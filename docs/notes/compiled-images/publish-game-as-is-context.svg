@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='634pt' height='340pt'
+viewBox='0.0 0.0 634.0 340.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <rect x='204' y='100' width='220' height='80' fill='none' stroke='black' />
+<text text-anchor='middle' x='314' y='140'>Опубликовать Игру На Платформе</text>
+
+  <line x1='20' y1='150' x2='204' y2='150' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='204,150 198,153 198,147 204,150' />
+<text text-anchor='start' x='25' y='145'>Билд Игры</text>
+
+<line x1='20' y1='130' x2='204' y2='130' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='204,130 198,133 198,127 204,130' />
+<text text-anchor='start' x='25' y='125'>SEO И Медиа Контент</text>
+
+<line x1='424' y1='140' x2='614' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='614,140 608,143 608,137 614,140' />
+<text text-anchor='end' x='609' y='135'>Игра На Проде</text>
+
+<line x1='424' y1='120' x2='614' y2='120' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='614,120 608,123 608,117 614,120' />
+<text text-anchor='end' x='609' y='115'>Замечания Модератора</text>
+
+<line x1='424' y1='160' x2='614' y2='160' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='614,160 608,163 608,157 614,160' />
+<text text-anchor='end' x='609' y='155'>Отчёт За Месяц</text>
+
+<line x1='324' y1='60' x2='324' y2='100' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='324,100 321,94 327,94 324,100' />
+<text text-anchor='middle' x='324' y='55'>Требования Платформы</text>
+
+<line x1='304' y1='40' x2='304' y2='100' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='304,100 301,94 307,94 304,100' />
+<text text-anchor='middle' x='304' y='35'>Конфигурация CI CD</text>
+
+<line x1='374' y1='280' x2='374' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='374,180 371,186 377,186 374,180' />
+<text text-anchor='middle' x='374' y='295'>Разработчик Игры</text>
+
+<line x1='254' y1='280' x2='254' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='254,180 251,186 257,186 254,180' />
+<text text-anchor='middle' x='254' y='295'>DevOps Инженер</text>
+
+<line x1='354' y1='260' x2='354' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='354,180 351,186 357,186 354,180' />
+<text text-anchor='middle' x='354' y='275'>Модератор</text>
+
+<line x1='334' y1='240' x2='334' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='334,180 331,186 337,186 334,180' />
+<text text-anchor='middle' x='334' y='255'>Менеджер</text>
+
+<line x1='274' y1='260' x2='274' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='274,180 271,186 277,186 274,180' />
+<text text-anchor='middle' x='274' y='275'>GitHub Actions</text>
+
+<line x1='294' y1='220' x2='294' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='294,180 291,186 297,186 294,180' />
+<text text-anchor='middle' x='294' y='235'>Telegram</text>
+
+<line x1='314' y1='300' x2='314' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='314,180 311,186 317,186 314,180' />
+<text text-anchor='middle' x='314' y='315'>Десктоп Программа</text>
+
+</g>
+</svg>

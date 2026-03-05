@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='1022pt' height='440pt'
+viewBox='0.0 0.0 1022.0 440.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <rect x='204' y='80' width='172' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='290' y='110'>Загрузить Билд Сервера</text>
+
+<rect x='416' y='180' width='154' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='493' y='210'>Управлять Инстансом</text>
+
+<rect x='610' y='280' width='148' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='684' y='310'>Мониторить Инстанс</text>
+
+  <path stroke='black' fill='none' d='M 376 110 L 386 110 C 391 110 396 115 396 120 L 396 190 C 396 195 401 200 406 200 L 416 200' />
+<polygon fill='black' stroke='black' points='416,200 410,203 410,197 416,200' />
+<text text-anchor='start' x='381' y='105'>Версия Билда В Хранилище</text>
+
+<path stroke='black' fill='none' d='M 570 220 L 580 220 C 585 220 590 225 590 230 L 590 300 C 590 305 595 310 600 310 L 610 310' />
+<polygon fill='black' stroke='black' points='610,310 604,313 604,307 610,310' />
+<text text-anchor='start' x='575' y='215'>Работающий Инстанс Сервера</text>
+
+<line x1='20' y1='110' x2='204' y2='110' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='204,110 198,113 198,107 204,110' />
+<text text-anchor='start' x='25' y='105'>Архив Билда Сервера</text>
+
+<line x1='20' y1='220' x2='416' y2='220' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='416,220 410,223 410,217 416,220' />
+<text text-anchor='start' x='25' y='215'>Команды Управления</text>
+
+<line x1='570' y1='200' x2='1002' y2='200' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1002,200 996,203 996,197 1002,200' />
+<text text-anchor='end' x='997' y='195'>Остановленный Инстанс Сервера</text>
+
+<line x1='758' y1='320' x2='1002' y2='320' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1002,320 996,323 996,317 1002,320' />
+<text text-anchor='end' x='997' y='315'>Логи Сервера</text>
+
+<line x1='758' y1='300' x2='1002' y2='300' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1002,300 996,303 996,297 1002,300' />
+<text text-anchor='end' x='997' y='295'>Коннект Для Клиента</text>
+
+<line x1='290' y1='40' x2='290' y2='80' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='290,80 287,74 293,74 290,80' />
+<text text-anchor='middle' x='290' y='35'>Конфигурация Режима</text>
+
+<line x1='493' y1='40' x2='493' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='493,180 490,174 496,174 493,180' />
+<text text-anchor='middle' x='493' y='35'>Конфигурация Режима</text>
+
+<line x1='280' y1='380' x2='280' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='280,140 277,146 283,146 280,140' />
+<text text-anchor='middle' x='280' y='395'>Разработчик</text>
+
+<line x1='300' y1='400' x2='300' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='300,140 297,146 303,146 300,140' />
+<text text-anchor='middle' x='300' y='415'>Система</text>
+
+<line x1='483' y1='380' x2='483' y2='240' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='483,240 480,246 486,246 483,240' />
+<text text-anchor='middle' x='483' y='395'>Разработчик</text>
+
+<line x1='503' y1='400' x2='503' y2='240' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='503,240 500,246 506,246 503,240' />
+<text text-anchor='middle' x='503' y='415'>Система</text>
+
+<line x1='684' y1='400' x2='684' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='684,340 681,346 687,346 684,340' />
+<text text-anchor='middle' x='684' y='415'>Система</text>
+
+</g>
+</svg>

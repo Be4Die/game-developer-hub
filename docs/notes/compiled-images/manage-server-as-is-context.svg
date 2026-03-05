@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='658pt' height='280pt'
+viewBox='0.0 0.0 658.0 280.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <rect x='198' y='80' width='196' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='296' y='110'>Управлять Игровым Сервером</text>
+
+  <line x1='20' y1='100' x2='198' y2='100' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='198,100 192,103 192,97 198,100' />
+<text text-anchor='start' x='25' y='95'>Билд Сервера</text>
+
+<line x1='20' y1='120' x2='198' y2='120' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='198,120 192,123 192,117 198,120' />
+<text text-anchor='start' x='25' y='115'>Запрос На Действие</text>
+
+<line x1='394' y1='120' x2='638' y2='120' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='638,120 632,123 632,117 638,120' />
+<text text-anchor='end' x='633' y='115'>Работающий Инстанс Сервера</text>
+
+<line x1='394' y1='100' x2='638' y2='100' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='638,100 632,103 632,97 638,100' />
+<text text-anchor='end' x='633' y='95'>Остановленный Инстанс Сервера</text>
+
+<line x1='296' y1='40' x2='296' y2='80' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='296,80 293,74 299,74 296,80' />
+<text text-anchor='middle' x='296' y='35'>Конфигурация CI CD</text>
+
+<line x1='326' y1='220' x2='326' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='326,140 323,146 329,146 326,140' />
+<text text-anchor='middle' x='326' y='235'>Разработчик Игры</text>
+
+<line x1='266' y1='200' x2='266' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='266,140 263,146 269,146 266,140' />
+<text text-anchor='middle' x='266' y='215'>DevOps Инженер</text>
+
+<line x1='286' y1='180' x2='286' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='286,140 283,146 289,146 286,140' />
+<text text-anchor='middle' x='286' y='195'>GitHub Actions</text>
+
+<line x1='306' y1='240' x2='306' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='306,140 303,146 309,146 306,140' />
+<text text-anchor='middle' x='306' y='255'>Telegram</text>
+
+</g>
+</svg>

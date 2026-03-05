@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='1228pt' height='560pt'
+viewBox='0.0 0.0 1228.0 560.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <rect x='204' y='80' width='178' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='293' y='110'>Настроить CI CD Сервера</text>
+
+<rect x='422' y='180' width='172' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='508' y='210'>Загрузить Билд Сервера</text>
+
+<rect x='634' y='280' width='142' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='705' y='310'>Запустить Инстанс</text>
+
+<rect x='816' y='380' width='148' height='60' fill='none' stroke='black' />
+<text text-anchor='middle' x='890' y='410'>Остановить Инстанс</text>
+
+  <path stroke='black' fill='none' d='M 382 110 L 392 110 C 397 110 402 115 402 120 L 402 190 C 402 195 407 200 412 200 L 422 200' />
+<polygon fill='black' stroke='black' points='422,200 416,203 416,197 422,200' />
+<text text-anchor='start' x='387' y='105'>Репозиторий Сервера С Workflow</text>
+
+<path stroke='black' fill='none' d='M 594 210 L 604 210 C 609 210 614 215 614 220 L 614 290 C 614 295 619 300 624 300 L 634 300' />
+<polygon fill='black' stroke='black' points='634,300 628,303 628,297 634,300' />
+<text text-anchor='start' x='599' y='205'>Билд На Выделенном Сервере</text>
+
+<path stroke='black' fill='none' d='M 776 310 L 786 310 C 791 310 796 315 796 320 L 796 390 C 796 395 801 400 806 400 L 816 400' />
+<polygon fill='black' stroke='black' points='816,400 810,403 810,397 816,400' />
+<text text-anchor='start' x='781' y='305'>Работающий Инстанс Сервера</text>
+
+<line x1='20' y1='110' x2='204' y2='110' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='204,110 198,113 198,107 204,110' />
+<text text-anchor='start' x='25' y='105'>Название Проекта</text>
+
+<line x1='20' y1='220' x2='422' y2='220' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='422,220 416,223 416,217 422,220' />
+<text text-anchor='start' x='25' y='215'>Билд Сервера</text>
+
+<line x1='20' y1='320' x2='634' y2='320' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='634,320 628,323 628,317 634,320' />
+<text text-anchor='start' x='25' y='315'>Запрос На Запуск</text>
+
+<line x1='20' y1='420' x2='816' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='816,420 810,423 810,417 816,420' />
+<text text-anchor='start' x='25' y='415'>Запрос На Остановку</text>
+
+<line x1='964' y1='410' x2='1208' y2='410' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1208,410 1202,413 1202,407 1208,410' />
+<text text-anchor='end' x='1203' y='405'>Остановленный Инстанс Сервера</text>
+
+<line x1='293' y1='40' x2='293' y2='80' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='293,80 290,74 296,74 293,80' />
+<text text-anchor='middle' x='293' y='35'>Конфигурация CI CD</text>
+
+<line x1='508' y1='40' x2='508' y2='180' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='508,180 505,174 511,174 508,180' />
+<text text-anchor='middle' x='508' y='35'>Конфигурация CI CD</text>
+
+<line x1='705' y1='40' x2='705' y2='280' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='705,280 702,274 708,274 705,280' />
+<text text-anchor='middle' x='705' y='35'>Конфигурация CI CD</text>
+
+<line x1='890' y1='40' x2='890' y2='380' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='890,380 887,374 893,374 890,380' />
+<text text-anchor='middle' x='890' y='35'>Конфигурация CI CD</text>
+
+<line x1='283' y1='500' x2='283' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='283,140 280,146 286,146 283,140' />
+<text text-anchor='middle' x='283' y='515'>DevOps Инженер</text>
+
+<line x1='303' y1='520' x2='303' y2='140' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='303,140 300,146 306,146 303,140' />
+<text text-anchor='middle' x='303' y='535'>GitHub</text>
+
+<line x1='518' y1='500' x2='518' y2='240' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='518,240 515,246 521,246 518,240' />
+<text text-anchor='middle' x='518' y='515'>Разработчик Игры</text>
+
+<line x1='498' y1='520' x2='498' y2='240' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='498,240 495,246 501,246 498,240' />
+<text text-anchor='middle' x='498' y='535'>GitHub Actions</text>
+
+<line x1='685' y1='500' x2='685' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='685,340 682,346 688,346 685,340' />
+<text text-anchor='middle' x='685' y='515'>DevOps Инженер</text>
+
+<line x1='705' y1='480' x2='705' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='705,340 702,346 708,346 705,340' />
+<text text-anchor='middle' x='705' y='495'>GitHub Actions</text>
+
+<line x1='725' y1='520' x2='725' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='725,340 722,346 728,346 725,340' />
+<text text-anchor='middle' x='725' y='535'>Telegram</text>
+
+<line x1='870' y1='500' x2='870' y2='440' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='870,440 867,446 873,446 870,440' />
+<text text-anchor='middle' x='870' y='515'>DevOps Инженер</text>
+
+<line x1='890' y1='480' x2='890' y2='440' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='890,440 887,446 893,446 890,440' />
+<text text-anchor='middle' x='890' y='495'>GitHub Actions</text>
+
+<line x1='910' y1='520' x2='910' y2='440' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='910,440 907,446 913,446 910,440' />
+<text text-anchor='middle' x='910' y='535'>Telegram</text>
+
+</g>
+</svg>

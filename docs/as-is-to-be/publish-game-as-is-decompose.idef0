@@ -1,0 +1,41 @@
+Опубликовать Игру На Платформе is composed of Настроить CI CD
+Опубликовать Игру На Платформе is composed of Загрузить Билд В Dev
+Опубликовать Игру На Платформе is composed of Провести Модерацию
+Опубликовать Игру На Платформе is composed of Выгрузить На Прод
+Опубликовать Игру На Платформе is composed of Сформировать Отчёт
+
+Настроить CI CD receives Название Игры
+Настроить CI CD respects Конфигурация CI CD
+Настроить CI CD produces Репозиторий С Workflow
+Настроить CI CD requires DevOps Инженер
+Настроить CI CD requires GitHub
+
+Загрузить Билд В Dev receives Билд Игры
+Загрузить Билд В Dev receives Репозиторий С Workflow
+Загрузить Билд В Dev respects Конфигурация CI CD
+Загрузить Билд В Dev produces Игра В Dev Окружении
+Загрузить Билд В Dev requires Разработчик Игры
+Загрузить Билд В Dev requires GitHub Actions
+
+Провести Модерацию receives Игра В Dev Окружении
+Провести Модерацию receives SEO И Медиа Контент
+Провести Модерацию respects Требования Платформы
+Провести Модерацию produces Решение О Публикации
+Провести Модерацию produces Замечания Модератора
+Провести Модерацию requires Модератор
+Провести Модерацию requires Разработчик Игры
+Провести Модерацию requires Telegram
+
+Выгрузить На Прод receives Решение О Публикации
+Выгрузить На Прод receives Репозиторий С Workflow
+Выгрузить На Прод respects Конфигурация CI CD
+Выгрузить На Прод produces Игра На Проде
+Выгрузить На Прод requires DevOps Инженер
+Выгрузить На Прод requires GitHub Actions
+
+Сформировать Отчёт receives Игра На Проде
+Сформировать Отчёт respects Требования Платформы
+Сформировать Отчёт produces Отчёт За Месяц
+Сформировать Отчёт requires Менеджер
+Сформировать Отчёт requires Десктоп Программа
+Сформировать Отчёт requires Telegram

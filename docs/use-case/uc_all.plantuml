@@ -1,0 +1,168 @@
+@startuml UC_Complete
+
+left to right direction
+skinparam actorStyle awesome
+
+skinparam usecase {
+  BackgroundColor<<auth>> #E8F5E9
+  BorderColor<<auth>> #388E3C
+
+  BackgroundColor<<proj>> #E3F2FD
+  BorderColor<<proj>> #1565C0
+
+  BackgroundColor<<mod>> #FFF3E0
+  BorderColor<<mod>> #EF6C00
+
+  BackgroundColor<<srv>> #F3E5F5
+  BorderColor<<srv>> #7B1FA2
+
+  BackgroundColor<<stat>> #FFFDE7
+  BorderColor<<stat>> #F9A825
+}
+
+' ═══════════════════════════════
+'  АКТЁРЫ
+' ═══════════════════════════════
+
+actor "Владелец\n(Owner)" as Owner
+actor "Разработчик" as Dev
+actor "Подключённый\nразработчик" as ConnDev
+actor "Администратор" as Admin
+actor "Модератор" as Mod
+actor "Клиент игры" as GameClient
+
+Owner --|> Dev
+ConnDev --|> Dev
+
+' ═══════════════════════════════
+'  АВТОРИЗАЦИЯ
+' ═══════════════════════════════
+
+usecase "Зарегистрироваться" as REG <<auth>>
+usecase "Авторизоваться" as AUTH <<auth>>
+usecase "Восстановить пароль" as RESTORE <<auth>>
+usecase "Управлять профилем" as PROFILE <<auth>>
+usecase "Создать учётную запись\nмодератора" as CREATE_MOD <<auth>>
+
+' ═══════════════════════════════
+'  УПРАВЛЕНИЕ ПРОЕКТАМИ
+' ═══════════════════════════════
+
+usecase "Просмотреть список проектов" as LIST <<proj>>
+usecase "Создать черновик игры" as CREATE <<proj>>
+usecase "Загрузить билд\nклиентской части" as UPLOAD <<proj>>
+usecase "Заполнить метаданные игры" as META <<proj>>
+usecase "Управлять доступом\nк проекту" as ACCESS <<proj>>
+
+' ═══════════════════════════════
+'  МОДЕРАЦИЯ И ПУБЛИКАЦИЯ
+' ═══════════════════════════════
+
+usecase "Отправить на модерацию" as SEND <<mod>>
+usecase "Просмотреть очередь\nтикетов" as QUEUE <<mod>>
+usecase "Провести модерацию" as MODERATE <<mod>>
+usecase "Тестировать игру\nв dev-окружении" as TEST <<mod>>
+usecase "Вынести вердикт" as VERDICT <<mod>>
+usecase "Одобрить игру" as APPROVE <<mod>>
+usecase "Указать замечания" as REMARKS <<mod>>
+usecase "Обмениваться сообщениями\nво встроенном чате" as CHAT <<mod>>
+
+' ═══════════════════════════════
+'  ОРКЕСТРАЦИЯ СЕРВЕРОВ
+' ═══════════════════════════════
+
+usecase "Загрузить билд сервера" as UPLOAD_SRV <<srv>>
+usecase "Выбрать режим\nработы сервера" as MODE <<srv>>
+usecase "Запустить экземпляр\nсервера" as START <<srv>>
+usecase "Остановить экземпляр\nсервера" as STOP <<srv>>
+usecase "Просмотреть логи сервера" as LOGS <<srv>>
+usecase "Обнаружить сервер\nдля подключения" as DISCOVER <<srv>>
+usecase "Подключить собственный\nвычислительный узел" as NODE <<srv>>
+
+' ═══════════════════════════════
+'  АНАЛИТИКА И ОТЧЁТНОСТЬ
+' ═══════════════════════════════
+
+usecase "Просмотреть статистику" as STATS <<stat>>
+usecase "Скачать отчёт за период" as REPORT <<stat>>
+
+' ═══════════════════════════════
+'  СВЯЗИ: Разработчик
+' ═══════════════════════════════
+
+Dev -- REG
+Dev -- AUTH
+Dev -- PROFILE
+Dev -- LIST
+Dev -- UPLOAD
+Dev -- META
+Dev -- SEND
+Dev -- CHAT
+Dev -- UPLOAD_SRV
+Dev -- MODE
+Dev -- START
+Dev -- STOP
+Dev -- LOGS
+Dev -- STATS
+Dev -- REPORT
+
+' ═══════════════════════════════
+'  СВЯЗИ: Только Владелец
+' ═══════════════════════════════
+
+Owner -- CREATE
+Owner -- ACCESS
+Owner -- NODE
+
+' ═══════════════════════════════
+'  СВЯЗИ: Модератор
+' ═══════════════════════════════
+
+Mod -- AUTH
+Mod -- PROFILE
+Mod -- QUEUE
+Mod -- MODERATE
+Mod -- CHAT
+
+' ═══════════════════════════════
+'  СВЯЗИ: Администратор
+' ═══════════════════════════════
+
+Admin -- AUTH
+Admin -- CREATE_MOD
+
+' ═══════════════════════════════
+'  СВЯЗИ: Клиент игры
+' ═══════════════════════════════
+
+GameClient -- DISCOVER
+
+' ═══════════════════════════════
+'  INCLUDE
+' ═══════════════════════════════
+
+MODERATE ..> TEST : <<include>>
+MODERATE ..> VERDICT : <<include>>
+
+' ═══════════════════════════════
+'  EXTEND
+' ═══════════════════════════════
+
+RESTORE ..> AUTH : <<extend>>
+APPROVE ..> VERDICT : <<extend>>
+REMARKS ..> VERDICT : <<extend>>
+
+' ═══════════════════════════════
+'  ЛЕГЕНДА
+' ═══════════════════════════════
+
+legend right
+  |= Цвет |= Подсистема |
+  |<#E8F5E9> | Авторизация и учётные записи |
+  |<#E3F2FD> | Управление проектами |
+  |<#FFF3E0> | Модерация и публикация |
+  |<#F3E5F5> | Оркестрация серверов |
+  |<#FFFDE7> | Аналитика и отчётность |
+endlegend
+
+@enduml
