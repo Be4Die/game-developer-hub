@@ -14,7 +14,7 @@
 
 ## Статус
 
-> Проект на стадии проектирования
+> 🚧 Проект на стадии проектирования
 
 ## Документация
 
@@ -23,7 +23,7 @@
 | [`docs/tech-spec.pdf`](docs/tech-spec.pdf) | Техническое задание (ГОСТ 34.602-2020) |
 | [`docs/notes/`](docs/notes/) | Рабочие заметки: идея, требования, аудитория |
 | [`docs/as-is-to-be/`](docs/as-is-to-be/) | IDEF0-диаграммы текущих и целевых процессов |
-| [`docs/use-case/`](docs/use-case/) | Use case диаграмма |
+| [`docs/use-case.plantuml`](docs/use-case.plantuml) | Use case диаграмма |
 
 ## Стек
 
