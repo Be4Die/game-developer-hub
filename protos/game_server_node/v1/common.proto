@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package game_server_node.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Сетевой протокол, по которому экземпляр игрового сервера
+// принимает подключения от клиентов игры.
+enum Protocol {
+  PROTOCOL_UNSPECIFIED = 0;
+  PROTOCOL_TCP = 1;
+  PROTOCOL_UDP = 2;
+  PROTOCOL_WEBSOCKET = 3;
+  PROTOCOL_WEBRTC = 4;
+}
+
+// Состояние жизненного цикла экземпляра игрового сервера.
+enum InstanceStatus {
+  INSTANCE_STATUS_UNSPECIFIED = 0;
+  INSTANCE_STATUS_STARTING = 1;
+  INSTANCE_STATUS_RUNNING = 2;
+  INSTANCE_STATUS_STOPPING = 3;
+  INSTANCE_STATUS_STOPPED = 4;
+  INSTANCE_STATUS_CRASHED = 5;
+}
+
+// Описание экземпляра игрового сервера, запущенного на ноде.
+message Instance {
+  int64 instance_id = 1;
+  string name = 2;
+  int64 game_id = 3;
+  string build_version = 4;
+  uint32 port = 5;
+  Protocol protocol = 6;
+  InstanceStatus status = 7;
+  // Отсутствует, если игровой сервер не реализовал механизм отчёта.
+  optional uint32 player_count = 8;
+  uint32 max_players = 9;
+  // Произвольные метаданные, задаваемые разработчиком игры.
+  map<string, string> developer_payload = 10;
+  google.protobuf.Timestamp started_at = 11;
+}
+
+// Текущее потребление ресурсов (ноды или экземпляра).
+message ResourceUsage {
+  // Загрузка CPU в процентах (0.0–100.0).
+  double cpu_usage_percent = 1;
+  uint64 memory_used_bytes = 2;
+  // Для ноды — общее использование диска,
+  // для экземпляра — размер рабочей директории.
+  uint64 disk_used_bytes = 3;
+  // Суммарный входящий и исходящий трафик.
+  uint64 network_bytes_per_sec = 4;
+}

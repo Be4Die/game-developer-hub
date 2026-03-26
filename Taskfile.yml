@@ -1,0 +1,24 @@
+version: "3"
+
+tasks:
+  proto:
+    desc: "Generate Go code from proto files"
+    dir: protos
+    cmds:
+      - task: proto:clean
+      - buf generate
+
+  proto:lint:
+    desc: "Lint proto files"
+    dir: protos
+    cmds:
+      - buf lint
+
+  proto:clean:
+    desc: "Clean generated proto files"
+    dir: protos
+    cmds:
+      - cmd: powershell -Command "Get-ChildItem -Recurse -Filter '*.pb.go' | Remove-Item -Force"
+        platforms: [windows]
+      - cmd: find . -name "*.pb.go" -type f -delete
+        platforms: [linux, darwin]

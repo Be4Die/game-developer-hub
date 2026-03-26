@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package game_server_node.v1;
+
+import "game_server_node/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Предоставляет оркестратору возможность загружать Docker-образы
+// и управлять экземплярами игровых серверов на ноде.
+service DeploymentService {
+  // Загрузка Docker-образа (tar-архив, результат docker save).
+  // Первое сообщение стрима содержит метаданные, последующие — чанки данных.
+  rpc LoadImage(stream LoadImageRequest) returns (LoadImageResponse);
+
+  // Запуск экземпляра игрового сервера из загруженного образа.
+  rpc StartInstance(StartInstanceRequest) returns (StartInstanceResponse);
+
+  // Graceful остановка экземпляра.
+  rpc StopInstance(StopInstanceRequest) returns (StopInstanceResponse);
+
+  // Стрим журналов экземпляра в реальном времени.
+  rpc StreamLogs(StreamLogsRequest) returns (stream StreamLogsResponse);
+}
+
+// Источник строки журнала.
+enum LogSource {
+  LOG_SOURCE_UNSPECIFIED = 0;
+  LOG_SOURCE_STDOUT = 1;
+  LOG_SOURCE_STDERR = 2;
+}
+
+message LoadImageRequest {
+  oneof payload {
+    ImageMetadata metadata = 1;
+    // Рекомендуемый размер чанка — 64 КБ.
+    bytes chunk = 2;
+  }
+}
+
+message ImageMetadata {
+  int64 game_id = 1;
+  // Тег образа, например "welwise/shooter:v1.2.3".
+  string image_tag = 2;
+}
+
+message LoadImageResponse {
+  string image_tag = 1;
+  uint64 size_bytes = 2;
+}
+
+// Стратегия выделения хостового порта для экземпляра.
+message PortAllocation {
+  oneof strategy {
+    // Любой свободный порт.
+    bool any = 1;
+    // Конкретный порт. Ошибка, если занят.
+    uint32 exact = 2;
+    // Свободный порт из диапазона.
+    PortRange range = 3;
+  }
+}
+
+message PortRange {
+  uint32 min_port = 1;
+  uint32 max_port = 2;
+}
+
+// Ограничения ресурсов контейнера.
+message ResourceLimits {
+  // В миллиядрах (1000 = 1 ядро).
+  optional uint32 cpu_millis = 1;
+  optional uint64 memory_bytes = 2;
+}
+
+message StartInstanceRequest {
+  int64 game_id = 1;
+  string name = 2;
+  Protocol protocol = 3;
+  // Порт, который процесс слушает внутри контейнера.
+  uint32 internal_port = 4;
+  PortAllocation port_allocation = 5;
+  uint32 max_players = 6;
+  map<string, string> developer_payload = 7;
+  // NODE_REPORT_URL добавляется нодой автоматически.
+  map<string, string> env_vars = 8;
+  repeated string args = 9;
+  optional ResourceLimits resource_limits = 10;
+}
+
+message StartInstanceResponse {
+  int64 instance_id = 1;
+  uint32 host_port = 2;
+}
+
+message StopInstanceRequest {
+  int64 instance_id = 1;
+  // 0 — таймаут по умолчанию (30 секунд).
+  uint32 timeout_seconds = 2;
+}
+
+message StopInstanceResponse {}
+
+message StreamLogsRequest {
+  int64 instance_id = 1;
+  bool follow_stdout = 2;
+  bool follow_stderr = 3;
+  // Количество последних строк перед переходом в follow-режим. 0 — без истории.
+  uint32 tail = 4;
+  optional google.protobuf.Timestamp since = 5;
+}
+
+message StreamLogsResponse {
+  google.protobuf.Timestamp timestamp = 1;
+  LogSource source = 2;
+  string message = 3;
+}

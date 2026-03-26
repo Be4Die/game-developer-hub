@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package game_server_node.v1;
+
+import "game_server_node/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Предоставляет оркестратору информацию о состоянии ноды
+// и запущенных на ней экземплярах игровых серверов.
+service DiscoveryService {
+  // Статические характеристики ноды (регион, ресурсы, версия агента).
+  rpc GetNodeInfo(GetNodeInfoRequest) returns (GetNodeInfoResponse);
+
+  // Текущая загруженность ноды. Используется как heartbeat в pull-модели.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Все экземпляры на ноде.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
+
+  // Экземпляр по идентификатору.
+  rpc GetInstance(GetInstanceRequest) returns (GetInstanceResponse);
+
+  // Экземпляры конкретной игры.
+  rpc ListInstancesByGame(ListInstancesByGameRequest) returns (ListInstancesByGameResponse);
+
+  // Текущая загруженность конкретного экземпляра.
+  rpc GetInstanceUsage(GetInstanceUsageRequest) returns (GetInstanceUsageResponse);
+}
+
+message GetNodeInfoRequest {}
+
+message GetNodeInfoResponse {
+  string region = 1;
+  uint32 cpu_cores = 2;
+  uint64 total_memory_bytes = 3;
+  uint64 total_disk_bytes = 4;
+  uint64 network_bandwidth_bytes_per_sec = 5;
+  google.protobuf.Timestamp started_at = 6;
+  string agent_version = 7;
+}
+
+message HeartbeatRequest {}
+
+message HeartbeatResponse {
+  ResourceUsage usage = 1;
+  // Количество экземпляров в статусах STARTING, RUNNING или STOPPING.
+  uint32 active_instance_count = 2;
+}
+
+message ListInstancesRequest {}
+
+message ListInstancesResponse {
+  repeated Instance instances = 1;
+}
+
+message GetInstanceRequest {
+  int64 instance_id = 1;
+}
+
+message GetInstanceResponse {
+  Instance instance = 1;
+}
+
+message ListInstancesByGameRequest {
+  int64 game_id = 1;
+}
+
+message ListInstancesByGameResponse {
+  repeated Instance instances = 1;
+}
+
+message GetInstanceUsageRequest {
+  int64 instance_id = 1;
+}
+
+message GetInstanceUsageResponse {
+  int64 instance_id = 1;
+  ResourceUsage usage = 2;
+}
