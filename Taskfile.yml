@@ -1,6 +1,14 @@
 version: "3"
 
+vars:
+  NODE_IMAGE_NAME: "game-server-node"
+  NODE_IMAGE_TAG: "latest"
+  NODE_CONTAINER_NAME: "game-server-node"
+  NODE_GRPC_PORT: 44044
+  NODE_CONFIG: "local.yaml"
+
 tasks:
+  # ==================== Proto ====================
   proto:
     desc: "Generate Go code from proto files"
     dir: protos
@@ -22,3 +30,70 @@ tasks:
         platforms: [windows]
       - cmd: find . -name "*.pb.go" -type f -delete
         platforms: [linux, darwin]
+
+  # ==================== Docker: build ====================
+  node:build:
+    desc: "Build Docker image for game-server-node"
+    dir: game-server-node
+    cmds:
+      - docker build -t {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}} .
+
+  # ==================== Docker: run ====================
+  node:run:
+    desc: "Run game-server-node container"
+    deps: [node:build]
+    cmds:
+      - docker run
+        --name {{.NODE_CONTAINER_NAME}}
+        --rm
+        -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
+        -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
+        {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
+
+  # ==================== Docker: run detached ====================
+  node:up:
+    desc: "Run game-server-node container in background"
+    deps: [node:build]
+    cmds:
+      - docker run
+        --name {{.NODE_CONTAINER_NAME}}
+        -d
+        --restart unless-stopped
+        -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
+        -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
+        {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
+
+  # ==================== Docker: stop ====================
+  node:down:
+    desc: "Stop and remove game-server-node container"
+    cmds:
+      - docker stop {{.NODE_CONTAINER_NAME}}
+      - docker rm {{.NODE_CONTAINER_NAME}}
+    ignore_error: true
+
+  # ==================== Docker: logs ====================
+  node:logs:
+    desc: "Show game-server-node container logs"
+    cmds:
+      - docker logs -f {{.NODE_CONTAINER_NAME}}
+
+  # ==================== Docker: restart ====================
+  node:restart:
+    desc: "Restart game-server-node container"
+    cmds:
+      - task: node:down
+      - task: node:up
+
+  # ==================== Docker: shell ====================
+  node:shell:
+    desc: "Open shell in running game-server-node container"
+    cmds:
+      - docker exec -it {{.NODE_CONTAINER_NAME}} /bin/sh
+
+  # ==================== Docker: clean ====================
+  node:clean:
+    desc: "Remove Docker image for game-server-node"
+    cmds:
+      - task: node:down
+      - docker rmi {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
+    ignore_error: true
