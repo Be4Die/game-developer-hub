@@ -1,0 +1,245 @@
+@startuml ER_DevCenter
+
+!theme plain
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+
+hide circle
+skinparam class {
+  BackgroundColor #FEFEFE
+  BorderColor #333333
+  ArrowColor #333333
+  FontSize 13
+}
+
+' ═══════════════════════════════
+'  ПОЛЬЗОВАТЕЛИ
+' ═══════════════════════════════
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  --
+  * email : varchar(255) <<unique>>
+  * password_hash : varchar(255)
+  * role : enum(developer, moderator, admin)
+  * display_name : varchar(255)
+  email_verified_at : timestamp
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ЧЕРНОВИКИ ИГР
+' ═══════════════════════════════
+
+entity "game_drafts" as drafts {
+  * id : uuid <<PK>>
+  --
+  * title_ru : varchar(255)
+  * title_en : varchar(255)
+  seo_description_ru : varchar(180)
+  seo_description_en : varchar(180)
+  about_ru : text(800)
+  about_en : text(800)
+  category : varchar(100)
+  icon_url : varchar(512)
+  cover_wide_url : varchar(512)
+  cover_tall_url : varchar(512)
+  video_url : varchar(512)
+  * status : enum(draft, on_moderation, approved, rejected)
+  * server_mode : enum(manual, auto)
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ОПУБЛИКОВАННЫЕ ИГРЫ
+' ═══════════════════════════════
+
+entity "published_games" as published {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>> <<unique>>
+  * title_ru : varchar(255)
+  * title_en : varchar(255)
+  seo_description_ru : varchar(180)
+  seo_description_en : varchar(180)
+  about_ru : text(800)
+  about_en : text(800)
+  category : varchar(100)
+  icon_url : varchar(512)
+  cover_wide_url : varchar(512)
+  cover_tall_url : varchar(512)
+  video_url : varchar(512)
+  * client_build_id : uuid <<FK>>
+  * published_at : timestamp
+  * updated_at : timestamp
+}
+
+' ═══════════════════════════════
+'  УЧАСТНИКИ ПРОЕКТА
+' ═══════════════════════════════
+
+entity "game_members" as members {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * role : enum(owner, developer)
+  * created_at : timestamp
+}
+
+' ═══════════════════════════════
+'  КЛИЕНТСКИЕ БИЛДЫ
+' ═══════════════════════════════
+
+entity "client_builds" as cbuilds {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>>
+  * uploaded_by : uuid <<FK>>
+  * version : int
+  * file_url : varchar(512)
+  * file_size : bigint
+  * created_at : timestamp
+}
+
+' ═══════════════════════════════
+'  СЕРВЕРНЫЕ БИЛДЫ
+' ═══════════════════════════════
+
+entity "server_builds" as sbuilds {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>>
+  * uploaded_by : uuid <<FK>>
+  * version : int
+  * file_url : varchar(512)
+  * file_size : bigint
+  * created_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ТИКЕТЫ МОДЕРАЦИИ
+' ═══════════════════════════════
+
+entity "moderation_tickets" as tickets {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>>
+  * submitted_by : uuid <<FK>>
+  reviewed_by : uuid <<FK>>
+  * status : enum(pending, approved, rejected)
+  reject_reason : text
+  * created_at : timestamp
+  reviewed_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ЧАТ
+' ═══════════════════════════════
+
+entity "chat_messages" as chat {
+  * id : uuid <<PK>>
+  --
+  * game_draft_id : uuid <<FK>>
+  sender_id : uuid <<FK>>
+  * type : enum(user, system)
+  * body : text
+  * created_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ВЫЧИСЛИТЕЛЬНЫЕ УЗЛЫ
+' ═══════════════════════════════
+
+entity "nodes" as nodes {
+  * id : uuid <<PK>>
+  --
+  * address : varchar(255)
+  * token_hash : varchar(255)
+  * status : enum(online, offline, maintenance)
+  cpu_cores : int
+  ram_mb : int
+  disk_mb : int
+  * last_ping_at : timestamp
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' ═══════════════════════════════
+'  ЭКЗЕМПЛЯРЫ СЕРВЕРОВ
+' ═══════════════════════════════
+
+entity "server_instances" as instances {
+  * id : uuid <<PK>>
+  --
+  * server_build_id : uuid <<FK>>
+  * node_id : uuid <<FK>>
+  * game_draft_id : uuid <<FK>>
+  * status : enum(starting, running, stopping, stopped, crashed)
+  port : int
+  * created_at : timestamp
+  * updated_at : timestamp
+}
+
+' ═══════════════════════════════
+'  АНАЛИТИКА (СУТОЧНЫЕ СНИМКИ)
+' ═══════════════════════════════
+
+entity "game_stats" as stats {
+  * id : uuid <<PK>>
+  --
+  * published_game_id : uuid <<FK>>
+  * date : date
+  dau : int
+  wau : int
+  mau : int
+  ad_impressions : int
+  avg_session_seconds : int
+  new_players : int
+  returning_players : int
+  total_sessions : int
+  * created_at : timestamp
+}
+
+' ═══════════════════════════════
+'  СВЯЗИ
+' ═══════════════════════════════
+
+' --- Участники проекта ---
+users ||--o{ members : "user_id"
+drafts ||--o{ members : "game_draft_id"
+
+' --- Публикация ---
+drafts ||--o| published : "game_draft_id"
+
+' --- Билды ---
+drafts ||--o{ cbuilds : "game_draft_id"
+users ||--o{ cbuilds : "uploaded_by"
+
+drafts ||--o{ sbuilds : "game_draft_id"
+users ||--o{ sbuilds : "uploaded_by"
+
+' --- Опубликованная игра ссылается на конкретный клиентский билд ---
+cbuilds ||--o| published : "client_build_id"
+
+' --- Модерация ---
+drafts ||--o{ tickets : "game_draft_id"
+users ||--o{ tickets : "submitted_by"
+users ||--o{ tickets : "reviewed_by"
+
+' --- Чат ---
+drafts ||--o{ chat : "game_draft_id"
+users ||--o{ chat : "sender_id"
+
+' --- Серверная инфраструктура ---
+sbuilds ||--o{ instances : "server_build_id"
+nodes ||--o{ instances : "node_id"
+drafts ||--o{ instances : "game_draft_id"
+
+' --- Аналитика ---
+published ||--o{ stats : "published_game_id"
+
+@enduml
