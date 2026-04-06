@@ -19,11 +19,18 @@ type Config struct {
 	StoragePath string        `yaml:"storage_path" env-required:"true"`
 	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
 	GRPC        GRPCConfig    `yaml:"grpc"`
+	Node        NodeConfig    `yaml:"node"`
 }
 
 type GRPCConfig struct {
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+
+type NodeConfig struct {
+	Region  string `yaml:"region" env-default:"unknown"`
+	Version string `yaml:"version" env-default:"0.0.1"`
+	EthName string `yaml:"eth_name" env-default:""`
 }
 
 func MustLoad() *Config {

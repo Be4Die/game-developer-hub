@@ -4,3 +4,6 @@ token_ttl: 1h
 grpc:
   port: 44044
   timeout: 10h
+node:
+  region: "local"
+  version: "0.0.1"

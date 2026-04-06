@@ -15,15 +15,20 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	application := app.New(log, cfg)
+	// Error is handled HERE — the caller decides what to do.
+	application, err := app.New(log, cfg)
+	if err != nil {
+		log.Error("failed to initialize application", slog.String("error", err.Error()))
+		os.Exit(1)
+	}
 
-	log.Info("application started ...")
+	log.Info("application started")
+
 	go func() {
 		application.MustRun()
 	}()
 
 	stop := make(chan os.Signal, 1)
-
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	<-stop
 
@@ -42,6 +47,5 @@ func setupLogger(env string) *slog.Logger {
 	case config.EnvProd:
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	}
-
 	return log
 }
