@@ -10,7 +10,6 @@ import (
 )
 
 func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
-	// Идиоматичный паттерн: Table-driven tests
 	tests := []struct {
 		name          string
 		presetData    map[int64]domain.Instance
@@ -45,16 +44,13 @@ func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Arrange
 			storage := &MemoryInstanceStorage{
-				data: tt.presetData, // Инициализируем хранилище тестовыми данными
+				data: tt.presetData,
 			}
 			ctx := context.Background()
 
-			// Act
 			inst, err := storage.GetInstanceByID(ctx, tt.requestID)
 
-			// Assert
 			if !errors.Is(err, tt.expectedError) {
 				t.Errorf("expected error %v, got %v", tt.expectedError, err)
 			}
@@ -66,8 +62,112 @@ func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
 	}
 }
 
+func TestMemoryInstanceStorage_GetInstancesByGameID(t *testing.T) {
+	storage := &MemoryInstanceStorage{
+		data: map[int64]domain.Instance{
+			1: {ID: 1, GameID: 42, Name: "Match-1"},
+			2: {ID: 2, GameID: 42, Name: "Match-2"},
+			3: {ID: 3, GameID: 99, Name: "Other-Game"},
+		},
+	}
+
+	ctx := context.Background()
+	instances, err := storage.GetInstancesByGameID(ctx, 42)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 2 {
+		t.Errorf("expected 2 instances, got %d", len(instances))
+	}
+
+	// Order is not guaranteed in maps, so we check contents
+	found1, found2 := false, false
+	for _, inst := range instances {
+		if inst.ID == 1 {
+			found1 = true
+		}
+		if inst.ID == 2 {
+			found2 = true
+		}
+	}
+
+	if !found1 || !found2 {
+		t.Errorf("expected to find instances with ID 1 and 2")
+	}
+}
+
+func TestMemoryInstanceStorage_GetInstanceByContainerID(t *testing.T) {
+	storage := &MemoryInstanceStorage{
+		data: map[int64]domain.Instance{
+			1: {ID: 1, ContainerID: "docker-abc-123"},
+			2: {ID: 2, ContainerID: "docker-xyz-789"},
+		},
+	}
+	ctx := context.Background()
+
+	// 1. Success case
+	inst, err := storage.GetInstanceByContainerID(ctx, "docker-xyz-789")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if inst.ID != 2 {
+		t.Errorf("expected instance ID 2, got %d", inst.ID)
+	}
+
+	// 2. Not found case
+	_, err = storage.GetInstanceByContainerID(ctx, "non-existent")
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestMemoryInstanceStorage_GetAllInstances(t *testing.T) {
+	storage := &MemoryInstanceStorage{
+		data: map[int64]domain.Instance{
+			1: {ID: 1},
+			2: {ID: 2},
+			3: {ID: 3},
+		},
+	}
+
+	instances, err := storage.GetAllInstances(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 3 {
+		t.Errorf("expected 3 instances, got %d", len(instances))
+	}
+}
+
+func TestMemoryInstanceStorage_DeleteInstance(t *testing.T) {
+	storage := &MemoryInstanceStorage{
+		data: map[int64]domain.Instance{
+			1: {ID: 1, Name: "To-Be-Deleted"},
+		},
+	}
+	ctx := context.Background()
+
+	// 1. Delete existing
+	err := storage.DeleteInstance(ctx, 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(storage.data) != 0 {
+		t.Errorf("expected storage to be empty, got %d items", len(storage.data))
+	}
+
+	// 2. Delete non-existing
+	err = storage.DeleteInstance(ctx, 99)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
 func TestMemoryInstanceStorage_ConcurrentAccess(t *testing.T) {
-	// Этот тест доказывает преподавателю, что твои sync.RWMutex работают!
 	storage := NewMemoryInstanceStorage()
 	ctx := context.Background()
 
@@ -75,12 +175,10 @@ func TestMemoryInstanceStorage_ConcurrentAccess(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(workers)
 
-	// Запускаем 100 горутин, которые одновременно пишут и читают
 	for i := range int64(workers) {
 		go func(id int64) {
 			defer wg.Done()
 
-			// Пишем
 			err := storage.RecordInstance(ctx, domain.Instance{
 				ID:   id,
 				Name: "Concurrent-Lobby",
@@ -89,13 +187,11 @@ func TestMemoryInstanceStorage_ConcurrentAccess(t *testing.T) {
 				t.Errorf("failed to record: %v", err)
 			}
 
-			// Читаем
 			_, err = storage.GetInstanceByID(ctx, id)
 			if err != nil {
 				t.Errorf("failed to get: %v", err)
 			}
 
-			// Получаем все
 			_, err = storage.GetAllInstances(ctx)
 			if err != nil {
 				t.Errorf("failed to get all: %v", err)
@@ -103,9 +199,8 @@ func TestMemoryInstanceStorage_ConcurrentAccess(t *testing.T) {
 		}(i)
 	}
 
-	wg.Wait() // Ждём завершения всех горутин
+	wg.Wait()
 
-	// Проверяем, что все 100 инстансов успешно сохранились
 	all, _ := storage.GetAllInstances(ctx)
 	if len(all) != workers {
 		t.Errorf("expected %d instances, got %d", workers, len(all))

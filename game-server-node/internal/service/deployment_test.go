@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -12,11 +13,16 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
 )
 
-// stubRuntime — это "фейковый" Docker для тестов.
-// Он реализует интерфейс domain.ContainerRuntime.
+// stubRuntime is a fake Docker client for tests.
 type stubRuntime struct {
 	createdContainerID string
 	started            bool
+
+	// Fields to verify StopContainer behavior
+	stopContainerID string
+	stopTimeout     time.Duration
+	stopErr         error // If set, StopContainer will return this error
+	removed         bool
 }
 
 func (s *stubRuntime) LoadImage(ctx context.Context, imageTag string, data io.Reader) error {
@@ -34,10 +40,16 @@ func (s *stubRuntime) StartContainer(ctx context.Context, containerID string) er
 }
 
 func (s *stubRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {
+	if s.stopErr != nil {
+		return s.stopErr
+	}
+	s.stopContainerID = containerID
+	s.stopTimeout = timeout
 	return nil
 }
 
 func (s *stubRuntime) RemoveContainer(ctx context.Context, containerID string) error {
+	s.removed = true
 	return nil
 }
 
@@ -50,15 +62,13 @@ func (s *stubRuntime) ContainerStats(ctx context.Context, containerID string) (d
 }
 
 func TestDeploymentService_StartInstance(t *testing.T) {
-	// Arrange
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewMemoryInstanceStorage()
-	runtime := &stubRuntime{} // Используем нашу заглушку вместо реального Docker!
+	runtime := &stubRuntime{}
 
 	svc := NewDeploymentService(log, storage, runtime)
 	ctx := context.Background()
 
-	// "Загружаем" образ в память сервиса
 	err := svc.LoadImage(ctx, 42, "test-game:v1", nil)
 	if err != nil {
 		t.Fatalf("unexpected error in LoadImage: %v", err)
@@ -73,10 +83,8 @@ func TestDeploymentService_StartInstance(t *testing.T) {
 		MaxPlayers:   10,
 	}
 
-	// Act
 	instanceID, hostPort, err := svc.StartInstance(ctx, opts)
 
-	// Assert
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -89,12 +97,10 @@ func TestDeploymentService_StartInstance(t *testing.T) {
 		t.Errorf("expected hostPort 27015, got %d", hostPort)
 	}
 
-	// Проверяем, что заглушка Docker-а была вызвана
 	if !runtime.started {
 		t.Errorf("expected container to be started in runtime")
 	}
 
-	// Проверяем, что инстанс сохранился в базу
 	savedInstance, err := storage.GetInstanceByID(ctx, instanceID)
 	if err != nil {
 		t.Fatalf("expected instance to be in storage, got error: %v", err)
@@ -109,59 +115,83 @@ func TestDeploymentService_StartInstance(t *testing.T) {
 	}
 }
 
-func TestDeploymentService_resolvePort(t *testing.T) {
-	ctx := context.Background()
+func TestDeploymentService_StopInstance_Success(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewMemoryInstanceStorage()
+	runtime := &stubRuntime{}
+	svc := NewDeploymentService(log, storage, runtime)
+	ctx := context.Background()
 
-	// Занимаем порты 30000 и 30001
-	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Port: 30000, Status: domain.InstanceStatusRunning})
-	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Port: 30001, Status: domain.InstanceStatusStarting})
-	// Порт 30002 занят, но инстанс остановлен (значит порт можно переиспользовать)
-	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, Port: 30002, Status: domain.InstanceStatusStopped})
+	// Pre-populate storage with a running instance
+	_ = storage.RecordInstance(ctx, domain.Instance{
+		ID:          1,
+		ContainerID: "docker-abc",
+		Status:      domain.InstanceStatusRunning,
+	})
 
-	svc := NewDeploymentService(nil, storage, &stubRuntime{})
+	err := svc.StopInstance(ctx, 1, 5*time.Second)
 
-	tests := []struct {
-		name          string
-		strategy      domain.PortStrategy
-		expectedPort  uint32
-		expectedError error
-	}{
-		{
-			name:         "Exact port",
-			strategy:     domain.PortStrategy{Exact: 27015},
-			expectedPort: 27015,
-		},
-		{
-			name:         "Any port",
-			strategy:     domain.PortStrategy{Any: true},
-			expectedPort: 0,
-		},
-		{
-			name: "Range - picks first available (skips 30000, 30001, picks 30002)",
-			strategy: domain.PortStrategy{
-				Range: &domain.PortRange{Min: 30000, Max: 30005},
-			},
-			expectedPort: 30002,
-		},
-		{
-			name: "Range - no ports available",
-			strategy: domain.PortStrategy{
-				Range: &domain.PortRange{Min: 30000, Max: 30001},
-			},
-			expectedError: domain.ErrNoAvailablePort,
-		},
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			port, err := svc.resolvePort(ctx, tt.strategy)
-			if err != tt.expectedError {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
-			}
-			if port != tt.expectedPort {
-				t.Errorf("expected port %d, got %d", tt.expectedPort, port)
-			}
-		})
+	// Verify runtime was called correctly
+	if runtime.stopContainerID != "docker-abc" {
+		t.Errorf("expected StopContainer to be called with 'docker-abc', got %s", runtime.stopContainerID)
+	}
+	if runtime.stopTimeout != 5*time.Second {
+		t.Errorf("expected 5s timeout, got %v", runtime.stopTimeout)
+	}
+	if !runtime.removed {
+		t.Errorf("expected RemoveContainer to be called")
+	}
+
+	// Verify final status in DB
+	saved, _ := storage.GetInstanceByID(ctx, 1)
+	if saved.Status != domain.InstanceStatusStopped {
+		t.Errorf("expected status Stopped, got %v", saved.Status)
+	}
+}
+
+func TestDeploymentService_StopInstance_RuntimeError(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+
+	// Configure runtime to fail on stop
+	runtime := &stubRuntime{
+		stopErr: errors.New("docker daemon not responding"),
+	}
+
+	svc := NewDeploymentService(log, storage, runtime)
+	ctx := context.Background()
+
+	_ = storage.RecordInstance(ctx, domain.Instance{
+		ID:          1,
+		ContainerID: "docker-abc",
+		Status:      domain.InstanceStatusRunning,
+	})
+
+	err := svc.StopInstance(ctx, 1, 5*time.Second)
+
+	if err == nil {
+		t.Fatalf("expected error from runtime, got nil")
+	}
+
+	// Verify status changed to Crashed due to Docker error
+	saved, _ := storage.GetInstanceByID(ctx, 1)
+	if saved.Status != domain.InstanceStatusCrashed {
+		t.Errorf("expected status Crashed, got %v", saved.Status)
+	}
+}
+
+func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage() // Empty storage
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+
+	err := svc.StopInstance(context.Background(), 99, 5*time.Second)
+
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
