@@ -97,3 +97,39 @@ tasks:
       - task: node:down
       - docker rmi {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
     ignore_error: true
+
+  # ==================== Testing ====================
+  node:test:
+    desc: "Run fast unit tests with race detector"
+    dir: game-server-node
+    cmds:
+      - cmd: go test -race ./...
+        platforms: [linux, darwin]
+      - cmd: go test ./...
+        platforms: [windows]
+
+  node:test:e2e:
+    desc: "Run end-to-end tests"
+    dir: game-server-node
+    cmds:
+      - cmd: go test -race -tags=e2e ./...
+        platforms: [linux, darwin]
+      - cmd: go test -tags=e2e ./...
+        platforms: [windows]
+
+  node:test:cover:
+    desc: "Run unit tests and print coverage percentage"
+    dir: game-server-node
+    cmds:
+      # Генерируем профиль покрытия
+      - go test -coverprofile=coverage.out ./...
+      # Выводим сводку по каждой функции в консоль
+      - go tool cover -func=coverage.out
+
+  node:test:cover-html:
+    desc: "Show test coverage in default browser"
+    dir: game-server-node
+    cmds:
+      - task: test:cover
+      # Эта встроенная утилита сама создаст HTML и откроет его в браузере
+      - go tool cover -html=coverage.out
