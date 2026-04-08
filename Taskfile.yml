@@ -121,9 +121,7 @@ tasks:
     desc: "Run unit tests and print coverage percentage"
     dir: game-server-node
     cmds:
-      # Генерируем профиль покрытия
       - go test -coverprofile=coverage.out ./...
-      # Выводим сводку по каждой функции в консоль
       - go tool cover -func=coverage.out
 
   node:test:cover-html:
@@ -131,5 +129,4 @@ tasks:
     dir: game-server-node
     cmds:
       - task: test:cover
-      # Эта встроенная утилита сама создаст HTML и откроет его в браузере
       - go tool cover -html=coverage.out
