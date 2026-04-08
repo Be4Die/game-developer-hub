@@ -23,6 +23,10 @@ type stubRuntime struct {
 	stopTimeout     time.Duration
 	stopErr         error // If set, StopContainer will return this error
 	removed         bool
+
+	// Error injection
+	createErr error
+	startErr  error
 }
 
 func (s *stubRuntime) LoadImage(ctx context.Context, imageTag string, data io.Reader) error {
@@ -30,11 +34,17 @@ func (s *stubRuntime) LoadImage(ctx context.Context, imageTag string, data io.Re
 }
 
 func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
+	if s.createErr != nil {
+		return "", s.createErr
+	}
 	s.createdContainerID = "stub-docker-id-123"
 	return s.createdContainerID, nil
 }
 
 func (s *stubRuntime) StartContainer(ctx context.Context, containerID string) error {
+	if s.startErr != nil {
+		return s.startErr
+	}
 	s.started = true
 	return nil
 }
@@ -54,7 +64,7 @@ func (s *stubRuntime) RemoveContainer(ctx context.Context, containerID string) e
 }
 
 func (s *stubRuntime) ContainerLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error) {
-	return nil, nil
+	return io.NopCloser(nil), nil
 }
 
 func (s *stubRuntime) ContainerStats(ctx context.Context, containerID string) (domain.ResourcesUsage, error) {
@@ -193,5 +203,257 @@ func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Exact(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+	ctx := context.Background()
+
+	port, err := svc.resolvePort(ctx, domain.PortStrategy{Exact: 12345})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if port != 12345 {
+		t.Errorf("expected port 12345, got %d", port)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Any(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+	ctx := context.Background()
+
+	port, err := svc.resolvePort(ctx, domain.PortStrategy{Any: true})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if port != 0 {
+		t.Errorf("expected port 0 (OS-assigned), got %d", port)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Range_FreePort(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	ctx := context.Background()
+
+	// Занимаем порт 30001
+	_ = storage.RecordInstance(ctx, domain.Instance{
+		ID:     1,
+		Port:   30001,
+		Status: domain.InstanceStatusRunning,
+	})
+
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+
+	port, err := svc.resolvePort(ctx, domain.PortStrategy{
+		Range: &domain.PortRange{Min: 30000, Max: 30005},
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Порт 30000 должен быть свободен
+	if port != 30000 {
+		t.Errorf("expected port 30000, got %d", port)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Range_AllOccupied(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	ctx := context.Background()
+
+	// Занимаем все порты в диапазоне
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Port: 40000, Status: domain.InstanceStatusRunning})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Port: 40001, Status: domain.InstanceStatusRunning})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, Port: 40002, Status: domain.InstanceStatusRunning})
+
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+
+	_, err := svc.resolvePort(ctx, domain.PortStrategy{
+		Range: &domain.PortRange{Min: 40000, Max: 40002},
+	})
+
+	if !errors.Is(err, domain.ErrNoAvailablePort) {
+		t.Errorf("expected ErrNoAvailablePort, got %v", err)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Range_MinGreaterThanMax(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+	ctx := context.Background()
+
+	_, err := svc.resolvePort(ctx, domain.PortStrategy{
+		Range: &domain.PortRange{Min: 50000, Max: 40000},
+	})
+
+	if !errors.Is(err, domain.ErrNoAvailablePort) {
+		t.Errorf("expected ErrNoAvailablePort, got %v", err)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Default(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+	ctx := context.Background()
+
+	// Пустая стратегия — должен вернуть 0 (OS-assigned)
+	port, err := svc.resolvePort(ctx, domain.PortStrategy{})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if port != 0 {
+		t.Errorf("expected port 0, got %d", port)
+	}
+}
+
+func TestDeploymentService_ResolvePort_Range_SkipsStoppedInstances(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	ctx := context.Background()
+
+	// Остановленный инстанс не должен занимать порт
+	_ = storage.RecordInstance(ctx, domain.Instance{
+		ID:     1,
+		Port:   60000,
+		Status: domain.InstanceStatusStopped,
+	})
+
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+
+	port, err := svc.resolvePort(ctx, domain.PortStrategy{
+		Range: &domain.PortRange{Min: 60000, Max: 60005},
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if port != 60000 {
+		t.Errorf("expected port 60000 (stopped instance should not block), got %d", port)
+	}
+}
+
+func TestDeploymentService_StreamLogs_Success(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	ctx := context.Background()
+
+	_ = storage.RecordInstance(ctx, domain.Instance{
+		ID:          1,
+		ContainerID: "container-abc",
+	})
+
+	runtime := &stubRuntime{}
+	svc := NewDeploymentService(log, storage, runtime)
+
+	logs, err := svc.StreamLogs(ctx, 1, false)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if logs == nil {
+		t.Errorf("expected non-nil logs reader")
+	}
+}
+
+func TestDeploymentService_StreamLogs_InstanceNotFound(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+
+	_, err := svc.StreamLogs(context.Background(), 999, false)
+
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDeploymentService_StartInstance_NoImage(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	svc := NewDeploymentService(log, storage, &stubRuntime{})
+	ctx := context.Background()
+
+	// Не загружаем image для gameID
+	opts := StartInstanceOpts{
+		GameID:       99,
+		Name:         "Test",
+		Protocol:     domain.ProtocolTCP,
+		InternalPort: 8080,
+		PortStrategy: domain.PortStrategy{Exact: 9090},
+	}
+
+	_, _, err := svc.StartInstance(ctx, opts)
+
+	if err == nil {
+		t.Fatalf("expected error when no image loaded, got nil")
+	}
+}
+
+func TestDeploymentService_StartInstance_CreateContainerError(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	runtime := &stubRuntime{
+		createErr: errors.New("docker daemon error"),
+	}
+	svc := NewDeploymentService(log, storage, runtime)
+	ctx := context.Background()
+
+	_ = svc.LoadImage(ctx, 1, "test:v1", nil)
+
+	opts := StartInstanceOpts{
+		GameID:       1,
+		Name:         "Test",
+		Protocol:     domain.ProtocolTCP,
+		InternalPort: 8080,
+		PortStrategy: domain.PortStrategy{Exact: 9090},
+	}
+
+	_, _, err := svc.StartInstance(ctx, opts)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+}
+
+func TestDeploymentService_StartInstance_StartContainerError(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	storage := memory.NewMemoryInstanceStorage()
+	runtime := &stubRuntime{
+		startErr: errors.New("container failed to start"),
+	}
+	svc := NewDeploymentService(log, storage, runtime)
+	ctx := context.Background()
+
+	_ = svc.LoadImage(ctx, 1, "test:v1", nil)
+
+	opts := StartInstanceOpts{
+		GameID:       1,
+		Name:         "Test",
+		Protocol:     domain.ProtocolTCP,
+		InternalPort: 8080,
+		PortStrategy: domain.PortStrategy{Exact: 9090},
+	}
+
+	_, _, err := svc.StartInstance(ctx, opts)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	// Контейнер должен быть удалён после ошибки
+	if !runtime.removed {
+		t.Errorf("expected container to be removed after start failure")
 	}
 }

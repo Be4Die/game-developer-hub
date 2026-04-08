@@ -11,6 +11,122 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func TestProtocolToProto(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    domain.Protocol
+		expected pb.Protocol
+	}{
+		{"TCP", domain.ProtocolTCP, pb.Protocol_PROTOCOL_TCP},
+		{"UDP", domain.ProtocolUDP, pb.Protocol_PROTOCOL_UDP},
+		{"WebSocket", domain.ProtocolWebSocket, pb.Protocol_PROTOCOL_WEBSOCKET},
+		{"WebRTC", domain.ProtocolWebRTC, pb.Protocol_PROTOCOL_WEBRTC},
+		{"Unknown defaults to UNSPECIFIED", domain.Protocol(99), pb.Protocol_PROTOCOL_UNSPECIFIED},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := protocolToProto(tt.input)
+			if result != tt.expected {
+				t.Errorf("protocolToProto(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestStatusToProto(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    domain.InstanceStatus
+		expected pb.InstanceStatus
+	}{
+		{"Starting", domain.InstanceStatusStarting, pb.InstanceStatus_INSTANCE_STATUS_STARTING},
+		{"Running", domain.InstanceStatusRunning, pb.InstanceStatus_INSTANCE_STATUS_RUNNING},
+		{"Stopping", domain.InstanceStatusStopping, pb.InstanceStatus_INSTANCE_STATUS_STOPPING},
+		{"Stopped", domain.InstanceStatusStopped, pb.InstanceStatus_INSTANCE_STATUS_STOPPED},
+		{"Crashed", domain.InstanceStatusCrashed, pb.InstanceStatus_INSTANCE_STATUS_CRASHED},
+		{"Unknown defaults to UNSPECIFIED", domain.InstanceStatus(99), pb.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := statusToProto(tt.input)
+			if result != tt.expected {
+				t.Errorf("statusToProto(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestProtoToProtocol(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    pb.Protocol
+		expected domain.Protocol
+	}{
+		{"TCP", pb.Protocol_PROTOCOL_TCP, domain.ProtocolTCP},
+		{"UDP", pb.Protocol_PROTOCOL_UDP, domain.ProtocolUDP},
+		{"WebSocket", pb.Protocol_PROTOCOL_WEBSOCKET, domain.ProtocolWebSocket},
+		{"WebRTC", pb.Protocol_PROTOCOL_WEBRTC, domain.ProtocolWebRTC},
+		{"UNSPECIFIED defaults to 0", pb.Protocol_PROTOCOL_UNSPECIFIED, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := protoToProtocol(tt.input)
+			if result != tt.expected {
+				t.Errorf("protoToProtocol(%v) = %v, want %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestProtoToPortStrategy_AnyStrategy(t *testing.T) {
+	input := &pb.PortAllocation{
+		Strategy: &pb.PortAllocation_Any{Any: true},
+	}
+	result := protoToPortStrategy(input)
+	if !result.Any {
+		t.Errorf("expected Any=true, got %+v", result)
+	}
+}
+
+func TestProtoToPortStrategy_UnknownDefaultsToAny(t *testing.T) {
+	// Создаём PortAllocation без установленной oneof стратегии
+	input := &pb.PortAllocation{}
+	result := protoToPortStrategy(input)
+	if !result.Any {
+		t.Errorf("expected Any=true for unknown strategy, got %+v", result)
+	}
+}
+
+func TestInstanceToProto_NilPlayerCount(t *testing.T) {
+	now := time.Now()
+	inst := &domain.Instance{
+		ID:          1,
+		Name:        "Test",
+		GameID:      1,
+		Port:        8080,
+		Protocol:    domain.ProtocolTCP,
+		Status:      domain.InstanceStatusStopped,
+		PlayerCount: nil,
+		MaxPlayers:  4,
+		StartedAt:   now,
+	}
+
+	pbInst := instanceToProto(inst)
+
+	if pbInst.PlayerCount != nil {
+		t.Errorf("expected nil PlayerCount, got %v", pbInst.PlayerCount)
+	}
+	if pbInst.Protocol != pb.Protocol_PROTOCOL_TCP {
+		t.Errorf("expected TCP protocol, got %v", pbInst.Protocol)
+	}
+	if pbInst.Status != pb.InstanceStatus_INSTANCE_STATUS_STOPPED {
+		t.Errorf("expected Stopped status, got %v", pbInst.Status)
+	}
+}
+
 func TestDomainErrToStatus(t *testing.T) {
 	tests := []struct {
 		name         string

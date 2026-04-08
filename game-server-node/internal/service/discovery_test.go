@@ -196,3 +196,187 @@ func TestDiscoveryService_GetInstanceUsage_NotFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestDiscoveryService_GetAllInstances(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Name: "instance-1"})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Name: "instance-2"})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, Name: "instance-3"})
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	instances, err := svc.GetAllInstances(ctx)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 3 {
+		t.Errorf("expected 3 instances, got %d", len(instances))
+	}
+}
+
+func TestDiscoveryService_GetAllInstances_Empty(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	instances, err := svc.GetAllInstances(ctx)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 0 {
+		t.Errorf("expected 0 instances, got %d", len(instances))
+	}
+}
+
+func TestDiscoveryService_GetInstance(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	expected := domain.Instance{ID: 42, Name: "my-instance", GameID: 10}
+	_ = storage.RecordInstance(ctx, expected)
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	instance, err := svc.GetInstance(ctx, 42)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if instance.ID != 42 {
+		t.Errorf("expected ID 42, got %d", instance.ID)
+	}
+	if instance.Name != "my-instance" {
+		t.Errorf("expected name 'my-instance', got '%s'", instance.Name)
+	}
+}
+
+func TestDiscoveryService_GetInstance_NotFound(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	_, err := svc.GetInstance(ctx, 999)
+
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestDiscoveryService_GetInstancesByGameID(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10, Name: "game1-inst1"})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, GameID: 10, Name: "game1-inst2"})
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, GameID: 20, Name: "game2-inst1"})
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	instances, err := svc.GetInstancesByGameID(ctx, 10)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 2 {
+		t.Errorf("expected 2 instances for game 10, got %d", len(instances))
+	}
+}
+
+func TestDiscoveryService_GetInstancesByGameID_NoMatches(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10})
+
+	cfg := &config.Config{}
+	svc := NewDiscoveryService(storage, nil, cfg)
+
+	instances, err := svc.GetInstancesByGameID(ctx, 99)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(instances) != 0 {
+		t.Errorf("expected 0 instances for game 99, got %d", len(instances))
+	}
+}
+
+func TestDiscoveryService_GetNode_Error(t *testing.T) {
+	storage := memory.NewMemoryInstanceStorage()
+
+	cfg := &config.Config{
+		Node: config.NodeConfig{
+			Region:  "eu-west",
+			Version: "v1.0.0",
+		},
+	}
+
+	mockProvider := &stubSysProviderWithError{maxErr: errors.New("sysinfo error")}
+	svc := &DiscoveryService{
+		storage:     storage,
+		config:      &cfg.Node,
+		sysProvider: mockProvider,
+	}
+
+	_, err := svc.GetNode()
+
+	if err == nil {
+		t.Fatalf("expected error from sysProvider, got nil")
+	}
+}
+
+func TestDiscoveryService_Heartbeat_SysProviderError(t *testing.T) {
+	ctx := context.Background()
+	storage := memory.NewMemoryInstanceStorage()
+
+	cfg := &config.Config{}
+
+	mockProvider := &stubSysProviderWithError{usageErr: errors.New("failed to get usage")}
+	svc := &DiscoveryService{
+		storage:     storage,
+		config:      &cfg.Node,
+		sysProvider: mockProvider,
+	}
+
+	_, err := svc.Heartbeat(ctx)
+
+	if err == nil {
+		t.Fatalf("expected error from sysProvider, got nil")
+	}
+}
+
+// stubSysProviderWithError — мок с возможностью вернуть ошибку
+type stubSysProviderWithError struct {
+	maxErr   error
+	usageErr error
+}
+
+func (s *stubSysProviderWithError) GetMax() (domain.ResourcesMax, error) {
+	if s.maxErr != nil {
+		return domain.ResourcesMax{}, s.maxErr
+	}
+	return domain.ResourcesMax{CPUCores: 4}, nil
+}
+
+func (s *stubSysProviderWithError) GetUsage() (domain.ResourcesUsage, error) {
+	if s.usageErr != nil {
+		return domain.ResourcesUsage{}, s.usageErr
+	}
+	return domain.ResourcesUsage{CPU: 50.0}, nil
+}
