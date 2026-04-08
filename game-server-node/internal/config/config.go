@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"time"
@@ -48,15 +49,49 @@ func MustLoad() *Config {
 		panic("failed to read config: " + err.Error())
 	}
 
+	if err := cfg.Validate(); err != nil {
+		panic("config validation failed: " + err.Error())
+	}
+
 	return &cfg
+}
+
+func (c *Config) Validate() error {
+	if c.Env == "" {
+		return errors.New("env is required")
+	}
+
+	validEnvs := map[string]bool{EnvLocal: true, EnvDev: true, EnvProd: true}
+	if !validEnvs[c.Env] {
+		return errors.New("env must be one of: local, dev, prod")
+	}
+
+	if c.StoragePath == "" {
+		return errors.New("storage_path is required")
+	}
+
+	if c.TokenTTL <= 0 {
+		return errors.New("token_ttl must be positive")
+	}
+
+	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {
+		return errors.New("grpc.port must be between 1 and 65535")
+	}
+
+	if c.GRPC.Timeout <= 0 {
+		return errors.New("grpc.timeout must be positive")
+	}
+
+	return nil
 }
 
 func fetchConfigPath() string {
 	var res string
 
 	// usage: --config="path/to/config.yaml"
-	flag.StringVar(&res, "config", "", "path to config file")
-	flag.Parse()
+	fs := flag.NewFlagSet("config", flag.ContinueOnError)
+	fs.StringVar(&res, "config", "", "path to config file")
+	_ = fs.Parse(os.Args[1:])
 
 	if res == "" {
 		res = os.Getenv("CONFIG_PATH")
