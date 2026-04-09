@@ -23,8 +23,8 @@ func NewDiscoveryHandler(svc *service.DiscoveryService) *DiscoveryHandler {
 
 // GetNodeInfo возвращает информацию об узле.
 func (h *DiscoveryHandler) GetNodeInfo(
-	ctx context.Context,
-	req *pb.GetNodeInfoRequest,
+	ctx context.Context, //nolint:revive // required by gRPC interface
+	req *pb.GetNodeInfoRequest, //nolint:revive // required by gRPC interface
 ) (*pb.GetNodeInfoResponse, error) {
 	node, err := h.svc.GetNode()
 	if err != nil {
@@ -45,7 +45,7 @@ func (h *DiscoveryHandler) GetNodeInfo(
 // Heartbeat возвращает текущую утилизацию ресурсов узла.
 func (h *DiscoveryHandler) Heartbeat(
 	ctx context.Context,
-	req *pb.HeartbeatRequest,
+	req *pb.HeartbeatRequest, //nolint:revive // required by gRPC interface
 ) (*pb.HeartbeatResponse, error) {
 	result, err := h.svc.Heartbeat(ctx)
 	if err != nil {
@@ -66,7 +66,7 @@ func (h *DiscoveryHandler) Heartbeat(
 // ListInstances возвращает список всех инстансов на узле.
 func (h *DiscoveryHandler) ListInstances(
 	ctx context.Context,
-	req *pb.ListInstancesRequest,
+	req *pb.ListInstancesRequest, //nolint:revive // required by gRPC interface
 ) (*pb.ListInstancesResponse, error) {
 	instances, err := h.svc.GetAllInstances(ctx)
 	if err != nil {

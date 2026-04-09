@@ -1,3 +1,4 @@
+// Package grpc предоставляет gRPC-хендлеры и конвертеры между доменом и protobuf.
 package grpc
 
 import (

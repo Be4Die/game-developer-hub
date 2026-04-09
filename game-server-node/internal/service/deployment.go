@@ -1,3 +1,4 @@
+// Package service содержит бизнес-логику управления игровыми серверами.
 package service
 
 import (

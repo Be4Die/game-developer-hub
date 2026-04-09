@@ -3,6 +3,7 @@ package grpc
 import (
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"time"
 
@@ -43,11 +44,11 @@ func (h *DeploymentHandler) LoadImage(stream pb.DeploymentService_LoadImageServe
 	errCh := make(chan error, 1)
 
 	go func() {
-		defer pw.Close()
+		defer func() { _ = pw.Close() }()
 
 		for {
 			req, err := stream.Recv()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				errCh <- nil
 				return
 			}
@@ -151,7 +152,7 @@ func (h *DeploymentHandler) StreamLogs(
 	if err != nil {
 		return domainErrToStatus(err)
 	}
-	defer rc.Close() // Always close the reader!
+	defer func() { _ = rc.Close() }() // Always close the reader!
 
 	// Read line by line — don't split lines in the middle.
 	scanner := bufio.NewScanner(rc)

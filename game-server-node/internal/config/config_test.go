@@ -69,7 +69,7 @@ grpc:
 		t.Run(tt.name, func(t *testing.T) {
 			tmpDir := t.TempDir()
 			cfgPath := filepath.Join(tmpDir, "config.yaml")
-			if err := os.WriteFile(cfgPath, []byte(tt.yaml), 0644); err != nil {
+			if err := os.WriteFile(cfgPath, []byte(tt.yaml), 0600); err != nil { //nolint:gosec // test file, permissions don't need to be restrictive
 				t.Fatalf("failed to write temp config: %v", err)
 			}
 

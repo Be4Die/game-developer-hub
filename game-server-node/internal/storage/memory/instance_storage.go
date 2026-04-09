@@ -1,3 +1,4 @@
+// Package memory предоставляет in-memory хранилище для инстансов.
 package memory
 
 import (
@@ -10,26 +11,26 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
-// MemoryInstanceStorage хранит инстансы в памяти.
+// Storage хранит инстансы в памяти.
 // Безопасна для конкурентного использования.
-type MemoryInstanceStorage struct {
+type Storage struct {
 	data  map[int64]domain.Instance
 	mutex sync.RWMutex
 }
 
-// NewMemoryInstanceStorage создаёт хранилище с начальной ёмкостью 10 элементов.
-func NewMemoryInstanceStorage() *MemoryInstanceStorage {
-	return &MemoryInstanceStorage{
+// NewStorage создаёт хранилище с начальной ёмкостью 10 элементов.
+func NewStorage() *Storage {
+	return &Storage{
 		data: make(map[int64]domain.Instance, 10),
 	}
 }
 
 // GetInstanceByID возвращает инстанс по ID. Возвращает ErrNotFound при отсутствии.
-func (m *MemoryInstanceStorage) GetInstanceByID(ctx context.Context, id int64) (*domain.Instance, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+func (s *Storage) GetInstanceByID(ctx context.Context, id int64) (*domain.Instance, error) { //nolint:revive // ctx required by interface
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	instance, ok := m.data[id]
+	instance, ok := s.data[id]
 	if !ok {
 		return nil, fmt.Errorf("instance with id %d: %w", id, domain.ErrNotFound)
 	}
@@ -37,12 +38,12 @@ func (m *MemoryInstanceStorage) GetInstanceByID(ctx context.Context, id int64) (
 }
 
 // GetInstancesByGameID возвращает все инстансы указанной игры.
-func (m *MemoryInstanceStorage) GetInstancesByGameID(ctx context.Context, gameID int64) ([]domain.Instance, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+func (s *Storage) GetInstancesByGameID(ctx context.Context, gameID int64) ([]domain.Instance, error) { //nolint:revive // ctx required by interface
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	instances := make([]domain.Instance, 0)
-	for _, v := range m.data {
+	for _, v := range s.data {
 		if v.GameID == gameID {
 			instances = append(instances, v)
 		}
@@ -51,11 +52,11 @@ func (m *MemoryInstanceStorage) GetInstancesByGameID(ctx context.Context, gameID
 }
 
 // GetInstanceByContainerID возвращает инстанс по containerID. Возвращает ErrNotFound при отсутствии.
-func (m *MemoryInstanceStorage) GetInstanceByContainerID(ctx context.Context, containerID string) (*domain.Instance, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+func (s *Storage) GetInstanceByContainerID(ctx context.Context, containerID string) (*domain.Instance, error) { //nolint:revive // ctx required by interface
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	for _, v := range m.data {
+	for _, v := range s.data {
 		if v.ContainerID == containerID {
 			return &v, nil
 		}
@@ -64,30 +65,30 @@ func (m *MemoryInstanceStorage) GetInstanceByContainerID(ctx context.Context, co
 }
 
 // GetAllInstances возвращает копию всех зарегистрированных инстансов.
-func (m *MemoryInstanceStorage) GetAllInstances(ctx context.Context) ([]domain.Instance, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+func (s *Storage) GetAllInstances(ctx context.Context) ([]domain.Instance, error) { //nolint:revive // ctx required by interface
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	return slices.Collect(maps.Values(m.data)), nil
+	return slices.Collect(maps.Values(s.data)), nil
 }
 
 // RecordInstance сохраняет или обновляет данные инстанса.
-func (m *MemoryInstanceStorage) RecordInstance(ctx context.Context, instance domain.Instance) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+func (s *Storage) RecordInstance(ctx context.Context, instance domain.Instance) error { //nolint:revive // ctx required by interface
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	m.data[instance.ID] = instance
+	s.data[instance.ID] = instance
 	return nil
 }
 
 // DeleteInstance удаляет инстанс по ID. Возвращает ErrNotFound при отсутствии.
-func (m *MemoryInstanceStorage) DeleteInstance(ctx context.Context, id int64) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+func (s *Storage) DeleteInstance(ctx context.Context, id int64) error { //nolint:revive // ctx required by interface
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	if _, ok := m.data[id]; !ok {
+	if _, ok := s.data[id]; !ok {
 		return fmt.Errorf("instance with id %d: %w", id, domain.ErrNotFound)
 	}
-	delete(m.data, id)
+	delete(s.data, id)
 	return nil
 }

@@ -18,7 +18,7 @@ import (
 func TestDiscoveryHandler_GetInstance(t *testing.T) {
 	// 1. Arrange
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	// Предзаполняем базу
 	_ = storage.RecordInstance(ctx, domain.Instance{
@@ -60,7 +60,7 @@ func TestDiscoveryHandler_GetInstance(t *testing.T) {
 
 func TestDiscoveryHandler_ListInstances(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
 		ID:       1,
@@ -97,7 +97,7 @@ func TestDiscoveryHandler_ListInstances(t *testing.T) {
 
 func TestDiscoveryHandler_ListInstances_Empty(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{}
 	svc := service.NewDiscoveryService(storage, nil, cfg)
@@ -117,7 +117,7 @@ func TestDiscoveryHandler_ListInstances_Empty(t *testing.T) {
 
 func TestDiscoveryHandler_ListInstancesByGame(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10, Name: "game1-a"})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, GameID: 10, Name: "game1-b"})
@@ -141,7 +141,7 @@ func TestDiscoveryHandler_ListInstancesByGame(t *testing.T) {
 
 func TestDiscoveryHandler_ListInstancesByGame_NoMatches(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10})
 
 	cfg := &config.Config{}
@@ -193,7 +193,7 @@ func (m *mockRuntime) ContainerStats(ctx context.Context, containerID string) (d
 
 func TestDiscoveryHandler_GetInstanceUsage(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
 		ID:          1,
@@ -230,7 +230,7 @@ func TestDiscoveryHandler_GetInstanceUsage(t *testing.T) {
 
 func TestDiscoveryHandler_GetInstanceUsage_NotFound(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{}
 	svc := service.NewDiscoveryService(storage, &mockRuntime{}, cfg)
@@ -250,7 +250,7 @@ func TestDiscoveryHandler_GetInstanceUsage_NotFound(t *testing.T) {
 
 func TestDiscoveryHandler_GetNodeInfo(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{
 		Node: config.NodeConfig{
@@ -279,7 +279,7 @@ func TestDiscoveryHandler_GetNodeInfo(t *testing.T) {
 
 func TestDiscoveryHandler_Heartbeat(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Status: domain.InstanceStatusRunning})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Status: domain.InstanceStatusStarting})

@@ -73,7 +73,7 @@ func (s *stubRuntime) ContainerStats(ctx context.Context, containerID string) (d
 
 func TestDeploymentService_StartInstance(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	runtime := &stubRuntime{}
 
 	svc := NewDeploymentService(log, storage, runtime)
@@ -127,7 +127,7 @@ func TestDeploymentService_StartInstance(t *testing.T) {
 
 func TestDeploymentService_StopInstance_Success(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	runtime := &stubRuntime{}
 	svc := NewDeploymentService(log, storage, runtime)
 	ctx := context.Background()
@@ -165,7 +165,7 @@ func TestDeploymentService_StopInstance_Success(t *testing.T) {
 
 func TestDeploymentService_StopInstance_RuntimeError(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	// Configure runtime to fail on stop
 	runtime := &stubRuntime{
@@ -196,7 +196,7 @@ func TestDeploymentService_StopInstance_RuntimeError(t *testing.T) {
 
 func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage() // Empty storage
+	storage := memory.NewStorage() // Empty storage
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 
 	err := svc.StopInstance(context.Background(), 99, 5*time.Second)
@@ -208,7 +208,7 @@ func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Exact(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 	ctx := context.Background()
 
@@ -224,7 +224,7 @@ func TestDeploymentService_ResolvePort_Exact(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Any(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 	ctx := context.Background()
 
@@ -240,7 +240,7 @@ func TestDeploymentService_ResolvePort_Any(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Range_FreePort(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	ctx := context.Background()
 
 	// Занимаем порт 30001
@@ -267,7 +267,7 @@ func TestDeploymentService_ResolvePort_Range_FreePort(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Range_AllOccupied(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	ctx := context.Background()
 
 	// Занимаем все порты в диапазоне
@@ -288,7 +288,7 @@ func TestDeploymentService_ResolvePort_Range_AllOccupied(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Range_MinGreaterThanMax(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 	ctx := context.Background()
 
@@ -303,7 +303,7 @@ func TestDeploymentService_ResolvePort_Range_MinGreaterThanMax(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Default(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 	ctx := context.Background()
 
@@ -320,7 +320,7 @@ func TestDeploymentService_ResolvePort_Default(t *testing.T) {
 
 func TestDeploymentService_ResolvePort_Range_SkipsStoppedInstances(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	ctx := context.Background()
 
 	// Остановленный инстанс не должен занимать порт
@@ -346,7 +346,7 @@ func TestDeploymentService_ResolvePort_Range_SkipsStoppedInstances(t *testing.T)
 
 func TestDeploymentService_StreamLogs_Success(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	ctx := context.Background()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
@@ -369,7 +369,7 @@ func TestDeploymentService_StreamLogs_Success(t *testing.T) {
 
 func TestDeploymentService_StreamLogs_InstanceNotFound(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 
 	_, err := svc.StreamLogs(context.Background(), 999, false)
@@ -381,7 +381,7 @@ func TestDeploymentService_StreamLogs_InstanceNotFound(t *testing.T) {
 
 func TestDeploymentService_StartInstance_NoImage(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := NewDeploymentService(log, storage, &stubRuntime{})
 	ctx := context.Background()
 
@@ -403,7 +403,7 @@ func TestDeploymentService_StartInstance_NoImage(t *testing.T) {
 
 func TestDeploymentService_StartInstance_CreateContainerError(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	runtime := &stubRuntime{
 		createErr: errors.New("docker daemon error"),
 	}
@@ -429,7 +429,7 @@ func TestDeploymentService_StartInstance_CreateContainerError(t *testing.T) {
 
 func TestDeploymentService_StartInstance_StartContainerError(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	runtime := &stubRuntime{
 		startErr: errors.New("container failed to start"),
 	}

@@ -1,3 +1,4 @@
+// Package sysinfo предоставляет информацию о ресурсах системы.
 package sysinfo
 
 import (

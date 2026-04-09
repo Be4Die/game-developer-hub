@@ -1,3 +1,4 @@
+// Package app координирует инициализацию всех компонентов приложения.
 package app
 
 import (
@@ -25,7 +26,7 @@ type App struct {
 // Возвращает ошибку если Docker-демон недоступен.
 func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// Initialize infrastructure.
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	runtime, err := docker.New(log)
 	if err != nil {

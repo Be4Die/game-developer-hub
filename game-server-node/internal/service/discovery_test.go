@@ -65,7 +65,7 @@ func (s *stubDiscoveryRuntime) ContainerStats(ctx context.Context, containerID s
 func TestDiscoveryService_Heartbeat(t *testing.T) {
 	ctx := context.Background()
 
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Status: domain.InstanceStatusRunning})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Status: domain.InstanceStatusStarting})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, Status: domain.InstanceStatusStopped})
@@ -149,7 +149,7 @@ func TestDiscoveryService_GetNode(t *testing.T) {
 
 func TestDiscoveryService_GetInstanceUsage_Success(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
 		ID:          1,
@@ -185,7 +185,7 @@ func TestDiscoveryService_GetInstanceUsage_Success(t *testing.T) {
 
 func TestDiscoveryService_GetInstanceUsage_NotFound(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage() // Empty DB
+	storage := memory.NewStorage() // Empty DB
 
 	cfg := &config.Config{}
 	svc := NewDiscoveryService(storage, &stubDiscoveryRuntime{}, cfg)
@@ -199,7 +199,7 @@ func TestDiscoveryService_GetInstanceUsage_NotFound(t *testing.T) {
 
 func TestDiscoveryService_GetAllInstances(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, Name: "instance-1"})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Name: "instance-2"})
@@ -221,7 +221,7 @@ func TestDiscoveryService_GetAllInstances(t *testing.T) {
 
 func TestDiscoveryService_GetAllInstances_Empty(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{}
 	svc := NewDiscoveryService(storage, nil, cfg)
@@ -239,7 +239,7 @@ func TestDiscoveryService_GetAllInstances_Empty(t *testing.T) {
 
 func TestDiscoveryService_GetInstance(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	expected := domain.Instance{ID: 42, Name: "my-instance", GameID: 10}
 	_ = storage.RecordInstance(ctx, expected)
@@ -263,7 +263,7 @@ func TestDiscoveryService_GetInstance(t *testing.T) {
 
 func TestDiscoveryService_GetInstance_NotFound(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{}
 	svc := NewDiscoveryService(storage, nil, cfg)
@@ -277,7 +277,7 @@ func TestDiscoveryService_GetInstance_NotFound(t *testing.T) {
 
 func TestDiscoveryService_GetInstancesByGameID(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10, Name: "game1-inst1"})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, GameID: 10, Name: "game1-inst2"})
@@ -299,7 +299,7 @@ func TestDiscoveryService_GetInstancesByGameID(t *testing.T) {
 
 func TestDiscoveryService_GetInstancesByGameID_NoMatches(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 1, GameID: 10})
 
@@ -318,7 +318,7 @@ func TestDiscoveryService_GetInstancesByGameID_NoMatches(t *testing.T) {
 }
 
 func TestDiscoveryService_GetNode_Error(t *testing.T) {
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{
 		Node: config.NodeConfig{
@@ -343,7 +343,7 @@ func TestDiscoveryService_GetNode_Error(t *testing.T) {
 
 func TestDiscoveryService_Heartbeat_SysProviderError(t *testing.T) {
 	ctx := context.Background()
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	cfg := &config.Config{}
 

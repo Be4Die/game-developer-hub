@@ -9,7 +9,7 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
-func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
+func TestStorage_GetInstanceByID(t *testing.T) {
 	tests := []struct {
 		name          string
 		presetData    map[int64]domain.Instance
@@ -44,7 +44,7 @@ func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			storage := &MemoryInstanceStorage{
+			storage := &Storage{
 				data: tt.presetData,
 			}
 			ctx := context.Background()
@@ -62,8 +62,8 @@ func TestMemoryInstanceStorage_GetInstanceByID(t *testing.T) {
 	}
 }
 
-func TestMemoryInstanceStorage_GetInstancesByGameID(t *testing.T) {
-	storage := &MemoryInstanceStorage{
+func TestStorage_GetInstancesByGameID(t *testing.T) {
+	storage := &Storage{
 		data: map[int64]domain.Instance{
 			1: {ID: 1, GameID: 42, Name: "Match-1"},
 			2: {ID: 2, GameID: 42, Name: "Match-2"},
@@ -98,8 +98,8 @@ func TestMemoryInstanceStorage_GetInstancesByGameID(t *testing.T) {
 	}
 }
 
-func TestMemoryInstanceStorage_GetInstanceByContainerID(t *testing.T) {
-	storage := &MemoryInstanceStorage{
+func TestStorage_GetInstanceByContainerID(t *testing.T) {
+	storage := &Storage{
 		data: map[int64]domain.Instance{
 			1: {ID: 1, ContainerID: "docker-abc-123"},
 			2: {ID: 2, ContainerID: "docker-xyz-789"},
@@ -123,8 +123,8 @@ func TestMemoryInstanceStorage_GetInstanceByContainerID(t *testing.T) {
 	}
 }
 
-func TestMemoryInstanceStorage_GetAllInstances(t *testing.T) {
-	storage := &MemoryInstanceStorage{
+func TestStorage_GetAllInstances(t *testing.T) {
+	storage := &Storage{
 		data: map[int64]domain.Instance{
 			1: {ID: 1},
 			2: {ID: 2},
@@ -142,8 +142,8 @@ func TestMemoryInstanceStorage_GetAllInstances(t *testing.T) {
 	}
 }
 
-func TestMemoryInstanceStorage_DeleteInstance(t *testing.T) {
-	storage := &MemoryInstanceStorage{
+func TestStorage_DeleteInstance(t *testing.T) {
+	storage := &Storage{
 		data: map[int64]domain.Instance{
 			1: {ID: 1, Name: "To-Be-Deleted"},
 		},
@@ -167,8 +167,8 @@ func TestMemoryInstanceStorage_DeleteInstance(t *testing.T) {
 	}
 }
 
-func TestMemoryInstanceStorage_ConcurrentAccess(t *testing.T) {
-	storage := NewMemoryInstanceStorage()
+func TestStorage_ConcurrentAccess(t *testing.T) {
+	storage := NewStorage()
 	ctx := context.Background()
 
 	const workers = 100

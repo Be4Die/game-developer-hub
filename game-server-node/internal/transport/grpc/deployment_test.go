@@ -42,7 +42,7 @@ func TestDeploymentHandler_StartInstance(t *testing.T) {
 	// Arrange
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	// Собираем DeploymentService с in-memory базой и фейковым докером
 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{})
@@ -84,7 +84,7 @@ func TestDeploymentHandler_StopInstance_NotFound(t *testing.T) {
 	// Проверяем, что хэндлер правильно возвращает 404, если инстанса нет
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	svc := service.NewDeploymentService(log, memory.NewMemoryInstanceStorage(), &fakeRuntime{})
+	svc := service.NewDeploymentService(log, memory.NewStorage(), &fakeRuntime{})
 	handler := NewDeploymentHandler(svc)
 
 	req := &pb.StopInstanceRequest{
@@ -103,7 +103,7 @@ func TestDeploymentHandler_StopInstance_NotFound(t *testing.T) {
 func TestDeploymentHandler_StopInstance_Success(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
 		ID:          1,
@@ -133,7 +133,7 @@ func TestDeploymentHandler_StopInstance_Success(t *testing.T) {
 func TestDeploymentHandler_StartInstance_Handler(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{})
 	handler := NewDeploymentHandler(svc)
@@ -169,7 +169,7 @@ func TestDeploymentHandler_StartInstance_Handler(t *testing.T) {
 func TestDeploymentHandler_LoadImage(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{})
 	handler := NewDeploymentHandler(svc)
 
@@ -191,7 +191,7 @@ func TestDeploymentHandler_LoadImage(t *testing.T) {
 func TestDeploymentHandler_StreamLogs(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	// Pre-populate with an instance
 	_ = storage.RecordInstance(ctx, domain.Instance{
@@ -215,7 +215,7 @@ func TestDeploymentHandler_StreamLogs(t *testing.T) {
 func TestDeploymentHandler_StreamLogs_NotFound(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	storage := memory.NewMemoryInstanceStorage()
+	storage := memory.NewStorage()
 
 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{})
 	handler := NewDeploymentHandler(svc)

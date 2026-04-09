@@ -29,7 +29,7 @@ func NewProvider(ethName string) *StubProvider {
 
 	return &StubProvider{
 		ethName: ethName,
-		rng:     rand.New(rand.NewSource(time.Now().UnixNano())),
+		rng:     rand.New(rand.NewSource(time.Now().UnixNano())), //nolint:gosec // stub provider, not security-sensitive
 	}
 }
 
@@ -50,8 +50,8 @@ func (p *StubProvider) GetUsage() (domain.ResourcesUsage, error) {
 
 	return domain.ResourcesUsage{
 		CPU:     30.0 + (p.rng.Float64() * 20.0),
-		Memory:  uint64(6+p.rng.Intn(2)) * 1024 * 1024 * 1024,
+		Memory:  uint64(6+p.rng.Intn(2)) * 1024 * 1024 * 1024, //nolint:gosec // stub data, within valid range
 		Disk:    250 * 1024 * 1024 * 1024,
-		Network: uint64(p.rng.Intn(5000) * 1024),
+		Network: uint64(p.rng.Intn(5000) * 1024), //nolint:gosec // stub data, within valid range
 	}, nil
 }

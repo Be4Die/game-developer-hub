@@ -6,6 +6,7 @@ import "time"
 // InstanceStatus описывает состояние игрового инстанса.
 type InstanceStatus uint8
 
+// Состояния игрового инстанса.
 const (
 	InstanceStatusStarting InstanceStatus = iota + 1
 	InstanceStatusRunning
@@ -17,6 +18,7 @@ const (
 // Protocol определяет сетевой протокол инстанса.
 type Protocol uint8
 
+// Сетевые протоколы инстансов.
 const (
 	ProtocolTCP Protocol = iota + 1
 	ProtocolUDP

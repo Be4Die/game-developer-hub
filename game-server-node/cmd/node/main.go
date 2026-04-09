@@ -1,3 +1,4 @@
+// Package main запускает game-server-node — агент для управления игровыми серверами.
 package main
 
 import (

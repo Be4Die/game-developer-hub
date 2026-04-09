@@ -1,3 +1,4 @@
+// Package config загружает и валидирует конфигурацию приложения.
 package config
 
 import (
@@ -9,12 +10,14 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Окружения приложения.
 const (
 	EnvLocal string = "local"
 	EnvDev   string = "dev"
 	EnvProd  string = "prod"
 )
 
+// Config хранит конфигурацию приложения.
 type Config struct {
 	Env         string        `yaml:"env" env-required:"true"`
 	StoragePath string        `yaml:"storage_path" env-required:"true"`
@@ -23,17 +26,20 @@ type Config struct {
 	Node        NodeConfig    `yaml:"node"`
 }
 
+// GRPCConfig хранит настройки gRPC-сервера.
 type GRPCConfig struct {
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
 }
 
+// NodeConfig хранит информацию об узле.
 type NodeConfig struct {
 	Region  string `yaml:"region" env-default:"unknown"`
 	Version string `yaml:"version" env-default:"0.0.1"`
 	EthName string `yaml:"eth_name" env-default:""`
 }
 
+// MustLoad загружает конфигурацию из файла или env. Паникует при ошибке.
 func MustLoad() *Config {
 	path := fetchConfigPath()
 	if path == "" {
@@ -56,6 +62,7 @@ func MustLoad() *Config {
 	return &cfg
 }
 
+// Validate проверяет корректность конфигурации.
 func (c *Config) Validate() error {
 	if c.Env == "" {
 		return errors.New("env is required")
