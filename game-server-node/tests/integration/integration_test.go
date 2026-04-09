@@ -7,7 +7,7 @@
 //
 // Требования:
 // - Доступный Docker daemon
-// - Запуск: go test -tags=integration ./internal/integration/...
+// - Запуск: go test -tags=integration ./tests/integration/...
 package integration
 
 import (
