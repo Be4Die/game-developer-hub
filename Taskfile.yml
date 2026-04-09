@@ -98,6 +98,13 @@ tasks:
       - docker rmi {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
     ignore_error: true
 
+  # ==================== Linting ====================
+  node:lint:
+    desc: "Lint Go code with golangci-lint"
+    dir: game-server-node
+    cmds:
+      - golangci-lint run ./...
+
   # ==================== Testing ====================
   node:test:
     desc: "Run fast unit tests with race detector"
