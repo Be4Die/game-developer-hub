@@ -1,7 +1,9 @@
+// Package domain определяет бизнес-модели и интерфейсы ядра системы.
 package domain
 
 import "time"
 
+// InstanceStatus описывает состояние игрового инстанса.
 type InstanceStatus uint8
 
 const (
@@ -12,6 +14,7 @@ const (
 	InstanceStatusCrashed
 )
 
+// Protocol определяет сетевой протокол инстанса.
 type Protocol uint8
 
 const (
@@ -21,10 +24,11 @@ const (
 	ProtocolWebRTC
 )
 
+// Instance представляет запущенный игровой сервер.
 type Instance struct {
 	ID               int64
-	ContainerID      string // docker id
-	ImageTag         string // docker image
+	ContainerID      string
+	ImageTag         string
 	Name             string
 	GameID           int64
 	BuildVersion     string

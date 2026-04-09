@@ -10,23 +10,24 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// DiscoveryHandler обрабатывает gRPC-запросы к сервису обнаружения.
 type DiscoveryHandler struct {
 	pb.UnimplementedDiscoveryServiceServer
 	svc *service.DiscoveryService
 }
 
+// NewDiscoveryHandler создаёт обработчик для сервиса обнаружения.
 func NewDiscoveryHandler(svc *service.DiscoveryService) *DiscoveryHandler {
 	return &DiscoveryHandler{svc: svc}
 }
 
+// GetNodeInfo возвращает информацию об узле.
 func (h *DiscoveryHandler) GetNodeInfo(
 	ctx context.Context,
 	req *pb.GetNodeInfoRequest,
 ) (*pb.GetNodeInfoResponse, error) {
-	// 1. Вызываем service (domain мир).
 	node, err := h.svc.GetNode()
 	if err != nil {
-		// Конвертируем Go-ошибку в gRPC-ошибку.
 		return nil, status.Errorf(codes.Internal, "failed to get node info: %v", err)
 	}
 
@@ -41,6 +42,7 @@ func (h *DiscoveryHandler) GetNodeInfo(
 	}, nil
 }
 
+// Heartbeat возвращает текущую утилизацию ресурсов узла.
 func (h *DiscoveryHandler) Heartbeat(
 	ctx context.Context,
 	req *pb.HeartbeatRequest,
@@ -61,6 +63,7 @@ func (h *DiscoveryHandler) Heartbeat(
 	}, nil
 }
 
+// ListInstances возвращает список всех инстансов на узле.
 func (h *DiscoveryHandler) ListInstances(
 	ctx context.Context,
 	req *pb.ListInstancesRequest,
@@ -70,7 +73,6 @@ func (h *DiscoveryHandler) ListInstances(
 		return nil, status.Errorf(codes.Internal, "failed to list instances: %v", err)
 	}
 
-	// Конвертируем слайс domain → слайс proto.
 	pbInstances := make([]*pb.Instance, 0, len(instances))
 	for _, inst := range instances {
 		pbInstances = append(pbInstances, instanceToProto(&inst))
@@ -81,13 +83,13 @@ func (h *DiscoveryHandler) ListInstances(
 	}, nil
 }
 
+// GetInstance возвращает инстанс по ID. Возвращает NotFound при отсутствии.
 func (h *DiscoveryHandler) GetInstance(
 	ctx context.Context,
 	req *pb.GetInstanceRequest,
 ) (*pb.GetInstanceResponse, error) {
 	instance, err := h.svc.GetInstance(ctx, req.GetInstanceId())
 	if err != nil {
-		// Проверяем тип ошибки и возвращаем правильный gRPC код.
 		return nil, domainErrToStatus(err)
 	}
 
@@ -96,6 +98,7 @@ func (h *DiscoveryHandler) GetInstance(
 	}, nil
 }
 
+// ListInstancesByGame возвращает инстансы указанной игры.
 func (h *DiscoveryHandler) ListInstancesByGame(
 	ctx context.Context,
 	req *pb.ListInstancesByGameRequest,
@@ -115,6 +118,7 @@ func (h *DiscoveryHandler) ListInstancesByGame(
 	}, nil
 }
 
+// GetInstanceUsage возвращает метрики использования ресурсов инстанса.
 func (h *DiscoveryHandler) GetInstanceUsage(
 	ctx context.Context,
 	req *pb.GetInstanceUsageRequest,

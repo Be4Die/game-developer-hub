@@ -13,15 +13,18 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// DeploymentHandler обрабатывает gRPC-запросы к сервису развёртывания.
 type DeploymentHandler struct {
 	pb.UnimplementedDeploymentServiceServer
 	svc *service.DeploymentService
 }
 
+// NewDeploymentHandler создаёт обработчик для сервиса развёртывания.
 func NewDeploymentHandler(svc *service.DeploymentService) *DeploymentHandler {
 	return &DeploymentHandler{svc: svc}
 }
 
+// LoadImage загружает образ через потоковую передачу чанков.
 func (h *DeploymentHandler) LoadImage(stream pb.DeploymentService_LoadImageServer) error {
 	first, err := stream.Recv()
 	if err != nil {
@@ -79,6 +82,7 @@ func (h *DeploymentHandler) LoadImage(stream pb.DeploymentService_LoadImageServe
 	})
 }
 
+// StartInstance создаёт и запускает новый игровой инстанс.
 func (h *DeploymentHandler) StartInstance(
 	ctx context.Context,
 	req *pb.StartInstanceRequest,
@@ -118,6 +122,7 @@ func (h *DeploymentHandler) StartInstance(
 	}, nil
 }
 
+// StopInstance останавливает инстанс и удаляет его контейнер.
 func (h *DeploymentHandler) StopInstance(
 	ctx context.Context,
 	req *pb.StopInstanceRequest,
@@ -133,6 +138,7 @@ func (h *DeploymentHandler) StopInstance(
 	return &pb.StopInstanceResponse{}, nil
 }
 
+// StreamLogs возвращает поток логов контейнера.
 func (h *DeploymentHandler) StreamLogs(
 	req *pb.StreamLogsRequest,
 	stream pb.DeploymentService_StreamLogsServer,

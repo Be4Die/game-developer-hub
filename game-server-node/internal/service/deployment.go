@@ -12,6 +12,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
+// DeploymentService управляет развёртыванием игровых инстансов.
+// Безопасен для конкурентного использования.
 type DeploymentService struct {
 	log     *slog.Logger
 	storage domain.InstanceStorage
@@ -25,6 +27,7 @@ type DeploymentService struct {
 	imagesMu sync.RWMutex
 }
 
+// NewDeploymentService создаёт сервис для управления развёртыванием.
 func NewDeploymentService(
 	log *slog.Logger,
 	storage domain.InstanceStorage,
@@ -38,7 +41,7 @@ func NewDeploymentService(
 	}
 }
 
-// LoadImage loads a container image and associates it with a game.
+// LoadImage загружает контейнер и связывает его с gameID.
 func (s *DeploymentService) LoadImage(ctx context.Context, gameID int64, imageTag string, data io.Reader) error {
 	const op = "DeploymentService.LoadImage"
 
@@ -64,6 +67,7 @@ func (s *DeploymentService) LoadImage(ctx context.Context, gameID int64, imageTa
 	return nil
 }
 
+// StartInstanceOpts задаёт параметры запуска инстанса.
 type StartInstanceOpts struct {
 	GameID           int64
 	Name             string
@@ -78,11 +82,12 @@ type StartInstanceOpts struct {
 	MemoryBytes      *uint64
 }
 
-// StartInstance creates and starts a new game server instance.
+// StartInstance создаёт и запускает новый игровой инстанс.
+// Возвращает ID инстанса и выделенный порт.
 func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanceOpts) (int64, uint32, error) {
 	const op = "DeploymentService.StartInstance"
 
-	// 0. Find image for this game.
+	// Find image for this game.
 	s.imagesMu.RLock()
 	imageTag, ok := s.images[opts.GameID]
 	s.imagesMu.RUnlock()
@@ -96,7 +101,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: resolve port: %w", op, err)
 	}
 
-	// 1. Create container.
+	// Create container.
 	containerID, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: opts.InternalPort,
@@ -110,13 +115,13 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: create container: %w", op, err)
 	}
 
-	// 2. Start container. If fails — cleanup step 1.
+	// Start container. If fails — cleanup step 1.
 	if err := s.runtime.StartContainer(ctx, containerID); err != nil {
 		_ = s.runtime.RemoveContainer(ctx, containerID)
 		return 0, 0, fmt.Errorf("%s: start container: %w", op, err)
 	}
 
-	// 3. Save to storage. If fails — cleanup steps 1+2.
+	// Save to storage. If fails — cleanup steps 1+2.
 	id := s.nextID.Add(1)
 
 	instance := domain.Instance{
@@ -148,7 +153,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	return id, hostPort, nil
 }
 
-// StopInstance stops a running instance and removes its container.
+// StopInstance останавливает инстанс и удаляет его контейнер.
 func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, timeout time.Duration) error {
 	const op = "DeploymentService.StopInstance"
 
@@ -188,7 +193,7 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 	return nil
 }
 
-// StreamLogs returns a stream of container logs.
+// StreamLogs возвращает поток логов контейнера инстанса.
 func (s *DeploymentService) StreamLogs(ctx context.Context, instanceID int64, follow bool) (io.ReadCloser, error) {
 	const op = "DeploymentService.StreamLogs"
 
@@ -205,20 +210,19 @@ func (s *DeploymentService) StreamLogs(ctx context.Context, instanceID int64, fo
 	return logs, nil
 }
 
-// resolvePort picks a concrete host port based on the strategy.
+// resolvePort подбирает порт на хосте согласно стратегии.
 func (s *DeploymentService) resolvePort(ctx context.Context, strategy domain.PortStrategy) (uint32, error) {
 	switch {
 	case strategy.Exact != 0:
-		// Client wants a specific port — use it as-is.
+		// Exact port requested — use as-is.
 		return strategy.Exact, nil
 
 	case strategy.Any:
-		// Let the OS pick a free port.
-		// Port 0 tells Docker to assign a random available port.
+		// Let OS pick — port 0 tells Docker to assign random available.
 		return 0, nil
 
 	case strategy.Range != nil:
-		// Find a port in range that's not used by other instances.
+		// Find free port in range not used by active instances.
 		instances, err := s.storage.GetAllInstances(ctx)
 		if err != nil {
 			return 0, err
@@ -240,7 +244,7 @@ func (s *DeploymentService) resolvePort(ctx context.Context, strategy domain.Por
 		return 0, domain.ErrNoAvailablePort
 
 	default:
-		// No strategy specified — let OS decide.
+		// No strategy — let OS decide.
 		return 0, nil
 	}
 }

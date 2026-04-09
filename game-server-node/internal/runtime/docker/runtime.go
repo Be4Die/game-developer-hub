@@ -15,11 +15,15 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
+// DockerRuntime реализует ContainerRuntime через Docker API.
+// Не безопасен для конкурентного использования без внешней синхронизации.
 type DockerRuntime struct {
 	cli *client.Client
 	log *slog.Logger
 }
 
+// New создаёт и инициализирует Docker-клиент.
+// Возвращает ошибку если демон недоступен.
 func New(log *slog.Logger) (*DockerRuntime, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -35,6 +39,7 @@ func New(log *slog.Logger) (*DockerRuntime, error) {
 	return &DockerRuntime{cli: cli, log: log}, nil
 }
 
+// LoadImage загружает Docker-образ из потока данных.
 func (r *DockerRuntime) LoadImage(ctx context.Context, imageTag string, data io.Reader) error {
 	const op = "DockerRuntime.LoadImage"
 
@@ -60,6 +65,7 @@ func (r *DockerRuntime) LoadImage(ctx context.Context, imageTag string, data io.
 	return nil
 }
 
+// CreateContainer создаёт контейнер с заданными параметрами.
 func (r *DockerRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	const op = "DockerRuntime.CreateContainer"
 
@@ -119,6 +125,7 @@ func (r *DockerRuntime) CreateContainer(ctx context.Context, opts domain.Contain
 	return resp.ID, nil
 }
 
+// StartContainer запускает остановленный контейнер.
 func (r *DockerRuntime) StartContainer(ctx context.Context, containerID string) error {
 	if err := r.cli.ContainerStart(ctx, containerID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("DockerRuntime.StartContainer: %w", err)
@@ -126,6 +133,7 @@ func (r *DockerRuntime) StartContainer(ctx context.Context, containerID string) 
 	return nil
 }
 
+// StopContainer останавливает контейнер с заданным таймаутом.
 func (r *DockerRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {
 	timeoutSeconds := int(timeout.Seconds())
 
@@ -137,6 +145,7 @@ func (r *DockerRuntime) StopContainer(ctx context.Context, containerID string, t
 	return nil
 }
 
+// RemoveContainer удаляет контейнер безвозвратно.
 func (r *DockerRuntime) RemoveContainer(ctx context.Context, containerID string) error {
 	if err := r.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{
 		Force: true,
@@ -146,6 +155,7 @@ func (r *DockerRuntime) RemoveContainer(ctx context.Context, containerID string)
 	return nil
 }
 
+// ContainerLogs возвращает поток stdout/stderr контейнера.
 func (r *DockerRuntime) ContainerLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error) {
 	reader, err := r.cli.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
@@ -159,6 +169,7 @@ func (r *DockerRuntime) ContainerLogs(ctx context.Context, containerID string, f
 	return reader, nil
 }
 
+// ContainerStats возвращает метрики использования ресурсов контейнера.
 func (r *DockerRuntime) ContainerStats(ctx context.Context, containerID string) (domain.ResourcesUsage, error) {
 	const op = "DockerRuntime.ContainerStats"
 

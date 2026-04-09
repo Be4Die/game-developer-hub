@@ -6,23 +6,27 @@ import (
 	"time"
 )
 
-// ContainerRuntime manages container lifecycle.
+// ContainerRuntime управляет жизненным циклом контейнеров.
 type ContainerRuntime interface {
-	// Image operations.
+	// LoadImage загружает образ из потока данных.
 	LoadImage(ctx context.Context, imageTag string, data io.Reader) error
 
-	// Container lifecycle.
+	// CreateContainer создаёт контейнер и возвращает его ID.
 	CreateContainer(ctx context.Context, opts ContainerOpts) (containerID string, err error)
+	// StartContainer запускает существующий контейнер.
 	StartContainer(ctx context.Context, containerID string) error
+	// StopContainer останавливает контейнер с заданным таймаутом.
 	StopContainer(ctx context.Context, containerID string, timeout time.Duration) error
+	// RemoveContainer удаляет контейнер безвозвратно.
 	RemoveContainer(ctx context.Context, containerID string) error
 
-	// Observability.
+	// ContainerLogs возвращает поток логов контейнера.
 	ContainerLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error)
+	// ContainerStats возвращает текущие метрики использования ресурсов.
 	ContainerStats(ctx context.Context, containerID string) (ResourcesUsage, error)
 }
 
-// ContainerOpts holds parameters for creating a container.
+// ContainerOpts задаёт параметры создания контейнера.
 type ContainerOpts struct {
 	ImageTag     string
 	InternalPort uint32

@@ -15,7 +15,7 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	// Error is handled HERE — the caller decides what to do.
+	// Application errors are handled here — caller decides exit behavior.
 	application, err := app.New(log, cfg)
 	if err != nil {
 		log.Error("failed to initialize application", slog.String("error", err.Error()))
@@ -37,6 +37,7 @@ func main() {
 	log.Info("application gracefully stopped")
 }
 
+// setupLogger настраивает логгер в зависимости от окружения.
 func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 	switch env {

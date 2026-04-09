@@ -14,6 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// LinuxProvider реализует Provider через чтение /proc и /sys на Linux.
 type LinuxProvider struct {
 	mu           sync.Mutex
 	ethName      string
@@ -23,6 +24,7 @@ type LinuxProvider struct {
 	lastCheck    time.Time
 }
 
+// NewProvider создаёт провайдер для сбора реальных метрик системы.
 func NewProvider(ethName string) *LinuxProvider {
 	if ethName == "" {
 		ethName = findDefaultInterface()
@@ -32,7 +34,7 @@ func NewProvider(ethName string) *LinuxProvider {
 		ethName: ethName,
 	}
 
-	// Инициализируем базовые счетчики
+	// Initialize base counters
 	p.lastCPUIdle, p.lastCPUTotal = p.getCPUCounters()
 	p.lastNetBytes = p.getNetBytes()
 	p.lastCheck = time.Now()
@@ -40,6 +42,7 @@ func NewProvider(ethName string) *LinuxProvider {
 	return p
 }
 
+// GetMax возвращает максимальные ресурсы системы через /proc и /sys.
 func (p *LinuxProvider) GetMax() (domain.ResourcesMax, error) {
 	cpu, _ := p.getMaxCPU()
 	ram, _ := p.getMaxRAM()
@@ -54,6 +57,7 @@ func (p *LinuxProvider) GetMax() (domain.ResourcesMax, error) {
 	}, nil
 }
 
+// GetUsage возвращает текущую утилизацию ресурсов системы.
 func (p *LinuxProvider) GetUsage() (domain.ResourcesUsage, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -139,7 +143,7 @@ func (p *LinuxProvider) getMaxNet() (uint64, error) {
 	if err == nil {
 		speed, _ := strconv.ParseUint(strings.TrimSpace(string(data)), 10, 64)
 		if speed > 0 {
-			return speed * 125000, nil // Конвертация Mbits в Bytes
+			return speed * 125000, nil // Convert Mbits to Bytes
 		}
 	}
 	return 0, fmt.Errorf("net info not found for interface: %s", p.ethName)
@@ -185,7 +189,7 @@ func (p *LinuxProvider) getMemoryUsageBase() (total, avail uint64) {
 		}
 	}
 	if !hasAvail {
-		avail = free // Фолбэк на MemFree
+		avail = free // Fallback to MemFree
 	}
 	return
 }

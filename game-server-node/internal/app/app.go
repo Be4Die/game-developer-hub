@@ -14,16 +14,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+// App координирует запуск gRPC-сервера со всеми зависимостями.
 type App struct {
 	log        *slog.Logger
 	config     *config.Config
 	gRPCServer *grpc.Server
 }
 
-// New creates and wires all dependencies.
-// Returns error if any infrastructure component fails to initialize.
+// New создаёт приложение со всеми инициализированными компонентами.
+// Возвращает ошибку если Docker-демон недоступен.
 func New(log *slog.Logger, cfg *config.Config) (*App, error) {
-	// 1. Infrastructure.
+	// Initialize infrastructure.
 	storage := memory.NewMemoryInstanceStorage()
 
 	runtime, err := docker.New(log)
@@ -31,15 +32,15 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("app.New: init docker runtime: %w", err)
 	}
 
-	// 2. Services.
+	// Initialize services.
 	discoverySvc := service.NewDiscoveryService(storage, runtime, cfg)
 	deploymentSvc := service.NewDeploymentService(log, storage, runtime)
 
-	// 3. Transport.
+	// Initialize transport layer.
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoverySvc)
 	deploymentHandler := grpctransport.NewDeploymentHandler(deploymentSvc)
 
-	// 4. gRPC server.
+	// Configure and register gRPC server.
 	gRPCServer := grpc.NewServer()
 	pb.RegisterDiscoveryServiceServer(gRPCServer, discoveryHandler)
 	pb.RegisterDeploymentServiceServer(gRPCServer, deploymentHandler)
@@ -51,12 +52,14 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}, nil
 }
 
+// MustRun запускает gRPC-сервер и паникует при ошибке.
 func (a *App) MustRun() {
 	if err := a.runGRPCServer(); err != nil {
 		panic(err)
 	}
 }
 
+// runGRPCServer слушает TCP-порт и обслуживает gRPC-запросы.
 func (a *App) runGRPCServer() error {
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", a.config.GRPC.Port))
 	if err != nil {
@@ -72,6 +75,7 @@ func (a *App) runGRPCServer() error {
 	return nil
 }
 
+// MustStop gracefully останавливает gRPC-сервер.
 func (a *App) MustStop() {
 	a.log.Info("stopping gRPC server", slog.Int("port", a.config.GRPC.Port))
 	a.gRPCServer.GracefulStop()

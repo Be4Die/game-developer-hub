@@ -10,8 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// --- domain → proto ---
-
+// instanceToProto преобразует доменный инстанс в protobuf-сообщение.
 func instanceToProto(inst *domain.Instance) *pb.Instance {
 	p := &pb.Instance{
 		InstanceId:       inst.ID,
@@ -33,6 +32,7 @@ func instanceToProto(inst *domain.Instance) *pb.Instance {
 	return p
 }
 
+// protocolToProto преобразует доменный Protocol в protobuf Protocol.
 func protocolToProto(p domain.Protocol) pb.Protocol {
 	switch p {
 	case domain.ProtocolTCP:
@@ -48,6 +48,7 @@ func protocolToProto(p domain.Protocol) pb.Protocol {
 	}
 }
 
+// statusToProto преобразует доменный InstanceStatus в protobuf InstanceStatus.
 func statusToProto(s domain.InstanceStatus) pb.InstanceStatus {
 	switch s {
 	case domain.InstanceStatusStarting:
@@ -67,6 +68,7 @@ func statusToProto(s domain.InstanceStatus) pb.InstanceStatus {
 
 // --- proto → domain ---
 
+// protoToProtocol преобразует protobuf Protocol в доменный Protocol.
 func protoToProtocol(p pb.Protocol) domain.Protocol {
 	switch p {
 	case pb.Protocol_PROTOCOL_TCP:
@@ -82,6 +84,8 @@ func protoToProtocol(p pb.Protocol) domain.Protocol {
 	}
 }
 
+// protoToPortStrategy преобразует protobuf PortAllocation в доменный PortStrategy.
+// При nil возвращает стратегию Any.
 func protoToPortStrategy(pa *pb.PortAllocation) domain.PortStrategy {
 	if pa == nil {
 		return domain.PortStrategy{Any: true}
@@ -104,8 +108,7 @@ func protoToPortStrategy(pa *pb.PortAllocation) domain.PortStrategy {
 	}
 }
 
-// --- errors ---
-
+// domainErrToStatus преобразует доменную ошибку в gRPC status.
 func domainErrToStatus(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):
