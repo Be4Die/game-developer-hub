@@ -34,23 +34,13 @@ tasks:
   # ==================== Docker: build ====================
   node:build:
     desc: "Build Docker image for game-server-node"
-    dir: game-server-node
     cmds:
-      - docker build -t {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}} .
+      - docker build
+        -t {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
+        -f game-server-node/Dockerfile
+        .
 
-  # ==================== Docker: run ====================
-  node:run:
-    desc: "Run game-server-node container"
-    deps: [node:build]
-    cmds:
-      - docker run
-        --name {{.NODE_CONTAINER_NAME}}
-        --rm
-        -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
-        -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
-        {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
-
-  # ==================== Docker: run detached ====================
+  # ==================== Docker: run background ====================
   node:up:
     desc: "Run game-server-node container in background"
     deps: [node:build]
@@ -60,6 +50,7 @@ tasks:
         -d
         --restart unless-stopped
         -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
+        -v //var/run/docker.sock:/var/run/docker.sock
         -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
         {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
 
@@ -132,6 +123,25 @@ tasks:
         platforms: [linux, darwin]
       - cmd: go test -tags=e2e ./...
         platforms: [windows]
+
+  # ==================== Load Testing ====================
+  node:load-test:
+    desc: "Run load tests against DiscoveryService (server must be running)"
+    dir: game-server-node
+    cmds:
+      - go run ./cmd/load-test --addr localhost:{{.NODE_GRPC_PORT}} --concurrency 50 --requests 10000
+
+  node:load-test:heavy:
+    desc: "Run heavy load tests (100 concurrency, 50000 requests)"
+    dir: game-server-node
+    cmds:
+      - go run ./cmd/load-test --addr localhost:{{.NODE_GRPC_PORT}} --concurrency 100 --requests 50000
+
+  node:load-test:custom:
+    desc: "Run load tests with custom params (requires ADDR, CONCURRENCY, REQUESTS vars)"
+    dir: game-server-node
+    cmds:
+      - go run ./cmd/load-test --addr {{.ADDR | default "localhost:44044"}} --concurrency {{.CONCURRENCY | default 50}} --requests {{.REQUESTS | default 10000}}
 
   node:test:cover:
     desc: "Run unit tests and print coverage percentage"

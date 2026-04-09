@@ -1,2 +1,5 @@
 *.bkp
 coverage.out
+
+# Load testing reports
+**/load-test-report.json
