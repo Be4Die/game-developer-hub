@@ -300,7 +300,9 @@ func TestDeploymentService_FullLifecycle(t *testing.T) {
 	// 1. Загружаем образ (LoadImage требует io.Reader — передаём nil для локального образа)
 	// Для реального теста нужен tar-архив от docker save.
 	// Здесь проверяем что сервис корректно работает с уже локальным образом.
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	// 2. Запускаем инстанс
 	instanceID, hostPort, err := env.deploymentSvc.StartInstance(ctx, service.StartInstanceOpts{
@@ -361,7 +363,9 @@ func TestDeploymentService_MultipleInstances(t *testing.T) {
 	ctx := context.Background()
 
 	const imageTag = "alpine:3.18"
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	// Запускаем 3 инстанса
 	var instanceIDs []int64
@@ -411,7 +415,9 @@ func TestDeploymentService_ExactPortStrategy(t *testing.T) {
 	ctx := context.Background()
 
 	const imageTag = "alpine:3.18"
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	instanceID, hostPort, err := env.deploymentSvc.StartInstance(ctx, service.StartInstanceOpts{
 		GameID:       1,
@@ -440,7 +446,9 @@ func TestDeploymentService_RangePortStrategy(t *testing.T) {
 	ctx := context.Background()
 
 	const imageTag = "alpine:3.18"
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	instanceID, hostPort, err := env.deploymentSvc.StartInstance(ctx, service.StartInstanceOpts{
 		GameID:       1,
@@ -488,7 +496,9 @@ func TestGRPC_FullLifecycle_StartAndStop(t *testing.T) {
 	const imageTag = "alpine:3.18"
 
 	// Предварительно загружаем образ через сервис (т.к. LoadImage — streaming RPC)
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	// StartInstance через gRPC
 	startReq := &pb.StartInstanceRequest{
@@ -600,8 +610,12 @@ func TestGRPC_ListInstancesByGame(t *testing.T) {
 	ctx := context.Background()
 
 	const imageTag = "alpine:3.18"
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
-	env.deploymentSvc.LoadImage(ctx, 2, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
+	if err := env.deploymentSvc.LoadImage(ctx, 2, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	// Запускаем 2 инстанса для game 1 и 1 для game 2
 	var game1IDs []int64
@@ -679,7 +693,9 @@ func TestGRPC_GetInstanceUsage(t *testing.T) {
 	ctx := context.Background()
 
 	const imageTag = "alpine:3.18"
-	env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil)
+	if err := env.deploymentSvc.LoadImage(ctx, 1, imageTag, nil); err != nil {
+		t.Fatalf("LoadImage failed: %v", err)
+	}
 
 	// Запускаем инстанс
 	startResp, err := env.deploymentClient.StartInstance(ctx, &pb.StartInstanceRequest{

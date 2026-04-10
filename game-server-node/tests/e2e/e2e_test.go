@@ -59,7 +59,7 @@ type testClient struct {
 }
 
 // connectToServer подключается к работающему gRPC серверу.
-func connectToServer(ctx context.Context, t *testing.T) *testClient {
+func connectToServer(_ context.Context, t *testing.T) *testClient {
 	t.Helper()
 
 	// Unary interceptor автоматически добавляет API-ключ в каждый запрос.
@@ -78,13 +78,13 @@ func connectToServer(ctx context.Context, t *testing.T) *testClient {
 	conn, err := grpc.NewClient(
 		grpcAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-		grpc.WithTimeout(testTimeout),
 		grpc.WithUnaryInterceptor(authInterceptor),
 	)
 	if err != nil {
 		t.Fatalf("не удалось подключиться к %s: %v\nУбедитесь что сервер запущен: task node:up", grpcAddress, err)
 	}
+
+	// Connection is established lazily; individual RPCs have their own timeouts via context.
 
 	t.Cleanup(func() {
 		_ = conn.Close()
@@ -112,7 +112,7 @@ func ensureDockerAvailable(t *testing.T) {
 
 // cleanupInstances останавливает и удаляет все инстансы на сервере.
 // Для идемпотентности тестов удаляем инстансы в любых статусах.
-func cleanupInstances(t *testing.T, tc *testClient, ctx context.Context) {
+func cleanupInstances(ctx context.Context, t *testing.T, tc *testClient) {
 	t.Helper()
 
 	resp, err := tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
@@ -129,33 +129,6 @@ func cleanupInstances(t *testing.T, tc *testClient, ctx context.Context) {
 			})
 		}
 	}
-}
-
-// cleanupAllInstancesForTest останавливает все запущенные и удаляет все остановленные
-// инстансы, гарантируя чистое состояние для идемпотентного теста.
-func cleanupAllInstancesForTest(t *testing.T, tc *testClient, ctx context.Context) {
-	t.Helper()
-
-	resp, err := tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
-	if err != nil {
-		return
-	}
-
-	for _, inst := range resp.Instances {
-		if inst.Status == pb.InstanceStatus_INSTANCE_STATUS_RUNNING ||
-			inst.Status == pb.InstanceStatus_INSTANCE_STATUS_STARTING {
-			_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
-				InstanceId:     inst.InstanceId,
-				TimeoutSeconds: 3,
-			})
-		}
-		// Остановленные и crashed инстансы остаются в хранилище (in-memory).
-		// Для полного clean нужно пересоздать контейнер, но это не требуется
-		// для большинства тестов — фильтрация по status решает проблему.
-	}
-
-	// Пауза чтобы все инстансы успели остановиться
-	time.Sleep(200 * time.Millisecond)
 }
 
 // ============================================================
@@ -207,7 +180,7 @@ func TestE2E_Discovery_Heartbeat(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 
 	resp, err := tc.discovery.Heartbeat(ctx, &pb.HeartbeatRequest{})
 	if err != nil {
@@ -227,7 +200,7 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 
 	// 1. Пустой список
 	resp, err := tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
@@ -238,7 +211,7 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 
 	// 2. Запускаем инстанс
 	ensureDockerAvailable(t)
-	startResp := startTestInstance(t, tc, ctx, 1, "list-test-server")
+	startResp := startTestInstance(ctx, t, tc, 1, "list-test-server")
 
 	// 3. Проверяем что список увеличился
 	resp, err = tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
@@ -251,7 +224,7 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 	}
 
 	// Cleanup
-	stopTestInstance(t, tc, ctx, startResp.InstanceId)
+	stopTestInstance(ctx, t, tc, startResp.InstanceId)
 }
 
 // E2E_04: ListInstancesByGame — фильтрация по game_id.
@@ -269,10 +242,10 @@ func TestE2E_Discovery_ListInstancesByGame(t *testing.T) {
 	// Запускаем 2 инстанса для game 1, 1 для game 2
 	var game1IDs []int64
 	for i := 0; i < 2; i++ {
-		resp := startTestInstanceWithGameID(t, tc, ctx, gameID1, fmt.Sprintf("game1-srv-%d", i))
+		resp := startTestInstanceWithGameID(ctx, t, tc, gameID1, fmt.Sprintf("game1-srv-%d", i))
 		game1IDs = append(game1IDs, resp.InstanceId)
 	}
-	resp2 := startTestInstanceWithGameID(t, tc, ctx, gameID2, "game2-srv")
+	resp2 := startTestInstanceWithGameID(ctx, t, tc, gameID2, "game2-srv")
 
 	// Проверяем фильтрацию
 	resp, err := tc.discovery.ListInstancesByGame(ctx, &pb.ListInstancesByGameRequest{GameId: gameID1})
@@ -304,9 +277,9 @@ func TestE2E_Discovery_ListInstancesByGame(t *testing.T) {
 
 	// Cleanup
 	for _, id := range game1IDs {
-		stopTestInstance(t, tc, ctx, id)
+		stopTestInstance(ctx, t, tc, id)
 	}
-	stopTestInstance(t, tc, ctx, resp2.InstanceId)
+	stopTestInstance(ctx, t, tc, resp2.InstanceId)
 }
 
 // E2E_05: GetInstance — существующий и несуществующий.
@@ -315,12 +288,12 @@ func TestE2E_Discovery_GetInstance(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// Запускаем инстанс
-	startResp := startTestInstance(t, tc, ctx, 1, "get-instance-test")
-	defer stopTestInstance(t, tc, ctx, startResp.InstanceId)
+	startResp := startTestInstance(ctx, t, tc, 1, "get-instance-test")
+	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	// Получение существующего
 	resp, err := tc.discovery.GetInstance(ctx, &pb.GetInstanceRequest{
@@ -360,12 +333,12 @@ func TestE2E_Discovery_GetInstanceUsage(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// Запускаем инстанс
-	startResp := startTestInstance(t, tc, ctx, 1, "usage-test")
-	defer stopTestInstance(t, tc, ctx, startResp.InstanceId)
+	startResp := startTestInstance(ctx, t, tc, 1, "usage-test")
+	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	time.Sleep(containerWait)
 
@@ -405,12 +378,12 @@ func TestE2E_Deployment_StartInstance(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// Запускаем инстанс
-	startResp := startTestInstance(t, tc, ctx, 1, "start-instance-e2e")
-	defer stopTestInstance(t, tc, ctx, startResp.InstanceId)
+	startResp := startTestInstance(ctx, t, tc, 1, "start-instance-e2e")
+	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	if startResp.InstanceId <= 0 {
 		t.Errorf("expected positive instance_id, got %d", startResp.InstanceId)
@@ -438,11 +411,11 @@ func TestE2E_Deployment_StopInstance(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// Запускаем
-	startResp := startTestInstance(t, tc, ctx, 1, "stop-test")
+	startResp := startTestInstance(ctx, t, tc, 1, "stop-test")
 
 	// Останавливаем
 	_, err := tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
@@ -472,15 +445,15 @@ func TestE2E_Deployment_LoadImageAndStart(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// LoadImage требует streaming
-	loadTestImage(t, tc, ctx, 42, imageTag)
+	loadTestImage(ctx, t, tc, 42)
 
 	// Запускаем инстанс — должен найти образ
-	startResp := startTestInstance(t, tc, ctx, 42, "load-image-test")
-	defer stopTestInstance(t, tc, ctx, startResp.InstanceId)
+	startResp := startTestInstance(ctx, t, tc, 42, "load-image-test")
+	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	t.Logf("Started instance %d for game 42", startResp.InstanceId)
 }
@@ -491,12 +464,12 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	// Шаг 1: LoadImage
 	t.Log("1. Loading image...")
-	loadTestImage(t, tc, ctx, 100, imageTag)
+	loadTestImage(ctx, t, tc, 100)
 
 	// Шаг 2: StartInstance
 	t.Log("2. Starting instance...")
@@ -598,7 +571,7 @@ func TestE2E_ParallelInstances(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	const n = 3
@@ -607,7 +580,7 @@ func TestE2E_ParallelInstances(t *testing.T) {
 	// Запускаем N инстансов параллельно
 	for i := 0; i < n; i++ {
 		func(idx int) {
-			resp := startTestInstance(t, tc, ctx, 1, fmt.Sprintf("parallel-srv-%d", idx))
+			resp := startTestInstance(ctx, t, tc, 1, fmt.Sprintf("parallel-srv-%d", idx))
 			instanceIDs[idx] = resp.InstanceId
 		}(i)
 	}
@@ -631,7 +604,7 @@ func TestE2E_ParallelInstances(t *testing.T) {
 
 	// Cleanup
 	for _, id := range instanceIDs {
-		stopTestInstance(t, tc, ctx, id)
+		stopTestInstance(ctx, t, tc, id)
 	}
 }
 
@@ -641,7 +614,7 @@ func TestE2E_PortStrategies(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	tests := []struct {
@@ -735,7 +708,7 @@ func TestE2E_ResourceLimits(t *testing.T) {
 	defer cancel()
 
 	tc := connectToServer(ctx, t)
-	cleanupInstances(t, tc, ctx)
+	cleanupInstances(ctx, t, tc)
 	ensureDockerAvailable(t)
 
 	cpuMillis := uint32(500)                // 0.5 ядра
@@ -787,11 +760,11 @@ func TestE2E_ResourceLimits(t *testing.T) {
 // ============================================================
 
 // startTestInstance запускает инстанс с параметрами по умолчанию.
-func startTestInstance(t *testing.T, tc *testClient, ctx context.Context, gameID int64, name string) *pb.StartInstanceResponse {
+func startTestInstance(ctx context.Context, t *testing.T, tc *testClient, gameID int64, name string) *pb.StartInstanceResponse {
 	t.Helper()
 
 	// Загружаем образ для этого gameID
-	loadTestImage(t, tc, ctx, gameID, imageTag)
+	loadTestImage(ctx, t, tc, gameID)
 
 	resp, err := tc.deployment.StartInstance(ctx, &pb.StartInstanceRequest{
 		GameId:       gameID,
@@ -819,10 +792,10 @@ func startTestInstance(t *testing.T, tc *testClient, ctx context.Context, gameID
 }
 
 // startTestInstanceWithGameID запускает инстанс с указанным gameID.
-func startTestInstanceWithGameID(t *testing.T, tc *testClient, ctx context.Context, gameID int64, name string) *pb.StartInstanceResponse {
+func startTestInstanceWithGameID(ctx context.Context, t *testing.T, tc *testClient, gameID int64, name string) *pb.StartInstanceResponse {
 	t.Helper()
 
-	loadTestImage(t, tc, ctx, gameID, imageTag)
+	loadTestImage(ctx, t, tc, gameID)
 
 	resp, err := tc.deployment.StartInstance(ctx, &pb.StartInstanceRequest{
 		GameId:       gameID,
@@ -850,7 +823,7 @@ func startTestInstanceWithGameID(t *testing.T, tc *testClient, ctx context.Conte
 }
 
 // stopTestInstance останавливает инстанс.
-func stopTestInstance(t *testing.T, tc *testClient, ctx context.Context, instanceID int64) {
+func stopTestInstance(ctx context.Context, t *testing.T, tc *testClient, instanceID int64) {
 	t.Helper()
 	_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
 		InstanceId:     instanceID,
@@ -860,17 +833,17 @@ func stopTestInstance(t *testing.T, tc *testClient, ctx context.Context, instanc
 
 // loadTestImage загружает Docker образ через gRPC streaming с реальной передачей данных.
 // Сохраняет образ в tar через Docker API и стримит чанки на сервер.
-func loadTestImage(t *testing.T, tc *testClient, ctx context.Context, gameID int64, tag string) {
+func loadTestImage(ctx context.Context, t *testing.T, tc *testClient, gameID int64) {
 	t.Helper()
 
-	t.Logf("Loading image '%s' for game_id=%d via gRPC stream...", tag, gameID)
+	t.Logf("Loading image '%s' for game_id=%d via gRPC stream...", imageTag, gameID)
 
-	imageTarData, err := saveDockerImageToTar(ctx, tag)
+	imageTarData, err := saveDockerImageToTar(ctx, imageTag)
 	if err != nil {
-		t.Fatalf("Failed to save image '%s' to tar: %v", tag, err)
+		t.Fatalf("Failed to save image '%s' to tar: %v", imageTag, err)
 	}
 
-	t.Logf("Image '%s' saved to tar: %d bytes, starting gRPC stream...", tag, len(imageTarData))
+	t.Logf("Image '%s' saved to tar: %d bytes, starting gRPC stream...", imageTag, len(imageTarData))
 
 	stream, err := tc.deployment.LoadImage(ctx)
 	if err != nil {
@@ -879,7 +852,7 @@ func loadTestImage(t *testing.T, tc *testClient, ctx context.Context, gameID int
 
 	err = stream.Send(&pb.LoadImageRequest{
 		Payload: &pb.LoadImageRequest_Metadata{
-			Metadata: &pb.ImageMetadata{GameId: gameID, ImageTag: tag},
+			Metadata: &pb.ImageMetadata{GameId: gameID, ImageTag: imageTag},
 		},
 	})
 	if err != nil {
@@ -909,14 +882,14 @@ func loadTestImage(t *testing.T, tc *testClient, ctx context.Context, gameID int
 		offset = end
 	}
 
-	t.Logf("Streamed %d bytes (%.2f MB) of image '%s'", totalSent, float64(totalSent)/1024/1024, tag)
+	t.Logf("Streamed %d bytes (%.2f MB) of image '%s'", totalSent, float64(totalSent)/1024/1024, imageTag)
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		t.Fatalf("LoadImage CloseAndRecv error: %v", err)
 	}
 
-	t.Logf("Image '%s' loaded successfully, server response: %s", tag, resp.GetImageTag())
+	t.Logf("Image '%s' loaded successfully, server response: %s", imageTag, resp.GetImageTag())
 }
 
 // saveDockerImageToTar сохраняет Docker образ в tar формат через Docker API.

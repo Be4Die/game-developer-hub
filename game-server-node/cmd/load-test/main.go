@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bojand/ghz/printer"
 	"github.com/bojand/ghz/runner"
 )
 
@@ -240,7 +239,7 @@ func detectProtoDir() string {
 			continue
 		}
 		testPath := filepath.Join(abs, "game_server_node", "v1", "discovery.proto")
-		if _, err := os.Stat(testPath); err == nil {
+		if _, err := os.Stat(filepath.Clean(testPath)); err == nil {
 			return abs
 		}
 	}
@@ -398,7 +397,7 @@ func saveJSONReport(results []TestResult, cfg Config) {
 		return
 	}
 
-	if err := os.WriteFile("load-test-report.json", data, 0644); err != nil {
+	if err := os.WriteFile("load-test-report.json", data, 0600); err != nil {
 		fmt.Fprintf(os.Stderr, "⚠️  Ошибка записи файла: %v\n", err)
 	}
 }
@@ -418,14 +417,4 @@ func sumMap(m map[string]int) int {
 		total += v
 	}
 	return total
-}
-
-// printDetailedReport выводит детальный ghz-отчёт для каждого метода.
-func printDetailedReport(report *runner.Report) {
-	fmt.Println()
-	fmt.Println("--- Детальный ghz отчёт ---")
-	rp := printer.ReportPrinter{Out: os.Stdout, Report: report}
-	_ = rp.Print("summary")
-	fmt.Println("--- Конец отчёта ---")
-	fmt.Println()
 }
