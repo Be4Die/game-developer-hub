@@ -17,7 +17,6 @@ func TestMustLoad(t *testing.T) {
 			name: "valid config",
 			yaml: `
 env: local
-storage_path: /tmp/storage
 grpc:
   port: 50051
   timeout: 5s
@@ -30,7 +29,6 @@ node:
 		{
 			name: "missing env field",
 			yaml: `
-storage_path: /tmp/storage
 grpc:
   port: 50051
   timeout: 5s
@@ -41,7 +39,6 @@ grpc:
 			name: "invalid env value",
 			yaml: `
 env: staging
-storage_path: /tmp/storage
 grpc:
   port: 50051
   timeout: 5s
@@ -52,7 +49,6 @@ grpc:
 			name: "invalid grpc port",
 			yaml: `
 env: dev
-storage_path: /tmp/storage
 grpc:
   port: 0
   timeout: 5s
@@ -147,8 +143,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "valid config",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -160,8 +155,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "valid dev env",
 			cfg: Config{
-				Env:         EnvDev,
-				StoragePath: "/tmp/storage",
+				Env: EnvDev,
 				GRPC: GRPCConfig{
 					Port:    8080,
 					Timeout: time.Second,
@@ -173,8 +167,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "valid prod env",
 			cfg: Config{
-				Env:         EnvProd,
-				StoragePath: "/data/storage",
+				Env: EnvProd,
 				GRPC: GRPCConfig{
 					Port:    443,
 					Timeout: 10 * time.Second,
@@ -186,7 +179,6 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "missing env",
 			cfg: Config{
-				StoragePath: "/tmp/storage",
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -199,8 +191,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "invalid env value",
 			cfg: Config{
-				Env:         "staging",
-				StoragePath: "/tmp/storage",
+				Env: "staging",
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -211,23 +202,9 @@ func TestConfig_Validate(t *testing.T) {
 			errMsg:  "env must be one of: local, dev, prod",
 		},
 		{
-			name: "missing storage path",
-			cfg: Config{
-				Env: EnvLocal,
-				GRPC: GRPCConfig{
-					Port:    50051,
-					Timeout: 5 * time.Second,
-				},
-				APIKey: "some-api-key",
-			},
-			wantErr: true,
-			errMsg:  "storage_path is required",
-		},
-		{
 			name: "grpc port zero",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    0,
 					Timeout: 5 * time.Second,
@@ -240,8 +217,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "grpc port too high",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    65536,
 					Timeout: 5 * time.Second,
@@ -254,8 +230,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "grpc port negative",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    -1,
 					Timeout: 5 * time.Second,
@@ -268,8 +243,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "grpc timeout zero",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 0,
@@ -282,8 +256,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "grpc timeout negative",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: -time.Second,
@@ -296,8 +269,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "missing api key",
 			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,

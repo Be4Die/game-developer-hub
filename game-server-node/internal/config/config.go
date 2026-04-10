@@ -19,11 +19,10 @@ const (
 
 // Config хранит конфигурацию приложения.
 type Config struct {
-	Env         string     `yaml:"env" env-required:"true"`
-	StoragePath string     `yaml:"storage_path" env-required:"true"`
-	GRPC        GRPCConfig `yaml:"grpc"`
-	Node        NodeConfig `yaml:"node"`
-	APIKey      string     `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
+	Env    string     `yaml:"env" env-required:"true"`
+	GRPC   GRPCConfig `yaml:"grpc"`
+	Node   NodeConfig `yaml:"node"`
+	APIKey string     `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
 }
 
 // GRPCConfig хранит настройки gRPC-сервера.
@@ -71,10 +70,6 @@ func (c *Config) Validate() error {
 	validEnvs := map[string]bool{EnvLocal: true, EnvDev: true, EnvProd: true}
 	if !validEnvs[c.Env] {
 		return errors.New("env must be one of: local, dev, prod")
-	}
-
-	if c.StoragePath == "" {
-		return errors.New("storage_path is required")
 	}
 
 	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {

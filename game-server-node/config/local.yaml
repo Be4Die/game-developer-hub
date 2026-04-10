@@ -1,5 +1,4 @@
 env: "local"
-storage_path: "./sotrage/sso.db"
 grpc:
   port: 44044
   timeout: 10h

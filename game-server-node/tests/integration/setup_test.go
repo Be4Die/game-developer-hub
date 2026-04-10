@@ -44,8 +44,7 @@ func skipIfNoDocker(t *testing.T) {
 // testConfig создаёт конфигурацию для тестов.
 func testConfig(port int) *config.Config {
 	return &config.Config{
-		Env:         config.EnvLocal,
-		StoragePath: "/tmp/test.db",
+		Env: config.EnvLocal,
 		GRPC: config.GRPCConfig{
 			Port:    port,
 			Timeout: 30 * time.Second,
