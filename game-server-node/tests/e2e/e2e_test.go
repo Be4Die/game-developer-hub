@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -38,6 +39,14 @@ const (
 	stopTimeout   = 10 * time.Second
 	containerWait = 500 * time.Millisecond
 )
+
+// getE2EAPIKey загружает ключ из env или использует значение по умолчанию.
+func getE2EAPIKey() string {
+	if key := os.Getenv("E2E_API_KEY"); key != "" {
+		return key
+	}
+	return "dev-api-key-for-local-testing"
+}
 
 // testClient хранит gRPC клиенты для всех сервисов.
 type testClient struct {
@@ -51,11 +60,25 @@ type testClient struct {
 func connectToServer(ctx context.Context, t *testing.T) *testClient {
 	t.Helper()
 
+	// Unary interceptor автоматически добавляет API-ключ в каждый запрос.
+	authInterceptor := func(
+		ctx context.Context,
+		method string,
+		req, reply interface{},
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+getE2EAPIKey())
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+
 	conn, err := grpc.NewClient(
 		grpcAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.WithTimeout(testTimeout),
+		grpc.WithUnaryInterceptor(authInterceptor),
 	)
 	if err != nil {
 		t.Fatalf("не удалось подключиться к %s: %v\nУбедитесь что сервер запущен: task node:up", grpcAddress, err)

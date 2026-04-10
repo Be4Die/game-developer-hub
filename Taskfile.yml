@@ -6,6 +6,7 @@ vars:
   NODE_CONTAINER_NAME: "game-server-node"
   NODE_GRPC_PORT: 44044
   NODE_CONFIG: "local.yaml"
+  NODE_API_KEY: "dev-api-key-for-local-testing"
 
 tasks:
   # ==================== Proto ====================
@@ -52,7 +53,7 @@ tasks:
         -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
         -v //var/run/docker.sock:/var/run/docker.sock
         -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
-        -e NODE_API_KEY
+        -e NODE_API_KEY={{.NODE_API_KEY}}
         {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
 
   # ==================== Docker: stop ====================
