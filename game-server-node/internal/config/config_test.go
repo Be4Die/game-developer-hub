@@ -18,7 +18,6 @@ func TestMustLoad(t *testing.T) {
 			yaml: `
 env: local
 storage_path: /tmp/storage
-token_ttl: 24h
 grpc:
   port: 50051
   timeout: 5s
@@ -32,7 +31,6 @@ node:
 			name: "missing env field",
 			yaml: `
 storage_path: /tmp/storage
-token_ttl: 24h
 grpc:
   port: 50051
   timeout: 5s
@@ -44,7 +42,6 @@ grpc:
 			yaml: `
 env: staging
 storage_path: /tmp/storage
-token_ttl: 24h
 grpc:
   port: 50051
   timeout: 5s
@@ -56,7 +53,6 @@ grpc:
 			yaml: `
 env: dev
 storage_path: /tmp/storage
-token_ttl: 24h
 grpc:
   port: 0
   timeout: 5s
@@ -153,7 +149,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -167,7 +162,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvDev,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    time.Hour,
 				GRPC: GRPCConfig{
 					Port:    8080,
 					Timeout: time.Second,
@@ -181,7 +175,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvProd,
 				StoragePath: "/data/storage",
-				TokenTTL:    48 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    443,
 					Timeout: 10 * time.Second,
@@ -194,7 +187,6 @@ func TestConfig_Validate(t *testing.T) {
 			name: "missing env",
 			cfg: Config{
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -209,7 +201,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         "staging",
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -222,8 +213,7 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "missing storage path",
 			cfg: Config{
-				Env:      EnvLocal,
-				TokenTTL: 24 * time.Hour,
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,
@@ -234,41 +224,10 @@ func TestConfig_Validate(t *testing.T) {
 			errMsg:  "storage_path is required",
 		},
 		{
-			name: "zero token ttl",
-			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
-				TokenTTL:    0,
-				GRPC: GRPCConfig{
-					Port:    50051,
-					Timeout: 5 * time.Second,
-				},
-				APIKey: "some-api-key",
-			},
-			wantErr: true,
-			errMsg:  "token_ttl must be positive",
-		},
-		{
-			name: "negative token ttl",
-			cfg: Config{
-				Env:         EnvLocal,
-				StoragePath: "/tmp/storage",
-				TokenTTL:    -time.Hour,
-				GRPC: GRPCConfig{
-					Port:    50051,
-					Timeout: 5 * time.Second,
-				},
-				APIKey: "some-api-key",
-			},
-			wantErr: true,
-			errMsg:  "token_ttl must be positive",
-		},
-		{
 			name: "grpc port zero",
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    0,
 					Timeout: 5 * time.Second,
@@ -283,7 +242,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    65536,
 					Timeout: 5 * time.Second,
@@ -298,7 +256,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    -1,
 					Timeout: 5 * time.Second,
@@ -313,7 +270,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 0,
@@ -328,7 +284,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: -time.Second,
@@ -343,7 +298,6 @@ func TestConfig_Validate(t *testing.T) {
 			cfg: Config{
 				Env:         EnvLocal,
 				StoragePath: "/tmp/storage",
-				TokenTTL:    24 * time.Hour,
 				GRPC: GRPCConfig{
 					Port:    50051,
 					Timeout: 5 * time.Second,

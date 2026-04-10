@@ -46,7 +46,6 @@ func testConfig(port int) *config.Config {
 	return &config.Config{
 		Env:         config.EnvLocal,
 		StoragePath: "/tmp/test.db",
-		TokenTTL:    time.Hour,
 		GRPC: config.GRPCConfig{
 			Port:    port,
 			Timeout: 30 * time.Second,

@@ -19,12 +19,11 @@ const (
 
 // Config хранит конфигурацию приложения.
 type Config struct {
-	Env         string        `yaml:"env" env-required:"true"`
-	StoragePath string        `yaml:"storage_path" env-required:"true"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
-	GRPC        GRPCConfig    `yaml:"grpc"`
-	Node        NodeConfig    `yaml:"node"`
-	APIKey      string        `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
+	Env         string     `yaml:"env" env-required:"true"`
+	StoragePath string     `yaml:"storage_path" env-required:"true"`
+	GRPC        GRPCConfig `yaml:"grpc"`
+	Node        NodeConfig `yaml:"node"`
+	APIKey      string     `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
 }
 
 // GRPCConfig хранит настройки gRPC-сервера.
@@ -76,10 +75,6 @@ func (c *Config) Validate() error {
 
 	if c.StoragePath == "" {
 		return errors.New("storage_path is required")
-	}
-
-	if c.TokenTTL <= 0 {
-		return errors.New("token_ttl must be positive")
 	}
 
 	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {
