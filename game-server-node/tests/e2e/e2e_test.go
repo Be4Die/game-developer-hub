@@ -16,6 +16,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/runtime/docker"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
+	"github.com/docker/docker/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -856,31 +858,88 @@ func stopTestInstance(t *testing.T, tc *testClient, ctx context.Context, instanc
 	})
 }
 
-// loadTestImage загружает образ через gRPC streaming.
-// Для локально доступных образов может вернуть ошибку (образ уже есть).
+// loadTestImage загружает Docker образ через gRPC streaming с реальной передачей данных.
+// Сохраняет образ в tar через Docker API и стримит чанки на сервер.
 func loadTestImage(t *testing.T, tc *testClient, ctx context.Context, gameID int64, tag string) {
 	t.Helper()
 
-	stream, err := tc.deployment.LoadImage(ctx)
+	t.Logf("Loading image '%s' for game_id=%d via gRPC stream...", tag, gameID)
+
+	imageTarData, err := saveDockerImageToTar(ctx, tag)
 	if err != nil {
-		t.Logf("LoadImage stream open error (may be ok): %v", err)
-		return
+		t.Fatalf("Failed to save image '%s' to tar: %v", tag, err)
 	}
 
-	// Отправляем метаданные
+	t.Logf("Image '%s' saved to tar: %d bytes, starting gRPC stream...", tag, len(imageTarData))
+
+	stream, err := tc.deployment.LoadImage(ctx)
+	if err != nil {
+		t.Fatalf("LoadImage stream open error: %v", err)
+	}
+
 	err = stream.Send(&pb.LoadImageRequest{
 		Payload: &pb.LoadImageRequest_Metadata{
 			Metadata: &pb.ImageMetadata{GameId: gameID, ImageTag: tag},
 		},
 	})
 	if err != nil {
-		t.Logf("LoadImage Send error (may be ok for local image): %v", err)
-		return
+		t.Fatalf("LoadImage Send metadata error: %v", err)
 	}
 
-	// Закрываем стрим и получаем ответ
-	_, err = stream.CloseAndRecv()
-	if err != nil {
-		t.Logf("LoadImage completed with: %v", err)
+	const chunkSize = 64 * 1024 // 64KB chunks
+	totalSent := 0
+
+	for offset := 0; offset < len(imageTarData); {
+		end := offset + chunkSize
+		if end > len(imageTarData) {
+			end = len(imageTarData)
+		}
+
+		chunk := imageTarData[offset:end]
+		err = stream.Send(&pb.LoadImageRequest{
+			Payload: &pb.LoadImageRequest_Chunk{
+				Chunk: chunk,
+			},
+		})
+		if err != nil {
+			t.Fatalf("LoadImage Send chunk error at offset %d: %v", offset, err)
+		}
+
+		totalSent += len(chunk)
+		offset = end
 	}
+
+	t.Logf("Streamed %d bytes (%.2f MB) of image '%s'", totalSent, float64(totalSent)/1024/1024, tag)
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		t.Fatalf("LoadImage CloseAndRecv error: %v", err)
+	}
+
+	t.Logf("Image '%s' loaded successfully, server response: %s", tag, resp.GetImageTag())
+}
+
+// saveDockerImageToTar сохраняет Docker образ в tar формат через Docker API.
+// Эквивалент команды: docker save <image> > image.tar
+func saveDockerImageToTar(ctx context.Context, imageTag string) ([]byte, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Docker client: %w", err)
+	}
+	defer func() { _ = cli.Close() }()
+
+	// ImageSave возвращает io.ReadCloser с tar архивом образа
+	imageTarReader, err := cli.ImageSave(ctx, []string{imageTag})
+	if err != nil {
+		return nil, fmt.Errorf("failed to save image '%s': %w", imageTag, err)
+	}
+	defer func() { _ = imageTarReader.Close() }()
+
+	// Читаем весь tar в память
+	data, err := io.ReadAll(imageTarReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image tar data: %w", err)
+	}
+
+	return data, nil
 }
