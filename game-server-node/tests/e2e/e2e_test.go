@@ -3,10 +3,12 @@
 // В отличие от интеграционных тестов (bufconn in-memory), e2e используют
 // реальный сетевой стек: gRPC клиент → TCP → Docker контейнер с сервером.
 //
+// Каждый тестовый пакет поднимает свежий контейнер через testcontainers,
+// поэтому состояние всегда чистое и тесты полностью изолированы.
+//
 // Перед запуском:
 //  1. Соберите образ: task node:build
-//  2. Запустите контейнер: task node:up
-//  3. Убедитесь что Docker Desktop запущен
+//  2. Убедитесь что Docker Desktop запущен
 //
 // Запуск:
 //
@@ -23,9 +25,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/runtime/docker"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -35,10 +39,8 @@ import (
 
 // Константы e2e тестирования.
 const (
-	grpcAddress   = "localhost:44044"
 	imageTag      = "alpine:3.18"
 	testTimeout   = 60 * time.Second
-	stopTimeout   = 10 * time.Second
 	containerWait = 500 * time.Millisecond
 )
 
@@ -58,11 +60,56 @@ type testClient struct {
 	containerLog *slog.Logger
 }
 
-// connectToServer подключается к работающему gRPC серверу.
-func connectToServer(_ context.Context, t *testing.T) *testClient {
+// setupServerContainer поднимает свежий контейнер game-server-node и возвращает
+// testClient для подключения + контейнер для последующей очистки.
+// Контейнер живёт в рамках одного теста и автоматически удаляется через t.Cleanup.
+func setupServerContainer(t *testing.T) *testClient {
 	t.Helper()
 
-	// Unary interceptor автоматически добавляет API-ключ в каждый запрос.
+	ctx := context.Background()
+
+	// Собираем образ из Dockerfile если его нет локально.
+	// Используем уже собранный образ game-server-node:latest.
+	req := testcontainers.ContainerRequest{
+		Image:        "game-server-node:latest",
+		ExposedPorts: []string{"44044/tcp"},
+		Env: map[string]string{
+			"CONFIG_PATH":  "/app/config/local.yaml",
+			"NODE_API_KEY": getE2EAPIKey(),
+		},
+		WaitingFor: wait.ForListeningPort("44044/tcp").WithStartupTimeout(15 * time.Second),
+		HostConfigModifier: func(hc *container.HostConfig) {
+			hc.Binds = append(hc.Binds, "/var/run/docker.sock:/var/run/docker.sock")
+		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Skipf("не удалось запустить контейнер (проверьте Docker Desktop и образ game-server-node:latest): %v", err)
+	}
+
+	// Cleanup в конце теста
+	t.Cleanup(func() {
+		_ = container.Terminate(context.Background())
+	})
+
+	// Получаем реальный порт (testcontainers мапит на случайный хост-порт)
+	port, err := container.MappedPort(ctx, "44044")
+	if err != nil {
+		t.Fatalf("не удалось получить порт контейнера: %v", err)
+	}
+
+	host, err := container.Host(ctx)
+	if err != nil {
+		t.Fatalf("не удалось получить хост контейнера: %v", err)
+	}
+
+	grpcAddress := fmt.Sprintf("%s:%s", host, port.Port())
+
+	// Создаём gRPC соединение
 	authInterceptor := func(
 		ctx context.Context,
 		method string,
@@ -81,10 +128,8 @@ func connectToServer(_ context.Context, t *testing.T) *testClient {
 		grpc.WithUnaryInterceptor(authInterceptor),
 	)
 	if err != nil {
-		t.Fatalf("не удалось подключиться к %s: %v\nУбедитесь что сервер запущен: task node:up", grpcAddress, err)
+		t.Fatalf("не удалось подключиться к %s: %v", grpcAddress, err)
 	}
-
-	// Connection is established lazily; individual RPCs have their own timeouts via context.
 
 	t.Cleanup(func() {
 		_ = conn.Close()
@@ -97,37 +142,6 @@ func connectToServer(_ context.Context, t *testing.T) *testClient {
 		containerLog: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelWarn,
 		})),
-	}
-}
-
-// ensureDockerAvailable проверяет доступность Docker daemon.
-func ensureDockerAvailable(t *testing.T) {
-	t.Helper()
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
-	_, err := docker.New(log)
-	if err != nil {
-		t.Skipf("Docker daemon недоступен: %v", err)
-	}
-}
-
-// cleanupInstances останавливает и удаляет все инстансы на сервере.
-// Для идемпотентности тестов удаляем инстансы в любых статусах.
-func cleanupInstances(ctx context.Context, t *testing.T, tc *testClient) {
-	t.Helper()
-
-	resp, err := tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
-	if err != nil {
-		return // не критично
-	}
-
-	for _, inst := range resp.Instances {
-		if inst.Status == pb.InstanceStatus_INSTANCE_STATUS_RUNNING ||
-			inst.Status == pb.InstanceStatus_INSTANCE_STATUS_STARTING {
-			_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
-				InstanceId:     inst.InstanceId,
-				TimeoutSeconds: 3,
-			})
-		}
 	}
 }
 
@@ -148,7 +162,7 @@ func TestE2E_Discovery_GetNodeInfo(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
+	tc := setupServerContainer(t)
 
 	resp, err := tc.discovery.GetNodeInfo(ctx, &pb.GetNodeInfoRequest{})
 	if err != nil {
@@ -179,8 +193,7 @@ func TestE2E_Discovery_Heartbeat(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
+	tc := setupServerContainer(t)
 
 	resp, err := tc.discovery.Heartbeat(ctx, &pb.HeartbeatRequest{})
 	if err != nil {
@@ -199,8 +212,7 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
+	tc := setupServerContainer(t)
 
 	// 1. Пустой список
 	resp, err := tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
@@ -210,8 +222,7 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 	initialCount := len(resp.Instances)
 
 	// 2. Запускаем инстанс
-	ensureDockerAvailable(t)
-	startResp := startTestInstance(ctx, t, tc, 1, "list-test-server")
+	_ = startTestInstance(ctx, t, tc, 1, "list-test-server")
 
 	// 3. Проверяем что список увеличился
 	resp, err = tc.discovery.ListInstances(ctx, &pb.ListInstancesRequest{})
@@ -222,9 +233,6 @@ func TestE2E_Discovery_ListInstances(t *testing.T) {
 	if len(resp.Instances) != initialCount+1 {
 		t.Errorf("expected %d instances, got %d", initialCount+1, len(resp.Instances))
 	}
-
-	// Cleanup
-	stopTestInstance(ctx, t, tc, startResp.InstanceId)
 }
 
 // E2E_04: ListInstancesByGame — фильтрация по game_id.
@@ -232,20 +240,17 @@ func TestE2E_Discovery_ListInstancesByGame(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Уникальные game_id для идемпотентности теста
 	const gameID1 = 10001
 	const gameID2 = 10002
 
 	// Запускаем 2 инстанса для game 1, 1 для game 2
-	var game1IDs []int64
 	for i := 0; i < 2; i++ {
-		resp := startTestInstanceWithGameID(ctx, t, tc, gameID1, fmt.Sprintf("game1-srv-%d", i))
-		game1IDs = append(game1IDs, resp.InstanceId)
+		_ = startTestInstanceWithGameID(ctx, t, tc, gameID1, fmt.Sprintf("game1-srv-%d", i))
 	}
-	resp2 := startTestInstanceWithGameID(ctx, t, tc, gameID2, "game2-srv")
+	_ = startTestInstanceWithGameID(ctx, t, tc, gameID2, "game2-srv")
 
 	// Проверяем фильтрацию
 	resp, err := tc.discovery.ListInstancesByGame(ctx, &pb.ListInstancesByGameRequest{GameId: gameID1})
@@ -274,12 +279,6 @@ func TestE2E_Discovery_ListInstancesByGame(t *testing.T) {
 	if len(resp.Instances) != 0 {
 		t.Errorf("expected 0 instances for game 999999, got %d", len(resp.Instances))
 	}
-
-	// Cleanup
-	for _, id := range game1IDs {
-		stopTestInstance(ctx, t, tc, id)
-	}
-	stopTestInstance(ctx, t, tc, resp2.InstanceId)
 }
 
 // E2E_05: GetInstance — существующий и несуществующий.
@@ -287,13 +286,10 @@ func TestE2E_Discovery_GetInstance(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Запускаем инстанс
 	startResp := startTestInstance(ctx, t, tc, 1, "get-instance-test")
-	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	// Получение существующего
 	resp, err := tc.discovery.GetInstance(ctx, &pb.GetInstanceRequest{
@@ -332,13 +328,10 @@ func TestE2E_Discovery_GetInstanceUsage(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Запускаем инстанс
 	startResp := startTestInstance(ctx, t, tc, 1, "usage-test")
-	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	time.Sleep(containerWait)
 
@@ -377,13 +370,10 @@ func TestE2E_Deployment_StartInstance(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Запускаем инстанс
 	startResp := startTestInstance(ctx, t, tc, 1, "start-instance-e2e")
-	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	if startResp.InstanceId <= 0 {
 		t.Errorf("expected positive instance_id, got %d", startResp.InstanceId)
@@ -410,9 +400,7 @@ func TestE2E_Deployment_StopInstance(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Запускаем
 	startResp := startTestInstance(ctx, t, tc, 1, "stop-test")
@@ -444,16 +432,13 @@ func TestE2E_Deployment_LoadImageAndStart(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// LoadImage требует streaming
 	loadTestImage(ctx, t, tc, 42)
 
 	// Запускаем инстанс — должен найти образ
 	startResp := startTestInstance(ctx, t, tc, 42, "load-image-test")
-	defer stopTestInstance(ctx, t, tc, startResp.InstanceId)
 
 	t.Logf("Started instance %d for game 42", startResp.InstanceId)
 }
@@ -463,9 +448,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	// Шаг 1: LoadImage
 	t.Log("1. Loading image...")
@@ -570,18 +553,14 @@ func TestE2E_ParallelInstances(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
 
 	const n = 3
-	instanceIDs := make([]int64, n)
 
 	// Запускаем N инстансов параллельно
 	for i := 0; i < n; i++ {
 		func(idx int) {
-			resp := startTestInstance(ctx, t, tc, 1, fmt.Sprintf("parallel-srv-%d", idx))
-			instanceIDs[idx] = resp.InstanceId
+			startTestInstance(ctx, t, tc, 1, fmt.Sprintf("parallel-srv-%d", idx))
 		}(i)
 	}
 
@@ -601,11 +580,6 @@ func TestE2E_ParallelInstances(t *testing.T) {
 	if runningCount < n {
 		t.Errorf("expected at least %d running instances, got %d", n, runningCount)
 	}
-
-	// Cleanup
-	for _, id := range instanceIDs {
-		stopTestInstance(ctx, t, tc, id)
-	}
 }
 
 // E2E_12: Стратегии портов (Exact / Range / Any).
@@ -613,9 +587,10 @@ func TestE2E_PortStrategies(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
+
+	// Загружаем образ для game 1
+	loadTestImage(ctx, t, tc, 1)
 
 	tests := []struct {
 		name      string
@@ -681,7 +656,7 @@ func TestE2E_StopNonExistentInstance(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
+	tc := setupServerContainer(t)
 
 	_, err := tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
 		InstanceId:     999999,
@@ -707,9 +682,10 @@ func TestE2E_ResourceLimits(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
-	tc := connectToServer(ctx, t)
-	cleanupInstances(ctx, t, tc)
-	ensureDockerAvailable(t)
+	tc := setupServerContainer(t)
+
+	// Загружаем образ
+	loadTestImage(ctx, t, tc, 1)
 
 	cpuMillis := uint32(500)                // 0.5 ядра
 	memoryBytes := uint64(64 * 1024 * 1024) // 64 MB
@@ -781,9 +757,13 @@ func startTestInstance(ctx context.Context, t *testing.T, tc *testClient, gameID
 		t.Fatalf("StartInstance(%s) failed: %v", name, err)
 	}
 
+	instanceID := resp.InstanceId
+	//nolint:contextcheck // cleanup uses its own timeout context
 	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 		_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
-			InstanceId:     resp.InstanceId,
+			InstanceId:     instanceID,
 			TimeoutSeconds: 3,
 		})
 	})
@@ -812,23 +792,18 @@ func startTestInstanceWithGameID(ctx context.Context, t *testing.T, tc *testClie
 		t.Fatalf("StartInstance(%s) failed: %v", name, err)
 	}
 
+	instanceID := resp.InstanceId
+	//nolint:contextcheck // cleanup uses its own timeout context
 	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 		_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
-			InstanceId:     resp.InstanceId,
+			InstanceId:     instanceID,
 			TimeoutSeconds: 3,
 		})
 	})
 
 	return resp
-}
-
-// stopTestInstance останавливает инстанс.
-func stopTestInstance(ctx context.Context, t *testing.T, tc *testClient, instanceID int64) {
-	t.Helper()
-	_, _ = tc.deployment.StopInstance(ctx, &pb.StopInstanceRequest{
-		InstanceId:     instanceID,
-		TimeoutSeconds: 5,
-	})
 }
 
 // loadTestImage загружает Docker образ через gRPC streaming с реальной передачей данных.
