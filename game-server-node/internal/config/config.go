@@ -24,6 +24,7 @@ type Config struct {
 	TokenTTL    time.Duration `yaml:"token_ttl" env-required:"true"`
 	GRPC        GRPCConfig    `yaml:"grpc"`
 	Node        NodeConfig    `yaml:"node"`
+	APIKey      string        `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
 }
 
 // GRPCConfig хранит настройки gRPC-сервера.
@@ -87,6 +88,10 @@ func (c *Config) Validate() error {
 
 	if c.GRPC.Timeout <= 0 {
 		return errors.New("grpc.timeout must be positive")
+	}
+
+	if c.APIKey == "" {
+		return errors.New("NODE_API_KEY is required")
 	}
 
 	return nil

@@ -41,8 +41,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoverySvc)
 	deploymentHandler := grpctransport.NewDeploymentHandler(deploymentSvc)
 
+	// Configure auth interceptor.
+	authInterceptor := grpctransport.NewAPIKeyAuth(cfg.APIKey)
+
 	// Configure and register gRPC server.
-	gRPCServer := grpc.NewServer()
+	gRPCServer := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor.Unary()),
+	)
 	pb.RegisterDiscoveryServiceServer(gRPCServer, discoveryHandler)
 	pb.RegisterDeploymentServiceServer(gRPCServer, deploymentHandler)
 

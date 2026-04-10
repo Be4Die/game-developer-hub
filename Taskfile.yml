@@ -52,6 +52,7 @@ tasks:
         -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
         -v //var/run/docker.sock:/var/run/docker.sock
         -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
+        -e NODE_API_KEY
         {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
 
   # ==================== Docker: stop ====================

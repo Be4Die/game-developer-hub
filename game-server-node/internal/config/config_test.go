@@ -74,6 +74,7 @@ grpc:
 			}
 
 			t.Setenv("CONFIG_PATH", cfgPath)
+			t.Setenv("NODE_API_KEY", "test-api-key-for-config")
 
 			if tt.wantPanic {
 				defer func() {
@@ -90,6 +91,9 @@ grpc:
 				}
 				if cfg.GRPC.Port != 50051 {
 					t.Errorf("expected grpc port 50051, got %d", cfg.GRPC.Port)
+				}
+				if cfg.APIKey != "test-api-key-for-config" {
+					t.Errorf("expected APIKey 'test-api-key-for-config', got '%s'", cfg.APIKey)
 				}
 			}
 		})
@@ -154,6 +158,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: false,
 		},
@@ -167,6 +172,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    8080,
 					Timeout: time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: false,
 		},
@@ -180,6 +186,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    443,
 					Timeout: 10 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: false,
 		},
@@ -192,6 +199,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "env is required",
@@ -206,6 +214,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "env must be one of: local, dev, prod",
@@ -219,6 +228,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "storage_path is required",
@@ -233,6 +243,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "token_ttl must be positive",
@@ -247,6 +258,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "token_ttl must be positive",
@@ -261,6 +273,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    0,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -275,6 +288,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    65536,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -289,6 +303,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    -1,
 					Timeout: 5 * time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -303,6 +318,7 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 0,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "grpc.timeout must be positive",
@@ -317,9 +333,24 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: -time.Second,
 				},
+				APIKey: "some-api-key",
 			},
 			wantErr: true,
 			errMsg:  "grpc.timeout must be positive",
+		},
+		{
+			name: "missing api key",
+			cfg: Config{
+				Env:         EnvLocal,
+				StoragePath: "/tmp/storage",
+				TokenTTL:    24 * time.Hour,
+				GRPC: GRPCConfig{
+					Port:    50051,
+					Timeout: 5 * time.Second,
+				},
+			},
+			wantErr: true,
+			errMsg:  "NODE_API_KEY is required",
 		},
 	}
 
