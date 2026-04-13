@@ -1,0 +1,1124 @@
+openapi: 3.1.0
+info:
+  title: Orchestrator API
+  description: |
+    HTTP API сервиса оркестрации игровых серверов.
+
+    Оркестратор управляет вычислительными нодами (game-server-node) через gRPC,
+    хранит метаданные в PostgreSQL и предоставляет REST API для:
+    - управления серверными билдами,
+    - запуска и остановки инстансов игровых серверов,
+    - просмотра журналов в реальном времени,
+    - обнаружения серверов клиентами игр (discovery).
+  version: 1.0.0
+
+servers:
+  - url: /api/orchestrator/v1
+    description: Базовый путь оркестратора
+
+tags:
+  - name: builds
+    description: Управление серверными билдами (загрузка, хранение, версии)
+  - name: instances
+    description: Управление инстансами игровых серверов (запуск, остановка, логи)
+  - name: discovery
+    description: Обнаружение серверов клиентами игр (получение данных для подключения)
+  - name: nodes
+    description: Управление и мониторинг вычислительных нод
+
+paths:
+  # ═══════════════════════════════════════════
+  #  СЕРВЕРНЫЕ БИЛДЫ
+  # ═══════════════════════════════════════════
+
+  /games/{gameId}/builds:
+    post:
+      summary: Загрузить серверный билд
+      description: |
+        Загрузка архива серверного билда (tar-образ, результат `docker save`).
+        Оркестратор сохраняет файл и загружает Docker-образ на целевую ноду.
+
+        Рекомендуемый размер чанка при потоковой загрузке — 64 КБ.
+      operationId: uploadServerBuild
+      tags:
+        - builds
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Идентификатор игры
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+                - build_version
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: |
+                    TAR-архив Docker-образа (результат `docker save`).
+                    Максимальный размер — 2 ГБ.
+                build_version:
+                  type: string
+                  pattern: '^\d+\.\d+\.\d+.*$'
+                  description: Версия билда, например "1.2.3" или "1.0.0-rc1"
+                protocol:
+                  $ref: "#/components/schemas/Protocol"
+                  description: Сетевой протокол, который слушает сервер
+                internal_port:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  maximum: 65535
+                  description: Порт, который игровой сервер слушает внутри контейнера
+                max_players:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  description: Максимальное количество игроков на один инстанс
+      responses:
+        "201":
+          description: Билд успешно загружен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerBuild"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          description: Превышен максимальный размер файла
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      summary: Список серверных билдов игры
+      description: Возвращает до 10 последних версий серверных билдов игры.
+      operationId: listServerBuilds
+      tags:
+        - builds
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Список билдов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  builds:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServerBuild"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/builds/{buildVersion}:
+    get:
+      summary: Информация о конкретном билде
+      operationId: getServerBuild
+      tags:
+        - builds
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: buildVersion
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Метаданные билда
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerBuild"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      summary: Удалить серверный билд
+      description: |
+        Удаляет билд из хранилища и с нод, на которые он был загружен.
+        Нельзя удалить билд, используемый работающими инстансами.
+      operationId: deleteServerBuild
+      tags:
+        - builds
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: buildVersion
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Билд удалён
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Билд используется работающими инстансами
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════
+  #  ИНСТАНСЫ
+  # ═══════════════════════════════════════════
+
+  /games/{gameId}/instances:
+    post:
+      summary: Запустить инстанс сервера
+      description: |
+        Запускает новый экземпляр игрового сервера из указанного билда.
+
+        Оркестратор выбирает ноду с достаточными ресурсами, загружает образ
+        (если ещё не загружен) и запускает контейнер. В ручном режиме инстанс
+        останавливается по команде разработчика. В автоматическом режиме
+        оркестратор поддерживает работоспособность и перезапускает при сбоях.
+      operationId: startInstance
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - build_version
+                - server_mode
+              properties:
+                build_version:
+                  type: string
+                  description: Версия билда для запуска
+                server_mode:
+                  type: string
+                  enum:
+                    - manual
+                    - auto
+                  description: |
+                    Ручной режим — разработчик сам управляет жизненным циклом.
+                    Автоматический — оркестратор поддерживает работоспособность.
+                name:
+                  type: string
+                  maxLength: 128
+                  description: Человекочитаемое имя инстанса
+                port_allocation:
+                  $ref: "#/components/schemas/PortAllocation"
+                resource_limits:
+                  $ref: "#/components/schemas/ResourceLimits"
+                env_vars:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Переменные окружения для контейнера
+                args:
+                  type: array
+                  items:
+                    type: string
+                  description: Аргументы командной строки контейнера
+                developer_payload:
+                  type: object
+                  additionalProperties:
+                    type: string
+                  description: Произвольные метаданные, передаваемые игровому серверу
+                max_players:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  description: |
+                    Переопределение max_players из билда. Если не указано —
+                    берётся значение из билда.
+      responses:
+        "201":
+          description: Инстанс запущен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Недостаточно ресурсов на доступных нодах
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      summary: Список инстансов игры
+      description: Возвращает все инстансы указанной игры с их текущим состоянием.
+      operationId: listInstances
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InstanceStatus"
+          description: Фильтр по статусу инстанса
+      responses:
+        "200":
+          description: Список инстансов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instances:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Instance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/instances/{instanceId}:
+    get:
+      summary: Информация об инстансе
+      operationId: getInstance
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Информация об инстансе
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      summary: Остановить инстанс
+      description: |
+        Graceful остановка инстанса. Оркестратор отправляет ноде команду
+        на остановку контейнера с таймаутом.
+      operationId: stopInstance
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: timeout
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 30
+          description: Таймаут остановки в секундах (0 — значение по умолчанию 30 сек)
+      responses:
+        "200":
+          description: Команда на остановку принята
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instance:
+                    $ref: "#/components/schemas/Instance"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/instances/{instanceId}/logs:
+    get:
+      summary: Журнал инстанса (SSE)
+      description: |
+        Поток журналов инстанса в реальном времени через Server-Sent Events.
+
+        Поддерживает режимы:
+        -一次性 — возвращает последние N строк и закрывает соединение
+        - follow — продолжает стримить новые строки журнала
+
+        Формат событий:
+        ```
+        event: log
+        data: {"timestamp":"...","source":"stdout","message":"..."}
+        ```
+      operationId: streamInstanceLogs
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: follow
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Следить за новыми записями в реальном времени
+        - name: tail
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 100
+          description: Количество последних строк перед переходом в follow-режим
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: Возвращать записи начиная с указанного момента
+        - name: source
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/LogSource"
+          description: Фильтр по источнику логов
+      responses:
+        "200":
+          description: SSE-поток журналов
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/LogEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/instances/{instanceId}/usage:
+    get:
+      summary: Потребление ресурсов инстанса
+      description: Текущее использование CPU, памяти, диска и сети конкретным инстансом.
+      operationId: getInstanceUsage
+      tags:
+        - instances
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Метрики потребления
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instance_id:
+                    type: integer
+                    format: int64
+                  usage:
+                    $ref: "#/components/schemas/ResourceUsage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════
+  #  DISCOVERY (для клиентов игр)
+  # ═══════════════════════════════════════════
+
+  /games/{gameId}/servers:
+    get:
+      summary: Обнаружить сервер для подключения
+      description: |
+        Эндпоинт для клиентов игр (Unity, JS Native Lib).
+
+        Возвращает данные для подключения к доступному серверу указанной игры.
+        Если серверов нет — возвращает пустой список.
+
+        Клиент игры должен вызывать этот эндпоинт периодически, чтобы получить
+        актуальный адрес сервера. Оркестратор выбирает сервер с наименьшим
+        количеством игроков (join-the-shortest-queue).
+      operationId: discoverServer
+      tags:
+        - discovery
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Список доступных серверов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  servers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ServerEndpoint"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════
+  #  НОДЫ
+  # ═══════════════════════════════════════════
+
+  /nodes:
+    post:
+      summary: Подключить вычислительную ноду
+      description: |
+        Разработчик подключает собственный вычислительный узел к платформе.
+
+        Два сценария:
+        1. **Ручной ввод IP** — разработчик знает адрес ноды и передаёт его
+           вместе с авторизационным токеном. Оркестратор проверяет доступность
+           ноды по gRPC и добавляет в реестр.
+        2. **Авторизация обнаруженной ноды** — нода уже вещает и видна в списке
+           со статусом `unauthorized` (неавторизована). Разработчик передаёт
+           только `node_id` и токен — оркестратор авторизует ноду.
+      operationId: registerNode
+      tags:
+        - nodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: manual
+                  description: Ручное добавление ноды по адресу
+                  type: object
+                  required:
+                    - address
+                    - token
+                  properties:
+                    address:
+                      type: string
+                      description: gRPC-адрес ноды (host:port)
+                      example: "192.168.1.100:50051"
+                    token:
+                      type: string
+                      description: |
+                        Авторизационный токен ноды. Устанавливается при
+                        запуске агента на ноде (флаг `--node-token` или
+                        переменная окружения `NODE_TOKEN`).
+                    region:
+                      type: string
+                      description: Регион ноды (опционально)
+                  additionalProperties: false
+                - title: authorize
+                  description: Авторизация обнаруженной ноды
+                  type: object
+                  required:
+                    - node_id
+                    - token
+                  properties:
+                    node_id:
+                      type: integer
+                      format: int64
+                      description: ID ноды, обнаруженной в реестре
+                    token:
+                      type: string
+                      description: Токен для авторизации ноды
+                  additionalProperties: false
+      responses:
+        "201":
+          description: Нода подключена и авторизована
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Node"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Неверный токен авторизации
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Нода с указанным ID не найдена в реестре
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Нода уже авторизована или уже существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    get:
+      summary: Список всех нод
+      description: Возвращает все зарегистрированные вычислительные ноды.
+      operationId: listNodes
+      tags:
+        - nodes
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/NodeStatus"
+          description: Фильтр по статусу ноды
+      responses:
+        "200":
+          description: Список нод
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Node"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /nodes/{nodeId}:
+    get:
+      summary: Информация о ноде
+      operationId: getNode
+      tags:
+        - nodes
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Информация о ноде
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Node"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      summary: Удалить ноду
+      description: |
+        Удаляет ноду из реестра. Все инстансы на этой ноде переводятся
+        в статус crashed.
+      operationId: deleteNode
+      tags:
+        - nodes
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "204":
+          description: Нода удалена
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /nodes/{nodeId}/usage:
+    get:
+      summary: Потребление ресурсов ноды
+      operationId: getNodeUsage
+      tags:
+        - nodes
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Метрики ноды
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  node_id:
+                    type: integer
+                    format: int64
+                  usage:
+                    $ref: "#/components/schemas/ResourceUsage"
+                  active_instance_count:
+                    type: integer
+                    format: int32
+                    description: Количество активных инстансов (starting, running, stopping)
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════
+  #  HEALTH
+  # ═══════════════════════════════════════════
+
+  /health:
+    get:
+      summary: Проверка работоспособности
+      description: Эндпоинт для readiness/liveness проверок.
+      operationId: healthCheck
+      tags:
+        - system
+      responses:
+        "200":
+          description: Сервис работоспособен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  version:
+                    type: string
+                    description: Версия оркестратора
+                  uptime_seconds:
+                    type: number
+                    format: double
+
+# ═══════════════════════════════════════════════
+#  КОМПОНЕНТЫ
+# ═══════════════════════════════════════════════
+
+components:
+  schemas:
+    # ─── Перечисления ─────────────────────────
+
+    Protocol:
+      type: string
+      enum:
+        - tcp
+        - udp
+        - websocket
+        - webrtc
+      description: |
+        Сетевой протокол игрового сервера.
+        Соответствует `game_server_node.v1.Protocol`.
+
+    InstanceStatus:
+      type: string
+      enum:
+        - starting
+        - running
+        - stopping
+        - stopped
+        - crashed
+      description: |
+        Статус инстанса. Соответствует `game_server_node.v1.InstanceStatus`.
+
+    LogSource:
+      type: string
+      enum:
+        - stdout
+        - stderr
+      description: Источник строки журнала
+
+    NodeStatus:
+      type: string
+      enum:
+        - unauthorized
+        - online
+        - offline
+        - maintenance
+      description: |
+        Статус вычислительной ноды.
+        `unauthorized` — нода обнаружена, но ещё не авторизована разработчиком.
+
+    # ─── Билды ────────────────────────────────
+
+    ServerBuild:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        game_id:
+          type: integer
+          format: int64
+        build_version:
+          type: string
+          example: "1.2.3"
+        image_tag:
+          type: string
+          example: "welwise/shooter:v1.2.3"
+        protocol:
+          $ref: "#/components/schemas/Protocol"
+        internal_port:
+          type: integer
+          format: int32
+        max_players:
+          type: integer
+          format: int32
+        file_size_bytes:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+
+    # ─── Инстансы ─────────────────────────────
+
+    Instance:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        game_id:
+          type: integer
+          format: int64
+        node_id:
+          type: integer
+          format: int64
+          description: Идентификатор ноды, на которой запущен инстанс
+        build_version:
+          type: string
+        name:
+          type: string
+        protocol:
+          $ref: "#/components/schemas/Protocol"
+        host_port:
+          type: integer
+          format: int32
+          description: Порт на хост-машине (ноде), проброшенный для клиента
+        internal_port:
+          type: integer
+          format: int32
+          description: Порт внутри контейнера
+        status:
+          $ref: "#/components/schemas/InstanceStatus"
+        player_count:
+          type: integer
+          format: int32
+          description: Текущее количество игроков (может отсутствовать)
+        max_players:
+          type: integer
+          format: int32
+        developer_payload:
+          type: object
+          additionalProperties:
+            type: string
+        server_address:
+          type: string
+          description: IP-адрес или hostname ноды
+        started_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ─── Discovery ────────────────────────────
+
+    ServerEndpoint:
+      type: object
+      description: Данные для подключения к игровому серверу
+      properties:
+        instance_id:
+          type: integer
+          format: int64
+        address:
+          type: string
+          description: IP-адрес или hostname ноды
+        port:
+          type: integer
+          format: int32
+          description: Хостовый порт инстанса
+        protocol:
+          $ref: "#/components/schemas/Protocol"
+        player_count:
+          type: integer
+          format: int32
+        max_players:
+          type: integer
+          format: int32
+
+    # ─── Ноды ─────────────────────────────────
+
+    Node:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        address:
+          type: string
+          description: gRPC-адрес ноды (host:port)
+        region:
+          type: string
+        status:
+          $ref: "#/components/schemas/NodeStatus"
+        cpu_cores:
+          type: integer
+          format: int32
+        total_memory_bytes:
+          type: integer
+          format: int64
+        total_disk_bytes:
+          type: integer
+          format: int64
+        agent_version:
+          type: string
+          description: Версия агента на ноде
+        last_ping_at:
+          type: string
+          format: date-time
+          description: Время последнего heartbeat
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ─── Ресурсы ──────────────────────────────
+
+    ResourceUsage:
+      type: object
+      properties:
+        cpu_usage_percent:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: Загрузка CPU в процентах
+        memory_used_bytes:
+          type: integer
+          format: int64
+        disk_used_bytes:
+          type: integer
+          format: int64
+        network_bytes_per_sec:
+          type: integer
+          format: int64
+          description: Суммарный входящий и исходящий трафик
+
+    ResourceLimits:
+      type: object
+      properties:
+        cpu_millis:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Лимит CPU в миллиядрах (1000 = 1 ядро)
+        memory_bytes:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Лимит памяти в байтах
+
+    # ─── Port Allocation ──────────────────────
+
+    PortAllocation:
+      oneOf:
+        - type: object
+          title: any
+          description: Любой свободный порт
+          properties:
+            strategy:
+              type: string
+              enum: [any]
+          required: [strategy]
+          additionalProperties: false
+        - type: object
+          title: exact
+          description: Конкретный хостовый порт
+          properties:
+            strategy:
+              type: string
+              enum: [exact]
+            port:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 65535
+          required: [strategy, port]
+          additionalProperties: false
+        - type: object
+          title: range
+          description: Свободный порт из диапазона
+          properties:
+            strategy:
+              type: string
+              enum: [range]
+            min_port:
+              type: integer
+              format: int32
+              minimum: 1
+            max_port:
+              type: integer
+              format: int32
+              maximum: 65535
+          required: [strategy, min_port, max_port]
+          additionalProperties: false
+
+    # ─── Логи ─────────────────────────────────
+
+    LogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        source:
+          $ref: "#/components/schemas/LogSource"
+        message:
+          type: string
+
+    # ─── Ошибки ───────────────────────────────
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машинно-читаемый код ошибки
+          example: "BUILD_IN_USE"
+        message:
+          type: string
+          description: Человекочитаемое описание
+          example: "Cannot delete build: 2 running instances depend on it"
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительные детали (опционально)
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

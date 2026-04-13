@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: orchestrator-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: orchestrator-valkey
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orchestrator
+    environment:
+      CONFIG_PATH: /app/config/local.yaml
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - ./config:/app/config:ro
+      - builds:/app/data/builds
+
+volumes:
+  pgdata:
+  builds:
