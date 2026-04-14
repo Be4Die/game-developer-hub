@@ -1,0 +1,52 @@
+version: "3"
+
+vars:
+  GO_DIR: "."
+
+tasks:
+  lint:
+    desc: "Lint Go code with golangci-lint"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - golangci-lint run ./...
+
+  test:
+    desc: "Run fast unit tests with race detector"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - cmd: go test -race ./...
+        platforms: [linux, darwin]
+      - cmd: go test ./...
+        platforms: [windows]
+
+  test:integration:
+    desc: "Run integration tests (requires Docker daemon)"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - cmd: go test -race -tags=integration ./tests/integration/...
+        platforms: [linux, darwin]
+      - cmd: go test -tags=integration ./tests/integration/...
+        platforms: [windows]
+
+  test:e2e:
+    desc: "Run end-to-end tests (server must be running)"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - cmd: go test -race -tags=e2e ./tests/e2e/...
+        platforms: [linux, darwin]
+      - cmd: go test -tags=e2e ./tests/e2e/...
+        platforms: [windows]
+
+  test:cover:
+    desc: "Run unit tests and print coverage percentage"
+    dir: "{{.GO_DIR}}"
+    cmds:
+      - go test -coverprofile=coverage.out ./...
+      - go tool cover -func=coverage.out
+
+  test:cover-html:
+    desc: "Show test coverage in default browser"
+    dir: "{{.GO_DIR}}"
+    deps: [test:cover]
+    cmds:
+      - go tool cover -html=coverage.out

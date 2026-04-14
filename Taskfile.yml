@@ -1,12 +1,24 @@
 version: "3"
 
 vars:
+  # Node
   NODE_IMAGE_NAME: "game-server-node"
   NODE_IMAGE_TAG: "latest"
   NODE_CONTAINER_NAME: "game-server-node"
   NODE_GRPC_PORT: 44044
   NODE_CONFIG: "local.yaml"
   NODE_API_KEY: "dev-api-key-for-local-testing"
+
+  # Orchestrator
+  ORCHESTRATOR_IMAGE_NAME: "orchestrator"
+  ORCHESTRATOR_IMAGE_TAG: "latest"
+  ORCHESTRATOR_CONTAINER_NAME: "orchestrator"
+  ORCHESTRATOR_PORT: 8080
+
+includes:
+  go: taskfiles/go.yml
+  docker: taskfiles/docker.yml
+  loadtest: taskfiles/loadtest.yml
 
 tasks:
   # ==================== Proto ====================
@@ -27,134 +39,291 @@ tasks:
     desc: "Clean generated proto files"
     dir: protos
     cmds:
-      - cmd: powershell -Command "Get-ChildItem -Recurse -Filter '*.pb.go' | Remove-Item -Force"
-        platforms: [windows]
       - cmd: find . -name "*.pb.go" -type f -delete
         platforms: [linux, darwin]
+      - cmd: powershell -Command "Get-ChildItem -Recurse -Filter '*.pb.go' | Remove-Item -Force"
+        platforms: [windows]
 
-  # ==================== Docker: build ====================
+  # ==================== Node: Docker ====================
   node:build:
     desc: "Build Docker image for game-server-node"
     cmds:
-      - docker build
-        -t {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
-        -f game-server-node/Dockerfile
-        .
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
+          DOCKERFILE_PATH: game-server-node/Dockerfile
 
-  # ==================== Docker: run background ====================
   node:up:
     desc: "Run game-server-node container in background"
-    deps: [node:build]
     cmds:
-      - docker run
-        --name {{.NODE_CONTAINER_NAME}}
-        -d
-        --restart unless-stopped
-        -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
-        -v //var/run/docker.sock:/var/run/docker.sock
-        -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
-        -e NODE_API_KEY={{.NODE_API_KEY}}
-        {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
+          DOCKERFILE_PATH: game-server-node/Dockerfile
+      - task: docker:up
+        vars:
+          DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: >
+            -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
+            -v //var/run/docker.sock:/var/run/docker.sock
+            -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
+            -e NODE_API_KEY={{.NODE_API_KEY}}
 
-  # ==================== Docker: stop ====================
   node:down:
     desc: "Stop and remove game-server-node container"
     cmds:
-      - docker stop {{.NODE_CONTAINER_NAME}}
-      - docker rm {{.NODE_CONTAINER_NAME}}
-    ignore_error: true
+      - task: docker:down
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
 
-  # ==================== Docker: logs ====================
   node:logs:
     desc: "Show game-server-node container logs"
     cmds:
-      - docker logs -f {{.NODE_CONTAINER_NAME}}
+      - task: docker:logs
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
 
-  # ==================== Docker: restart ====================
   node:restart:
     desc: "Restart game-server-node container"
     cmds:
-      - task: node:down
-      - task: node:up
+      - task: docker:restart
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
 
-  # ==================== Docker: shell ====================
   node:shell:
     desc: "Open shell in running game-server-node container"
     cmds:
-      - docker exec -it {{.NODE_CONTAINER_NAME}} /bin/sh
+      - task: docker:shell
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
 
-  # ==================== Docker: clean ====================
   node:clean:
     desc: "Remove Docker image for game-server-node"
     cmds:
-      - task: node:down
-      - docker rmi {{.NODE_IMAGE_NAME}}:{{.NODE_IMAGE_TAG}}
-    ignore_error: true
+      - task: docker:clean
+        vars:
+          DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
 
-  # ==================== Linting ====================
+  # ==================== Node: Go ====================
   node:lint:
     desc: "Lint Go code with golangci-lint"
-    dir: game-server-node
     cmds:
-      - golangci-lint run ./...
+      - task: go:lint
+        vars:
+          GO_DIR: game-server-node
 
-  # ==================== Testing ====================
   node:test:
     desc: "Run fast unit tests with race detector"
-    dir: game-server-node
     cmds:
-      - cmd: go test -race ./...
-        platforms: [linux, darwin]
-      - cmd: go test ./...
-        platforms: [windows]
+      - task: go:test
+        vars:
+          GO_DIR: game-server-node
 
   node:test:integration:
     desc: "Run integration tests (requires Docker daemon)"
-    dir: game-server-node
     cmds:
-      - cmd: go test -race -tags=integration ./tests/integration/...
-        platforms: [linux, darwin]
-      - cmd: go test -tags=integration ./tests/integration/...
-        platforms: [windows]
+      - task: go:test:integration
+        vars:
+          GO_DIR: game-server-node
 
   node:test:e2e:
     desc: "Run end-to-end tests (server must be running: task node:up)"
-    dir: game-server-node
     cmds:
-      - cmd: go test -race -tags=e2e ./tests/e2e/...
-        platforms: [linux, darwin]
-      - cmd: go test -tags=e2e ./tests/e2e/...
-        platforms: [windows]
-
-  # ==================== Load Testing ====================
-  node:load-test:
-    desc: "Run load tests against DiscoveryService (server must be running)"
-    dir: game-server-node
-    cmds:
-      - go run ./cmd/load-test --addr localhost:{{.NODE_GRPC_PORT}} --concurrency 50 --requests 10000
-
-  node:load-test:heavy:
-    desc: "Run heavy load tests (100 concurrency, 50000 requests)"
-    dir: game-server-node
-    cmds:
-      - go run ./cmd/load-test --addr localhost:{{.NODE_GRPC_PORT}} --concurrency 100 --requests 50000
-
-  node:load-test:custom:
-    desc: "Run load tests with custom params (requires ADDR, CONCURRENCY, REQUESTS vars)"
-    dir: game-server-node
-    cmds:
-      - go run ./cmd/load-test --addr {{.ADDR | default "localhost:44044"}} --concurrency {{.CONCURRENCY | default 50}} --requests {{.REQUESTS | default 10000}}
+      - task: go:test:e2e
+        vars:
+          GO_DIR: game-server-node
 
   node:test:cover:
     desc: "Run unit tests and print coverage percentage"
-    dir: game-server-node
     cmds:
-      - go test -coverprofile=coverage.out ./...
-      - go tool cover -func=coverage.out
+      - task: go:test:cover
+        vars:
+          GO_DIR: game-server-node
 
   node:test:cover-html:
     desc: "Show test coverage in default browser"
-    dir: game-server-node
     cmds:
-      - task: test:cover
-      - go tool cover -html=coverage.out
+      - task: go:test:cover-html
+        vars:
+          GO_DIR: game-server-node
+
+  # ==================== Node: Load Tests ====================
+  node:load-test:
+    desc: "Run load tests against DiscoveryService (server must be running)"
+    cmds:
+      - task: loadtest:run
+        vars:
+          LOAD_TEST_DIR: game-server-node
+          LOAD_TEST_ADDR: "localhost:{{.NODE_GRPC_PORT}}"
+
+  node:load-test:heavy:
+    desc: "Run heavy load tests (100 concurrency, 50000 requests)"
+    cmds:
+      - task: loadtest:heavy
+        vars:
+          LOAD_TEST_DIR: game-server-node
+          LOAD_TEST_ADDR: "localhost:{{.NODE_GRPC_PORT}}"
+
+  node:load-test:custom:
+    desc: "Run load tests with custom params"
+    vars:
+      ADDR: '{{.ADDR | default "localhost:44044"}}'
+      CONCURRENCY: "{{.CONCURRENCY | default 50}}"
+      REQUESTS: "{{.REQUESTS | default 10000}}"
+    cmds:
+      - task: loadtest:run
+        vars:
+          LOAD_TEST_DIR: game-server-node
+          LOAD_TEST_ADDR: "{{.ADDR}}"
+          LOAD_TEST_CONCURRENCY: "{{.CONCURRENCY}}"
+          LOAD_TEST_REQUESTS: "{{.REQUESTS}}"
+
+  # ==================== Orchestrator: Docker ====================
+  orchestrator:build:
+    desc: "Build Docker image for orchestrator"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
+          DOCKERFILE_PATH: orchestrator/Dockerfile
+
+  orchestrator:up:
+    desc: "Run orchestrator container in background"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
+          DOCKERFILE_PATH: orchestrator/Dockerfile
+      - task: docker:up
+        vars:
+          DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: >
+            -p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}
+
+  orchestrator:down:
+    desc: "Stop and remove orchestrator container"
+    cmds:
+      - task: docker:down
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+
+  orchestrator:logs:
+    desc: "Show orchestrator container logs"
+    cmds:
+      - task: docker:logs
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+
+  orchestrator:restart:
+    desc: "Restart orchestrator container"
+    cmds:
+      - task: docker:restart
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+
+  orchestrator:shell:
+    desc: "Open shell in running orchestrator container"
+    cmds:
+      - task: docker:shell
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+
+  orchestrator:clean:
+    desc: "Remove Docker image for orchestrator"
+    cmds:
+      - task: docker:clean
+        vars:
+          DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+
+  # ==================== Orchestrator: Go ====================
+  orchestrator:lint:
+    desc: "Lint Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: orchestrator
+
+  orchestrator:test:
+    desc: "Run fast unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: orchestrator
+
+  orchestrator:test:integration:
+    desc: "Run integration tests (requires Docker daemon)"
+    cmds:
+      - task: go:test:integration
+        vars:
+          GO_DIR: orchestrator
+
+  orchestrator:test:e2e:
+    desc: "Run end-to-end tests (server must be running: task orchestrator:up)"
+    cmds:
+      - task: go:test:e2e
+        vars:
+          GO_DIR: orchestrator
+
+  orchestrator:test:cover:
+    desc: "Run unit tests and print coverage percentage"
+    cmds:
+      - task: go:test:cover
+        vars:
+          GO_DIR: orchestrator
+
+  orchestrator:test:cover-html:
+    desc: "Show test coverage in default browser"
+    cmds:
+      - task: go:test:cover-html
+        vars:
+          GO_DIR: orchestrator
+
+  # ==================== All services ====================
+  all:up:
+    desc: "Start all services"
+    cmds:
+      - task: node:up
+      - task: orchestrator:up
+
+  all:down:
+    desc: "Stop all services"
+    cmds:
+      - task: node:down
+      - task: orchestrator:down
+
+  all:restart:
+    desc: "Restart all services"
+    cmds:
+      - task: node:restart
+      - task: orchestrator:restart
+
+  all:logs:
+    desc: "Show logs for all services"
+    cmds:
+      - task: node:logs
+      - task: orchestrator:logs
+
+  all:test:
+    desc: "Run all tests"
+    cmds:
+      - task: node:test
+      - task: orchestrator:test
+
+  all:lint:
+    desc: "Lint all code"
+    cmds:
+      - task: node:lint
+      - task: orchestrator:lint
+      - task: proto:lint
