@@ -318,6 +318,9 @@ func instanceResponse(inst *domain.Instance, _ *service.InstanceService) map[str
 
 // resourceUsageResponse преобразует доменную ResourceUsage в API-ответ.
 func resourceUsageResponse(u *domain.ResourceUsage) map[string]any {
+	if u == nil {
+		return nil
+	}
 	return map[string]any{
 		"cpu_usage_percent":     u.CPUUsagePercent,
 		"memory_used_bytes":     u.MemoryUsedBytes,

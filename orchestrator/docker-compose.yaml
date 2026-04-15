@@ -29,8 +29,8 @@ services:
 
   orchestrator:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: orchestrator/Dockerfile
     container_name: orchestrator
     environment:
       CONFIG_PATH: /app/config/local.yaml
