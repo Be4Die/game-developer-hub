@@ -23,26 +23,3 @@ tasks:
     dir: "{{.LOAD_TEST_DIR}}"
     cmds:
       - go run ./cmd/load-test --addr {{.LOAD_TEST_ADDR}} --concurrency 100 --requests 50000
-
-  # ── orchestrator (HTTP, vegeta) ───────────────────────────────
-  orch:
-    desc: "Run load tests against Orchestrator HTTP API (vegeta)"
-    dir: "../orchestrator"
-    cmds:
-      - >
-        go run ./cmd/load-test
-        --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
-        --rate {{.ORCH_RATE | default 1000}}
-        --duration {{.ORCH_DURATION | default "30s"}}
-
-  orch:heavy:
-    desc: "Run heavy load tests on orchestrator (10000 rps, 60s)"
-    dir: "../orchestrator"
-    cmds:
-      - go run ./cmd/load-test --heavy --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
-
-  orch:seed:
-    desc: "Seed test data into orchestrator for load testing"
-    dir: "../orchestrator"
-    cmds:
-      - go run ./cmd/load-test --seed-only --addr {{.ORCH_ADDR | default "http://localhost:8080"}}

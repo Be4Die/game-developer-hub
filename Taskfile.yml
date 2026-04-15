@@ -183,6 +183,39 @@ tasks:
           LOAD_TEST_CONCURRENCY: "{{.CONCURRENCY}}"
           LOAD_TEST_REQUESTS: "{{.REQUESTS}}"
 
+  # ==================== Orchestrator: Load Tests ====================
+  orchestrator:load-test:
+    desc: "Run load tests against Orchestrator HTTP API (server must be running)"
+    cmds:
+      - >
+        cd orchestrator && go run ./cmd/load-test
+        --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
+        --rate {{.ORCH_RATE | default 1000}}
+        --duration {{.ORCH_DURATION | default "30s"}}
+
+  orchestrator:load-test:heavy:
+    desc: "Run heavy load tests on orchestrator (10000 rps, 60s)"
+    cmds:
+      - cd orchestrator && go run ./cmd/load-test --heavy --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
+
+  orchestrator:load-test:seed:
+    desc: "Seed test data into orchestrator for load testing"
+    cmds:
+      - cd orchestrator && go run ./cmd/load-test --seed-only --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
+
+  orchestrator:load-test:custom:
+    desc: "Run load tests with custom params"
+    vars:
+      ADDR: '{{.ADDR | default "http://localhost:8080"}}'
+      RATE: "{{.RATE | default 1000}}"
+      DURATION: '{{.DURATION | default "30s"}}'
+    cmds:
+      - >
+        cd orchestrator && go run ./cmd/load-test
+        --addr {{.ADDR}}
+        --rate {{.RATE}}
+        --duration {{.DURATION}}
+
   # ==================== Orchestrator: Docker ====================
   orchestrator:build:
     desc: "Build Docker image for orchestrator"
