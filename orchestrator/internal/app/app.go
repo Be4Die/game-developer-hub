@@ -21,14 +21,15 @@ import (
 
 // App координирует все компоненты оркестратора.
 type App struct {
-	log        *slog.Logger
-	cfg        *config.Config
-	srv        *http.Server
-	grpcClient *grpcnode.Client
-	pool       *pgxpool.Pool
-	valkey     *redis.Client
-	hbCancel   context.CancelFunc
-	once       sync.Once
+	log              *slog.Logger
+	cfg              *config.Config
+	srv              *http.Server
+	grpcClient       *grpcnode.Client
+	pool             *pgxpool.Pool
+	valkey           *redis.Client
+	heartbeatService *service.HeartbeatService
+	hbCancel         context.CancelFunc
+	once             sync.Once
 }
 
 // New создаёт и инициализирует все компоненты приложения.
@@ -86,7 +87,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
 	)
 
-	service.NewHeartbeatService(
+	heartbeatService := service.NewHeartbeatService(
 		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
 		cfg.NodeHeartbeat, log,
 	)
@@ -113,12 +114,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	log.Info("all components initialized")
 
 	return &App{
-		log:        log,
-		cfg:        cfg,
-		srv:        srv,
-		grpcClient: nodeClient,
-		pool:       pool,
-		valkey:     valkeyClient,
+		log:              log,
+		cfg:              cfg,
+		srv:              srv,
+		grpcClient:       nodeClient,
+		pool:             pool,
+		valkey:           valkeyClient,
+		heartbeatService: heartbeatService,
 	}, nil
 }
 
@@ -130,8 +132,7 @@ func (a *App) MustRun() {
 
 	go func() {
 		a.log.Info("heartbeat service started")
-		// TODO: heartbeatService.Run(hbCtx)
-		<-hbCtx.Done()
+		a.heartbeatService.Run(hbCtx)
 		a.log.Info("heartbeat service stopped")
 	}()
 
