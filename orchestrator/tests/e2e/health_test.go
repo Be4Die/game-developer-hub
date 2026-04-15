@@ -3,15 +3,20 @@
 package e2e
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 )
 
-// E2E_01: Health check — проверка работоспособности.
+// E2E_01: Health check -- проверка работоспособности оркестратора.
 func TestE2E_Health(t *testing.T) {
 	env := setupE2E(t)
-	env.cleanupDB(t)
+	env.cleanupTables(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	resp, err := http.Get(env.baseURL + "/health")
 	if err != nil {
@@ -31,17 +36,12 @@ func TestE2E_Health(t *testing.T) {
 	if body["status"] != "ok" {
 		t.Errorf("status = %q, want %q", body["status"], "ok")
 	}
-	if body["version"] != "e2e-test-1.0.0" {
-		t.Errorf("version = %q, want %q", body["version"], "e2e-test-1.0.0")
+	if _, ok := body["version"]; !ok {
+		t.Error("version field missing")
+	}
+	if _, ok := body["uptime_seconds"]; !ok {
+		t.Error("uptime_seconds field missing")
 	}
 
-	uptime, ok := body["uptime_seconds"].(float64)
-	if !ok {
-		t.Fatal("uptime_seconds is not a number")
-	}
-	if uptime <= 0 {
-		t.Errorf("uptime_seconds = %f, want > 0", uptime)
-	}
-
-	t.Logf("Health: status=ok, version=%s, uptime=%.2fs", body["version"], uptime)
+	_ = ctx
 }

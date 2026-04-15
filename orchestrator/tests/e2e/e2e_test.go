@@ -1,12 +1,19 @@
+//go:build e2e
+
 // Package e2e содержит end-to-end тесты для оркестратора.
 //
-// В отличие от интеграционных тестов (httptest с моками), e2e используют
-// реальные сервисы: PostgreSQL, Valkey и game-server-node в контейнерах.
-// Orchestrator запускается in-process как HTTP сервер на случайном порту.
+// В отличие от интеграционных тестов (mock NodeClient), e2e используют
+// реальный game-server-node контейнер с настоящим gRPC и Docker-сокетом.
+//
+// Архитектура:
+//   - PostgreSQL: testcontainers (реальный)
+//   - Valkey: testcontainers (реальный)
+//   - game-server-node: testcontainers с docker.sock mount (реальный)
+//   - Orchestrator: in-process через httptest.NewServer с реальным gRPC-клиентом к ноде
 //
 // Перед запуском:
 //  1. Соберите образ game-server-node: task node:build
-//  2. Убедитесь что Docker Desktop запущен
+//  2. Убедитесь что Docker запущен
 //
 // Запуск:
 //
@@ -15,15 +22,16 @@ package e2e
 
 import (
 	"context"
-	"io"
+	"fmt"
 	"log/slog"
-	"net"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
@@ -32,29 +40,31 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
 	orchhttp "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/http"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/moby/moby/api/types/container"
 	"github.com/redis/go-redis/v9"
+	"github.com/testcontainers/testcontainers-go"
 	testcontainerspostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	testcontainersredis "github.com/testcontainers/testcontainers-go/modules/redis"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
 const (
-	e2eTestTimeout = 60 * time.Second
-	containerWait  = 500 * time.Millisecond
 	nodeImageTag   = "game-server-node:latest"
-	testAPIKey     = "dev-api-key-for-local-testing"
-	testImageTag   = "alpine:3.18"
+	e2eAPIKey      = "dev-api-key-for-local-testing"
+	e2eTestTimeout = 60 * time.Second
 )
 
 // e2eTestEnv хранит все компоненты тестового окружения.
 type e2eTestEnv struct {
 	pgContainer    *testcontainerspostgres.PostgresContainer
 	redisContainer *testcontainersredis.RedisContainer
+	nodeContainer  testcontainers.Container
 	pool           *pgxpool.Pool
 	redisClient    *redis.Client
 	nodeRepo       *postgres.NodeRepo
 	instanceRepo   *postgres.InstanceRepo
 	buildStorage   *postgres.BuildStorage
-	buildFS        *filesystem.BuildStorageFS
+	buildFS        domain.BuildStorageFS
 	nodeState      *valkey.NodeStateStore
 	instanceState  *valkey.InstanceStateStore
 	httpServer     *httptest.Server
@@ -62,13 +72,12 @@ type e2eTestEnv struct {
 	log            *slog.Logger
 }
 
-// setupE2E поднимает PostgreSQL, Valkey и запускает orchestrator in-process.
+// setupE2E запускает PostgreSQL, Valkey, game-server-node и orchestrator in-process.
 func setupE2E(t *testing.T) *e2eTestEnv {
 	t.Helper()
 	ctx := context.Background()
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
-	// PostgreSQL.
+	// ─── PostgreSQL ─────────────────────────────────────────────
 	pgContainer, err := testcontainerspostgres.Run(ctx,
 		"postgres:17-alpine",
 		testcontainerspostgres.WithDatabase("orchestrator"),
@@ -84,7 +93,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		t.Fatalf("failed to get connection string: %v", err)
 	}
 
-	// Valkey.
+	// ─── Valkey ─────────────────────────────────────────────────
 	redisContainer, err := testcontainersredis.Run(ctx, "valkey/valkey:8-alpine")
 	if err != nil {
 		t.Skipf("Valkey container not available: %v", err)
@@ -96,7 +105,43 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	}
 	redisAddr := strings.TrimPrefix(redisConnStr, "redis://")
 
-	// Подключение к PostgreSQL с retry.
+	// ─── game-server-node ───────────────────────────────────────
+	nodeReq := testcontainers.ContainerRequest{
+		Image:        nodeImageTag,
+		ExposedPorts: []string{"44044/tcp"},
+		Env: map[string]string{
+			"CONFIG_PATH":  "/app/config/local.yaml",
+			"NODE_API_KEY": e2eAPIKey,
+		},
+		WaitingFor: wait.ForListeningPort("44044/tcp").WithStartupTimeout(15 * time.Second),
+		HostConfigModifier: func(hc *container.HostConfig) {
+			hc.Binds = append(hc.Binds, "/var/run/docker.sock:/var/run/docker.sock")
+		},
+	}
+
+	nodeContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: nodeReq,
+		Started:          true,
+	})
+	if err != nil {
+		t.Skipf("game-server-node container not available (проверьте Docker и образ game-server-node:latest): %v", err)
+	}
+
+	t.Cleanup(func() { _ = nodeContainer.Terminate(context.Background()) })
+
+	nodePort, err := nodeContainer.MappedPort(ctx, "44044")
+	if err != nil {
+		t.Fatalf("failed to get node port: %v", err)
+	}
+	nodeHost, err := nodeContainer.Host(ctx)
+	if err != nil {
+		t.Fatalf("failed to get node host: %v", err)
+	}
+	nodeAddress := nodeHost + ":" + nodePort.Port()
+
+	t.Logf("game-server-node started at %s", nodeAddress)
+
+	// ─── Подключение к PostgreSQL с retry ───────────────────────
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		t.Fatalf("failed to create pool: %v", err)
@@ -111,66 +156,64 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		}
 	}
 
-	// Подключение к Valkey.
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
+	// ─── Подключение к Valkey ───────────────────────────────────
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
 	if err := redisClient.Ping(ctx).Err(); err != nil {
 		t.Fatalf("failed to ping valkey: %v", err)
 	}
 
-	// Создание таблиц.
+	// ─── Создание таблиц ────────────────────────────────────────
 	createE2ETables(t, pool)
 
-	// Репозитории.
+	// ─── Репозитории и хранилища ────────────────────────────────
 	nodeRepo := postgres.NewNodeRepo(pool)
 	instanceRepo := postgres.NewInstanceRepo(pool)
 	buildStorage := postgres.NewBuildStorage(pool)
-
-	// Хранилища состояний.
 	keyTTL := 45 * time.Second
 	nodeState := valkey.NewNodeStateStore(redisClient, keyTTL)
 	instanceState := valkey.NewInstanceStateStore(redisClient, keyTTL)
-
-	// Файловое хранилище (временная директория).
 	buildFS := filesystem.NewBuildStorageFS(t.TempDir())
 
-	// Конфиг лимитов.
+	// ─── gRPC-клиент к реальной ноде ────────────────────────────
+	grpcCfg := config.GRPCClientConfig{
+		Timeout:           30 * time.Second,
+		ConnectTimeout:    10 * time.Second,
+		KeepAliveTime:     30 * time.Second,
+		KeepAliveTimeout:  10 * time.Second,
+		MaxMessageSize:    16 * 1024 * 1024,
+		EnableCompression: true,
+	}
+	nodeClient := grpcnode.New(grpcCfg)
+	t.Cleanup(func() { nodeClient.Close() })
+
+	// ─── Сервисы ────────────────────────────────────────────────
 	limits := config.LimitsConfig{
 		MaxBuildsPerGame:    10,
-		MaxInstancesPerGame: 50,
+		MaxInstancesPerGame: 5,
 		MaxLogTailLines:     5000,
-		MaxBuildSizeBytes:   2147483648,
+		MaxBuildSizeBytes:   2 * 1024 * 1024 * 1024,
 	}
 
-	// TODO: для полного e2e с game-server-node контейнером нужен реальный gRPC client.
-	// Пока тестируем с mock NodeClient (имитирует успешные gRPC вызовы).
-	nodeClient := &e2eMockNodeClient{}
-
-	// Сервисы.
 	buildPipeline := service.NewBuildPipeline(
 		buildStorage, buildFS, nodeClient, nodeRepo, nodeState, limits,
 	)
-
 	instanceService := service.NewInstanceService(
-		instanceRepo, instanceState, buildStorage,
-		nodeRepo, nodeState, nodeClient, limits,
+		instanceRepo, instanceState, buildStorage, nodeRepo, nodeState, nodeClient, limits,
 	)
-
 	discoveryService := service.NewDiscoveryService(
 		instanceRepo, instanceState, nodeRepo,
 	)
-
 	nodeService := service.NewNodeService(
 		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
 	)
 
-	// Handlers.
+	// ─── HTTP-сервер ────────────────────────────────────────────
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	buildHandler := orchhttp.NewBuildHandler(buildPipeline)
 	instanceHandler := orchhttp.NewInstanceHandler(instanceService, limits.MaxLogTailLines)
 	discoveryHandler := orchhttp.NewDiscoveryHandler(discoveryService)
 	nodeHandler := orchhttp.NewNodeHandler(nodeService)
-	healthHandler := orchhttp.NewHealthHandler("e2e-test-1.0.0")
+	healthHandler := orchhttp.NewHealthHandler("e2e-1.0.0")
 
 	router := orchhttp.NewRouter(
 		buildHandler, instanceHandler, discoveryHandler, nodeHandler, healthHandler, log,
@@ -184,9 +227,22 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		pool.Close()
 	})
 
+	// Регистрируем ноду через API для E2E-тестов.
+	nodeAddr := nodeAddress
+	token := e2eAPIKey
+
+	regResp, regErr := http.Post(srv.URL+"/nodes", "application/json",
+		strings.NewReader(fmt.Sprintf(`{"address":"%s","token":"%s","region":"e2e"}`, nodeAddr, token)),
+	)
+	if regErr == nil {
+		defer regResp.Body.Close()
+		t.Logf("Node registered via API, status=%d", regResp.StatusCode)
+	}
+
 	return &e2eTestEnv{
 		pgContainer:    pgContainer,
 		redisContainer: redisContainer,
+		nodeContainer:  nodeContainer,
 		pool:           pool,
 		redisClient:    redisClient,
 		nodeRepo:       nodeRepo,
@@ -201,21 +257,6 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	}
 }
 
-// cleanupDB удаляет все данные из БД и KV.
-func (env *e2eTestEnv) cleanupDB(t *testing.T) {
-	t.Helper()
-	ctx := context.Background()
-
-	stmt := "TRUNCATE instances, server_builds, nodes RESTART IDENTITY CASCADE"
-	if _, err := env.pool.Exec(ctx, stmt); err != nil {
-		t.Fatalf("failed to clean tables: %v", err)
-	}
-
-	if err := env.redisClient.FlushDB(ctx).Err(); err != nil {
-		t.Fatalf("failed to flush valkey: %v", err)
-	}
-}
-
 // createE2ETables создаёт таблицы в PostgreSQL.
 func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
@@ -226,6 +267,7 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 			id            BIGSERIAL PRIMARY KEY,
 			address       TEXT NOT NULL UNIQUE,
 			token_hash    BYTEA NOT NULL,
+			api_token     TEXT NOT NULL DEFAULT '',
 			region        TEXT,
 			status        SMALLINT NOT NULL DEFAULT 1,
 			cpu_cores     INTEGER NOT NULL DEFAULT 0,
@@ -277,63 +319,19 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// e2eMockNodeClient — mock NodeClient для e2e тестов (реализует domain.NodeClient).
-// Позволяет тестировать сценарии без реального game-server-node контейнера.
-type e2eMockNodeClient struct {
-	nextInstanceID int64
-}
+// cleanupTables удаляет все данные из таблиц.
+func (env *e2eTestEnv) cleanupTables(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
 
-func (m *e2eMockNodeClient) nextID() int64 {
-	m.nextInstanceID++
-	return m.nextInstanceID
-}
-
-func (m *e2eMockNodeClient) LoadImage(ctx context.Context, nodeAddress string, metadata domain.ImageMetadata, chunks io.Reader) (*domain.ImageLoadResult, error) {
-	return &domain.ImageLoadResult{ImageTag: metadata.ImageTag, SizeBytes: 1000}, nil
-}
-func (m *e2eMockNodeClient) StartInstance(ctx context.Context, nodeAddress string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
-	return &domain.StartInstanceResult{InstanceID: m.nextID(), HostPort: 7001}, nil
-}
-func (m *e2eMockNodeClient) StopInstance(ctx context.Context, nodeAddress string, instanceID int64, timeoutSec uint32) error {
-	return nil
-}
-func (m *e2eMockNodeClient) StreamLogs(ctx context.Context, nodeAddress string, req domain.StreamLogsRequest) (domain.LogStream, error) {
-	return nil, nil
-}
-func (m *e2eMockNodeClient) GetNodeInfo(ctx context.Context, nodeAddress string) (*domain.NodeInfo, error) {
-	return &domain.NodeInfo{
-		Region:           "test-region",
-		CPUCores:         4,
-		TotalMemoryBytes: 8000000000,
-		TotalDiskBytes:   250000000000,
-		AgentVersion:     "e2e-test-1.0.0",
-	}, nil
-}
-func (m *e2eMockNodeClient) Heartbeat(ctx context.Context, nodeAddress string) (*domain.ResourceUsage, error) {
-	return &domain.ResourceUsage{CPUUsagePercent: 10.0}, nil
-}
-func (m *e2eMockNodeClient) ListInstances(ctx context.Context, nodeAddress string) ([]*domain.Instance, error) {
-	return nil, nil
-}
-func (m *e2eMockNodeClient) GetInstance(ctx context.Context, nodeAddress string, instanceID int64) (*domain.Instance, error) {
-	return nil, nil
-}
-func (m *e2eMockNodeClient) GetInstanceUsage(ctx context.Context, nodeAddress string, instanceID int64) (*domain.ResourceUsage, error) {
-	return &domain.ResourceUsage{CPUUsagePercent: 5.0}, nil
-}
-
-// findFreePort возвращает свободный TCP порт.
-func findFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
+	stmt := "TRUNCATE instances, server_builds, nodes RESTART IDENTITY CASCADE"
+	if _, err := env.pool.Exec(ctx, stmt); err != nil {
+		t.Fatalf("failed to clean tables: %v", err)
 	}
-	l, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
+
+	if err := env.redisClient.FlushDB(ctx).Err(); err != nil {
+		t.Fatalf("failed to flush valkey: %v", err)
 	}
-	defer l.Close()
-	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
 // TestMain — точка входа для всех e2e тестов.
