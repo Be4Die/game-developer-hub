@@ -190,13 +190,13 @@ func TestHTTPConfig_Addr(t *testing.T) {
 func TestDBConfig_DSN(t *testing.T) {
 	db := DBConfig{
 		User:     "admin",
-		Password: "secret",
+		Password: "secret", //nolint:gosec // тестовый пароль, не продакшен
 		Host:     "db.example.com",
 		Port:     5433,
 		Name:     "testdb",
 		SSLMode:  "require",
 	}
-	want := "postgres://admin:secret@db.example.com:5433/testdb?sslmode=require"
+	want := "postgres://admin:secret@db.example.com:5433/testdb?sslmode=require" //nolint:gosec // тестовый DSN, не продакшен
 	if got := db.DSN(); got != want {
 		t.Errorf("DSN = %q, want %q", got, want)
 	}
@@ -219,7 +219,9 @@ func TestMustLoad_PanicOnMissingFile(t *testing.T) {
 func TestMustLoad_PanicOnInvalidYAML(t *testing.T) {
 	tmpDir := t.TempDir()
 	cfgPath := filepath.Join(tmpDir, "config.yaml")
-	os.WriteFile(cfgPath, []byte(":::invalid::yaml:::"), 0600)
+	if err := os.WriteFile(cfgPath, []byte(":::invalid::yaml:::"), 0600); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
 	t.Setenv("CONFIG_PATH", cfgPath)
 
 	defer func() {
@@ -258,7 +260,9 @@ limits:
   max_log_tail_lines: 5000
   max_build_size: 2147483648
 `
-	os.WriteFile(cfgPath, []byte(yaml), 0600)
+	if err := os.WriteFile(cfgPath, []byte(yaml), 0600); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
 	t.Setenv("CONFIG_PATH", cfgPath)
 
 	cfg := MustLoad()
@@ -277,7 +281,9 @@ func TestMustLoad_PanicOnValidationError(t *testing.T) {
 	yaml := `http:
   port: 8080
 `
-	os.WriteFile(cfgPath, []byte(yaml), 0600)
+	if err := os.WriteFile(cfgPath, []byte(yaml), 0600); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
 	t.Setenv("CONFIG_PATH", cfgPath)
 
 	defer func() {

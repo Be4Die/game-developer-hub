@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -109,7 +110,7 @@ func TestBuildPipeline_GenerateDockerfile_WithExecutable(t *testing.T) {
 
 	// Create an executable file.
 	execPath := filepath.Join(tmpDir, "myserver")
-	if err := os.WriteFile(execPath, []byte("#!/bin/sh\necho hello"), 0o755); err != nil {
+	if err := os.WriteFile(execPath, []byte("#!/bin/sh\necho hello"), 0o755); err != nil { //nolint:gosec // тест, нужен исполняемый файл
 		t.Fatalf("failed to create executable: %v", err)
 	}
 
@@ -129,7 +130,7 @@ func TestBuildPipeline_GenerateDockerfile_WithExe(t *testing.T) {
 
 	// Create a .exe file (non-executable mode).
 	exePath := filepath.Join(tmpDir, "game.exe")
-	if err := os.WriteFile(exePath, []byte("MZ..."), 0o644); err != nil {
+	if err := os.WriteFile(exePath, []byte("MZ..."), 0o644); err != nil { //nolint:gosec // тест, нужен файл с обычными правами
 		t.Fatalf("failed to create exe: %v", err)
 	}
 
@@ -148,7 +149,7 @@ func TestBuildPipeline_GenerateDockerfile_NoExecutable_DefaultsToServer(t *testi
 	tmpDir := t.TempDir()
 
 	// Create a non-executable text file.
-	if err := os.WriteFile(filepath.Join(tmpDir, "readme.txt"), []byte("hello"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "readme.txt"), []byte("hello"), 0o644); err != nil { //nolint:gosec // тест, нужен читаемый файл
 		t.Fatalf("failed to create text file: %v", err)
 	}
 
@@ -199,7 +200,7 @@ func TestBuildPipeline_ExtractZip_Success(t *testing.T) {
 	}
 
 	// Verify files exist.
-	content, err := os.ReadFile(filepath.Join(destDir, "hello.txt"))
+	content, err := os.ReadFile(filepath.Join(destDir, "hello.txt")) //nolint:gosec // путь из t.TempDir()
 	if err != nil {
 		t.Fatalf("hello.txt not found: %v", err)
 	}
@@ -207,7 +208,7 @@ func TestBuildPipeline_ExtractZip_Success(t *testing.T) {
 		t.Errorf("expected 'hello world', got %q", string(content))
 	}
 
-	content2, err := os.ReadFile(filepath.Join(destDir, "sub", "file.txt"))
+	content2, err := os.ReadFile(filepath.Join(destDir, "sub", "file.txt")) //nolint:gosec // путь из t.TempDir()
 	if err != nil {
 		t.Fatalf("sub/file.txt not found: %v", err)
 	}
@@ -295,7 +296,7 @@ func TestBuildPipeline_ExtractTar_Success(t *testing.T) {
 	}
 
 	// Verify files.
-	content, err := os.ReadFile(filepath.Join(destDir, "data", "file.txt"))
+	content, err := os.ReadFile(filepath.Join(destDir, "data", "file.txt")) //nolint:gosec // путь из t.TempDir()
 	if err != nil {
 		t.Fatalf("data/file.txt not found: %v", err)
 	}
@@ -303,7 +304,7 @@ func TestBuildPipeline_ExtractTar_Success(t *testing.T) {
 		t.Errorf("expected 'tar content', got %q", string(content))
 	}
 
-	content2, err := os.ReadFile(filepath.Join(destDir, "root.txt"))
+	content2, err := os.ReadFile(filepath.Join(destDir, "root.txt")) //nolint:gosec // путь из t.TempDir()
 	if err != nil {
 		t.Fatalf("root.txt not found: %v", err)
 	}
@@ -422,7 +423,7 @@ func TestBuildPipeline_DeleteBuild_InUse(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
-	if err != domain.ErrBuildInUse {
+	if !errors.Is(err, domain.ErrBuildInUse) {
 		t.Errorf("expected ErrBuildInUse, got %v", err)
 	}
 	if fsCalled {

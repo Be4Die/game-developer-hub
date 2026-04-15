@@ -6,7 +6,7 @@ import "time"
 type ServerBuild struct {
 	ID           int64
 	GameID       int64
-	UploadedBy   int64 // ID пользователя (0 — неизвестно
+	UploadedBy   int64 // ID пользователя (0 — неизвестно).
 	Version      string
 	ImageTag     string
 	Protocol     Protocol

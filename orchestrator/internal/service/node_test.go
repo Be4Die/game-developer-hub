@@ -32,7 +32,7 @@ func TestNodeService_RegisterNode_Manual_Success(t *testing.T) {
 	}
 
 	nodeClient := &hbMockNodeClient{
-		getNodeInfoFn: func(ctx context.Context, addr string) (*domain.NodeInfo, error) {
+		getNodeInfoFn: func(ctx context.Context, addr, apiKey string) (*domain.NodeInfo, error) {
 			return &domain.NodeInfo{
 				CPUCores:         8,
 				TotalMemoryBytes: 16 * 1024 * 1024 * 1024,
@@ -100,7 +100,7 @@ func TestNodeService_RegisterNode_Manual_AlreadyExists(t *testing.T) {
 
 	getNodeInfoCalled := false
 	nodeClient := &hbMockNodeClient{
-		getNodeInfoFn: func(ctx context.Context, addr string) (*domain.NodeInfo, error) {
+		getNodeInfoFn: func(ctx context.Context, addr, apiKey string) (*domain.NodeInfo, error) {
 			getNodeInfoCalled = true
 			return nil, nil
 		},
@@ -276,8 +276,8 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 	}
 
 	for i, r := range result {
-		if r.Node.ID != nodes[i].ID {
-			t.Errorf("node[%d]: expected ID %d, got %d", i, nodes[i].ID, r.Node.ID)
+		if r.ID != nodes[i].ID {
+			t.Errorf("node[%d]: expected ID %d, got %d", i, nodes[i].ID, r.ID)
 		}
 		if r.Usage == nil {
 			t.Errorf("node[%d]: expected Usage, got nil", i)
@@ -329,8 +329,8 @@ func TestNodeService_GetNode_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.Node.ID != nodeID {
-		t.Errorf("expected node ID %d, got %d", nodeID, result.Node.ID)
+	if result.ID != nodeID {
+		t.Errorf("expected node ID %d, got %d", nodeID, result.ID)
 	}
 	if result.Usage == nil {
 		t.Fatal("expected Usage, got nil")

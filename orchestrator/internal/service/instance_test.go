@@ -267,68 +267,68 @@ func (m *instMockNodeStateStore) Delete(ctx context.Context, nodeID int64) error
 }
 
 type instMockNodeClient struct {
-	loadImageFn        func(ctx context.Context, address string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
-	startInstanceFn    func(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
-	stopInstanceFn     func(ctx context.Context, address string, instanceID int64, timeoutSec uint32) error
-	streamLogsFn       func(ctx context.Context, address string, req domain.StreamLogsRequest) (domain.LogStream, error)
-	getNodeInfoFn      func(ctx context.Context, address string) (*domain.NodeInfo, error)
-	heartbeatFn        func(ctx context.Context, address string) (*domain.ResourceUsage, error)
-	listInstancesFn    func(ctx context.Context, address string) ([]*domain.Instance, error)
-	getInstanceFn      func(ctx context.Context, address string, instanceID int64) (*domain.Instance, error)
-	getInstanceUsageFn func(ctx context.Context, address string, instanceID int64) (*domain.ResourceUsage, error)
+	loadImageFn        func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
+	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
+	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
+	streamLogsFn       func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
+	getNodeInfoFn      func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
+	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
+	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
+	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
+	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
 }
 
-func (m *instMockNodeClient) LoadImage(ctx context.Context, address string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
+func (m *instMockNodeClient) LoadImage(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
 	if m.loadImageFn != nil {
-		return m.loadImageFn(ctx, address, meta, reader)
+		return m.loadImageFn(ctx, address, apiKey, meta, reader)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) StartInstance(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+func (m *instMockNodeClient) StartInstance(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
 	if m.startInstanceFn != nil {
-		return m.startInstanceFn(ctx, address, req)
+		return m.startInstanceFn(ctx, address, apiKey, req)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) StopInstance(ctx context.Context, address string, instanceID int64, timeoutSec uint32) error {
+func (m *instMockNodeClient) StopInstance(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
 	if m.stopInstanceFn != nil {
-		return m.stopInstanceFn(ctx, address, instanceID, timeoutSec)
+		return m.stopInstanceFn(ctx, address, apiKey, instanceID, timeoutSec)
 	}
 	return nil
 }
-func (m *instMockNodeClient) StreamLogs(ctx context.Context, address string, req domain.StreamLogsRequest) (domain.LogStream, error) {
+func (m *instMockNodeClient) StreamLogs(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	if m.streamLogsFn != nil {
-		return m.streamLogsFn(ctx, address, req)
+		return m.streamLogsFn(ctx, address, apiKey, req)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) GetNodeInfo(ctx context.Context, address string) (*domain.NodeInfo, error) {
+func (m *instMockNodeClient) GetNodeInfo(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error) {
 	if m.getNodeInfoFn != nil {
-		return m.getNodeInfoFn(ctx, address)
+		return m.getNodeInfoFn(ctx, address, apiKey)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) Heartbeat(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+func (m *instMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 	if m.heartbeatFn != nil {
-		return m.heartbeatFn(ctx, address)
+		return m.heartbeatFn(ctx, address, apiKey)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) ListInstances(ctx context.Context, address string) ([]*domain.Instance, error) {
+func (m *instMockNodeClient) ListInstances(ctx context.Context, address, apiKey string) ([]*domain.Instance, error) {
 	if m.listInstancesFn != nil {
-		return m.listInstancesFn(ctx, address)
+		return m.listInstancesFn(ctx, address, apiKey)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) GetInstance(ctx context.Context, address string, instanceID int64) (*domain.Instance, error) {
+func (m *instMockNodeClient) GetInstance(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error) {
 	if m.getInstanceFn != nil {
-		return m.getInstanceFn(ctx, address, instanceID)
+		return m.getInstanceFn(ctx, address, apiKey, instanceID)
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) GetInstanceUsage(ctx context.Context, address string, instanceID int64) (*domain.ResourceUsage, error) {
+func (m *instMockNodeClient) GetInstanceUsage(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error) {
 	if m.getInstanceUsageFn != nil {
-		return m.getInstanceUsageFn(ctx, address, instanceID)
+		return m.getInstanceUsageFn(ctx, address, apiKey, instanceID)
 	}
 	return nil, nil
 }
@@ -404,7 +404,7 @@ func TestInstanceService_StartInstance(t *testing.T) {
 					},
 				}
 				nodeClient := &instMockNodeClient{
-					startInstanceFn: func(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+					startInstanceFn: func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
 						return &domain.StartInstanceResult{
 							InstanceID: 42,
 							HostPort:   8001,
@@ -537,7 +537,7 @@ func TestInstanceService_StartInstance(t *testing.T) {
 					},
 				}
 				nodeClient := &instMockNodeClient{
-					startInstanceFn: func(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+					startInstanceFn: func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
 						return nil, errors.New("grpc error")
 					},
 				}
@@ -650,7 +650,7 @@ func TestInstanceService_StopInstance(t *testing.T) {
 				}
 				stopCalled := false
 				nodeClient := &instMockNodeClient{
-					stopInstanceFn: func(ctx context.Context, address string, instanceID int64, timeoutSec uint32) error {
+					stopInstanceFn: func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
 						stopCalled = true
 						return nil
 					},

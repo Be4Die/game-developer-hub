@@ -15,43 +15,43 @@ import (
 // ─── Mocks for HeartbeatService ─────────────────────────────────────────────
 
 type hbMockNodeClient struct {
-	heartbeatFn        func(ctx context.Context, address string) (*domain.ResourceUsage, error)
-	getNodeInfoFn      func(ctx context.Context, address string) (*domain.NodeInfo, error)
-	startInstanceFn    func(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
-	stopInstanceFn     func(ctx context.Context, address string, instanceID int64, timeoutSec uint32) error
-	streamLogsFn       func(ctx context.Context, address string, req domain.StreamLogsRequest) (domain.LogStream, error)
-	loadImageFn        func(ctx context.Context, address string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
-	listInstancesFn    func(ctx context.Context, address string) ([]*domain.Instance, error)
-	getInstanceFn      func(ctx context.Context, address string, instanceID int64) (*domain.Instance, error)
-	getInstanceUsageFn func(ctx context.Context, address string, instanceID int64) (*domain.ResourceUsage, error)
+	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
+	getNodeInfoFn      func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
+	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
+	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
+	streamLogsFn       func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
+	loadImageFn        func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
+	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
+	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
+	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
 }
 
-func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address string) (*domain.ResourceUsage, error) {
-	return m.heartbeatFn(ctx, address)
+func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
+	return m.heartbeatFn(ctx, address, apiKey)
 }
-func (m *hbMockNodeClient) GetNodeInfo(ctx context.Context, address string) (*domain.NodeInfo, error) {
-	return m.getNodeInfoFn(ctx, address)
+func (m *hbMockNodeClient) GetNodeInfo(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error) {
+	return m.getNodeInfoFn(ctx, address, apiKey)
 }
-func (m *hbMockNodeClient) StartInstance(ctx context.Context, address string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
-	return m.startInstanceFn(ctx, address, req)
+func (m *hbMockNodeClient) StartInstance(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+	return m.startInstanceFn(ctx, address, apiKey, req)
 }
-func (m *hbMockNodeClient) StopInstance(ctx context.Context, address string, instanceID int64, timeoutSec uint32) error {
-	return m.stopInstanceFn(ctx, address, instanceID, timeoutSec)
+func (m *hbMockNodeClient) StopInstance(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
+	return m.stopInstanceFn(ctx, address, apiKey, instanceID, timeoutSec)
 }
-func (m *hbMockNodeClient) StreamLogs(ctx context.Context, address string, req domain.StreamLogsRequest) (domain.LogStream, error) {
-	return m.streamLogsFn(ctx, address, req)
+func (m *hbMockNodeClient) StreamLogs(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {
+	return m.streamLogsFn(ctx, address, apiKey, req)
 }
-func (m *hbMockNodeClient) LoadImage(ctx context.Context, address string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
-	return m.loadImageFn(ctx, address, meta, reader)
+func (m *hbMockNodeClient) LoadImage(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
+	return m.loadImageFn(ctx, address, apiKey, meta, reader)
 }
-func (m *hbMockNodeClient) ListInstances(ctx context.Context, address string) ([]*domain.Instance, error) {
-	return m.listInstancesFn(ctx, address)
+func (m *hbMockNodeClient) ListInstances(ctx context.Context, address, apiKey string) ([]*domain.Instance, error) {
+	return m.listInstancesFn(ctx, address, apiKey)
 }
-func (m *hbMockNodeClient) GetInstance(ctx context.Context, address string, instanceID int64) (*domain.Instance, error) {
-	return m.getInstanceFn(ctx, address, instanceID)
+func (m *hbMockNodeClient) GetInstance(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error) {
+	return m.getInstanceFn(ctx, address, apiKey, instanceID)
 }
-func (m *hbMockNodeClient) GetInstanceUsage(ctx context.Context, address string, instanceID int64) (*domain.ResourceUsage, error) {
-	return m.getInstanceUsageFn(ctx, address, instanceID)
+func (m *hbMockNodeClient) GetInstanceUsage(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error) {
+	return m.getInstanceUsageFn(ctx, address, apiKey, instanceID)
 }
 
 type hbMockNodeRepo struct {
@@ -290,7 +290,7 @@ func TestHeartbeatService_CheckNode_Success(t *testing.T) {
 	}
 
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 			return usage, nil
 		},
 	}
@@ -323,7 +323,7 @@ func TestHeartbeatService_CheckNode_HeartbeatError_WithinTimeout(t *testing.T) {
 	nodeRepo := &hbMockNodeRepo{}
 	nodeState := &hbMockNodeStateStore{}
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 			return nil, context.DeadlineExceeded
 		},
 	}
@@ -385,7 +385,7 @@ func TestHeartbeatService_CheckNode_HeartbeatError_TimeoutExceeded(t *testing.T)
 
 	nodeState := &hbMockNodeStateStore{}
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 			return nil, context.DeadlineExceeded
 		},
 	}
@@ -432,7 +432,7 @@ func TestHeartbeatService_CheckNode_RecoverFromOffline(t *testing.T) {
 	}
 
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 			return &domain.ResourceUsage{CPUUsagePercent: 10.0}, nil
 		},
 	}
@@ -467,7 +467,7 @@ func TestHeartbeatService_CheckAllNodes_SkipMaintenance(t *testing.T) {
 
 	heartbeatCalled := false
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
 			heartbeatCalled = true
 			return nil, nil
 		},
