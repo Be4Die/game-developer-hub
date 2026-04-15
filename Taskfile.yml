@@ -67,11 +67,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
           DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
-          DOCKER_RUN_ARGS: >
-            -p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}}
-            -v //var/run/docker.sock:/var/run/docker.sock
-            -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}}
-            -e NODE_API_KEY={{.NODE_API_KEY}}
+          DOCKER_RUN_ARGS: "-p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}} -v /var/run/docker.sock:/var/run/docker.sock -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}} -e NODE_API_KEY={{.NODE_API_KEY}}"
 
   node:down:
     desc: "Stop and remove game-server-node container"
@@ -92,7 +88,10 @@ tasks:
     cmds:
       - task: docker:restart
         vars:
+          DOCKER_IMAGE_NAME: "{{.NODE_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.NODE_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.NODE_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.NODE_GRPC_PORT}}:{{.NODE_GRPC_PORT}} -v /var/run/docker.sock:/var/run/docker.sock -e CONFIG_PATH=/app/config/{{.NODE_CONFIG}} -e NODE_API_KEY={{.NODE_API_KEY}}"
 
   node:shell:
     desc: "Open shell in running game-server-node container"
@@ -207,8 +206,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
           DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
-          DOCKER_RUN_ARGS: >
-            -p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}
+          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}"
 
   orchestrator:down:
     desc: "Stop and remove orchestrator container"
@@ -229,7 +227,10 @@ tasks:
     cmds:
       - task: docker:restart
         vars:
+          DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}"
 
   orchestrator:shell:
     desc: "Open shell in running orchestrator container"

@@ -1,12 +1,14 @@
+# syntax=docker/dockerfile:1
+
 FROM golang:1.25.3-alpine AS builder
 
-WORKDIR /app
+WORKDIR /app/orchestrator
 
-COPY go.mod go.sum ./
+COPY protos/ /app/protos/
+COPY orchestrator/go.mod orchestrator/go.sum ./
 RUN go mod download
 
-COPY protos ../protos
-COPY . .
+COPY orchestrator/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /orchestrator ./cmd/server
 
 
@@ -17,7 +19,7 @@ RUN apk add --no-cache ca-certificates docker-cli
 WORKDIR /app
 
 COPY --from=builder /orchestrator /app/orchestrator
-COPY config/ /app/config/
+COPY orchestrator/config/ /app/config/
 
 ENV CONFIG_PATH=/app/config/local.yaml
 
