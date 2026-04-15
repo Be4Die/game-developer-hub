@@ -54,13 +54,11 @@ type StartInstanceParams struct {
 	MaxPlayers       *uint32
 }
 
-// StartInstance запускает новый экземпляр игрового сервера:
-// 1. Проверка лимита инстансов
-// 2. Загрузка билда из PG
-// 3. Выбор ноды с достаточными ресурсами
-// 4. gRPC StartInstance на ноде
-// 5. Запись метаданных в PG
-// 6. Инициализация состояния в KV
+// StartInstance запускает новый экземпляр игрового сервера на доступной ноде.
+// Проверяет лимит инстансов на игру, выбирает ноду с наименьшей загрузкой,
+// запускает контейнер через gRPC и регистрирует метаданные.
+// При ошибке сохраняет целостность: откатывает запуск на ноде, если не удалось сохранить в PG.
+// Возвращает ErrNoAvailableNode при отсутствии свободных нод, ErrNotFound при отсутствии билда.
 func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
 	// Шаг 1: проверка лимита инстансов на игру.
 	count, err := s.instanceRepo.CountByGame(ctx, params.GameID)
@@ -105,7 +103,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		ResourceLimits:   params.ResourceLimits,
 	}
 
-	result, err := s.nodeClient.StartInstance(ctx, nodeAddr, startReq)
+	result, err := s.nodeClient.StartInstance(ctx, nodeAddr, node.APIToken, startReq)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.StartInstance: node StartInstance: %w", err)
 	}
@@ -133,7 +131,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
 		// Откат: останавливаем инстанс на ноде.
-		_ = s.nodeClient.StopInstance(ctx, nodeAddr, result.InstanceID, 0)
+		_ = s.nodeClient.StopInstance(ctx, nodeAddr, node.APIToken, result.InstanceID, 0)
 		return nil, fmt.Errorf("InstanceService.StartInstance: save instance: %w", err)
 	}
 
@@ -156,10 +154,9 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 	return instance, nil
 }
 
-// StopInstance останавливает экземпляр:
-// 1. gRPC StopInstance на ноде
-// 2. Обновление статуса в PG
-// 3. Удаление состояния из KV
+// StopInstance останавливает экземпляр игрового сервера, обновляет статус в PostgreSQL
+// и удаляет состояние из KV. Уменьшает счётчик активных инстансов на ноде.
+// Возвращает ошибку, если instanceID не принадлежит указанной игре.
 func (s *InstanceService) StopInstance(ctx context.Context, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
@@ -176,7 +173,7 @@ func (s *InstanceService) StopInstance(ctx context.Context, gameID, instanceID i
 	}
 
 	// gRPC остановка.
-	if err := s.nodeClient.StopInstance(ctx, node.Address, instanceID, timeoutSec); err != nil {
+	if err := s.nodeClient.StopInstance(ctx, node.Address, node.APIToken, instanceID, timeoutSec); err != nil {
 		return nil, fmt.Errorf("InstanceService.StopInstance: node StopInstance: %w", err)
 	}
 
@@ -269,7 +266,7 @@ func (s *InstanceService) StreamInstanceLogs(ctx context.Context, gameID, instan
 		return nil, fmt.Errorf("InstanceService.StreamInstanceLogs: get node: %w", err)
 	}
 
-	stream, err := s.nodeClient.StreamLogs(ctx, node.Address, req)
+	stream, err := s.nodeClient.StreamLogs(ctx, node.Address, node.APIToken, req)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.StreamInstanceLogs: node StreamLogs: %w", err)
 	}
@@ -300,7 +297,7 @@ func (s *InstanceService) GetInstanceUsage(ctx context.Context, gameID, instance
 		return nil, fmt.Errorf("InstanceService.GetInstanceUsage: get node: %w", err)
 	}
 
-	usage, err = s.nodeClient.GetInstanceUsage(ctx, node.Address, instanceID)
+	usage, err = s.nodeClient.GetInstanceUsage(ctx, node.Address, node.APIToken, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.GetInstanceUsage: node GetInstanceUsage: %w", err)
 	}

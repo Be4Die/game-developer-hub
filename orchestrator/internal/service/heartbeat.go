@@ -91,7 +91,7 @@ func (s *HeartbeatService) checkAllNodes(ctx context.Context) {
 
 func (s *HeartbeatService) checkNode(ctx context.Context, node *domain.Node) error {
 	// Попытка gRPC Heartbeat.
-	usage, err := s.nodeClient.Heartbeat(ctx, node.Address)
+	usage, err := s.nodeClient.Heartbeat(ctx, node.Address, node.APIToken)
 	if err != nil {
 		// Проверяем таймаут неактивности.
 		timeSincePing := time.Since(node.LastPingAt)

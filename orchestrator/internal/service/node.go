@@ -48,9 +48,10 @@ type RegisterNodeParams struct {
 	NodeID *int64
 }
 
-// RegisterNode подключает ноду:
-// 1. Manual — GetNodeInfo gRPC → создание записи в PG
-// 2. Authorize — проверка токена → обновление записи в PG
+// RegisterNode подключает ноду к оркестратору.
+// В режиме manual — запрашивает информацию о ноде через gRPC и создаёт запись.
+// В режиме authorize — проверяет токен и переводит ноду в статус online.
+// Возвращает ErrAlreadyExists при повторной регистрации, ErrInvalidToken при неверном токене.
 func (s *NodeService) RegisterNode(ctx context.Context, params RegisterNodeParams) (*domain.Node, error) {
 	if params.NodeID != nil {
 		return s.authorizeNode(ctx, *params.NodeID, params.Token)
@@ -70,7 +71,7 @@ func (s *NodeService) registerNodeManual(ctx context.Context, address, token, re
 	}
 
 	// Получаем информацию о ноде через gRPC.
-	info, err := s.nodeClient.GetNodeInfo(ctx, address)
+	info, err := s.nodeClient.GetNodeInfo(ctx, address, token)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.registerNodeManual: GetNodeInfo: %w", err)
 	}
@@ -81,6 +82,7 @@ func (s *NodeService) registerNodeManual(ctx context.Context, address, token, re
 	node := &domain.Node{
 		Address:      address,
 		TokenHash:    tokenHash[:],
+		APIToken:     token,
 		Region:       region,
 		Status:       domain.NodeStatusOnline,
 		CPUCores:     info.CPUCores,
@@ -117,6 +119,7 @@ func (s *NodeService) authorizeNode(ctx context.Context, nodeID int64, token str
 
 	// Авторизуем ноду.
 	now := time.Now()
+	node.APIToken = token // сохраняем для последующих gRPC-запросов
 	node.Status = domain.NodeStatusOnline
 	node.LastPingAt = now
 	node.UpdatedAt = now
@@ -177,10 +180,8 @@ func (s *NodeService) GetNode(ctx context.Context, nodeID int64) (*EnrichedNode,
 	return enriched, nil
 }
 
-// DeleteNode удаляет ноду:
-// 1. Инстансы на ноде → crashed (PG + KV)
-// 2. Удаление из KV
-// 3. Удаление из PG
+// DeleteNode удаляет ноду из оркестратора. Все инстансы на ноде переводятся
+// в статус crashed, состояние удаляется из KV и PostgreSQL.
 func (s *NodeService) DeleteNode(ctx context.Context, nodeID int64) error {
 	// Переводим все инстансы ноды в crashed.
 	instances, err := s.instanceRepo.ListByNode(ctx, nodeID)

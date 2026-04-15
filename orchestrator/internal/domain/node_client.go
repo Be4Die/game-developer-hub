@@ -7,35 +7,36 @@ import (
 
 // NodeClient определяет интерфейс gRPC-клиента для управления нодой.
 // Абстрагирует конкретную реализацию gRPC-подключения к game-server-node.
+// apiKey — токен авторизации ноды (передается как "authorization: Bearer <apiKey>").
 type NodeClient interface {
 	// LoadImage загружает Docker-образ на ноду. Метаданные отправляются первым сообщением,
 	// далее — чанки данных. Возвращает подтверждение с размером загруженного образа.
-	LoadImage(ctx context.Context, nodeAddress string, metadata ImageMetadata, chunks io.Reader) (*ImageLoadResult, error)
+	LoadImage(ctx context.Context, nodeAddress, apiKey string, metadata ImageMetadata, chunks io.Reader) (*ImageLoadResult, error)
 
 	// StartInstance запускает экземпляр игрового сервера на ноде.
-	StartInstance(ctx context.Context, nodeAddress string, req StartInstanceRequest) (*StartInstanceResult, error)
+	StartInstance(ctx context.Context, nodeAddress, apiKey string, req StartInstanceRequest) (*StartInstanceResult, error)
 
 	// StopInstance выполняет graceful остановку экземпляра.
-	StopInstance(ctx context.Context, nodeAddress string, instanceID int64, timeoutSec uint32) error
+	StopInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error
 
 	// StreamLogs открывает поток журналов инстанса. Читатель должен закрыть stream
 	// для освобождения ресурсов.
-	StreamLogs(ctx context.Context, nodeAddress string, req StreamLogsRequest) (LogStream, error)
+	StreamLogs(ctx context.Context, nodeAddress, apiKey string, req StreamLogsRequest) (LogStream, error)
 
 	// GetNodeInfo запрашивает статические характеристики ноды.
-	GetNodeInfo(ctx context.Context, nodeAddress string) (*NodeInfo, error)
+	GetNodeInfo(ctx context.Context, nodeAddress, apiKey string) (*NodeInfo, error)
 
 	// Heartbeat получает текущую загруженность ноды.
-	Heartbeat(ctx context.Context, nodeAddress string) (*ResourceUsage, error)
+	Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*ResourceUsage, error)
 
 	// ListInstances возвращает все экземпляры на ноде.
-	ListInstances(ctx context.Context, nodeAddress string) ([]*Instance, error)
+	ListInstances(ctx context.Context, nodeAddress, apiKey string) ([]*Instance, error)
 
 	// GetInstance возвращает экземпляр по идентификатору.
-	GetInstance(ctx context.Context, nodeAddress string, instanceID int64) (*Instance, error)
+	GetInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) (*Instance, error)
 
 	// GetInstanceUsage возвращает потребление ресурсов конкретным инстансом.
-	GetInstanceUsage(ctx context.Context, nodeAddress string, instanceID int64) (*ResourceUsage, error)
+	GetInstanceUsage(ctx context.Context, nodeAddress, apiKey string, instanceID int64) (*ResourceUsage, error)
 }
 
 // LogStream представляет поток журнальных записей от ноды.

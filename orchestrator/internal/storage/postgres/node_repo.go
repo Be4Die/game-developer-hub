@@ -31,14 +31,14 @@ func NewNodeRepo(pool *pgxpool.Pool) *NodeRepo {
 // Create добавляет новую ноду в реестр. Возвращает ErrAlreadyExists при дубликате.
 func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 	const q = `
-		INSERT INTO nodes (id, address, token_hash, region, status,
+		INSERT INTO nodes (id, address, token_hash, api_token, region, status,
 		                   cpu_cores, total_memory, total_disk, agent_version,
 		                   last_ping_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 	`
 
 	_, err := r.pool.Exec(ctx, q,
-		node.ID, node.Address, node.TokenHash, node.Region, node.Status,
+		node.ID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status,
 		node.CPUCores, node.TotalMemory, node.TotalDisk, node.AgentVersion,
 		node.LastPingAt, node.CreatedAt, node.UpdatedAt,
 	)
@@ -55,14 +55,14 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 // Update обновляет данные ноды. Возвращает ErrNotFound если нода не существует.
 func (r *NodeRepo) Update(ctx context.Context, node *domain.Node) error {
 	const q = `
-		UPDATE nodes SET address=$1, token_hash=$2, region=$3, status=$4,
-		                 cpu_cores=$5, total_memory=$6, total_disk=$7,
-		                 agent_version=$8, last_ping_at=$9, updated_at=$10
-		WHERE id=$11
+		UPDATE nodes SET address=$1, token_hash=$2, api_token=$3, region=$4, status=$5,
+		                 cpu_cores=$6, total_memory=$7, total_disk=$8,
+		                 agent_version=$9, last_ping_at=$10, updated_at=$11
+		WHERE id=$12
 	`
 
 	tag, err := r.pool.Exec(ctx, q,
-		node.Address, node.TokenHash, node.Region, node.Status,
+		node.Address, node.TokenHash, node.APIToken, node.Region, node.Status,
 		node.CPUCores, node.TotalMemory, node.TotalDisk,
 		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.ID,
 	)
@@ -79,7 +79,7 @@ func (r *NodeRepo) Update(ctx context.Context, node *domain.Node) error {
 // GetByID возвращает ноду по идентификатору. Возвращает ErrNotFound при отсутствии.
 func (r *NodeRepo) GetByID(ctx context.Context, id int64) (*domain.Node, error) {
 	const q = `
-		SELECT id, address, token_hash, region, status,
+		SELECT id, address, token_hash, api_token, region, status,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at
 		FROM nodes WHERE id = $1
@@ -92,7 +92,7 @@ func (r *NodeRepo) GetByID(ctx context.Context, id int64) (*domain.Node, error) 
 // GetByAddress возвращает ноду по gRPC-адресу. Возвращает ErrNotFound при отсутствии.
 func (r *NodeRepo) GetByAddress(ctx context.Context, address string) (*domain.Node, error) {
 	const q = `
-		SELECT id, address, token_hash, region, status,
+		SELECT id, address, token_hash, api_token, region, status,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at
 		FROM nodes WHERE address = $1
@@ -105,7 +105,7 @@ func (r *NodeRepo) GetByAddress(ctx context.Context, address string) (*domain.No
 // List возвращает все ноды. Опционально фильтрует по статусу (nil — без фильтра).
 func (r *NodeRepo) List(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error) {
 	q := `
-		SELECT id, address, token_hash, region, status,
+		SELECT id, address, token_hash, api_token, region, status,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at
 		FROM nodes
@@ -177,7 +177,7 @@ type nodeScanner interface {
 func scanNode(s nodeScanner) (*domain.Node, error) {
 	n := &domain.Node{}
 	err := s.Scan(
-		&n.ID, &n.Address, &n.TokenHash, &n.Region, &n.Status,
+		&n.ID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status,
 		&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
 		&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt,
 	)

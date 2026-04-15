@@ -137,6 +137,7 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 			id            BIGSERIAL PRIMARY KEY,
 			address       TEXT NOT NULL UNIQUE,
 			token_hash    BYTEA NOT NULL,
+			api_token     TEXT NOT NULL DEFAULT '',
 			region        TEXT,
 			status        SMALLINT NOT NULL DEFAULT 1,
 			cpu_cores     INTEGER NOT NULL DEFAULT 0,

@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/metadata"
 )
 
 // Client реализует domain.NodeClient через gRPC к game-server-node.
@@ -30,6 +31,14 @@ func New(cfg config.GRPCClientConfig) *Client {
 		cfg:   cfg,
 		conns: make(map[string]*grpc.ClientConn),
 	}
+}
+
+// authContext добавляет auth metadata в контекст.
+func authContext(ctx context.Context, apiKey string) context.Context {
+	if apiKey == "" {
+		return ctx
+	}
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+apiKey)
 }
 
 // getConn возвращает gRPC-соединение к ноде (кеширует).
@@ -72,12 +81,13 @@ func (c *Client) getConn(_ context.Context, address string) (*grpc.ClientConn, e
 }
 
 // LoadImage загружает Docker-образ на ноду через стрим.
-func (c *Client) LoadImage(ctx context.Context, nodeAddress string, metadata domain.ImageMetadata, chunks io.Reader) (*domain.ImageLoadResult, error) {
+func (c *Client) LoadImage(ctx context.Context, nodeAddress, apiKey string, metadata domain.ImageMetadata, chunks io.Reader) (*domain.ImageLoadResult, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	depClient := pb.NewDeploymentServiceClient(conn)
 	stream, err := depClient.LoadImage(ctx)
 	if err != nil {
@@ -131,12 +141,13 @@ func (c *Client) LoadImage(ctx context.Context, nodeAddress string, metadata dom
 }
 
 // StartInstance запускает экземпляр игрового сервера на ноде.
-func (c *Client) StartInstance(ctx context.Context, nodeAddress string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+func (c *Client) StartInstance(ctx context.Context, nodeAddress, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	depClient := pb.NewDeploymentServiceClient(conn)
 
 	pbReq := &pb.StartInstanceRequest{
@@ -173,12 +184,13 @@ func (c *Client) StartInstance(ctx context.Context, nodeAddress string, req doma
 }
 
 // StopInstance выполняет graceful остановку экземпляра.
-func (c *Client) StopInstance(ctx context.Context, nodeAddress string, instanceID int64, timeoutSec uint32) error {
+func (c *Client) StopInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	depClient := pb.NewDeploymentServiceClient(conn)
 	_, err = depClient.StopInstance(ctx, &pb.StopInstanceRequest{
 		InstanceId:     instanceID,
@@ -192,12 +204,13 @@ func (c *Client) StopInstance(ctx context.Context, nodeAddress string, instanceI
 }
 
 // StreamLogs открывает поток журналов инстанса.
-func (c *Client) StreamLogs(ctx context.Context, nodeAddress string, req domain.StreamLogsRequest) (domain.LogStream, error) {
+func (c *Client) StreamLogs(ctx context.Context, nodeAddress, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	depClient := pb.NewDeploymentServiceClient(conn)
 	pbReq := &pb.StreamLogsRequest{
 		InstanceId:   req.InstanceID,
@@ -215,12 +228,13 @@ func (c *Client) StreamLogs(ctx context.Context, nodeAddress string, req domain.
 }
 
 // GetNodeInfo запрашивает статические характеристики ноды.
-func (c *Client) GetNodeInfo(ctx context.Context, nodeAddress string) (*domain.NodeInfo, error) {
+func (c *Client) GetNodeInfo(ctx context.Context, nodeAddress, apiKey string) (*domain.NodeInfo, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	discClient := pb.NewDiscoveryServiceClient(conn)
 	resp, err := discClient.GetNodeInfo(ctx, &pb.GetNodeInfoRequest{})
 	if err != nil {
@@ -238,12 +252,13 @@ func (c *Client) GetNodeInfo(ctx context.Context, nodeAddress string) (*domain.N
 }
 
 // Heartbeat получает текущую загруженность ноды.
-func (c *Client) Heartbeat(ctx context.Context, nodeAddress string) (*domain.ResourceUsage, error) {
+func (c *Client) Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*domain.ResourceUsage, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	discClient := pb.NewDiscoveryServiceClient(conn)
 	resp, err := discClient.Heartbeat(ctx, &pb.HeartbeatRequest{})
 	if err != nil {
@@ -259,12 +274,13 @@ func (c *Client) Heartbeat(ctx context.Context, nodeAddress string) (*domain.Res
 }
 
 // ListInstances возвращает все экземпляры на ноде.
-func (c *Client) ListInstances(ctx context.Context, nodeAddress string) ([]*domain.Instance, error) {
+func (c *Client) ListInstances(ctx context.Context, nodeAddress, apiKey string) ([]*domain.Instance, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	discClient := pb.NewDiscoveryServiceClient(conn)
 	resp, err := discClient.ListInstances(ctx, &pb.ListInstancesRequest{})
 	if err != nil {
@@ -280,12 +296,13 @@ func (c *Client) ListInstances(ctx context.Context, nodeAddress string) ([]*doma
 }
 
 // GetInstance возвращает экземпляр по идентификатору.
-func (c *Client) GetInstance(ctx context.Context, nodeAddress string, instanceID int64) (*domain.Instance, error) {
+func (c *Client) GetInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) (*domain.Instance, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	discClient := pb.NewDiscoveryServiceClient(conn)
 	resp, err := discClient.GetInstance(ctx, &pb.GetInstanceRequest{
 		InstanceId: instanceID,
@@ -298,12 +315,13 @@ func (c *Client) GetInstance(ctx context.Context, nodeAddress string, instanceID
 }
 
 // GetInstanceUsage возвращает потребление ресурсов экземпляра.
-func (c *Client) GetInstanceUsage(ctx context.Context, nodeAddress string, instanceID int64) (*domain.ResourceUsage, error) {
+func (c *Client) GetInstanceUsage(ctx context.Context, nodeAddress, apiKey string, instanceID int64) (*domain.ResourceUsage, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	ctx = authContext(ctx, apiKey)
 	discClient := pb.NewDiscoveryServiceClient(conn)
 	resp, err := discClient.GetInstanceUsage(ctx, &pb.GetInstanceUsageRequest{
 		InstanceId: instanceID,

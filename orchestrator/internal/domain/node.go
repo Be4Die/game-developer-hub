@@ -6,7 +6,8 @@ import "time"
 type Node struct {
 	ID           int64
 	Address      string // gRPC-адрес ноды (host:port)
-	TokenHash    []byte // хеш авторизационного токена
+	TokenHash    []byte // хеш авторизационного токена (для проверки при авторизации)
+	APIToken     string // plaintext токен (для gRPC-запросов к ноде)
 	Region       string // опционально
 	Status       NodeStatus
 	CPUCores     uint32    // получено из NodeInfo

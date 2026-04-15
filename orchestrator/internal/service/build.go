@@ -69,15 +69,10 @@ type UploadBuildParams struct {
 	ArchiveSize  int64
 }
 
-// UploadBuild выполняет полный пайплайн загрузки билда:
-// 1. Валидация лимитов
-// 2. Распаковка архива
-// 3. Создание Dockerfile
-// 4. Сборка Docker-образа
-// 5. Сохранение образа (docker save)
-// 6. Загрузка образа на ноду через gRPC
-// 7. Сохранение файла в FS
-// 8. Регистрация метаданных в PG
+// UploadBuild загружает серверный билд: распаковывает архив, собирает Docker-образ,
+// сохраняет его в файловое хранилище, загружает на ноду и регистрирует метаданные.
+// Возвращает ErrNoAvailableNode при отсутствии свободных нод.
+// Превышение размера архива или лимита билдов на игру возвращает ошибку.
 func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParams) (*domain.ServerBuild, error) {
 	// Шаг 1: проверка лимита билдов на игру.
 	count, err := p.buildRepo.CountByGame(ctx, params.GameID)
@@ -155,7 +150,7 @@ func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParam
 	}
 
 	// Шаг 10: загрузка Docker-образа на ноду через gRPC.
-	if err := p.loadImageToNode(ctx, node.Address, params.GameID, imageTag, imageTarPath); err != nil {
+	if err := p.loadImageToNode(ctx, node.Address, node.APIToken, params.GameID, imageTag, imageTarPath); err != nil {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: load image to node: %w", err)
 	}
 
@@ -361,7 +356,7 @@ func (p *BuildPipeline) dockerSave(ctx context.Context, tag, outPath string) err
 }
 
 // loadImageToNode загружает Docker-образ на ноду через gRPC.
-func (p *BuildPipeline) loadImageToNode(ctx context.Context, nodeAddress string, gameID int64, imageTag, tarPath string) error {
+func (p *BuildPipeline) loadImageToNode(ctx context.Context, nodeAddress, apiKey string, gameID int64, imageTag, tarPath string) error {
 	file, err := os.Open(tarPath) //nolint:gosec // путь генерируется внутри пайплайна
 	if err != nil {
 		return fmt.Errorf("open tar file: %w", err)
@@ -373,7 +368,7 @@ func (p *BuildPipeline) loadImageToNode(ctx context.Context, nodeAddress string,
 		ImageTag: imageTag,
 	}
 
-	_, err = p.nodeClient.LoadImage(ctx, nodeAddress, meta, file)
+	_, err = p.nodeClient.LoadImage(ctx, nodeAddress, apiKey, meta, file)
 	if err != nil {
 		return fmt.Errorf("load image: %w", err)
 	}
@@ -424,7 +419,9 @@ func (p *BuildPipeline) GetBuild(ctx context.Context, gameID int64, version stri
 	return p.buildRepo.GetByVersion(ctx, gameID, version)
 }
 
-// DeleteBuild удаляет билд: проверка активных инстансов → удаление из FS → удаление из PG.
+// DeleteBuild удаляет билд по версии. Проверяет отсутствие активных инстансов,
+// удаляет файл из файлового хранилища и метаданные из PostgreSQL.
+// Возвращает ErrBuildInUse при наличии запущенных инстансов, ErrNotFound при отсутствии билда.
 func (p *BuildPipeline) DeleteBuild(ctx context.Context, gameID int64, version string) error {
 	build, err := p.buildRepo.GetByVersion(ctx, gameID, version)
 	if err != nil {
