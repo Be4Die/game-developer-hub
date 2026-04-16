@@ -19,6 +19,7 @@ includes:
   go: taskfiles/go.yml
   docker: taskfiles/docker.yml
   loadtest: taskfiles/loadtest.yml
+  frontend: taskfiles/frontend.yml
 
 tasks:
   # ==================== Proto ====================
@@ -460,6 +461,42 @@ tasks:
       - task: go:test:cover-html
         vars:
           GO_DIR: orchestrator
+
+  # ==================== Frontend ====================
+  frontend:install:
+    desc: "Install frontend dependencies"
+    cmds:
+      - task: frontend:deps
+        vars:
+          FRONTEND_DIR: frontend
+
+  frontend:dev:
+    desc: "Start frontend development server"
+    cmds:
+      - task: frontend:start
+        vars:
+          FRONTEND_DIR: frontend
+
+  frontend:build:
+    desc: "Build frontend for production"
+    cmds:
+      - task: frontend:prod
+        vars:
+          FRONTEND_DIR: frontend
+
+  frontend:preview:
+    desc: "Preview frontend production build"
+    cmds:
+      - task: frontend:serve
+        vars:
+          FRONTEND_DIR: frontend
+
+  frontend:clean:
+    desc: "Clean frontend build artifacts"
+    cmds:
+      - task: frontend:remove
+        vars:
+          FRONTEND_DIR: frontend
 
   # ==================== All services ====================
   all:up:

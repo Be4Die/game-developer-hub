@@ -1,0 +1,38 @@
+version: "3"
+
+vars:
+  FRONTEND_DIR: "."
+
+tasks:
+  deps:
+    desc: "Install npm dependencies"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm ci
+
+  start:
+    desc: "Start development server"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run dev
+
+  prod:
+    desc: "Build for production"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run build
+
+  serve:
+    desc: "Preview production build"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run preview
+
+  remove:
+    desc: "Clean build artifacts"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - cmd: rm -rf node_modules dist
+        platforms: [linux, darwin]
+      - cmd: powershell -Command "Remove-Item -Recurse -Force node_modules, dist -ErrorAction SilentlyContinue"
+        platforms: [windows]
