@@ -153,6 +153,20 @@ tasks:
           GO_DIR: game-server-node
 
   # ==================== Node: Load Tests ====================
+  node:seed:
+    desc: "Seed game-server-node with test data (requires running server)"
+    dir: game-server-node
+    vars:
+      SEED_GAMES: "{{.SEED_GAMES | default 2}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES | default 8}}"
+    env:
+      SEED_NODE_ADDR: '{{.NODE_ADDR | default "localhost:44044"}}'
+      SEED_API_KEY: '{{.NODE_API_KEY | default "dev-api-key-for-local-testing"}}'
+      SEED_GAMES: "{{.SEED_GAMES}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES}}"
+    cmds:
+      - go run ./cmd/seed
+
   node:load-test:
     desc: "Run load tests against DiscoveryService (server must be running)"
     cmds:
@@ -182,6 +196,55 @@ tasks:
           LOAD_TEST_ADDR: "{{.ADDR}}"
           LOAD_TEST_CONCURRENCY: "{{.CONCURRENCY}}"
           LOAD_TEST_REQUESTS: "{{.REQUESTS}}"
+
+  node:load-test:full:
+    desc: "Full load test cycle: start node, run tests, cleanup"
+    vars:
+      NODE_CONCURRENCY: "{{.NODE_CONCURRENCY | default 50}}"
+      NODE_REQUESTS: "{{.NODE_REQUESTS | default 10000}}"
+    cmds:
+      - echo "═══════════════════════════════════════════════════════"
+      - echo "  FULL LOAD TEST CYCLE - GAME-SERVER-NODE"
+      - echo "═══════════════════════════════════════════════════════"
+      - task: node:up
+      - |
+        echo "Waiting for game-server-node..."
+        for i in $(seq 1 15); do
+          bash -c "echo >/dev/tcp/localhost/44044" 2>/dev/null && break
+          sleep 1
+        done
+      - task: node:load-test
+        vars:
+          LOAD_TEST_CONCURRENCY: "{{.NODE_CONCURRENCY}}"
+          LOAD_TEST_REQUESTS: "{{.NODE_REQUESTS}}"
+      - task: node:down
+
+  # ==================== Orchestrator: Seed ====================
+  orchestrator:seed:
+    desc: "Seed orchestrator with test data"
+    dir: orchestrator
+    vars:
+      SEED_NODES: "{{.SEED_NODES | default 3}}"
+      SEED_BUILDS: "{{.SEED_BUILDS | default 2}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES | default 8}}"
+    env:
+      SEED_NODES: "{{.SEED_NODES}}"
+      SEED_BUILDS: "{{.SEED_BUILDS}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES}}"
+      SEED_CLEAN: '{{if eq .SEED_CLEAN "true"}}1{{end}}'
+      SEED_DB_HOST: localhost
+      SEED_DB_PORT: "5432"
+      SEED_KV_ADDR: localhost:6379
+    cmds:
+      - go run ./cmd/seed
+
+  orchestrator:seed:clean:
+    desc: "Clean and seed orchestrator with test data"
+    dir: orchestrator
+    cmds:
+      - task: orchestrator:seed
+        vars:
+          SEED_CLEAN: "true"
 
   # ==================== Orchestrator: Load Tests ====================
   orchestrator:load-test:
@@ -216,7 +279,81 @@ tasks:
         --rate {{.RATE}}
         --duration {{.DURATION}}
 
+  orchestrator:load-test:full:
+    desc: "Full load test cycle: start stack, seed data, run tests, cleanup"
+    vars:
+      ORCH_RATE: "{{.ORCH_RATE | default 1000}}"
+      ORCH_DURATION: '{{.ORCH_DURATION | default "30s"}}'
+    cmds:
+      - echo "═══════════════════════════════════════════════════════"
+      - echo "  FULL LOAD TEST CYCLE - ORCHESTRATOR"
+      - echo "═══════════════════════════════════════════════════════"
+      - task: orchestrator:stack:up
+      - task: orchestrator:seed:clean
+      - task: orchestrator:load-test
+        vars:
+          ORCH_RATE: "{{.ORCH_RATE}}"
+          ORCH_DURATION: "{{.ORCH_DURATION}}"
+      - task: orchestrator:stack:down
+    status:
+      - test "${SKIP_LOAD_TEST:-}" = "true"
+
+  orchestrator:stack:up:
+    desc: "Start orchestrator stack (PostgreSQL, Valkey, Orchestrator, Node)"
+    dir: orchestrator
+    cmds:
+      - docker compose up -d --force-recreate --build
+      - |
+        echo "Waiting for PostgreSQL..."
+        for i in $(seq 1 20); do
+          docker exec orchestrator-postgres pg_isready -U postgres >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - |
+        echo "Waiting for Valkey..."
+        for i in $(seq 1 20); do
+          docker exec orchestrator-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
+          sleep 1
+        done
+      - |
+        echo "Waiting for Orchestrator..."
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - echo "✅ Stack is ready"
+
+  orchestrator:stack:down:
+    desc: "Stop orchestrator stack"
+    dir: orchestrator
+    cmds:
+      - docker compose down --remove-orphans
+      - docker stop game-server-node 2>/dev/null || true
+      - docker rm game-server-node 2>/dev/null || true
+
+  orchestrator:stack:logs:
+    desc: "Show orchestrator stack logs"
+    dir: orchestrator
+    cmds:
+      - docker compose logs -f
+
   # ==================== Orchestrator: Docker ====================
+  orchestrator:db:init:
+    desc: "Initialize orchestrator database schema"
+    dir: orchestrator
+    cmds:
+      - |
+        docker exec -i orchestrator-postgres psql -U postgres -d orchestrator < migrations/init.sql
+      - echo "✅ Database schema initialized"
+
+  orchestrator:db:reset:
+    desc: "Reset orchestrator database (drop and recreate)"
+    dir: orchestrator
+    cmds:
+      - docker exec orchestrator-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
+      - docker exec orchestrator-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - task: orchestrator:db:init
+
   orchestrator:build:
     desc: "Build Docker image for orchestrator"
     cmds:
