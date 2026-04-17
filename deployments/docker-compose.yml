@@ -1,0 +1,105 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — полный стек для локальной разработки
+#
+#  Сервисы:
+#    postgres       — БД оркестратора
+#    valkey         — key-value хранилище (heartbeat нод)
+#    orchestrator   — HTTP API оркестратора
+#    game-server-node — gRPC-агент ноды (Docker-in-Docker)
+#    frontend       — Vue SPA с nginx (production) / vite dev-proxy
+#
+#  Использование:
+#    docker compose up -d              # запустить всё
+#    docker compose up -d --build      # пересобрать и запустить
+#    docker compose logs -f orchestrator
+#    docker compose down -v            # остановить и удалить тома
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── Инфраструктура ──────────────────────────────────────────
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: gdh-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: gdh-valkey
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Сервисы приложения ──────────────────────────────────────
+
+  orchestrator:
+    build:
+      context: ..
+      dockerfile: orchestrator/Dockerfile
+    container_name: gdh-orchestrator
+    environment:
+      CONFIG_PATH: /app/config/local.yaml
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - ../orchestrator/config:/app/config:ro
+      - builds:/app/data/builds
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  game-server-node:
+    build:
+      context: ..
+      dockerfile: game-server-node/Dockerfile
+    container_name: gdh-node
+    environment:
+      CONFIG_PATH: /app/config/local.yaml
+      NODE_API_KEY: dev-api-key-for-local-testing
+    ports:
+      - "44044:44044"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+    volumes:
+      - ../game-server-node/config:/app/config:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    container_name: gdh-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      orchestrator:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  builds:
