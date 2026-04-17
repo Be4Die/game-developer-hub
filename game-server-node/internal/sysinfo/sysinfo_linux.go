@@ -22,16 +22,26 @@ type LinuxProvider struct {
 	lastCPUTotal uint64
 	lastNetBytes uint64
 	lastCheck    time.Time
+	hostPrefix   string // "/host" для Docker-in-Docker, "" для обычного контейнера
 }
 
 // NewProvider создаёт провайдер для сбора реальных метрик системы.
 func NewProvider(ethName string) *LinuxProvider {
-	if ethName == "" {
-		ethName = findDefaultInterface()
+	// Определяем префикс: если /host/proc существует — используем DinD режим,
+	// иначе читаем напрямую из /proc.
+	hostPrefix := ""
+	if _, err := os.Stat("/host/proc/meminfo"); err == nil {
+		hostPrefix = "/host"
 	}
 
 	p := &LinuxProvider{
-		ethName: ethName,
+		ethName:    ethName,
+		hostPrefix: hostPrefix,
+	}
+
+	// Если интерфейс не задан, определим автоматически.
+	if p.ethName == "" {
+		p.ethName = p.findDefaultInterface()
 	}
 
 	// Initialize base counters
@@ -40,6 +50,29 @@ func NewProvider(ethName string) *LinuxProvider {
 	p.lastCheck = time.Now()
 
 	return p
+}
+
+// readProc читает файл из procfs с учётом префикса.
+func (p *LinuxProvider) readProc(path string) ([]byte, error) {
+	return os.ReadFile(p.hostPrefix + path)
+}
+
+// readSys читает файл из sysfs с учётом префикса.
+func (p *LinuxProvider) readSys(path string) ([]byte, error) {
+	return os.ReadFile(p.hostPrefix + path)
+}
+
+// statfs выполняет statfs с учётом префикса.
+func (p *LinuxProvider) statfs(path string) (*unix.Statfs_t, error) {
+	var stat unix.Statfs_t
+	target := p.hostPrefix + path
+	if p.hostPrefix == "" {
+		target = path
+	}
+	if err := unix.Statfs(target, &stat); err != nil {
+		return nil, err
+	}
+	return &stat, nil
 }
 
 // GetMax возвращает максимальные ресурсы системы через /proc и /sys.
@@ -69,9 +102,9 @@ func (p *LinuxProvider) GetUsage() (domain.ResourcesUsage, error) {
 		usage.Memory = (memTotal - memAvail) * 1024
 	}
 
-	// 2. Disk
-	var stat unix.Statfs_t
-	if err := unix.Statfs("/host/root", &stat); err == nil {
+	// Disk
+	stat, err := p.statfs("/")
+	if err == nil {
 		usage.Disk = (stat.Blocks - stat.Bfree) * uint64(stat.Bsize)
 	}
 
@@ -101,7 +134,7 @@ func (p *LinuxProvider) GetUsage() (domain.ResourcesUsage, error) {
 }
 
 func (p *LinuxProvider) getMaxRAM() (uint64, error) {
-	data, err := os.ReadFile("/host/proc/meminfo")
+	data, err := p.readProc("/proc/meminfo")
 	if err != nil {
 		return 0, err
 	}
@@ -118,16 +151,15 @@ func (p *LinuxProvider) getMaxRAM() (uint64, error) {
 }
 
 func (p *LinuxProvider) getMaxDisk() (uint64, error) {
-	var stat unix.Statfs_t
-	if err := unix.Statfs("/host/root", &stat); err == nil {
-		return stat.Blocks * uint64(stat.Bsize), nil
-	} else {
+	stat, err := p.statfs("/")
+	if err != nil {
 		return 0, err
 	}
+	return stat.Blocks * uint64(stat.Bsize), nil
 }
 
 func (p *LinuxProvider) getMaxCPU() (uint32, error) {
-	data, err := os.ReadFile("/host/proc/cpuinfo")
+	data, err := p.readProc("/proc/cpuinfo")
 	if err != nil {
 		return 0, err
 	}
@@ -139,7 +171,7 @@ func (p *LinuxProvider) getMaxNet() (uint64, error) {
 		return 0, fmt.Errorf("network interface not configured")
 	}
 
-	data, err := os.ReadFile("/host/sys/class/net/" + p.ethName + "/speed")
+	data, err := p.readSys("/sys/class/net/" + p.ethName + "/speed")
 	if err == nil {
 		speed, _ := strconv.ParseUint(strings.TrimSpace(string(data)), 10, 64)
 		if speed > 0 {
@@ -149,8 +181,8 @@ func (p *LinuxProvider) getMaxNet() (uint64, error) {
 	return 0, fmt.Errorf("net info not found for interface: %s", p.ethName)
 }
 
-func findDefaultInterface() string {
-	entries, err := os.ReadDir("/host/sys/class/net")
+func (p *LinuxProvider) findDefaultInterface() string {
+	entries, err := os.ReadDir(p.hostPrefix + "/sys/class/net")
 	if err != nil {
 		return ""
 	}
@@ -163,7 +195,7 @@ func findDefaultInterface() string {
 }
 
 func (p *LinuxProvider) getMemoryUsageBase() (total, avail uint64) {
-	data, err := os.ReadFile("/host/proc/meminfo")
+	data, err := p.readProc("/proc/meminfo")
 	if err != nil {
 		return
 	}
@@ -195,7 +227,7 @@ func (p *LinuxProvider) getMemoryUsageBase() (total, avail uint64) {
 }
 
 func (p *LinuxProvider) getCPUCounters() (idle, total uint64) {
-	data, err := os.ReadFile("/host/proc/stat")
+	data, err := p.readProc("/proc/stat")
 	if err != nil {
 		return
 	}
@@ -218,11 +250,11 @@ func (p *LinuxProvider) getNetBytes() uint64 {
 		return 0
 	}
 
-	rxPath := "/host/sys/class/net/" + p.ethName + "/statistics/rx_bytes"
-	txPath := "/host/sys/class/net/" + p.ethName + "/statistics/tx_bytes"
+	rxPath := "/sys/class/net/" + p.ethName + "/statistics/rx_bytes"
+	txPath := "/sys/class/net/" + p.ethName + "/statistics/tx_bytes"
 
-	rxData, _ := os.ReadFile(rxPath)
-	txData, _ := os.ReadFile(txPath)
+	rxData, _ := p.readSys(rxPath)
+	txData, _ := p.readSys(txPath)
 
 	rx, _ := strconv.ParseUint(strings.TrimSpace(string(rxData)), 10, 64)
 	tx, _ := strconv.ParseUint(strings.TrimSpace(string(txData)), 10, 64)
