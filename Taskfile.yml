@@ -344,16 +344,22 @@ tasks:
     dir: orchestrator
     cmds:
       - |
-        docker exec -i orchestrator-postgres psql -U postgres -d orchestrator < migrations/init.sql
+        docker exec -i {{.DB_CONTAINER}} psql -U postgres -d orchestrator < migrations/init.sql
       - echo "✅ Database schema initialized"
+    vars:
+      DB_CONTAINER: '{{.DB_CONTAINER | default "orchestrator-postgres"}}'
 
   orchestrator:db:reset:
     desc: "Reset orchestrator database (drop and recreate)"
     dir: orchestrator
+    vars:
+      DB_CONTAINER: '{{.DB_CONTAINER | default "orchestrator-postgres"}}'
     cmds:
-      - docker exec orchestrator-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
-      - docker exec orchestrator-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - docker exec {{.DB_CONTAINER}} psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
+      - docker exec {{.DB_CONTAINER}} psql -U postgres -c "CREATE DATABASE orchestrator;"
       - task: orchestrator:db:init
+        vars:
+          DB_CONTAINER: "{{.DB_CONTAINER}}"
 
   orchestrator:build:
     desc: "Build Docker image for orchestrator"
@@ -505,9 +511,92 @@ tasks:
         vars:
           FRONTEND_DIR: frontend
 
-  # ==================== All services ====================
+  # ==================== Stack (deployments/) ====================
+  stack:up:
+    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, Node, Frontend)"
+    dir: deployments
+    cmds:
+      - docker compose up -d --build
+      - |
+        echo "Ожидание PostgreSQL..."
+        for i in $(seq 1 20); do
+          docker exec gdh-postgres pg_isready -U postgres >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание Valkey..."
+        for i in $(seq 1 20); do
+          docker exec gdh-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание Orchestrator..."
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - 'echo "Stack is ready: http://localhost:3000 (frontend), http://localhost:8080 (API)"'
+
+  stack:down:
+    desc: "Stop full stack and remove containers"
+    dir: deployments
+    cmds:
+      - docker compose down --remove-orphans
+
+  stack:logs:
+    desc: "Follow logs for all stack services"
+    dir: deployments
+    cmds:
+      - docker compose logs -f
+
+  stack:rebuild:
+    desc: "Rebuild and restart all stack services"
+    dir: deployments
+    cmds:
+      - docker compose up -d --build --force-recreate
+
+  stack:db:init:
+    desc: "Initialize orchestrator database schema (run after stack:up)"
+    cmds:
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
+      - echo "✅ Database schema initialized"
+
+  stack:db:reset:
+    desc: "Reset orchestrator database (drop, recreate, init)"
+    cmds:
+      - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - task: stack:db:init
+
+  stack:seed:
+    desc: "Seed orchestrator with test data (requires running stack)"
+    dir: orchestrator
+    vars:
+      SEED_NODES: "{{.SEED_NODES | default 2}}"
+      SEED_BUILDS: "{{.SEED_BUILDS | default 2}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES | default 4}}"
+    env:
+      SEED_NODES: "{{.SEED_NODES}}"
+      SEED_BUILDS: "{{.SEED_BUILDS}}"
+      SEED_INSTANCES: "{{.SEED_INSTANCES}}"
+      SEED_DB_HOST: localhost
+      SEED_DB_PORT: "5432"
+      SEED_KV_ADDR: localhost:6379
+    cmds:
+      - go run ./cmd/seed
+
+  # ==================== Dev (orchestrator stack + frontend dev server) ====================
+  dev:
+    desc: "Start orchestrator infra (Postgres, Valkey, Orchestrator, Node) + frontend dev server"
+    cmds:
+      - task: stack:up
+      - task: stack:db:init
+      - task: frontend:dev
+
+  # ==================== All services (legacy single containers) ====================
   all:up:
-    desc: "Start all services"
+    desc: "Start all services as individual containers"
     cmds:
       - task: node:up
       - task: orchestrator:up
