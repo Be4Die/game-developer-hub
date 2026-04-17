@@ -36,3 +36,9 @@ tasks:
         platforms: [linux, darwin]
       - cmd: powershell -Command "Remove-Item -Recurse -Force node_modules, dist -ErrorAction SilentlyContinue"
         platforms: [windows]
+
+  stats:
+    desc: "Count lines of code (excluding node_modules)"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - cloc --exclude-dir=node_modules,.git .

@@ -498,6 +498,13 @@ tasks:
         vars:
           FRONTEND_DIR: frontend
 
+  frontend:cloc:
+    desc: "Count lines of code in frontend"
+    cmds:
+      - task: frontend:stats
+        vars:
+          FRONTEND_DIR: frontend
+
   # ==================== All services ====================
   all:up:
     desc: "Start all services"
@@ -535,3 +542,8 @@ tasks:
       - task: node:lint
       - task: orchestrator:lint
       - task: proto:lint
+
+  all:cloc:
+    desc: "Count lines of code (excluding node_modules, generated proto)"
+    cmds:
+      - cloc --exclude-dir=node_modules,.git --exclude-ext=json,lock --not-match-f='\.pb\.go$|_grpc\.pb\.go$' .
