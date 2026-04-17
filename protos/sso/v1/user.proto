@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package sso.v1;
+
+import "sso/v1/common.proto";
+
+// Сервис управления профилем пользователя.
+service UserService {
+  // Получение профиля текущего пользователя (по JWT).
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+
+  // Обновление профиля текущего пользователя.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+  // Смена пароля (требует текущий пароль).
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+
+  // Получение профиля другого пользователя по ID.
+  // Доступно для модераторов и администраторов.
+  rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
+
+  // Поиск пользователей по email или display_name.
+  // Доступно для модераторов и администраторов.
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+
+  // Изменение роли пользователя.
+  // Доступно только администраторам.
+  rpc ChangeUserRole(ChangeUserRoleRequest) returns (ChangeUserRoleResponse);
+
+  // Блокировка/разблокировка пользователя.
+  // Доступно только администраторам.
+  rpc SetUserStatus(SetUserStatusRequest) returns (SetUserStatusResponse);
+}
+
+message GetProfileRequest {
+  // Извлекается из JWT, поле может быть пустым.
+  string user_id = 1;
+}
+
+message GetProfileResponse {
+  User user = 1;
+}
+
+message UpdateProfileRequest {
+  optional string display_name = 1;
+}
+
+message UpdateProfileResponse {
+  User user = 1;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+
+message GetUserByIdResponse {
+  User user = 1;
+}
+
+message SearchUsersRequest {
+  // Поисковый запрос (совпадение по email или display_name).
+  string query = 1;
+  // Лимит результатов (по умолчанию 20, максимум 100).
+  optional int32 limit = 2;
+  // Смещение для пагинации.
+  optional int32 offset = 3;
+}
+
+message SearchUsersResponse {
+  repeated User users = 1;
+  int64 total_count = 2;
+}
+
+message ChangeUserRoleRequest {
+  string user_id = 1;
+  UserRole new_role = 2;
+}
+
+message ChangeUserRoleResponse {
+  User user = 1;
+}
+
+message SetUserStatusRequest {
+  string user_id = 1;
+  UserStatus new_status = 2;
+}
+
+message SetUserStatusResponse {
+  User user = 1;
+}

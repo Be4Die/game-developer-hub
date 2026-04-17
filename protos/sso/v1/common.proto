@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package sso.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Роль пользователя в системе.
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_DEVELOPER = 1;
+  USER_ROLE_MODERATOR = 2;
+  USER_ROLE_ADMIN = 3;
+}
+
+// Состояние пользователя.
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_SUSPENDED = 2;
+  USER_STATUS_DELETED = 3;
+}
+
+// Информация о пользователе.
+message User {
+  // Уникальный идентификатор пользователя (UUID string).
+  string id = 1;
+  string email = 2;
+  // Отображаемое имя.
+  string display_name = 3;
+  UserRole role = 4;
+  UserStatus status = 5;
+  bool email_verified = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// Информация о токене сессии.
+message TokenInfo {
+  // JWT access token.
+  string access_token = 1;
+  // Refresh token для обновления access token.
+  string refresh_token = 2;
+  // Время истечения access token.
+  google.protobuf.Timestamp expires_at = 3;
+  // Тип токена (всегда "Bearer").
+  string token_type = 4;
+}
+
+// Метаданные активной сессии.
+message Session {
+  // Идентификатор сессии (jti из JWT).
+  string session_id = 1;
+  // Идентификатор пользователя.
+  string user_id = 2;
+  // User-Agent клиента.
+  string user_agent = 3;
+  // IP-адрес клиента.
+  string ip_address = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp last_used_at = 6;
+  google.protobuf.Timestamp expires_at = 7;
+}

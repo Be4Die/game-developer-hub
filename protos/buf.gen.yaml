@@ -7,12 +7,10 @@ managed:
       value: github.com/Be4Die/game-developer-hub/protos
 
 plugins:
-  - remote: buf.build/protocolbuffers/go
+  - local: protoc-gen-go
     out: .
-    opt:
-      - paths=source_relative
+    opt: paths=source_relative
 
-  - remote: buf.build/grpc/go
+  - local: protoc-gen-go-grpc
     out: .
-    opt:
-      - paths=source_relative
+    opt: paths=source_relative

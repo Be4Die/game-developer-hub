@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package sso.v1;
+
+import "sso/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+// Сервис управления токенами и сессиями.
+// Предназначен в первую очередь для использования другими сервисами
+// через gRPC (валидация токенов, проверка прав).
+service TokenService {
+  // Валидация access token. Возвращает информацию о пользователе.
+  // Используется другими сервисами для проверки авторизации.
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // Получение всех активных сессий пользователя.
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+
+  // Отзыв конкретной сессии.
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+
+  // Отзыв всех сессий пользователя (кроме текущей).
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (RevokeAllSessionsResponse);
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  // true — токен валиден.
+  bool valid = 1;
+  // Информация о пользователе (присутствует, если valid = true).
+  User user = 2;
+  // Идентификатор сессии.
+  string session_id = 3;
+  // Время истечения токена.
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message ListSessionsRequest {
+  string user_id = 1;
+}
+
+message ListSessionsResponse {
+  repeated Session sessions = 1;
+}
+
+message RevokeSessionRequest {
+  string user_id = 1;
+  string session_id = 2;
+}
+
+message RevokeSessionResponse {
+  bool success = 1;
+}
+
+message RevokeAllSessionsRequest {
+  string user_id = 1;
+  // Опционально: сессия, которую НЕ нужно отзывать.
+  optional string exclude_session_id = 2;
+}
+
+message RevokeAllSessionsResponse {
+  int64 revoked_count = 1;
+}

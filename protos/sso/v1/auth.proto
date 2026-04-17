@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package sso.v1;
+
+import "sso/v1/common.proto";
+
+// Сервис аутентификации: регистрация, вход, обновление токенов.
+service AuthService {
+  // Регистрация нового пользователя по email и паролю.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+
+  // Вход пользователя по email и паролю.
+  rpc Login(LoginRequest) returns (LoginResponse);
+
+  // Обновление access token по refresh token.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  // Выход пользователя (отзыв refresh token).
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Подтверждение email по коду верификации.
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+
+  // Запрос повторной отправки письма верификации.
+  rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse);
+
+  // Восстановление пароля (запрос письма с ссылкой).
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+
+  // Сброс пароля по токену из письма.
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string display_name = 3;
+}
+
+message RegisterResponse {
+  User user = 1;
+  TokenInfo tokens = 2;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  // Опционально: информация о клиенте для сессии.
+  optional string user_agent = 3;
+  optional string ip_address = 4;
+}
+
+message LoginResponse {
+  User user = 1;
+  TokenInfo tokens = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  TokenInfo tokens = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message VerifyEmailRequest {
+  // Код верификации из письма.
+  string verification_code = 1;
+}
+
+message VerifyEmailResponse {
+  bool success = 1;
+}
+
+message ResendVerificationEmailRequest {
+  string email = 1;
+}
+
+message ResendVerificationEmailResponse {
+  // true — письмо отправлено, false — пользователь уже подтверждён или email не найден.
+  bool sent = 1;
+}
+
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+message RequestPasswordResetResponse {
+  // Всегда true для предотвращения enumeration attack.
+  bool ok = 1;
+}
+
+message ResetPasswordRequest {
+  string reset_token = 1;
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+}
