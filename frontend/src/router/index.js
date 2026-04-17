@@ -32,31 +32,34 @@ const routes = [
       {
         path: "servers",
         component: ServersLayout,
-        props: true,
+        props: (route) => ({ gameId: route.params.id }),
         children: [
           {
             path: "",
             name: "servers",
             component: ServersOverview,
-            props: true,
+            props: (route) => ({ gameId: route.params.id }),
           },
           {
             path: "builds",
             name: "server-builds",
             component: ServerBuilds,
-            props: true,
+            props: (route) => ({ gameId: route.params.id }),
           },
           {
             path: "instances",
             name: "server-instances",
             component: ServerInstances,
-            props: true,
+            props: (route) => ({ gameId: route.params.id }),
           },
           {
             path: "instances/:instanceId",
             name: "instance-detail",
             component: InstanceDetail,
-            props: true,
+            props: (route) => ({
+              gameId: route.params.id,
+              instanceId: route.params.instanceId,
+            }),
           },
         ],
       },

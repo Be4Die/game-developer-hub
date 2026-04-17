@@ -4,23 +4,29 @@
       <h1>Игровые сервера</h1>
     </div>
 
+    <!-- Ошибка загрузки -->
+    <div v-if="error" class="error-banner">
+      <AlertCircle class="icon-sm" /> Не удалось загрузить данные: {{ error }}
+      <button class="btn-outline btn-sm" @click="fetchAll">Повторить</button>
+    </div>
+
     <!-- Карточки-сводки -->
     <div class="summary-grid">
       <div class="summary-card">
         <span class="summary-label">Билды</span>
-        <span class="summary-value">{{ builds.length }}</span>
+        <span class="summary-value">{{ loading ? '...' : builds.length }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Работающие</span>
-        <span class="summary-value">{{ runningCount }}<span class="summary-sub"> / {{ instances.length }}</span></span>
+        <span class="summary-value">{{ loading ? '...' : runningCount }}<span class="summary-sub"> / {{ instances.length }}</span></span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Игроков онлайн</span>
-        <span class="summary-value">{{ totalPlayers }}</span>
+        <span class="summary-value">{{ loading ? '...' : totalPlayers }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Ноды</span>
-        <span class="summary-value">{{ onlineNodes }}<span class="summary-sub"> / {{ nodes.length }}</span></span>
+        <span class="summary-value">{{ loading ? '...' : onlineNodes }}<span class="summary-sub"> / {{ nodes.length }}</span></span>
       </div>
     </div>
 
@@ -71,23 +77,25 @@
             </tr>
           </tbody>
         </table>
-        <div v-else class="empty-state">Нет запущенных инстансов</div>
+        <div v-else-if="!loading" class="empty-state">Нет запущенных инстансов</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { Upload, Play } from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { Upload, Play, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
-import { mockBuilds, mockInstances, mockNodes } from '../../data/mock-orchestrator'
+import { listBuilds, listInstances, listNodes } from '../../api/orchestrator'
 
-defineProps({ gameId: { type: [String, Number], required: true } })
+const props = defineProps({ gameId: { type: [String, Number], required: true } })
 
-const builds = computed(() => mockBuilds)
-const instances = computed(() => mockInstances)
-const nodes = computed(() => mockNodes)
+const builds = ref([])
+const instances = ref([])
+const nodes = ref([])
+const loading = ref(true)
+const error = ref(null)
 
 const runningCount = computed(() => instances.value.filter(i => i.status === 'running').length)
 const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0))
@@ -96,6 +104,27 @@ const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online'
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
+
+async function fetchAll() {
+  loading.value = true
+  error.value = null
+  try {
+    const [b, i, n] = await Promise.all([
+      listBuilds(props.gameId).catch(() => []),
+      listInstances(props.gameId).catch(() => []),
+      listNodes().catch(() => []),
+    ])
+    builds.value = b
+    instances.value = i
+    nodes.value = n
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchAll)
 </script>
 
 <style scoped>
@@ -104,6 +133,13 @@ function formatDate(ts) {
 
 .overview-header { margin-bottom: 24px; }
 .overview-header h1 { margin: 0; }
+
+.error-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--danger-light); color: var(--danger);
+  border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
+}
+.btn-sm { padding: 4px 12px; font-size: 0.82rem; }
 
 .summary-grid {
   display: grid;
@@ -131,16 +167,9 @@ function formatDate(ts) {
   margin-bottom: 32px;
 }
 .action-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: var(--text-main);
-  transition: 0.15s;
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); text-decoration: none; color: var(--text-main); transition: 0.15s;
 }
 .action-card:hover { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
 .action-icon { width: 36px; height: 36px; color: var(--primary); flex-shrink: 0; }
@@ -156,15 +185,9 @@ function formatDate(ts) {
 .recent-table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .recent-table { width: 100%; border-collapse: collapse; }
 .recent-table th {
-  text-align: left;
-  padding: 12px 16px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  text-align: left; padding: 12px 16px; font-size: 0.78rem; font-weight: 600;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;
+  background: var(--bg-secondary); border-bottom: 1px solid var(--border);
 }
 .recent-table td { padding: 12px 16px; font-size: 0.88rem; border-bottom: 1px solid var(--border); }
 .recent-table tr:last-child td { border-bottom: none; }

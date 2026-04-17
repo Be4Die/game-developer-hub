@@ -3,7 +3,7 @@
     <div class="page-header">
       <h1>Вычислительные ноды</h1>
       <div class="header-actions">
-        <select v-model="statusFilter" class="filter-select">
+        <select v-model="statusFilter" class="filter-select" @change="fetchNodes">
           <option value="all">Все статусы</option>
           <option value="unauthorized">Не авторизованы</option>
           <option value="online">В сети</option>
@@ -16,8 +16,15 @@
       </div>
     </div>
 
+    <!-- Ошибка -->
+    <div v-if="error" class="error-banner">
+      <AlertCircle class="icon-sm" /> {{ error }}
+      <button class="btn-outline btn-sm" @click="fetchNodes">Повторить</button>
+    </div>
+
     <!-- Таблица нод -->
-    <div class="table-wrap" v-if="filteredNodes.length">
+    <div v-if="loading" class="loading-state">Загрузка...</div>
+    <div class="table-wrap" v-else-if="filteredNodes.length">
       <table class="data-table">
         <thead>
           <tr>
@@ -47,7 +54,7 @@
             <td class="cell-muted">{{ node.agent_version || '—' }}</td>
             <td class="cell-muted">{{ formatTime(node.last_ping_at) }}</td>
             <td class="cell-actions" @click.stop>
-              <button class="btn-icon" @click="confirmDelete(node)" title="Удалить">
+              <button class="btn-icon" @click="confirmDelete(node)" title="Удалить" :disabled="deletingId === node.id">
                 <Trash2 class="icon-sm" />
               </button>
             </td>
@@ -100,8 +107,11 @@
           </div>
         </div>
 
+        <div v-if="registerError" class="start-error">{{ registerError }}</div>
         <div class="modal-actions">
-          <button class="btn-primary" @click="submitRegister" :disabled="!canRegister">Подключить</button>
+          <button class="btn-primary" @click="submitRegister" :disabled="!canRegister || registering">
+            {{ registering ? 'Подключение...' : 'Подключить' }}
+          </button>
           <button class="btn-outline" @click="showRegisterForm = false">Отмена</button>
         </div>
       </div>
@@ -114,7 +124,7 @@
         <p>Нода <code>{{ deleteTarget.address }}</code> будет удалена из реестра.</p>
         <p class="text-danger">Все инстансы на этой ноде будут переведены в статус «Авария».</p>
         <div class="modal-actions">
-          <button class="btn-primary" @click="doDelete">Удалить</button>
+          <button class="btn-primary" @click="doDelete" :disabled="deleting">Удалить</button>
           <button class="btn-outline" @click="deleteTarget = null">Отмена</button>
         </div>
       </div>
@@ -123,17 +133,23 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
-import { Plus, Trash2 } from 'lucide-vue-next'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
-import { mockNodes } from '../../data/mock-orchestrator'
+import { listNodes, registerNode, deleteNode } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
-const nodes = ref([...mockNodes])
+const nodes = ref([])
+const loading = ref(true)
+const error = ref(null)
 const statusFilter = ref('all')
 const showRegisterForm = ref(false)
 const registerTab = ref('manual')
+const registerError = ref(null)
+const registering = ref(false)
 const deleteTarget = ref(null)
+const deleting = ref(false)
+const deletingId = ref(null)
 
 const manualForm = reactive({ address: '', token: '', region: '' })
 const authorizeForm = reactive({ node_id: '', token: '' })
@@ -150,48 +166,67 @@ const canRegister = computed(() => {
   return authorizeForm.node_id && authorizeForm.token
 })
 
-function submitRegister() {
-  if (registerTab.value === 'manual') {
-    const newNode = {
-      id: Date.now(),
-      address: manualForm.address,
-      region: manualForm.region || null,
-      status: 'online',
-      cpu_cores: 2,
-      total_memory_bytes: 4_294_967_296,
-      total_disk_bytes: 53_687_091_200,
-      agent_version: '0.3.1',
-      last_ping_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-    nodes.value.push(newNode)
-    showToast('Нода подключена и авторизована')
-  } else {
-    const node = nodes.value.find(n => n.id === Number(authorizeForm.node_id))
-    if (node) {
-      node.status = 'online'
-      node.cpu_cores = 4
-      node.total_memory_bytes = 8_589_934_592
-      node.total_disk_bytes = 107_374_182_400
-      node.agent_version = '0.3.1'
-      node.updated_at = new Date().toISOString()
-      showToast('Нода авторизована')
-    }
+async function fetchNodes() {
+  loading.value = true
+  error.value = null
+  try {
+    nodes.value = await listNodes(statusFilter.value === 'all' ? undefined : statusFilter.value)
+  } catch (e) {
+    error.value = e.response?.data?.message ?? e.message
+  } finally {
+    loading.value = false
   }
-  showRegisterForm.value = false
-  Object.assign(manualForm, { address: '', token: '', region: '' })
-  Object.assign(authorizeForm, { node_id: '', token: '' })
+}
+
+async function submitRegister() {
+  registering.value = true
+  registerError.value = null
+  let payload
+  if (registerTab.value === 'manual') {
+    payload = { address: manualForm.address, token: manualForm.token }
+    if (manualForm.region) payload.region = manualForm.region
+  } else {
+    payload = { node_id: Number(authorizeForm.node_id), token: authorizeForm.token }
+  }
+
+  try {
+    await registerNode(payload)
+    showToast('Нода подключена и авторизована')
+    showRegisterForm.value = false
+    Object.assign(manualForm, { address: '', token: '', region: '' })
+    Object.assign(authorizeForm, { node_id: '', token: '' })
+    await fetchNodes()
+  } catch (e) {
+    if (e.response?.status === 401) {
+      registerError.value = 'Неверный токен авторизации'
+    } else if (e.response?.status === 409) {
+      registerError.value = 'Нода уже авторизована или уже существует'
+    } else {
+      registerError.value = e.response?.data?.message ?? 'Ошибка подключения ноды'
+    }
+  } finally {
+    registering.value = false
+  }
 }
 
 function confirmDelete(node) {
   deleteTarget.value = node
 }
 
-function doDelete() {
-  nodes.value = nodes.value.filter(n => n.id !== deleteTarget.value.id)
-  showToast('Нода удалена')
-  deleteTarget.value = null
+async function doDelete() {
+  deleting.value = true
+  deletingId.value = deleteTarget.value.id
+  try {
+    await deleteNode(deleteTarget.value.id)
+    showToast('Нода удалена')
+    deleteTarget.value = null
+    await fetchNodes()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error')
+  } finally {
+    deleting.value = false
+    deletingId.value = null
+  }
 }
 
 function formatBytes(b) {
@@ -209,10 +244,11 @@ function formatTime(ts) {
   if (diff < 86400) return Math.floor(diff / 3600) + ' ч. назад'
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
+
+onMounted(fetchNodes)
 </script>
 
 <style scoped>
-.page-container { padding: 32px 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
 .nodes-page { padding: 32px 40px; max-width: 1400px; margin: 0 auto; width: 100%; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .page-header h1 { margin: 0; }
@@ -221,6 +257,14 @@ function formatTime(ts) {
   padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-input); color: var(--text-main); font-size: 0.88rem;
 }
+
+.error-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--danger-light); color: var(--danger);
+  border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
+}
+.btn-sm { padding: 4px 12px; font-size: 0.82rem; }
+.loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
 
 .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .data-table { width: 100%; border-collapse: collapse; }
@@ -239,6 +283,7 @@ function formatTime(ts) {
 .cell-actions { display: flex; gap: 4px; }
 .btn-icon { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; }
 .btn-icon:hover { color: var(--danger); background: var(--danger-light); }
+.btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
@@ -264,4 +309,5 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   background: var(--bg-input); color: var(--text-main); font-size: 0.88rem;
 }
 .hint { font-size: 0.82rem; color: var(--text-muted); margin: 4px 0 0; }
+.start-error { color: var(--danger); font-size: 0.85rem; margin-top: 8px; font-weight: 500; }
 </style>

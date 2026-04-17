@@ -3,7 +3,7 @@
     <div class="page-header">
       <h1>Инстансы <span class="counter">{{ instances.length }}/4</span></h1>
       <div class="header-actions">
-        <select v-model="statusFilter" class="filter-select">
+        <select v-model="statusFilter" class="filter-select" @change="fetchInstances">
           <option value="all">Все статусы</option>
           <option value="starting">Запускается</option>
           <option value="running">Работает</option>
@@ -17,8 +17,15 @@
       </div>
     </div>
 
+    <!-- Ошибка -->
+    <div v-if="error" class="error-banner">
+      <AlertCircle class="icon-sm" /> {{ error }}
+      <button class="btn-outline btn-sm" @click="fetchInstances">Повторить</button>
+    </div>
+
     <!-- Таблица инстансов -->
-    <div class="table-wrap" v-if="filteredInstances.length">
+    <div v-if="loading" class="loading-state">Загрузка...</div>
+    <div class="table-wrap" v-else-if="filteredInstances.length">
       <table class="data-table">
         <thead>
           <tr>
@@ -44,11 +51,8 @@
             <td class="cell-muted">{{ inst.server_address }}:{{ inst.host_port }}</td>
             <td class="cell-muted">{{ inst.started_at ? formatDate(inst.started_at) : '—' }}</td>
             <td class="cell-actions" @click.stop>
-              <button v-if="inst.status === 'running'" class="btn-stop" @click="stopInstance(inst)" title="Остановить">
+              <button v-if="inst.status === 'running'" class="btn-stop" @click="handleStop(inst)" :disabled="stoppingId === inst.id" title="Остановить">
                 <Square class="icon-sm" />
-              </button>
-              <button v-else-if="inst.status === 'stopped' || inst.status === 'crashed'" class="btn-start" @click="startExisting(inst)" title="Запустить">
-                <Play class="icon-sm" />
               </button>
             </td>
           </tr>
@@ -66,7 +70,7 @@
             <label>Версия билда *</label>
             <select v-model="startForm.build_version" class="form-input">
               <option value="" disabled>Выберите билд</option>
-              <option v-for="b in builds" :key="b.id" :value="b.build_version">{{ b.build_version }}</option>
+              <option v-for="b in availableBuilds" :key="b.build_version" :value="b.build_version">{{ b.build_version }}</option>
             </select>
           </div>
           <div class="form-group">
@@ -103,9 +107,10 @@
             </div>
           </div>
         </div>
+        <div v-if="startError" class="start-error">{{ startError }}</div>
         <div class="modal-actions">
-          <button class="btn-primary" @click="submitStart" :disabled="!startForm.build_version || !startForm.server_mode">
-            Запустить
+          <button class="btn-primary" @click="submitStart" :disabled="!startForm.build_version || !startForm.server_mode || starting">
+            {{ starting ? 'Запуск...' : 'Запустить' }}
           </button>
           <button class="btn-outline" @click="showStartForm = false">Отмена</button>
         </div>
@@ -115,19 +120,24 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
-import { Play, Square } from 'lucide-vue-next'
+import { ref, computed, reactive, onMounted } from 'vue'
+import { Play, Square, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import KeyValueEditor from '../../components/orchestrator/KeyValueEditor.vue'
-import { mockBuilds, mockInstances } from '../../data/mock-orchestrator'
+import { listInstances, startInstance, stopInstance, listBuilds } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
 
-const instances = ref([...mockInstances])
-const builds = computed(() => mockBuilds)
+const instances = ref([])
+const availableBuilds = ref([])
+const loading = ref(true)
+const error = ref(null)
 const statusFilter = ref('all')
 const showStartForm = ref(false)
+const starting = ref(false)
+const startError = ref(null)
+const stoppingId = ref(null)
 
 const startForm = reactive({
   build_version: '',
@@ -143,51 +153,74 @@ const filteredInstances = computed(() => {
   return instances.value.filter(i => i.status === statusFilter.value)
 })
 
-function submitStart() {
-  const newInst = {
-    id: Date.now(),
-    game_id: Number(props.gameId),
-    node_id: 1,
-    build_version: startForm.build_version,
-    name: startForm.name || `Инстанс #${Date.now()}`,
-    protocol: 'websocket',
-    host_port: 30000 + Math.floor(Math.random() * 1000),
-    internal_port: 8080,
-    status: 'starting',
-    player_count: 0,
-    max_players: startForm.max_players || 16,
-    developer_payload: {},
-    server_address: '192.168.1.100',
-    started_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+async function fetchInstances() {
+  loading.value = true
+  error.value = null
+  try {
+    instances.value = await listInstances(props.gameId, statusFilter.value === 'all' ? undefined : statusFilter.value)
+  } catch (e) {
+    error.value = e.response?.data?.message ?? e.message
+  } finally {
+    loading.value = false
   }
-  instances.value.unshift(newInst)
-  showStartForm.value = false
-  Object.assign(startForm, { build_version: '', server_mode: 'manual', name: '', max_players: null, env_vars: {}, args: [] })
-  showToast('Инстанс запускается...')
-  // Имитация перехода в running
-  setTimeout(() => {
-    const inst = instances.value.find(i => i.id === newInst.id)
-    if (inst) { inst.status = 'running'; inst.started_at = new Date().toISOString() }
-  }, 2000)
 }
 
-function stopInstance(inst) {
-  inst.status = 'stopping'
-  showToast(`Инстанс ${inst.name} останавливается...`)
-  setTimeout(() => { inst.status = 'stopped'; inst.player_count = 0 }, 1500)
+async function fetchBuilds() {
+  try {
+    availableBuilds.value = await listBuilds(props.gameId)
+  } catch { /* не критично */ }
 }
 
-function startExisting(inst) {
-  inst.status = 'starting'
-  showToast(`Инстанс ${inst.name} запускается...`)
-  setTimeout(() => { inst.status = 'running'; inst.started_at = new Date().toISOString() }, 2000)
+async function submitStart() {
+  starting.value = true
+  startError.value = null
+  const payload = {
+    build_version: startForm.build_version,
+    server_mode: startForm.server_mode,
+  }
+  if (startForm.name) payload.name = startForm.name
+  if (startForm.max_players) payload.max_players = startForm.max_players
+  if (Object.keys(startForm.env_vars).length) payload.env_vars = startForm.env_vars
+  if (startForm.args.filter(Boolean).length) payload.args = startForm.args.filter(Boolean)
+
+  try {
+    await startInstance(props.gameId, payload)
+    showToast('Инстанс запускается...')
+    showStartForm.value = false
+    Object.assign(startForm, { build_version: '', server_mode: 'manual', name: '', max_players: null, env_vars: {}, args: [] })
+    await fetchInstances()
+  } catch (e) {
+    if (e.response?.status === 409) {
+      startError.value = 'Недостаточно ресурсов на доступных нодах'
+    } else {
+      startError.value = e.response?.data?.message ?? 'Ошибка запуска инстанса'
+    }
+  } finally {
+    starting.value = false
+  }
+}
+
+async function handleStop(inst) {
+  stoppingId.value = inst.id
+  try {
+    await stopInstance(props.gameId, inst.id)
+    showToast(`Инстанс ${inst.name || inst.id} останавливается...`)
+    await fetchInstances()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка остановки', 'error')
+  } finally {
+    stoppingId.value = null
+  }
 }
 
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
+
+onMounted(() => {
+  fetchInstances()
+  fetchBuilds()
+})
 </script>
 
 <style scoped>
@@ -202,6 +235,14 @@ function formatDate(ts) {
   padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-input); color: var(--text-main); font-size: 0.88rem;
 }
+
+.error-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--danger-light); color: var(--danger);
+  border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
+}
+.btn-sm { padding: 4px 12px; font-size: 0.82rem; }
+.loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
 
 .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .data-table { width: 100%; border-collapse: collapse; }
@@ -219,12 +260,12 @@ function formatDate(ts) {
 .cell-actions { display: flex; gap: 4px; }
 code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }
 
-.btn-stop, .btn-start {
+.btn-stop {
   background: none; border: 1px solid var(--border); padding: 4px 8px;
   border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; color: var(--text-muted);
 }
 .btn-stop:hover { color: var(--danger); border-color: var(--danger); }
-.btn-start:hover { color: var(--success); border-color: var(--success); }
+.btn-stop:disabled { opacity: 0.4; cursor: not-allowed; }
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
@@ -247,5 +288,6 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 .arg-remove { background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0 4px; }
 .arg-add { background: none; border: 1px dashed var(--border); color: var(--primary); padding: 4px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem; }
 
+.start-error { color: var(--danger); font-size: 0.85rem; margin-top: 8px; font-weight: 500; }
 .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 </style>

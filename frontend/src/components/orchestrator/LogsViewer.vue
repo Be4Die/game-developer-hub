@@ -3,15 +3,15 @@
     <div class="logs-toolbar">
       <div class="toolbar-left">
         <label class="toolbar-item">
-          <input type="checkbox" v-model="follow" /> Стриминг
+          <input type="checkbox" v-model="follow" @change="reconnect" /> Стриминг
         </label>
         <label class="toolbar-item">
           Хвост
-          <input type="number" v-model.number="tail" min="0" max="1000" class="toolbar-input" />
+          <input type="number" v-model.number="tail" min="0" max="1000" class="toolbar-input" @change="reconnect" />
         </label>
         <label class="toolbar-item">
           Источник
-          <select v-model="sourceFilter" class="toolbar-select">
+          <select v-model="sourceFilter" class="toolbar-select" @change="reconnect">
             <option value="all">Все</option>
             <option value="stdout">stdout</option>
             <option value="stderr">stderr</option>
@@ -24,7 +24,8 @@
       </div>
     </div>
     <div class="logs-terminal" ref="terminal" @scroll="onScroll">
-      <div v-if="filteredEntries.length === 0" class="logs-empty">Нет записей</div>
+      <div v-if="filteredEntries.length === 0 && !connected" class="logs-empty">Подключение...</div>
+      <div v-else-if="filteredEntries.length === 0" class="logs-empty">Нет записей</div>
       <div
         v-for="(entry, i) in filteredEntries"
         :key="i"
@@ -41,10 +42,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { generateMockLogEntries } from '../../data/mock-orchestrator'
+import { createLogStream } from '../../api/orchestrator'
 
 const props = defineProps({
-  instanceId: { type: [Number, String], default: null },
+  gameId: { type: [String, Number], required: true },
+  instanceId: { type: [String, Number], required: true },
 })
 
 const terminal = ref(null)
@@ -52,32 +54,54 @@ const follow = ref(true)
 const tail = ref(100)
 const sourceFilter = ref('all')
 const entries = ref([])
+const connected = ref(false)
+let eventSource = null
 
-// Начальная загрузка моковых логов
-onMounted(() => {
-  entries.value = generateMockLogEntries(20)
-  scrollToBottom()
-})
+function connect() {
+  disconnect()
+  entries.value = []
 
-// Имитация стриминга новых логов
-let streamInterval = null
-watch(follow, (val) => {
-  if (val) {
-    streamInterval = setInterval(() => {
-      const newEntries = generateMockLogEntries(1)
-      entries.value.push(...newEntries)
-      if (entries.value.length > 500) entries.value = entries.value.slice(-300)
-      nextTick(scrollToBottom)
-    }, 2000)
-  } else {
-    clearInterval(streamInterval)
-    streamInterval = null
+  try {
+    eventSource = createLogStream(props.gameId, props.instanceId, {
+      follow: follow.value,
+      tail: tail.value,
+      source: sourceFilter.value,
+    })
+
+    eventSource.addEventListener('log', (e) => {
+      connected.value = true
+      try {
+        const entry = JSON.parse(e.data)
+        entries.value.push(entry)
+        if (entries.value.length > 500) entries.value = entries.value.slice(-300)
+        nextTick(scrollToBottom)
+      } catch { /* игнорируем некорректные данные */ }
+    })
+
+    eventSource.addEventListener('error', () => {
+      connected.value = false
+      // EventSource автоматически переподключается
+    })
+
+    eventSource.addEventListener('open', () => {
+      connected.value = true
+    })
+  } catch {
+    connected.value = false
   }
-}, { immediate: true })
+}
 
-onUnmounted(() => {
-  clearInterval(streamInterval)
-})
+function disconnect() {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+  connected.value = false
+}
+
+function reconnect() {
+  connect()
+}
 
 const filteredEntries = computed(() => {
   if (sourceFilter.value === 'all') return entries.value
@@ -113,6 +137,14 @@ function copyLogs() {
     .join('\n')
   navigator.clipboard.writeText(text).catch(() => {})
 }
+
+onMounted(connect)
+onUnmounted(disconnect)
+
+// Переподключение при смене пропсов (навигация между инстансами)
+watch(() => [props.gameId, props.instanceId], () => {
+  connect()
+})
 </script>
 
 <style scoped>
@@ -136,38 +168,20 @@ function copyLogs() {
 }
 .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
 .toolbar-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.78rem;
-  color: #cdd6f4;
-  cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.78rem; color: #cdd6f4; cursor: pointer;
 }
 .toolbar-input {
-  width: 60px;
-  padding: 2px 6px;
-  border: 1px solid #3a3a4c;
-  border-radius: 4px;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  font-size: 0.78rem;
+  width: 60px; padding: 2px 6px; border: 1px solid #3a3a4c;
+  border-radius: 4px; background: #1e1e2e; color: #cdd6f4; font-size: 0.78rem;
 }
 .toolbar-select {
-  padding: 2px 6px;
-  border: 1px solid #3a3a4c;
-  border-radius: 4px;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  font-size: 0.78rem;
+  padding: 2px 6px; border: 1px solid #3a3a4c;
+  border-radius: 4px; background: #1e1e2e; color: #cdd6f4; font-size: 0.78rem;
 }
 .toolbar-btn {
-  padding: 4px 10px;
-  border: 1px solid #3a3a4c;
-  border-radius: 4px;
-  background: #2a2a3c;
-  color: #cdd6f4;
-  cursor: pointer;
-  font-size: 0.78rem;
+  padding: 4px 10px; border: 1px solid #3a3a4c;
+  border-radius: 4px; background: #2a2a3c; color: #cdd6f4; cursor: pointer; font-size: 0.78rem;
 }
 .toolbar-btn:hover { background: #3a3a4c; }
 .logs-terminal {

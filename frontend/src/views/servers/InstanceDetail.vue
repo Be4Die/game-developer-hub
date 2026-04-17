@@ -7,106 +7,139 @@
           <ArrowLeft class="icon-sm" /> Инстансы
         </button>
         <h1>{{ instance.name || `Инстанс #${instance.id}` }}</h1>
-        <StatusBadge :status="instance.status" type="instance" />
+        <StatusBadge v-if="instance.status" :status="instance.status" type="instance" />
       </div>
       <div class="header-actions">
-        <button v-if="instance.status === 'running'" class="btn-stop-lg" @click="stopInstance">
-          <Square class="icon-sm" /> Остановить
+        <button v-if="instance.status === 'running'" class="btn-stop-lg" @click="handleStop" :disabled="stopping">
+          <Square class="icon-sm" /> {{ stopping ? 'Остановка...' : 'Остановить' }}
         </button>
       </div>
     </div>
 
-    <!-- Информация -->
-    <div class="info-grid">
-      <div class="card info-card">
-        <h3>Информация</h3>
-        <div class="info-rows">
-          <div class="info-row"><span class="info-label">ID</span><span class="info-val">{{ instance.id }}</span></div>
-          <div class="info-row"><span class="info-label">Версия билда</span><span class="info-val"><code>{{ instance.build_version }}</code></span></div>
-          <div class="info-row"><span class="info-label">Протокол</span><span class="info-val">{{ instance.protocol }}</span></div>
-          <div class="info-row"><span class="info-label">Порты</span><span class="info-val">{{ instance.internal_port }} → {{ instance.host_port }}</span></div>
-          <div class="info-row"><span class="info-label">Нода</span><span class="info-val">{{ instance.node_id }}</span></div>
-          <div class="info-row"><span class="info-label">Адрес</span><span class="info-val">{{ instance.server_address }}:{{ instance.host_port }}</span></div>
-          <div class="info-row"><span class="info-label">Игроки</span><span class="info-val">{{ instance.player_count ?? 0 }} / {{ instance.max_players }}</span></div>
-          <div class="info-row"><span class="info-label">Создан</span><span class="info-val">{{ formatDateTime(instance.created_at) }}</span></div>
-          <div class="info-row"><span class="info-label">Запущен</span><span class="info-val">{{ instance.started_at ? formatDateTime(instance.started_at) : '—' }}</span></div>
-        </div>
-      </div>
+    <!-- Ошибка загрузки -->
+    <div v-if="error" class="error-banner">
+      <AlertCircle class="icon-sm" /> {{ error }}
+      <button class="btn-outline btn-sm" @click="fetchInstance">Повторить</button>
+    </div>
 
-      <!-- developer_payload -->
-      <div class="card info-card" v-if="Object.keys(instance.developer_payload || {}).length">
-        <h3>Developer Payload</h3>
-        <div class="info-rows">
-          <div class="info-row" v-for="(v, k) in instance.developer_payload" :key="k">
-            <span class="info-label">{{ k }}</span><span class="info-val">{{ v }}</span>
+    <template v-if="!error">
+      <!-- Информация -->
+      <div class="info-grid">
+        <div class="card info-card">
+          <h3>Информация</h3>
+          <div class="info-rows">
+            <div class="info-row"><span class="info-label">ID</span><span class="info-val">{{ instance.id }}</span></div>
+            <div class="info-row"><span class="info-label">Версия билда</span><span class="info-val"><code>{{ instance.build_version }}</code></span></div>
+            <div class="info-row"><span class="info-label">Протокол</span><span class="info-val">{{ instance.protocol }}</span></div>
+            <div class="info-row"><span class="info-label">Порты</span><span class="info-val">{{ instance.internal_port }} → {{ instance.host_port }}</span></div>
+            <div class="info-row"><span class="info-label">Нода</span><span class="info-val">{{ instance.node_id }}</span></div>
+            <div class="info-row"><span class="info-label">Адрес</span><span class="info-val">{{ instance.server_address }}:{{ instance.host_port }}</span></div>
+            <div class="info-row"><span class="info-label">Игроки</span><span class="info-val">{{ instance.player_count ?? 0 }} / {{ instance.max_players }}</span></div>
+            <div class="info-row"><span class="info-label">Создан</span><span class="info-val">{{ formatDateTime(instance.created_at) }}</span></div>
+            <div class="info-row"><span class="info-label">Запущен</span><span class="info-val">{{ instance.started_at ? formatDateTime(instance.started_at) : '—' }}</span></div>
+          </div>
+        </div>
+
+        <!-- developer_payload -->
+        <div class="card info-card" v-if="Object.keys(instance.developer_payload || {}).length">
+          <h3>Developer Payload</h3>
+          <div class="info-rows">
+            <div class="info-row" v-for="(v, k) in instance.developer_payload" :key="k">
+              <span class="info-label">{{ k }}</span><span class="info-val">{{ v }}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Ресурсы -->
-    <div class="section-header">
-      <h2>Потребление ресурсов</h2>
-    </div>
-    <div class="resources-grid">
-      <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
-      <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" type="bytes" />
-      <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" type="bytes" />
-      <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
-    </div>
+      <!-- Ресурсы -->
+      <div class="section-header">
+        <h2>Потребление ресурсов</h2>
+      </div>
+      <div class="resources-grid">
+        <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
+        <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" type="bytes" />
+        <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" type="bytes" />
+        <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
+      </div>
 
-    <!-- Логи -->
-    <div class="section-header">
-      <h2>Журнал</h2>
-    </div>
-    <LogsViewer :instance-id="instance.id" />
+      <!-- Логи -->
+      <div class="section-header">
+        <h2>Журнал</h2>
+      </div>
+      <LogsViewer :game-id="gameId" :instance-id="instanceId" />
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { ArrowLeft, Square } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft, Square, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
 import LogsViewer from '../../components/orchestrator/LogsViewer.vue'
-import { mockInstances, mockInstanceUsage } from '../../data/mock-orchestrator'
+import { getInstance, getInstanceUsage, stopInstance } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({
   gameId: { type: [String, Number], required: true },
   instanceId: { type: [String, Number], required: true },
 })
+const router = useRouter()
 
-const instance = ref(mockInstances.find(i => i.id === Number(props.instanceId)) || mockInstances[0])
-const usage = ref({ ...mockInstanceUsage })
+const instance = ref({})
+const usage = ref({ cpu_usage_percent: 0, memory_used_bytes: 0, disk_used_bytes: 0, network_bytes_per_sec: 0 })
+const loading = ref(true)
+const error = ref(null)
+const stopping = ref(false)
 
-// Имитация обновления метрик каждые 5 сек
 let usageInterval = null
-onMounted(() => {
-  usageInterval = setInterval(() => {
-    usage.value = {
-      cpu_usage_percent: Math.max(5, Math.min(95, usage.value.cpu_usage_percent + (Math.random() - 0.5) * 10)),
-      memory_used_bytes: Math.max(100_000_000, usage.value.memory_used_bytes + Math.floor((Math.random() - 0.4) * 50_000_000)),
-      disk_used_bytes: usage.value.disk_used_bytes + Math.floor(Math.random() * 1_000_000),
-      network_bytes_per_sec: Math.max(100_000, usage.value.network_bytes_per_sec + Math.floor((Math.random() - 0.5) * 500_000)),
-    }
-  }, 5000)
-})
-onUnmounted(() => clearInterval(usageInterval))
 
-function stopInstance() {
-  instance.value.status = 'stopping'
-  showToast('Инстанс останавливается...')
-  setTimeout(() => {
-    instance.value.status = 'stopped'
-    instance.value.player_count = 0
-  }, 1500)
+async function fetchInstance() {
+  error.value = null
+  try {
+    instance.value = await getInstance(props.gameId, props.instanceId)
+  } catch (e) {
+    error.value = e.response?.data?.message ?? e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchUsage() {
+  try {
+    const data = await getInstanceUsage(props.gameId, props.instanceId)
+    usage.value = data
+  } catch { /* не критично */ }
+}
+
+async function handleStop() {
+  stopping.value = true
+  try {
+    await stopInstance(props.gameId, props.instanceId)
+    showToast('Инстанс останавливается...')
+    await fetchInstance()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка остановки', 'error')
+  } finally {
+    stopping.value = false
+  }
 }
 
 function formatDateTime(ts) {
   if (!ts) return '—'
   return new Date(ts).toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
+
+onMounted(async () => {
+  await fetchInstance()
+  await fetchUsage()
+  usageInterval = setInterval(fetchUsage, 5000)
+})
+
+onUnmounted(() => {
+  clearInterval(usageInterval)
+})
 </script>
 
 <style scoped>
@@ -123,6 +156,14 @@ function formatDateTime(ts) {
   padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;
 }
 .btn-stop-lg:hover { background: var(--danger-light); }
+.btn-stop-lg:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.error-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--danger-light); color: var(--danger);
+  border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
+}
+.btn-sm { padding: 4px 12px; font-size: 0.82rem; }
 
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
 .info-card h3 { margin: 0 0 12px; font-size: 0.95rem; }

@@ -7,68 +7,77 @@
           <ArrowLeft class="icon-sm" /> Ноды
         </button>
         <h1>{{ node.address }}</h1>
-        <StatusBadge :status="node.status" type="node" />
+        <StatusBadge v-if="node.status" :status="node.status" type="node" />
       </div>
-      <button class="btn-delete-lg" @click="confirmDelete">
+      <button class="btn-delete-lg" @click="showDeleteConfirm = true">
         <Trash2 class="icon-sm" /> Удалить ноду
       </button>
     </div>
 
-    <!-- Информация -->
-    <div class="card info-card">
-      <h3>Информация о ноде</h3>
-      <div class="info-grid-inner">
-        <div class="info-row"><span class="info-label">ID</span><span class="info-val">{{ node.id }}</span></div>
-        <div class="info-row"><span class="info-label">Адрес</span><span class="info-val"><code>{{ node.address }}</code></span></div>
-        <div class="info-row"><span class="info-label">Регион</span><span class="info-val">{{ node.region || '—' }}</span></div>
-        <div class="info-row"><span class="info-label">Статус</span><span class="info-val"><StatusBadge :status="node.status" type="node" /></span></div>
-        <div class="info-row"><span class="info-label">CPU</span><span class="info-val">{{ node.cpu_cores ? node.cpu_cores + ' ядер' : '—' }}</span></div>
-        <div class="info-row"><span class="info-label">Память</span><span class="info-val">{{ node.total_memory_bytes ? formatBytes(node.total_memory_bytes) : '—' }}</span></div>
-        <div class="info-row"><span class="info-label">Диск</span><span class="info-val">{{ node.total_disk_bytes ? formatBytes(node.total_disk_bytes) : '—' }}</span></div>
-        <div class="info-row"><span class="info-label">Версия агента</span><span class="info-val">{{ node.agent_version || '—' }}</span></div>
-        <div class="info-row"><span class="info-label">Последний heartbeat</span><span class="info-val">{{ formatDateTime(node.last_ping_at) }}</span></div>
-        <div class="info-row"><span class="info-label">Создана</span><span class="info-val">{{ formatDateTime(node.created_at) }}</span></div>
+    <!-- Ошибка -->
+    <div v-if="error" class="error-banner">
+      <AlertCircle class="icon-sm" /> {{ error }}
+      <button class="btn-outline btn-sm" @click="fetchNode">Повторить</button>
+    </div>
+
+    <template v-if="!error">
+      <!-- Информация -->
+      <div class="card info-card">
+        <h3>Информация о ноде</h3>
+        <div class="info-grid-inner">
+          <div class="info-row"><span class="info-label">ID</span><span class="info-val">{{ node.id }}</span></div>
+          <div class="info-row"><span class="info-label">Адрес</span><span class="info-val"><code>{{ node.address }}</code></span></div>
+          <div class="info-row"><span class="info-label">Регион</span><span class="info-val">{{ node.region || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">Статус</span><span class="info-val"><StatusBadge :status="node.status" type="node" /></span></div>
+          <div class="info-row"><span class="info-label">CPU</span><span class="info-val">{{ node.cpu_cores ? node.cpu_cores + ' ядер' : '—' }}</span></div>
+          <div class="info-row"><span class="info-label">Память</span><span class="info-val">{{ node.total_memory_bytes ? formatBytes(node.total_memory_bytes) : '—' }}</span></div>
+          <div class="info-row"><span class="info-label">Диск</span><span class="info-val">{{ node.total_disk_bytes ? formatBytes(node.total_disk_bytes) : '—' }}</span></div>
+          <div class="info-row"><span class="info-label">Версия агента</span><span class="info-val">{{ node.agent_version || '—' }}</span></div>
+          <div class="info-row"><span class="info-label">Последний heartbeat</span><span class="info-val">{{ formatDateTime(node.last_ping_at) }}</span></div>
+          <div class="info-row"><span class="info-label">Создана</span><span class="info-val">{{ formatDateTime(node.created_at) }}</span></div>
+        </div>
       </div>
-    </div>
 
-    <!-- Ресурсы -->
-    <div class="section-header"><h2>Потребление ресурсов</h2></div>
-    <div class="resources-grid">
-      <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
-      <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" :max="node.total_memory_bytes" type="bytes" />
-      <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" :max="node.total_disk_bytes" type="bytes" />
-      <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
-    </div>
+      <!-- Ресурсы -->
+      <div class="section-header"><h2>Потребление ресурсов</h2></div>
+      <div class="resources-grid">
+        <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
+        <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" :max="node.total_memory_bytes" type="bytes" />
+        <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" :max="node.total_disk_bytes" type="bytes" />
+        <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
+      </div>
 
-    <!-- Активные инстансы -->
-    <div class="section-header">
-      <h2>Инстансы на ноде <span class="count">{{ activeCount }}</span></h2>
-    </div>
-    <div class="table-wrap" v-if="nodeInstances.length">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Имя</th>
-            <th>Игра</th>
-            <th>Версия</th>
-            <th>Статус</th>
-            <th>Игроки</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="inst in nodeInstances" :key="inst.id"
-              @click="$router.push(`/projects/${inst.game_id}/servers/instances/${inst.id}`)"
-              class="clickable-row">
-            <td class="cell-name">{{ inst.name || `#${inst.id}` }}</td>
-            <td>Игра #{{ inst.game_id }}</td>
-            <td><code>{{ inst.build_version }}</code></td>
-            <td><StatusBadge :status="inst.status" type="instance" /></td>
-            <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-else class="empty-state">Нет инстансов на этой ноде</div>
+      <!-- Активные инстансы -->
+      <div class="section-header">
+        <h2>Инстансы на ноде <span class="count">{{ activeCount }}</span></h2>
+      </div>
+      <div v-if="instancesLoading" class="loading-state">Загрузка...</div>
+      <div class="table-wrap" v-else-if="nodeInstances.length">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Имя</th>
+              <th>Игра</th>
+              <th>Версия</th>
+              <th>Статус</th>
+              <th>Игроки</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="inst in nodeInstances" :key="inst.id"
+                @click="$router.push(`/projects/${inst.game_id}/servers/instances/${inst.id}`)"
+                class="clickable-row">
+              <td class="cell-name">{{ inst.name || `#${inst.id}` }}</td>
+              <td>Игра #{{ inst.game_id }}</td>
+              <td><code>{{ inst.build_version }}</code></td>
+              <td><StatusBadge :status="inst.status" type="instance" /></td>
+              <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="empty-state">Нет инстансов на этой ноде</div>
+    </template>
 
     <!-- Подтверждение удаления -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
@@ -77,7 +86,7 @@
         <p>Нода <code>{{ node.address }}</code> будет удалена из реестра.</p>
         <p class="text-danger">Все инстансы на этой ноде будут переведены в статус «Авария».</p>
         <div class="modal-actions">
-          <button class="btn-primary" @click="doDelete">Удалить</button>
+          <button class="btn-primary" @click="doDelete" :disabled="deleting">Удалить</button>
           <button class="btn-outline" @click="showDeleteConfirm = false">Отмена</button>
         </div>
       </div>
@@ -88,45 +97,72 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Trash2, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
-import { mockNodes, mockInstances, mockNodeUsage } from '../../data/mock-orchestrator'
+import { getNode, getNodeUsage, deleteNode, listInstances } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({ nodeId: { type: [String, Number], required: true } })
 const router = useRouter()
 
-const node = ref(mockNodes.find(n => n.id === Number(props.nodeId)) || mockNodes[0])
-const usage = ref({ ...mockNodeUsage })
+const node = ref({})
+const usage = ref({ cpu_usage_percent: 0, memory_used_bytes: 0, disk_used_bytes: 0, network_bytes_per_sec: 0, active_instance_count: 0 })
+const nodeInstances = ref([])
+const instancesLoading = ref(true)
+const error = ref(null)
 const showDeleteConfirm = ref(false)
+const deleting = ref(false)
 
-const nodeInstances = computed(() => mockInstances.filter(i => i.node_id === node.value.id))
-const activeCount = computed(() => nodeInstances.value.filter(i => ['starting', 'running', 'stopping'].includes(i.status)).length)
+const activeCount = computed(() => usage.value.active_instance_count ?? 0)
 
-// Имитация обновления метрик
 let usageInterval = null
-onMounted(() => {
-  usageInterval = setInterval(() => {
-    usage.value = {
-      cpu_usage_percent: Math.max(5, Math.min(95, usage.value.cpu_usage_percent + (Math.random() - 0.5) * 8)),
-      memory_used_bytes: Math.max(100_000_000, usage.value.memory_used_bytes + Math.floor((Math.random() - 0.4) * 100_000_000)),
-      disk_used_bytes: usage.value.disk_used_bytes + Math.floor(Math.random() * 2_000_000),
-      network_bytes_per_sec: Math.max(100_000, usage.value.network_bytes_per_sec + Math.floor((Math.random() - 0.5) * 800_000)),
-      active_instance_count: activeCount.value,
-    }
-  }, 5000)
-})
-onUnmounted(() => clearInterval(usageInterval))
 
-function confirmDelete() { showDeleteConfirm.value = true }
+async function fetchNode() {
+  error.value = null
+  try {
+    node.value = await getNode(props.nodeId)
+  } catch (e) {
+    error.value = e.response?.data?.message ?? e.message
+  }
+}
 
-function doDelete() {
-  showToast('Нода удалена')
-  router.push('/nodes')
+async function fetchUsage() {
+  try {
+    const data = await getNodeUsage(props.nodeId)
+    usage.value = data
+  } catch { /* не критично */ }
+}
+
+async function fetchInstances() {
+  instancesLoading.value = true
+  try {
+    // Получаем все инстансы и фильтруем по ноде
+    // TODO: когда API поддержит фильтрацию по node_id, убрать фильтрацию на клиенте
+    const allInstances = await listInstances(0) // 0 = все игры? Или нужен перебор
+    nodeInstances.value = allInstances.filter(i => i.node_id === Number(props.nodeId))
+  } catch {
+    nodeInstances.value = []
+  } finally {
+    instancesLoading.value = false
+  }
+}
+
+async function doDelete() {
+  deleting.value = true
+  try {
+    await deleteNode(props.nodeId)
+    showToast('Нода удалена')
+    router.push('/nodes')
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error')
+  } finally {
+    deleting.value = false
+  }
 }
 
 function formatBytes(b) {
+  if (!b) return '—'
   if (b < 1024 * 1024 * 1024) return (b / (1024 * 1024)).toFixed(0) + ' MB'
   return (b / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
 }
@@ -135,6 +171,20 @@ function formatDateTime(ts) {
   if (!ts) return '—'
   return new Date(ts).toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
+
+onMounted(async () => {
+  await fetchNode()
+  await fetchUsage()
+  // Инстансы загружаем только если нода найдена
+  if (!error.value) {
+    await fetchInstances()
+    usageInterval = setInterval(fetchUsage, 5000)
+  }
+})
+
+onUnmounted(() => {
+  clearInterval(usageInterval)
+})
 </script>
 
 <style scoped>
@@ -151,6 +201,13 @@ function formatDateTime(ts) {
 }
 .btn-delete-lg:hover { background: var(--danger-light); }
 
+.error-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; background: var(--danger-light); color: var(--danger);
+  border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
+}
+.btn-sm { padding: 4px 12px; font-size: 0.82rem; }
+
 .info-card { margin-bottom: 24px; }
 .info-card h3 { margin: 0 0 16px; font-size: 0.95rem; }
 .info-grid-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
@@ -165,6 +222,7 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 
 .resources-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
 
+.loading-state { padding: 40px; text-align: center; color: var(--text-muted); }
 .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th {
