@@ -5,7 +5,7 @@
     </transition>
     <GlobalHeader />
     <main class="page-content">
-      <div v-if="user.role === 'Модератор' && $route.path.includes('/projects')" class="moderator-stub">
+      <div v-if="user.role === 'Модератор' && $route.path.includes('/projects') && !$route.path.includes('/nodes')" class="moderator-stub">
         <h2>Режим модератора</h2>
         <p>Перейдите во вкладку "Очередь тикетов". Просмотр проектов недоступен.</p>
       </div>

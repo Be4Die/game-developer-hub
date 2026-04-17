@@ -3,9 +3,11 @@
     <div class="header-left">
       <div class="logo"><Layers class="logo-icon" /><span>WELWISE</span></div>
       <nav class="main-nav">
-        <template v-if="user.role === 'Разработчик'">
+        <template v-if="user.role === 'Разработчик' || user.role === 'Владелец'">
           <router-link to="/projects" class="nav-item" active-class="active"><FolderGit2 class="icon-sm" /> Черновики</router-link>
-          <a href="#" class="nav-item text-muted"><Server class="icon-sm" /> Сервера</a>
+        </template>
+        <template v-if="user.role === 'Владелец'">
+          <router-link to="/nodes" class="nav-item" active-class="active"><Server class="icon-sm" /> Ноды</router-link>
         </template>
         <template v-if="user.role === 'Модератор'">
           <router-link to="/moderator/tickets" class="nav-item" active-class="active"><Inbox class="icon-sm" /> Очередь тикетов</router-link>
@@ -32,6 +34,7 @@
           <div class="dropdown-item" style="cursor: default; padding-bottom: 0;">
             <select v-model="user.role" class="role-select">
               <option value="Разработчик">Роль: Разработчик</option>
+              <option value="Владелец">Роль: Владелец</option>
               <option value="Модератор">Роль: Модератор</option>
               <option value="Администратор">Роль: Администратор</option>
             </select>
