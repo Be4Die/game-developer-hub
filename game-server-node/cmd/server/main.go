@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "google.golang.org/grpc/encoding/gzip" // register gzip decompressor
+
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/app"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/config"
 )
