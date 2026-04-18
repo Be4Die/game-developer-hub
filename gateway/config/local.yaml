@@ -1,0 +1,16 @@
+http_addr: ":8080"
+
+grpc:
+  orchestrator:
+    address: "orchestrator:9090"
+  sso:
+    address: "sso:9090"
+
+cors:
+  allowed_origins:
+    - "http://localhost:3000"
+    - "http://localhost:5173"
+
+allowed_hosts:
+  - "localhost"
+  - "127.0.0.1"

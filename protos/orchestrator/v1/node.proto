@@ -2,24 +2,38 @@ syntax = "proto3";
 
 package orchestrator.v1;
 
+import "google/api/annotations.proto";
 import "orchestrator/v1/common.proto";
 
 // Сервис управления вычислительными нодами.
 service NodeService {
   // Подключить вычислительную ноду.
-  rpc Register(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc Register(NodeServiceRegisterRequest) returns (NodeServiceRegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes"
+      body: "*"
+    };
+  }
 
   // Список всех нод.
-  rpc List(ListNodesRequest) returns (ListNodesResponse);
+  rpc List(NodeServiceListRequest) returns (NodeServiceListResponse) {
+    option (google.api.http) = {get: "/api/v1/nodes"};
+  }
 
   // Информация о ноде.
-  rpc Get(GetNodeRequest) returns (GetNodeResponse);
+  rpc Get(NodeServiceGetRequest) returns (NodeServiceGetResponse) {
+    option (google.api.http) = {get: "/api/v1/nodes/{node_id}"};
+  }
 
   // Удалить ноду.
-  rpc Delete(DeleteNodeRequest) returns (DeleteNodeResponse);
+  rpc Delete(NodeServiceDeleteRequest) returns (NodeServiceDeleteResponse) {
+    option (google.api.http) = {delete: "/api/v1/nodes/{node_id}"};
+  }
 
   // Потребление ресурсов ноды.
-  rpc GetUsage(GetNodeUsageRequest) returns (GetNodeUsageResponse);
+  rpc GetUsage(NodeServiceGetUsageRequest) returns (NodeServiceGetUsageResponse) {
+    option (google.api.http) = {get: "/api/v1/nodes/{node_id}/usage"};
+  }
 }
 
 // ─── Register ───────────────────────────────────────────────────────────────
@@ -35,54 +49,54 @@ message RegisterNodeAuthorize {
   string token = 2;
 }
 
-message RegisterNodeRequest {
+message NodeServiceRegisterRequest {
   oneof mode {
     RegisterNodeManual manual = 1;
     RegisterNodeAuthorize authorize = 2;
   }
 }
 
-message RegisterNodeResponse {
+message NodeServiceRegisterResponse {
   Node node = 1;
 }
 
 // ─── List ───────────────────────────────────────────────────────────────────
 
-message ListNodesRequest {
+message NodeServiceListRequest {
   optional NodeStatus status = 1;
 }
 
-message ListNodesResponse {
+message NodeServiceListResponse {
   repeated Node nodes = 1;
 }
 
 // ─── Get ────────────────────────────────────────────────────────────────────
 
-message GetNodeRequest {
+message NodeServiceGetRequest {
   int64 node_id = 1;
 }
 
-message GetNodeResponse {
+message NodeServiceGetResponse {
   Node node = 1;
 }
 
 // ─── Delete ─────────────────────────────────────────────────────────────────
 
-message DeleteNodeRequest {
+message NodeServiceDeleteRequest {
   int64 node_id = 1;
 }
 
-message DeleteNodeResponse {
+message NodeServiceDeleteResponse {
   // Пусто — при успехе возвращается пустой ответ.
 }
 
 // ─── GetUsage ───────────────────────────────────────────────────────────────
 
-message GetNodeUsageRequest {
+message NodeServiceGetUsageRequest {
   int64 node_id = 1;
 }
 
-message GetNodeUsageResponse {
+message NodeServiceGetUsageResponse {
   int64 node_id = 1;
   ResourceUsage usage = 2;
   int32 active_instance_count = 3;

@@ -7,6 +7,7 @@
 package orchestratorv1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,27 +22,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type DiscoverServersRequest struct {
+type DiscoveryServiceDiscoverRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DiscoverServersRequest) Reset() {
-	*x = DiscoverServersRequest{}
+func (x *DiscoveryServiceDiscoverRequest) Reset() {
+	*x = DiscoveryServiceDiscoverRequest{}
 	mi := &file_orchestrator_v1_discovery_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DiscoverServersRequest) String() string {
+func (x *DiscoveryServiceDiscoverRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DiscoverServersRequest) ProtoMessage() {}
+func (*DiscoveryServiceDiscoverRequest) ProtoMessage() {}
 
-func (x *DiscoverServersRequest) ProtoReflect() protoreflect.Message {
+func (x *DiscoveryServiceDiscoverRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_discovery_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -53,39 +54,39 @@ func (x *DiscoverServersRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DiscoverServersRequest.ProtoReflect.Descriptor instead.
-func (*DiscoverServersRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use DiscoveryServiceDiscoverRequest.ProtoReflect.Descriptor instead.
+func (*DiscoveryServiceDiscoverRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_discovery_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *DiscoverServersRequest) GetGameId() int64 {
+func (x *DiscoveryServiceDiscoverRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-type DiscoverServersResponse struct {
+type DiscoveryServiceDiscoverResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Servers       []*ServerEndpoint      `protobuf:"bytes,1,rep,name=servers,proto3" json:"servers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DiscoverServersResponse) Reset() {
-	*x = DiscoverServersResponse{}
+func (x *DiscoveryServiceDiscoverResponse) Reset() {
+	*x = DiscoveryServiceDiscoverResponse{}
 	mi := &file_orchestrator_v1_discovery_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DiscoverServersResponse) String() string {
+func (x *DiscoveryServiceDiscoverResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DiscoverServersResponse) ProtoMessage() {}
+func (*DiscoveryServiceDiscoverResponse) ProtoMessage() {}
 
-func (x *DiscoverServersResponse) ProtoReflect() protoreflect.Message {
+func (x *DiscoveryServiceDiscoverResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_discovery_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -97,12 +98,12 @@ func (x *DiscoverServersResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DiscoverServersResponse.ProtoReflect.Descriptor instead.
-func (*DiscoverServersResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use DiscoveryServiceDiscoverResponse.ProtoReflect.Descriptor instead.
+func (*DiscoveryServiceDiscoverResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_discovery_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DiscoverServersResponse) GetServers() []*ServerEndpoint {
+func (x *DiscoveryServiceDiscoverResponse) GetServers() []*ServerEndpoint {
 	if x != nil {
 		return x.Servers
 	}
@@ -113,13 +114,13 @@ var File_orchestrator_v1_discovery_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_discovery_proto_rawDesc = "" +
 	"\n" +
-	"\x1forchestrator/v1/discovery.proto\x12\x0forchestrator.v1\x1a\x1corchestrator/v1/common.proto\"1\n" +
-	"\x16DiscoverServersRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"T\n" +
-	"\x17DiscoverServersResponse\x129\n" +
-	"\aservers\x18\x01 \x03(\v2\x1f.orchestrator.v1.ServerEndpointR\aservers2q\n" +
-	"\x10DiscoveryService\x12]\n" +
-	"\bDiscover\x12'.orchestrator.v1.DiscoverServersRequest\x1a(.orchestrator.v1.DiscoverServersResponseB\xce\x01\n" +
+	"\x1forchestrator/v1/discovery.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\":\n" +
+	"\x1fDiscoveryServiceDiscoverRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"]\n" +
+	" DiscoveryServiceDiscoverResponse\x129\n" +
+	"\aservers\x18\x01 \x03(\v2\x1f.orchestrator.v1.ServerEndpointR\aservers2\xbe\x01\n" +
+	"\x10DiscoveryService\x12\xa9\x01\n" +
+	"\x18DiscoveryServiceDiscover\x120.orchestrator.v1.DiscoveryServiceDiscoverRequest\x1a1.orchestrator.v1.DiscoveryServiceDiscoverResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/games/{game_id}/discoverB\xce\x01\n" +
 	"\x13com.orchestrator.v1B\x0eDiscoveryProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
@@ -136,14 +137,14 @@ func file_orchestrator_v1_discovery_proto_rawDescGZIP() []byte {
 
 var file_orchestrator_v1_discovery_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_orchestrator_v1_discovery_proto_goTypes = []any{
-	(*DiscoverServersRequest)(nil),  // 0: orchestrator.v1.DiscoverServersRequest
-	(*DiscoverServersResponse)(nil), // 1: orchestrator.v1.DiscoverServersResponse
-	(*ServerEndpoint)(nil),          // 2: orchestrator.v1.ServerEndpoint
+	(*DiscoveryServiceDiscoverRequest)(nil),  // 0: orchestrator.v1.DiscoveryServiceDiscoverRequest
+	(*DiscoveryServiceDiscoverResponse)(nil), // 1: orchestrator.v1.DiscoveryServiceDiscoverResponse
+	(*ServerEndpoint)(nil),                   // 2: orchestrator.v1.ServerEndpoint
 }
 var file_orchestrator_v1_discovery_proto_depIdxs = []int32{
-	2, // 0: orchestrator.v1.DiscoverServersResponse.servers:type_name -> orchestrator.v1.ServerEndpoint
-	0, // 1: orchestrator.v1.DiscoveryService.Discover:input_type -> orchestrator.v1.DiscoverServersRequest
-	1, // 2: orchestrator.v1.DiscoveryService.Discover:output_type -> orchestrator.v1.DiscoverServersResponse
+	2, // 0: orchestrator.v1.DiscoveryServiceDiscoverResponse.servers:type_name -> orchestrator.v1.ServerEndpoint
+	0, // 1: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:input_type -> orchestrator.v1.DiscoveryServiceDiscoverRequest
+	1, // 2: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:output_type -> orchestrator.v1.DiscoveryServiceDiscoverResponse
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DiscoveryService_Discover_FullMethodName = "/orchestrator.v1.DiscoveryService/Discover"
+	DiscoveryService_DiscoveryServiceDiscover_FullMethodName = "/orchestrator.v1.DiscoveryService/DiscoveryServiceDiscover"
 )
 
 // DiscoveryServiceClient is the client API for DiscoveryService service.
@@ -29,7 +29,7 @@ const (
 // Сервис обнаружения серверов для клиентов игр.
 type DiscoveryServiceClient interface {
 	// Обнаружить доступные серверы для подключения.
-	Discover(ctx context.Context, in *DiscoverServersRequest, opts ...grpc.CallOption) (*DiscoverServersResponse, error)
+	DiscoveryServiceDiscover(ctx context.Context, in *DiscoveryServiceDiscoverRequest, opts ...grpc.CallOption) (*DiscoveryServiceDiscoverResponse, error)
 }
 
 type discoveryServiceClient struct {
@@ -40,10 +40,10 @@ func NewDiscoveryServiceClient(cc grpc.ClientConnInterface) DiscoveryServiceClie
 	return &discoveryServiceClient{cc}
 }
 
-func (c *discoveryServiceClient) Discover(ctx context.Context, in *DiscoverServersRequest, opts ...grpc.CallOption) (*DiscoverServersResponse, error) {
+func (c *discoveryServiceClient) DiscoveryServiceDiscover(ctx context.Context, in *DiscoveryServiceDiscoverRequest, opts ...grpc.CallOption) (*DiscoveryServiceDiscoverResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DiscoverServersResponse)
-	err := c.cc.Invoke(ctx, DiscoveryService_Discover_FullMethodName, in, out, cOpts...)
+	out := new(DiscoveryServiceDiscoverResponse)
+	err := c.cc.Invoke(ctx, DiscoveryService_DiscoveryServiceDiscover_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *discoveryServiceClient) Discover(ctx context.Context, in *DiscoverServe
 // Сервис обнаружения серверов для клиентов игр.
 type DiscoveryServiceServer interface {
 	// Обнаружить доступные серверы для подключения.
-	Discover(context.Context, *DiscoverServersRequest) (*DiscoverServersResponse, error)
+	DiscoveryServiceDiscover(context.Context, *DiscoveryServiceDiscoverRequest) (*DiscoveryServiceDiscoverResponse, error)
 	mustEmbedUnimplementedDiscoveryServiceServer()
 }
 
@@ -68,8 +68,8 @@ type DiscoveryServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDiscoveryServiceServer struct{}
 
-func (UnimplementedDiscoveryServiceServer) Discover(context.Context, *DiscoverServersRequest) (*DiscoverServersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Discover not implemented")
+func (UnimplementedDiscoveryServiceServer) DiscoveryServiceDiscover(context.Context, *DiscoveryServiceDiscoverRequest) (*DiscoveryServiceDiscoverResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DiscoveryServiceDiscover not implemented")
 }
 func (UnimplementedDiscoveryServiceServer) mustEmbedUnimplementedDiscoveryServiceServer() {}
 func (UnimplementedDiscoveryServiceServer) testEmbeddedByValue()                          {}
@@ -92,20 +92,20 @@ func RegisterDiscoveryServiceServer(s grpc.ServiceRegistrar, srv DiscoveryServic
 	s.RegisterService(&DiscoveryService_ServiceDesc, srv)
 }
 
-func _DiscoveryService_Discover_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DiscoverServersRequest)
+func _DiscoveryService_DiscoveryServiceDiscover_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiscoveryServiceDiscoverRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DiscoveryServiceServer).Discover(ctx, in)
+		return srv.(DiscoveryServiceServer).DiscoveryServiceDiscover(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: DiscoveryService_Discover_FullMethodName,
+		FullMethod: DiscoveryService_DiscoveryServiceDiscover_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiscoveryServiceServer).Discover(ctx, req.(*DiscoverServersRequest))
+		return srv.(DiscoveryServiceServer).DiscoveryServiceDiscover(ctx, req.(*DiscoveryServiceDiscoverRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -118,8 +118,8 @@ var DiscoveryService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DiscoveryServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Discover",
-			Handler:    _DiscoveryService_Discover_Handler,
+			MethodName: "DiscoveryServiceDiscover",
+			Handler:    _DiscoveryService_DiscoveryServiceDiscover_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

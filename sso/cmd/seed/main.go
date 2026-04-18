@@ -139,7 +139,7 @@ func (s *Seeder) seedUsers(ctx context.Context) {
 		password := fmt.Sprintf("Password123!user%d", i)
 		displayName := fmt.Sprintf("Test User %d", i)
 
-		_, err := s.client.Register(ctx, &pb.RegisterRequest{
+		_, err := s.client.Register(ctx, &pb.AuthServiceRegisterRequest{
 			Email:       email,
 			Password:    password,
 			DisplayName: displayName,
@@ -161,7 +161,7 @@ func (s *Seeder) seedUsers(ctx context.Context) {
 			password := fmt.Sprintf("Admin123!admin%d", i)
 			displayName := fmt.Sprintf("Admin %d", i)
 
-			_, err := s.client.Register(ctx, &pb.RegisterRequest{
+			_, err := s.client.Register(ctx, &pb.AuthServiceRegisterRequest{
 				Email:       email,
 				Password:    password,
 				DisplayName: displayName,

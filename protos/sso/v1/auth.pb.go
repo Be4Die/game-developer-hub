@@ -7,6 +7,7 @@
 package ssov1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type RegisterRequest struct {
+type AuthServiceRegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
@@ -30,20 +31,20 @@ type RegisterRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegisterRequest) Reset() {
-	*x = RegisterRequest{}
+func (x *AuthServiceRegisterRequest) Reset() {
+	*x = AuthServiceRegisterRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegisterRequest) String() string {
+func (x *AuthServiceRegisterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterRequest) ProtoMessage() {}
+func (*AuthServiceRegisterRequest) ProtoMessage() {}
 
-func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRegisterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,33 +56,33 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
-func (*RegisterRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRegisterRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceRegisterRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RegisterRequest) GetEmail() string {
+func (x *AuthServiceRegisterRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-func (x *RegisterRequest) GetPassword() string {
+func (x *AuthServiceRegisterRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
 	}
 	return ""
 }
 
-func (x *RegisterRequest) GetDisplayName() string {
+func (x *AuthServiceRegisterRequest) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-type RegisterResponse struct {
+type AuthServiceRegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	Tokens        *TokenInfo             `protobuf:"bytes,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
@@ -89,20 +90,20 @@ type RegisterResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegisterResponse) Reset() {
-	*x = RegisterResponse{}
+func (x *AuthServiceRegisterResponse) Reset() {
+	*x = AuthServiceRegisterResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegisterResponse) String() string {
+func (x *AuthServiceRegisterResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterResponse) ProtoMessage() {}
+func (*AuthServiceRegisterResponse) ProtoMessage() {}
 
-func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRegisterResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -114,26 +115,26 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
-func (*RegisterResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRegisterResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceRegisterResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RegisterResponse) GetUser() *User {
+func (x *AuthServiceRegisterResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-func (x *RegisterResponse) GetTokens() *TokenInfo {
+func (x *AuthServiceRegisterResponse) GetTokens() *TokenInfo {
 	if x != nil {
 		return x.Tokens
 	}
 	return nil
 }
 
-type LoginRequest struct {
+type AuthServiceLoginRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Email    string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Password string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
@@ -144,20 +145,20 @@ type LoginRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LoginRequest) Reset() {
-	*x = LoginRequest{}
+func (x *AuthServiceLoginRequest) Reset() {
+	*x = AuthServiceLoginRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LoginRequest) String() string {
+func (x *AuthServiceLoginRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginRequest) ProtoMessage() {}
+func (*AuthServiceLoginRequest) ProtoMessage() {}
 
-func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceLoginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -169,40 +170,40 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
-func (*LoginRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceLoginRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceLoginRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *LoginRequest) GetEmail() string {
+func (x *AuthServiceLoginRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetPassword() string {
+func (x *AuthServiceLoginRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetUserAgent() string {
+func (x *AuthServiceLoginRequest) GetUserAgent() string {
 	if x != nil && x.UserAgent != nil {
 		return *x.UserAgent
 	}
 	return ""
 }
 
-func (x *LoginRequest) GetIpAddress() string {
+func (x *AuthServiceLoginRequest) GetIpAddress() string {
 	if x != nil && x.IpAddress != nil {
 		return *x.IpAddress
 	}
 	return ""
 }
 
-type LoginResponse struct {
+type AuthServiceLoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	Tokens        *TokenInfo             `protobuf:"bytes,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
@@ -210,20 +211,20 @@ type LoginResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LoginResponse) Reset() {
-	*x = LoginResponse{}
+func (x *AuthServiceLoginResponse) Reset() {
+	*x = AuthServiceLoginResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LoginResponse) String() string {
+func (x *AuthServiceLoginResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LoginResponse) ProtoMessage() {}
+func (*AuthServiceLoginResponse) ProtoMessage() {}
 
-func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceLoginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -235,46 +236,46 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
-func (*LoginResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceLoginResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceLoginResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *LoginResponse) GetUser() *User {
+func (x *AuthServiceLoginResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-func (x *LoginResponse) GetTokens() *TokenInfo {
+func (x *AuthServiceLoginResponse) GetTokens() *TokenInfo {
 	if x != nil {
 		return x.Tokens
 	}
 	return nil
 }
 
-type RefreshTokenRequest struct {
+type AuthServiceRefreshTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RefreshTokenRequest) Reset() {
-	*x = RefreshTokenRequest{}
+func (x *AuthServiceRefreshTokenRequest) Reset() {
+	*x = AuthServiceRefreshTokenRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RefreshTokenRequest) String() string {
+func (x *AuthServiceRefreshTokenRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RefreshTokenRequest) ProtoMessage() {}
+func (*AuthServiceRefreshTokenRequest) ProtoMessage() {}
 
-func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRefreshTokenRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -286,39 +287,39 @@ func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RefreshTokenRequest.ProtoReflect.Descriptor instead.
-func (*RefreshTokenRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRefreshTokenRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceRefreshTokenRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RefreshTokenRequest) GetRefreshToken() string {
+func (x *AuthServiceRefreshTokenRequest) GetRefreshToken() string {
 	if x != nil {
 		return x.RefreshToken
 	}
 	return ""
 }
 
-type RefreshTokenResponse struct {
+type AuthServiceRefreshTokenResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tokens        *TokenInfo             `protobuf:"bytes,1,opt,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RefreshTokenResponse) Reset() {
-	*x = RefreshTokenResponse{}
+func (x *AuthServiceRefreshTokenResponse) Reset() {
+	*x = AuthServiceRefreshTokenResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RefreshTokenResponse) String() string {
+func (x *AuthServiceRefreshTokenResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RefreshTokenResponse) ProtoMessage() {}
+func (*AuthServiceRefreshTokenResponse) ProtoMessage() {}
 
-func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRefreshTokenResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -330,39 +331,39 @@ func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RefreshTokenResponse.ProtoReflect.Descriptor instead.
-func (*RefreshTokenResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRefreshTokenResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceRefreshTokenResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *RefreshTokenResponse) GetTokens() *TokenInfo {
+func (x *AuthServiceRefreshTokenResponse) GetTokens() *TokenInfo {
 	if x != nil {
 		return x.Tokens
 	}
 	return nil
 }
 
-type LogoutRequest struct {
+type AuthServiceLogoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LogoutRequest) Reset() {
-	*x = LogoutRequest{}
+func (x *AuthServiceLogoutRequest) Reset() {
+	*x = AuthServiceLogoutRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LogoutRequest) String() string {
+func (x *AuthServiceLogoutRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LogoutRequest) ProtoMessage() {}
+func (*AuthServiceLogoutRequest) ProtoMessage() {}
 
-func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceLogoutRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -374,38 +375,38 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
-func (*LogoutRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceLogoutRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceLogoutRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *LogoutRequest) GetRefreshToken() string {
+func (x *AuthServiceLogoutRequest) GetRefreshToken() string {
 	if x != nil {
 		return x.RefreshToken
 	}
 	return ""
 }
 
-type LogoutResponse struct {
+type AuthServiceLogoutResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LogoutResponse) Reset() {
-	*x = LogoutResponse{}
+func (x *AuthServiceLogoutResponse) Reset() {
+	*x = AuthServiceLogoutResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LogoutResponse) String() string {
+func (x *AuthServiceLogoutResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LogoutResponse) ProtoMessage() {}
+func (*AuthServiceLogoutResponse) ProtoMessage() {}
 
-func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceLogoutResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -417,12 +418,12 @@ func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
-func (*LogoutResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceLogoutResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceLogoutResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{7}
 }
 
-type VerifyEmailRequest struct {
+type AuthServiceVerifyEmailRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Код верификации из письма.
 	VerificationCode string `protobuf:"bytes,1,opt,name=verification_code,json=verificationCode,proto3" json:"verification_code,omitempty"`
@@ -430,20 +431,20 @@ type VerifyEmailRequest struct {
 	sizeCache        protoimpl.SizeCache
 }
 
-func (x *VerifyEmailRequest) Reset() {
-	*x = VerifyEmailRequest{}
+func (x *AuthServiceVerifyEmailRequest) Reset() {
+	*x = AuthServiceVerifyEmailRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VerifyEmailRequest) String() string {
+func (x *AuthServiceVerifyEmailRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VerifyEmailRequest) ProtoMessage() {}
+func (*AuthServiceVerifyEmailRequest) ProtoMessage() {}
 
-func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceVerifyEmailRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -455,39 +456,39 @@ func (x *VerifyEmailRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VerifyEmailRequest.ProtoReflect.Descriptor instead.
-func (*VerifyEmailRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceVerifyEmailRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceVerifyEmailRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *VerifyEmailRequest) GetVerificationCode() string {
+func (x *AuthServiceVerifyEmailRequest) GetVerificationCode() string {
 	if x != nil {
 		return x.VerificationCode
 	}
 	return ""
 }
 
-type VerifyEmailResponse struct {
+type AuthServiceVerifyEmailResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VerifyEmailResponse) Reset() {
-	*x = VerifyEmailResponse{}
+func (x *AuthServiceVerifyEmailResponse) Reset() {
+	*x = AuthServiceVerifyEmailResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VerifyEmailResponse) String() string {
+func (x *AuthServiceVerifyEmailResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VerifyEmailResponse) ProtoMessage() {}
+func (*AuthServiceVerifyEmailResponse) ProtoMessage() {}
 
-func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceVerifyEmailResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -499,39 +500,39 @@ func (x *VerifyEmailResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VerifyEmailResponse.ProtoReflect.Descriptor instead.
-func (*VerifyEmailResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceVerifyEmailResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceVerifyEmailResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *VerifyEmailResponse) GetSuccess() bool {
+func (x *AuthServiceVerifyEmailResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-type ResendVerificationEmailRequest struct {
+type AuthServiceResendVerificationEmailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResendVerificationEmailRequest) Reset() {
-	*x = ResendVerificationEmailRequest{}
+func (x *AuthServiceResendVerificationEmailRequest) Reset() {
+	*x = AuthServiceResendVerificationEmailRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResendVerificationEmailRequest) String() string {
+func (x *AuthServiceResendVerificationEmailRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResendVerificationEmailRequest) ProtoMessage() {}
+func (*AuthServiceResendVerificationEmailRequest) ProtoMessage() {}
 
-func (x *ResendVerificationEmailRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceResendVerificationEmailRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -543,19 +544,19 @@ func (x *ResendVerificationEmailRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResendVerificationEmailRequest.ProtoReflect.Descriptor instead.
-func (*ResendVerificationEmailRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceResendVerificationEmailRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceResendVerificationEmailRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ResendVerificationEmailRequest) GetEmail() string {
+func (x *AuthServiceResendVerificationEmailRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-type ResendVerificationEmailResponse struct {
+type AuthServiceResendVerificationEmailResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// true — письмо отправлено, false — пользователь уже подтверждён или email не найден.
 	Sent          bool `protobuf:"varint,1,opt,name=sent,proto3" json:"sent,omitempty"`
@@ -563,20 +564,20 @@ type ResendVerificationEmailResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResendVerificationEmailResponse) Reset() {
-	*x = ResendVerificationEmailResponse{}
+func (x *AuthServiceResendVerificationEmailResponse) Reset() {
+	*x = AuthServiceResendVerificationEmailResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResendVerificationEmailResponse) String() string {
+func (x *AuthServiceResendVerificationEmailResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResendVerificationEmailResponse) ProtoMessage() {}
+func (*AuthServiceResendVerificationEmailResponse) ProtoMessage() {}
 
-func (x *ResendVerificationEmailResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceResendVerificationEmailResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -588,39 +589,39 @@ func (x *ResendVerificationEmailResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResendVerificationEmailResponse.ProtoReflect.Descriptor instead.
-func (*ResendVerificationEmailResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceResendVerificationEmailResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceResendVerificationEmailResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ResendVerificationEmailResponse) GetSent() bool {
+func (x *AuthServiceResendVerificationEmailResponse) GetSent() bool {
 	if x != nil {
 		return x.Sent
 	}
 	return false
 }
 
-type RequestPasswordResetRequest struct {
+type AuthServiceRequestPasswordResetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RequestPasswordResetRequest) Reset() {
-	*x = RequestPasswordResetRequest{}
+func (x *AuthServiceRequestPasswordResetRequest) Reset() {
+	*x = AuthServiceRequestPasswordResetRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RequestPasswordResetRequest) String() string {
+func (x *AuthServiceRequestPasswordResetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RequestPasswordResetRequest) ProtoMessage() {}
+func (*AuthServiceRequestPasswordResetRequest) ProtoMessage() {}
 
-func (x *RequestPasswordResetRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRequestPasswordResetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -632,19 +633,19 @@ func (x *RequestPasswordResetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RequestPasswordResetRequest.ProtoReflect.Descriptor instead.
-func (*RequestPasswordResetRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRequestPasswordResetRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceRequestPasswordResetRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *RequestPasswordResetRequest) GetEmail() string {
+func (x *AuthServiceRequestPasswordResetRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
 	}
 	return ""
 }
 
-type RequestPasswordResetResponse struct {
+type AuthServiceRequestPasswordResetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Всегда true для предотвращения enumeration attack.
 	Ok            bool `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
@@ -652,20 +653,20 @@ type RequestPasswordResetResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RequestPasswordResetResponse) Reset() {
-	*x = RequestPasswordResetResponse{}
+func (x *AuthServiceRequestPasswordResetResponse) Reset() {
+	*x = AuthServiceRequestPasswordResetResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RequestPasswordResetResponse) String() string {
+func (x *AuthServiceRequestPasswordResetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RequestPasswordResetResponse) ProtoMessage() {}
+func (*AuthServiceRequestPasswordResetResponse) ProtoMessage() {}
 
-func (x *RequestPasswordResetResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceRequestPasswordResetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -677,19 +678,19 @@ func (x *RequestPasswordResetResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RequestPasswordResetResponse.ProtoReflect.Descriptor instead.
-func (*RequestPasswordResetResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceRequestPasswordResetResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceRequestPasswordResetResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *RequestPasswordResetResponse) GetOk() bool {
+func (x *AuthServiceRequestPasswordResetResponse) GetOk() bool {
 	if x != nil {
 		return x.Ok
 	}
 	return false
 }
 
-type ResetPasswordRequest struct {
+type AuthServiceResetPasswordRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ResetToken    string                 `protobuf:"bytes,1,opt,name=reset_token,json=resetToken,proto3" json:"reset_token,omitempty"`
 	NewPassword   string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
@@ -697,20 +698,20 @@ type ResetPasswordRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResetPasswordRequest) Reset() {
-	*x = ResetPasswordRequest{}
+func (x *AuthServiceResetPasswordRequest) Reset() {
+	*x = AuthServiceResetPasswordRequest{}
 	mi := &file_sso_v1_auth_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResetPasswordRequest) String() string {
+func (x *AuthServiceResetPasswordRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResetPasswordRequest) ProtoMessage() {}
+func (*AuthServiceResetPasswordRequest) ProtoMessage() {}
 
-func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceResetPasswordRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -722,46 +723,46 @@ func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResetPasswordRequest.ProtoReflect.Descriptor instead.
-func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceResetPasswordRequest.ProtoReflect.Descriptor instead.
+func (*AuthServiceResetPasswordRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *ResetPasswordRequest) GetResetToken() string {
+func (x *AuthServiceResetPasswordRequest) GetResetToken() string {
 	if x != nil {
 		return x.ResetToken
 	}
 	return ""
 }
 
-func (x *ResetPasswordRequest) GetNewPassword() string {
+func (x *AuthServiceResetPasswordRequest) GetNewPassword() string {
 	if x != nil {
 		return x.NewPassword
 	}
 	return ""
 }
 
-type ResetPasswordResponse struct {
+type AuthServiceResetPasswordResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResetPasswordResponse) Reset() {
-	*x = ResetPasswordResponse{}
+func (x *AuthServiceResetPasswordResponse) Reset() {
+	*x = AuthServiceResetPasswordResponse{}
 	mi := &file_sso_v1_auth_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResetPasswordResponse) String() string {
+func (x *AuthServiceResetPasswordResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResetPasswordResponse) ProtoMessage() {}
+func (*AuthServiceResetPasswordResponse) ProtoMessage() {}
 
-func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthServiceResetPasswordResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_auth_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -773,12 +774,12 @@ func (x *ResetPasswordResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResetPasswordResponse.ProtoReflect.Descriptor instead.
-func (*ResetPasswordResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthServiceResetPasswordResponse.ProtoReflect.Descriptor instead.
+func (*AuthServiceResetPasswordResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_auth_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *ResetPasswordResponse) GetSuccess() bool {
+func (x *AuthServiceResetPasswordResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
@@ -789,15 +790,15 @@ var File_sso_v1_auth_proto protoreflect.FileDescriptor
 
 const file_sso_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x11sso/v1/auth.proto\x12\x06sso.v1\x1a\x13sso/v1/common.proto\"f\n" +
-	"\x0fRegisterRequest\x12\x14\n" +
+	"\x11sso/v1/auth.proto\x12\x06sso.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x13sso/v1/common.proto\"q\n" +
+	"\x1aAuthServiceRegisterRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
-	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\"_\n" +
-	"\x10RegisterResponse\x12 \n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\"j\n" +
+	"\x1bAuthServiceRegisterResponse\x12 \n" +
 	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\x12)\n" +
-	"\x06tokens\x18\x02 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"\xa6\x01\n" +
-	"\fLoginRequest\x12\x14\n" +
+	"\x06tokens\x18\x02 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"\xb1\x01\n" +
+	"\x17AuthServiceLoginRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\"\n" +
 	"\n" +
@@ -805,44 +806,44 @@ const file_sso_v1_auth_proto_rawDesc = "" +
 	"\n" +
 	"ip_address\x18\x04 \x01(\tH\x01R\tipAddress\x88\x01\x01B\r\n" +
 	"\v_user_agentB\r\n" +
-	"\v_ip_address\"\\\n" +
-	"\rLoginResponse\x12 \n" +
+	"\v_ip_address\"g\n" +
+	"\x18AuthServiceLoginResponse\x12 \n" +
 	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\x12)\n" +
-	"\x06tokens\x18\x02 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\":\n" +
-	"\x13RefreshTokenRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"A\n" +
-	"\x14RefreshTokenResponse\x12)\n" +
-	"\x06tokens\x18\x01 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"4\n" +
-	"\rLogoutRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x10\n" +
-	"\x0eLogoutResponse\"A\n" +
-	"\x12VerifyEmailRequest\x12+\n" +
-	"\x11verification_code\x18\x01 \x01(\tR\x10verificationCode\"/\n" +
-	"\x13VerifyEmailResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"6\n" +
-	"\x1eResendVerificationEmailRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\"5\n" +
-	"\x1fResendVerificationEmailResponse\x12\x12\n" +
-	"\x04sent\x18\x01 \x01(\bR\x04sent\"3\n" +
-	"\x1bRequestPasswordResetRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\".\n" +
-	"\x1cRequestPasswordResetResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\"Z\n" +
-	"\x14ResetPasswordRequest\x12\x1f\n" +
+	"\x06tokens\x18\x02 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"E\n" +
+	"\x1eAuthServiceRefreshTokenRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"L\n" +
+	"\x1fAuthServiceRefreshTokenResponse\x12)\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"?\n" +
+	"\x18AuthServiceLogoutRequest\x12#\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x1b\n" +
+	"\x19AuthServiceLogoutResponse\"L\n" +
+	"\x1dAuthServiceVerifyEmailRequest\x12+\n" +
+	"\x11verification_code\x18\x01 \x01(\tR\x10verificationCode\":\n" +
+	"\x1eAuthServiceVerifyEmailResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"A\n" +
+	")AuthServiceResendVerificationEmailRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"@\n" +
+	"*AuthServiceResendVerificationEmailResponse\x12\x12\n" +
+	"\x04sent\x18\x01 \x01(\bR\x04sent\">\n" +
+	"&AuthServiceRequestPasswordResetRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\"9\n" +
+	"'AuthServiceRequestPasswordResetResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"e\n" +
+	"\x1fAuthServiceResetPasswordRequest\x12\x1f\n" +
 	"\vreset_token\x18\x01 \x01(\tR\n" +
 	"resetToken\x12!\n" +
-	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"1\n" +
-	"\x15ResetPasswordResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\xeb\x04\n" +
-	"\vAuthService\x12=\n" +
-	"\bRegister\x12\x17.sso.v1.RegisterRequest\x1a\x18.sso.v1.RegisterResponse\x124\n" +
-	"\x05Login\x12\x14.sso.v1.LoginRequest\x1a\x15.sso.v1.LoginResponse\x12I\n" +
-	"\fRefreshToken\x12\x1b.sso.v1.RefreshTokenRequest\x1a\x1c.sso.v1.RefreshTokenResponse\x127\n" +
-	"\x06Logout\x12\x15.sso.v1.LogoutRequest\x1a\x16.sso.v1.LogoutResponse\x12F\n" +
-	"\vVerifyEmail\x12\x1a.sso.v1.VerifyEmailRequest\x1a\x1b.sso.v1.VerifyEmailResponse\x12j\n" +
-	"\x17ResendVerificationEmail\x12&.sso.v1.ResendVerificationEmailRequest\x1a'.sso.v1.ResendVerificationEmailResponse\x12a\n" +
-	"\x14RequestPasswordReset\x12#.sso.v1.RequestPasswordResetRequest\x1a$.sso.v1.RequestPasswordResetResponse\x12L\n" +
-	"\rResetPassword\x12\x1c.sso.v1.ResetPasswordRequest\x1a\x1d.sso.v1.ResetPasswordResponseB\x8a\x01\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"<\n" +
+	" AuthServiceResetPasswordResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xc5\b\n" +
+	"\vAuthService\x12u\n" +
+	"\bRegister\x12\".sso.v1.AuthServiceRegisterRequest\x1a#.sso.v1.AuthServiceRegisterResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/register\x12i\n" +
+	"\x05Login\x12\x1f.sso.v1.AuthServiceLoginRequest\x1a .sso.v1.AuthServiceLoginResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/auth/login\x12\x80\x01\n" +
+	"\fRefreshToken\x12&.sso.v1.AuthServiceRefreshTokenRequest\x1a'.sso.v1.AuthServiceRefreshTokenResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/refresh\x12m\n" +
+	"\x06Logout\x12 .sso.v1.AuthServiceLogoutRequest\x1a!.sso.v1.AuthServiceLogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logout\x12\x82\x01\n" +
+	"\vVerifyEmail\x12%.sso.v1.AuthServiceVerifyEmailRequest\x1a&.sso.v1.AuthServiceVerifyEmailResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/auth/verify-email\x12\xad\x01\n" +
+	"\x17ResendVerificationEmail\x121.sso.v1.AuthServiceResendVerificationEmailRequest\x1a2.sso.v1.AuthServiceResendVerificationEmailResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/auth/resend-verification\x12\x9f\x01\n" +
+	"\x14RequestPasswordReset\x12..sso.v1.AuthServiceRequestPasswordResetRequest\x1a/.sso.v1.AuthServiceRequestPasswordResetResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/auth/password-reset\x12\x8a\x01\n" +
+	"\rResetPassword\x12'.sso.v1.AuthServiceResetPasswordRequest\x1a(.sso.v1.AuthServiceResetPasswordResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/auth/reset-passwordB\x8a\x01\n" +
 	"\n" +
 	"com.sso.v1B\tAuthProtoP\x01Z8github.com/Be4Die/game-developer-hub/protos/sso/v1;ssov1\xa2\x02\x03SXX\xaa\x02\x06Sso.V1\xca\x02\x06Sso\\V1\xe2\x02\x12Sso\\V1\\GPBMetadata\xea\x02\aSso::V1b\x06proto3"
 
@@ -860,47 +861,47 @@ func file_sso_v1_auth_proto_rawDescGZIP() []byte {
 
 var file_sso_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_sso_v1_auth_proto_goTypes = []any{
-	(*RegisterRequest)(nil),                 // 0: sso.v1.RegisterRequest
-	(*RegisterResponse)(nil),                // 1: sso.v1.RegisterResponse
-	(*LoginRequest)(nil),                    // 2: sso.v1.LoginRequest
-	(*LoginResponse)(nil),                   // 3: sso.v1.LoginResponse
-	(*RefreshTokenRequest)(nil),             // 4: sso.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),            // 5: sso.v1.RefreshTokenResponse
-	(*LogoutRequest)(nil),                   // 6: sso.v1.LogoutRequest
-	(*LogoutResponse)(nil),                  // 7: sso.v1.LogoutResponse
-	(*VerifyEmailRequest)(nil),              // 8: sso.v1.VerifyEmailRequest
-	(*VerifyEmailResponse)(nil),             // 9: sso.v1.VerifyEmailResponse
-	(*ResendVerificationEmailRequest)(nil),  // 10: sso.v1.ResendVerificationEmailRequest
-	(*ResendVerificationEmailResponse)(nil), // 11: sso.v1.ResendVerificationEmailResponse
-	(*RequestPasswordResetRequest)(nil),     // 12: sso.v1.RequestPasswordResetRequest
-	(*RequestPasswordResetResponse)(nil),    // 13: sso.v1.RequestPasswordResetResponse
-	(*ResetPasswordRequest)(nil),            // 14: sso.v1.ResetPasswordRequest
-	(*ResetPasswordResponse)(nil),           // 15: sso.v1.ResetPasswordResponse
-	(*User)(nil),                            // 16: sso.v1.User
-	(*TokenInfo)(nil),                       // 17: sso.v1.TokenInfo
+	(*AuthServiceRegisterRequest)(nil),                 // 0: sso.v1.AuthServiceRegisterRequest
+	(*AuthServiceRegisterResponse)(nil),                // 1: sso.v1.AuthServiceRegisterResponse
+	(*AuthServiceLoginRequest)(nil),                    // 2: sso.v1.AuthServiceLoginRequest
+	(*AuthServiceLoginResponse)(nil),                   // 3: sso.v1.AuthServiceLoginResponse
+	(*AuthServiceRefreshTokenRequest)(nil),             // 4: sso.v1.AuthServiceRefreshTokenRequest
+	(*AuthServiceRefreshTokenResponse)(nil),            // 5: sso.v1.AuthServiceRefreshTokenResponse
+	(*AuthServiceLogoutRequest)(nil),                   // 6: sso.v1.AuthServiceLogoutRequest
+	(*AuthServiceLogoutResponse)(nil),                  // 7: sso.v1.AuthServiceLogoutResponse
+	(*AuthServiceVerifyEmailRequest)(nil),              // 8: sso.v1.AuthServiceVerifyEmailRequest
+	(*AuthServiceVerifyEmailResponse)(nil),             // 9: sso.v1.AuthServiceVerifyEmailResponse
+	(*AuthServiceResendVerificationEmailRequest)(nil),  // 10: sso.v1.AuthServiceResendVerificationEmailRequest
+	(*AuthServiceResendVerificationEmailResponse)(nil), // 11: sso.v1.AuthServiceResendVerificationEmailResponse
+	(*AuthServiceRequestPasswordResetRequest)(nil),     // 12: sso.v1.AuthServiceRequestPasswordResetRequest
+	(*AuthServiceRequestPasswordResetResponse)(nil),    // 13: sso.v1.AuthServiceRequestPasswordResetResponse
+	(*AuthServiceResetPasswordRequest)(nil),            // 14: sso.v1.AuthServiceResetPasswordRequest
+	(*AuthServiceResetPasswordResponse)(nil),           // 15: sso.v1.AuthServiceResetPasswordResponse
+	(*User)(nil),                                       // 16: sso.v1.User
+	(*TokenInfo)(nil),                                  // 17: sso.v1.TokenInfo
 }
 var file_sso_v1_auth_proto_depIdxs = []int32{
-	16, // 0: sso.v1.RegisterResponse.user:type_name -> sso.v1.User
-	17, // 1: sso.v1.RegisterResponse.tokens:type_name -> sso.v1.TokenInfo
-	16, // 2: sso.v1.LoginResponse.user:type_name -> sso.v1.User
-	17, // 3: sso.v1.LoginResponse.tokens:type_name -> sso.v1.TokenInfo
-	17, // 4: sso.v1.RefreshTokenResponse.tokens:type_name -> sso.v1.TokenInfo
-	0,  // 5: sso.v1.AuthService.Register:input_type -> sso.v1.RegisterRequest
-	2,  // 6: sso.v1.AuthService.Login:input_type -> sso.v1.LoginRequest
-	4,  // 7: sso.v1.AuthService.RefreshToken:input_type -> sso.v1.RefreshTokenRequest
-	6,  // 8: sso.v1.AuthService.Logout:input_type -> sso.v1.LogoutRequest
-	8,  // 9: sso.v1.AuthService.VerifyEmail:input_type -> sso.v1.VerifyEmailRequest
-	10, // 10: sso.v1.AuthService.ResendVerificationEmail:input_type -> sso.v1.ResendVerificationEmailRequest
-	12, // 11: sso.v1.AuthService.RequestPasswordReset:input_type -> sso.v1.RequestPasswordResetRequest
-	14, // 12: sso.v1.AuthService.ResetPassword:input_type -> sso.v1.ResetPasswordRequest
-	1,  // 13: sso.v1.AuthService.Register:output_type -> sso.v1.RegisterResponse
-	3,  // 14: sso.v1.AuthService.Login:output_type -> sso.v1.LoginResponse
-	5,  // 15: sso.v1.AuthService.RefreshToken:output_type -> sso.v1.RefreshTokenResponse
-	7,  // 16: sso.v1.AuthService.Logout:output_type -> sso.v1.LogoutResponse
-	9,  // 17: sso.v1.AuthService.VerifyEmail:output_type -> sso.v1.VerifyEmailResponse
-	11, // 18: sso.v1.AuthService.ResendVerificationEmail:output_type -> sso.v1.ResendVerificationEmailResponse
-	13, // 19: sso.v1.AuthService.RequestPasswordReset:output_type -> sso.v1.RequestPasswordResetResponse
-	15, // 20: sso.v1.AuthService.ResetPassword:output_type -> sso.v1.ResetPasswordResponse
+	16, // 0: sso.v1.AuthServiceRegisterResponse.user:type_name -> sso.v1.User
+	17, // 1: sso.v1.AuthServiceRegisterResponse.tokens:type_name -> sso.v1.TokenInfo
+	16, // 2: sso.v1.AuthServiceLoginResponse.user:type_name -> sso.v1.User
+	17, // 3: sso.v1.AuthServiceLoginResponse.tokens:type_name -> sso.v1.TokenInfo
+	17, // 4: sso.v1.AuthServiceRefreshTokenResponse.tokens:type_name -> sso.v1.TokenInfo
+	0,  // 5: sso.v1.AuthService.Register:input_type -> sso.v1.AuthServiceRegisterRequest
+	2,  // 6: sso.v1.AuthService.Login:input_type -> sso.v1.AuthServiceLoginRequest
+	4,  // 7: sso.v1.AuthService.RefreshToken:input_type -> sso.v1.AuthServiceRefreshTokenRequest
+	6,  // 8: sso.v1.AuthService.Logout:input_type -> sso.v1.AuthServiceLogoutRequest
+	8,  // 9: sso.v1.AuthService.VerifyEmail:input_type -> sso.v1.AuthServiceVerifyEmailRequest
+	10, // 10: sso.v1.AuthService.ResendVerificationEmail:input_type -> sso.v1.AuthServiceResendVerificationEmailRequest
+	12, // 11: sso.v1.AuthService.RequestPasswordReset:input_type -> sso.v1.AuthServiceRequestPasswordResetRequest
+	14, // 12: sso.v1.AuthService.ResetPassword:input_type -> sso.v1.AuthServiceResetPasswordRequest
+	1,  // 13: sso.v1.AuthService.Register:output_type -> sso.v1.AuthServiceRegisterResponse
+	3,  // 14: sso.v1.AuthService.Login:output_type -> sso.v1.AuthServiceLoginResponse
+	5,  // 15: sso.v1.AuthService.RefreshToken:output_type -> sso.v1.AuthServiceRefreshTokenResponse
+	7,  // 16: sso.v1.AuthService.Logout:output_type -> sso.v1.AuthServiceLogoutResponse
+	9,  // 17: sso.v1.AuthService.VerifyEmail:output_type -> sso.v1.AuthServiceVerifyEmailResponse
+	11, // 18: sso.v1.AuthService.ResendVerificationEmail:output_type -> sso.v1.AuthServiceResendVerificationEmailResponse
+	13, // 19: sso.v1.AuthService.RequestPasswordReset:output_type -> sso.v1.AuthServiceRequestPasswordResetResponse
+	15, // 20: sso.v1.AuthService.ResetPassword:output_type -> sso.v1.AuthServiceResetPasswordResponse
 	13, // [13:21] is the sub-list for method output_type
 	5,  // [5:13] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name

@@ -28,7 +28,7 @@ const (
 //
 // Сервис проверки работоспособности.
 type HealthServiceClient interface {
-	Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
+	Check(ctx context.Context, in *HealthServiceCheckRequest, opts ...grpc.CallOption) (*HealthServiceCheckResponse, error)
 }
 
 type healthServiceClient struct {
@@ -39,9 +39,9 @@ func NewHealthServiceClient(cc grpc.ClientConnInterface) HealthServiceClient {
 	return &healthServiceClient{cc}
 }
 
-func (c *healthServiceClient) Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
+func (c *healthServiceClient) Check(ctx context.Context, in *HealthServiceCheckRequest, opts ...grpc.CallOption) (*HealthServiceCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealthCheckResponse)
+	out := new(HealthServiceCheckResponse)
 	err := c.cc.Invoke(ctx, HealthService_Check_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (c *healthServiceClient) Check(ctx context.Context, in *HealthCheckRequest,
 //
 // Сервис проверки работоспособности.
 type HealthServiceServer interface {
-	Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
+	Check(context.Context, *HealthServiceCheckRequest) (*HealthServiceCheckResponse, error)
 	mustEmbedUnimplementedHealthServiceServer()
 }
 
@@ -66,7 +66,7 @@ type HealthServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedHealthServiceServer struct{}
 
-func (UnimplementedHealthServiceServer) Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
+func (UnimplementedHealthServiceServer) Check(context.Context, *HealthServiceCheckRequest) (*HealthServiceCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Check not implemented")
 }
 func (UnimplementedHealthServiceServer) mustEmbedUnimplementedHealthServiceServer() {}
@@ -91,7 +91,7 @@ func RegisterHealthServiceServer(s grpc.ServiceRegistrar, srv HealthServiceServe
 }
 
 func _HealthService_Check_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealthCheckRequest)
+	in := new(HealthServiceCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func _HealthService_Check_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: HealthService_Check_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HealthServiceServer).Check(ctx, req.(*HealthCheckRequest))
+		return srv.(HealthServiceServer).Check(ctx, req.(*HealthServiceCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -19,7 +19,7 @@ func NewBuildHandler(pipeline *service.BuildPipeline) *BuildHandler {
 }
 
 // Upload загружает серверный билд.
-func (h *BuildHandler) Upload(ctx context.Context, req *pb.UploadBuildRequest) (*pb.UploadBuildResponse, error) {
+func (h *BuildHandler) Upload(ctx context.Context, req *pb.BuildServiceUploadRequest) (*pb.BuildServiceUploadResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	params := service.UploadBuildParams{
@@ -39,11 +39,11 @@ func (h *BuildHandler) Upload(ctx context.Context, req *pb.UploadBuildRequest) (
 		return nil, domainError(err, "upload build")
 	}
 
-	return &pb.UploadBuildResponse{Build: buildToProto(build)}, nil
+	return &pb.BuildServiceUploadResponse{Build: buildToProto(build)}, nil
 }
 
 // List возвращает список билдов игры.
-func (h *BuildHandler) List(ctx context.Context, req *pb.ListBuildsRequest) (*pb.ListBuildsResponse, error) {
+func (h *BuildHandler) List(ctx context.Context, req *pb.BuildServiceListRequest) (*pb.BuildServiceListResponse, error) {
 	builds, err := h.pipeline.ListBuilds(ctx, req.GetGameId())
 	if err != nil {
 		return nil, domainError(err, "list builds")
@@ -54,25 +54,25 @@ func (h *BuildHandler) List(ctx context.Context, req *pb.ListBuildsRequest) (*pb
 		resp = append(resp, buildToProto(b))
 	}
 
-	return &pb.ListBuildsResponse{Builds: resp}, nil
+	return &pb.BuildServiceListResponse{Builds: resp}, nil
 }
 
 // Get возвращает информацию о билде.
-func (h *BuildHandler) Get(ctx context.Context, req *pb.GetBuildRequest) (*pb.GetBuildResponse, error) {
+func (h *BuildHandler) Get(ctx context.Context, req *pb.BuildServiceGetRequest) (*pb.BuildServiceGetResponse, error) {
 	build, err := h.pipeline.GetBuild(ctx, req.GetGameId(), req.GetBuildVersion())
 	if err != nil {
 		return nil, domainError(err, "get build")
 	}
 
-	return &pb.GetBuildResponse{Build: buildToProto(build)}, nil
+	return &pb.BuildServiceGetResponse{Build: buildToProto(build)}, nil
 }
 
 // Delete удаляет серверный билд.
-func (h *BuildHandler) Delete(ctx context.Context, req *pb.DeleteBuildRequest) (*pb.DeleteBuildResponse, error) {
+func (h *BuildHandler) Delete(ctx context.Context, req *pb.BuildServiceDeleteRequest) (*pb.BuildServiceDeleteResponse, error) {
 	err := h.pipeline.DeleteBuild(ctx, req.GetGameId(), req.GetBuildVersion())
 	if err != nil {
 		return nil, domainError(err, "delete build")
 	}
 
-	return &pb.DeleteBuildResponse{}, nil
+	return &pb.BuildServiceDeleteResponse{}, nil
 }

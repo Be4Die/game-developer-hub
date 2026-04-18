@@ -7,6 +7,7 @@
 package orchestratorv1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,26 +22,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HealthCheckRequest struct {
+type HealthServiceCheckRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthCheckRequest) Reset() {
-	*x = HealthCheckRequest{}
+func (x *HealthServiceCheckRequest) Reset() {
+	*x = HealthServiceCheckRequest{}
 	mi := &file_orchestrator_v1_health_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthCheckRequest) String() string {
+func (x *HealthServiceCheckRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthCheckRequest) ProtoMessage() {}
+func (*HealthServiceCheckRequest) ProtoMessage() {}
 
-func (x *HealthCheckRequest) ProtoReflect() protoreflect.Message {
+func (x *HealthServiceCheckRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_health_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -52,12 +53,12 @@ func (x *HealthCheckRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthCheckRequest.ProtoReflect.Descriptor instead.
-func (*HealthCheckRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HealthServiceCheckRequest.ProtoReflect.Descriptor instead.
+func (*HealthServiceCheckRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_health_proto_rawDescGZIP(), []int{0}
 }
 
-type HealthCheckResponse struct {
+type HealthServiceCheckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Всегда "ok" при работоспособности.
 	Status        string  `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
@@ -67,20 +68,20 @@ type HealthCheckResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HealthCheckResponse) Reset() {
-	*x = HealthCheckResponse{}
+func (x *HealthServiceCheckResponse) Reset() {
+	*x = HealthServiceCheckResponse{}
 	mi := &file_orchestrator_v1_health_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HealthCheckResponse) String() string {
+func (x *HealthServiceCheckResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HealthCheckResponse) ProtoMessage() {}
+func (*HealthServiceCheckResponse) ProtoMessage() {}
 
-func (x *HealthCheckResponse) ProtoReflect() protoreflect.Message {
+func (x *HealthServiceCheckResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_health_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -92,26 +93,26 @@ func (x *HealthCheckResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HealthCheckResponse.ProtoReflect.Descriptor instead.
-func (*HealthCheckResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HealthServiceCheckResponse.ProtoReflect.Descriptor instead.
+func (*HealthServiceCheckResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_health_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HealthCheckResponse) GetStatus() string {
+func (x *HealthServiceCheckResponse) GetStatus() string {
 	if x != nil {
 		return x.Status
 	}
 	return ""
 }
 
-func (x *HealthCheckResponse) GetVersion() string {
+func (x *HealthServiceCheckResponse) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
 	return ""
 }
 
-func (x *HealthCheckResponse) GetUptimeSeconds() float64 {
+func (x *HealthServiceCheckResponse) GetUptimeSeconds() float64 {
 	if x != nil {
 		return x.UptimeSeconds
 	}
@@ -122,14 +123,14 @@ var File_orchestrator_v1_health_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_health_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/health.proto\x12\x0forchestrator.v1\"\x14\n" +
-	"\x12HealthCheckRequest\"n\n" +
-	"\x13HealthCheckResponse\x12\x16\n" +
+	"\x1corchestrator/v1/health.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\"\x1b\n" +
+	"\x19HealthServiceCheckRequest\"u\n" +
+	"\x1aHealthServiceCheckResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12%\n" +
-	"\x0euptime_seconds\x18\x03 \x01(\x01R\ruptimeSeconds2c\n" +
-	"\rHealthService\x12R\n" +
-	"\x05Check\x12#.orchestrator.v1.HealthCheckRequest\x1a$.orchestrator.v1.HealthCheckResponseB\xcb\x01\n" +
+	"\x0euptime_seconds\x18\x03 \x01(\x01R\ruptimeSeconds2\x89\x01\n" +
+	"\rHealthService\x12x\n" +
+	"\x05Check\x12*.orchestrator.v1.HealthServiceCheckRequest\x1a+.orchestrator.v1.HealthServiceCheckResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/api/v1/healthB\xcb\x01\n" +
 	"\x13com.orchestrator.v1B\vHealthProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
@@ -146,12 +147,12 @@ func file_orchestrator_v1_health_proto_rawDescGZIP() []byte {
 
 var file_orchestrator_v1_health_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_orchestrator_v1_health_proto_goTypes = []any{
-	(*HealthCheckRequest)(nil),  // 0: orchestrator.v1.HealthCheckRequest
-	(*HealthCheckResponse)(nil), // 1: orchestrator.v1.HealthCheckResponse
+	(*HealthServiceCheckRequest)(nil),  // 0: orchestrator.v1.HealthServiceCheckRequest
+	(*HealthServiceCheckResponse)(nil), // 1: orchestrator.v1.HealthServiceCheckResponse
 }
 var file_orchestrator_v1_health_proto_depIdxs = []int32{
-	0, // 0: orchestrator.v1.HealthService.Check:input_type -> orchestrator.v1.HealthCheckRequest
-	1, // 1: orchestrator.v1.HealthService.Check:output_type -> orchestrator.v1.HealthCheckResponse
+	0, // 0: orchestrator.v1.HealthService.Check:input_type -> orchestrator.v1.HealthServiceCheckRequest
+	1, // 1: orchestrator.v1.HealthService.Check:output_type -> orchestrator.v1.HealthServiceCheckResponse
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name

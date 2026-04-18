@@ -2,26 +2,38 @@ syntax = "proto3";
 
 package orchestrator.v1;
 
+import "google/api/annotations.proto";
 import "orchestrator/v1/common.proto";
 
 // Сервис управления серверными билдами.
 service BuildService {
   // Загрузить серверный билд.
-  rpc Upload(UploadBuildRequest) returns (UploadBuildResponse);
+  rpc Upload(BuildServiceUploadRequest) returns (BuildServiceUploadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/builds"
+      body: "*"
+    };
+  }
 
   // Список билдов игры.
-  rpc List(ListBuildsRequest) returns (ListBuildsResponse);
+  rpc List(BuildServiceListRequest) returns (BuildServiceListResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/builds"};
+  }
 
   // Информация о конкретном билде.
-  rpc Get(GetBuildRequest) returns (GetBuildResponse);
+  rpc Get(BuildServiceGetRequest) returns (BuildServiceGetResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/builds/{build_version}"};
+  }
 
   // Удалить серверный билд.
-  rpc Delete(DeleteBuildRequest) returns (DeleteBuildResponse);
+  rpc Delete(BuildServiceDeleteRequest) returns (BuildServiceDeleteResponse) {
+    option (google.api.http) = {delete: "/api/v1/games/{game_id}/builds/{build_version}"};
+  }
 }
 
 // ─── Upload ─────────────────────────────────────────────────────────────────
 
-message UploadBuildRequest {
+message BuildServiceUploadRequest {
   int64 game_id = 1;
   // Docker image tar-архив (результат `docker save`).
   bytes image_data = 2;
@@ -31,38 +43,38 @@ message UploadBuildRequest {
   uint32 max_players = 6;
 }
 
-message UploadBuildResponse {
+message BuildServiceUploadResponse {
   ServerBuild build = 1;
 }
 
 // ─── List ───────────────────────────────────────────────────────────────────
 
-message ListBuildsRequest {
+message BuildServiceListRequest {
   int64 game_id = 1;
 }
 
-message ListBuildsResponse {
+message BuildServiceListResponse {
   repeated ServerBuild builds = 1;
 }
 
 // ─── Get ────────────────────────────────────────────────────────────────────
 
-message GetBuildRequest {
+message BuildServiceGetRequest {
   int64 game_id = 1;
   string build_version = 2;
 }
 
-message GetBuildResponse {
+message BuildServiceGetResponse {
   ServerBuild build = 1;
 }
 
 // ─── Delete ─────────────────────────────────────────────────────────────────
 
-message DeleteBuildRequest {
+message BuildServiceDeleteRequest {
   int64 game_id = 1;
   string build_version = 2;
 }
 
-message DeleteBuildResponse {
+message BuildServiceDeleteResponse {
   // Пусто — при успехе возвращается пустой ответ.
 }

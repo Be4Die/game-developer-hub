@@ -23,10 +23,10 @@ func NewHealthHandler(version string) *HealthHandler {
 }
 
 // Check возвращает статус работоспособности.
-func (h *HealthHandler) Check(_ context.Context, _ *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+func (h *HealthHandler) Check(_ context.Context, _ *pb.HealthServiceCheckRequest) (*pb.HealthServiceCheckResponse, error) {
 	uptime := time.Since(h.startTime).Seconds()
 
-	return &pb.HealthCheckResponse{
+	return &pb.HealthServiceCheckResponse{
 		Status:        "ok",
 		Version:       h.version,
 		UptimeSeconds: uptime,

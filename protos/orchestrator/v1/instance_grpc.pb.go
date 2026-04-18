@@ -34,17 +34,17 @@ const (
 // Сервис управления инстансами игровых серверов.
 type InstanceServiceClient interface {
 	// Запустить инстанс сервера.
-	Start(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error)
+	Start(ctx context.Context, in *InstanceServiceStartRequest, opts ...grpc.CallOption) (*InstanceServiceStartResponse, error)
 	// Список инстансов игры.
-	List(ctx context.Context, in *ListInstancesRequest, opts ...grpc.CallOption) (*ListInstancesResponse, error)
+	List(ctx context.Context, in *InstanceServiceListRequest, opts ...grpc.CallOption) (*InstanceServiceListResponse, error)
 	// Информация об инстансе.
-	Get(ctx context.Context, in *GetInstanceRequest, opts ...grpc.CallOption) (*GetInstanceResponse, error)
+	Get(ctx context.Context, in *InstanceServiceGetRequest, opts ...grpc.CallOption) (*InstanceServiceGetResponse, error)
 	// Остановить инстанс.
-	Stop(ctx context.Context, in *StopInstanceRequest, opts ...grpc.CallOption) (*StopInstanceResponse, error)
-	// Поток журналов инстанса (server streaming).
-	StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error)
+	Stop(ctx context.Context, in *InstanceServiceStopRequest, opts ...grpc.CallOption) (*InstanceServiceStopResponse, error)
+	// Поток журналов инстанса (server streaming) — без HTTP-маппинга.
+	StreamLogs(ctx context.Context, in *InstanceServiceStreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse], error)
 	// Потребление ресурсов инстанса.
-	GetUsage(ctx context.Context, in *GetInstanceUsageRequest, opts ...grpc.CallOption) (*GetInstanceUsageResponse, error)
+	GetUsage(ctx context.Context, in *InstanceServiceGetUsageRequest, opts ...grpc.CallOption) (*InstanceServiceGetUsageResponse, error)
 }
 
 type instanceServiceClient struct {
@@ -55,9 +55,9 @@ func NewInstanceServiceClient(cc grpc.ClientConnInterface) InstanceServiceClient
 	return &instanceServiceClient{cc}
 }
 
-func (c *instanceServiceClient) Start(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error) {
+func (c *instanceServiceClient) Start(ctx context.Context, in *InstanceServiceStartRequest, opts ...grpc.CallOption) (*InstanceServiceStartResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StartInstanceResponse)
+	out := new(InstanceServiceStartResponse)
 	err := c.cc.Invoke(ctx, InstanceService_Start_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -65,9 +65,9 @@ func (c *instanceServiceClient) Start(ctx context.Context, in *StartInstanceRequ
 	return out, nil
 }
 
-func (c *instanceServiceClient) List(ctx context.Context, in *ListInstancesRequest, opts ...grpc.CallOption) (*ListInstancesResponse, error) {
+func (c *instanceServiceClient) List(ctx context.Context, in *InstanceServiceListRequest, opts ...grpc.CallOption) (*InstanceServiceListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListInstancesResponse)
+	out := new(InstanceServiceListResponse)
 	err := c.cc.Invoke(ctx, InstanceService_List_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -75,9 +75,9 @@ func (c *instanceServiceClient) List(ctx context.Context, in *ListInstancesReque
 	return out, nil
 }
 
-func (c *instanceServiceClient) Get(ctx context.Context, in *GetInstanceRequest, opts ...grpc.CallOption) (*GetInstanceResponse, error) {
+func (c *instanceServiceClient) Get(ctx context.Context, in *InstanceServiceGetRequest, opts ...grpc.CallOption) (*InstanceServiceGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetInstanceResponse)
+	out := new(InstanceServiceGetResponse)
 	err := c.cc.Invoke(ctx, InstanceService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -85,9 +85,9 @@ func (c *instanceServiceClient) Get(ctx context.Context, in *GetInstanceRequest,
 	return out, nil
 }
 
-func (c *instanceServiceClient) Stop(ctx context.Context, in *StopInstanceRequest, opts ...grpc.CallOption) (*StopInstanceResponse, error) {
+func (c *instanceServiceClient) Stop(ctx context.Context, in *InstanceServiceStopRequest, opts ...grpc.CallOption) (*InstanceServiceStopResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StopInstanceResponse)
+	out := new(InstanceServiceStopResponse)
 	err := c.cc.Invoke(ctx, InstanceService_Stop_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -95,13 +95,13 @@ func (c *instanceServiceClient) Stop(ctx context.Context, in *StopInstanceReques
 	return out, nil
 }
 
-func (c *instanceServiceClient) StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LogEntry], error) {
+func (c *instanceServiceClient) StreamLogs(ctx context.Context, in *InstanceServiceStreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &InstanceService_ServiceDesc.Streams[0], InstanceService_StreamLogs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[StreamLogsRequest, LogEntry]{ClientStream: stream}
+	x := &grpc.GenericClientStream[InstanceServiceStreamLogsRequest, InstanceServiceStreamLogsResponse]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -112,11 +112,11 @@ func (c *instanceServiceClient) StreamLogs(ctx context.Context, in *StreamLogsRe
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type InstanceService_StreamLogsClient = grpc.ServerStreamingClient[LogEntry]
+type InstanceService_StreamLogsClient = grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse]
 
-func (c *instanceServiceClient) GetUsage(ctx context.Context, in *GetInstanceUsageRequest, opts ...grpc.CallOption) (*GetInstanceUsageResponse, error) {
+func (c *instanceServiceClient) GetUsage(ctx context.Context, in *InstanceServiceGetUsageRequest, opts ...grpc.CallOption) (*InstanceServiceGetUsageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetInstanceUsageResponse)
+	out := new(InstanceServiceGetUsageResponse)
 	err := c.cc.Invoke(ctx, InstanceService_GetUsage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -131,17 +131,17 @@ func (c *instanceServiceClient) GetUsage(ctx context.Context, in *GetInstanceUsa
 // Сервис управления инстансами игровых серверов.
 type InstanceServiceServer interface {
 	// Запустить инстанс сервера.
-	Start(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error)
+	Start(context.Context, *InstanceServiceStartRequest) (*InstanceServiceStartResponse, error)
 	// Список инстансов игры.
-	List(context.Context, *ListInstancesRequest) (*ListInstancesResponse, error)
+	List(context.Context, *InstanceServiceListRequest) (*InstanceServiceListResponse, error)
 	// Информация об инстансе.
-	Get(context.Context, *GetInstanceRequest) (*GetInstanceResponse, error)
+	Get(context.Context, *InstanceServiceGetRequest) (*InstanceServiceGetResponse, error)
 	// Остановить инстанс.
-	Stop(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error)
-	// Поток журналов инстанса (server streaming).
-	StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[LogEntry]) error
+	Stop(context.Context, *InstanceServiceStopRequest) (*InstanceServiceStopResponse, error)
+	// Поток журналов инстанса (server streaming) — без HTTP-маппинга.
+	StreamLogs(*InstanceServiceStreamLogsRequest, grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]) error
 	// Потребление ресурсов инстанса.
-	GetUsage(context.Context, *GetInstanceUsageRequest) (*GetInstanceUsageResponse, error)
+	GetUsage(context.Context, *InstanceServiceGetUsageRequest) (*InstanceServiceGetUsageResponse, error)
 	mustEmbedUnimplementedInstanceServiceServer()
 }
 
@@ -152,22 +152,22 @@ type InstanceServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedInstanceServiceServer struct{}
 
-func (UnimplementedInstanceServiceServer) Start(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error) {
+func (UnimplementedInstanceServiceServer) Start(context.Context, *InstanceServiceStartRequest) (*InstanceServiceStartResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Start not implemented")
 }
-func (UnimplementedInstanceServiceServer) List(context.Context, *ListInstancesRequest) (*ListInstancesResponse, error) {
+func (UnimplementedInstanceServiceServer) List(context.Context, *InstanceServiceListRequest) (*InstanceServiceListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedInstanceServiceServer) Get(context.Context, *GetInstanceRequest) (*GetInstanceResponse, error) {
+func (UnimplementedInstanceServiceServer) Get(context.Context, *InstanceServiceGetRequest) (*InstanceServiceGetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedInstanceServiceServer) Stop(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error) {
+func (UnimplementedInstanceServiceServer) Stop(context.Context, *InstanceServiceStopRequest) (*InstanceServiceStopResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Stop not implemented")
 }
-func (UnimplementedInstanceServiceServer) StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[LogEntry]) error {
+func (UnimplementedInstanceServiceServer) StreamLogs(*InstanceServiceStreamLogsRequest, grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
 }
-func (UnimplementedInstanceServiceServer) GetUsage(context.Context, *GetInstanceUsageRequest) (*GetInstanceUsageResponse, error) {
+func (UnimplementedInstanceServiceServer) GetUsage(context.Context, *InstanceServiceGetUsageRequest) (*InstanceServiceGetUsageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
 }
 func (UnimplementedInstanceServiceServer) mustEmbedUnimplementedInstanceServiceServer() {}
@@ -192,7 +192,7 @@ func RegisterInstanceServiceServer(s grpc.ServiceRegistrar, srv InstanceServiceS
 }
 
 func _InstanceService_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartInstanceRequest)
+	in := new(InstanceServiceStartRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -204,13 +204,13 @@ func _InstanceService_Start_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: InstanceService_Start_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceServiceServer).Start(ctx, req.(*StartInstanceRequest))
+		return srv.(InstanceServiceServer).Start(ctx, req.(*InstanceServiceStartRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _InstanceService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListInstancesRequest)
+	in := new(InstanceServiceListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -222,13 +222,13 @@ func _InstanceService_List_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: InstanceService_List_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceServiceServer).List(ctx, req.(*ListInstancesRequest))
+		return srv.(InstanceServiceServer).List(ctx, req.(*InstanceServiceListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _InstanceService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetInstanceRequest)
+	in := new(InstanceServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -240,13 +240,13 @@ func _InstanceService_Get_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: InstanceService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceServiceServer).Get(ctx, req.(*GetInstanceRequest))
+		return srv.(InstanceServiceServer).Get(ctx, req.(*InstanceServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _InstanceService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StopInstanceRequest)
+	in := new(InstanceServiceStopRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -258,24 +258,24 @@ func _InstanceService_Stop_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: InstanceService_Stop_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceServiceServer).Stop(ctx, req.(*StopInstanceRequest))
+		return srv.(InstanceServiceServer).Stop(ctx, req.(*InstanceServiceStopRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _InstanceService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(StreamLogsRequest)
+	m := new(InstanceServiceStreamLogsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(InstanceServiceServer).StreamLogs(m, &grpc.GenericServerStream[StreamLogsRequest, LogEntry]{ServerStream: stream})
+	return srv.(InstanceServiceServer).StreamLogs(m, &grpc.GenericServerStream[InstanceServiceStreamLogsRequest, InstanceServiceStreamLogsResponse]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type InstanceService_StreamLogsServer = grpc.ServerStreamingServer[LogEntry]
+type InstanceService_StreamLogsServer = grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]
 
 func _InstanceService_GetUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetInstanceUsageRequest)
+	in := new(InstanceServiceGetUsageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -287,7 +287,7 @@ func _InstanceService_GetUsage_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: InstanceService_GetUsage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceServiceServer).GetUsage(ctx, req.(*GetInstanceUsageRequest))
+		return srv.(InstanceServiceServer).GetUsage(ctx, req.(*InstanceServiceGetUsageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -32,13 +32,13 @@ const (
 // Сервис управления серверными билдами.
 type BuildServiceClient interface {
 	// Загрузить серверный билд.
-	Upload(ctx context.Context, in *UploadBuildRequest, opts ...grpc.CallOption) (*UploadBuildResponse, error)
+	Upload(ctx context.Context, in *BuildServiceUploadRequest, opts ...grpc.CallOption) (*BuildServiceUploadResponse, error)
 	// Список билдов игры.
-	List(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error)
+	List(ctx context.Context, in *BuildServiceListRequest, opts ...grpc.CallOption) (*BuildServiceListResponse, error)
 	// Информация о конкретном билде.
-	Get(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*GetBuildResponse, error)
+	Get(ctx context.Context, in *BuildServiceGetRequest, opts ...grpc.CallOption) (*BuildServiceGetResponse, error)
 	// Удалить серверный билд.
-	Delete(ctx context.Context, in *DeleteBuildRequest, opts ...grpc.CallOption) (*DeleteBuildResponse, error)
+	Delete(ctx context.Context, in *BuildServiceDeleteRequest, opts ...grpc.CallOption) (*BuildServiceDeleteResponse, error)
 }
 
 type buildServiceClient struct {
@@ -49,9 +49,9 @@ func NewBuildServiceClient(cc grpc.ClientConnInterface) BuildServiceClient {
 	return &buildServiceClient{cc}
 }
 
-func (c *buildServiceClient) Upload(ctx context.Context, in *UploadBuildRequest, opts ...grpc.CallOption) (*UploadBuildResponse, error) {
+func (c *buildServiceClient) Upload(ctx context.Context, in *BuildServiceUploadRequest, opts ...grpc.CallOption) (*BuildServiceUploadResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UploadBuildResponse)
+	out := new(BuildServiceUploadResponse)
 	err := c.cc.Invoke(ctx, BuildService_Upload_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -59,9 +59,9 @@ func (c *buildServiceClient) Upload(ctx context.Context, in *UploadBuildRequest,
 	return out, nil
 }
 
-func (c *buildServiceClient) List(ctx context.Context, in *ListBuildsRequest, opts ...grpc.CallOption) (*ListBuildsResponse, error) {
+func (c *buildServiceClient) List(ctx context.Context, in *BuildServiceListRequest, opts ...grpc.CallOption) (*BuildServiceListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListBuildsResponse)
+	out := new(BuildServiceListResponse)
 	err := c.cc.Invoke(ctx, BuildService_List_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -69,9 +69,9 @@ func (c *buildServiceClient) List(ctx context.Context, in *ListBuildsRequest, op
 	return out, nil
 }
 
-func (c *buildServiceClient) Get(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*GetBuildResponse, error) {
+func (c *buildServiceClient) Get(ctx context.Context, in *BuildServiceGetRequest, opts ...grpc.CallOption) (*BuildServiceGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetBuildResponse)
+	out := new(BuildServiceGetResponse)
 	err := c.cc.Invoke(ctx, BuildService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -79,9 +79,9 @@ func (c *buildServiceClient) Get(ctx context.Context, in *GetBuildRequest, opts 
 	return out, nil
 }
 
-func (c *buildServiceClient) Delete(ctx context.Context, in *DeleteBuildRequest, opts ...grpc.CallOption) (*DeleteBuildResponse, error) {
+func (c *buildServiceClient) Delete(ctx context.Context, in *BuildServiceDeleteRequest, opts ...grpc.CallOption) (*BuildServiceDeleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteBuildResponse)
+	out := new(BuildServiceDeleteResponse)
 	err := c.cc.Invoke(ctx, BuildService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -96,13 +96,13 @@ func (c *buildServiceClient) Delete(ctx context.Context, in *DeleteBuildRequest,
 // Сервис управления серверными билдами.
 type BuildServiceServer interface {
 	// Загрузить серверный билд.
-	Upload(context.Context, *UploadBuildRequest) (*UploadBuildResponse, error)
+	Upload(context.Context, *BuildServiceUploadRequest) (*BuildServiceUploadResponse, error)
 	// Список билдов игры.
-	List(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error)
+	List(context.Context, *BuildServiceListRequest) (*BuildServiceListResponse, error)
 	// Информация о конкретном билде.
-	Get(context.Context, *GetBuildRequest) (*GetBuildResponse, error)
+	Get(context.Context, *BuildServiceGetRequest) (*BuildServiceGetResponse, error)
 	// Удалить серверный билд.
-	Delete(context.Context, *DeleteBuildRequest) (*DeleteBuildResponse, error)
+	Delete(context.Context, *BuildServiceDeleteRequest) (*BuildServiceDeleteResponse, error)
 	mustEmbedUnimplementedBuildServiceServer()
 }
 
@@ -113,16 +113,16 @@ type BuildServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBuildServiceServer struct{}
 
-func (UnimplementedBuildServiceServer) Upload(context.Context, *UploadBuildRequest) (*UploadBuildResponse, error) {
+func (UnimplementedBuildServiceServer) Upload(context.Context, *BuildServiceUploadRequest) (*BuildServiceUploadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Upload not implemented")
 }
-func (UnimplementedBuildServiceServer) List(context.Context, *ListBuildsRequest) (*ListBuildsResponse, error) {
+func (UnimplementedBuildServiceServer) List(context.Context, *BuildServiceListRequest) (*BuildServiceListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedBuildServiceServer) Get(context.Context, *GetBuildRequest) (*GetBuildResponse, error) {
+func (UnimplementedBuildServiceServer) Get(context.Context, *BuildServiceGetRequest) (*BuildServiceGetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedBuildServiceServer) Delete(context.Context, *DeleteBuildRequest) (*DeleteBuildResponse, error) {
+func (UnimplementedBuildServiceServer) Delete(context.Context, *BuildServiceDeleteRequest) (*BuildServiceDeleteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedBuildServiceServer) mustEmbedUnimplementedBuildServiceServer() {}
@@ -147,7 +147,7 @@ func RegisterBuildServiceServer(s grpc.ServiceRegistrar, srv BuildServiceServer)
 }
 
 func _BuildService_Upload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadBuildRequest)
+	in := new(BuildServiceUploadRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -159,13 +159,13 @@ func _BuildService_Upload_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: BuildService_Upload_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuildServiceServer).Upload(ctx, req.(*UploadBuildRequest))
+		return srv.(BuildServiceServer).Upload(ctx, req.(*BuildServiceUploadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _BuildService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListBuildsRequest)
+	in := new(BuildServiceListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -177,13 +177,13 @@ func _BuildService_List_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: BuildService_List_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuildServiceServer).List(ctx, req.(*ListBuildsRequest))
+		return srv.(BuildServiceServer).List(ctx, req.(*BuildServiceListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _BuildService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBuildRequest)
+	in := new(BuildServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -195,13 +195,13 @@ func _BuildService_Get_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: BuildService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuildServiceServer).Get(ctx, req.(*GetBuildRequest))
+		return srv.(BuildServiceServer).Get(ctx, req.(*BuildServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _BuildService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteBuildRequest)
+	in := new(BuildServiceDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func _BuildService_Delete_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: BuildService_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BuildServiceServer).Delete(ctx, req.(*DeleteBuildRequest))
+		return srv.(BuildServiceServer).Delete(ctx, req.(*BuildServiceDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

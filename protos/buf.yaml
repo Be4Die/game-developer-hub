@@ -3,6 +3,10 @@ version: v2
 lint:
   use:
     - STANDARD
+  ignore_only:
+    PACKAGE_VERSION_SUFFIX:
+      - google/api/annotations.proto
+      - google/api/http.proto
 
 breaking:
   use:

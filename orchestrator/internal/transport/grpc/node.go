@@ -20,7 +20,7 @@ func NewNodeHandler(svc *service.NodeService) *NodeHandler {
 }
 
 // Register подключает вычислительную ноду.
-func (h *NodeHandler) Register(ctx context.Context, req *pb.RegisterNodeRequest) (*pb.RegisterNodeResponse, error) {
+func (h *NodeHandler) Register(ctx context.Context, req *pb.NodeServiceRegisterRequest) (*pb.NodeServiceRegisterResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	params := service.RegisterNodeParams{
@@ -28,13 +28,13 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.RegisterNodeRequest)
 	}
 
 	switch v := req.GetMode().(type) {
-	case *pb.RegisterNodeRequest_Manual:
+	case *pb.NodeServiceRegisterRequest_Manual:
 		params.Address = v.Manual.GetAddress()
 		params.Token = v.Manual.GetToken()
 		if v.Manual.Region != nil {
 			params.Region = v.Manual.GetRegion()
 		}
-	case *pb.RegisterNodeRequest_Authorize:
+	case *pb.NodeServiceRegisterRequest_Authorize:
 		params.NodeID = ptrInt64(v.Authorize.GetNodeId())
 		params.Token = v.Authorize.GetToken()
 	}
@@ -44,11 +44,11 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.RegisterNodeRequest)
 		return nil, domainError(err, "register node")
 	}
 
-	return &pb.RegisterNodeResponse{Node: nodeToProto(node)}, nil
+	return &pb.NodeServiceRegisterResponse{Node: nodeToProto(node)}, nil
 }
 
 // List возвращает список всех нод пользователя.
-func (h *NodeHandler) List(ctx context.Context, req *pb.ListNodesRequest) (*pb.ListNodesResponse, error) {
+func (h *NodeHandler) List(ctx context.Context, req *pb.NodeServiceListRequest) (*pb.NodeServiceListResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	var statusFilter *domain.NodeStatus
@@ -67,11 +67,11 @@ func (h *NodeHandler) List(ctx context.Context, req *pb.ListNodesRequest) (*pb.L
 		resp = append(resp, enrichedNodeToProto(n))
 	}
 
-	return &pb.ListNodesResponse{Nodes: resp}, nil
+	return &pb.NodeServiceListResponse{Nodes: resp}, nil
 }
 
 // Get возвращает информацию о ноде.
-func (h *NodeHandler) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeResponse, error) {
+func (h *NodeHandler) Get(ctx context.Context, req *pb.NodeServiceGetRequest) (*pb.NodeServiceGetResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	node, err := h.nodeService.GetNode(ctx, ownerID, req.GetNodeId())
@@ -79,11 +79,11 @@ func (h *NodeHandler) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetN
 		return nil, domainError(err, "get node")
 	}
 
-	return &pb.GetNodeResponse{Node: enrichedNodeToProto(node)}, nil
+	return &pb.NodeServiceGetResponse{Node: enrichedNodeToProto(node)}, nil
 }
 
 // Delete удаляет ноду.
-func (h *NodeHandler) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.DeleteNodeResponse, error) {
+func (h *NodeHandler) Delete(ctx context.Context, req *pb.NodeServiceDeleteRequest) (*pb.NodeServiceDeleteResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	err := h.nodeService.DeleteNode(ctx, ownerID, req.GetNodeId())
@@ -91,11 +91,11 @@ func (h *NodeHandler) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*p
 		return nil, domainError(err, "delete node")
 	}
 
-	return &pb.DeleteNodeResponse{}, nil
+	return &pb.NodeServiceDeleteResponse{}, nil
 }
 
 // GetUsage возвращает потребление ресурсов ноды.
-func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.GetNodeUsageRequest) (*pb.GetNodeUsageResponse, error) {
+func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.NodeServiceGetUsageRequest) (*pb.NodeServiceGetUsageResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	usage, err := h.nodeService.GetNodeUsage(ctx, ownerID, req.GetNodeId())
@@ -103,7 +103,7 @@ func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.GetNodeUsageRequest)
 		return nil, domainError(err, "get node usage")
 	}
 
-	return &pb.GetNodeUsageResponse{
+	return &pb.NodeServiceGetUsageResponse{
 		NodeId:              req.GetNodeId(),
 		Usage:               resourceUsageToProto(usage.Usage),
 		ActiveInstanceCount: int32(usage.ActiveInstanceCount), //nolint:gosec // count не превышает int32

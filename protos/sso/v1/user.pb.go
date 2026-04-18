@@ -7,6 +7,7 @@
 package ssov1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GetProfileRequest struct {
+type UserServiceGetProfileRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Извлекается из JWT, поле может быть пустым.
 	UserId        string `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -29,20 +30,20 @@ type GetProfileRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetProfileRequest) Reset() {
-	*x = GetProfileRequest{}
+func (x *UserServiceGetProfileRequest) Reset() {
+	*x = UserServiceGetProfileRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetProfileRequest) String() string {
+func (x *UserServiceGetProfileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetProfileRequest) ProtoMessage() {}
+func (*UserServiceGetProfileRequest) ProtoMessage() {}
 
-func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceGetProfileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,39 +55,39 @@ func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetProfileRequest.ProtoReflect.Descriptor instead.
-func (*GetProfileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceGetProfileRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceGetProfileRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetProfileRequest) GetUserId() string {
+func (x *UserServiceGetProfileRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-type GetProfileResponse struct {
+type UserServiceGetProfileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetProfileResponse) Reset() {
-	*x = GetProfileResponse{}
+func (x *UserServiceGetProfileResponse) Reset() {
+	*x = UserServiceGetProfileResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetProfileResponse) String() string {
+func (x *UserServiceGetProfileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetProfileResponse) ProtoMessage() {}
+func (*UserServiceGetProfileResponse) ProtoMessage() {}
 
-func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceGetProfileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,39 +99,39 @@ func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetProfileResponse.ProtoReflect.Descriptor instead.
-func (*GetProfileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceGetProfileResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceGetProfileResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetProfileResponse) GetUser() *User {
+func (x *UserServiceGetProfileResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-type UpdateProfileRequest struct {
+type UserServiceUpdateProfileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DisplayName   *string                `protobuf:"bytes,1,opt,name=display_name,json=displayName,proto3,oneof" json:"display_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateProfileRequest) Reset() {
-	*x = UpdateProfileRequest{}
+func (x *UserServiceUpdateProfileRequest) Reset() {
+	*x = UserServiceUpdateProfileRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateProfileRequest) String() string {
+func (x *UserServiceUpdateProfileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateProfileRequest) ProtoMessage() {}
+func (*UserServiceUpdateProfileRequest) ProtoMessage() {}
 
-func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceUpdateProfileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -142,39 +143,39 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
-func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceUpdateProfileRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceUpdateProfileRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *UpdateProfileRequest) GetDisplayName() string {
+func (x *UserServiceUpdateProfileRequest) GetDisplayName() string {
 	if x != nil && x.DisplayName != nil {
 		return *x.DisplayName
 	}
 	return ""
 }
 
-type UpdateProfileResponse struct {
+type UserServiceUpdateProfileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateProfileResponse) Reset() {
-	*x = UpdateProfileResponse{}
+func (x *UserServiceUpdateProfileResponse) Reset() {
+	*x = UserServiceUpdateProfileResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateProfileResponse) String() string {
+func (x *UserServiceUpdateProfileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateProfileResponse) ProtoMessage() {}
+func (*UserServiceUpdateProfileResponse) ProtoMessage() {}
 
-func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceUpdateProfileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -186,19 +187,19 @@ func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
-func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceUpdateProfileResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceUpdateProfileResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *UpdateProfileResponse) GetUser() *User {
+func (x *UserServiceUpdateProfileResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-type ChangePasswordRequest struct {
+type UserServiceChangePasswordRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	CurrentPassword string                 `protobuf:"bytes,1,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
 	NewPassword     string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
@@ -206,20 +207,20 @@ type ChangePasswordRequest struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *ChangePasswordRequest) Reset() {
-	*x = ChangePasswordRequest{}
+func (x *UserServiceChangePasswordRequest) Reset() {
+	*x = UserServiceChangePasswordRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangePasswordRequest) String() string {
+func (x *UserServiceChangePasswordRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangePasswordRequest) ProtoMessage() {}
+func (*UserServiceChangePasswordRequest) ProtoMessage() {}
 
-func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceChangePasswordRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -231,46 +232,46 @@ func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.
-func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceChangePasswordRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceChangePasswordRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ChangePasswordRequest) GetCurrentPassword() string {
+func (x *UserServiceChangePasswordRequest) GetCurrentPassword() string {
 	if x != nil {
 		return x.CurrentPassword
 	}
 	return ""
 }
 
-func (x *ChangePasswordRequest) GetNewPassword() string {
+func (x *UserServiceChangePasswordRequest) GetNewPassword() string {
 	if x != nil {
 		return x.NewPassword
 	}
 	return ""
 }
 
-type ChangePasswordResponse struct {
+type UserServiceChangePasswordResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangePasswordResponse) Reset() {
-	*x = ChangePasswordResponse{}
+func (x *UserServiceChangePasswordResponse) Reset() {
+	*x = UserServiceChangePasswordResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangePasswordResponse) String() string {
+func (x *UserServiceChangePasswordResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangePasswordResponse) ProtoMessage() {}
+func (*UserServiceChangePasswordResponse) ProtoMessage() {}
 
-func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceChangePasswordResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -282,39 +283,39 @@ func (x *ChangePasswordResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangePasswordResponse.ProtoReflect.Descriptor instead.
-func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceChangePasswordResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceChangePasswordResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ChangePasswordResponse) GetSuccess() bool {
+func (x *UserServiceChangePasswordResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-type GetUserByIdRequest struct {
+type UserServiceGetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserByIdRequest) Reset() {
-	*x = GetUserByIdRequest{}
+func (x *UserServiceGetRequest) Reset() {
+	*x = UserServiceGetRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserByIdRequest) String() string {
+func (x *UserServiceGetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserByIdRequest) ProtoMessage() {}
+func (*UserServiceGetRequest) ProtoMessage() {}
 
-func (x *GetUserByIdRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceGetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -326,39 +327,39 @@ func (x *GetUserByIdRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserByIdRequest.ProtoReflect.Descriptor instead.
-func (*GetUserByIdRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceGetRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceGetRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetUserByIdRequest) GetUserId() string {
+func (x *UserServiceGetRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-type GetUserByIdResponse struct {
+type UserServiceGetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetUserByIdResponse) Reset() {
-	*x = GetUserByIdResponse{}
+func (x *UserServiceGetResponse) Reset() {
+	*x = UserServiceGetResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetUserByIdResponse) String() string {
+func (x *UserServiceGetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetUserByIdResponse) ProtoMessage() {}
+func (*UserServiceGetResponse) ProtoMessage() {}
 
-func (x *GetUserByIdResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceGetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -370,19 +371,19 @@ func (x *GetUserByIdResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetUserByIdResponse.ProtoReflect.Descriptor instead.
-func (*GetUserByIdResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceGetResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceGetResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetUserByIdResponse) GetUser() *User {
+func (x *UserServiceGetResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-type SearchUsersRequest struct {
+type UserServiceSearchRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Поисковый запрос (совпадение по email или display_name).
 	Query string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
@@ -394,20 +395,20 @@ type SearchUsersRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchUsersRequest) Reset() {
-	*x = SearchUsersRequest{}
+func (x *UserServiceSearchRequest) Reset() {
+	*x = UserServiceSearchRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchUsersRequest) String() string {
+func (x *UserServiceSearchRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchUsersRequest) ProtoMessage() {}
+func (*UserServiceSearchRequest) ProtoMessage() {}
 
-func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceSearchRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -419,33 +420,33 @@ func (x *SearchUsersRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchUsersRequest.ProtoReflect.Descriptor instead.
-func (*SearchUsersRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceSearchRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceSearchRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *SearchUsersRequest) GetQuery() string {
+func (x *UserServiceSearchRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *SearchUsersRequest) GetLimit() int32 {
+func (x *UserServiceSearchRequest) GetLimit() int32 {
 	if x != nil && x.Limit != nil {
 		return *x.Limit
 	}
 	return 0
 }
 
-func (x *SearchUsersRequest) GetOffset() int32 {
+func (x *UserServiceSearchRequest) GetOffset() int32 {
 	if x != nil && x.Offset != nil {
 		return *x.Offset
 	}
 	return 0
 }
 
-type SearchUsersResponse struct {
+type UserServiceSearchResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
 	TotalCount    int64                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
@@ -453,20 +454,20 @@ type SearchUsersResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchUsersResponse) Reset() {
-	*x = SearchUsersResponse{}
+func (x *UserServiceSearchResponse) Reset() {
+	*x = UserServiceSearchResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchUsersResponse) String() string {
+func (x *UserServiceSearchResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchUsersResponse) ProtoMessage() {}
+func (*UserServiceSearchResponse) ProtoMessage() {}
 
-func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceSearchResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -478,26 +479,26 @@ func (x *SearchUsersResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchUsersResponse.ProtoReflect.Descriptor instead.
-func (*SearchUsersResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceSearchResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceSearchResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *SearchUsersResponse) GetUsers() []*User {
+func (x *UserServiceSearchResponse) GetUsers() []*User {
 	if x != nil {
 		return x.Users
 	}
 	return nil
 }
 
-func (x *SearchUsersResponse) GetTotalCount() int64 {
+func (x *UserServiceSearchResponse) GetTotalCount() int64 {
 	if x != nil {
 		return x.TotalCount
 	}
 	return 0
 }
 
-type ChangeUserRoleRequest struct {
+type UserServiceChangeRoleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	NewRole       UserRole               `protobuf:"varint,2,opt,name=new_role,json=newRole,proto3,enum=sso.v1.UserRole" json:"new_role,omitempty"`
@@ -505,20 +506,20 @@ type ChangeUserRoleRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangeUserRoleRequest) Reset() {
-	*x = ChangeUserRoleRequest{}
+func (x *UserServiceChangeRoleRequest) Reset() {
+	*x = UserServiceChangeRoleRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangeUserRoleRequest) String() string {
+func (x *UserServiceChangeRoleRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeUserRoleRequest) ProtoMessage() {}
+func (*UserServiceChangeRoleRequest) ProtoMessage() {}
 
-func (x *ChangeUserRoleRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceChangeRoleRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -530,46 +531,46 @@ func (x *ChangeUserRoleRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeUserRoleRequest.ProtoReflect.Descriptor instead.
-func (*ChangeUserRoleRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceChangeRoleRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceChangeRoleRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ChangeUserRoleRequest) GetUserId() string {
+func (x *UserServiceChangeRoleRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-func (x *ChangeUserRoleRequest) GetNewRole() UserRole {
+func (x *UserServiceChangeRoleRequest) GetNewRole() UserRole {
 	if x != nil {
 		return x.NewRole
 	}
 	return UserRole_USER_ROLE_UNSPECIFIED
 }
 
-type ChangeUserRoleResponse struct {
+type UserServiceChangeRoleResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangeUserRoleResponse) Reset() {
-	*x = ChangeUserRoleResponse{}
+func (x *UserServiceChangeRoleResponse) Reset() {
+	*x = UserServiceChangeRoleResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangeUserRoleResponse) String() string {
+func (x *UserServiceChangeRoleResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeUserRoleResponse) ProtoMessage() {}
+func (*UserServiceChangeRoleResponse) ProtoMessage() {}
 
-func (x *ChangeUserRoleResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceChangeRoleResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -581,19 +582,19 @@ func (x *ChangeUserRoleResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeUserRoleResponse.ProtoReflect.Descriptor instead.
-func (*ChangeUserRoleResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceChangeRoleResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceChangeRoleResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ChangeUserRoleResponse) GetUser() *User {
+func (x *UserServiceChangeRoleResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-type SetUserStatusRequest struct {
+type UserServiceSetStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	NewStatus     UserStatus             `protobuf:"varint,2,opt,name=new_status,json=newStatus,proto3,enum=sso.v1.UserStatus" json:"new_status,omitempty"`
@@ -601,20 +602,20 @@ type SetUserStatusRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SetUserStatusRequest) Reset() {
-	*x = SetUserStatusRequest{}
+func (x *UserServiceSetStatusRequest) Reset() {
+	*x = UserServiceSetStatusRequest{}
 	mi := &file_sso_v1_user_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SetUserStatusRequest) String() string {
+func (x *UserServiceSetStatusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SetUserStatusRequest) ProtoMessage() {}
+func (*UserServiceSetStatusRequest) ProtoMessage() {}
 
-func (x *SetUserStatusRequest) ProtoReflect() protoreflect.Message {
+func (x *UserServiceSetStatusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -626,46 +627,46 @@ func (x *SetUserStatusRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetUserStatusRequest.ProtoReflect.Descriptor instead.
-func (*SetUserStatusRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceSetStatusRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceSetStatusRequest) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *SetUserStatusRequest) GetUserId() string {
+func (x *UserServiceSetStatusRequest) GetUserId() string {
 	if x != nil {
 		return x.UserId
 	}
 	return ""
 }
 
-func (x *SetUserStatusRequest) GetNewStatus() UserStatus {
+func (x *UserServiceSetStatusRequest) GetNewStatus() UserStatus {
 	if x != nil {
 		return x.NewStatus
 	}
 	return UserStatus_USER_STATUS_UNSPECIFIED
 }
 
-type SetUserStatusResponse struct {
+type UserServiceSetStatusResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SetUserStatusResponse) Reset() {
-	*x = SetUserStatusResponse{}
+func (x *UserServiceSetStatusResponse) Reset() {
+	*x = UserServiceSetStatusResponse{}
 	mi := &file_sso_v1_user_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SetUserStatusResponse) String() string {
+func (x *UserServiceSetStatusResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SetUserStatusResponse) ProtoMessage() {}
+func (*UserServiceSetStatusResponse) ProtoMessage() {}
 
-func (x *SetUserStatusResponse) ProtoReflect() protoreflect.Message {
+func (x *UserServiceSetStatusResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sso_v1_user_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -677,12 +678,12 @@ func (x *SetUserStatusResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SetUserStatusResponse.ProtoReflect.Descriptor instead.
-func (*SetUserStatusResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserServiceSetStatusResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceSetStatusResponse) Descriptor() ([]byte, []int) {
 	return file_sso_v1_user_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *SetUserStatusResponse) GetUser() *User {
+func (x *UserServiceSetStatusResponse) GetUser() *User {
 	if x != nil {
 		return x.User
 	}
@@ -693,55 +694,56 @@ var File_sso_v1_user_proto protoreflect.FileDescriptor
 
 const file_sso_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x11sso/v1/user.proto\x12\x06sso.v1\x1a\x13sso/v1/common.proto\",\n" +
-	"\x11GetProfileRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"6\n" +
-	"\x12GetProfileResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"O\n" +
-	"\x14UpdateProfileRequest\x12&\n" +
+	"\x11sso/v1/user.proto\x12\x06sso.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x13sso/v1/common.proto\"7\n" +
+	"\x1cUserServiceGetProfileRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"A\n" +
+	"\x1dUserServiceGetProfileResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"Z\n" +
+	"\x1fUserServiceUpdateProfileRequest\x12&\n" +
 	"\fdisplay_name\x18\x01 \x01(\tH\x00R\vdisplayName\x88\x01\x01B\x0f\n" +
-	"\r_display_name\"9\n" +
-	"\x15UpdateProfileResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"e\n" +
-	"\x15ChangePasswordRequest\x12)\n" +
+	"\r_display_name\"D\n" +
+	" UserServiceUpdateProfileResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"p\n" +
+	" UserServiceChangePasswordRequest\x12)\n" +
 	"\x10current_password\x18\x01 \x01(\tR\x0fcurrentPassword\x12!\n" +
-	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"2\n" +
-	"\x16ChangePasswordResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"-\n" +
-	"\x12GetUserByIdRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"7\n" +
-	"\x13GetUserByIdResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"w\n" +
-	"\x12SearchUsersRequest\x12\x14\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"=\n" +
+	"!UserServiceChangePasswordResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"0\n" +
+	"\x15UserServiceGetRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\":\n" +
+	"\x16UserServiceGetResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"}\n" +
+	"\x18UserServiceSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x19\n" +
 	"\x05limit\x18\x02 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12\x1b\n" +
 	"\x06offset\x18\x03 \x01(\x05H\x01R\x06offset\x88\x01\x01B\b\n" +
 	"\x06_limitB\t\n" +
-	"\a_offset\"Z\n" +
-	"\x13SearchUsersResponse\x12\"\n" +
+	"\a_offset\"`\n" +
+	"\x19UserServiceSearchResponse\x12\"\n" +
 	"\x05users\x18\x01 \x03(\v2\f.sso.v1.UserR\x05users\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x03R\n" +
-	"totalCount\"]\n" +
-	"\x15ChangeUserRoleRequest\x12\x17\n" +
+	"totalCount\"d\n" +
+	"\x1cUserServiceChangeRoleRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12+\n" +
-	"\bnew_role\x18\x02 \x01(\x0e2\x10.sso.v1.UserRoleR\anewRole\":\n" +
-	"\x16ChangeUserRoleResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"b\n" +
-	"\x14SetUserStatusRequest\x12\x17\n" +
+	"\bnew_role\x18\x02 \x01(\x0e2\x10.sso.v1.UserRoleR\anewRole\"A\n" +
+	"\x1dUserServiceChangeRoleResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"i\n" +
+	"\x1bUserServiceSetStatusRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
 	"\n" +
-	"new_status\x18\x02 \x01(\x0e2\x12.sso.v1.UserStatusR\tnewStatus\"9\n" +
-	"\x15SetUserStatusResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user2\xa0\x04\n" +
-	"\vUserService\x12C\n" +
+	"new_status\x18\x02 \x01(\x0e2\x12.sso.v1.UserStatusR\tnewStatus\"@\n" +
+	"\x1cUserServiceSetStatusResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user2\x89\a\n" +
+	"\vUserService\x12x\n" +
 	"\n" +
-	"GetProfile\x12\x19.sso.v1.GetProfileRequest\x1a\x1a.sso.v1.GetProfileResponse\x12L\n" +
-	"\rUpdateProfile\x12\x1c.sso.v1.UpdateProfileRequest\x1a\x1d.sso.v1.UpdateProfileResponse\x12O\n" +
-	"\x0eChangePassword\x12\x1d.sso.v1.ChangePasswordRequest\x1a\x1e.sso.v1.ChangePasswordResponse\x12F\n" +
-	"\vGetUserById\x12\x1a.sso.v1.GetUserByIdRequest\x1a\x1b.sso.v1.GetUserByIdResponse\x12F\n" +
-	"\vSearchUsers\x12\x1a.sso.v1.SearchUsersRequest\x1a\x1b.sso.v1.SearchUsersResponse\x12O\n" +
-	"\x0eChangeUserRole\x12\x1d.sso.v1.ChangeUserRoleRequest\x1a\x1e.sso.v1.ChangeUserRoleResponse\x12L\n" +
-	"\rSetUserStatus\x12\x1c.sso.v1.SetUserStatusRequest\x1a\x1d.sso.v1.SetUserStatusResponseB\x8a\x01\n" +
+	"GetProfile\x12$.sso.v1.UserServiceGetProfileRequest\x1a%.sso.v1.UserServiceGetProfileResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/users/profile\x12\x84\x01\n" +
+	"\rUpdateProfile\x12'.sso.v1.UserServiceUpdateProfileRequest\x1a(.sso.v1.UserServiceUpdateProfileResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/api/v1/users/profile\x12\x97\x01\n" +
+	"\x0eChangePassword\x12(.sso.v1.UserServiceChangePasswordRequest\x1a).sso.v1.UserServiceChangePasswordResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/users/profile:change-password\x12e\n" +
+	"\x03Get\x12\x1d.sso.v1.UserServiceGetRequest\x1a\x1e.sso.v1.UserServiceGetResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/users/{user_id}\x12d\n" +
+	"\x06Search\x12 .sso.v1.UserServiceSearchRequest\x1a!.sso.v1.UserServiceSearchResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/users\x12\x89\x01\n" +
+	"\n" +
+	"ChangeRole\x12$.sso.v1.UserServiceChangeRoleRequest\x1a%.sso.v1.UserServiceChangeRoleResponse\".\x82\xd3\xe4\x93\x02(:\x01*2#/api/v1/users/{user_id}:change-role\x12\x85\x01\n" +
+	"\tSetStatus\x12#.sso.v1.UserServiceSetStatusRequest\x1a$.sso.v1.UserServiceSetStatusResponse\"-\x82\xd3\xe4\x93\x02':\x01*2\"/api/v1/users/{user_id}:set-statusB\x8a\x01\n" +
 	"\n" +
 	"com.sso.v1B\tUserProtoP\x01Z8github.com/Be4Die/game-developer-hub/protos/sso/v1;ssov1\xa2\x02\x03SXX\xaa\x02\x06Sso.V1\xca\x02\x06Sso\\V1\xe2\x02\x12Sso\\V1\\GPBMetadata\xea\x02\aSso::V1b\x06proto3"
 
@@ -759,47 +761,47 @@ func file_sso_v1_user_proto_rawDescGZIP() []byte {
 
 var file_sso_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_sso_v1_user_proto_goTypes = []any{
-	(*GetProfileRequest)(nil),      // 0: sso.v1.GetProfileRequest
-	(*GetProfileResponse)(nil),     // 1: sso.v1.GetProfileResponse
-	(*UpdateProfileRequest)(nil),   // 2: sso.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),  // 3: sso.v1.UpdateProfileResponse
-	(*ChangePasswordRequest)(nil),  // 4: sso.v1.ChangePasswordRequest
-	(*ChangePasswordResponse)(nil), // 5: sso.v1.ChangePasswordResponse
-	(*GetUserByIdRequest)(nil),     // 6: sso.v1.GetUserByIdRequest
-	(*GetUserByIdResponse)(nil),    // 7: sso.v1.GetUserByIdResponse
-	(*SearchUsersRequest)(nil),     // 8: sso.v1.SearchUsersRequest
-	(*SearchUsersResponse)(nil),    // 9: sso.v1.SearchUsersResponse
-	(*ChangeUserRoleRequest)(nil),  // 10: sso.v1.ChangeUserRoleRequest
-	(*ChangeUserRoleResponse)(nil), // 11: sso.v1.ChangeUserRoleResponse
-	(*SetUserStatusRequest)(nil),   // 12: sso.v1.SetUserStatusRequest
-	(*SetUserStatusResponse)(nil),  // 13: sso.v1.SetUserStatusResponse
-	(*User)(nil),                   // 14: sso.v1.User
-	(UserRole)(0),                  // 15: sso.v1.UserRole
-	(UserStatus)(0),                // 16: sso.v1.UserStatus
+	(*UserServiceGetProfileRequest)(nil),      // 0: sso.v1.UserServiceGetProfileRequest
+	(*UserServiceGetProfileResponse)(nil),     // 1: sso.v1.UserServiceGetProfileResponse
+	(*UserServiceUpdateProfileRequest)(nil),   // 2: sso.v1.UserServiceUpdateProfileRequest
+	(*UserServiceUpdateProfileResponse)(nil),  // 3: sso.v1.UserServiceUpdateProfileResponse
+	(*UserServiceChangePasswordRequest)(nil),  // 4: sso.v1.UserServiceChangePasswordRequest
+	(*UserServiceChangePasswordResponse)(nil), // 5: sso.v1.UserServiceChangePasswordResponse
+	(*UserServiceGetRequest)(nil),             // 6: sso.v1.UserServiceGetRequest
+	(*UserServiceGetResponse)(nil),            // 7: sso.v1.UserServiceGetResponse
+	(*UserServiceSearchRequest)(nil),          // 8: sso.v1.UserServiceSearchRequest
+	(*UserServiceSearchResponse)(nil),         // 9: sso.v1.UserServiceSearchResponse
+	(*UserServiceChangeRoleRequest)(nil),      // 10: sso.v1.UserServiceChangeRoleRequest
+	(*UserServiceChangeRoleResponse)(nil),     // 11: sso.v1.UserServiceChangeRoleResponse
+	(*UserServiceSetStatusRequest)(nil),       // 12: sso.v1.UserServiceSetStatusRequest
+	(*UserServiceSetStatusResponse)(nil),      // 13: sso.v1.UserServiceSetStatusResponse
+	(*User)(nil),                              // 14: sso.v1.User
+	(UserRole)(0),                             // 15: sso.v1.UserRole
+	(UserStatus)(0),                           // 16: sso.v1.UserStatus
 }
 var file_sso_v1_user_proto_depIdxs = []int32{
-	14, // 0: sso.v1.GetProfileResponse.user:type_name -> sso.v1.User
-	14, // 1: sso.v1.UpdateProfileResponse.user:type_name -> sso.v1.User
-	14, // 2: sso.v1.GetUserByIdResponse.user:type_name -> sso.v1.User
-	14, // 3: sso.v1.SearchUsersResponse.users:type_name -> sso.v1.User
-	15, // 4: sso.v1.ChangeUserRoleRequest.new_role:type_name -> sso.v1.UserRole
-	14, // 5: sso.v1.ChangeUserRoleResponse.user:type_name -> sso.v1.User
-	16, // 6: sso.v1.SetUserStatusRequest.new_status:type_name -> sso.v1.UserStatus
-	14, // 7: sso.v1.SetUserStatusResponse.user:type_name -> sso.v1.User
-	0,  // 8: sso.v1.UserService.GetProfile:input_type -> sso.v1.GetProfileRequest
-	2,  // 9: sso.v1.UserService.UpdateProfile:input_type -> sso.v1.UpdateProfileRequest
-	4,  // 10: sso.v1.UserService.ChangePassword:input_type -> sso.v1.ChangePasswordRequest
-	6,  // 11: sso.v1.UserService.GetUserById:input_type -> sso.v1.GetUserByIdRequest
-	8,  // 12: sso.v1.UserService.SearchUsers:input_type -> sso.v1.SearchUsersRequest
-	10, // 13: sso.v1.UserService.ChangeUserRole:input_type -> sso.v1.ChangeUserRoleRequest
-	12, // 14: sso.v1.UserService.SetUserStatus:input_type -> sso.v1.SetUserStatusRequest
-	1,  // 15: sso.v1.UserService.GetProfile:output_type -> sso.v1.GetProfileResponse
-	3,  // 16: sso.v1.UserService.UpdateProfile:output_type -> sso.v1.UpdateProfileResponse
-	5,  // 17: sso.v1.UserService.ChangePassword:output_type -> sso.v1.ChangePasswordResponse
-	7,  // 18: sso.v1.UserService.GetUserById:output_type -> sso.v1.GetUserByIdResponse
-	9,  // 19: sso.v1.UserService.SearchUsers:output_type -> sso.v1.SearchUsersResponse
-	11, // 20: sso.v1.UserService.ChangeUserRole:output_type -> sso.v1.ChangeUserRoleResponse
-	13, // 21: sso.v1.UserService.SetUserStatus:output_type -> sso.v1.SetUserStatusResponse
+	14, // 0: sso.v1.UserServiceGetProfileResponse.user:type_name -> sso.v1.User
+	14, // 1: sso.v1.UserServiceUpdateProfileResponse.user:type_name -> sso.v1.User
+	14, // 2: sso.v1.UserServiceGetResponse.user:type_name -> sso.v1.User
+	14, // 3: sso.v1.UserServiceSearchResponse.users:type_name -> sso.v1.User
+	15, // 4: sso.v1.UserServiceChangeRoleRequest.new_role:type_name -> sso.v1.UserRole
+	14, // 5: sso.v1.UserServiceChangeRoleResponse.user:type_name -> sso.v1.User
+	16, // 6: sso.v1.UserServiceSetStatusRequest.new_status:type_name -> sso.v1.UserStatus
+	14, // 7: sso.v1.UserServiceSetStatusResponse.user:type_name -> sso.v1.User
+	0,  // 8: sso.v1.UserService.GetProfile:input_type -> sso.v1.UserServiceGetProfileRequest
+	2,  // 9: sso.v1.UserService.UpdateProfile:input_type -> sso.v1.UserServiceUpdateProfileRequest
+	4,  // 10: sso.v1.UserService.ChangePassword:input_type -> sso.v1.UserServiceChangePasswordRequest
+	6,  // 11: sso.v1.UserService.Get:input_type -> sso.v1.UserServiceGetRequest
+	8,  // 12: sso.v1.UserService.Search:input_type -> sso.v1.UserServiceSearchRequest
+	10, // 13: sso.v1.UserService.ChangeRole:input_type -> sso.v1.UserServiceChangeRoleRequest
+	12, // 14: sso.v1.UserService.SetStatus:input_type -> sso.v1.UserServiceSetStatusRequest
+	1,  // 15: sso.v1.UserService.GetProfile:output_type -> sso.v1.UserServiceGetProfileResponse
+	3,  // 16: sso.v1.UserService.UpdateProfile:output_type -> sso.v1.UserServiceUpdateProfileResponse
+	5,  // 17: sso.v1.UserService.ChangePassword:output_type -> sso.v1.UserServiceChangePasswordResponse
+	7,  // 18: sso.v1.UserService.Get:output_type -> sso.v1.UserServiceGetResponse
+	9,  // 19: sso.v1.UserService.Search:output_type -> sso.v1.UserServiceSearchResponse
+	11, // 20: sso.v1.UserService.ChangeRole:output_type -> sso.v1.UserServiceChangeRoleResponse
+	13, // 21: sso.v1.UserService.SetStatus:output_type -> sso.v1.UserServiceSetStatusResponse
 	15, // [15:22] is the sub-list for method output_type
 	8,  // [8:15] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name

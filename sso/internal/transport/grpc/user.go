@@ -24,7 +24,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 
 // GetProfile возвращает профиль пользователя по ID.
 // Возвращает ErrNotFound, если пользователь не найден.
-func (h *UserHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
+func (h *UserHandler) GetProfile(ctx context.Context, req *pb.UserServiceGetProfileRequest) (*pb.UserServiceGetProfileResponse, error) {
 	userID := req.UserId
 	if userID == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
@@ -35,12 +35,12 @@ func (h *UserHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.GetProfileResponse{User: userToProto(user)}, nil
+	return &pb.UserServiceGetProfileResponse{User: userToProto(user)}, nil
 }
 
 // UpdateProfile обновляет данные профиля текущего пользователя.
 // Требует валидный user_id в контексте (из JWT).
-func (h *UserHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
+func (h *UserHandler) UpdateProfile(ctx context.Context, req *pb.UserServiceUpdateProfileRequest) (*pb.UserServiceUpdateProfileResponse, error) {
 	// user_id должен извлекаться из JWT контекста interceptor'ом.
 	// Для простоты ожидаем что caller передаёт user_id через metadata.
 	userID := extractUserIDFromContext(ctx)
@@ -60,13 +60,13 @@ func (h *UserHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.UpdateProfileResponse{User: userToProto(user)}, nil
+	return &pb.UserServiceUpdateProfileResponse{User: userToProto(user)}, nil
 }
 
 // ChangePassword изменяет пароль текущего пользователя.
 // Требует валидный user_id в контексте и текущий пароль.
 // Возвращает ErrInvalidPassword при неверном текущем пароле.
-func (h *UserHandler) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+func (h *UserHandler) ChangePassword(ctx context.Context, req *pb.UserServiceChangePasswordRequest) (*pb.UserServiceChangePasswordResponse, error) {
 	userID := extractUserIDFromContext(ctx)
 	if userID == "" {
 		return nil, status.Error(codes.Unauthenticated, "missing user context")
@@ -83,14 +83,14 @@ func (h *UserHandler) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.ChangePasswordResponse{Success: true}, nil
+	return &pb.UserServiceChangePasswordResponse{Success: true}, nil
 }
 
 // GetUserById возвращает данные пользователя по идентификатору.
 // Возвращает ErrNotFound, если пользователь не найден.
 //
 //nolint:revive // имя совпадает с proto-определением GetUserById
-func (h *UserHandler) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*pb.GetUserByIdResponse, error) {
+func (h *UserHandler) GetUserById(ctx context.Context, req *pb.UserServiceGetRequest) (*pb.UserServiceGetResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -100,12 +100,12 @@ func (h *UserHandler) GetUserById(ctx context.Context, req *pb.GetUserByIdReques
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.GetUserByIdResponse{User: userToProto(user)}, nil
+	return &pb.UserServiceGetResponse{User: userToProto(user)}, nil
 }
 
 // SearchUsers выполняет поиск пользователей по запросу с пагинацией.
 // Возвращает до 100 пользователей за один запрос.
-func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error) {
+func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.UserServiceSearchRequest) (*pb.UserServiceSearchResponse, error) {
 	limit := 20
 	if req.Limit != nil {
 		limit = int(*req.Limit)
@@ -139,7 +139,7 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
 		users = append(users, userToProto(u))
 	}
 
-	return &pb.SearchUsersResponse{
+	return &pb.UserServiceSearchResponse{
 		Users:      users,
 		TotalCount: resp.TotalCount,
 	}, nil
@@ -147,7 +147,7 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
 
 // ChangeUserRole изменяет роль указанного пользователя.
 // Требует роль admin или moderator. Возвращает codes.Unimplemented, пока не реализовано в сервисе.
-func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.ChangeUserRoleRequest) (*pb.ChangeUserRoleResponse, error) {
+func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.UserServiceChangeRoleRequest) (*pb.UserServiceChangeRoleResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -161,7 +161,7 @@ func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.ChangeUserRoleRe
 
 // SetUserStatus изменяет статус учётной записи пользователя.
 // Требует роль admin. Возвращает codes.Unimplemented, пока не реализовано в сервисе.
-func (h *UserHandler) SetUserStatus(_ context.Context, req *pb.SetUserStatusRequest) (*pb.SetUserStatusResponse, error) {
+func (h *UserHandler) SetUserStatus(_ context.Context, req *pb.UserServiceSetStatusRequest) (*pb.UserServiceSetStatusResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}

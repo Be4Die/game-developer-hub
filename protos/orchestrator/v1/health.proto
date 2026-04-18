@@ -2,14 +2,18 @@ syntax = "proto3";
 
 package orchestrator.v1;
 
+import "google/api/annotations.proto";
+
 // Сервис проверки работоспособности.
 service HealthService {
-  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc Check(HealthServiceCheckRequest) returns (HealthServiceCheckResponse) {
+    option (google.api.http) = {get: "/api/v1/health"};
+  }
 }
 
-message HealthCheckRequest {}
+message HealthServiceCheckRequest {}
 
-message HealthCheckResponse {
+message HealthServiceCheckResponse {
   // Всегда "ok" при работоспособности.
   string status = 1;
   string version = 2;

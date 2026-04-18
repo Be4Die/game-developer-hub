@@ -24,7 +24,7 @@ func NewAuthHandler(svc *service.AuthService) *AuthHandler {
 
 // Register обрабатывает запрос на регистрацию нового пользователя.
 // Возвращает ErrAlreadyExists, если email уже занят.
-func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (h *AuthHandler) Register(ctx context.Context, req *pb.AuthServiceRegisterRequest) (*pb.AuthServiceRegisterResponse, error) {
 	resp, err := h.svc.Register(ctx, domain.RegisterRequest{
 		Email:       req.Email,
 		Password:    req.Password,
@@ -34,7 +34,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.RegisterResponse{
+	return &pb.AuthServiceRegisterResponse{
 		User:   userToProto(resp.User),
 		Tokens: tokenInfoToProto(resp.Tokens),
 	}, nil
@@ -42,7 +42,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 // Login обрабатывает запрос на аутентификацию по email и паролю.
 // Возвращает ErrInvalidPassword при неверных учётных данных.
-func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+func (h *AuthHandler) Login(ctx context.Context, req *pb.AuthServiceLoginRequest) (*pb.AuthServiceLoginResponse, error) {
 	loginReq := domain.LoginRequest{
 		Email:    req.Email,
 		Password: req.Password,
@@ -59,7 +59,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.LoginResponse{
+	return &pb.AuthServiceLoginResponse{
 		User:   userToProto(resp.User),
 		Tokens: tokenInfoToProto(resp.Tokens),
 	}, nil
@@ -67,7 +67,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 // RefreshToken обновляет пару access/refresh токенов по истёкшему refresh-токену.
 // Возвращает ErrInvalidToken или ErrTokenExpired при невалидном токене.
-func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.AuthServiceRefreshTokenRequest) (*pb.AuthServiceRefreshTokenResponse, error) {
 	resp, err := h.svc.RefreshToken(ctx, domain.RefreshTokenRequest{
 		RefreshToken: req.RefreshToken,
 	})
@@ -75,37 +75,37 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.RefreshTokenResponse{
+	return &pb.AuthServiceRefreshTokenResponse{
 		Tokens: tokenInfoToProto(resp.Tokens),
 	}, nil
 }
 
 // Logout выполняет выход пользователя и инвалидирует refresh-токен.
-func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+func (h *AuthHandler) Logout(ctx context.Context, req *pb.AuthServiceLogoutRequest) (*pb.AuthServiceLogoutResponse, error) {
 	if err := h.svc.Logout(ctx, domain.LogoutRequest{
 		RefreshToken: req.RefreshToken,
 	}); err != nil {
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.LogoutResponse{}, nil
+	return &pb.AuthServiceLogoutResponse{}, nil
 }
 
 // VerifyEmail подтверждает email-адрес пользователя по коду верификации.
 // Возвращает ErrInvalidToken при неверном или истёкшем коде.
-func (h *AuthHandler) VerifyEmail(ctx context.Context, req *pb.VerifyEmailRequest) (*pb.VerifyEmailResponse, error) {
+func (h *AuthHandler) VerifyEmail(ctx context.Context, req *pb.AuthServiceVerifyEmailRequest) (*pb.AuthServiceVerifyEmailResponse, error) {
 	if err := h.svc.VerifyEmail(ctx, domain.VerifyEmailRequest{
 		VerificationCode: req.VerificationCode,
 	}); err != nil {
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.VerifyEmailResponse{Success: true}, nil
+	return &pb.AuthServiceVerifyEmailResponse{Success: true}, nil
 }
 
 // ResendVerificationEmail повторно отправляет письмо с кодом верификации.
 // Возвращает ошибку, если пользователь не найден или email уже подтверждён.
-func (h *AuthHandler) ResendVerificationEmail(ctx context.Context, req *pb.ResendVerificationEmailRequest) (*pb.ResendVerificationEmailResponse, error) {
+func (h *AuthHandler) ResendVerificationEmail(ctx context.Context, req *pb.AuthServiceResendVerificationEmailRequest) (*pb.AuthServiceResendVerificationEmailResponse, error) {
 	err := h.svc.ResendVerificationEmail(ctx, domain.ResendVerificationRequest{
 		Email: req.Email,
 	})
@@ -113,23 +113,23 @@ func (h *AuthHandler) ResendVerificationEmail(ctx context.Context, req *pb.Resen
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.ResendVerificationEmailResponse{Sent: true}, nil
+	return &pb.AuthServiceResendVerificationEmailResponse{Sent: true}, nil
 }
 
 // RequestPasswordReset инициирует процесс сброса пароля.
 // Всегда возвращает Ok:true для защиты от enumeration attack.
-func (h *AuthHandler) RequestPasswordReset(ctx context.Context, req *pb.RequestPasswordResetRequest) (*pb.RequestPasswordResetResponse, error) {
+func (h *AuthHandler) RequestPasswordReset(ctx context.Context, req *pb.AuthServiceRequestPasswordResetRequest) (*pb.AuthServiceRequestPasswordResetResponse, error) {
 	_ = h.svc.RequestPasswordReset(ctx, domain.PasswordResetRequest{
 		Email: req.Email,
 	})
 
 	// Всегда возвращаем true — защита от enumeration attack.
-	return &pb.RequestPasswordResetResponse{Ok: true}, nil
+	return &pb.AuthServiceRequestPasswordResetResponse{Ok: true}, nil
 }
 
 // ResetPassword устанавливает новый пароль по токену сброса.
 // Возвращает ErrInvalidToken или ErrTokenExpired при невалидном токене.
-func (h *AuthHandler) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
+func (h *AuthHandler) ResetPassword(ctx context.Context, req *pb.AuthServiceResetPasswordRequest) (*pb.AuthServiceResetPasswordResponse, error) {
 	if err := h.svc.ResetPassword(ctx, domain.ResetPasswordRequest{
 		ResetToken:  req.ResetToken,
 		NewPassword: req.NewPassword,
@@ -137,7 +137,7 @@ func (h *AuthHandler) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 		return nil, domainErrToStatus(err)
 	}
 
-	return &pb.ResetPasswordResponse{Success: true}, nil
+	return &pb.AuthServiceResetPasswordResponse{Success: true}, nil
 }
 
 // validateUserRole проверяет что роль допустима для изменения.

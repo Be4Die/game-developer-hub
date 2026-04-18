@@ -2,47 +2,88 @@ syntax = "proto3";
 
 package sso.v1;
 
+import "google/api/annotations.proto";
 import "sso/v1/common.proto";
 
 // Сервис аутентификации: регистрация, вход, обновление токенов.
 service AuthService {
   // Регистрация нового пользователя по email и паролю.
-  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Register(AuthServiceRegisterRequest) returns (AuthServiceRegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register"
+      body: "*"
+    };
+  }
 
   // Вход пользователя по email и паролю.
-  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Login(AuthServiceLoginRequest) returns (AuthServiceLoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
 
   // Обновление access token по refresh token.
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RefreshToken(AuthServiceRefreshTokenRequest) returns (AuthServiceRefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/refresh"
+      body: "*"
+    };
+  }
 
   // Выход пользователя (отзыв refresh token).
-  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc Logout(AuthServiceLogoutRequest) returns (AuthServiceLogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/logout"
+      body: "*"
+    };
+  }
 
   // Подтверждение email по коду верификации.
-  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  rpc VerifyEmail(AuthServiceVerifyEmailRequest) returns (AuthServiceVerifyEmailResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/verify-email"
+      body: "*"
+    };
+  }
 
   // Запрос повторной отправки письма верификации.
-  rpc ResendVerificationEmail(ResendVerificationEmailRequest) returns (ResendVerificationEmailResponse);
+  rpc ResendVerificationEmail(AuthServiceResendVerificationEmailRequest) returns (AuthServiceResendVerificationEmailResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/resend-verification"
+      body: "*"
+    };
+  }
 
   // Восстановление пароля (запрос письма с ссылкой).
-  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+  rpc RequestPasswordReset(AuthServiceRequestPasswordResetRequest) returns (AuthServiceRequestPasswordResetResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/password-reset"
+      body: "*"
+    };
+  }
 
   // Сброс пароля по токену из письма.
-  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ResetPassword(AuthServiceResetPasswordRequest) returns (AuthServiceResetPasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/reset-password"
+      body: "*"
+    };
+  }
 }
 
-message RegisterRequest {
+message AuthServiceRegisterRequest {
   string email = 1;
   string password = 2;
   string display_name = 3;
 }
 
-message RegisterResponse {
+message AuthServiceRegisterResponse {
   User user = 1;
   TokenInfo tokens = 2;
 }
 
-message LoginRequest {
+message AuthServiceLoginRequest {
   string email = 1;
   string password = 2;
   // Опционально: информация о клиенте для сессии.
@@ -50,57 +91,57 @@ message LoginRequest {
   optional string ip_address = 4;
 }
 
-message LoginResponse {
+message AuthServiceLoginResponse {
   User user = 1;
   TokenInfo tokens = 2;
 }
 
-message RefreshTokenRequest {
+message AuthServiceRefreshTokenRequest {
   string refresh_token = 1;
 }
 
-message RefreshTokenResponse {
+message AuthServiceRefreshTokenResponse {
   TokenInfo tokens = 1;
 }
 
-message LogoutRequest {
+message AuthServiceLogoutRequest {
   string refresh_token = 1;
 }
 
-message LogoutResponse {}
+message AuthServiceLogoutResponse {}
 
-message VerifyEmailRequest {
+message AuthServiceVerifyEmailRequest {
   // Код верификации из письма.
   string verification_code = 1;
 }
 
-message VerifyEmailResponse {
+message AuthServiceVerifyEmailResponse {
   bool success = 1;
 }
 
-message ResendVerificationEmailRequest {
+message AuthServiceResendVerificationEmailRequest {
   string email = 1;
 }
 
-message ResendVerificationEmailResponse {
+message AuthServiceResendVerificationEmailResponse {
   // true — письмо отправлено, false — пользователь уже подтверждён или email не найден.
   bool sent = 1;
 }
 
-message RequestPasswordResetRequest {
+message AuthServiceRequestPasswordResetRequest {
   string email = 1;
 }
 
-message RequestPasswordResetResponse {
+message AuthServiceRequestPasswordResetResponse {
   // Всегда true для предотвращения enumeration attack.
   bool ok = 1;
 }
 
-message ResetPasswordRequest {
+message AuthServiceResetPasswordRequest {
   string reset_token = 1;
   string new_password = 2;
 }
 
-message ResetPasswordResponse {
+message AuthServiceResetPasswordResponse {
   bool success = 1;
 }

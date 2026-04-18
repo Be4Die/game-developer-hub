@@ -2,71 +2,98 @@ syntax = "proto3";
 
 package sso.v1;
 
+import "google/api/annotations.proto";
 import "sso/v1/common.proto";
 
 // Сервис управления профилем пользователя.
 service UserService {
   // Получение профиля текущего пользователя (по JWT).
-  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc GetProfile(UserServiceGetProfileRequest) returns (UserServiceGetProfileResponse) {
+    option (google.api.http) = {get: "/api/v1/users/profile"};
+  }
 
   // Обновление профиля текущего пользователя.
-  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc UpdateProfile(UserServiceUpdateProfileRequest) returns (UserServiceUpdateProfileResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/users/profile"
+      body: "*"
+    };
+  }
 
   // Смена пароля (требует текущий пароль).
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ChangePassword(UserServiceChangePasswordRequest) returns (UserServiceChangePasswordResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/users/profile:change-password"
+      body: "*"
+    };
+  }
 
   // Получение профиля другого пользователя по ID.
   // Доступно для модераторов и администраторов.
-  rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
+  rpc Get(UserServiceGetRequest) returns (UserServiceGetResponse) {
+    option (google.api.http) = {get: "/api/v1/users/{user_id}"};
+  }
 
   // Поиск пользователей по email или display_name.
   // Доступно для модераторов и администраторов.
-  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc Search(UserServiceSearchRequest) returns (UserServiceSearchResponse) {
+    option (google.api.http) = {get: "/api/v1/users"};
+  }
 
   // Изменение роли пользователя.
   // Доступно только администраторам.
-  rpc ChangeUserRole(ChangeUserRoleRequest) returns (ChangeUserRoleResponse);
+  rpc ChangeRole(UserServiceChangeRoleRequest) returns (UserServiceChangeRoleResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/users/{user_id}:change-role"
+      body: "*"
+    };
+  }
 
   // Блокировка/разблокировка пользователя.
   // Доступно только администраторам.
-  rpc SetUserStatus(SetUserStatusRequest) returns (SetUserStatusResponse);
+  rpc SetStatus(UserServiceSetStatusRequest) returns (UserServiceSetStatusResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/users/{user_id}:set-status"
+      body: "*"
+    };
+  }
 }
 
-message GetProfileRequest {
+message UserServiceGetProfileRequest {
   // Извлекается из JWT, поле может быть пустым.
   string user_id = 1;
 }
 
-message GetProfileResponse {
+message UserServiceGetProfileResponse {
   User user = 1;
 }
 
-message UpdateProfileRequest {
+message UserServiceUpdateProfileRequest {
   optional string display_name = 1;
 }
 
-message UpdateProfileResponse {
+message UserServiceUpdateProfileResponse {
   User user = 1;
 }
 
-message ChangePasswordRequest {
+message UserServiceChangePasswordRequest {
   string current_password = 1;
   string new_password = 2;
 }
 
-message ChangePasswordResponse {
+message UserServiceChangePasswordResponse {
   bool success = 1;
 }
 
-message GetUserByIdRequest {
+message UserServiceGetRequest {
   string user_id = 1;
 }
 
-message GetUserByIdResponse {
+message UserServiceGetResponse {
   User user = 1;
 }
 
-message SearchUsersRequest {
+message UserServiceSearchRequest {
   // Поисковый запрос (совпадение по email или display_name).
   string query = 1;
   // Лимит результатов (по умолчанию 20, максимум 100).
@@ -75,25 +102,25 @@ message SearchUsersRequest {
   optional int32 offset = 3;
 }
 
-message SearchUsersResponse {
+message UserServiceSearchResponse {
   repeated User users = 1;
   int64 total_count = 2;
 }
 
-message ChangeUserRoleRequest {
+message UserServiceChangeRoleRequest {
   string user_id = 1;
   UserRole new_role = 2;
 }
 
-message ChangeUserRoleResponse {
+message UserServiceChangeRoleResponse {
   User user = 1;
 }
 
-message SetUserStatusRequest {
+message UserServiceSetStatusRequest {
   string user_id = 1;
   UserStatus new_status = 2;
 }
 
-message SetUserStatusResponse {
+message UserServiceSetStatusResponse {
   User user = 1;
 }

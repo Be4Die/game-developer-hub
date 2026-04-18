@@ -7,6 +7,7 @@
 package orchestratorv1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type UploadBuildRequest struct {
+type BuildServiceUploadRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	GameId int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	// Docker image tar-архив (результат `docker save`).
@@ -34,20 +35,20 @@ type UploadBuildRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UploadBuildRequest) Reset() {
-	*x = UploadBuildRequest{}
+func (x *BuildServiceUploadRequest) Reset() {
+	*x = BuildServiceUploadRequest{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UploadBuildRequest) String() string {
+func (x *BuildServiceUploadRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UploadBuildRequest) ProtoMessage() {}
+func (*BuildServiceUploadRequest) ProtoMessage() {}
 
-func (x *UploadBuildRequest) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceUploadRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,74 +60,74 @@ func (x *UploadBuildRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UploadBuildRequest.ProtoReflect.Descriptor instead.
-func (*UploadBuildRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceUploadRequest.ProtoReflect.Descriptor instead.
+func (*BuildServiceUploadRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UploadBuildRequest) GetGameId() int64 {
+func (x *BuildServiceUploadRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *UploadBuildRequest) GetImageData() []byte {
+func (x *BuildServiceUploadRequest) GetImageData() []byte {
 	if x != nil {
 		return x.ImageData
 	}
 	return nil
 }
 
-func (x *UploadBuildRequest) GetBuildVersion() string {
+func (x *BuildServiceUploadRequest) GetBuildVersion() string {
 	if x != nil {
 		return x.BuildVersion
 	}
 	return ""
 }
 
-func (x *UploadBuildRequest) GetProtocol() Protocol {
+func (x *BuildServiceUploadRequest) GetProtocol() Protocol {
 	if x != nil {
 		return x.Protocol
 	}
 	return Protocol_PROTOCOL_UNSPECIFIED
 }
 
-func (x *UploadBuildRequest) GetInternalPort() uint32 {
+func (x *BuildServiceUploadRequest) GetInternalPort() uint32 {
 	if x != nil {
 		return x.InternalPort
 	}
 	return 0
 }
 
-func (x *UploadBuildRequest) GetMaxPlayers() uint32 {
+func (x *BuildServiceUploadRequest) GetMaxPlayers() uint32 {
 	if x != nil {
 		return x.MaxPlayers
 	}
 	return 0
 }
 
-type UploadBuildResponse struct {
+type BuildServiceUploadResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Build         *ServerBuild           `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UploadBuildResponse) Reset() {
-	*x = UploadBuildResponse{}
+func (x *BuildServiceUploadResponse) Reset() {
+	*x = BuildServiceUploadResponse{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UploadBuildResponse) String() string {
+func (x *BuildServiceUploadResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UploadBuildResponse) ProtoMessage() {}
+func (*BuildServiceUploadResponse) ProtoMessage() {}
 
-func (x *UploadBuildResponse) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceUploadResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -138,39 +139,39 @@ func (x *UploadBuildResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UploadBuildResponse.ProtoReflect.Descriptor instead.
-func (*UploadBuildResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceUploadResponse.ProtoReflect.Descriptor instead.
+func (*BuildServiceUploadResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *UploadBuildResponse) GetBuild() *ServerBuild {
+func (x *BuildServiceUploadResponse) GetBuild() *ServerBuild {
 	if x != nil {
 		return x.Build
 	}
 	return nil
 }
 
-type ListBuildsRequest struct {
+type BuildServiceListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListBuildsRequest) Reset() {
-	*x = ListBuildsRequest{}
+func (x *BuildServiceListRequest) Reset() {
+	*x = BuildServiceListRequest{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListBuildsRequest) String() string {
+func (x *BuildServiceListRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListBuildsRequest) ProtoMessage() {}
+func (*BuildServiceListRequest) ProtoMessage() {}
 
-func (x *ListBuildsRequest) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceListRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -182,39 +183,39 @@ func (x *ListBuildsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListBuildsRequest.ProtoReflect.Descriptor instead.
-func (*ListBuildsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceListRequest.ProtoReflect.Descriptor instead.
+func (*BuildServiceListRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListBuildsRequest) GetGameId() int64 {
+func (x *BuildServiceListRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-type ListBuildsResponse struct {
+type BuildServiceListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Builds        []*ServerBuild         `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListBuildsResponse) Reset() {
-	*x = ListBuildsResponse{}
+func (x *BuildServiceListResponse) Reset() {
+	*x = BuildServiceListResponse{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListBuildsResponse) String() string {
+func (x *BuildServiceListResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListBuildsResponse) ProtoMessage() {}
+func (*BuildServiceListResponse) ProtoMessage() {}
 
-func (x *ListBuildsResponse) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceListResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,19 +227,19 @@ func (x *ListBuildsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListBuildsResponse.ProtoReflect.Descriptor instead.
-func (*ListBuildsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceListResponse.ProtoReflect.Descriptor instead.
+func (*BuildServiceListResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListBuildsResponse) GetBuilds() []*ServerBuild {
+func (x *BuildServiceListResponse) GetBuilds() []*ServerBuild {
 	if x != nil {
 		return x.Builds
 	}
 	return nil
 }
 
-type GetBuildRequest struct {
+type BuildServiceGetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	BuildVersion  string                 `protobuf:"bytes,2,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
@@ -246,20 +247,20 @@ type GetBuildRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetBuildRequest) Reset() {
-	*x = GetBuildRequest{}
+func (x *BuildServiceGetRequest) Reset() {
+	*x = BuildServiceGetRequest{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetBuildRequest) String() string {
+func (x *BuildServiceGetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBuildRequest) ProtoMessage() {}
+func (*BuildServiceGetRequest) ProtoMessage() {}
 
-func (x *GetBuildRequest) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceGetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -271,46 +272,46 @@ func (x *GetBuildRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBuildRequest.ProtoReflect.Descriptor instead.
-func (*GetBuildRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceGetRequest.ProtoReflect.Descriptor instead.
+func (*BuildServiceGetRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetBuildRequest) GetGameId() int64 {
+func (x *BuildServiceGetRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *GetBuildRequest) GetBuildVersion() string {
+func (x *BuildServiceGetRequest) GetBuildVersion() string {
 	if x != nil {
 		return x.BuildVersion
 	}
 	return ""
 }
 
-type GetBuildResponse struct {
+type BuildServiceGetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Build         *ServerBuild           `protobuf:"bytes,1,opt,name=build,proto3" json:"build,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetBuildResponse) Reset() {
-	*x = GetBuildResponse{}
+func (x *BuildServiceGetResponse) Reset() {
+	*x = BuildServiceGetResponse{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetBuildResponse) String() string {
+func (x *BuildServiceGetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBuildResponse) ProtoMessage() {}
+func (*BuildServiceGetResponse) ProtoMessage() {}
 
-func (x *GetBuildResponse) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceGetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -322,19 +323,19 @@ func (x *GetBuildResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBuildResponse.ProtoReflect.Descriptor instead.
-func (*GetBuildResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceGetResponse.ProtoReflect.Descriptor instead.
+func (*BuildServiceGetResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetBuildResponse) GetBuild() *ServerBuild {
+func (x *BuildServiceGetResponse) GetBuild() *ServerBuild {
 	if x != nil {
 		return x.Build
 	}
 	return nil
 }
 
-type DeleteBuildRequest struct {
+type BuildServiceDeleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	BuildVersion  string                 `protobuf:"bytes,2,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
@@ -342,20 +343,20 @@ type DeleteBuildRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteBuildRequest) Reset() {
-	*x = DeleteBuildRequest{}
+func (x *BuildServiceDeleteRequest) Reset() {
+	*x = BuildServiceDeleteRequest{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteBuildRequest) String() string {
+func (x *BuildServiceDeleteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteBuildRequest) ProtoMessage() {}
+func (*BuildServiceDeleteRequest) ProtoMessage() {}
 
-func (x *DeleteBuildRequest) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceDeleteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -367,45 +368,45 @@ func (x *DeleteBuildRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteBuildRequest.ProtoReflect.Descriptor instead.
-func (*DeleteBuildRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceDeleteRequest.ProtoReflect.Descriptor instead.
+func (*BuildServiceDeleteRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *DeleteBuildRequest) GetGameId() int64 {
+func (x *BuildServiceDeleteRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *DeleteBuildRequest) GetBuildVersion() string {
+func (x *BuildServiceDeleteRequest) GetBuildVersion() string {
 	if x != nil {
 		return x.BuildVersion
 	}
 	return ""
 }
 
-type DeleteBuildResponse struct {
+type BuildServiceDeleteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteBuildResponse) Reset() {
-	*x = DeleteBuildResponse{}
+func (x *BuildServiceDeleteResponse) Reset() {
+	*x = BuildServiceDeleteResponse{}
 	mi := &file_orchestrator_v1_build_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteBuildResponse) String() string {
+func (x *BuildServiceDeleteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteBuildResponse) ProtoMessage() {}
+func (*BuildServiceDeleteResponse) ProtoMessage() {}
 
-func (x *DeleteBuildResponse) ProtoReflect() protoreflect.Message {
+func (x *BuildServiceDeleteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_build_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -417,8 +418,8 @@ func (x *DeleteBuildResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteBuildResponse.ProtoReflect.Descriptor instead.
-func (*DeleteBuildResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use BuildServiceDeleteResponse.ProtoReflect.Descriptor instead.
+func (*BuildServiceDeleteResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_build_proto_rawDescGZIP(), []int{7}
 }
 
@@ -426,8 +427,8 @@ var File_orchestrator_v1_build_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_build_proto_rawDesc = "" +
 	"\n" +
-	"\x1borchestrator/v1/build.proto\x12\x0forchestrator.v1\x1a\x1corchestrator/v1/common.proto\"\xee\x01\n" +
-	"\x12UploadBuildRequest\x12\x17\n" +
+	"\x1borchestrator/v1/build.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"\xf5\x01\n" +
+	"\x19BuildServiceUploadRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1d\n" +
 	"\n" +
 	"image_data\x18\x02 \x01(\fR\timageData\x12#\n" +
@@ -435,27 +436,27 @@ const file_orchestrator_v1_build_proto_rawDesc = "" +
 	"\bprotocol\x18\x04 \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12#\n" +
 	"\rinternal_port\x18\x05 \x01(\rR\finternalPort\x12\x1f\n" +
 	"\vmax_players\x18\x06 \x01(\rR\n" +
-	"maxPlayers\"I\n" +
-	"\x13UploadBuildResponse\x122\n" +
-	"\x05build\x18\x01 \x01(\v2\x1c.orchestrator.v1.ServerBuildR\x05build\",\n" +
-	"\x11ListBuildsRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"J\n" +
-	"\x12ListBuildsResponse\x124\n" +
-	"\x06builds\x18\x01 \x03(\v2\x1c.orchestrator.v1.ServerBuildR\x06builds\"O\n" +
-	"\x0fGetBuildRequest\x12\x17\n" +
+	"maxPlayers\"P\n" +
+	"\x1aBuildServiceUploadResponse\x122\n" +
+	"\x05build\x18\x01 \x01(\v2\x1c.orchestrator.v1.ServerBuildR\x05build\"2\n" +
+	"\x17BuildServiceListRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"P\n" +
+	"\x18BuildServiceListResponse\x124\n" +
+	"\x06builds\x18\x01 \x03(\v2\x1c.orchestrator.v1.ServerBuildR\x06builds\"V\n" +
+	"\x16BuildServiceGetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12#\n" +
-	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\"F\n" +
-	"\x10GetBuildResponse\x122\n" +
-	"\x05build\x18\x01 \x01(\v2\x1c.orchestrator.v1.ServerBuildR\x05build\"R\n" +
-	"\x12DeleteBuildRequest\x12\x17\n" +
+	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\"M\n" +
+	"\x17BuildServiceGetResponse\x122\n" +
+	"\x05build\x18\x01 \x01(\v2\x1c.orchestrator.v1.ServerBuildR\x05build\"Y\n" +
+	"\x19BuildServiceDeleteRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12#\n" +
-	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\"\x15\n" +
-	"\x13DeleteBuildResponse2\xd5\x02\n" +
-	"\fBuildService\x12S\n" +
-	"\x06Upload\x12#.orchestrator.v1.UploadBuildRequest\x1a$.orchestrator.v1.UploadBuildResponse\x12O\n" +
-	"\x04List\x12\".orchestrator.v1.ListBuildsRequest\x1a#.orchestrator.v1.ListBuildsResponse\x12J\n" +
-	"\x03Get\x12 .orchestrator.v1.GetBuildRequest\x1a!.orchestrator.v1.GetBuildResponse\x12S\n" +
-	"\x06Delete\x12#.orchestrator.v1.DeleteBuildRequest\x1a$.orchestrator.v1.DeleteBuildResponseB\xca\x01\n" +
+	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\"\x1c\n" +
+	"\x1aBuildServiceDeleteResponse2\xd2\x04\n" +
+	"\fBuildService\x12\x8c\x01\n" +
+	"\x06Upload\x12*.orchestrator.v1.BuildServiceUploadRequest\x1a+.orchestrator.v1.BuildServiceUploadResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/games/{game_id}/builds\x12\x83\x01\n" +
+	"\x04List\x12(.orchestrator.v1.BuildServiceListRequest\x1a).orchestrator.v1.BuildServiceListResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/games/{game_id}/builds\x12\x90\x01\n" +
+	"\x03Get\x12'.orchestrator.v1.BuildServiceGetRequest\x1a(.orchestrator.v1.BuildServiceGetResponse\"6\x82\xd3\xe4\x93\x020\x12./api/v1/games/{game_id}/builds/{build_version}\x12\x99\x01\n" +
+	"\x06Delete\x12*.orchestrator.v1.BuildServiceDeleteRequest\x1a+.orchestrator.v1.BuildServiceDeleteResponse\"6\x82\xd3\xe4\x93\x020*./api/v1/games/{game_id}/builds/{build_version}B\xca\x01\n" +
 	"\x13com.orchestrator.v1B\n" +
 	"BuildProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
@@ -473,30 +474,30 @@ func file_orchestrator_v1_build_proto_rawDescGZIP() []byte {
 
 var file_orchestrator_v1_build_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_orchestrator_v1_build_proto_goTypes = []any{
-	(*UploadBuildRequest)(nil),  // 0: orchestrator.v1.UploadBuildRequest
-	(*UploadBuildResponse)(nil), // 1: orchestrator.v1.UploadBuildResponse
-	(*ListBuildsRequest)(nil),   // 2: orchestrator.v1.ListBuildsRequest
-	(*ListBuildsResponse)(nil),  // 3: orchestrator.v1.ListBuildsResponse
-	(*GetBuildRequest)(nil),     // 4: orchestrator.v1.GetBuildRequest
-	(*GetBuildResponse)(nil),    // 5: orchestrator.v1.GetBuildResponse
-	(*DeleteBuildRequest)(nil),  // 6: orchestrator.v1.DeleteBuildRequest
-	(*DeleteBuildResponse)(nil), // 7: orchestrator.v1.DeleteBuildResponse
-	(Protocol)(0),               // 8: orchestrator.v1.Protocol
-	(*ServerBuild)(nil),         // 9: orchestrator.v1.ServerBuild
+	(*BuildServiceUploadRequest)(nil),  // 0: orchestrator.v1.BuildServiceUploadRequest
+	(*BuildServiceUploadResponse)(nil), // 1: orchestrator.v1.BuildServiceUploadResponse
+	(*BuildServiceListRequest)(nil),    // 2: orchestrator.v1.BuildServiceListRequest
+	(*BuildServiceListResponse)(nil),   // 3: orchestrator.v1.BuildServiceListResponse
+	(*BuildServiceGetRequest)(nil),     // 4: orchestrator.v1.BuildServiceGetRequest
+	(*BuildServiceGetResponse)(nil),    // 5: orchestrator.v1.BuildServiceGetResponse
+	(*BuildServiceDeleteRequest)(nil),  // 6: orchestrator.v1.BuildServiceDeleteRequest
+	(*BuildServiceDeleteResponse)(nil), // 7: orchestrator.v1.BuildServiceDeleteResponse
+	(Protocol)(0),                      // 8: orchestrator.v1.Protocol
+	(*ServerBuild)(nil),                // 9: orchestrator.v1.ServerBuild
 }
 var file_orchestrator_v1_build_proto_depIdxs = []int32{
-	8, // 0: orchestrator.v1.UploadBuildRequest.protocol:type_name -> orchestrator.v1.Protocol
-	9, // 1: orchestrator.v1.UploadBuildResponse.build:type_name -> orchestrator.v1.ServerBuild
-	9, // 2: orchestrator.v1.ListBuildsResponse.builds:type_name -> orchestrator.v1.ServerBuild
-	9, // 3: orchestrator.v1.GetBuildResponse.build:type_name -> orchestrator.v1.ServerBuild
-	0, // 4: orchestrator.v1.BuildService.Upload:input_type -> orchestrator.v1.UploadBuildRequest
-	2, // 5: orchestrator.v1.BuildService.List:input_type -> orchestrator.v1.ListBuildsRequest
-	4, // 6: orchestrator.v1.BuildService.Get:input_type -> orchestrator.v1.GetBuildRequest
-	6, // 7: orchestrator.v1.BuildService.Delete:input_type -> orchestrator.v1.DeleteBuildRequest
-	1, // 8: orchestrator.v1.BuildService.Upload:output_type -> orchestrator.v1.UploadBuildResponse
-	3, // 9: orchestrator.v1.BuildService.List:output_type -> orchestrator.v1.ListBuildsResponse
-	5, // 10: orchestrator.v1.BuildService.Get:output_type -> orchestrator.v1.GetBuildResponse
-	7, // 11: orchestrator.v1.BuildService.Delete:output_type -> orchestrator.v1.DeleteBuildResponse
+	8, // 0: orchestrator.v1.BuildServiceUploadRequest.protocol:type_name -> orchestrator.v1.Protocol
+	9, // 1: orchestrator.v1.BuildServiceUploadResponse.build:type_name -> orchestrator.v1.ServerBuild
+	9, // 2: orchestrator.v1.BuildServiceListResponse.builds:type_name -> orchestrator.v1.ServerBuild
+	9, // 3: orchestrator.v1.BuildServiceGetResponse.build:type_name -> orchestrator.v1.ServerBuild
+	0, // 4: orchestrator.v1.BuildService.Upload:input_type -> orchestrator.v1.BuildServiceUploadRequest
+	2, // 5: orchestrator.v1.BuildService.List:input_type -> orchestrator.v1.BuildServiceListRequest
+	4, // 6: orchestrator.v1.BuildService.Get:input_type -> orchestrator.v1.BuildServiceGetRequest
+	6, // 7: orchestrator.v1.BuildService.Delete:input_type -> orchestrator.v1.BuildServiceDeleteRequest
+	1, // 8: orchestrator.v1.BuildService.Upload:output_type -> orchestrator.v1.BuildServiceUploadResponse
+	3, // 9: orchestrator.v1.BuildService.List:output_type -> orchestrator.v1.BuildServiceListResponse
+	5, // 10: orchestrator.v1.BuildService.Get:output_type -> orchestrator.v1.BuildServiceGetResponse
+	7, // 11: orchestrator.v1.BuildService.Delete:output_type -> orchestrator.v1.BuildServiceDeleteResponse
 	8, // [8:12] is the sub-list for method output_type
 	4, // [4:8] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name

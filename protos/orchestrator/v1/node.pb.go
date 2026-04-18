@@ -7,6 +7,7 @@
 package orchestratorv1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -133,31 +134,31 @@ func (x *RegisterNodeAuthorize) GetToken() string {
 	return ""
 }
 
-type RegisterNodeRequest struct {
+type NodeServiceRegisterRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Mode:
 	//
-	//	*RegisterNodeRequest_Manual
-	//	*RegisterNodeRequest_Authorize
-	Mode          isRegisterNodeRequest_Mode `protobuf_oneof:"mode"`
+	//	*NodeServiceRegisterRequest_Manual
+	//	*NodeServiceRegisterRequest_Authorize
+	Mode          isNodeServiceRegisterRequest_Mode `protobuf_oneof:"mode"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegisterNodeRequest) Reset() {
-	*x = RegisterNodeRequest{}
+func (x *NodeServiceRegisterRequest) Reset() {
+	*x = NodeServiceRegisterRequest{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegisterNodeRequest) String() string {
+func (x *NodeServiceRegisterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterNodeRequest) ProtoMessage() {}
+func (*NodeServiceRegisterRequest) ProtoMessage() {}
 
-func (x *RegisterNodeRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceRegisterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -169,73 +170,73 @@ func (x *RegisterNodeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterNodeRequest.ProtoReflect.Descriptor instead.
-func (*RegisterNodeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceRegisterRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceRegisterRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *RegisterNodeRequest) GetMode() isRegisterNodeRequest_Mode {
+func (x *NodeServiceRegisterRequest) GetMode() isNodeServiceRegisterRequest_Mode {
 	if x != nil {
 		return x.Mode
 	}
 	return nil
 }
 
-func (x *RegisterNodeRequest) GetManual() *RegisterNodeManual {
+func (x *NodeServiceRegisterRequest) GetManual() *RegisterNodeManual {
 	if x != nil {
-		if x, ok := x.Mode.(*RegisterNodeRequest_Manual); ok {
+		if x, ok := x.Mode.(*NodeServiceRegisterRequest_Manual); ok {
 			return x.Manual
 		}
 	}
 	return nil
 }
 
-func (x *RegisterNodeRequest) GetAuthorize() *RegisterNodeAuthorize {
+func (x *NodeServiceRegisterRequest) GetAuthorize() *RegisterNodeAuthorize {
 	if x != nil {
-		if x, ok := x.Mode.(*RegisterNodeRequest_Authorize); ok {
+		if x, ok := x.Mode.(*NodeServiceRegisterRequest_Authorize); ok {
 			return x.Authorize
 		}
 	}
 	return nil
 }
 
-type isRegisterNodeRequest_Mode interface {
-	isRegisterNodeRequest_Mode()
+type isNodeServiceRegisterRequest_Mode interface {
+	isNodeServiceRegisterRequest_Mode()
 }
 
-type RegisterNodeRequest_Manual struct {
+type NodeServiceRegisterRequest_Manual struct {
 	Manual *RegisterNodeManual `protobuf:"bytes,1,opt,name=manual,proto3,oneof"`
 }
 
-type RegisterNodeRequest_Authorize struct {
+type NodeServiceRegisterRequest_Authorize struct {
 	Authorize *RegisterNodeAuthorize `protobuf:"bytes,2,opt,name=authorize,proto3,oneof"`
 }
 
-func (*RegisterNodeRequest_Manual) isRegisterNodeRequest_Mode() {}
+func (*NodeServiceRegisterRequest_Manual) isNodeServiceRegisterRequest_Mode() {}
 
-func (*RegisterNodeRequest_Authorize) isRegisterNodeRequest_Mode() {}
+func (*NodeServiceRegisterRequest_Authorize) isNodeServiceRegisterRequest_Mode() {}
 
-type RegisterNodeResponse struct {
+type NodeServiceRegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Node          *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RegisterNodeResponse) Reset() {
-	*x = RegisterNodeResponse{}
+func (x *NodeServiceRegisterResponse) Reset() {
+	*x = NodeServiceRegisterResponse{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RegisterNodeResponse) String() string {
+func (x *NodeServiceRegisterResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterNodeResponse) ProtoMessage() {}
+func (*NodeServiceRegisterResponse) ProtoMessage() {}
 
-func (x *RegisterNodeResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceRegisterResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -247,39 +248,39 @@ func (x *RegisterNodeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterNodeResponse.ProtoReflect.Descriptor instead.
-func (*RegisterNodeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceRegisterResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceRegisterResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *RegisterNodeResponse) GetNode() *Node {
+func (x *NodeServiceRegisterResponse) GetNode() *Node {
 	if x != nil {
 		return x.Node
 	}
 	return nil
 }
 
-type ListNodesRequest struct {
+type NodeServiceListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        *NodeStatus            `protobuf:"varint,1,opt,name=status,proto3,enum=orchestrator.v1.NodeStatus,oneof" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListNodesRequest) Reset() {
-	*x = ListNodesRequest{}
+func (x *NodeServiceListRequest) Reset() {
+	*x = NodeServiceListRequest{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListNodesRequest) String() string {
+func (x *NodeServiceListRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListNodesRequest) ProtoMessage() {}
+func (*NodeServiceListRequest) ProtoMessage() {}
 
-func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceListRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -291,39 +292,39 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
-func (*ListNodesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceListRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceListRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ListNodesRequest) GetStatus() NodeStatus {
+func (x *NodeServiceListRequest) GetStatus() NodeStatus {
 	if x != nil && x.Status != nil {
 		return *x.Status
 	}
 	return NodeStatus_NODE_STATUS_UNSPECIFIED
 }
 
-type ListNodesResponse struct {
+type NodeServiceListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Nodes         []*Node                `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListNodesResponse) Reset() {
-	*x = ListNodesResponse{}
+func (x *NodeServiceListResponse) Reset() {
+	*x = NodeServiceListResponse{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListNodesResponse) String() string {
+func (x *NodeServiceListResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListNodesResponse) ProtoMessage() {}
+func (*NodeServiceListResponse) ProtoMessage() {}
 
-func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceListResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -335,39 +336,39 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
-func (*ListNodesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceListResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceListResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ListNodesResponse) GetNodes() []*Node {
+func (x *NodeServiceListResponse) GetNodes() []*Node {
 	if x != nil {
 		return x.Nodes
 	}
 	return nil
 }
 
-type GetNodeRequest struct {
+type NodeServiceGetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetNodeRequest) Reset() {
-	*x = GetNodeRequest{}
+func (x *NodeServiceGetRequest) Reset() {
+	*x = NodeServiceGetRequest{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNodeRequest) String() string {
+func (x *NodeServiceGetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNodeRequest) ProtoMessage() {}
+func (*NodeServiceGetRequest) ProtoMessage() {}
 
-func (x *GetNodeRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceGetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -379,39 +380,39 @@ func (x *GetNodeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNodeRequest.ProtoReflect.Descriptor instead.
-func (*GetNodeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceGetRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetNodeRequest) GetNodeId() int64 {
+func (x *NodeServiceGetRequest) GetNodeId() int64 {
 	if x != nil {
 		return x.NodeId
 	}
 	return 0
 }
 
-type GetNodeResponse struct {
+type NodeServiceGetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Node          *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetNodeResponse) Reset() {
-	*x = GetNodeResponse{}
+func (x *NodeServiceGetResponse) Reset() {
+	*x = NodeServiceGetResponse{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNodeResponse) String() string {
+func (x *NodeServiceGetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNodeResponse) ProtoMessage() {}
+func (*NodeServiceGetResponse) ProtoMessage() {}
 
-func (x *GetNodeResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceGetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -423,39 +424,39 @@ func (x *GetNodeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNodeResponse.ProtoReflect.Descriptor instead.
-func (*GetNodeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceGetResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetNodeResponse) GetNode() *Node {
+func (x *NodeServiceGetResponse) GetNode() *Node {
 	if x != nil {
 		return x.Node
 	}
 	return nil
 }
 
-type DeleteNodeRequest struct {
+type NodeServiceDeleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteNodeRequest) Reset() {
-	*x = DeleteNodeRequest{}
+func (x *NodeServiceDeleteRequest) Reset() {
+	*x = NodeServiceDeleteRequest{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteNodeRequest) String() string {
+func (x *NodeServiceDeleteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteNodeRequest) ProtoMessage() {}
+func (*NodeServiceDeleteRequest) ProtoMessage() {}
 
-func (x *DeleteNodeRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceDeleteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -467,38 +468,38 @@ func (x *DeleteNodeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteNodeRequest.ProtoReflect.Descriptor instead.
-func (*DeleteNodeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceDeleteRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceDeleteRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *DeleteNodeRequest) GetNodeId() int64 {
+func (x *NodeServiceDeleteRequest) GetNodeId() int64 {
 	if x != nil {
 		return x.NodeId
 	}
 	return 0
 }
 
-type DeleteNodeResponse struct {
+type NodeServiceDeleteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeleteNodeResponse) Reset() {
-	*x = DeleteNodeResponse{}
+func (x *NodeServiceDeleteResponse) Reset() {
+	*x = NodeServiceDeleteResponse{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeleteNodeResponse) String() string {
+func (x *NodeServiceDeleteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeleteNodeResponse) ProtoMessage() {}
+func (*NodeServiceDeleteResponse) ProtoMessage() {}
 
-func (x *DeleteNodeResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceDeleteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -510,32 +511,32 @@ func (x *DeleteNodeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeleteNodeResponse.ProtoReflect.Descriptor instead.
-func (*DeleteNodeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceDeleteResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceDeleteResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{9}
 }
 
-type GetNodeUsageRequest struct {
+type NodeServiceGetUsageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetNodeUsageRequest) Reset() {
-	*x = GetNodeUsageRequest{}
+func (x *NodeServiceGetUsageRequest) Reset() {
+	*x = NodeServiceGetUsageRequest{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNodeUsageRequest) String() string {
+func (x *NodeServiceGetUsageRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNodeUsageRequest) ProtoMessage() {}
+func (*NodeServiceGetUsageRequest) ProtoMessage() {}
 
-func (x *GetNodeUsageRequest) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceGetUsageRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -547,19 +548,19 @@ func (x *GetNodeUsageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNodeUsageRequest.ProtoReflect.Descriptor instead.
-func (*GetNodeUsageRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceGetUsageRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetUsageRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *GetNodeUsageRequest) GetNodeId() int64 {
+func (x *NodeServiceGetUsageRequest) GetNodeId() int64 {
 	if x != nil {
 		return x.NodeId
 	}
 	return 0
 }
 
-type GetNodeUsageResponse struct {
+type NodeServiceGetUsageResponse struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	NodeId              int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	Usage               *ResourceUsage         `protobuf:"bytes,2,opt,name=usage,proto3" json:"usage,omitempty"`
@@ -568,20 +569,20 @@ type GetNodeUsageResponse struct {
 	sizeCache           protoimpl.SizeCache
 }
 
-func (x *GetNodeUsageResponse) Reset() {
-	*x = GetNodeUsageResponse{}
+func (x *NodeServiceGetUsageResponse) Reset() {
+	*x = NodeServiceGetUsageResponse{}
 	mi := &file_orchestrator_v1_node_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNodeUsageResponse) String() string {
+func (x *NodeServiceGetUsageResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNodeUsageResponse) ProtoMessage() {}
+func (*NodeServiceGetUsageResponse) ProtoMessage() {}
 
-func (x *GetNodeUsageResponse) ProtoReflect() protoreflect.Message {
+func (x *NodeServiceGetUsageResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_node_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -593,26 +594,26 @@ func (x *GetNodeUsageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNodeUsageResponse.ProtoReflect.Descriptor instead.
-func (*GetNodeUsageResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use NodeServiceGetUsageResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetUsageResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *GetNodeUsageResponse) GetNodeId() int64 {
+func (x *NodeServiceGetUsageResponse) GetNodeId() int64 {
 	if x != nil {
 		return x.NodeId
 	}
 	return 0
 }
 
-func (x *GetNodeUsageResponse) GetUsage() *ResourceUsage {
+func (x *NodeServiceGetUsageResponse) GetUsage() *ResourceUsage {
 	if x != nil {
 		return x.Usage
 	}
 	return nil
 }
 
-func (x *GetNodeUsageResponse) GetActiveInstanceCount() int32 {
+func (x *NodeServiceGetUsageResponse) GetActiveInstanceCount() int32 {
 	if x != nil {
 		return x.ActiveInstanceCount
 	}
@@ -623,7 +624,7 @@ var File_orchestrator_v1_node_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1aorchestrator/v1/node.proto\x12\x0forchestrator.v1\x1a\x1corchestrator/v1/common.proto\"l\n" +
+	"\x1aorchestrator/v1/node.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"l\n" +
 	"\x12RegisterNodeManual\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x1b\n" +
@@ -631,37 +632,37 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\a_region\"F\n" +
 	"\x15RegisterNodeAuthorize\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\"\xa4\x01\n" +
-	"\x13RegisterNodeRequest\x12=\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\"\xab\x01\n" +
+	"\x1aNodeServiceRegisterRequest\x12=\n" +
 	"\x06manual\x18\x01 \x01(\v2#.orchestrator.v1.RegisterNodeManualH\x00R\x06manual\x12F\n" +
 	"\tauthorize\x18\x02 \x01(\v2&.orchestrator.v1.RegisterNodeAuthorizeH\x00R\tauthorizeB\x06\n" +
-	"\x04mode\"A\n" +
-	"\x14RegisterNodeResponse\x12)\n" +
-	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"W\n" +
-	"\x10ListNodesRequest\x128\n" +
+	"\x04mode\"H\n" +
+	"\x1bNodeServiceRegisterResponse\x12)\n" +
+	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"]\n" +
+	"\x16NodeServiceListRequest\x128\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1b.orchestrator.v1.NodeStatusH\x00R\x06status\x88\x01\x01B\t\n" +
-	"\a_status\"@\n" +
-	"\x11ListNodesResponse\x12+\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x15.orchestrator.v1.NodeR\x05nodes\")\n" +
-	"\x0eGetNodeRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"<\n" +
-	"\x0fGetNodeResponse\x12)\n" +
-	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\",\n" +
-	"\x11DeleteNodeRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"\x14\n" +
-	"\x12DeleteNodeResponse\".\n" +
-	"\x13GetNodeUsageRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"\x99\x01\n" +
-	"\x14GetNodeUsageResponse\x12\x17\n" +
+	"\a_status\"F\n" +
+	"\x17NodeServiceListResponse\x12+\n" +
+	"\x05nodes\x18\x01 \x03(\v2\x15.orchestrator.v1.NodeR\x05nodes\"0\n" +
+	"\x15NodeServiceGetRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"C\n" +
+	"\x16NodeServiceGetResponse\x12)\n" +
+	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"3\n" +
+	"\x18NodeServiceDeleteRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"\x1b\n" +
+	"\x19NodeServiceDeleteResponse\"5\n" +
+	"\x1aNodeServiceGetUsageRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"\xa0\x01\n" +
+	"\x1bNodeServiceGetUsageResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x124\n" +
 	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage\x122\n" +
-	"\x15active_instance_count\x18\x03 \x01(\x05R\x13activeInstanceCount2\xab\x03\n" +
-	"\vNodeService\x12W\n" +
-	"\bRegister\x12$.orchestrator.v1.RegisterNodeRequest\x1a%.orchestrator.v1.RegisterNodeResponse\x12M\n" +
-	"\x04List\x12!.orchestrator.v1.ListNodesRequest\x1a\".orchestrator.v1.ListNodesResponse\x12H\n" +
-	"\x03Get\x12\x1f.orchestrator.v1.GetNodeRequest\x1a .orchestrator.v1.GetNodeResponse\x12Q\n" +
-	"\x06Delete\x12\".orchestrator.v1.DeleteNodeRequest\x1a#.orchestrator.v1.DeleteNodeResponse\x12W\n" +
-	"\bGetUsage\x12$.orchestrator.v1.GetNodeUsageRequest\x1a%.orchestrator.v1.GetNodeUsageResponseB\xc9\x01\n" +
+	"\x15active_instance_count\x18\x03 \x01(\x05R\x13activeInstanceCount2\x8b\x05\n" +
+	"\vNodeService\x12\x7f\n" +
+	"\bRegister\x12+.orchestrator.v1.NodeServiceRegisterRequest\x1a,.orchestrator.v1.NodeServiceRegisterResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/nodes\x12p\n" +
+	"\x04List\x12'.orchestrator.v1.NodeServiceListRequest\x1a(.orchestrator.v1.NodeServiceListResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/nodes\x12w\n" +
+	"\x03Get\x12&.orchestrator.v1.NodeServiceGetRequest\x1a'.orchestrator.v1.NodeServiceGetResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/nodes/{node_id}\x12\x80\x01\n" +
+	"\x06Delete\x12).orchestrator.v1.NodeServiceDeleteRequest\x1a*.orchestrator.v1.NodeServiceDeleteResponse\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/nodes/{node_id}\x12\x8c\x01\n" +
+	"\bGetUsage\x12+.orchestrator.v1.NodeServiceGetUsageRequest\x1a,.orchestrator.v1.NodeServiceGetUsageResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/nodes/{node_id}/usageB\xc9\x01\n" +
 	"\x13com.orchestrator.v1B\tNodeProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
@@ -678,40 +679,40 @@ func file_orchestrator_v1_node_proto_rawDescGZIP() []byte {
 
 var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_orchestrator_v1_node_proto_goTypes = []any{
-	(*RegisterNodeManual)(nil),    // 0: orchestrator.v1.RegisterNodeManual
-	(*RegisterNodeAuthorize)(nil), // 1: orchestrator.v1.RegisterNodeAuthorize
-	(*RegisterNodeRequest)(nil),   // 2: orchestrator.v1.RegisterNodeRequest
-	(*RegisterNodeResponse)(nil),  // 3: orchestrator.v1.RegisterNodeResponse
-	(*ListNodesRequest)(nil),      // 4: orchestrator.v1.ListNodesRequest
-	(*ListNodesResponse)(nil),     // 5: orchestrator.v1.ListNodesResponse
-	(*GetNodeRequest)(nil),        // 6: orchestrator.v1.GetNodeRequest
-	(*GetNodeResponse)(nil),       // 7: orchestrator.v1.GetNodeResponse
-	(*DeleteNodeRequest)(nil),     // 8: orchestrator.v1.DeleteNodeRequest
-	(*DeleteNodeResponse)(nil),    // 9: orchestrator.v1.DeleteNodeResponse
-	(*GetNodeUsageRequest)(nil),   // 10: orchestrator.v1.GetNodeUsageRequest
-	(*GetNodeUsageResponse)(nil),  // 11: orchestrator.v1.GetNodeUsageResponse
-	(*Node)(nil),                  // 12: orchestrator.v1.Node
-	(NodeStatus)(0),               // 13: orchestrator.v1.NodeStatus
-	(*ResourceUsage)(nil),         // 14: orchestrator.v1.ResourceUsage
+	(*RegisterNodeManual)(nil),          // 0: orchestrator.v1.RegisterNodeManual
+	(*RegisterNodeAuthorize)(nil),       // 1: orchestrator.v1.RegisterNodeAuthorize
+	(*NodeServiceRegisterRequest)(nil),  // 2: orchestrator.v1.NodeServiceRegisterRequest
+	(*NodeServiceRegisterResponse)(nil), // 3: orchestrator.v1.NodeServiceRegisterResponse
+	(*NodeServiceListRequest)(nil),      // 4: orchestrator.v1.NodeServiceListRequest
+	(*NodeServiceListResponse)(nil),     // 5: orchestrator.v1.NodeServiceListResponse
+	(*NodeServiceGetRequest)(nil),       // 6: orchestrator.v1.NodeServiceGetRequest
+	(*NodeServiceGetResponse)(nil),      // 7: orchestrator.v1.NodeServiceGetResponse
+	(*NodeServiceDeleteRequest)(nil),    // 8: orchestrator.v1.NodeServiceDeleteRequest
+	(*NodeServiceDeleteResponse)(nil),   // 9: orchestrator.v1.NodeServiceDeleteResponse
+	(*NodeServiceGetUsageRequest)(nil),  // 10: orchestrator.v1.NodeServiceGetUsageRequest
+	(*NodeServiceGetUsageResponse)(nil), // 11: orchestrator.v1.NodeServiceGetUsageResponse
+	(*Node)(nil),                        // 12: orchestrator.v1.Node
+	(NodeStatus)(0),                     // 13: orchestrator.v1.NodeStatus
+	(*ResourceUsage)(nil),               // 14: orchestrator.v1.ResourceUsage
 }
 var file_orchestrator_v1_node_proto_depIdxs = []int32{
-	0,  // 0: orchestrator.v1.RegisterNodeRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
-	1,  // 1: orchestrator.v1.RegisterNodeRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
-	12, // 2: orchestrator.v1.RegisterNodeResponse.node:type_name -> orchestrator.v1.Node
-	13, // 3: orchestrator.v1.ListNodesRequest.status:type_name -> orchestrator.v1.NodeStatus
-	12, // 4: orchestrator.v1.ListNodesResponse.nodes:type_name -> orchestrator.v1.Node
-	12, // 5: orchestrator.v1.GetNodeResponse.node:type_name -> orchestrator.v1.Node
-	14, // 6: orchestrator.v1.GetNodeUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	2,  // 7: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.RegisterNodeRequest
-	4,  // 8: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.ListNodesRequest
-	6,  // 9: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.GetNodeRequest
-	8,  // 10: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.DeleteNodeRequest
-	10, // 11: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.GetNodeUsageRequest
-	3,  // 12: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.RegisterNodeResponse
-	5,  // 13: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.ListNodesResponse
-	7,  // 14: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.GetNodeResponse
-	9,  // 15: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.DeleteNodeResponse
-	11, // 16: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.GetNodeUsageResponse
+	0,  // 0: orchestrator.v1.NodeServiceRegisterRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
+	1,  // 1: orchestrator.v1.NodeServiceRegisterRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
+	12, // 2: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
+	13, // 3: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
+	12, // 4: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
+	12, // 5: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
+	14, // 6: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	2,  // 7: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
+	4,  // 8: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
+	6,  // 9: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
+	8,  // 10: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
+	10, // 11: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
+	3,  // 12: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
+	5,  // 13: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
+	7,  // 14: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
+	9,  // 15: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
+	11, // 16: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
 	12, // [12:17] is the sub-list for method output_type
 	7,  // [7:12] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
@@ -727,8 +728,8 @@ func file_orchestrator_v1_node_proto_init() {
 	file_orchestrator_v1_common_proto_init()
 	file_orchestrator_v1_node_proto_msgTypes[0].OneofWrappers = []any{}
 	file_orchestrator_v1_node_proto_msgTypes[2].OneofWrappers = []any{
-		(*RegisterNodeRequest_Manual)(nil),
-		(*RegisterNodeRequest_Authorize)(nil),
+		(*NodeServiceRegisterRequest_Manual)(nil),
+		(*NodeServiceRegisterRequest_Authorize)(nil),
 	}
 	file_orchestrator_v1_node_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}

@@ -22,10 +22,10 @@ const (
 	UserService_GetProfile_FullMethodName     = "/sso.v1.UserService/GetProfile"
 	UserService_UpdateProfile_FullMethodName  = "/sso.v1.UserService/UpdateProfile"
 	UserService_ChangePassword_FullMethodName = "/sso.v1.UserService/ChangePassword"
-	UserService_GetUserById_FullMethodName    = "/sso.v1.UserService/GetUserById"
-	UserService_SearchUsers_FullMethodName    = "/sso.v1.UserService/SearchUsers"
-	UserService_ChangeUserRole_FullMethodName = "/sso.v1.UserService/ChangeUserRole"
-	UserService_SetUserStatus_FullMethodName  = "/sso.v1.UserService/SetUserStatus"
+	UserService_Get_FullMethodName            = "/sso.v1.UserService/Get"
+	UserService_Search_FullMethodName         = "/sso.v1.UserService/Search"
+	UserService_ChangeRole_FullMethodName     = "/sso.v1.UserService/ChangeRole"
+	UserService_SetStatus_FullMethodName      = "/sso.v1.UserService/SetStatus"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -35,23 +35,23 @@ const (
 // Сервис управления профилем пользователя.
 type UserServiceClient interface {
 	// Получение профиля текущего пользователя (по JWT).
-	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
+	GetProfile(ctx context.Context, in *UserServiceGetProfileRequest, opts ...grpc.CallOption) (*UserServiceGetProfileResponse, error)
 	// Обновление профиля текущего пользователя.
-	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
+	UpdateProfile(ctx context.Context, in *UserServiceUpdateProfileRequest, opts ...grpc.CallOption) (*UserServiceUpdateProfileResponse, error)
 	// Смена пароля (требует текущий пароль).
-	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
+	ChangePassword(ctx context.Context, in *UserServiceChangePasswordRequest, opts ...grpc.CallOption) (*UserServiceChangePasswordResponse, error)
 	// Получение профиля другого пользователя по ID.
 	// Доступно для модераторов и администраторов.
-	GetUserById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error)
+	Get(ctx context.Context, in *UserServiceGetRequest, opts ...grpc.CallOption) (*UserServiceGetResponse, error)
 	// Поиск пользователей по email или display_name.
 	// Доступно для модераторов и администраторов.
-	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
+	Search(ctx context.Context, in *UserServiceSearchRequest, opts ...grpc.CallOption) (*UserServiceSearchResponse, error)
 	// Изменение роли пользователя.
 	// Доступно только администраторам.
-	ChangeUserRole(ctx context.Context, in *ChangeUserRoleRequest, opts ...grpc.CallOption) (*ChangeUserRoleResponse, error)
+	ChangeRole(ctx context.Context, in *UserServiceChangeRoleRequest, opts ...grpc.CallOption) (*UserServiceChangeRoleResponse, error)
 	// Блокировка/разблокировка пользователя.
 	// Доступно только администраторам.
-	SetUserStatus(ctx context.Context, in *SetUserStatusRequest, opts ...grpc.CallOption) (*SetUserStatusResponse, error)
+	SetStatus(ctx context.Context, in *UserServiceSetStatusRequest, opts ...grpc.CallOption) (*UserServiceSetStatusResponse, error)
 }
 
 type userServiceClient struct {
@@ -62,9 +62,9 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error) {
+func (c *userServiceClient) GetProfile(ctx context.Context, in *UserServiceGetProfileRequest, opts ...grpc.CallOption) (*UserServiceGetProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetProfileResponse)
+	out := new(UserServiceGetProfileResponse)
 	err := c.cc.Invoke(ctx, UserService_GetProfile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +72,9 @@ func (c *userServiceClient) GetProfile(ctx context.Context, in *GetProfileReques
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error) {
+func (c *userServiceClient) UpdateProfile(ctx context.Context, in *UserServiceUpdateProfileRequest, opts ...grpc.CallOption) (*UserServiceUpdateProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateProfileResponse)
+	out := new(UserServiceUpdateProfileResponse)
 	err := c.cc.Invoke(ctx, UserService_UpdateProfile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -82,9 +82,9 @@ func (c *userServiceClient) UpdateProfile(ctx context.Context, in *UpdateProfile
 	return out, nil
 }
 
-func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+func (c *userServiceClient) ChangePassword(ctx context.Context, in *UserServiceChangePasswordRequest, opts ...grpc.CallOption) (*UserServiceChangePasswordResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ChangePasswordResponse)
+	out := new(UserServiceChangePasswordResponse)
 	err := c.cc.Invoke(ctx, UserService_ChangePassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -92,40 +92,40 @@ func (c *userServiceClient) ChangePassword(ctx context.Context, in *ChangePasswo
 	return out, nil
 }
 
-func (c *userServiceClient) GetUserById(ctx context.Context, in *GetUserByIdRequest, opts ...grpc.CallOption) (*GetUserByIdResponse, error) {
+func (c *userServiceClient) Get(ctx context.Context, in *UserServiceGetRequest, opts ...grpc.CallOption) (*UserServiceGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetUserByIdResponse)
-	err := c.cc.Invoke(ctx, UserService_GetUserById_FullMethodName, in, out, cOpts...)
+	out := new(UserServiceGetResponse)
+	err := c.cc.Invoke(ctx, UserService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userServiceClient) SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error) {
+func (c *userServiceClient) Search(ctx context.Context, in *UserServiceSearchRequest, opts ...grpc.CallOption) (*UserServiceSearchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SearchUsersResponse)
-	err := c.cc.Invoke(ctx, UserService_SearchUsers_FullMethodName, in, out, cOpts...)
+	out := new(UserServiceSearchResponse)
+	err := c.cc.Invoke(ctx, UserService_Search_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userServiceClient) ChangeUserRole(ctx context.Context, in *ChangeUserRoleRequest, opts ...grpc.CallOption) (*ChangeUserRoleResponse, error) {
+func (c *userServiceClient) ChangeRole(ctx context.Context, in *UserServiceChangeRoleRequest, opts ...grpc.CallOption) (*UserServiceChangeRoleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ChangeUserRoleResponse)
-	err := c.cc.Invoke(ctx, UserService_ChangeUserRole_FullMethodName, in, out, cOpts...)
+	out := new(UserServiceChangeRoleResponse)
+	err := c.cc.Invoke(ctx, UserService_ChangeRole_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *userServiceClient) SetUserStatus(ctx context.Context, in *SetUserStatusRequest, opts ...grpc.CallOption) (*SetUserStatusResponse, error) {
+func (c *userServiceClient) SetStatus(ctx context.Context, in *UserServiceSetStatusRequest, opts ...grpc.CallOption) (*UserServiceSetStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetUserStatusResponse)
-	err := c.cc.Invoke(ctx, UserService_SetUserStatus_FullMethodName, in, out, cOpts...)
+	out := new(UserServiceSetStatusResponse)
+	err := c.cc.Invoke(ctx, UserService_SetStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,23 +139,23 @@ func (c *userServiceClient) SetUserStatus(ctx context.Context, in *SetUserStatus
 // Сервис управления профилем пользователя.
 type UserServiceServer interface {
 	// Получение профиля текущего пользователя (по JWT).
-	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
+	GetProfile(context.Context, *UserServiceGetProfileRequest) (*UserServiceGetProfileResponse, error)
 	// Обновление профиля текущего пользователя.
-	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
+	UpdateProfile(context.Context, *UserServiceUpdateProfileRequest) (*UserServiceUpdateProfileResponse, error)
 	// Смена пароля (требует текущий пароль).
-	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
+	ChangePassword(context.Context, *UserServiceChangePasswordRequest) (*UserServiceChangePasswordResponse, error)
 	// Получение профиля другого пользователя по ID.
 	// Доступно для модераторов и администраторов.
-	GetUserById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error)
+	Get(context.Context, *UserServiceGetRequest) (*UserServiceGetResponse, error)
 	// Поиск пользователей по email или display_name.
 	// Доступно для модераторов и администраторов.
-	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
+	Search(context.Context, *UserServiceSearchRequest) (*UserServiceSearchResponse, error)
 	// Изменение роли пользователя.
 	// Доступно только администраторам.
-	ChangeUserRole(context.Context, *ChangeUserRoleRequest) (*ChangeUserRoleResponse, error)
+	ChangeRole(context.Context, *UserServiceChangeRoleRequest) (*UserServiceChangeRoleResponse, error)
 	// Блокировка/разблокировка пользователя.
 	// Доступно только администраторам.
-	SetUserStatus(context.Context, *SetUserStatusRequest) (*SetUserStatusResponse, error)
+	SetStatus(context.Context, *UserServiceSetStatusRequest) (*UserServiceSetStatusResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -166,26 +166,26 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
-func (UnimplementedUserServiceServer) GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error) {
+func (UnimplementedUserServiceServer) GetProfile(context.Context, *UserServiceGetProfileRequest) (*UserServiceGetProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProfile not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
+func (UnimplementedUserServiceServer) UpdateProfile(context.Context, *UserServiceUpdateProfileRequest) (*UserServiceUpdateProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProfile not implemented")
 }
-func (UnimplementedUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+func (UnimplementedUserServiceServer) ChangePassword(context.Context, *UserServiceChangePasswordRequest) (*UserServiceChangePasswordResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ChangePassword not implemented")
 }
-func (UnimplementedUserServiceServer) GetUserById(context.Context, *GetUserByIdRequest) (*GetUserByIdResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetUserById not implemented")
+func (UnimplementedUserServiceServer) Get(context.Context, *UserServiceGetRequest) (*UserServiceGetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedUserServiceServer) SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
+func (UnimplementedUserServiceServer) Search(context.Context, *UserServiceSearchRequest) (*UserServiceSearchResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Search not implemented")
 }
-func (UnimplementedUserServiceServer) ChangeUserRole(context.Context, *ChangeUserRoleRequest) (*ChangeUserRoleResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ChangeUserRole not implemented")
+func (UnimplementedUserServiceServer) ChangeRole(context.Context, *UserServiceChangeRoleRequest) (*UserServiceChangeRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangeRole not implemented")
 }
-func (UnimplementedUserServiceServer) SetUserStatus(context.Context, *SetUserStatusRequest) (*SetUserStatusResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SetUserStatus not implemented")
+func (UnimplementedUserServiceServer) SetStatus(context.Context, *UserServiceSetStatusRequest) (*UserServiceSetStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetStatus not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -209,7 +209,7 @@ func RegisterUserServiceServer(s grpc.ServiceRegistrar, srv UserServiceServer) {
 }
 
 func _UserService_GetProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProfileRequest)
+	in := new(UserServiceGetProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -221,13 +221,13 @@ func _UserService_GetProfile_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: UserService_GetProfile_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetProfile(ctx, req.(*GetProfileRequest))
+		return srv.(UserServiceServer).GetProfile(ctx, req.(*UserServiceGetProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_UpdateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateProfileRequest)
+	in := new(UserServiceUpdateProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -239,13 +239,13 @@ func _UserService_UpdateProfile_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: UserService_UpdateProfile_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).UpdateProfile(ctx, req.(*UpdateProfileRequest))
+		return srv.(UserServiceServer).UpdateProfile(ctx, req.(*UserServiceUpdateProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ChangePasswordRequest)
+	in := new(UserServiceChangePasswordRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -257,79 +257,79 @@ func _UserService_ChangePassword_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: UserService_ChangePassword_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+		return srv.(UserServiceServer).ChangePassword(ctx, req.(*UserServiceChangePasswordRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_GetUserById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUserByIdRequest)
+func _UserService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).GetUserById(ctx, in)
+		return srv.(UserServiceServer).Get(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: UserService_GetUserById_FullMethodName,
+		FullMethod: UserService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetUserById(ctx, req.(*GetUserByIdRequest))
+		return srv.(UserServiceServer).Get(ctx, req.(*UserServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SearchUsersRequest)
+func _UserService_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceSearchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).SearchUsers(ctx, in)
+		return srv.(UserServiceServer).Search(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: UserService_SearchUsers_FullMethodName,
+		FullMethod: UserService_Search_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).SearchUsers(ctx, req.(*SearchUsersRequest))
+		return srv.(UserServiceServer).Search(ctx, req.(*UserServiceSearchRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_ChangeUserRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ChangeUserRoleRequest)
+func _UserService_ChangeRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceChangeRoleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).ChangeUserRole(ctx, in)
+		return srv.(UserServiceServer).ChangeRole(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: UserService_ChangeUserRole_FullMethodName,
+		FullMethod: UserService_ChangeRole_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ChangeUserRole(ctx, req.(*ChangeUserRoleRequest))
+		return srv.(UserServiceServer).ChangeRole(ctx, req.(*UserServiceChangeRoleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_SetUserStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetUserStatusRequest)
+func _UserService_SetStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceSetStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UserServiceServer).SetUserStatus(ctx, in)
+		return srv.(UserServiceServer).SetStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: UserService_SetUserStatus_FullMethodName,
+		FullMethod: UserService_SetStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).SetUserStatus(ctx, req.(*SetUserStatusRequest))
+		return srv.(UserServiceServer).SetStatus(ctx, req.(*UserServiceSetStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -354,20 +354,20 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UserService_ChangePassword_Handler,
 		},
 		{
-			MethodName: "GetUserById",
-			Handler:    _UserService_GetUserById_Handler,
+			MethodName: "Get",
+			Handler:    _UserService_Get_Handler,
 		},
 		{
-			MethodName: "SearchUsers",
-			Handler:    _UserService_SearchUsers_Handler,
+			MethodName: "Search",
+			Handler:    _UserService_Search_Handler,
 		},
 		{
-			MethodName: "ChangeUserRole",
-			Handler:    _UserService_ChangeUserRole_Handler,
+			MethodName: "ChangeRole",
+			Handler:    _UserService_ChangeRole_Handler,
 		},
 		{
-			MethodName: "SetUserStatus",
-			Handler:    _UserService_SetUserStatus_Handler,
+			MethodName: "SetStatus",
+			Handler:    _UserService_SetStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

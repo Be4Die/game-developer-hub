@@ -33,15 +33,15 @@ const (
 // Сервис управления вычислительными нодами.
 type NodeServiceClient interface {
 	// Подключить вычислительную ноду.
-	Register(ctx context.Context, in *RegisterNodeRequest, opts ...grpc.CallOption) (*RegisterNodeResponse, error)
+	Register(ctx context.Context, in *NodeServiceRegisterRequest, opts ...grpc.CallOption) (*NodeServiceRegisterResponse, error)
 	// Список всех нод.
-	List(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	List(ctx context.Context, in *NodeServiceListRequest, opts ...grpc.CallOption) (*NodeServiceListResponse, error)
 	// Информация о ноде.
-	Get(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error)
+	Get(ctx context.Context, in *NodeServiceGetRequest, opts ...grpc.CallOption) (*NodeServiceGetResponse, error)
 	// Удалить ноду.
-	Delete(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*DeleteNodeResponse, error)
+	Delete(ctx context.Context, in *NodeServiceDeleteRequest, opts ...grpc.CallOption) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
-	GetUsage(ctx context.Context, in *GetNodeUsageRequest, opts ...grpc.CallOption) (*GetNodeUsageResponse, error)
+	GetUsage(ctx context.Context, in *NodeServiceGetUsageRequest, opts ...grpc.CallOption) (*NodeServiceGetUsageResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -52,9 +52,9 @@ func NewNodeServiceClient(cc grpc.ClientConnInterface) NodeServiceClient {
 	return &nodeServiceClient{cc}
 }
 
-func (c *nodeServiceClient) Register(ctx context.Context, in *RegisterNodeRequest, opts ...grpc.CallOption) (*RegisterNodeResponse, error) {
+func (c *nodeServiceClient) Register(ctx context.Context, in *NodeServiceRegisterRequest, opts ...grpc.CallOption) (*NodeServiceRegisterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RegisterNodeResponse)
+	out := new(NodeServiceRegisterResponse)
 	err := c.cc.Invoke(ctx, NodeService_Register_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -62,9 +62,9 @@ func (c *nodeServiceClient) Register(ctx context.Context, in *RegisterNodeReques
 	return out, nil
 }
 
-func (c *nodeServiceClient) List(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
+func (c *nodeServiceClient) List(ctx context.Context, in *NodeServiceListRequest, opts ...grpc.CallOption) (*NodeServiceListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListNodesResponse)
+	out := new(NodeServiceListResponse)
 	err := c.cc.Invoke(ctx, NodeService_List_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -72,9 +72,9 @@ func (c *nodeServiceClient) List(ctx context.Context, in *ListNodesRequest, opts
 	return out, nil
 }
 
-func (c *nodeServiceClient) Get(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*GetNodeResponse, error) {
+func (c *nodeServiceClient) Get(ctx context.Context, in *NodeServiceGetRequest, opts ...grpc.CallOption) (*NodeServiceGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetNodeResponse)
+	out := new(NodeServiceGetResponse)
 	err := c.cc.Invoke(ctx, NodeService_Get_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -82,9 +82,9 @@ func (c *nodeServiceClient) Get(ctx context.Context, in *GetNodeRequest, opts ..
 	return out, nil
 }
 
-func (c *nodeServiceClient) Delete(ctx context.Context, in *DeleteNodeRequest, opts ...grpc.CallOption) (*DeleteNodeResponse, error) {
+func (c *nodeServiceClient) Delete(ctx context.Context, in *NodeServiceDeleteRequest, opts ...grpc.CallOption) (*NodeServiceDeleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeleteNodeResponse)
+	out := new(NodeServiceDeleteResponse)
 	err := c.cc.Invoke(ctx, NodeService_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -92,9 +92,9 @@ func (c *nodeServiceClient) Delete(ctx context.Context, in *DeleteNodeRequest, o
 	return out, nil
 }
 
-func (c *nodeServiceClient) GetUsage(ctx context.Context, in *GetNodeUsageRequest, opts ...grpc.CallOption) (*GetNodeUsageResponse, error) {
+func (c *nodeServiceClient) GetUsage(ctx context.Context, in *NodeServiceGetUsageRequest, opts ...grpc.CallOption) (*NodeServiceGetUsageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetNodeUsageResponse)
+	out := new(NodeServiceGetUsageResponse)
 	err := c.cc.Invoke(ctx, NodeService_GetUsage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -109,15 +109,15 @@ func (c *nodeServiceClient) GetUsage(ctx context.Context, in *GetNodeUsageReques
 // Сервис управления вычислительными нодами.
 type NodeServiceServer interface {
 	// Подключить вычислительную ноду.
-	Register(context.Context, *RegisterNodeRequest) (*RegisterNodeResponse, error)
+	Register(context.Context, *NodeServiceRegisterRequest) (*NodeServiceRegisterResponse, error)
 	// Список всех нод.
-	List(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	List(context.Context, *NodeServiceListRequest) (*NodeServiceListResponse, error)
 	// Информация о ноде.
-	Get(context.Context, *GetNodeRequest) (*GetNodeResponse, error)
+	Get(context.Context, *NodeServiceGetRequest) (*NodeServiceGetResponse, error)
 	// Удалить ноду.
-	Delete(context.Context, *DeleteNodeRequest) (*DeleteNodeResponse, error)
+	Delete(context.Context, *NodeServiceDeleteRequest) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
-	GetUsage(context.Context, *GetNodeUsageRequest) (*GetNodeUsageResponse, error)
+	GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -128,19 +128,19 @@ type NodeServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNodeServiceServer struct{}
 
-func (UnimplementedNodeServiceServer) Register(context.Context, *RegisterNodeRequest) (*RegisterNodeResponse, error) {
+func (UnimplementedNodeServiceServer) Register(context.Context, *NodeServiceRegisterRequest) (*NodeServiceRegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedNodeServiceServer) List(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
+func (UnimplementedNodeServiceServer) List(context.Context, *NodeServiceListRequest) (*NodeServiceListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedNodeServiceServer) Get(context.Context, *GetNodeRequest) (*GetNodeResponse, error) {
+func (UnimplementedNodeServiceServer) Get(context.Context, *NodeServiceGetRequest) (*NodeServiceGetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedNodeServiceServer) Delete(context.Context, *DeleteNodeRequest) (*DeleteNodeResponse, error) {
+func (UnimplementedNodeServiceServer) Delete(context.Context, *NodeServiceDeleteRequest) (*NodeServiceDeleteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
-func (UnimplementedNodeServiceServer) GetUsage(context.Context, *GetNodeUsageRequest) (*GetNodeUsageResponse, error) {
+func (UnimplementedNodeServiceServer) GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
@@ -165,7 +165,7 @@ func RegisterNodeServiceServer(s grpc.ServiceRegistrar, srv NodeServiceServer) {
 }
 
 func _NodeService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterNodeRequest)
+	in := new(NodeServiceRegisterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -177,13 +177,13 @@ func _NodeService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: NodeService_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Register(ctx, req.(*RegisterNodeRequest))
+		return srv.(NodeServiceServer).Register(ctx, req.(*NodeServiceRegisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _NodeService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListNodesRequest)
+	in := new(NodeServiceListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -195,13 +195,13 @@ func _NodeService_List_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: NodeService_List_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).List(ctx, req.(*ListNodesRequest))
+		return srv.(NodeServiceServer).List(ctx, req.(*NodeServiceListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _NodeService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNodeRequest)
+	in := new(NodeServiceGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -213,13 +213,13 @@ func _NodeService_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: NodeService_Get_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Get(ctx, req.(*GetNodeRequest))
+		return srv.(NodeServiceServer).Get(ctx, req.(*NodeServiceGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _NodeService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteNodeRequest)
+	in := new(NodeServiceDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -231,13 +231,13 @@ func _NodeService_Delete_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: NodeService_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Delete(ctx, req.(*DeleteNodeRequest))
+		return srv.(NodeServiceServer).Delete(ctx, req.(*NodeServiceDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _NodeService_GetUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNodeUsageRequest)
+	in := new(NodeServiceGetUsageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -249,7 +249,7 @@ func _NodeService_GetUsage_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: NodeService_GetUsage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).GetUsage(ctx, req.(*GetNodeUsageRequest))
+		return srv.(NodeServiceServer).GetUsage(ctx, req.(*NodeServiceGetUsageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

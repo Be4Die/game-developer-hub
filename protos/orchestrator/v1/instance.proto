@@ -2,32 +2,49 @@ syntax = "proto3";
 
 package orchestrator.v1;
 
+import "google/api/annotations.proto";
 import "orchestrator/v1/common.proto";
 
 // Сервис управления инстансами игровых серверов.
 service InstanceService {
   // Запустить инстанс сервера.
-  rpc Start(StartInstanceRequest) returns (StartInstanceResponse);
+  rpc Start(InstanceServiceStartRequest) returns (InstanceServiceStartResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/instances"
+      body: "*"
+    };
+  }
 
   // Список инстансов игры.
-  rpc List(ListInstancesRequest) returns (ListInstancesResponse);
+  rpc List(InstanceServiceListRequest) returns (InstanceServiceListResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/instances"};
+  }
 
   // Информация об инстансе.
-  rpc Get(GetInstanceRequest) returns (GetInstanceResponse);
+  rpc Get(InstanceServiceGetRequest) returns (InstanceServiceGetResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/instances/{instance_id}"};
+  }
 
   // Остановить инстанс.
-  rpc Stop(StopInstanceRequest) returns (StopInstanceResponse);
+  rpc Stop(InstanceServiceStopRequest) returns (InstanceServiceStopResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/instances/{instance_id}:stop"
+      body: "*"
+    };
+  }
 
-  // Поток журналов инстанса (server streaming).
-  rpc StreamLogs(StreamLogsRequest) returns (stream LogEntry);
+  // Поток журналов инстанса (server streaming) — без HTTP-маппинга.
+  rpc StreamLogs(InstanceServiceStreamLogsRequest) returns (stream InstanceServiceStreamLogsResponse);
 
   // Потребление ресурсов инстанса.
-  rpc GetUsage(GetInstanceUsageRequest) returns (GetInstanceUsageResponse);
+  rpc GetUsage(InstanceServiceGetUsageRequest) returns (InstanceServiceGetUsageResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/instances/{instance_id}/usage"};
+  }
 }
 
 // ─── Start ──────────────────────────────────────────────────────────────────
 
-message StartInstanceRequest {
+message InstanceServiceStartRequest {
   int64 game_id = 1;
   string build_version = 2;
   // Ручной (manual) или автоматический (auto) режим.
@@ -41,48 +58,48 @@ message StartInstanceRequest {
   optional uint32 max_players = 10;
 }
 
-message StartInstanceResponse {
+message InstanceServiceStartResponse {
   Instance instance = 1;
 }
 
 // ─── List ───────────────────────────────────────────────────────────────────
 
-message ListInstancesRequest {
+message InstanceServiceListRequest {
   int64 game_id = 1;
   optional InstanceStatus status = 2;
 }
 
-message ListInstancesResponse {
+message InstanceServiceListResponse {
   repeated Instance instances = 1;
 }
 
 // ─── Get ────────────────────────────────────────────────────────────────────
 
-message GetInstanceRequest {
+message InstanceServiceGetRequest {
   int64 game_id = 1;
   int64 instance_id = 2;
 }
 
-message GetInstanceResponse {
+message InstanceServiceGetResponse {
   Instance instance = 1;
 }
 
 // ─── Stop ───────────────────────────────────────────────────────────────────
 
-message StopInstanceRequest {
+message InstanceServiceStopRequest {
   int64 game_id = 1;
   int64 instance_id = 2;
   // Таймаут остановки в секундах (0 = значение по умолчанию 30 сек).
   int32 timeout = 3;
 }
 
-message StopInstanceResponse {
+message InstanceServiceStopResponse {
   Instance instance = 1;
 }
 
 // ─── StreamLogs ─────────────────────────────────────────────────────────────
 
-message StreamLogsRequest {
+message InstanceServiceStreamLogsRequest {
   int64 game_id = 1;
   int64 instance_id = 2;
   bool follow = 3;
@@ -91,14 +108,18 @@ message StreamLogsRequest {
   optional LogSource source = 6;
 }
 
+message InstanceServiceStreamLogsResponse {
+  LogEntry entry = 1;
+}
+
 // ─── GetUsage ───────────────────────────────────────────────────────────────
 
-message GetInstanceUsageRequest {
+message InstanceServiceGetUsageRequest {
   int64 game_id = 1;
   int64 instance_id = 2;
 }
 
-message GetInstanceUsageResponse {
+message InstanceServiceGetUsageResponse {
   int64 instance_id = 1;
   ResourceUsage usage = 2;
 }

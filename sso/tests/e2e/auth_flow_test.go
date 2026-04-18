@@ -20,7 +20,7 @@ func TestE2E_FullAuthFlow(t *testing.T) {
 
 	// Step 1: Register via gRPC
 	displayName := "E2E User"
-	regResp, err := env.authClient.Register(ctx, &pb.RegisterRequest{
+	regResp, err := env.authClient.Register(ctx, &pb.AuthServiceRegisterRequest{
 		Email:       "e2e-flow@test.com",
 		Password:    "password123",
 		DisplayName: displayName,
@@ -40,7 +40,7 @@ func TestE2E_FullAuthFlow(t *testing.T) {
 	userID := regResp.User.Id
 
 	// User is registered but not verified yet. Login should fail.
-	_, err = env.authClient.Login(ctx, &pb.LoginRequest{
+	_, err = env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email:    "e2e-flow@test.com",
 		Password: "password123",
 	})
@@ -53,13 +53,13 @@ func TestE2E_FullAuthFlow(t *testing.T) {
 		t.Fatalf("store verification code failed: %v", err)
 	}
 
-	_, err = env.authClient.VerifyEmail(ctx, &pb.VerifyEmailRequest{VerificationCode: "123456"})
+	_, err = env.authClient.VerifyEmail(ctx, &pb.AuthServiceVerifyEmailRequest{VerificationCode: "123456"})
 	if err != nil {
 		t.Fatalf("VerifyEmail failed: %v", err)
 	}
 
 	// Step 3: Login via gRPC
-	loginResp, err := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, err := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email:    "e2e-flow@test.com",
 		Password: "password123",
 	})
@@ -96,7 +96,7 @@ func TestE2E_TokenRotation(t *testing.T) {
 	createVerifiedUserE2E(t, env, "rotation@test.com", "Rotation User")
 
 	// Login
-	loginResp, err := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, err := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "rotation@test.com", Password: "password123",
 	})
 	if err != nil {
@@ -105,7 +105,7 @@ func TestE2E_TokenRotation(t *testing.T) {
 	originalRT := loginResp.Tokens.RefreshToken
 
 	// First refresh
-	refreshResp1, err := env.authClient.RefreshToken(ctx, &pb.RefreshTokenRequest{RefreshToken: originalRT})
+	refreshResp1, err := env.authClient.RefreshToken(ctx, &pb.AuthServiceRefreshTokenRequest{RefreshToken: originalRT})
 	if err != nil {
 		t.Fatalf("First refresh failed: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestE2E_TokenRotation(t *testing.T) {
 	}
 
 	// Use new refresh token
-	refreshResp2, err := env.authClient.RefreshToken(ctx, &pb.RefreshTokenRequest{RefreshToken: refreshResp1.Tokens.RefreshToken})
+	refreshResp2, err := env.authClient.RefreshToken(ctx, &pb.AuthServiceRefreshTokenRequest{RefreshToken: refreshResp1.Tokens.RefreshToken})
 	if err != nil {
 		t.Fatalf("Second refresh failed: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestE2E_TokenRotation(t *testing.T) {
 	}
 
 	// Old token should be invalid
-	_, err = env.authClient.RefreshToken(ctx, &pb.RefreshTokenRequest{RefreshToken: originalRT})
+	_, err = env.authClient.RefreshToken(ctx, &pb.AuthServiceRefreshTokenRequest{RefreshToken: originalRT})
 	if err == nil {
 		t.Error("expected error using original refresh token")
 	}
@@ -138,7 +138,7 @@ func TestE2E_ValidateToken(t *testing.T) {
 
 	createVerifiedUserE2E(t, env, "validate-e2e@test.com", "Validate E2E")
 
-	loginResp, _ := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, _ := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "validate-e2e@test.com", Password: "password123",
 	})
 
@@ -163,14 +163,14 @@ func TestE2E_ListSessions(t *testing.T) {
 	env.cleanupTables(t)
 
 	createVerifiedUserE2E(t, env, "list-sessions@test.com", "List Sessions")
-	loginResp, _ := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, _ := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "list-sessions@test.com", Password: "password123",
 	})
 	userID := loginResp.User.Id
 
 	// Login again to have multiple sessions
 	time.Sleep(100 * time.Millisecond)
-	_, _ = env.authClient.Login(ctx, &pb.LoginRequest{
+	_, _ = env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "list-sessions@test.com", Password: "password123",
 	})
 
@@ -191,7 +191,7 @@ func TestE2E_RevokeSession(t *testing.T) {
 	env.cleanupTables(t)
 
 	createVerifiedUserE2E(t, env, "revoke-e2e@test.com", "Revoke E2E")
-	loginResp, _ := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, _ := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "revoke-e2e@test.com", Password: "password123",
 	})
 	userID := loginResp.User.Id
@@ -224,17 +224,17 @@ func TestE2E_Logout(t *testing.T) {
 	env.cleanupTables(t)
 
 	createVerifiedUserE2E(t, env, "logout-e2e@test.com", "Logout E2E")
-	loginResp, _ := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, _ := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "logout-e2e@test.com", Password: "password123",
 	})
 
-	_, err := env.authClient.Logout(ctx, &pb.LogoutRequest{RefreshToken: loginResp.Tokens.RefreshToken})
+	_, err := env.authClient.Logout(ctx, &pb.AuthServiceLogoutRequest{RefreshToken: loginResp.Tokens.RefreshToken})
 	if err != nil {
 		t.Fatalf("Logout failed: %v", err)
 	}
 
 	// Refresh should fail
-	_, err = env.authClient.RefreshToken(ctx, &pb.RefreshTokenRequest{RefreshToken: loginResp.Tokens.RefreshToken})
+	_, err = env.authClient.RefreshToken(ctx, &pb.AuthServiceRefreshTokenRequest{RefreshToken: loginResp.Tokens.RefreshToken})
 	if err == nil {
 		t.Error("expected error after logout")
 	}
@@ -250,13 +250,13 @@ func TestE2E_UserProfile(t *testing.T) {
 	createVerifiedUserE2E(t, env, "profile-e2e@test.com", "Original Name")
 
 	// We need user ID — get it by login
-	loginResp, _ := env.authClient.Login(ctx, &pb.LoginRequest{
+	loginResp, _ := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "profile-e2e@test.com", Password: "password123",
 	})
 	userID := loginResp.User.Id
 
 	// Get profile
-	profileResp, err := env.userClient.GetProfile(ctx, &pb.GetProfileRequest{UserId: userID})
+	profileResp, err := env.userClient.GetProfile(ctx, &pb.UserServiceGetProfileRequest{UserId: userID})
 	if err != nil {
 		t.Fatalf("GetProfile failed: %v", err)
 	}
@@ -267,7 +267,7 @@ func TestE2E_UserProfile(t *testing.T) {
 	// Update profile — requires user_id in context (extracted from metadata by interceptor)
 	// Since we don't have auth interceptor in e2e, we use GetUserById instead
 	newName := "Updated Name"
-	_, err = env.userClient.UpdateProfile(ctx, &pb.UpdateProfileRequest{DisplayName: &newName})
+	_, err = env.userClient.UpdateProfile(ctx, &pb.UserServiceUpdateProfileRequest{DisplayName: &newName})
 	// This should fail because there's no user_id in context
 	if err == nil {
 		t.Error("expected error without user context")
@@ -286,7 +286,7 @@ func TestE2E_ErrorCases(t *testing.T) {
 	env.cleanupTables(t)
 
 	// Login with wrong password
-	_, err := env.authClient.Login(ctx, &pb.LoginRequest{
+	_, err := env.authClient.Login(ctx, &pb.AuthServiceLoginRequest{
 		Email: "nonexistent@test.com", Password: "password",
 	})
 	if err == nil {

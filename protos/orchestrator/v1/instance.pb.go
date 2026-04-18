@@ -7,6 +7,7 @@
 package orchestratorv1
 
 import (
+	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type StartInstanceRequest struct {
+type InstanceServiceStartRequest struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
 	GameId       int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	BuildVersion string                 `protobuf:"bytes,2,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
@@ -38,20 +39,20 @@ type StartInstanceRequest struct {
 	sizeCache        protoimpl.SizeCache
 }
 
-func (x *StartInstanceRequest) Reset() {
-	*x = StartInstanceRequest{}
+func (x *InstanceServiceStartRequest) Reset() {
+	*x = InstanceServiceStartRequest{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StartInstanceRequest) String() string {
+func (x *InstanceServiceStartRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StartInstanceRequest) ProtoMessage() {}
+func (*InstanceServiceStartRequest) ProtoMessage() {}
 
-func (x *StartInstanceRequest) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceStartRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -63,102 +64,102 @@ func (x *StartInstanceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartInstanceRequest.ProtoReflect.Descriptor instead.
-func (*StartInstanceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceStartRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStartRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *StartInstanceRequest) GetGameId() int64 {
+func (x *InstanceServiceStartRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *StartInstanceRequest) GetBuildVersion() string {
+func (x *InstanceServiceStartRequest) GetBuildVersion() string {
 	if x != nil {
 		return x.BuildVersion
 	}
 	return ""
 }
 
-func (x *StartInstanceRequest) GetServerMode() string {
+func (x *InstanceServiceStartRequest) GetServerMode() string {
 	if x != nil {
 		return x.ServerMode
 	}
 	return ""
 }
 
-func (x *StartInstanceRequest) GetName() string {
+func (x *InstanceServiceStartRequest) GetName() string {
 	if x != nil && x.Name != nil {
 		return *x.Name
 	}
 	return ""
 }
 
-func (x *StartInstanceRequest) GetPortAllocation() *PortAllocation {
+func (x *InstanceServiceStartRequest) GetPortAllocation() *PortAllocation {
 	if x != nil {
 		return x.PortAllocation
 	}
 	return nil
 }
 
-func (x *StartInstanceRequest) GetResourceLimits() *ResourceLimits {
+func (x *InstanceServiceStartRequest) GetResourceLimits() *ResourceLimits {
 	if x != nil {
 		return x.ResourceLimits
 	}
 	return nil
 }
 
-func (x *StartInstanceRequest) GetEnvVars() map[string]string {
+func (x *InstanceServiceStartRequest) GetEnvVars() map[string]string {
 	if x != nil {
 		return x.EnvVars
 	}
 	return nil
 }
 
-func (x *StartInstanceRequest) GetArgs() []string {
+func (x *InstanceServiceStartRequest) GetArgs() []string {
 	if x != nil {
 		return x.Args
 	}
 	return nil
 }
 
-func (x *StartInstanceRequest) GetDeveloperPayload() map[string]string {
+func (x *InstanceServiceStartRequest) GetDeveloperPayload() map[string]string {
 	if x != nil {
 		return x.DeveloperPayload
 	}
 	return nil
 }
 
-func (x *StartInstanceRequest) GetMaxPlayers() uint32 {
+func (x *InstanceServiceStartRequest) GetMaxPlayers() uint32 {
 	if x != nil && x.MaxPlayers != nil {
 		return *x.MaxPlayers
 	}
 	return 0
 }
 
-type StartInstanceResponse struct {
+type InstanceServiceStartResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instance      *Instance              `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StartInstanceResponse) Reset() {
-	*x = StartInstanceResponse{}
+func (x *InstanceServiceStartResponse) Reset() {
+	*x = InstanceServiceStartResponse{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StartInstanceResponse) String() string {
+func (x *InstanceServiceStartResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StartInstanceResponse) ProtoMessage() {}
+func (*InstanceServiceStartResponse) ProtoMessage() {}
 
-func (x *StartInstanceResponse) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceStartResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -170,19 +171,19 @@ func (x *StartInstanceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartInstanceResponse.ProtoReflect.Descriptor instead.
-func (*StartInstanceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceStartResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStartResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *StartInstanceResponse) GetInstance() *Instance {
+func (x *InstanceServiceStartResponse) GetInstance() *Instance {
 	if x != nil {
 		return x.Instance
 	}
 	return nil
 }
 
-type ListInstancesRequest struct {
+type InstanceServiceListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	Status        *InstanceStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=orchestrator.v1.InstanceStatus,oneof" json:"status,omitempty"`
@@ -190,20 +191,20 @@ type ListInstancesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListInstancesRequest) Reset() {
-	*x = ListInstancesRequest{}
+func (x *InstanceServiceListRequest) Reset() {
+	*x = InstanceServiceListRequest{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListInstancesRequest) String() string {
+func (x *InstanceServiceListRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListInstancesRequest) ProtoMessage() {}
+func (*InstanceServiceListRequest) ProtoMessage() {}
 
-func (x *ListInstancesRequest) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceListRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -215,46 +216,46 @@ func (x *ListInstancesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListInstancesRequest.ProtoReflect.Descriptor instead.
-func (*ListInstancesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceListRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceListRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListInstancesRequest) GetGameId() int64 {
+func (x *InstanceServiceListRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *ListInstancesRequest) GetStatus() InstanceStatus {
+func (x *InstanceServiceListRequest) GetStatus() InstanceStatus {
 	if x != nil && x.Status != nil {
 		return *x.Status
 	}
 	return InstanceStatus_INSTANCE_STATUS_UNSPECIFIED
 }
 
-type ListInstancesResponse struct {
+type InstanceServiceListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instances     []*Instance            `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListInstancesResponse) Reset() {
-	*x = ListInstancesResponse{}
+func (x *InstanceServiceListResponse) Reset() {
+	*x = InstanceServiceListResponse{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListInstancesResponse) String() string {
+func (x *InstanceServiceListResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListInstancesResponse) ProtoMessage() {}
+func (*InstanceServiceListResponse) ProtoMessage() {}
 
-func (x *ListInstancesResponse) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceListResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -266,19 +267,19 @@ func (x *ListInstancesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListInstancesResponse.ProtoReflect.Descriptor instead.
-func (*ListInstancesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceListResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceListResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListInstancesResponse) GetInstances() []*Instance {
+func (x *InstanceServiceListResponse) GetInstances() []*Instance {
 	if x != nil {
 		return x.Instances
 	}
 	return nil
 }
 
-type GetInstanceRequest struct {
+type InstanceServiceGetRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	InstanceId    int64                  `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
@@ -286,20 +287,20 @@ type GetInstanceRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetInstanceRequest) Reset() {
-	*x = GetInstanceRequest{}
+func (x *InstanceServiceGetRequest) Reset() {
+	*x = InstanceServiceGetRequest{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetInstanceRequest) String() string {
+func (x *InstanceServiceGetRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetInstanceRequest) ProtoMessage() {}
+func (*InstanceServiceGetRequest) ProtoMessage() {}
 
-func (x *GetInstanceRequest) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceGetRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -311,46 +312,46 @@ func (x *GetInstanceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetInstanceRequest.ProtoReflect.Descriptor instead.
-func (*GetInstanceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceGetRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceGetRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetInstanceRequest) GetGameId() int64 {
+func (x *InstanceServiceGetRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *GetInstanceRequest) GetInstanceId() int64 {
+func (x *InstanceServiceGetRequest) GetInstanceId() int64 {
 	if x != nil {
 		return x.InstanceId
 	}
 	return 0
 }
 
-type GetInstanceResponse struct {
+type InstanceServiceGetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instance      *Instance              `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetInstanceResponse) Reset() {
-	*x = GetInstanceResponse{}
+func (x *InstanceServiceGetResponse) Reset() {
+	*x = InstanceServiceGetResponse{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetInstanceResponse) String() string {
+func (x *InstanceServiceGetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetInstanceResponse) ProtoMessage() {}
+func (*InstanceServiceGetResponse) ProtoMessage() {}
 
-func (x *GetInstanceResponse) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceGetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -362,19 +363,19 @@ func (x *GetInstanceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetInstanceResponse.ProtoReflect.Descriptor instead.
-func (*GetInstanceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceGetResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceGetResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetInstanceResponse) GetInstance() *Instance {
+func (x *InstanceServiceGetResponse) GetInstance() *Instance {
 	if x != nil {
 		return x.Instance
 	}
 	return nil
 }
 
-type StopInstanceRequest struct {
+type InstanceServiceStopRequest struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	GameId     int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	InstanceId int64                  `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
@@ -384,20 +385,20 @@ type StopInstanceRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StopInstanceRequest) Reset() {
-	*x = StopInstanceRequest{}
+func (x *InstanceServiceStopRequest) Reset() {
+	*x = InstanceServiceStopRequest{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StopInstanceRequest) String() string {
+func (x *InstanceServiceStopRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StopInstanceRequest) ProtoMessage() {}
+func (*InstanceServiceStopRequest) ProtoMessage() {}
 
-func (x *StopInstanceRequest) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceStopRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -409,53 +410,53 @@ func (x *StopInstanceRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StopInstanceRequest.ProtoReflect.Descriptor instead.
-func (*StopInstanceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceStopRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStopRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *StopInstanceRequest) GetGameId() int64 {
+func (x *InstanceServiceStopRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *StopInstanceRequest) GetInstanceId() int64 {
+func (x *InstanceServiceStopRequest) GetInstanceId() int64 {
 	if x != nil {
 		return x.InstanceId
 	}
 	return 0
 }
 
-func (x *StopInstanceRequest) GetTimeout() int32 {
+func (x *InstanceServiceStopRequest) GetTimeout() int32 {
 	if x != nil {
 		return x.Timeout
 	}
 	return 0
 }
 
-type StopInstanceResponse struct {
+type InstanceServiceStopResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instance      *Instance              `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StopInstanceResponse) Reset() {
-	*x = StopInstanceResponse{}
+func (x *InstanceServiceStopResponse) Reset() {
+	*x = InstanceServiceStopResponse{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StopInstanceResponse) String() string {
+func (x *InstanceServiceStopResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StopInstanceResponse) ProtoMessage() {}
+func (*InstanceServiceStopResponse) ProtoMessage() {}
 
-func (x *StopInstanceResponse) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceStopResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -467,19 +468,19 @@ func (x *StopInstanceResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StopInstanceResponse.ProtoReflect.Descriptor instead.
-func (*StopInstanceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceStopResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStopResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *StopInstanceResponse) GetInstance() *Instance {
+func (x *InstanceServiceStopResponse) GetInstance() *Instance {
 	if x != nil {
 		return x.Instance
 	}
 	return nil
 }
 
-type StreamLogsRequest struct {
+type InstanceServiceStreamLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	InstanceId    int64                  `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
@@ -491,20 +492,20 @@ type StreamLogsRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StreamLogsRequest) Reset() {
-	*x = StreamLogsRequest{}
+func (x *InstanceServiceStreamLogsRequest) Reset() {
+	*x = InstanceServiceStreamLogsRequest{}
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StreamLogsRequest) String() string {
+func (x *InstanceServiceStreamLogsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StreamLogsRequest) ProtoMessage() {}
+func (*InstanceServiceStreamLogsRequest) ProtoMessage() {}
 
-func (x *StreamLogsRequest) ProtoReflect() protoreflect.Message {
+func (x *InstanceServiceStreamLogsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_orchestrator_v1_instance_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -516,54 +517,98 @@ func (x *StreamLogsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StreamLogsRequest.ProtoReflect.Descriptor instead.
-func (*StreamLogsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use InstanceServiceStreamLogsRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStreamLogsRequest) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *StreamLogsRequest) GetGameId() int64 {
+func (x *InstanceServiceStreamLogsRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *StreamLogsRequest) GetInstanceId() int64 {
+func (x *InstanceServiceStreamLogsRequest) GetInstanceId() int64 {
 	if x != nil {
 		return x.InstanceId
 	}
 	return 0
 }
 
-func (x *StreamLogsRequest) GetFollow() bool {
+func (x *InstanceServiceStreamLogsRequest) GetFollow() bool {
 	if x != nil {
 		return x.Follow
 	}
 	return false
 }
 
-func (x *StreamLogsRequest) GetTail() int32 {
+func (x *InstanceServiceStreamLogsRequest) GetTail() int32 {
 	if x != nil {
 		return x.Tail
 	}
 	return 0
 }
 
-func (x *StreamLogsRequest) GetSinceUnixNano() int64 {
+func (x *InstanceServiceStreamLogsRequest) GetSinceUnixNano() int64 {
 	if x != nil && x.SinceUnixNano != nil {
 		return *x.SinceUnixNano
 	}
 	return 0
 }
 
-func (x *StreamLogsRequest) GetSource() LogSource {
+func (x *InstanceServiceStreamLogsRequest) GetSource() LogSource {
 	if x != nil && x.Source != nil {
 		return *x.Source
 	}
 	return LogSource_LOG_SOURCE_UNSPECIFIED
 }
 
-type GetInstanceUsageRequest struct {
+type InstanceServiceStreamLogsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entry         *LogEntry              `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceServiceStreamLogsResponse) Reset() {
+	*x = InstanceServiceStreamLogsResponse{}
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceServiceStreamLogsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceServiceStreamLogsResponse) ProtoMessage() {}
+
+func (x *InstanceServiceStreamLogsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceServiceStreamLogsResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceStreamLogsResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *InstanceServiceStreamLogsResponse) GetEntry() *LogEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+type InstanceServiceGetUsageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	InstanceId    int64                  `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
@@ -571,21 +616,21 @@ type GetInstanceUsageRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetInstanceUsageRequest) Reset() {
-	*x = GetInstanceUsageRequest{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[9]
+func (x *InstanceServiceGetUsageRequest) Reset() {
+	*x = InstanceServiceGetUsageRequest{}
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetInstanceUsageRequest) String() string {
+func (x *InstanceServiceGetUsageRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetInstanceUsageRequest) ProtoMessage() {}
+func (*InstanceServiceGetUsageRequest) ProtoMessage() {}
 
-func (x *GetInstanceUsageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[9]
+func (x *InstanceServiceGetUsageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -596,26 +641,26 @@ func (x *GetInstanceUsageRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetInstanceUsageRequest.ProtoReflect.Descriptor instead.
-func (*GetInstanceUsageRequest) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{9}
+// Deprecated: Use InstanceServiceGetUsageRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceGetUsageRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *GetInstanceUsageRequest) GetGameId() int64 {
+func (x *InstanceServiceGetUsageRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
 	}
 	return 0
 }
 
-func (x *GetInstanceUsageRequest) GetInstanceId() int64 {
+func (x *InstanceServiceGetUsageRequest) GetInstanceId() int64 {
 	if x != nil {
 		return x.InstanceId
 	}
 	return 0
 }
 
-type GetInstanceUsageResponse struct {
+type InstanceServiceGetUsageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	InstanceId    int64                  `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
 	Usage         *ResourceUsage         `protobuf:"bytes,2,opt,name=usage,proto3" json:"usage,omitempty"`
@@ -623,21 +668,21 @@ type GetInstanceUsageResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetInstanceUsageResponse) Reset() {
-	*x = GetInstanceUsageResponse{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[10]
+func (x *InstanceServiceGetUsageResponse) Reset() {
+	*x = InstanceServiceGetUsageResponse{}
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetInstanceUsageResponse) String() string {
+func (x *InstanceServiceGetUsageResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetInstanceUsageResponse) ProtoMessage() {}
+func (*InstanceServiceGetUsageResponse) ProtoMessage() {}
 
-func (x *GetInstanceUsageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[10]
+func (x *InstanceServiceGetUsageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -648,19 +693,19 @@ func (x *GetInstanceUsageResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetInstanceUsageResponse.ProtoReflect.Descriptor instead.
-func (*GetInstanceUsageResponse) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{10}
+// Deprecated: Use InstanceServiceGetUsageResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceGetUsageResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *GetInstanceUsageResponse) GetInstanceId() int64 {
+func (x *InstanceServiceGetUsageResponse) GetInstanceId() int64 {
 	if x != nil {
 		return x.InstanceId
 	}
 	return 0
 }
 
-func (x *GetInstanceUsageResponse) GetUsage() *ResourceUsage {
+func (x *InstanceServiceGetUsageResponse) GetUsage() *ResourceUsage {
 	if x != nil {
 		return x.Usage
 	}
@@ -671,18 +716,18 @@ var File_orchestrator_v1_instance_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\n" +
-	"\x1eorchestrator/v1/instance.proto\x12\x0forchestrator.v1\x1a\x1corchestrator/v1/common.proto\"\xe1\x05\n" +
-	"\x14StartInstanceRequest\x12\x17\n" +
+	"\x1eorchestrator/v1/instance.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"\xf6\x05\n" +
+	"\x1bInstanceServiceStartRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12#\n" +
 	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\x12\x1f\n" +
 	"\vserver_mode\x18\x03 \x01(\tR\n" +
 	"serverMode\x12\x17\n" +
 	"\x04name\x18\x04 \x01(\tH\x00R\x04name\x88\x01\x01\x12M\n" +
 	"\x0fport_allocation\x18\x05 \x01(\v2\x1f.orchestrator.v1.PortAllocationH\x01R\x0eportAllocation\x88\x01\x01\x12M\n" +
-	"\x0fresource_limits\x18\x06 \x01(\v2\x1f.orchestrator.v1.ResourceLimitsH\x02R\x0eresourceLimits\x88\x01\x01\x12M\n" +
-	"\benv_vars\x18\a \x03(\v22.orchestrator.v1.StartInstanceRequest.EnvVarsEntryR\aenvVars\x12\x12\n" +
-	"\x04args\x18\b \x03(\tR\x04args\x12h\n" +
-	"\x11developer_payload\x18\t \x03(\v2;.orchestrator.v1.StartInstanceRequest.DeveloperPayloadEntryR\x10developerPayload\x12$\n" +
+	"\x0fresource_limits\x18\x06 \x01(\v2\x1f.orchestrator.v1.ResourceLimitsH\x02R\x0eresourceLimits\x88\x01\x01\x12T\n" +
+	"\benv_vars\x18\a \x03(\v29.orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntryR\aenvVars\x12\x12\n" +
+	"\x04args\x18\b \x03(\tR\x04args\x12o\n" +
+	"\x11developer_payload\x18\t \x03(\v2B.orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntryR\x10developerPayload\x12$\n" +
 	"\vmax_players\x18\n" +
 	" \x01(\rH\x03R\n" +
 	"maxPlayers\x88\x01\x01\x1a:\n" +
@@ -695,29 +740,29 @@ const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\x05_nameB\x12\n" +
 	"\x10_port_allocationB\x12\n" +
 	"\x10_resource_limitsB\x0e\n" +
-	"\f_max_players\"N\n" +
-	"\x15StartInstanceResponse\x125\n" +
-	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"x\n" +
-	"\x14ListInstancesRequest\x12\x17\n" +
+	"\f_max_players\"U\n" +
+	"\x1cInstanceServiceStartResponse\x125\n" +
+	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"~\n" +
+	"\x1aInstanceServiceListRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12<\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.orchestrator.v1.InstanceStatusH\x00R\x06status\x88\x01\x01B\t\n" +
-	"\a_status\"P\n" +
-	"\x15ListInstancesResponse\x127\n" +
-	"\tinstances\x18\x01 \x03(\v2\x19.orchestrator.v1.InstanceR\tinstances\"N\n" +
-	"\x12GetInstanceRequest\x12\x17\n" +
+	"\a_status\"V\n" +
+	"\x1bInstanceServiceListResponse\x127\n" +
+	"\tinstances\x18\x01 \x03(\v2\x19.orchestrator.v1.InstanceR\tinstances\"U\n" +
+	"\x19InstanceServiceGetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\x03R\n" +
-	"instanceId\"L\n" +
-	"\x13GetInstanceResponse\x125\n" +
-	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"i\n" +
-	"\x13StopInstanceRequest\x12\x17\n" +
+	"instanceId\"S\n" +
+	"\x1aInstanceServiceGetResponse\x125\n" +
+	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"p\n" +
+	"\x1aInstanceServiceStopRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\x03R\n" +
 	"instanceId\x12\x18\n" +
-	"\atimeout\x18\x03 \x01(\x05R\atimeout\"M\n" +
-	"\x14StopInstanceResponse\x125\n" +
-	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"\xfe\x01\n" +
-	"\x11StreamLogsRequest\x12\x17\n" +
+	"\atimeout\x18\x03 \x01(\x05R\atimeout\"T\n" +
+	"\x1bInstanceServiceStopResponse\x125\n" +
+	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"\x8d\x02\n" +
+	" InstanceServiceStreamLogsRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\x03R\n" +
 	"instanceId\x12\x16\n" +
@@ -726,23 +771,25 @@ const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\x0fsince_unix_nano\x18\x05 \x01(\x03H\x00R\rsinceUnixNano\x88\x01\x01\x127\n" +
 	"\x06source\x18\x06 \x01(\x0e2\x1a.orchestrator.v1.LogSourceH\x01R\x06source\x88\x01\x01B\x12\n" +
 	"\x10_since_unix_nanoB\t\n" +
-	"\a_source\"S\n" +
-	"\x17GetInstanceUsageRequest\x12\x17\n" +
+	"\a_source\"T\n" +
+	"!InstanceServiceStreamLogsResponse\x12/\n" +
+	"\x05entry\x18\x01 \x01(\v2\x19.orchestrator.v1.LogEntryR\x05entry\"Z\n" +
+	"\x1eInstanceServiceGetUsageRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
 	"\vinstance_id\x18\x02 \x01(\x03R\n" +
-	"instanceId\"q\n" +
-	"\x18GetInstanceUsageResponse\x12\x1f\n" +
+	"instanceId\"x\n" +
+	"\x1fInstanceServiceGetUsageResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x124\n" +
-	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\x97\x04\n" +
-	"\x0fInstanceService\x12V\n" +
-	"\x05Start\x12%.orchestrator.v1.StartInstanceRequest\x1a&.orchestrator.v1.StartInstanceResponse\x12U\n" +
-	"\x04List\x12%.orchestrator.v1.ListInstancesRequest\x1a&.orchestrator.v1.ListInstancesResponse\x12P\n" +
-	"\x03Get\x12#.orchestrator.v1.GetInstanceRequest\x1a$.orchestrator.v1.GetInstanceResponse\x12S\n" +
-	"\x04Stop\x12$.orchestrator.v1.StopInstanceRequest\x1a%.orchestrator.v1.StopInstanceResponse\x12M\n" +
+	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\x9a\a\n" +
+	"\x0fInstanceService\x12\x92\x01\n" +
+	"\x05Start\x12,.orchestrator.v1.InstanceServiceStartRequest\x1a-.orchestrator.v1.InstanceServiceStartResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/games/{game_id}/instances\x12\x8c\x01\n" +
+	"\x04List\x12+.orchestrator.v1.InstanceServiceListRequest\x1a,.orchestrator.v1.InstanceServiceListResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/games/{game_id}/instances\x12\x97\x01\n" +
+	"\x03Get\x12*.orchestrator.v1.InstanceServiceGetRequest\x1a+.orchestrator.v1.InstanceServiceGetResponse\"7\x82\xd3\xe4\x93\x021\x12//api/v1/games/{game_id}/instances/{instance_id}\x12\xa2\x01\n" +
+	"\x04Stop\x12+.orchestrator.v1.InstanceServiceStopRequest\x1a,.orchestrator.v1.InstanceServiceStopResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/games/{game_id}/instances/{instance_id}:stop\x12u\n" +
 	"\n" +
-	"StreamLogs\x12\".orchestrator.v1.StreamLogsRequest\x1a\x19.orchestrator.v1.LogEntry0\x01\x12_\n" +
-	"\bGetUsage\x12(.orchestrator.v1.GetInstanceUsageRequest\x1a).orchestrator.v1.GetInstanceUsageResponseB\xcd\x01\n" +
+	"StreamLogs\x121.orchestrator.v1.InstanceServiceStreamLogsRequest\x1a2.orchestrator.v1.InstanceServiceStreamLogsResponse0\x01\x12\xac\x01\n" +
+	"\bGetUsage\x12/.orchestrator.v1.InstanceServiceGetUsageRequest\x1a0.orchestrator.v1.InstanceServiceGetUsageResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/games/{game_id}/instances/{instance_id}/usageB\xcd\x01\n" +
 	"\x13com.orchestrator.v1B\rInstanceProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
@@ -757,58 +804,60 @@ func file_orchestrator_v1_instance_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_instance_proto_rawDescData
 }
 
-var file_orchestrator_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_orchestrator_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_orchestrator_v1_instance_proto_goTypes = []any{
-	(*StartInstanceRequest)(nil),     // 0: orchestrator.v1.StartInstanceRequest
-	(*StartInstanceResponse)(nil),    // 1: orchestrator.v1.StartInstanceResponse
-	(*ListInstancesRequest)(nil),     // 2: orchestrator.v1.ListInstancesRequest
-	(*ListInstancesResponse)(nil),    // 3: orchestrator.v1.ListInstancesResponse
-	(*GetInstanceRequest)(nil),       // 4: orchestrator.v1.GetInstanceRequest
-	(*GetInstanceResponse)(nil),      // 5: orchestrator.v1.GetInstanceResponse
-	(*StopInstanceRequest)(nil),      // 6: orchestrator.v1.StopInstanceRequest
-	(*StopInstanceResponse)(nil),     // 7: orchestrator.v1.StopInstanceResponse
-	(*StreamLogsRequest)(nil),        // 8: orchestrator.v1.StreamLogsRequest
-	(*GetInstanceUsageRequest)(nil),  // 9: orchestrator.v1.GetInstanceUsageRequest
-	(*GetInstanceUsageResponse)(nil), // 10: orchestrator.v1.GetInstanceUsageResponse
-	nil,                              // 11: orchestrator.v1.StartInstanceRequest.EnvVarsEntry
-	nil,                              // 12: orchestrator.v1.StartInstanceRequest.DeveloperPayloadEntry
-	(*PortAllocation)(nil),           // 13: orchestrator.v1.PortAllocation
-	(*ResourceLimits)(nil),           // 14: orchestrator.v1.ResourceLimits
-	(*Instance)(nil),                 // 15: orchestrator.v1.Instance
-	(InstanceStatus)(0),              // 16: orchestrator.v1.InstanceStatus
-	(LogSource)(0),                   // 17: orchestrator.v1.LogSource
-	(*ResourceUsage)(nil),            // 18: orchestrator.v1.ResourceUsage
-	(*LogEntry)(nil),                 // 19: orchestrator.v1.LogEntry
+	(*InstanceServiceStartRequest)(nil),       // 0: orchestrator.v1.InstanceServiceStartRequest
+	(*InstanceServiceStartResponse)(nil),      // 1: orchestrator.v1.InstanceServiceStartResponse
+	(*InstanceServiceListRequest)(nil),        // 2: orchestrator.v1.InstanceServiceListRequest
+	(*InstanceServiceListResponse)(nil),       // 3: orchestrator.v1.InstanceServiceListResponse
+	(*InstanceServiceGetRequest)(nil),         // 4: orchestrator.v1.InstanceServiceGetRequest
+	(*InstanceServiceGetResponse)(nil),        // 5: orchestrator.v1.InstanceServiceGetResponse
+	(*InstanceServiceStopRequest)(nil),        // 6: orchestrator.v1.InstanceServiceStopRequest
+	(*InstanceServiceStopResponse)(nil),       // 7: orchestrator.v1.InstanceServiceStopResponse
+	(*InstanceServiceStreamLogsRequest)(nil),  // 8: orchestrator.v1.InstanceServiceStreamLogsRequest
+	(*InstanceServiceStreamLogsResponse)(nil), // 9: orchestrator.v1.InstanceServiceStreamLogsResponse
+	(*InstanceServiceGetUsageRequest)(nil),    // 10: orchestrator.v1.InstanceServiceGetUsageRequest
+	(*InstanceServiceGetUsageResponse)(nil),   // 11: orchestrator.v1.InstanceServiceGetUsageResponse
+	nil,                                       // 12: orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
+	nil,                                       // 13: orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
+	(*PortAllocation)(nil),                    // 14: orchestrator.v1.PortAllocation
+	(*ResourceLimits)(nil),                    // 15: orchestrator.v1.ResourceLimits
+	(*Instance)(nil),                          // 16: orchestrator.v1.Instance
+	(InstanceStatus)(0),                       // 17: orchestrator.v1.InstanceStatus
+	(LogSource)(0),                            // 18: orchestrator.v1.LogSource
+	(*LogEntry)(nil),                          // 19: orchestrator.v1.LogEntry
+	(*ResourceUsage)(nil),                     // 20: orchestrator.v1.ResourceUsage
 }
 var file_orchestrator_v1_instance_proto_depIdxs = []int32{
-	13, // 0: orchestrator.v1.StartInstanceRequest.port_allocation:type_name -> orchestrator.v1.PortAllocation
-	14, // 1: orchestrator.v1.StartInstanceRequest.resource_limits:type_name -> orchestrator.v1.ResourceLimits
-	11, // 2: orchestrator.v1.StartInstanceRequest.env_vars:type_name -> orchestrator.v1.StartInstanceRequest.EnvVarsEntry
-	12, // 3: orchestrator.v1.StartInstanceRequest.developer_payload:type_name -> orchestrator.v1.StartInstanceRequest.DeveloperPayloadEntry
-	15, // 4: orchestrator.v1.StartInstanceResponse.instance:type_name -> orchestrator.v1.Instance
-	16, // 5: orchestrator.v1.ListInstancesRequest.status:type_name -> orchestrator.v1.InstanceStatus
-	15, // 6: orchestrator.v1.ListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
-	15, // 7: orchestrator.v1.GetInstanceResponse.instance:type_name -> orchestrator.v1.Instance
-	15, // 8: orchestrator.v1.StopInstanceResponse.instance:type_name -> orchestrator.v1.Instance
-	17, // 9: orchestrator.v1.StreamLogsRequest.source:type_name -> orchestrator.v1.LogSource
-	18, // 10: orchestrator.v1.GetInstanceUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	0,  // 11: orchestrator.v1.InstanceService.Start:input_type -> orchestrator.v1.StartInstanceRequest
-	2,  // 12: orchestrator.v1.InstanceService.List:input_type -> orchestrator.v1.ListInstancesRequest
-	4,  // 13: orchestrator.v1.InstanceService.Get:input_type -> orchestrator.v1.GetInstanceRequest
-	6,  // 14: orchestrator.v1.InstanceService.Stop:input_type -> orchestrator.v1.StopInstanceRequest
-	8,  // 15: orchestrator.v1.InstanceService.StreamLogs:input_type -> orchestrator.v1.StreamLogsRequest
-	9,  // 16: orchestrator.v1.InstanceService.GetUsage:input_type -> orchestrator.v1.GetInstanceUsageRequest
-	1,  // 17: orchestrator.v1.InstanceService.Start:output_type -> orchestrator.v1.StartInstanceResponse
-	3,  // 18: orchestrator.v1.InstanceService.List:output_type -> orchestrator.v1.ListInstancesResponse
-	5,  // 19: orchestrator.v1.InstanceService.Get:output_type -> orchestrator.v1.GetInstanceResponse
-	7,  // 20: orchestrator.v1.InstanceService.Stop:output_type -> orchestrator.v1.StopInstanceResponse
-	19, // 21: orchestrator.v1.InstanceService.StreamLogs:output_type -> orchestrator.v1.LogEntry
-	10, // 22: orchestrator.v1.InstanceService.GetUsage:output_type -> orchestrator.v1.GetInstanceUsageResponse
-	17, // [17:23] is the sub-list for method output_type
-	11, // [11:17] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	14, // 0: orchestrator.v1.InstanceServiceStartRequest.port_allocation:type_name -> orchestrator.v1.PortAllocation
+	15, // 1: orchestrator.v1.InstanceServiceStartRequest.resource_limits:type_name -> orchestrator.v1.ResourceLimits
+	12, // 2: orchestrator.v1.InstanceServiceStartRequest.env_vars:type_name -> orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
+	13, // 3: orchestrator.v1.InstanceServiceStartRequest.developer_payload:type_name -> orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
+	16, // 4: orchestrator.v1.InstanceServiceStartResponse.instance:type_name -> orchestrator.v1.Instance
+	17, // 5: orchestrator.v1.InstanceServiceListRequest.status:type_name -> orchestrator.v1.InstanceStatus
+	16, // 6: orchestrator.v1.InstanceServiceListResponse.instances:type_name -> orchestrator.v1.Instance
+	16, // 7: orchestrator.v1.InstanceServiceGetResponse.instance:type_name -> orchestrator.v1.Instance
+	16, // 8: orchestrator.v1.InstanceServiceStopResponse.instance:type_name -> orchestrator.v1.Instance
+	18, // 9: orchestrator.v1.InstanceServiceStreamLogsRequest.source:type_name -> orchestrator.v1.LogSource
+	19, // 10: orchestrator.v1.InstanceServiceStreamLogsResponse.entry:type_name -> orchestrator.v1.LogEntry
+	20, // 11: orchestrator.v1.InstanceServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	0,  // 12: orchestrator.v1.InstanceService.Start:input_type -> orchestrator.v1.InstanceServiceStartRequest
+	2,  // 13: orchestrator.v1.InstanceService.List:input_type -> orchestrator.v1.InstanceServiceListRequest
+	4,  // 14: orchestrator.v1.InstanceService.Get:input_type -> orchestrator.v1.InstanceServiceGetRequest
+	6,  // 15: orchestrator.v1.InstanceService.Stop:input_type -> orchestrator.v1.InstanceServiceStopRequest
+	8,  // 16: orchestrator.v1.InstanceService.StreamLogs:input_type -> orchestrator.v1.InstanceServiceStreamLogsRequest
+	10, // 17: orchestrator.v1.InstanceService.GetUsage:input_type -> orchestrator.v1.InstanceServiceGetUsageRequest
+	1,  // 18: orchestrator.v1.InstanceService.Start:output_type -> orchestrator.v1.InstanceServiceStartResponse
+	3,  // 19: orchestrator.v1.InstanceService.List:output_type -> orchestrator.v1.InstanceServiceListResponse
+	5,  // 20: orchestrator.v1.InstanceService.Get:output_type -> orchestrator.v1.InstanceServiceGetResponse
+	7,  // 21: orchestrator.v1.InstanceService.Stop:output_type -> orchestrator.v1.InstanceServiceStopResponse
+	9,  // 22: orchestrator.v1.InstanceService.StreamLogs:output_type -> orchestrator.v1.InstanceServiceStreamLogsResponse
+	11, // 23: orchestrator.v1.InstanceService.GetUsage:output_type -> orchestrator.v1.InstanceServiceGetUsageResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_instance_proto_init() }
@@ -826,7 +875,7 @@ func file_orchestrator_v1_instance_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_instance_proto_rawDesc), len(file_orchestrator_v1_instance_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

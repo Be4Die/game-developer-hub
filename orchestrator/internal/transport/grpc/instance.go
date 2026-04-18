@@ -21,7 +21,7 @@ func NewInstanceHandler(svc *service.InstanceService, maxLogTailLines uint32) *I
 }
 
 // Start запускает инстанс сервера.
-func (h *InstanceHandler) Start(ctx context.Context, req *pb.StartInstanceRequest) (*pb.StartInstanceResponse, error) {
+func (h *InstanceHandler) Start(ctx context.Context, req *pb.InstanceServiceStartRequest) (*pb.InstanceServiceStartResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	params := service.StartInstanceParams{
@@ -51,11 +51,11 @@ func (h *InstanceHandler) Start(ctx context.Context, req *pb.StartInstanceReques
 		return nil, domainError(err, "start instance")
 	}
 
-	return &pb.StartInstanceResponse{Instance: instanceToProto(instance)}, nil
+	return &pb.InstanceServiceStartResponse{Instance: instanceToProto(instance)}, nil
 }
 
 // List возвращает список инстансов пользователя.
-func (h *InstanceHandler) List(ctx context.Context, req *pb.ListInstancesRequest) (*pb.ListInstancesResponse, error) {
+func (h *InstanceHandler) List(ctx context.Context, req *pb.InstanceServiceListRequest) (*pb.InstanceServiceListResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	var statusFilter *domain.InstanceStatus
@@ -74,11 +74,11 @@ func (h *InstanceHandler) List(ctx context.Context, req *pb.ListInstancesRequest
 		resp = append(resp, enrichedInstanceToProto(inst))
 	}
 
-	return &pb.ListInstancesResponse{Instances: resp}, nil
+	return &pb.InstanceServiceListResponse{Instances: resp}, nil
 }
 
 // Get возвращает информацию об инстансе.
-func (h *InstanceHandler) Get(ctx context.Context, req *pb.GetInstanceRequest) (*pb.GetInstanceResponse, error) {
+func (h *InstanceHandler) Get(ctx context.Context, req *pb.InstanceServiceGetRequest) (*pb.InstanceServiceGetResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	instance, err := h.instanceService.GetInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
@@ -86,11 +86,11 @@ func (h *InstanceHandler) Get(ctx context.Context, req *pb.GetInstanceRequest) (
 		return nil, domainError(err, "get instance")
 	}
 
-	return &pb.GetInstanceResponse{Instance: enrichedInstanceToProto(instance)}, nil
+	return &pb.InstanceServiceGetResponse{Instance: enrichedInstanceToProto(instance)}, nil
 }
 
 // Stop останавливает инстанс.
-func (h *InstanceHandler) Stop(ctx context.Context, req *pb.StopInstanceRequest) (*pb.StopInstanceResponse, error) {
+func (h *InstanceHandler) Stop(ctx context.Context, req *pb.InstanceServiceStopRequest) (*pb.InstanceServiceStopResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	timeout := req.GetTimeout()
@@ -103,11 +103,11 @@ func (h *InstanceHandler) Stop(ctx context.Context, req *pb.StopInstanceRequest)
 		return nil, domainError(err, "stop instance")
 	}
 
-	return &pb.StopInstanceResponse{Instance: instanceToProto(instance)}, nil
+	return &pb.InstanceServiceStopResponse{Instance: instanceToProto(instance)}, nil
 }
 
 // StreamLogs стримит логи инстанса.
-func (h *InstanceHandler) StreamLogs(req *pb.StreamLogsRequest, stream pb.InstanceService_StreamLogsServer) error {
+func (h *InstanceHandler) StreamLogs(req *pb.InstanceServiceStreamLogsRequest, stream pb.InstanceService_StreamLogsServer) error {
 	ctx := stream.Context()
 	ownerID, _ := GetUserID(ctx)
 
@@ -153,14 +153,14 @@ func (h *InstanceHandler) StreamLogs(req *pb.StreamLogsRequest, stream pb.Instan
 			continue
 		}
 
-		if err := stream.Send(logEntryToProto(entry)); err != nil {
+		if err := stream.Send(&pb.InstanceServiceStreamLogsResponse{Entry: logEntryToProto(entry)}); err != nil {
 			return err
 		}
 	}
 }
 
 // GetUsage возвращает потребление ресурсов инстанса.
-func (h *InstanceHandler) GetUsage(ctx context.Context, req *pb.GetInstanceUsageRequest) (*pb.GetInstanceUsageResponse, error) {
+func (h *InstanceHandler) GetUsage(ctx context.Context, req *pb.InstanceServiceGetUsageRequest) (*pb.InstanceServiceGetUsageResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
 	usage, err := h.instanceService.GetInstanceUsage(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
@@ -168,7 +168,7 @@ func (h *InstanceHandler) GetUsage(ctx context.Context, req *pb.GetInstanceUsage
 		return nil, domainError(err, "get instance usage")
 	}
 
-	return &pb.GetInstanceUsageResponse{
+	return &pb.InstanceServiceGetUsageResponse{
 		InstanceId: req.GetInstanceId(),
 		Usage:      resourceUsageToProto(usage),
 	}, nil
