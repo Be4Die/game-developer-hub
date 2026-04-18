@@ -39,6 +39,9 @@ func NewNodeService(
 // RegisterNodeParams содержит параметры подключения ноды.
 // Один из Address или NodeID должен быть заполнен.
 type RegisterNodeParams struct {
+	// OwnerID — ID пользователя из JWT.
+	OwnerID string
+
 	// Manual: адрес ноды + токен.
 	Address string
 	Token   string
@@ -54,13 +57,13 @@ type RegisterNodeParams struct {
 // Возвращает ErrAlreadyExists при повторной регистрации, ErrInvalidToken при неверном токене.
 func (s *NodeService) RegisterNode(ctx context.Context, params RegisterNodeParams) (*domain.Node, error) {
 	if params.NodeID != nil {
-		return s.authorizeNode(ctx, *params.NodeID, params.Token)
+		return s.authorizeNode(ctx, params.OwnerID, *params.NodeID, params.Token)
 	}
 
-	return s.registerNodeManual(ctx, params.Address, params.Token, params.Region)
+	return s.registerNodeManual(ctx, params.OwnerID, params.Address, params.Token, params.Region)
 }
 
-func (s *NodeService) registerNodeManual(ctx context.Context, address, token, region string) (*domain.Node, error) {
+func (s *NodeService) registerNodeManual(ctx context.Context, ownerID, address, token, region string) (*domain.Node, error) {
 	// Проверка — не существует ли уже нода с таким адресом.
 	existing, err := s.nodeRepo.GetByAddress(ctx, address)
 	if err == nil && existing.Status == domain.NodeStatusOnline {
@@ -80,6 +83,7 @@ func (s *NodeService) registerNodeManual(ctx context.Context, address, token, re
 	tokenHash := sha256.Sum256([]byte(token))
 
 	node := &domain.Node{
+		OwnerID:      ownerID,
 		Address:      address,
 		TokenHash:    tokenHash[:],
 		APIToken:     token,
@@ -101,10 +105,14 @@ func (s *NodeService) registerNodeManual(ctx context.Context, address, token, re
 	return node, nil
 }
 
-func (s *NodeService) authorizeNode(ctx context.Context, nodeID int64, token string) (*domain.Node, error) {
+func (s *NodeService) authorizeNode(ctx context.Context, ownerID string, nodeID int64, token string) (*domain.Node, error) {
 	node, err := s.nodeRepo.GetByID(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.authorizeNode: get node: %w", err)
+	}
+
+	if node.OwnerID != "" && node.OwnerID != ownerID {
+		return nil, fmt.Errorf("NodeService.authorizeNode: %w", domain.ErrForbidden)
 	}
 
 	if node.Status != domain.NodeStatusUnauthorized {
@@ -131,8 +139,8 @@ func (s *NodeService) authorizeNode(ctx context.Context, nodeID int64, token str
 	return node, nil
 }
 
-// ListNodes возвращает все ноды с обогащением из KV.
-func (s *NodeService) ListNodes(ctx context.Context, status *domain.NodeStatus) ([]*EnrichedNode, error) {
+// ListNodes возвращает ноды пользователя с обогащением из KV.
+func (s *NodeService) ListNodes(ctx context.Context, ownerID string, status *domain.NodeStatus) ([]*EnrichedNode, error) {
 	nodes, err := s.nodeRepo.List(ctx, status)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.ListNodes: %w", err)
@@ -140,6 +148,10 @@ func (s *NodeService) ListNodes(ctx context.Context, status *domain.NodeStatus) 
 
 	result := make([]*EnrichedNode, 0, len(nodes))
 	for _, n := range nodes {
+		if ownerID != "" && n.OwnerID != ownerID {
+			continue
+		}
+
 		enriched := &EnrichedNode{Node: n}
 
 		usage, err := s.nodeState.GetUsage(ctx, n.ID)
@@ -158,11 +170,15 @@ func (s *NodeService) ListNodes(ctx context.Context, status *domain.NodeStatus) 
 	return result, nil
 }
 
-// GetNode возвращает ноду с обогащением из KV.
-func (s *NodeService) GetNode(ctx context.Context, nodeID int64) (*EnrichedNode, error) {
+// GetNode возвращает ноду с обогащением из KV. Проверяет владение.
+func (s *NodeService) GetNode(ctx context.Context, ownerID string, nodeID int64) (*EnrichedNode, error) {
 	node, err := s.nodeRepo.GetByID(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.GetNode: %w", err)
+	}
+
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	enriched := &EnrichedNode{Node: node}
@@ -180,9 +196,18 @@ func (s *NodeService) GetNode(ctx context.Context, nodeID int64) (*EnrichedNode,
 	return enriched, nil
 }
 
-// DeleteNode удаляет ноду из оркестратора. Все инстансы на ноде переводятся
-// в статус crashed, состояние удаляется из KV и PostgreSQL.
-func (s *NodeService) DeleteNode(ctx context.Context, nodeID int64) error {
+// DeleteNode удаляет ноду из оркестратора. Проверяет владение.
+// Все инстансы на ноде переводятся в статус crashed, состояние удаляется из KV и PostgreSQL.
+func (s *NodeService) DeleteNode(ctx context.Context, ownerID string, nodeID int64) error {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return fmt.Errorf("NodeService.DeleteNode: get node: %w", err)
+	}
+
+	if ownerID != "" && node.OwnerID != ownerID {
+		return domain.ErrForbidden
+	}
+
 	// Переводим все инстансы ноды в crashed.
 	instances, err := s.instanceRepo.ListByNode(ctx, nodeID)
 	if err != nil {
@@ -209,11 +234,15 @@ func (s *NodeService) DeleteNode(ctx context.Context, nodeID int64) error {
 	return nil
 }
 
-// GetNodeUsage возвращает метрики ноды.
-func (s *NodeService) GetNodeUsage(ctx context.Context, nodeID int64) (*NodeUsageResult, error) {
+// GetNodeUsage возвращает метрики ноды. Проверяет владение.
+func (s *NodeService) GetNodeUsage(ctx context.Context, ownerID string, nodeID int64) (*NodeUsageResult, error) {
 	node, err := s.nodeRepo.GetByID(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.GetNodeUsage: get node: %w", err)
+	}
+
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	usage, err := s.nodeState.GetUsage(ctx, nodeID)

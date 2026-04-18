@@ -43,6 +43,7 @@ func NewInstanceService(
 
 // StartInstanceParams содержит параметры запуска инстанса.
 type StartInstanceParams struct {
+	OwnerID          string
 	GameID           int64
 	BuildVersion     string
 	Name             string
@@ -112,6 +113,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 	now := time.Now()
 	instance := &domain.Instance{
 		ID:               result.InstanceID,
+		OwnerID:          params.OwnerID,
 		NodeID:           node.ID,
 		ServerBuildID:    build.ID,
 		GameID:           params.GameID,
@@ -156,14 +158,17 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 // StopInstance останавливает экземпляр игрового сервера, обновляет статус в PostgreSQL
 // и удаляет состояние из KV. Уменьшает счётчик активных инстансов на ноде.
-// Возвращает ошибку, если instanceID не принадлежит указанной игре.
-func (s *InstanceService) StopInstance(ctx context.Context, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error) {
+// Возвращает ошибку, если instanceID не принадлежит указанной игре или владельцу.
+func (s *InstanceService) StopInstance(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.StopInstance: get instance: %w", err)
 	}
 	if instance.GameID != gameID {
 		return nil, fmt.Errorf("InstanceService.StopInstance: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	// Определяем ноду для gRPC-вызова.
@@ -197,8 +202,8 @@ func (s *InstanceService) StopInstance(ctx context.Context, gameID, instanceID i
 	return instance, nil
 }
 
-// ListInstances возвращает список инстансов игры с обогащением из KV.
-func (s *InstanceService) ListInstances(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*EnrichedInstance, error) {
+// ListInstances возвращает список инстансов пользователя с обогащением из KV.
+func (s *InstanceService) ListInstances(ctx context.Context, ownerID string, gameID int64, status *domain.InstanceStatus) ([]*EnrichedInstance, error) {
 	instances, err := s.instanceRepo.ListByGame(ctx, gameID, status)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.ListInstances: %w", err)
@@ -206,6 +211,10 @@ func (s *InstanceService) ListInstances(ctx context.Context, gameID int64, statu
 
 	result := make([]*EnrichedInstance, 0, len(instances))
 	for _, inst := range instances {
+		if ownerID != "" && inst.OwnerID != ownerID {
+			continue
+		}
+
 		enriched := &EnrichedInstance{Instance: inst}
 
 		// Обогащение из KV.
@@ -226,13 +235,16 @@ func (s *InstanceService) ListInstances(ctx context.Context, gameID int64, statu
 }
 
 // GetInstance возвращает инстанс с обогащением из KV.
-func (s *InstanceService) GetInstance(ctx context.Context, gameID, instanceID int64) (*EnrichedInstance, error) {
+func (s *InstanceService) GetInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*EnrichedInstance, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.GetInstance: %w", err)
 	}
 	if instance.GameID != gameID {
 		return nil, fmt.Errorf("InstanceService.GetInstance: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	enriched := &EnrichedInstance{Instance: instance}
@@ -252,13 +264,16 @@ func (s *InstanceService) GetInstance(ctx context.Context, gameID, instanceID in
 
 // StreamInstanceLogs возвращает поток журналов инстанса.
 // Caller обязан закрыть stream после использования.
-func (s *InstanceService) StreamInstanceLogs(ctx context.Context, gameID, instanceID int64, req domain.StreamLogsRequest) (domain.LogStream, error) {
+func (s *InstanceService) StreamInstanceLogs(ctx context.Context, ownerID string, gameID, instanceID int64, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.StreamInstanceLogs: get instance: %w", err)
 	}
 	if instance.GameID != gameID {
 		return nil, fmt.Errorf("InstanceService.StreamInstanceLogs: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
@@ -276,7 +291,7 @@ func (s *InstanceService) StreamInstanceLogs(ctx context.Context, gameID, instan
 
 // GetInstanceUsage возвращает метрики потребления ресурсов инстанса.
 // Сначала пробует KV (быстро), fallback — gRPC на ноду.
-func (s *InstanceService) GetInstanceUsage(ctx context.Context, gameID, instanceID int64) (*domain.ResourceUsage, error) {
+func (s *InstanceService) GetInstanceUsage(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.ResourceUsage, error) {
 	// Пробуем KV.
 	usage, err := s.instanceState.GetUsage(ctx, instanceID)
 	if err == nil {
@@ -290,6 +305,9 @@ func (s *InstanceService) GetInstanceUsage(ctx context.Context, gameID, instance
 	}
 	if instance.GameID != gameID {
 		return nil, fmt.Errorf("InstanceService.GetInstanceUsage: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
 	}
 
 	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)

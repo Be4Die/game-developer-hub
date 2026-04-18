@@ -18,6 +18,7 @@ import (
 func buildToProto(b *domain.ServerBuild) *pb.ServerBuild {
 	return &pb.ServerBuild{
 		Id:            b.ID,
+		OwnerId:       b.OwnerID,
 		GameId:        b.GameID,
 		BuildVersion:  b.Version,
 		ImageTag:      b.ImageTag,
@@ -32,6 +33,7 @@ func buildToProto(b *domain.ServerBuild) *pb.ServerBuild {
 func instanceToProto(inst *domain.Instance) *pb.Instance {
 	resp := &pb.Instance{
 		Id:               inst.ID,
+		OwnerId:          inst.OwnerID,
 		GameId:           inst.GameID,
 		NodeId:           inst.NodeID,
 		BuildVersion:     inst.BuildVersion,
@@ -64,6 +66,7 @@ func enrichedInstanceToProto(inst *service.EnrichedInstance) *pb.Instance {
 
 	resp := &pb.Instance{
 		Id:               inst.ID,
+		OwnerId:          inst.OwnerID,
 		GameId:           inst.GameID,
 		NodeId:           inst.NodeID,
 		BuildVersion:     inst.BuildVersion,
@@ -91,6 +94,7 @@ func enrichedInstanceToProto(inst *service.EnrichedInstance) *pb.Instance {
 func nodeToProto(n *domain.Node) *pb.Node {
 	return &pb.Node{
 		Id:               n.ID,
+		OwnerId:          n.OwnerID,
 		Address:          n.Address,
 		Region:           n.Region,
 		Status:           nodeStatusToProto(n.Status),
@@ -106,6 +110,7 @@ func nodeToProto(n *domain.Node) *pb.Node {
 func enrichedNodeToProto(n *service.EnrichedNode) *pb.Node {
 	node := nodeToProto(&domain.Node{
 		ID:           n.ID,
+		OwnerID:      n.OwnerID,
 		Address:      n.Address,
 		Region:       n.Region,
 		Status:       n.Status,
@@ -276,6 +281,8 @@ func domainError(err error, action string) error {
 		return status.Error(codes.Unauthenticated, action+": invalid token")
 	case errors.Is(err, domain.ErrNoAvailableNode):
 		return status.Error(codes.ResourceExhausted, action+": "+err.Error())
+	case errors.Is(err, domain.ErrForbidden):
+		return status.Error(codes.PermissionDenied, action+": forbidden")
 	default:
 		return status.Error(codes.Internal, action+": "+err.Error())
 	}

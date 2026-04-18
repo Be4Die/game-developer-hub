@@ -22,13 +22,19 @@ const (
 type Config struct {
 	Env           string           `yaml:"env" env-required:"true"`
 	GRPC          GRPCConfig       `yaml:"grpc"`
-	APIKey        string           `yaml:"api_key" env-required:"true"`
+	JWT           JWTConfig        `yaml:"jwt"`
 	DB            DBConfig         `yaml:"db"`
 	KV            KVConfig         `yaml:"kv"`
 	Storage       StorageConfig    `yaml:"storage"`
 	GRPCClient    GRPCClientConfig `yaml:"grpc_client"`
 	NodeHeartbeat NodeHeartbeatCfg `yaml:"node_heartbeat"`
 	Limits        LimitsConfig     `yaml:"limits"`
+}
+
+// JWTConfig хранит параметры валидации JWT-токенов.
+type JWTConfig struct {
+	Secret string `yaml:"secret" env:"ORCHESTRATOR_JWT_SECRET" env-required:"true"`
+	Issuer string `yaml:"issuer" env-default:"sso"`
 }
 
 // GRPCConfig хранит настройки gRPC-сервера.
@@ -156,8 +162,8 @@ func (c *Config) Validate() error {
 		return errors.New("env must be one of: local, dev, prod")
 	}
 
-	if c.APIKey == "" {
-		return errors.New("api_key is required")
+	if c.JWT.Secret == "" {
+		return errors.New("jwt.secret is required")
 	}
 
 	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {

@@ -150,6 +150,7 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS server_builds (
 			id             BIGSERIAL PRIMARY KEY,
+			owner_id       TEXT NOT NULL DEFAULT '',
 			game_id        BIGINT NOT NULL,
 			uploaded_by    BIGINT NOT NULL DEFAULT 0,
 			version        TEXT NOT NULL,

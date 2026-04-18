@@ -42,6 +42,7 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
 	grpctransport "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/grpc"
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/moby/moby/api/types/container"
 	"github.com/redis/go-redis/v9"
@@ -53,7 +54,9 @@ import (
 
 const (
 	nodeImageTag   = "game-server-node:latest"
-	e2eAPIKey      = "dev-api-key-for-local-testing"
+	e2eJWTSecret   = "dev-jwt-secret-for-local-testing"
+	e2eIssuer      = "sso"
+	e2eTestUserID  = "test-user-001"
 	e2eTestTimeout = 60 * time.Second
 )
 
@@ -119,7 +122,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		ExposedPorts: []string{"44044/tcp"},
 		Env: map[string]string{
 			"CONFIG_PATH":  "/app/config/local.yaml",
-			"NODE_API_KEY": e2eAPIKey,
+			"NODE_API_KEY": "test-node-token",
 		},
 		WaitingFor: wait.ForListeningPort("44044/tcp").WithStartupTimeout(15 * time.Second),
 		HostConfigModifier: func(hc *container.HostConfig) {
@@ -223,10 +226,14 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	nodeHandler := grpctransport.NewNodeHandler(nodeService)
 	healthHandler := grpctransport.NewHealthHandler("e2e-1.0.0")
 
-	authInterceptor := grpctransport.NewAPIKeyAuth(e2eAPIKey)
+	authInterceptor, err := grpctransport.NewJWTAuth(e2eJWTSecret, e2eIssuer)
+	if err != nil {
+		t.Fatalf("failed to create auth interceptor: %v", err)
+	}
 
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authInterceptor.Unary()),
+		grpc.StreamInterceptor(authInterceptor.Stream()),
 	)
 
 	pb.RegisterBuildServiceServer(grpcServer, buildHandler)
@@ -264,11 +271,11 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 
 	// Регистрируем ноду через gRPC API.
 	nsClient := pb.NewNodeServiceClient(conn)
-	_, err = nsClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+	_, err = nsClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
 		Mode: &pb.RegisterNodeRequest_Manual{
 			Manual: &pb.RegisterNodeManual{
 				Address: nodeAddress,
-				Token:   e2eAPIKey,
+				Token:   "test-node-token",
 				Region:  ptrStr("e2e"),
 			},
 		},
@@ -310,6 +317,7 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 	migrations := []string{
 		`CREATE TABLE IF NOT EXISTS nodes (
 			id            BIGSERIAL PRIMARY KEY,
+			owner_id      TEXT NOT NULL DEFAULT '',
 			address       TEXT NOT NULL UNIQUE,
 			token_hash    BYTEA NOT NULL,
 			api_token     TEXT NOT NULL DEFAULT '',
@@ -325,6 +333,7 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS server_builds (
 			id             BIGSERIAL PRIMARY KEY,
+			owner_id       TEXT NOT NULL DEFAULT '',
 			game_id        BIGINT NOT NULL,
 			uploaded_by    BIGINT NOT NULL DEFAULT 0,
 			version        TEXT NOT NULL,
@@ -339,6 +348,7 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS instances (
 			id               BIGSERIAL PRIMARY KEY,
+			owner_id         TEXT NOT NULL DEFAULT '',
 			node_id          BIGINT NOT NULL REFERENCES nodes(id),
 			server_build_id  BIGINT NOT NULL REFERENCES server_builds(id),
 			game_id          BIGINT NOT NULL,
@@ -390,8 +400,25 @@ func ptrStr(s string) *string {
 	return &s
 }
 
-// withAPIKey adds API key to outgoing metadata and returns the context.
-func withAPIKey(ctx context.Context, apiKey string) context.Context {
-	md := metadata.New(map[string]string{"x-api-key": apiKey})
+// generateTestJWT создаёт JWT-токен для тестов.
+func generateTestJWT(secret, issuer, userID string) string {
+	now := time.Now()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":   userID,
+		"sid":   "test-session",
+		"email": "test@example.com",
+		"role":  1,
+		"iss":   issuer,
+		"iat":   now.Unix(),
+		"exp":   now.Add(time.Hour).Unix(),
+	})
+	s, _ := token.SignedString([]byte(secret))
+	return s
+}
+
+// withJWT adds JWT to outgoing metadata and returns the context.
+func withJWT(ctx context.Context, secret, issuer string) context.Context {
+	tokenStr := generateTestJWT(secret, issuer, e2eTestUserID)
+	md := metadata.New(map[string]string{"authorization": "Bearer " + tokenStr})
 	return metadata.NewOutgoingContext(ctx, md)
 }

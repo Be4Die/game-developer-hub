@@ -50,49 +50,52 @@ enum PortAllocationStrategy {
 // Серверный билд.
 message ServerBuild {
   int64 id = 1;
-  int64 game_id = 2;
-  string build_version = 3;
-  string image_tag = 4;
-  Protocol protocol = 5;
-  uint32 internal_port = 6;
-  uint32 max_players = 7;
-  int64 file_size_bytes = 8;
-  google.protobuf.Timestamp created_at = 9;
+  string owner_id = 2;
+  int64 game_id = 3;
+  string build_version = 4;
+  string image_tag = 5;
+  Protocol protocol = 6;
+  uint32 internal_port = 7;
+  uint32 max_players = 8;
+  int64 file_size_bytes = 9;
+  google.protobuf.Timestamp created_at = 10;
 }
 
 // Инстанс игрового сервера.
 message Instance {
   int64 id = 1;
-  int64 game_id = 2;
-  int64 node_id = 3;
-  string build_version = 4;
-  string name = 5;
-  Protocol protocol = 6;
-  uint32 host_port = 7;
-  uint32 internal_port = 8;
-  InstanceStatus status = 9;
-  optional uint32 player_count = 10;
-  uint32 max_players = 11;
-  map<string, string> developer_payload = 12;
-  string server_address = 13;
-  google.protobuf.Timestamp started_at = 14;
-  google.protobuf.Timestamp created_at = 15;
-  google.protobuf.Timestamp updated_at = 16;
+  string owner_id = 2;
+  int64 game_id = 3;
+  int64 node_id = 4;
+  string build_version = 5;
+  string name = 6;
+  Protocol protocol = 7;
+  uint32 host_port = 8;
+  uint32 internal_port = 9;
+  InstanceStatus status = 10;
+  optional uint32 player_count = 11;
+  uint32 max_players = 12;
+  map<string, string> developer_payload = 13;
+  string server_address = 14;
+  google.protobuf.Timestamp started_at = 15;
+  google.protobuf.Timestamp created_at = 16;
+  google.protobuf.Timestamp updated_at = 17;
 }
 
 // Вычислительная нода.
 message Node {
   int64 id = 1;
-  string address = 2;
-  string region = 3;
-  NodeStatus status = 4;
-  uint32 cpu_cores = 5;
-  uint64 total_memory_bytes = 6;
-  uint64 total_disk_bytes = 7;
-  string agent_version = 8;
-  google.protobuf.Timestamp last_ping_at = 9;
-  google.protobuf.Timestamp created_at = 10;
-  google.protobuf.Timestamp updated_at = 11;
+  string owner_id = 2;
+  string address = 3;
+  string region = 4;
+  NodeStatus status = 5;
+  uint32 cpu_cores = 6;
+  uint64 total_memory_bytes = 7;
+  uint64 total_disk_bytes = 8;
+  string agent_version = 9;
+  google.protobuf.Timestamp last_ping_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
 }
 
 // Потребление ресурсов.

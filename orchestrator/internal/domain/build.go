@@ -5,6 +5,7 @@ import "time"
 // ServerBuild описывает загруженный серверный билд игры.
 type ServerBuild struct {
 	ID           int64
+	OwnerID      string
 	GameID       int64
 	UploadedBy   int64 // ID пользователя (0 — неизвестно).
 	Version      string

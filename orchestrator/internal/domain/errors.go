@@ -15,4 +15,6 @@ var (
 	ErrInvalidToken = errors.New("invalid node token")
 	// ErrNoAvailableNode возвращается когда нет нод с достаточными ресурсами.
 	ErrNoAvailableNode = errors.New("no available node with sufficient resources")
+	// ErrForbidden возвращается при попытке выполнить операцию над чужим ресурсом.
+	ErrForbidden = errors.New("forbidden")
 )

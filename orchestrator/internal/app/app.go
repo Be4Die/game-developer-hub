@@ -103,11 +103,15 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	healthHandler := grpctransport.NewHealthHandler("1.0.0")
 
 	// ─── Аутентификация ─────────────────────────────────────────
-	authInterceptor := grpctransport.NewAPIKeyAuth(cfg.APIKey)
+	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT auth: %w", err)
+	}
 
 	// ─── Создание gRPC-сервера ──────────────────────────────────
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authInterceptor.Unary()),
+		grpc.StreamInterceptor(authInterceptor.Stream()),
 	)
 
 	pb.RegisterBuildServiceServer(gRPCServer, buildHandler)

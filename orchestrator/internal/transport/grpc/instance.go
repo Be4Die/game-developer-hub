@@ -22,7 +22,10 @@ func NewInstanceHandler(svc *service.InstanceService, maxLogTailLines uint32) *I
 
 // Start запускает инстанс сервера.
 func (h *InstanceHandler) Start(ctx context.Context, req *pb.StartInstanceRequest) (*pb.StartInstanceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
 	params := service.StartInstanceParams{
+		OwnerID:          ownerID,
 		GameID:           req.GetGameId(),
 		BuildVersion:     req.GetBuildVersion(),
 		Name:             req.GetName(),
@@ -51,15 +54,17 @@ func (h *InstanceHandler) Start(ctx context.Context, req *pb.StartInstanceReques
 	return &pb.StartInstanceResponse{Instance: instanceToProto(instance)}, nil
 }
 
-// List возвращает список инстансов игры.
+// List возвращает список инстансов пользователя.
 func (h *InstanceHandler) List(ctx context.Context, req *pb.ListInstancesRequest) (*pb.ListInstancesResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
 	var statusFilter *domain.InstanceStatus
 	if req.Status != nil {
 		s := instanceStatusFromProto(req.GetStatus())
 		statusFilter = &s
 	}
 
-	instances, err := h.instanceService.ListInstances(ctx, req.GetGameId(), statusFilter)
+	instances, err := h.instanceService.ListInstances(ctx, ownerID, req.GetGameId(), statusFilter)
 	if err != nil {
 		return nil, domainError(err, "list instances")
 	}
@@ -74,7 +79,9 @@ func (h *InstanceHandler) List(ctx context.Context, req *pb.ListInstancesRequest
 
 // Get возвращает информацию об инстансе.
 func (h *InstanceHandler) Get(ctx context.Context, req *pb.GetInstanceRequest) (*pb.GetInstanceResponse, error) {
-	instance, err := h.instanceService.GetInstance(ctx, req.GetGameId(), req.GetInstanceId())
+	ownerID, _ := GetUserID(ctx)
+
+	instance, err := h.instanceService.GetInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
 	if err != nil {
 		return nil, domainError(err, "get instance")
 	}
@@ -84,12 +91,14 @@ func (h *InstanceHandler) Get(ctx context.Context, req *pb.GetInstanceRequest) (
 
 // Stop останавливает инстанс.
 func (h *InstanceHandler) Stop(ctx context.Context, req *pb.StopInstanceRequest) (*pb.StopInstanceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
 	timeout := req.GetTimeout()
 	if timeout == 0 {
 		timeout = 30
 	}
 
-	instance, err := h.instanceService.StopInstance(ctx, req.GetGameId(), req.GetInstanceId(), uint32(timeout))
+	instance, err := h.instanceService.StopInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId(), uint32(timeout))
 	if err != nil {
 		return nil, domainError(err, "stop instance")
 	}
@@ -100,6 +109,7 @@ func (h *InstanceHandler) Stop(ctx context.Context, req *pb.StopInstanceRequest)
 // StreamLogs стримит логи инстанса.
 func (h *InstanceHandler) StreamLogs(req *pb.StreamLogsRequest, stream pb.InstanceService_StreamLogsServer) error {
 	ctx := stream.Context()
+	ownerID, _ := GetUserID(ctx)
 
 	follow := req.GetFollow()
 	tail := uint32(req.GetTail()) //nolint:gosec // tail всегда положительный из proto
@@ -116,7 +126,7 @@ func (h *InstanceHandler) StreamLogs(req *pb.StreamLogsRequest, stream pb.Instan
 		source = &s
 	}
 
-	logStream, err := h.instanceService.StreamInstanceLogs(ctx, req.GetGameId(), req.GetInstanceId(), domain.StreamLogsRequest{
+	logStream, err := h.instanceService.StreamInstanceLogs(ctx, ownerID, req.GetGameId(), req.GetInstanceId(), domain.StreamLogsRequest{
 		InstanceID:   req.GetInstanceId(),
 		FollowStdout: follow,
 		FollowStderr: follow,
@@ -151,7 +161,9 @@ func (h *InstanceHandler) StreamLogs(req *pb.StreamLogsRequest, stream pb.Instan
 
 // GetUsage возвращает потребление ресурсов инстанса.
 func (h *InstanceHandler) GetUsage(ctx context.Context, req *pb.GetInstanceUsageRequest) (*pb.GetInstanceUsageResponse, error) {
-	usage, err := h.instanceService.GetInstanceUsage(ctx, req.GetGameId(), req.GetInstanceId())
+	ownerID, _ := GetUserID(ctx)
+
+	usage, err := h.instanceService.GetInstanceUsage(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
 	if err != nil {
 		return nil, domainError(err, "get instance usage")
 	}

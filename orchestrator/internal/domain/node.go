@@ -5,6 +5,7 @@ import "time"
 // Node описывает вычислительный узел в реестре оркестратора.
 type Node struct {
 	ID           int64
+	OwnerID      string // ID пользователя (из JWT).
 	Address      string // gRPC-адрес ноды (host:port)
 	TokenHash    []byte // хеш авторизационного токена (для проверки при авторизации)
 	APIToken     string // plaintext токен (для gRPC-запросов к ноде)

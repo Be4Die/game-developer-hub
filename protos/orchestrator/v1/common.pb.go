@@ -300,14 +300,15 @@ func (PortAllocationStrategy) EnumDescriptor() ([]byte, []int) {
 type ServerBuild struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	GameId        int64                  `protobuf:"varint,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	BuildVersion  string                 `protobuf:"bytes,3,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
-	ImageTag      string                 `protobuf:"bytes,4,opt,name=image_tag,json=imageTag,proto3" json:"image_tag,omitempty"`
-	Protocol      Protocol               `protobuf:"varint,5,opt,name=protocol,proto3,enum=orchestrator.v1.Protocol" json:"protocol,omitempty"`
-	InternalPort  uint32                 `protobuf:"varint,6,opt,name=internal_port,json=internalPort,proto3" json:"internal_port,omitempty"`
-	MaxPlayers    uint32                 `protobuf:"varint,7,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
-	FileSizeBytes int64                  `protobuf:"varint,8,opt,name=file_size_bytes,json=fileSizeBytes,proto3" json:"file_size_bytes,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	OwnerId       string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	GameId        int64                  `protobuf:"varint,3,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	BuildVersion  string                 `protobuf:"bytes,4,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
+	ImageTag      string                 `protobuf:"bytes,5,opt,name=image_tag,json=imageTag,proto3" json:"image_tag,omitempty"`
+	Protocol      Protocol               `protobuf:"varint,6,opt,name=protocol,proto3,enum=orchestrator.v1.Protocol" json:"protocol,omitempty"`
+	InternalPort  uint32                 `protobuf:"varint,7,opt,name=internal_port,json=internalPort,proto3" json:"internal_port,omitempty"`
+	MaxPlayers    uint32                 `protobuf:"varint,8,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
+	FileSizeBytes int64                  `protobuf:"varint,9,opt,name=file_size_bytes,json=fileSizeBytes,proto3" json:"file_size_bytes,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -347,6 +348,13 @@ func (x *ServerBuild) GetId() int64 {
 		return x.Id
 	}
 	return 0
+}
+
+func (x *ServerBuild) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *ServerBuild) GetGameId() int64 {
@@ -409,21 +417,22 @@ func (x *ServerBuild) GetCreatedAt() *timestamppb.Timestamp {
 type Instance struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	GameId           int64                  `protobuf:"varint,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	NodeId           int64                  `protobuf:"varint,3,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	BuildVersion     string                 `protobuf:"bytes,4,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
-	Name             string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
-	Protocol         Protocol               `protobuf:"varint,6,opt,name=protocol,proto3,enum=orchestrator.v1.Protocol" json:"protocol,omitempty"`
-	HostPort         uint32                 `protobuf:"varint,7,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
-	InternalPort     uint32                 `protobuf:"varint,8,opt,name=internal_port,json=internalPort,proto3" json:"internal_port,omitempty"`
-	Status           InstanceStatus         `protobuf:"varint,9,opt,name=status,proto3,enum=orchestrator.v1.InstanceStatus" json:"status,omitempty"`
-	PlayerCount      *uint32                `protobuf:"varint,10,opt,name=player_count,json=playerCount,proto3,oneof" json:"player_count,omitempty"`
-	MaxPlayers       uint32                 `protobuf:"varint,11,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
-	DeveloperPayload map[string]string      `protobuf:"bytes,12,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ServerAddress    string                 `protobuf:"bytes,13,opt,name=server_address,json=serverAddress,proto3" json:"server_address,omitempty"`
-	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
-	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OwnerId          string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	GameId           int64                  `protobuf:"varint,3,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	NodeId           int64                  `protobuf:"varint,4,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	BuildVersion     string                 `protobuf:"bytes,5,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
+	Name             string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	Protocol         Protocol               `protobuf:"varint,7,opt,name=protocol,proto3,enum=orchestrator.v1.Protocol" json:"protocol,omitempty"`
+	HostPort         uint32                 `protobuf:"varint,8,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
+	InternalPort     uint32                 `protobuf:"varint,9,opt,name=internal_port,json=internalPort,proto3" json:"internal_port,omitempty"`
+	Status           InstanceStatus         `protobuf:"varint,10,opt,name=status,proto3,enum=orchestrator.v1.InstanceStatus" json:"status,omitempty"`
+	PlayerCount      *uint32                `protobuf:"varint,11,opt,name=player_count,json=playerCount,proto3,oneof" json:"player_count,omitempty"`
+	MaxPlayers       uint32                 `protobuf:"varint,12,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
+	DeveloperPayload map[string]string      `protobuf:"bytes,13,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ServerAddress    string                 `protobuf:"bytes,14,opt,name=server_address,json=serverAddress,proto3" json:"server_address,omitempty"`
+	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -463,6 +472,13 @@ func (x *Instance) GetId() int64 {
 		return x.Id
 	}
 	return 0
+}
+
+func (x *Instance) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *Instance) GetGameId() int64 {
@@ -574,16 +590,17 @@ func (x *Instance) GetUpdatedAt() *timestamppb.Timestamp {
 type Node struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Address          string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	Region           string                 `protobuf:"bytes,3,opt,name=region,proto3" json:"region,omitempty"`
-	Status           NodeStatus             `protobuf:"varint,4,opt,name=status,proto3,enum=orchestrator.v1.NodeStatus" json:"status,omitempty"`
-	CpuCores         uint32                 `protobuf:"varint,5,opt,name=cpu_cores,json=cpuCores,proto3" json:"cpu_cores,omitempty"`
-	TotalMemoryBytes uint64                 `protobuf:"varint,6,opt,name=total_memory_bytes,json=totalMemoryBytes,proto3" json:"total_memory_bytes,omitempty"`
-	TotalDiskBytes   uint64                 `protobuf:"varint,7,opt,name=total_disk_bytes,json=totalDiskBytes,proto3" json:"total_disk_bytes,omitempty"`
-	AgentVersion     string                 `protobuf:"bytes,8,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
-	LastPingAt       *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_ping_at,json=lastPingAt,proto3" json:"last_ping_at,omitempty"`
-	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OwnerId          string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Address          string                 `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
+	Region           string                 `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
+	Status           NodeStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=orchestrator.v1.NodeStatus" json:"status,omitempty"`
+	CpuCores         uint32                 `protobuf:"varint,6,opt,name=cpu_cores,json=cpuCores,proto3" json:"cpu_cores,omitempty"`
+	TotalMemoryBytes uint64                 `protobuf:"varint,7,opt,name=total_memory_bytes,json=totalMemoryBytes,proto3" json:"total_memory_bytes,omitempty"`
+	TotalDiskBytes   uint64                 `protobuf:"varint,8,opt,name=total_disk_bytes,json=totalDiskBytes,proto3" json:"total_disk_bytes,omitempty"`
+	AgentVersion     string                 `protobuf:"bytes,9,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
+	LastPingAt       *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_ping_at,json=lastPingAt,proto3" json:"last_ping_at,omitempty"`
+	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -623,6 +640,13 @@ func (x *Node) GetId() int64 {
 		return x.Id
 	}
 	return 0
+}
+
+func (x *Node) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *Node) GetAddress() string {
@@ -1278,61 +1302,65 @@ var File_orchestrator_v1_common_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/common.proto\x12\x0forchestrator.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd8\x02\n" +
+	"\x1corchestrator/v1/common.proto\x12\x0forchestrator.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf3\x02\n" +
 	"\vServerBuild\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\x03R\x06gameId\x12#\n" +
-	"\rbuild_version\x18\x03 \x01(\tR\fbuildVersion\x12\x1b\n" +
-	"\timage_tag\x18\x04 \x01(\tR\bimageTag\x125\n" +
-	"\bprotocol\x18\x05 \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12#\n" +
-	"\rinternal_port\x18\x06 \x01(\rR\finternalPort\x12\x1f\n" +
-	"\vmax_players\x18\a \x01(\rR\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
+	"\agame_id\x18\x03 \x01(\x03R\x06gameId\x12#\n" +
+	"\rbuild_version\x18\x04 \x01(\tR\fbuildVersion\x12\x1b\n" +
+	"\timage_tag\x18\x05 \x01(\tR\bimageTag\x125\n" +
+	"\bprotocol\x18\x06 \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12#\n" +
+	"\rinternal_port\x18\a \x01(\rR\finternalPort\x12\x1f\n" +
+	"\vmax_players\x18\b \x01(\rR\n" +
 	"maxPlayers\x12&\n" +
-	"\x0ffile_size_bytes\x18\b \x01(\x03R\rfileSizeBytes\x129\n" +
+	"\x0ffile_size_bytes\x18\t \x01(\x03R\rfileSizeBytes\x129\n" +
 	"\n" +
-	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x8c\x06\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa7\x06\n" +
 	"\bInstance\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\x03R\x06gameId\x12\x17\n" +
-	"\anode_id\x18\x03 \x01(\x03R\x06nodeId\x12#\n" +
-	"\rbuild_version\x18\x04 \x01(\tR\fbuildVersion\x12\x12\n" +
-	"\x04name\x18\x05 \x01(\tR\x04name\x125\n" +
-	"\bprotocol\x18\x06 \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12\x1b\n" +
-	"\thost_port\x18\a \x01(\rR\bhostPort\x12#\n" +
-	"\rinternal_port\x18\b \x01(\rR\finternalPort\x127\n" +
-	"\x06status\x18\t \x01(\x0e2\x1f.orchestrator.v1.InstanceStatusR\x06status\x12&\n" +
-	"\fplayer_count\x18\n" +
-	" \x01(\rH\x00R\vplayerCount\x88\x01\x01\x12\x1f\n" +
-	"\vmax_players\x18\v \x01(\rR\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x17\n" +
+	"\agame_id\x18\x03 \x01(\x03R\x06gameId\x12\x17\n" +
+	"\anode_id\x18\x04 \x01(\x03R\x06nodeId\x12#\n" +
+	"\rbuild_version\x18\x05 \x01(\tR\fbuildVersion\x12\x12\n" +
+	"\x04name\x18\x06 \x01(\tR\x04name\x125\n" +
+	"\bprotocol\x18\a \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12\x1b\n" +
+	"\thost_port\x18\b \x01(\rR\bhostPort\x12#\n" +
+	"\rinternal_port\x18\t \x01(\rR\finternalPort\x127\n" +
+	"\x06status\x18\n" +
+	" \x01(\x0e2\x1f.orchestrator.v1.InstanceStatusR\x06status\x12&\n" +
+	"\fplayer_count\x18\v \x01(\rH\x00R\vplayerCount\x88\x01\x01\x12\x1f\n" +
+	"\vmax_players\x18\f \x01(\rR\n" +
 	"maxPlayers\x12\\\n" +
-	"\x11developer_payload\x18\f \x03(\v2/.orchestrator.v1.Instance.DeveloperPayloadEntryR\x10developerPayload\x12%\n" +
-	"\x0eserver_address\x18\r \x01(\tR\rserverAddress\x129\n" +
+	"\x11developer_payload\x18\r \x03(\v2/.orchestrator.v1.Instance.DeveloperPayloadEntryR\x10developerPayload\x12%\n" +
+	"\x0eserver_address\x18\x0e \x01(\tR\rserverAddress\x129\n" +
 	"\n" +
-	"started_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x129\n" +
+	"started_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x129\n" +
 	"\n" +
-	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1aC\n" +
+	"updated_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x1aC\n" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\xcb\x03\n" +
+	"\r_player_count\"\xe6\x03\n" +
 	"\x04Node\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x18\n" +
-	"\aaddress\x18\x02 \x01(\tR\aaddress\x12\x16\n" +
-	"\x06region\x18\x03 \x01(\tR\x06region\x123\n" +
-	"\x06status\x18\x04 \x01(\x0e2\x1b.orchestrator.v1.NodeStatusR\x06status\x12\x1b\n" +
-	"\tcpu_cores\x18\x05 \x01(\rR\bcpuCores\x12,\n" +
-	"\x12total_memory_bytes\x18\x06 \x01(\x04R\x10totalMemoryBytes\x12(\n" +
-	"\x10total_disk_bytes\x18\a \x01(\x04R\x0etotalDiskBytes\x12#\n" +
-	"\ragent_version\x18\b \x01(\tR\fagentVersion\x12<\n" +
-	"\flast_ping_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x18\n" +
+	"\aaddress\x18\x03 \x01(\tR\aaddress\x12\x16\n" +
+	"\x06region\x18\x04 \x01(\tR\x06region\x123\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x1b.orchestrator.v1.NodeStatusR\x06status\x12\x1b\n" +
+	"\tcpu_cores\x18\x06 \x01(\rR\bcpuCores\x12,\n" +
+	"\x12total_memory_bytes\x18\a \x01(\x04R\x10totalMemoryBytes\x12(\n" +
+	"\x10total_disk_bytes\x18\b \x01(\x04R\x0etotalDiskBytes\x12#\n" +
+	"\ragent_version\x18\t \x01(\tR\fagentVersion\x12<\n" +
+	"\flast_ping_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastPingAt\x129\n" +
 	"\n" +
-	"created_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc2\x01\n" +
+	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc2\x01\n" +
 	"\rResourceUsage\x12*\n" +
 	"\x11cpu_usage_percent\x18\x01 \x01(\x01R\x0fcpuUsagePercent\x12*\n" +
 	"\x11memory_used_bytes\x18\x02 \x01(\x04R\x0fmemoryUsedBytes\x12&\n" +

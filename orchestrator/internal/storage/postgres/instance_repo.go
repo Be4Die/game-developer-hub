@@ -24,15 +24,15 @@ func NewInstanceRepo(pool *pgxpool.Pool) *InstanceRepo {
 // Create регистрирует новый инстанс. Возвращает ErrAlreadyExists при дубликате.
 func (r *InstanceRepo) Create(ctx context.Context, inst *domain.Instance) error {
 	const q = `
-		INSERT INTO instances (id, node_id, server_build_id, game_id, name,
+		INSERT INTO instances (id, owner_id, node_id, server_build_id, game_id, name,
 		                       build_version, protocol, host_port, internal_port,
 		                       status, max_players, developer_payload,
 		                       server_address, started_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 	`
 
 	_, err := r.pool.Exec(ctx, q,
-		inst.ID, inst.NodeID, inst.ServerBuildID, inst.GameID, inst.Name,
+		inst.ID, inst.OwnerID, inst.NodeID, inst.ServerBuildID, inst.GameID, inst.Name,
 		inst.BuildVersion, inst.Protocol, inst.HostPort, inst.InternalPort,
 		inst.Status, inst.MaxPlayers, inst.DeveloperPayload,
 		inst.ServerAddress, inst.StartedAt, inst.CreatedAt, inst.UpdatedAt,
@@ -50,7 +50,7 @@ func (r *InstanceRepo) Create(ctx context.Context, inst *domain.Instance) error 
 // GetByID возвращает инстанс по идентификатору. Возвращает ErrNotFound при отсутствии.
 func (r *InstanceRepo) GetByID(ctx context.Context, id int64) (*domain.Instance, error) {
 	const q = `
-		SELECT id, node_id, server_build_id, game_id, name,
+		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
 		       server_address, started_at, created_at, updated_at
@@ -65,7 +65,7 @@ func (r *InstanceRepo) GetByID(ctx context.Context, id int64) (*domain.Instance,
 // Опционально фильтрует по статусу (nil — без фильтра).
 func (r *InstanceRepo) ListByGame(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
 	q := `
-		SELECT id, node_id, server_build_id, game_id, name,
+		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
 		       server_address, started_at, created_at, updated_at
@@ -103,7 +103,7 @@ func (r *InstanceRepo) ListByGame(ctx context.Context, gameID int64, status *dom
 // ListByNode возвращает все инстансы, запущенные на указанной ноде.
 func (r *InstanceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.Instance, error) {
 	const q = `
-		SELECT id, node_id, server_build_id, game_id, name,
+		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
 		       server_address, started_at, created_at, updated_at
@@ -134,16 +134,16 @@ func (r *InstanceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.
 // Update обновляет персистентные поля инстанса. Возвращает ErrNotFound при отсутствии.
 func (r *InstanceRepo) Update(ctx context.Context, inst *domain.Instance) error {
 	const q = `
-		UPDATE instances SET node_id=$1, server_build_id=$2, game_id=$3,
-		                     name=$4, build_version=$5, protocol=$6,
-		                     host_port=$7, internal_port=$8, status=$9,
-		                     max_players=$10, developer_payload=$11,
-		                     server_address=$12, started_at=$13, updated_at=$14
-		WHERE id=$15
+		UPDATE instances SET owner_id=$1, node_id=$2, server_build_id=$3, game_id=$4,
+		                     name=$5, build_version=$6, protocol=$7,
+		                     host_port=$8, internal_port=$9, status=$10,
+		                     max_players=$11, developer_payload=$12,
+		                     server_address=$13, started_at=$14, updated_at=$15
+		WHERE id=$16
 	`
 
 	tag, err := r.pool.Exec(ctx, q,
-		inst.NodeID, inst.ServerBuildID, inst.GameID, inst.Name,
+		inst.OwnerID, inst.NodeID, inst.ServerBuildID, inst.GameID, inst.Name,
 		inst.BuildVersion, inst.Protocol, inst.HostPort, inst.InternalPort,
 		inst.Status, inst.MaxPlayers, inst.DeveloperPayload,
 		inst.ServerAddress, inst.StartedAt, inst.UpdatedAt, inst.ID,
@@ -193,7 +193,7 @@ type instanceScanner interface {
 func scanInstance(s instanceScanner) (*domain.Instance, error) {
 	inst := &domain.Instance{}
 	err := s.Scan(
-		&inst.ID, &inst.NodeID, &inst.ServerBuildID, &inst.GameID, &inst.Name,
+		&inst.ID, &inst.OwnerID, &inst.NodeID, &inst.ServerBuildID, &inst.GameID, &inst.Name,
 		&inst.BuildVersion, &inst.Protocol, &inst.HostPort, &inst.InternalPort,
 		&inst.Status, &inst.MaxPlayers, &inst.DeveloperPayload,
 		&inst.ServerAddress, &inst.StartedAt, &inst.CreatedAt, &inst.UpdatedAt,

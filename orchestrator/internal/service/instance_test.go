@@ -716,7 +716,7 @@ func TestInstanceService_StopInstance(t *testing.T) {
 			)
 
 			ctx := context.Background()
-			result, err := svc.StopInstance(ctx, tc.gameID, tc.instanceID, tc.timeoutSec)
+			result, err := svc.StopInstance(ctx, "", tc.gameID, tc.instanceID, tc.timeoutSec)
 
 			if tc.wantErr {
 				if err == nil {
@@ -779,7 +779,7 @@ func TestInstanceService_ListInstances_Success(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	result, err := svc.ListInstances(ctx, 1, nil)
+	result, err := svc.ListInstances(ctx, "", 1, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -832,7 +832,7 @@ func TestInstanceService_GetInstance_KVFallback(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	result, err := svc.GetInstance(ctx, 1, 42)
+	result, err := svc.GetInstance(ctx, "", 1, 42)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -25,14 +25,14 @@ func NewBuildStorage(pool *pgxpool.Pool) *BuildStorage {
 // Create регистрирует новый билд. Возвращает ErrAlreadyExists при дубликате версии.
 func (s *BuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error {
 	const q = `
-		INSERT INTO server_builds (id, game_id, uploaded_by, version, image_tag,
+		INSERT INTO server_builds (id, owner_id, game_id, uploaded_by, version, image_tag,
 		                           protocol, internal_port, max_players,
 		                           file_url, file_size, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
 	`
 
 	_, err := s.pool.Exec(ctx, q,
-		build.ID, build.GameID, build.UploadedBy, build.Version, build.ImageTag,
+		build.ID, build.OwnerID, build.GameID, build.UploadedBy, build.Version, build.ImageTag,
 		build.Protocol, build.InternalPort, build.MaxPlayers,
 		build.FileURL, build.FileSize, build.CreatedAt,
 	)
@@ -49,7 +49,7 @@ func (s *BuildStorage) Create(ctx context.Context, build *domain.ServerBuild) er
 // GetByID возвращает билд по идентификатору. Возвращает ErrNotFound при отсутствии.
 func (s *BuildStorage) GetByID(ctx context.Context, id int64) (*domain.ServerBuild, error) {
 	const q = `
-		SELECT id, game_id, uploaded_by, version, image_tag,
+		SELECT id, owner_id, game_id, uploaded_by, version, image_tag,
 		       protocol, internal_port, max_players,
 		       file_url, file_size, created_at
 		FROM server_builds WHERE id = $1
@@ -62,7 +62,7 @@ func (s *BuildStorage) GetByID(ctx context.Context, id int64) (*domain.ServerBui
 // GetByVersion возвращает билд по game_id и версии. Возвращает ErrNotFound при отсутствии.
 func (s *BuildStorage) GetByVersion(ctx context.Context, gameID int64, version string) (*domain.ServerBuild, error) {
 	const q = `
-		SELECT id, game_id, uploaded_by, version, image_tag,
+		SELECT id, owner_id, game_id, uploaded_by, version, image_tag,
 		       protocol, internal_port, max_players,
 		       file_url, file_size, created_at
 		FROM server_builds WHERE game_id = $1 AND version = $2
@@ -76,7 +76,7 @@ func (s *BuildStorage) GetByVersion(ctx context.Context, gameID int64, version s
 // Limit ограничивает количество (0 — без ограничения).
 func (s *BuildStorage) ListByGame(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
 	q := `
-		SELECT id, game_id, uploaded_by, version, image_tag,
+		SELECT id, owner_id, game_id, uploaded_by, version, image_tag,
 		       protocol, internal_port, max_players,
 		       file_url, file_size, created_at
 		FROM server_builds WHERE game_id = $1
@@ -168,7 +168,7 @@ type buildScanner interface {
 func scanBuild(s buildScanner) (*domain.ServerBuild, error) {
 	b := &domain.ServerBuild{}
 	err := s.Scan(
-		&b.ID, &b.GameID, &b.UploadedBy, &b.Version, &b.ImageTag,
+		&b.ID, &b.OwnerID, &b.GameID, &b.UploadedBy, &b.Version, &b.ImageTag,
 		&b.Protocol, &b.InternalPort, &b.MaxPlayers,
 		&b.FileURL, &b.FileSize, &b.CreatedAt,
 	)

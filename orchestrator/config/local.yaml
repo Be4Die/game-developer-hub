@@ -3,7 +3,9 @@ env: "local"
 grpc:
   port: 50052
 
-api_key: "dev-api-key-for-local-testing"
+jwt:
+  secret: "dev-jwt-secret-for-local-testing"
+  issuer: "sso"
 
 db:
   host: "postgres"

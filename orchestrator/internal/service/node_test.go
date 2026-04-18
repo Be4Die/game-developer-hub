@@ -265,7 +265,7 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx := context.Background()
-	result, err := svc.ListNodes(ctx, nil)
+	result, err := svc.ListNodes(ctx, "", nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -323,7 +323,7 @@ func TestNodeService_GetNode_Success(t *testing.T) {
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx := context.Background()
-	result, err := svc.GetNode(ctx, nodeID)
+	result, err := svc.GetNode(ctx, "", nodeID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -391,7 +391,7 @@ func TestNodeService_DeleteNode_Success(t *testing.T) {
 	svc := NewNodeService(nodeRepo, nodeState, instanceRepo, instanceState, &hbMockNodeClient{})
 
 	ctx := context.Background()
-	err := svc.DeleteNode(ctx, nodeID)
+	err := svc.DeleteNode(ctx, "", nodeID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -448,7 +448,7 @@ func TestNodeService_GetNodeUsage_Success(t *testing.T) {
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx := context.Background()
-	result, err := svc.GetNodeUsage(ctx, nodeID)
+	result, err := svc.GetNodeUsage(ctx, "", nodeID)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

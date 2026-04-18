@@ -20,18 +20,19 @@ func NewBuildHandler(pipeline *service.BuildPipeline) *BuildHandler {
 
 // Upload загружает серверный билд.
 func (h *BuildHandler) Upload(ctx context.Context, req *pb.UploadBuildRequest) (*pb.UploadBuildResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
 	params := service.UploadBuildParams{
 		GameID:       req.GetGameId(),
+		OwnerID:      ownerID,
 		Version:      req.GetBuildVersion(),
 		Protocol:     protocolFromProto(req.GetProtocol()),
 		InternalPort: req.GetInternalPort(),
 		MaxPlayers:   req.GetMaxPlayers(),
-		Archive:      nil, // Будет обработано отдельно — image_data в памяти.
+		Archive:      nil,
+		ArchiveData:  req.GetImageData(),
 		ArchiveSize:  int64(len(req.GetImageData())),
 	}
-
-	// Для gRPC передача данных идёт напрямую через bytes, используем bytesReader.
-	params.ArchiveData = req.GetImageData()
 
 	build, err := h.pipeline.UploadBuildFromBytes(ctx, params)
 	if err != nil {

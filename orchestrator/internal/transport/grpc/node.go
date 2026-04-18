@@ -21,7 +21,11 @@ func NewNodeHandler(svc *service.NodeService) *NodeHandler {
 
 // Register подключает вычислительную ноду.
 func (h *NodeHandler) Register(ctx context.Context, req *pb.RegisterNodeRequest) (*pb.RegisterNodeResponse, error) {
-	params := service.RegisterNodeParams{}
+	ownerID, _ := GetUserID(ctx)
+
+	params := service.RegisterNodeParams{
+		OwnerID: ownerID,
+	}
 
 	switch v := req.GetMode().(type) {
 	case *pb.RegisterNodeRequest_Manual:
@@ -43,15 +47,17 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.RegisterNodeRequest)
 	return &pb.RegisterNodeResponse{Node: nodeToProto(node)}, nil
 }
 
-// List возвращает список всех нод.
+// List возвращает список всех нод пользователя.
 func (h *NodeHandler) List(ctx context.Context, req *pb.ListNodesRequest) (*pb.ListNodesResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
 	var statusFilter *domain.NodeStatus
 	if req.Status != nil {
 		s := nodeStatusFromProto(req.GetStatus())
 		statusFilter = &s
 	}
 
-	nodes, err := h.nodeService.ListNodes(ctx, statusFilter)
+	nodes, err := h.nodeService.ListNodes(ctx, ownerID, statusFilter)
 	if err != nil {
 		return nil, domainError(err, "list nodes")
 	}
@@ -66,7 +72,9 @@ func (h *NodeHandler) List(ctx context.Context, req *pb.ListNodesRequest) (*pb.L
 
 // Get возвращает информацию о ноде.
 func (h *NodeHandler) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeResponse, error) {
-	node, err := h.nodeService.GetNode(ctx, req.GetNodeId())
+	ownerID, _ := GetUserID(ctx)
+
+	node, err := h.nodeService.GetNode(ctx, ownerID, req.GetNodeId())
 	if err != nil {
 		return nil, domainError(err, "get node")
 	}
@@ -76,7 +84,9 @@ func (h *NodeHandler) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetN
 
 // Delete удаляет ноду.
 func (h *NodeHandler) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.DeleteNodeResponse, error) {
-	err := h.nodeService.DeleteNode(ctx, req.GetNodeId())
+	ownerID, _ := GetUserID(ctx)
+
+	err := h.nodeService.DeleteNode(ctx, ownerID, req.GetNodeId())
 	if err != nil {
 		return nil, domainError(err, "delete node")
 	}
@@ -86,7 +96,9 @@ func (h *NodeHandler) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*p
 
 // GetUsage возвращает потребление ресурсов ноды.
 func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.GetNodeUsageRequest) (*pb.GetNodeUsageResponse, error) {
-	usage, err := h.nodeService.GetNodeUsage(ctx, req.GetNodeId())
+	ownerID, _ := GetUserID(ctx)
+
+	usage, err := h.nodeService.GetNodeUsage(ctx, ownerID, req.GetNodeId())
 	if err != nil {
 		return nil, domainError(err, "get node usage")
 	}

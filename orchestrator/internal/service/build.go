@@ -60,6 +60,7 @@ func (p *BuildPipeline) WithWorkDir(dir string) *BuildPipeline {
 
 // UploadBuildParams содержит параметры загрузки билда.
 type UploadBuildParams struct {
+	OwnerID      string
 	GameID       int64
 	Version      string
 	Protocol     domain.Protocol
@@ -158,6 +159,7 @@ func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParam
 
 	// Шаг 11: регистрация метаданных в PostgreSQL.
 	build := &domain.ServerBuild{
+		OwnerID:      params.OwnerID,
 		GameID:       params.GameID,
 		Version:      params.Version,
 		ImageTag:     imageTag,

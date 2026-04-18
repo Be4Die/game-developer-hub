@@ -11,6 +11,7 @@
 
 CREATE TABLE IF NOT EXISTS nodes (
     id            BIGSERIAL PRIMARY KEY,
+    owner_id      TEXT NOT NULL DEFAULT '',           -- ID владельца (пользователь)
     address       TEXT NOT NULL UNIQUE,              -- gRPC-адрес (host:port)
     token_hash    BYTEA NOT NULL,                    -- хеш авторизационного токена
     api_token     TEXT NOT NULL DEFAULT '',          -- plaintext токен для gRPC-запросов
@@ -38,6 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_nodes_last_ping ON nodes(last_ping_at);
 
 CREATE TABLE IF NOT EXISTS server_builds (
     id             BIGSERIAL PRIMARY KEY,
+    owner_id       TEXT NOT NULL DEFAULT '',          -- ID владельца (пользователь)
     game_id        BIGINT NOT NULL,                  -- ID игры
     uploaded_by    BIGINT NOT NULL DEFAULT 0,        -- ID пользователя (0=неизвестно)
     version        TEXT NOT NULL,                    -- версия билда (semver)
@@ -63,6 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_server_builds_created ON server_builds(created_at
 
 CREATE TABLE IF NOT EXISTS instances (
     id               BIGSERIAL PRIMARY KEY,
+    owner_id         TEXT NOT NULL DEFAULT '',       -- ID владельца (пользователь)
     node_id          BIGINT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
     server_build_id  BIGINT NOT NULL REFERENCES server_builds(id) ON DELETE RESTRICT,
     game_id          BIGINT NOT NULL,                  -- денормализовано для быстрых запросов

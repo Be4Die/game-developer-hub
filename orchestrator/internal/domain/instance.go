@@ -5,6 +5,7 @@ import "time"
 // Instance описывает экземпляр игрового сервера.
 type Instance struct {
 	ID               int64
+	OwnerID          string // ID пользователя (из JWT).
 	NodeID           int64
 	ServerBuildID    int64
 	GameID           int64

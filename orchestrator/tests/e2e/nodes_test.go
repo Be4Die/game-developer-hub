@@ -25,11 +25,11 @@ func TestE2E_Nodes_Register_Manual(t *testing.T) {
 
 	nodeAddress := env.getNodeAddress(t)
 
-	resp, err := env.nodeClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
 		Mode: &pb.RegisterNodeRequest_Manual{
 			Manual: &pb.RegisterNodeManual{
 				Address: nodeAddress,
-				Token:   e2eAPIKey,
+				Token:   "test-node-token",
 				Region:  ptrStr("e2e-test"),
 			},
 		},
@@ -61,7 +61,7 @@ func TestE2E_Nodes_Register_Authorize(t *testing.T) {
 
 	// Создаём ноду в unauthorized состоянии.
 	now := time.Now()
-	token := e2eAPIKey
+	token := "test-node-token"
 	tokenHash := sha256.Sum256([]byte(token))
 
 	node := &domain.Node{
@@ -79,7 +79,7 @@ func TestE2E_Nodes_Register_Authorize(t *testing.T) {
 	}
 
 	// Авторизуем через API.
-	resp, err := env.nodeClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
 		Mode: &pb.RegisterNodeRequest_Authorize{
 			Authorize: &pb.RegisterNodeAuthorize{
 				NodeId: node.ID,
@@ -107,13 +107,14 @@ func TestE2E_Nodes_List(t *testing.T) {
 
 	// Создаём ноды напрямую.
 	now := time.Now()
-	tokenHash := sha256.Sum256([]byte(e2eAPIKey))
+	token := "test-node-token"
+	tokenHash := sha256.Sum256([]byte(token))
 	for i := range 2 {
 		node := &domain.Node{
 			ID:         int64(i + 1),
 			Address:    fmt.Sprintf("e2e-node-%d:44044", i+1),
 			TokenHash:  tokenHash[:],
-			APIToken:   e2eAPIKey,
+			APIToken:   token,
 			Status:     domain.NodeStatusOnline,
 			LastPingAt: now,
 			CreatedAt:  now,
@@ -125,7 +126,7 @@ func TestE2E_Nodes_List(t *testing.T) {
 		_ = env.nodeState.UpdateHeartbeat(ctx, node.ID, &domain.ResourceUsage{})
 	}
 
-	resp, err := env.nodeClient.List(withAPIKey(ctx, e2eAPIKey), &pb.ListNodesRequest{})
+	resp, err := env.nodeClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.ListNodesRequest{})
 	if err != nil {
 		t.Fatalf("ListNodes failed: %v", err)
 	}
@@ -145,13 +146,14 @@ func TestE2E_Nodes_Delete(t *testing.T) {
 	defer cancel()
 
 	now := time.Now()
-	tokenHash := sha256.Sum256([]byte(e2eAPIKey))
+	token := "test-node-token"
+	tokenHash := sha256.Sum256([]byte(token))
 
 	node := &domain.Node{
 		ID:         99,
 		Address:    "e2e-delete-node:44044",
 		TokenHash:  tokenHash[:],
-		APIToken:   e2eAPIKey,
+		APIToken:   token,
 		Status:     domain.NodeStatusOnline,
 		LastPingAt: now,
 		CreatedAt:  now,
@@ -161,7 +163,7 @@ func TestE2E_Nodes_Delete(t *testing.T) {
 		t.Fatalf("Create node failed: %v", err)
 	}
 
-	_, err := env.nodeClient.Delete(withAPIKey(ctx, e2eAPIKey), &pb.DeleteNodeRequest{NodeId: node.ID})
+	_, err := env.nodeClient.Delete(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.DeleteNodeRequest{NodeId: node.ID})
 	if err != nil {
 		t.Fatalf("DeleteNode failed: %v", err)
 	}
