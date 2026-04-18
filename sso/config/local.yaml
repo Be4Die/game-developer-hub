@@ -1,0 +1,28 @@
+env: "local"
+grpc:
+  port: 50051
+  timeout: 10s
+db:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  name: "sso"
+  ssl_mode: "disable"
+kv:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  key_ttl: 30m
+jwt:
+  access_token_ttl: 15m
+  refresh_token_ttl: 720h
+  issuer: "sso"
+smtp:
+  host: "localhost"
+  port: 25
+  from: "noreply@welwise.games"
+  tls: false
+email:
+  verification_code_ttl: 24h
+  reset_token_ttl: 1h

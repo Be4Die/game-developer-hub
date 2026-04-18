@@ -15,6 +15,12 @@ vars:
   ORCHESTRATOR_CONTAINER_NAME: "orchestrator"
   ORCHESTRATOR_PORT: 8080
 
+  # SSO
+  SSO_IMAGE_NAME: "sso"
+  SSO_IMAGE_TAG: "latest"
+  SSO_CONTAINER_NAME: "sso"
+  SSO_GRPC_PORT: 50051
+
 includes:
   go: taskfiles/go.yml
   docker: taskfiles/docker.yml
@@ -468,6 +474,202 @@ tasks:
         vars:
           GO_DIR: orchestrator
 
+  # ==================== SSO ====================
+  sso:build:
+    desc: "Build Docker image for SSO service"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.SSO_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.SSO_IMAGE_TAG}}"
+          DOCKERFILE_PATH: sso/Dockerfile
+
+  sso:up:
+    desc: "Start SSO stack (PostgreSQL, Valkey, SSO)"
+    dir: sso
+    cmds:
+      - docker compose up -d --build
+      - |
+        echo "Ожидание PostgreSQL..."
+        for i in $(seq 1 20); do
+          docker exec sso-postgres pg_isready -U postgres >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание Valkey..."
+        for i in $(seq 1 20); do
+          docker exec sso-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
+          sleep 1
+        done
+      - 'echo "SSO stack is ready"'
+
+  sso:down:
+    desc: "Stop SSO stack"
+    dir: sso
+    cmds:
+      - docker compose down --remove-orphans
+
+  sso:logs:
+    desc: "Show SSO service logs"
+    dir: sso
+    cmds:
+      - docker compose logs -f {{.SERVICE | default "sso"}}
+
+  sso:restart:
+    desc: "Rebuild and restart SSO service"
+    dir: sso
+    cmds:
+      - docker compose up -d --build --force-recreate
+
+  sso:db:init:
+    desc: "Initialize SSO database schema"
+    dir: sso
+    cmds:
+      - |
+        docker exec -i sso-postgres psql -U postgres -d sso < migrations/init.sql
+      - echo "✅ SSO database schema initialized"
+
+  sso:db:reset:
+    desc: "Reset SSO database (drop and recreate)"
+    dir: sso
+    cmds:
+      - docker exec sso-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sso;"
+      - docker exec sso-postgres psql -U postgres -c "CREATE DATABASE sso;"
+      - task: sso:db:init
+
+  sso:lint:
+    desc: "Lint SSO Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: sso
+
+  sso:test:
+    desc: "Run SSO unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: sso
+
+  sso:test:cover:
+    desc: "Run SSO tests and print coverage percentage"
+    cmds:
+      - task: go:test:cover
+        vars:
+          GO_DIR: sso
+
+  sso:test:cover-html:
+    desc: "Show SSO test coverage in browser"
+    cmds:
+      - task: go:test:cover-html
+        vars:
+          GO_DIR: sso
+
+  sso:shell:
+    desc: "Open shell in running SSO container"
+    dir: sso
+    cmds:
+      - docker compose exec sso sh
+
+  # ==================== SSO: Seed & Load Tests ====================
+  sso:seed:
+    desc: "Seed SSO with test users (requires running server)"
+    dir: sso
+    vars:
+      SEED_USERS: "{{.SEED_USERS | default 10}}"
+      SEED_ADMINS: "{{.SEED_ADMINS | default 1}}"
+    env:
+      SEED_SSO_ADDR: '{{.SSO_ADDR | default "localhost:50051"}}'
+      SEED_USERS: "{{.SEED_USERS}}"
+      SEED_ADMINS: "{{.SEED_ADMINS}}"
+    cmds:
+      - go run ./cmd/seed
+
+  sso:load-test:
+    desc: "Run load tests against SSO gRPC API (server must be running)"
+    dir: sso
+    cmds:
+      - >
+        go run ./cmd/load-test
+        --addr {{.SSO_ADDR | default "localhost:50051"}}
+        --concurrency {{.SSO_CONCURRENCY | default 50}}
+        --requests {{.SSO_REQUESTS | default 10000}}
+
+  sso:load-test:heavy:
+    desc: "Run heavy load tests (100 concurrency, 50000 requests)"
+    dir: sso
+    cmds:
+      - go run ./cmd/load-test --addr {{.SSO_ADDR | default "localhost:50051"}} --heavy
+
+  sso:load-test:auth:
+    desc: "Run load tests against SSO AuthService only"
+    dir: sso
+    cmds:
+      - >
+        go run ./cmd/load-test
+        --addr {{.SSO_ADDR | default "localhost:50051"}}
+        --concurrency {{.SSO_CONCURRENCY | default 50}}
+        --requests {{.SSO_REQUESTS | default 10000}}
+        --service auth
+
+  sso:load-test:token:
+    desc: "Run load tests against SSO TokenService only"
+    dir: sso
+    cmds:
+      - >
+        go run ./cmd/load-test
+        --addr {{.SSO_ADDR | default "localhost:50051"}}
+        --concurrency {{.SSO_CONCURRENCY | default 50}}
+        --requests {{.SSO_REQUESTS | default 10000}}
+        --service token
+
+  sso:load-test:user:
+    desc: "Run load tests against SSO UserService only"
+    dir: sso
+    cmds:
+      - >
+        go run ./cmd/load-test
+        --addr {{.SSO_ADDR | default "localhost:50051"}}
+        --concurrency {{.SSO_CONCURRENCY | default 50}}
+        --requests {{.SSO_REQUESTS | default 10000}}
+        --service user
+
+  sso:load-test:custom:
+    desc: "Run load tests with custom params"
+    vars:
+      ADDR: '{{.ADDR | default "localhost:50051"}}'
+      CONCURRENCY: "{{.CONCURRENCY | default 50}}"
+      REQUESTS: "{{.REQUESTS | default 10000}}"
+    cmds:
+      - >
+        cd sso && go run ./cmd/load-test
+        --addr {{.ADDR}}
+        --concurrency {{.CONCURRENCY}}
+        --requests {{.REQUESTS}}
+
+  sso:load-test:full:
+    desc: "Full load test cycle: start SSO stack, seed, run tests, cleanup"
+    vars:
+      SSO_CONCURRENCY: "{{.SSO_CONCURRENCY | default 50}}"
+      SSO_REQUESTS: "{{.SSO_REQUESTS | default 10000}}"
+    cmds:
+      - echo "==================================================="
+      - echo "  FULL LOAD TEST CYCLE - SSO"
+      - echo "==================================================="
+      - task: sso:up
+      - |
+        echo "Waiting for SSO gRPC..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/50051" 2>/dev/null && break
+          sleep 1
+        done
+      - task: sso:seed
+      - task: sso:load-test
+        vars:
+          SSO_CONCURRENCY: "{{.SSO_CONCURRENCY}}"
+          SSO_REQUESTS: "{{.SSO_REQUESTS}}"
+      - task: sso:down
+
   # ==================== Frontend ====================
   frontend:install:
     desc: "Install frontend dependencies"
@@ -513,7 +715,7 @@ tasks:
 
   # ==================== Stack (deployments/) ====================
   stack:up:
-    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, Node, Frontend)"
+    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Node, Frontend)"
     dir: deployments
     cmds:
       - docker compose up -d --build
@@ -535,7 +737,7 @@ tasks:
           curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost:3000 (frontend), http://localhost:8080 (API)"'
+      - 'echo "Stack is ready: http://localhost:3000 (frontend), http://localhost:8080 (API), :50051 (SSO)"'
 
   stack:down:
     desc: "Stop full stack and remove containers"
@@ -630,6 +832,7 @@ tasks:
     cmds:
       - task: node:lint
       - task: orchestrator:lint
+      - task: sso:lint
       - task: proto:lint
 
   all:cloc:

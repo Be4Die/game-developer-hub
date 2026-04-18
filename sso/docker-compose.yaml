@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sso-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sso
+    ports:
+      - "5432:5432"
+    volumes:
+      - sso-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: sso-valkey
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  sso:
+    build:
+      context: ..
+      dockerfile: sso/Dockerfile
+    container_name: sso
+    environment:
+      CONFIG_PATH: /app/config/local.yaml
+      SSO_API_KEY: dev-api-key-for-local-testing
+      JWT_SECRET: dev-jwt-secret-for-local-testing
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+volumes:
+  sso-pgdata:
