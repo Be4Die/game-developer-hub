@@ -23,6 +23,6 @@ COPY orchestrator/config/ /app/config/
 
 ENV CONFIG_PATH=/app/config/local.yaml
 
-EXPOSE 8080
+EXPOSE 50052
 
 ENTRYPOINT ["/app/orchestrator"]

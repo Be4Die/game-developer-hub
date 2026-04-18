@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "orchestrator/v1/common.proto";
+
+// Сервис управления серверными билдами.
+service BuildService {
+  // Загрузить серверный билд.
+  rpc Upload(UploadBuildRequest) returns (UploadBuildResponse);
+
+  // Список билдов игры.
+  rpc List(ListBuildsRequest) returns (ListBuildsResponse);
+
+  // Информация о конкретном билде.
+  rpc Get(GetBuildRequest) returns (GetBuildResponse);
+
+  // Удалить серверный билд.
+  rpc Delete(DeleteBuildRequest) returns (DeleteBuildResponse);
+}
+
+// ─── Upload ─────────────────────────────────────────────────────────────────
+
+message UploadBuildRequest {
+  int64 game_id = 1;
+  // Docker image tar-архив (результат `docker save`).
+  bytes image_data = 2;
+  string build_version = 3;
+  Protocol protocol = 4;
+  uint32 internal_port = 5;
+  uint32 max_players = 6;
+}
+
+message UploadBuildResponse {
+  ServerBuild build = 1;
+}
+
+// ─── List ───────────────────────────────────────────────────────────────────
+
+message ListBuildsRequest {
+  int64 game_id = 1;
+}
+
+message ListBuildsResponse {
+  repeated ServerBuild builds = 1;
+}
+
+// ─── Get ────────────────────────────────────────────────────────────────────
+
+message GetBuildRequest {
+  int64 game_id = 1;
+  string build_version = 2;
+}
+
+message GetBuildResponse {
+  ServerBuild build = 1;
+}
+
+// ─── Delete ─────────────────────────────────────────────────────────────────
+
+message DeleteBuildRequest {
+  int64 game_id = 1;
+  string build_version = 2;
+}
+
+message DeleteBuildResponse {
+  // Пусто — при успехе возвращается пустой ответ.
+}

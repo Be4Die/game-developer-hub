@@ -35,7 +35,7 @@ services:
     environment:
       CONFIG_PATH: /app/config/local.yaml
     ports:
-      - "8080:8080"
+      - "50052:50052"
     depends_on:
       postgres:
         condition: service_healthy

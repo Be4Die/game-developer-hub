@@ -3,17 +3,17 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 )
 
 // E2E_02: Register node via manual flow — GetNodeInfo gRPC к реальной ноде.
@@ -23,45 +23,33 @@ func TestE2E_Nodes_Register_Manual(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), e2eTestTimeout)
 	defer cancel()
 
-	// Регистрируем ноду через manual flow (адрес + токен).
-	// Токен = e2eAPIKey, так как это API key реальной ноды.
-	reqBody := map[string]any{
-		"address": env.getNodeAddress(t),
-		"token":   e2eAPIKey,
-		"region":  "e2e-test",
-	}
-	body, _ := json.Marshal(reqBody)
+	nodeAddress := env.getNodeAddress(t)
 
-	resp, err := http.Post(env.baseURL+"/nodes", "application/json", bytes.NewReader(body))
+	resp, err := env.nodeClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+		Mode: &pb.RegisterNodeRequest_Manual{
+			Manual: &pb.RegisterNodeManual{
+				Address: nodeAddress,
+				Token:   e2eAPIKey,
+				Region:  ptrStr("e2e-test"),
+			},
+		},
+	})
 	if err != nil {
-		t.Fatalf("POST /nodes failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		respBody, _ := io.ReadAll(resp.Body)
-		t.Fatalf("status = %d, body = %s, want %d", resp.StatusCode, respBody, http.StatusCreated)
+		t.Fatalf("RegisterNode failed: %v", err)
 	}
 
-	var result map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("decode failed: %v", err)
+	if resp.Node.Status != pb.NodeStatus_NODE_STATUS_ONLINE {
+		t.Errorf("status = %q, want %q", resp.Node.Status, pb.NodeStatus_NODE_STATUS_ONLINE)
+	}
+	if resp.Node.GetRegion() != "e2e-test" {
+		t.Errorf("region = %q, want %q", resp.Node.GetRegion(), "e2e-test")
+	}
+	if resp.Node.GetCpuCores() == 0 {
+		t.Error("cpu_cores = 0 — GetNodeInfo gRPC likely failed")
 	}
 
-	if result["status"] != "online" {
-		t.Errorf("status = %q, want %q", result["status"], "online")
-	}
-	if result["region"] != "e2e-test" {
-		t.Errorf("region = %q, want %q", result["region"], "e2e-test")
-	}
-	if _, ok := result["cpu_cores"]; !ok {
-		t.Error("cpu_cores field missing — GetNodeInfo gRPC likely failed")
-	}
-
-	t.Logf("Node registered: id=%v, address=%s, status=%s, cpu_cores=%v",
-		result["id"], result["address"], result["status"], result["cpu_cores"])
-
-	_ = ctx
+	t.Logf("Node registered: id=%d, address=%s, status=%s, cpu_cores=%d",
+		resp.Node.Id, resp.Node.Address, resp.Node.Status, resp.Node.CpuCores)
 }
 
 // E2E_03: Register node via authorize flow.
@@ -91,32 +79,23 @@ func TestE2E_Nodes_Register_Authorize(t *testing.T) {
 	}
 
 	// Авторизуем через API.
-	reqBody := map[string]any{
-		"node_id": node.ID,
-		"token":   token,
-	}
-	body, _ := json.Marshal(reqBody)
-
-	resp, err := http.Post(env.baseURL+"/nodes", "application/json", bytes.NewReader(body))
+	resp, err := env.nodeClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+		Mode: &pb.RegisterNodeRequest_Authorize{
+			Authorize: &pb.RegisterNodeAuthorize{
+				NodeId: node.ID,
+				Token:  token,
+			},
+		},
+	})
 	if err != nil {
-		t.Fatalf("POST /nodes failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusCreated)
+		t.Fatalf("RegisterNode failed: %v", err)
 	}
 
-	var result map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		t.Fatalf("decode failed: %v", err)
+	if resp.Node.Status != pb.NodeStatus_NODE_STATUS_ONLINE {
+		t.Errorf("status = %q, want %q", resp.Node.Status, pb.NodeStatus_NODE_STATUS_ONLINE)
 	}
 
-	if result["status"] != "online" {
-		t.Errorf("status = %q, want %q", result["status"], "online")
-	}
-
-	t.Logf("Node authorized: id=%v, status=%s", result["id"], result["status"])
+	t.Logf("Node authorized: id=%d, status=%s", resp.Node.Id, resp.Node.Status)
 }
 
 // E2E_04: List nodes.
@@ -126,7 +105,7 @@ func TestE2E_Nodes_List(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), e2eTestTimeout)
 	defer cancel()
 
-	// Создаём ноду напрямую.
+	// Создаём ноды напрямую.
 	now := time.Now()
 	tokenHash := sha256.Sum256([]byte(e2eAPIKey))
 	for i := range 2 {
@@ -146,27 +125,16 @@ func TestE2E_Nodes_List(t *testing.T) {
 		_ = env.nodeState.UpdateHeartbeat(ctx, node.ID, &domain.ResourceUsage{})
 	}
 
-	resp, err := http.Get(env.baseURL + "/nodes")
+	resp, err := env.nodeClient.List(withAPIKey(ctx, e2eAPIKey), &pb.ListNodesRequest{})
 	if err != nil {
-		t.Fatalf("GET /nodes failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("ListNodes failed: %v", err)
 	}
 
-	var body map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("decode failed: %v", err)
+	if len(resp.Nodes) != 2 {
+		t.Fatalf("expected 2 nodes, got %d", len(resp.Nodes))
 	}
 
-	nodes := body["nodes"].([]any)
-	if len(nodes) != 2 {
-		t.Fatalf("expected 2 nodes, got %d", len(nodes))
-	}
-
-	t.Logf("Listed %d nodes", len(nodes))
+	t.Logf("Listed %d nodes", len(resp.Nodes))
 }
 
 // E2E_05: Delete node.
@@ -193,16 +161,9 @@ func TestE2E_Nodes_Delete(t *testing.T) {
 		t.Fatalf("Create node failed: %v", err)
 	}
 
-	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/nodes/%d", env.baseURL, node.ID), nil)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	_, err := env.nodeClient.Delete(withAPIKey(ctx, e2eAPIKey), &pb.DeleteNodeRequest{NodeId: node.ID})
 	if err != nil {
-		t.Fatalf("DELETE /nodes/%d failed: %v", node.ID, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusNoContent {
-		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusNoContent)
+		t.Fatalf("DeleteNode failed: %v", err)
 	}
 
 	_, err = env.nodeRepo.GetByID(ctx, node.ID)
@@ -227,3 +188,6 @@ func (env *e2eTestEnv) getNodeAddress(t *testing.T) string {
 	}
 	return host + ":" + port.Port()
 }
+
+var _ = codes.OK
+var _ = status.Error

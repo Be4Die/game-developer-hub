@@ -4,7 +4,7 @@
 #  Сервисы:
 #    postgres       — БД оркестратора
 #    valkey         — key-value хранилище (heartbeat нод)
-#    orchestrator   — HTTP API оркестратора
+#    orchestrator   — gRPC API оркестратора
 #    game-server-node — gRPC-агент ноды (Docker-in-Docker)
 #    frontend       — Vue SPA с nginx (production) / vite dev-proxy
 #
@@ -56,7 +56,7 @@ services:
     environment:
       CONFIG_PATH: /app/config/local.yaml
     ports:
-      - "8080:8080"
+      - "50052:50052"
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,7 +66,14 @@ services:
       - ../orchestrator/config:/app/config:ro
       - builds:/app/data/builds
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "grpcurl",
+          "-plaintext",
+          "localhost:50052",
+          "orchestrator.v1.HealthService/Check",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10

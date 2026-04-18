@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Сетевой протокол игрового сервера.
+enum Protocol {
+  PROTOCOL_UNSPECIFIED = 0;
+  PROTOCOL_TCP = 1;
+  PROTOCOL_UDP = 2;
+  PROTOCOL_WEBSOCKET = 3;
+  PROTOCOL_WEBRTC = 4;
+}
+
+// Статус инстанса.
+enum InstanceStatus {
+  INSTANCE_STATUS_UNSPECIFIED = 0;
+  INSTANCE_STATUS_STARTING = 1;
+  INSTANCE_STATUS_RUNNING = 2;
+  INSTANCE_STATUS_STOPPING = 3;
+  INSTANCE_STATUS_STOPPED = 4;
+  INSTANCE_STATUS_CRASHED = 5;
+}
+
+// Статус ноды.
+enum NodeStatus {
+  NODE_STATUS_UNSPECIFIED = 0;
+  NODE_STATUS_UNAUTHORIZED = 1;
+  NODE_STATUS_ONLINE = 2;
+  NODE_STATUS_OFFLINE = 3;
+  NODE_STATUS_MAINTENANCE = 4;
+}
+
+// Источник лога.
+enum LogSource {
+  LOG_SOURCE_UNSPECIFIED = 0;
+  LOG_SOURCE_STDOUT = 1;
+  LOG_SOURCE_STDERR = 2;
+}
+
+// Стратегия выделения порта.
+enum PortAllocationStrategy {
+  PORT_ALLOCATION_STRATEGY_UNSPECIFIED = 0;
+  PORT_ALLOCATION_STRATEGY_ANY = 1;
+  PORT_ALLOCATION_STRATEGY_EXACT = 2;
+  PORT_ALLOCATION_STRATEGY_RANGE = 3;
+}
+
+// Серверный билд.
+message ServerBuild {
+  int64 id = 1;
+  int64 game_id = 2;
+  string build_version = 3;
+  string image_tag = 4;
+  Protocol protocol = 5;
+  uint32 internal_port = 6;
+  uint32 max_players = 7;
+  int64 file_size_bytes = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+// Инстанс игрового сервера.
+message Instance {
+  int64 id = 1;
+  int64 game_id = 2;
+  int64 node_id = 3;
+  string build_version = 4;
+  string name = 5;
+  Protocol protocol = 6;
+  uint32 host_port = 7;
+  uint32 internal_port = 8;
+  InstanceStatus status = 9;
+  optional uint32 player_count = 10;
+  uint32 max_players = 11;
+  map<string, string> developer_payload = 12;
+  string server_address = 13;
+  google.protobuf.Timestamp started_at = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+}
+
+// Вычислительная нода.
+message Node {
+  int64 id = 1;
+  string address = 2;
+  string region = 3;
+  NodeStatus status = 4;
+  uint32 cpu_cores = 5;
+  uint64 total_memory_bytes = 6;
+  uint64 total_disk_bytes = 7;
+  string agent_version = 8;
+  google.protobuf.Timestamp last_ping_at = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// Потребление ресурсов.
+message ResourceUsage {
+  double cpu_usage_percent = 1;
+  uint64 memory_used_bytes = 2;
+  uint64 disk_used_bytes = 3;
+  uint64 network_bytes_per_sec = 4;
+}
+
+// Лимиты ресурсов.
+message ResourceLimits {
+  int32 cpu_millis = 1;
+  uint64 memory_bytes = 2;
+}
+
+// Выделение порта: любой свободный.
+message PortAllocationAny {
+  PortAllocationStrategy strategy = 1;
+}
+
+// Выделение порта: конкретный порт.
+message PortAllocationExact {
+  PortAllocationStrategy strategy = 1;
+  uint32 port = 2;
+}
+
+// Выделение порта: диапазон.
+message PortAllocationRange {
+  PortAllocationStrategy strategy = 1;
+  uint32 min_port = 2;
+  uint32 max_port = 3;
+}
+
+// Выбор стратегии выделения порта.
+message PortAllocation {
+  oneof strategy {
+    PortAllocationAny any = 1;
+    PortAllocationExact exact = 2;
+    PortAllocationRange range = 3;
+  }
+}
+
+// Эндпоинт сервера для discovery.
+message ServerEndpoint {
+  int64 instance_id = 1;
+  string address = 2;
+  uint32 port = 3;
+  Protocol protocol = 4;
+  uint32 player_count = 5;
+  uint32 max_players = 6;
+}
+
+// Запись журнала.
+message LogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+  LogSource source = 2;
+  string message = 3;
+}
+
+// Машина-читаемая ошибка.
+message Error {
+  string code = 1;
+  string message = 2;
+}

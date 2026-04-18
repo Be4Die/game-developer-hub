@@ -13,7 +13,7 @@ vars:
   ORCHESTRATOR_IMAGE_NAME: "orchestrator"
   ORCHESTRATOR_IMAGE_TAG: "latest"
   ORCHESTRATOR_CONTAINER_NAME: "orchestrator"
-  ORCHESTRATOR_PORT: 8080
+  ORCHESTRATOR_GRPC_PORT: 50052
 
   # SSO
   SSO_IMAGE_NAME: "sso"
@@ -259,7 +259,7 @@ tasks:
     cmds:
       - >
         cd orchestrator && go run ./cmd/load-test
-        --addr {{.ORCH_ADDR | default "http://localhost:8080"}}
+        --addr {{.ORCH_ADDR | default "localhost:50052"}}
         --rate {{.ORCH_RATE | default 1000}}
         --duration {{.ORCH_DURATION | default "30s"}}
 
@@ -276,7 +276,7 @@ tasks:
   orchestrator:load-test:custom:
     desc: "Run load tests with custom params"
     vars:
-      ADDR: '{{.ADDR | default "http://localhost:8080"}}'
+      ADDR: '{{.ADDR | default "localhost:50052"}}'
       RATE: "{{.RATE | default 1000}}"
       DURATION: '{{.DURATION | default "30s"}}'
     cmds:
@@ -325,7 +325,7 @@ tasks:
       - |
         echo "Waiting for Orchestrator..."
         for i in $(seq 1 30); do
-          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
+          bash -c "echo >/dev/tcp/localhost/50052" 2>/dev/null && break
           sleep 1
         done
       - echo "✅ Stack is ready"
@@ -389,7 +389,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
           DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
-          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}"
+          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_GRPC_PORT}}:{{.ORCHESTRATOR_GRPC_PORT}}"
 
   orchestrator:down:
     desc: "Stop and remove orchestrator container"
@@ -413,7 +413,7 @@ tasks:
           DOCKER_IMAGE_NAME: "{{.ORCHESTRATOR_IMAGE_NAME}}"
           DOCKER_IMAGE_TAG: "{{.ORCHESTRATOR_IMAGE_TAG}}"
           DOCKER_CONTAINER_NAME: "{{.ORCHESTRATOR_CONTAINER_NAME}}"
-          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_PORT}}:{{.ORCHESTRATOR_PORT}}"
+          DOCKER_RUN_ARGS: "-p {{.ORCHESTRATOR_GRPC_PORT}}:{{.ORCHESTRATOR_GRPC_PORT}}"
 
   orchestrator:shell:
     desc: "Open shell in running orchestrator container"
@@ -734,10 +734,10 @@ tasks:
       - |
         echo "Ожидание Orchestrator..."
         for i in $(seq 1 30); do
-          curl -sf http://localhost:8080/health >/dev/null 2>&1 && break
+          bash -c "echo >/dev/tcp/localhost/50052" 2>/dev/null && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost:3000 (frontend), http://localhost:8080 (API), :50051 (SSO)"'
+      - 'echo "Stack is ready: http://localhost:3000 (frontend), :50052 (Orchestrator gRPC), :50051 (SSO)"'
 
   stack:down:
     desc: "Stop full stack and remove containers"

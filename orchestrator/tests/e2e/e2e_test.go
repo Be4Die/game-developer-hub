@@ -9,7 +9,7 @@
 //   - PostgreSQL: testcontainers (реальный)
 //   - Valkey: testcontainers (реальный)
 //   - game-server-node: testcontainers с docker.sock mount (реальный)
-//   - Orchestrator: in-process через httptest.NewServer с реальным gRPC-клиентом к ноде
+//   - Orchestrator: in-process gRPC server
 //
 // Перед запуском:
 //  1. Соберите образ game-server-node: task node:build
@@ -22,14 +22,16 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"net/http"
-	"net/http/httptest"
+	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
@@ -38,7 +40,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
-	orchhttp "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/http"
+	grpctransport "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/grpc"
+	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/moby/moby/api/types/container"
 	"github.com/redis/go-redis/v9"
@@ -56,20 +59,25 @@ const (
 
 // e2eTestEnv хранит все компоненты тестового окружения.
 type e2eTestEnv struct {
-	pgContainer    *testcontainerspostgres.PostgresContainer
-	redisContainer *testcontainersredis.RedisContainer
-	nodeContainer  testcontainers.Container
-	pool           *pgxpool.Pool
-	redisClient    *redis.Client
-	nodeRepo       *postgres.NodeRepo
-	instanceRepo   *postgres.InstanceRepo
-	buildStorage   *postgres.BuildStorage
-	buildFS        domain.BuildStorageFS
-	nodeState      *valkey.NodeStateStore
-	instanceState  *valkey.InstanceStateStore
-	httpServer     *httptest.Server
-	baseURL        string
-	log            *slog.Logger
+	pgContainer     *testcontainerspostgres.PostgresContainer
+	redisContainer  *testcontainersredis.RedisContainer
+	nodeContainer   testcontainers.Container
+	pool            *pgxpool.Pool
+	redisClient     *redis.Client
+	nodeRepo        *postgres.NodeRepo
+	instanceRepo    *postgres.InstanceRepo
+	buildStorage    *postgres.BuildStorage
+	buildFS         domain.BuildStorageFS
+	nodeState       *valkey.NodeStateStore
+	instanceState   *valkey.InstanceStateStore
+	grpcServer      *grpc.Server
+	grpcConn        *grpc.ClientConn
+	buildClient     pb.BuildServiceClient
+	instanceClient  pb.InstanceServiceClient
+	discoveryClient pb.DiscoveryServiceClient
+	nodeClient      pb.NodeServiceClient
+	healthClient    pb.HealthServiceClient
+	log             *slog.Logger
 }
 
 // setupE2E запускает PostgreSQL, Valkey, game-server-node и orchestrator in-process.
@@ -183,8 +191,8 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		MaxMessageSize:    16 * 1024 * 1024,
 		EnableCompression: true,
 	}
-	nodeClient := grpcnode.New(grpcCfg)
-	t.Cleanup(func() { nodeClient.Close() })
+	orchNodeClient := grpcnode.New(grpcCfg)
+	t.Cleanup(func() { orchNodeClient.Close() })
 
 	// ─── Сервисы ────────────────────────────────────────────────
 	limits := config.LimitsConfig{
@@ -195,65 +203,102 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	}
 
 	buildPipeline := service.NewBuildPipeline(
-		buildStorage, buildFS, nodeClient, nodeRepo, nodeState, limits,
+		buildStorage, buildFS, orchNodeClient, nodeRepo, nodeState, limits,
 	)
 	instanceService := service.NewInstanceService(
-		instanceRepo, instanceState, buildStorage, nodeRepo, nodeState, nodeClient, limits,
+		instanceRepo, instanceState, buildStorage, nodeRepo, nodeState, orchNodeClient, limits,
 	)
 	discoveryService := service.NewDiscoveryService(
 		instanceRepo, instanceState, nodeRepo,
 	)
 	nodeService := service.NewNodeService(
-		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
+		nodeRepo, nodeState, instanceRepo, instanceState, orchNodeClient,
 	)
 
-	// ─── HTTP-сервер ────────────────────────────────────────────
+	// ─── gRPC-сервер ────────────────────────────────────────────
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
-	buildHandler := orchhttp.NewBuildHandler(buildPipeline)
-	instanceHandler := orchhttp.NewInstanceHandler(instanceService, limits.MaxLogTailLines)
-	discoveryHandler := orchhttp.NewDiscoveryHandler(discoveryService)
-	nodeHandler := orchhttp.NewNodeHandler(nodeService)
-	healthHandler := orchhttp.NewHealthHandler("e2e-1.0.0")
+	buildHandler := grpctransport.NewBuildHandler(buildPipeline)
+	instanceHandler := grpctransport.NewInstanceHandler(instanceService, limits.MaxLogTailLines)
+	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
+	nodeHandler := grpctransport.NewNodeHandler(nodeService)
+	healthHandler := grpctransport.NewHealthHandler("e2e-1.0.0")
 
-	router := orchhttp.NewRouter(
-		buildHandler, instanceHandler, discoveryHandler, nodeHandler, healthHandler, log,
+	authInterceptor := grpctransport.NewAPIKeyAuth(e2eAPIKey)
+
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor.Unary()),
 	)
 
-	srv := httptest.NewServer(router)
-	t.Cleanup(srv.Close)
+	pb.RegisterBuildServiceServer(grpcServer, buildHandler)
+	pb.RegisterInstanceServiceServer(grpcServer, instanceHandler)
+	pb.RegisterDiscoveryServiceServer(grpcServer, discoveryHandler)
+	pb.RegisterNodeServiceServer(grpcServer, nodeHandler)
+	pb.RegisterHealthServiceServer(grpcServer, healthHandler)
+
+	// Запуск на случайном порту.
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Error("gRPC server failed", slog.String("error", err.Error()))
+		}
+	}()
 
 	t.Cleanup(func() {
+		grpcServer.GracefulStop()
 		redisClient.Close()
 		pool.Close()
 	})
 
-	// Регистрируем ноду через API для E2E-тестов.
-	nodeAddr := nodeAddress
-	token := e2eAPIKey
-
-	regResp, regErr := http.Post(srv.URL+"/nodes", "application/json",
-		strings.NewReader(fmt.Sprintf(`{"address":"%s","token":"%s","region":"e2e"}`, nodeAddr, token)),
+	// ─── gRPC-клиент к серверу ──────────────────────────────────
+	conn, err := grpc.NewClient(lis.Addr().String(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
-	if regErr == nil {
-		defer regResp.Body.Close()
-		t.Logf("Node registered via API, status=%d", regResp.StatusCode)
+	if err != nil {
+		t.Fatalf("failed to connect to gRPC server: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+
+	// Регистрируем ноду через gRPC API.
+	nsClient := pb.NewNodeServiceClient(conn)
+	_, err = nsClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+		Mode: &pb.RegisterNodeRequest_Manual{
+			Manual: &pb.RegisterNodeManual{
+				Address: nodeAddress,
+				Token:   e2eAPIKey,
+				Region:  ptrStr("e2e"),
+			},
+		},
+	})
+	if err != nil {
+		t.Logf("Node registration via gRPC failed: %v", err)
+	} else {
+		t.Logf("Node registered via gRPC")
 	}
 
 	return &e2eTestEnv{
-		pgContainer:    pgContainer,
-		redisContainer: redisContainer,
-		nodeContainer:  nodeContainer,
-		pool:           pool,
-		redisClient:    redisClient,
-		nodeRepo:       nodeRepo,
-		instanceRepo:   instanceRepo,
-		buildStorage:   buildStorage,
-		buildFS:        buildFS,
-		nodeState:      nodeState,
-		instanceState:  instanceState,
-		httpServer:     srv,
-		baseURL:        srv.URL,
-		log:            log,
+		pgContainer:     pgContainer,
+		redisContainer:  redisContainer,
+		nodeContainer:   nodeContainer,
+		pool:            pool,
+		redisClient:     redisClient,
+		nodeRepo:        nodeRepo,
+		instanceRepo:    instanceRepo,
+		buildStorage:    buildStorage,
+		buildFS:         buildFS,
+		nodeState:       nodeState,
+		instanceState:   instanceState,
+		grpcServer:      grpcServer,
+		grpcConn:        conn,
+		buildClient:     pb.NewBuildServiceClient(conn),
+		instanceClient:  pb.NewInstanceServiceClient(conn),
+		discoveryClient: pb.NewDiscoveryServiceClient(conn),
+		nodeClient:      nsClient,
+		healthClient:    pb.NewHealthServiceClient(conn),
+		log:             log,
 	}
 }
 
@@ -337,4 +382,16 @@ func (env *e2eTestEnv) cleanupTables(t *testing.T) {
 // TestMain — точка входа для всех e2e тестов.
 func TestMain(m *testing.M) {
 	os.Exit(m.Run())
+}
+
+// ─── Helpers ────────────────────────────────────────────────────
+
+func ptrStr(s string) *string {
+	return &s
+}
+
+// withAPIKey adds API key to outgoing metadata and returns the context.
+func withAPIKey(ctx context.Context, apiKey string) context.Context {
+	md := metadata.New(map[string]string{"x-api-key": apiKey})
+	return metadata.NewOutgoingContext(ctx, md)
 }

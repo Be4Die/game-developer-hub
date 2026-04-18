@@ -3,10 +3,12 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"net/http"
+	"net"
 	"sync"
-	"time"
+
+	"google.golang.org/grpc"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
@@ -14,7 +16,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
-	orchhttp "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/http"
+	grpctransport "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/grpc"
+	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -23,7 +26,7 @@ import (
 type App struct {
 	log              *slog.Logger
 	cfg              *config.Config
-	srv              *http.Server
+	gRPCServer       *grpc.Server
 	grpcClient       *grpcnode.Client
 	pool             *pgxpool.Pool
 	valkey           *redis.Client
@@ -92,31 +95,33 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		cfg.NodeHeartbeat, log,
 	)
 
-	// ─── HTTP-транспорт ─────────────────────────────────────────
-	buildHandler := orchhttp.NewBuildHandler(buildPipeline)
-	instanceHandler := orchhttp.NewInstanceHandler(instanceService, cfg.Limits.MaxLogTailLines)
-	discoveryHandler := orchhttp.NewDiscoveryHandler(discoveryService)
-	nodeHandler := orchhttp.NewNodeHandler(nodeService)
-	healthHandler := orchhttp.NewHealthHandler("1.0.0")
+	// ─── gRPC-транспорт ─────────────────────────────────────────
+	buildHandler := grpctransport.NewBuildHandler(buildPipeline)
+	instanceHandler := grpctransport.NewInstanceHandler(instanceService, cfg.Limits.MaxLogTailLines)
+	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
+	nodeHandler := grpctransport.NewNodeHandler(nodeService)
+	healthHandler := grpctransport.NewHealthHandler("1.0.0")
 
-	router := orchhttp.NewRouter(
-		buildHandler, instanceHandler, discoveryHandler, nodeHandler, healthHandler, log,
+	// ─── Аутентификация ─────────────────────────────────────────
+	authInterceptor := grpctransport.NewAPIKeyAuth(cfg.APIKey)
+
+	// ─── Создание gRPC-сервера ──────────────────────────────────
+	gRPCServer := grpc.NewServer(
+		grpc.UnaryInterceptor(authInterceptor.Unary()),
 	)
 
-	srv := &http.Server{
-		Addr:         cfg.HTTP.Addr(),
-		Handler:      router,
-		ReadTimeout:  cfg.HTTP.ReadTimeout,
-		WriteTimeout: cfg.HTTP.WriteTimeout,
-		IdleTimeout:  cfg.HTTP.IdleTimeout,
-	}
+	pb.RegisterBuildServiceServer(gRPCServer, buildHandler)
+	pb.RegisterInstanceServiceServer(gRPCServer, instanceHandler)
+	pb.RegisterDiscoveryServiceServer(gRPCServer, discoveryHandler)
+	pb.RegisterNodeServiceServer(gRPCServer, nodeHandler)
+	pb.RegisterHealthServiceServer(gRPCServer, healthHandler)
 
 	log.Info("all components initialized")
 
 	return &App{
 		log:              log,
 		cfg:              cfg,
-		srv:              srv,
+		gRPCServer:       gRPCServer,
 		grpcClient:       nodeClient,
 		pool:             pool,
 		valkey:           valkeyClient,
@@ -124,10 +129,10 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}, nil
 }
 
-// MustRun запускает HTTP-сервер и фоновые процессы. Блокирует вызов.
+// MustRun запускает gRPC-сервер и фоновые процессы. Блокирует вызов.
 func (a *App) MustRun() {
 	// Запускаем heartbeat-сервис.
-	hbCtx, hbCancel := context.WithCancel(context.Background()) //nolint:gosec
+	hbCtx, hbCancel := context.WithCancel(context.Background()) //nolint:gosec // hbCancel вызывается в MustStop
 	a.hbCancel = hbCancel
 
 	go func() {
@@ -136,23 +141,27 @@ func (a *App) MustRun() {
 		a.log.Info("heartbeat service stopped")
 	}()
 
-	a.log.Info("http server listening", slog.String("addr", a.srv.Addr))
-	if err := a.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		a.log.Error("http server failed", slog.String("error", err.Error()))
+	addr := fmt.Sprintf(":%d", a.cfg.GRPC.Port)
+	a.log.Info("gRPC server listening", slog.String("addr", addr))
+
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		a.log.Error("failed to listen", slog.String("error", err.Error()))
+		panic(err)
+	}
+
+	if err := a.gRPCServer.Serve(lis); err != nil {
+		a.log.Error("gRPC server failed", slog.String("error", err.Error()))
+		panic(err)
 	}
 }
 
-// MustStop выполняет graceful shutdown HTTP-сервера и фоновых процессов.
+// MustStop выполняет graceful shutdown gRPC-сервера и фоновых процессов.
 func (a *App) MustStop() {
 	a.once.Do(func() {
-		a.log.Info("shutting down http server")
+		a.log.Info("shutting down gRPC server")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := a.srv.Shutdown(ctx); err != nil {
-			a.log.Error("http server shutdown error", slog.String("error", err.Error()))
-		}
+		a.gRPCServer.GracefulStop()
 
 		if a.hbCancel != nil {
 			a.hbCancel()

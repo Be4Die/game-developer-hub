@@ -21,7 +21,8 @@ const (
 // Config хранит конфигурацию оркестратора.
 type Config struct {
 	Env           string           `yaml:"env" env-required:"true"`
-	HTTP          HTTPConfig       `yaml:"http"`
+	GRPC          GRPCConfig       `yaml:"grpc"`
+	APIKey        string           `yaml:"api_key" env-required:"true"`
 	DB            DBConfig         `yaml:"db"`
 	KV            KVConfig         `yaml:"kv"`
 	Storage       StorageConfig    `yaml:"storage"`
@@ -30,17 +31,9 @@ type Config struct {
 	Limits        LimitsConfig     `yaml:"limits"`
 }
 
-// HTTPConfig хранит настройки HTTP-сервера.
-type HTTPConfig struct {
-	Port         int           `yaml:"port"          env-default:"8080"`
-	ReadTimeout  time.Duration `yaml:"read_timeout"  env-default:"10s"`
-	WriteTimeout time.Duration `yaml:"write_timeout" env-default:"30s"`
-	IdleTimeout  time.Duration `yaml:"idle_timeout"  env-default:"60s"`
-}
-
-// Addr возвращает адрес HTTP-сервера в формате ":port".
-func (h HTTPConfig) Addr() string {
-	return fmt.Sprintf(":%d", h.Port)
+// GRPCConfig хранит настройки gRPC-сервера.
+type GRPCConfig struct {
+	Port int `yaml:"port" env-default:"50052"`
 }
 
 // DBConfig хранит настройки подключения к PostgreSQL.
@@ -163,18 +156,12 @@ func (c *Config) Validate() error {
 		return errors.New("env must be one of: local, dev, prod")
 	}
 
-	if c.HTTP.Port <= 0 || c.HTTP.Port > 65535 {
-		return errors.New("http.port must be between 1 and 65535")
+	if c.APIKey == "" {
+		return errors.New("api_key is required")
 	}
 
-	if c.HTTP.ReadTimeout <= 0 {
-		return errors.New("http.read_timeout must be positive")
-	}
-	if c.HTTP.WriteTimeout <= 0 {
-		return errors.New("http.write_timeout must be positive")
-	}
-	if c.HTTP.IdleTimeout <= 0 {
-		return errors.New("http.idle_timeout must be positive")
+	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {
+		return errors.New("grpc.port must be between 1 and 65535")
 	}
 
 	if c.DB.Host == "" {

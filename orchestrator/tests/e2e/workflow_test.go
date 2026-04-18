@@ -3,17 +3,14 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 )
 
 // E2E_06: Full workflow — register node → list instances (empty) → discovery (empty).
@@ -24,109 +21,74 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	defer cancel()
 
 	// Шаг 1: Health check.
-	resp, err := http.Get(env.baseURL + "/health")
+	healthResp, err := env.healthClient.Check(ctx, &pb.HealthCheckRequest{})
 	if err != nil {
-		t.Fatalf("GET /health failed: %v", err)
+		t.Fatalf("HealthCheck failed: %v", err)
 	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("health check failed: status=%d", resp.StatusCode)
+	if healthResp.Status != "ok" {
+		t.Fatalf("health check failed: status=%s", healthResp.Status)
 	}
 	t.Log("Step 1: Health check OK")
 
 	// Шаг 2: Register node via API.
 	nodeAddress := env.getNodeAddress(t)
-	reqBody := map[string]any{
-		"address": nodeAddress,
-		"token":   e2eAPIKey,
-		"region":  "e2e-workflow",
-	}
-	body, _ := json.Marshal(reqBody)
-	resp, err = http.Post(env.baseURL+"/nodes", "application/json", bytes.NewReader(body))
+	_, err = env.nodeClient.Register(withAPIKey(ctx, e2eAPIKey), &pb.RegisterNodeRequest{
+		Mode: &pb.RegisterNodeRequest_Manual{
+			Manual: &pb.RegisterNodeManual{
+				Address: nodeAddress,
+				Token:   e2eAPIKey,
+				Region:  ptrStr("e2e-workflow"),
+			},
+		},
+	})
 	if err != nil {
-		t.Fatalf("POST /nodes failed: %v", err)
+		t.Fatalf("RegisterNode failed: %v", err)
 	}
-	if resp.StatusCode != http.StatusCreated {
-		respBody, _ := io.ReadAll(resp.Body)
-		t.Fatalf("register node: status=%d, body=%s", resp.StatusCode, respBody)
-	}
-	resp.Body.Close()
 	t.Log("Step 2: Node registered")
 
 	// Шаг 3: List nodes — should have 1.
-	resp, err = http.Get(env.baseURL + "/nodes")
+	listResp, err := env.nodeClient.List(withAPIKey(ctx, e2eAPIKey), &pb.ListNodesRequest{})
 	if err != nil {
-		t.Fatalf("GET /nodes failed: %v", err)
+		t.Fatalf("ListNodes failed: %v", err)
 	}
-	var nodesBody map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&nodesBody); err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-	resp.Body.Close()
-	nodes := nodesBody["nodes"].([]any)
-	if len(nodes) != 1 {
-		t.Fatalf("expected 1 node, got %d", len(nodes))
+	if len(listResp.Nodes) != 1 {
+		t.Fatalf("expected 1 node, got %d", len(listResp.Nodes))
 	}
 	t.Log("Step 3: Node listed")
 
 	// Шаг 4: List instances — empty.
 	gameID := int64(100)
-	resp, err = http.Get(fmt.Sprintf("%s/games/%d/instances", env.baseURL, gameID))
+	instResp, err := env.instanceClient.List(withAPIKey(ctx, e2eAPIKey), &pb.ListInstancesRequest{GameId: gameID})
 	if err != nil {
-		t.Fatalf("GET /games/%d/instances failed: %v", gameID, err)
+		t.Fatalf("ListInstances failed: %v", err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("list instances: status=%d", resp.StatusCode)
-	}
-	var instBody map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&instBody); err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-	instances := instBody["instances"].([]any)
-	if len(instances) != 0 {
-		t.Fatalf("expected 0 instances, got %d", len(instances))
+	if len(instResp.Instances) != 0 {
+		t.Fatalf("expected 0 instances, got %d", len(instResp.Instances))
 	}
 	t.Log("Step 4: Instances empty (expected)")
 
 	// Шаг 5: Discovery — empty (no instances running).
-	resp, err = http.Get(fmt.Sprintf("%s/games/%d/discover", env.baseURL, gameID))
+	discResp, err := env.discoveryClient.Discover(withAPIKey(ctx, e2eAPIKey), &pb.DiscoverServersRequest{GameId: gameID})
 	if err != nil {
-		t.Fatalf("GET /games/%d/discover failed: %v", gameID, err)
+		t.Fatalf("DiscoverServers failed: %v", err)
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("discovery: status=%d", resp.StatusCode)
-	}
-	var discBody map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&discBody); err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-	servers := discBody["servers"].([]any)
-	if len(servers) != 0 {
-		t.Fatalf("expected 0 servers, got %d", len(servers))
+	if len(discResp.Servers) != 0 {
+		t.Fatalf("expected 0 servers, got %d", len(discResp.Servers))
 	}
 	t.Log("Step 5: Discovery empty (expected)")
 
 	// Шаг 6: Delete node.
-	nodeID := int64(nodes[0].(map[string]any)["id"].(float64))
-	req, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/nodes/%d", env.baseURL, nodeID), nil)
-	client := &http.Client{}
-	delResp, err := client.Do(req)
+	nodeID := listResp.Nodes[0].Id
+	_, err = env.nodeClient.Delete(withAPIKey(ctx, e2eAPIKey), &pb.DeleteNodeRequest{NodeId: nodeID})
 	if err != nil {
-		t.Fatalf("DELETE /nodes/%d failed: %v", nodeID, err)
-	}
-	delResp.Body.Close()
-	if delResp.StatusCode != http.StatusNoContent {
-		t.Fatalf("delete node: status=%d", delResp.StatusCode)
+		t.Fatalf("DeleteNode failed: %v", err)
 	}
 	t.Log("Step 6: Node deleted")
 
 	t.Log("Full workflow completed successfully")
-	_ = ctx
 }
 
-// E2E_07: Multiple nodes — verify least-loaded-first discovery ordering.
+// E2E_07: Multiple nodes — verify discovery works with nodes having different loads.
 func TestE2E_Discovery_LeastLoaded(t *testing.T) {
 	env := setupE2E(t)
 	env.cleanupTables(t)
@@ -159,27 +121,11 @@ func TestE2E_Discovery_LeastLoaded(t *testing.T) {
 
 	gameID := int64(200)
 
-	resp, err := http.Get(fmt.Sprintf("%s/games/%d/discover", env.baseURL, gameID))
+	resp, err := env.discoveryClient.Discover(withAPIKey(ctx, e2eAPIKey), &pb.DiscoverServersRequest{GameId: gameID})
 	if err != nil {
-		t.Fatalf("GET /games/%d/discover failed: %v", gameID, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("discovery: status=%d", resp.StatusCode)
+		t.Fatalf("DiscoverServers failed: %v", err)
 	}
 
-	var body map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("decode failed: %v", err)
-	}
-
-	servers := body["servers"].([]any)
-	// Без инстансов discovery вернёт empty, но ноды должны быть доступны.
-	// Проверим что запрос успешен.
-	if _, ok := body["servers"]; !ok {
-		t.Error("servers field missing")
-	}
-
-	t.Logf("Discovery returned %d servers", len(servers))
+	// Без инстансов discovery вернёт empty, но запрос должен быть успешен.
+	t.Logf("Discovery returned %d servers", len(resp.Servers))
 }

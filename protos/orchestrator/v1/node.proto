@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "orchestrator/v1/common.proto";
+
+// Сервис управления вычислительными нодами.
+service NodeService {
+  // Подключить вычислительную ноду.
+  rpc Register(RegisterNodeRequest) returns (RegisterNodeResponse);
+
+  // Список всех нод.
+  rpc List(ListNodesRequest) returns (ListNodesResponse);
+
+  // Информация о ноде.
+  rpc Get(GetNodeRequest) returns (GetNodeResponse);
+
+  // Удалить ноду.
+  rpc Delete(DeleteNodeRequest) returns (DeleteNodeResponse);
+
+  // Потребление ресурсов ноды.
+  rpc GetUsage(GetNodeUsageRequest) returns (GetNodeUsageResponse);
+}
+
+// ─── Register ───────────────────────────────────────────────────────────────
+
+message RegisterNodeManual {
+  string address = 1;
+  string token = 2;
+  optional string region = 3;
+}
+
+message RegisterNodeAuthorize {
+  int64 node_id = 1;
+  string token = 2;
+}
+
+message RegisterNodeRequest {
+  oneof mode {
+    RegisterNodeManual manual = 1;
+    RegisterNodeAuthorize authorize = 2;
+  }
+}
+
+message RegisterNodeResponse {
+  Node node = 1;
+}
+
+// ─── List ───────────────────────────────────────────────────────────────────
+
+message ListNodesRequest {
+  optional NodeStatus status = 1;
+}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+}
+
+// ─── Get ────────────────────────────────────────────────────────────────────
+
+message GetNodeRequest {
+  int64 node_id = 1;
+}
+
+message GetNodeResponse {
+  Node node = 1;
+}
+
+// ─── Delete ─────────────────────────────────────────────────────────────────
+
+message DeleteNodeRequest {
+  int64 node_id = 1;
+}
+
+message DeleteNodeResponse {
+  // Пусто — при успехе возвращается пустой ответ.
+}
+
+// ─── GetUsage ───────────────────────────────────────────────────────────────
+
+message GetNodeUsageRequest {
+  int64 node_id = 1;
+}
+
+message GetNodeUsageResponse {
+  int64 node_id = 1;
+  ResourceUsage usage = 2;
+  int32 active_instance_count = 3;
+}

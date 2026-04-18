@@ -4,10 +4,10 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 	"testing"
 	"time"
+
+	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 )
 
 // E2E_01: Health check -- проверка работоспособности оркестратора.
@@ -18,30 +18,18 @@ func TestE2E_Health(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := http.Get(env.baseURL + "/health")
+	resp, err := env.healthClient.Check(withAPIKey(ctx, e2eAPIKey), &pb.HealthCheckRequest{})
 	if err != nil {
-		t.Fatalf("GET /health failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("HealthCheck failed: %v", err)
 	}
 
-	var body map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("decode failed: %v", err)
+	if resp.Status != "ok" {
+		t.Errorf("status = %q, want %q", resp.Status, "ok")
 	}
-
-	if body["status"] != "ok" {
-		t.Errorf("status = %q, want %q", body["status"], "ok")
-	}
-	if _, ok := body["version"]; !ok {
+	if resp.Version == "" {
 		t.Error("version field missing")
 	}
-	if _, ok := body["uptime_seconds"]; !ok {
-		t.Error("uptime_seconds field missing")
+	if resp.UptimeSeconds <= 0 {
+		t.Errorf("uptime_seconds = %f, want > 0", resp.UptimeSeconds)
 	}
-
-	_ = ctx
 }

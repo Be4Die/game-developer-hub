@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "orchestrator/v1/common.proto";
+
+// Сервис обнаружения серверов для клиентов игр.
+service DiscoveryService {
+  // Обнаружить доступные серверы для подключения.
+  rpc Discover(DiscoverServersRequest) returns (DiscoverServersResponse);
+}
+
+message DiscoverServersRequest {
+  int64 game_id = 1;
+}
+
+message DiscoverServersResponse {
+  repeated ServerEndpoint servers = 1;
+}

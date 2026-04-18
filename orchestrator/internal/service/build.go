@@ -67,6 +67,8 @@ type UploadBuildParams struct {
 	MaxPlayers   uint32
 	Archive      io.Reader
 	ArchiveSize  int64
+	// ArchiveData — альтернатива Archive, когда данные уже в памяти (gRPC).
+	ArchiveData []byte
 }
 
 // UploadBuild загружает серверный билд: распаковывает архив, собирает Docker-образ,
@@ -172,6 +174,16 @@ func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParam
 	}
 
 	return build, nil
+}
+
+// UploadBuildFromBytes загружает билд из данных в памяти (для gRPC).
+func (p *BuildPipeline) UploadBuildFromBytes(ctx context.Context, params UploadBuildParams) (*domain.ServerBuild, error) {
+	if len(params.ArchiveData) == 0 {
+		return nil, fmt.Errorf("BuildPipeline.UploadBuildFromBytes: archive data is empty")
+	}
+	params.Archive = bytes.NewReader(params.ArchiveData)
+	params.ArchiveSize = int64(len(params.ArchiveData))
+	return p.UploadBuild(ctx, params)
 }
 
 // extractArchive распаковывает zip или tar.gz архив в целевую директорию.

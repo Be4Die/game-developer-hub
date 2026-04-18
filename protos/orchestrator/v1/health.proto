@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+// Сервис проверки работоспособности.
+service HealthService {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  // Всегда "ok" при работоспособности.
+  string status = 1;
+  string version = 2;
+  double uptime_seconds = 3;
+}

@@ -79,7 +79,7 @@ func parseFlags() SeedConfig {
 	// Читаем из переменных окружения если флаги не указаны
 	if cfg.Nodes == 0 {
 		if v := os.Getenv("SEED_NODES"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.Nodes)
+			_, _ = fmt.Sscanf(v, "%d", &cfg.Nodes)
 		}
 	}
 	if cfg.Nodes == 0 {
@@ -88,7 +88,7 @@ func parseFlags() SeedConfig {
 
 	if cfg.Builds == 0 {
 		if v := os.Getenv("SEED_BUILDS"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.Builds)
+			_, _ = fmt.Sscanf(v, "%d", &cfg.Builds)
 		}
 	}
 	if cfg.Builds == 0 {
@@ -97,7 +97,7 @@ func parseFlags() SeedConfig {
 
 	if cfg.Instances == 0 {
 		if v := os.Getenv("SEED_INSTANCES"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.Instances)
+			_, _ = fmt.Sscanf(v, "%d", &cfg.Instances)
 		}
 	}
 	if cfg.Instances == 0 {
@@ -113,7 +113,7 @@ func parseFlags() SeedConfig {
 	}
 	if cfg.DBPort == 0 {
 		if v := os.Getenv("SEED_DB_PORT"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.DBPort)
+			_, _ = fmt.Sscanf(v, "%d", &cfg.DBPort)
 		}
 	}
 	if cfg.KVAddr == "" {
