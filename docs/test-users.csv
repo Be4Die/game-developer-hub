@@ -1,0 +1,7 @@
+email,password,display_name,role
+developer@test.local,Developer123!dev,Разработчик,developer
+moderator@test.local,Moderator123!mod,Модератор,moderator
+admin@test.local,Admin123!admin,Администратор,admin
+user1@test.local,User1Password!,Пользователь 1,developer
+user2@test.local,User2Password!,Пользователь 2,developer
+user3@test.local,User3Password!,Пользователь 3,developer

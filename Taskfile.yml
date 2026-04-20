@@ -812,17 +812,9 @@ tasks:
       - go run ./cmd/seed
 
   stack:sso-seed:
-    desc: "Seed SSO with test users (requires running stack)"
-    dir: sso
-    vars:
-      SEED_USERS: "{{.SEED_USERS | default 3}}"
-      SEED_ADMINS: "{{.SEED_ADMINS | default 1}}"
-    env:
-      SEED_SSO_ADDR: "localhost:50051"
-      SEED_USERS: "{{.SEED_USERS}}"
-      SEED_ADMINS: "{{.SEED_ADMINS}}"
+    desc: "Seed SSO with test users and generate CSV (requires running stack)"
     cmds:
-      - go run ./cmd/seed
+      - bash deployments/scripts/seed-sso.sh
 
   # ==================== Dev (orchestrator stack + frontend dev server) ====================
   dev:

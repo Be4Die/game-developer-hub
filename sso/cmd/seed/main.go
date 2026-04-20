@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"os"
@@ -25,11 +26,13 @@ import (
 
 // Config — параметры seed-скрипта.
 type Config struct {
-	Addr   string
-	Users  int
-	Admins int
-	Clean  bool
-	Quiet  bool
+	Addr       string
+	Users      int
+	Admins     int
+	Moderators int
+	Clean      bool
+	Quiet      bool
+	OutputCSV  string
 }
 
 func main() {
@@ -49,8 +52,10 @@ func parseFlags() Config {
 	fs.StringVar(&cfg.Addr, "addr", "", "gRPC адрес SSO-сервиса")
 	fs.IntVar(&cfg.Users, "users", 0, "количество тестовых пользователей")
 	fs.IntVar(&cfg.Admins, "admins", 0, "количество администраторов")
+	fs.IntVar(&cfg.Moderators, "mods", 0, "количество модераторов")
 	fs.BoolVar(&cfg.Clean, "clean", false, "удалить тестовых пользователей перед созданием")
 	fs.BoolVar(&cfg.Quiet, "quiet", false, "минимизировать вывод")
+	fs.StringVar(&cfg.OutputCSV, "output-csv", "", "путь к CSV файлу с данными для входа")
 
 	_ = fs.Parse(os.Args[1:])
 
@@ -79,14 +84,28 @@ func parseFlags() Config {
 		cfg.Admins = 1
 	}
 
+	if cfg.Moderators == 0 {
+		if v := os.Getenv("SEED_MODS"); v != "" {
+			_, _ = fmt.Sscanf(v, "%d", &cfg.Moderators)
+		}
+	}
+	if cfg.Moderators == 0 {
+		cfg.Moderators = 1
+	}
+
+	if cfg.OutputCSV == "" {
+		cfg.OutputCSV = os.Getenv("SEED_OUTPUT_CSV")
+	}
+
 	return cfg
 }
 
 // Seeder управляет процессом заполнения данными.
 type Seeder struct {
-	cfg    Config
-	client pb.AuthServiceClient
-	conn   *grpc.ClientConn
+	cfg     Config
+	client  pb.AuthServiceClient
+	conn    *grpc.ClientConn
+	records [][]string // email,password,display_name,role
 }
 
 // NewSeeder создаёт seeder.
@@ -106,6 +125,16 @@ func (s *Seeder) Run(ctx context.Context) error {
 
 	// 2. Создаём пользователей
 	s.seedUsers(ctx)
+
+	// 3. Верифицируем email
+	s.verifyEmails(ctx)
+
+	// 4. Выводим CSV если указан путь
+	if s.cfg.OutputCSV != "" {
+		if err := s.writeCSV(); err != nil {
+			return fmt.Errorf("запись CSV: %w", err)
+		}
+	}
 
 	s.log("[OK] Заполнение завершено успешно")
 	s.printSummary()
@@ -130,7 +159,8 @@ func (s *Seeder) connect() error {
 }
 
 func (s *Seeder) seedUsers(ctx context.Context) {
-	totalCreated := 0
+	// Очищаем предыдущие записи
+	s.records = nil
 
 	// Создаём обычных пользователей
 	s.log("  [USERS] Создание %d пользователей...", s.cfg.Users)
@@ -149,8 +179,31 @@ func (s *Seeder) seedUsers(ctx context.Context) {
 			continue
 		}
 
+		s.records = append(s.records, []string{email, password, displayName, "developer"})
 		s.log("    + %s", email)
-		totalCreated++
+	}
+
+	// Создаём модераторов
+	if s.cfg.Moderators > 0 {
+		s.log("  [MODERATORS] Создание %d модераторов...", s.cfg.Moderators)
+		for i := 1; i <= s.cfg.Moderators; i++ {
+			email := fmt.Sprintf("mod%d@test.local", i)
+			password := fmt.Sprintf("Mod123!mod%d", i)
+			displayName := fmt.Sprintf("Moderator %d", i)
+
+			_, err := s.client.Register(ctx, &pb.AuthServiceRegisterRequest{
+				Email:       email,
+				Password:    password,
+				DisplayName: displayName,
+			})
+			if err != nil {
+				s.log("    [WARN] Ошибка регистрации %s: %v", email, err)
+				continue
+			}
+
+			s.records = append(s.records, []string{email, password, displayName, "moderator"})
+			s.log("    + %s (moderator)", email)
+		}
 	}
 
 	// Создаём администраторов
@@ -171,12 +224,52 @@ func (s *Seeder) seedUsers(ctx context.Context) {
 				continue
 			}
 
+			s.records = append(s.records, []string{email, password, displayName, "admin"})
 			s.log("    + %s (admin)", email)
-			totalCreated++
 		}
 	}
 
-	s.log("    Итого создано: %d", totalCreated)
+	s.log("    Зарегистрировано: %d", len(s.records))
+}
+
+func (s *Seeder) verifyEmails(ctx context.Context) {
+	s.log("  [VERIFY] Верификация email...")
+
+	// Получаем коды верификации из логов SSO
+	// В dev-режиме SSO логирует коды, используем прямой доступ к Valkey
+	// Для простоты — используем известный паттерн кодов
+	for _, rec := range s.records {
+		email := rec[0]
+		// В тестовой среде код верификации сохраняется в Valkey.
+		// Для seed используем API resend + прямой доступ к Valkey.
+		// Пока просто логируем — верификация будет ручной или через Valkey.
+		s.log("    -> %s (требуется верификация)", email)
+	}
+}
+
+func (s *Seeder) writeCSV() error {
+	f, err := os.Create(s.cfg.OutputCSV)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+
+	// Заголовок
+	if err := w.Write([]string{"email", "password", "display_name", "role"}); err != nil {
+		return err
+	}
+
+	for _, rec := range s.records {
+		if err := w.Write(rec); err != nil {
+			return err
+		}
+	}
+
+	s.log("  [CSV] Записано %d записей в %s", len(s.records), s.cfg.OutputCSV)
+	return nil
 }
 
 func (s *Seeder) printSummary() {
@@ -186,7 +279,11 @@ func (s *Seeder) printSummary() {
 	fmt.Println("===================================================")
 	fmt.Printf("  Адрес:         %s\n", s.cfg.Addr)
 	fmt.Printf("  Пользователей: %d\n", s.cfg.Users)
+	fmt.Printf("  Модераторов:   %d\n", s.cfg.Moderators)
 	fmt.Printf("  Администратор: %d\n", s.cfg.Admins)
+	if s.cfg.OutputCSV != "" {
+		fmt.Printf("  CSV файл:      %s\n", s.cfg.OutputCSV)
+	}
 	fmt.Println()
 	fmt.Println("  Данные готовы для:")
 	fmt.Println("    - Нагрузочного тестирования AuthService")
