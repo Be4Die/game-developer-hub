@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25.3-alpine AS builder
 
 WORKDIR /src
 
@@ -24,7 +24,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-COPY --from=builder /gateway .
+COPY --from=builder /gateway /gateway
 COPY --from=builder /src/gateway/config/ ./config/
 
 EXPOSE 8080

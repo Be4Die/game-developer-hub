@@ -300,7 +300,7 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/GetProfile", runtime.WithHTTPPathPattern("/api/v1/users/profile"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/GetProfile", runtime.WithHTTPPathPattern("/api/v1/user/profile"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -320,7 +320,7 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/UpdateProfile", runtime.WithHTTPPathPattern("/api/v1/users/profile"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/UpdateProfile", runtime.WithHTTPPathPattern("/api/v1/user/profile"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -340,7 +340,7 @@ func RegisterUserServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/ChangePassword", runtime.WithHTTPPathPattern("/api/v1/users/profile:change-password"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sso.v1.UserService/ChangePassword", runtime.WithHTTPPathPattern("/api/v1/user/profile:change-password"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -478,7 +478,7 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/GetProfile", runtime.WithHTTPPathPattern("/api/v1/users/profile"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/GetProfile", runtime.WithHTTPPathPattern("/api/v1/user/profile"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -495,7 +495,7 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/UpdateProfile", runtime.WithHTTPPathPattern("/api/v1/users/profile"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/UpdateProfile", runtime.WithHTTPPathPattern("/api/v1/user/profile"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -512,7 +512,7 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/ChangePassword", runtime.WithHTTPPathPattern("/api/v1/users/profile:change-password"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sso.v1.UserService/ChangePassword", runtime.WithHTTPPathPattern("/api/v1/user/profile:change-password"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -597,9 +597,9 @@ func RegisterUserServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux
 }
 
 var (
-	pattern_UserService_GetProfile_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "profile"}, ""))
-	pattern_UserService_UpdateProfile_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "profile"}, ""))
-	pattern_UserService_ChangePassword_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "users", "profile"}, "change-password"))
+	pattern_UserService_GetProfile_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "user", "profile"}, ""))
+	pattern_UserService_UpdateProfile_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "user", "profile"}, ""))
+	pattern_UserService_ChangePassword_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "user", "profile"}, "change-password"))
 	pattern_UserService_Get_0            = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "users", "user_id"}, ""))
 	pattern_UserService_Search_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "users"}, ""))
 	pattern_UserService_ChangeRole_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "users", "user_id"}, "change-role"))

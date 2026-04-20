@@ -22,12 +22,13 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
-// GetProfile возвращает профиль пользователя по ID.
-// Возвращает ErrNotFound, если пользователь не найден.
+// GetProfile возвращает профиль текущего пользователя (по JWT).
+// UserID извлекается из контекста, установленного JWT interceptor.
 func (h *UserHandler) GetProfile(ctx context.Context, req *pb.UserServiceGetProfileRequest) (*pb.UserServiceGetProfileResponse, error) {
-	userID := req.UserId
+	// UserID извлекается из JWT контекста interceptor'ом.
+	userID := extractUserIDFromContext(ctx)
 	if userID == "" {
-		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+		return nil, status.Error(codes.Unauthenticated, "missing user context")
 	}
 
 	user, err := h.svc.GetProfile(ctx, userID)
@@ -86,11 +87,9 @@ func (h *UserHandler) ChangePassword(ctx context.Context, req *pb.UserServiceCha
 	return &pb.UserServiceChangePasswordResponse{Success: true}, nil
 }
 
-// GetUserById возвращает данные пользователя по идентификатору.
+// Get возвращает данные пользователя по идентификатору.
 // Возвращает ErrNotFound, если пользователь не найден.
-//
-//nolint:revive // имя совпадает с proto-определением GetUserById
-func (h *UserHandler) GetUserById(ctx context.Context, req *pb.UserServiceGetRequest) (*pb.UserServiceGetResponse, error) {
+func (h *UserHandler) Get(ctx context.Context, req *pb.UserServiceGetRequest) (*pb.UserServiceGetResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}

@@ -85,11 +85,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	tokenHandler := grpctransport.NewTokenHandler(tokenService)
 
 	// 7. Настройка аутентификации.
+	// Chain interceptor: сначала API key (для service-to-service), затем JWT (для user endpoints).
 	authInterceptor := grpctransport.NewAPIKeyAuth(cfg.APIKey)
+	jwtInterceptor := grpctransport.NewJWTAuth(tokenManager)
 
 	// 8. Создание и регистрация gRPC-сервера.
 	gRPCServer := grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.Unary()),
+		grpc.ChainUnaryInterceptor(authInterceptor.Unary(), jwtInterceptor.Unary()),
 	)
 	pb.RegisterAuthServiceServer(gRPCServer, authHandler)
 	pb.RegisterUserServiceServer(gRPCServer, userHandler)

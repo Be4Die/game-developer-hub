@@ -41,13 +41,7 @@ COMMENT ON COLUMN users.role IS '1=developer, 2=moderator, 3=admin';
 COMMENT ON COLUMN users.status IS '1=active, 2=suspended, 3=deleted';
 COMMENT ON TABLE sessions IS 'Активные сессии пользователей';
 
--- Trigger for automatic updated_at
-DROP TRIGGER IF EXISTS trigger_users_updated_at ON users;
-CREATE TRIGGER trigger_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
+-- Function for automatic updated_at (must be created before triggers)
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -55,3 +49,16 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Triggers
+DROP TRIGGER IF EXISTS trigger_users_updated_at ON users;
+CREATE TRIGGER trigger_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+DROP TRIGGER IF EXISTS trigger_sessions_updated_at ON sessions;
+CREATE TRIGGER trigger_sessions_updated_at
+    BEFORE UPDATE ON sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();

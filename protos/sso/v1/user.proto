@@ -9,13 +9,13 @@ import "sso/v1/common.proto";
 service UserService {
   // Получение профиля текущего пользователя (по JWT).
   rpc GetProfile(UserServiceGetProfileRequest) returns (UserServiceGetProfileResponse) {
-    option (google.api.http) = {get: "/api/v1/users/profile"};
+    option (google.api.http) = {get: "/api/v1/user/profile"};
   }
 
   // Обновление профиля текущего пользователя.
   rpc UpdateProfile(UserServiceUpdateProfileRequest) returns (UserServiceUpdateProfileResponse) {
     option (google.api.http) = {
-      patch: "/api/v1/users/profile"
+      patch: "/api/v1/user/profile"
       body: "*"
     };
   }
@@ -23,7 +23,7 @@ service UserService {
   // Смена пароля (требует текущий пароль).
   rpc ChangePassword(UserServiceChangePasswordRequest) returns (UserServiceChangePasswordResponse) {
     option (google.api.http) = {
-      post: "/api/v1/users/profile:change-password"
+      post: "/api/v1/user/profile:change-password"
       body: "*"
     };
   }

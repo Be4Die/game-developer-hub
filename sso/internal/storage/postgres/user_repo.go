@@ -26,9 +26,9 @@ func (r *UserRepository) Create(ctx context.Context, user domain.User) error { /
 	const op = "postgres.UserRepository.Create"
 
 	_, err := r.pool.Exec(ctx, `
-		INSERT INTO users (id, email, password_hash, display_name, role, status, email_verified, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`, user.ID, user.Email, user.PasswordHash, user.DisplayName, user.Role, user.Status, user.EmailVerified, user.CreatedAt, user.UpdatedAt)
+		INSERT INTO users (email, password_hash, display_name, role, status, email_verified, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, user.Email, user.PasswordHash, user.DisplayName, user.Role, user.Status, user.EmailVerified, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return fmt.Errorf("%s: %w", op, domain.ErrAlreadyExists)

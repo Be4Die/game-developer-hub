@@ -5,7 +5,7 @@
     </transition>
     <GlobalHeader />
     <main class="page-content">
-      <div v-if="user.role === 'Модератор' && $route.path.includes('/projects') && !$route.path.includes('/nodes')" class="moderator-stub">
+      <div v-if="userRole === 'Модератор' && $route.path.includes('/projects') && !$route.path.includes('/nodes')" class="moderator-stub">
         <h2>Режим модератора</h2>
         <p>Перейдите во вкладку "Очередь тикетов". Просмотр проектов недоступен.</p>
       </div>
@@ -15,15 +15,30 @@
 </template>
 
 <script setup>
-import { watch } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import GlobalHeader from './components/GlobalHeader.vue'
-import { toast, user } from './store'
+import { toast } from './store'
+import { useAuth } from './store/auth'
 
 const router = useRouter()
 const route = useRoute()
+const { state: authState, loadUser } = useAuth()
 
-watch(() => user.role, (newRole) => {
+const ROLE_MAP = {
+  0: 'Пользователь',
+  1: 'Разработчик',
+  2: 'Модератор',
+  3: 'Администратор',
+}
+
+const userRole = computed(() => ROLE_MAP[authState.user?.role] || 'Пользователь')
+
+onMounted(() => {
+  loadUser()
+})
+
+watch(userRole, (newRole) => {
   if (newRole === 'Разработчик') {
     if (route.path.startsWith('/moderator')) {
       router.push('/projects')

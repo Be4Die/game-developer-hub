@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { isAuthenticated } from "../store/auth";
+import Login from "../views/Login.vue";
 import ProjectsList from "../views/ProjectsList.vue";
 import ProjectWorkspace from "../views/ProjectWorkspace.vue";
 import DraftTab from "../views/tabs/DraftTab.vue";
@@ -18,12 +20,19 @@ import Tickethistory from "../views/Tickethistory.vue";
 import Settings from "../views/Settings.vue";
 
 const routes = [
-  { path: "/", redirect: "/projects" },
-  { path: "/projects", component: ProjectsList },
+  {
+    path: "/",
+    redirect: () => {
+      return isAuthenticated() ? "/projects" : "/login";
+    },
+  },
+  { path: "/login", component: Login, meta: { guest: true } },
+  { path: "/projects", component: ProjectsList, meta: { requiresAuth: true } },
   {
     path: "/projects/:id",
     component: ProjectWorkspace,
     props: true,
+    meta: { requiresAuth: true },
     children: [
       { path: "", redirect: (to) => `/projects/${to.params.id}/draft` },
       { path: "draft", name: "draft", component: DraftTab },
@@ -65,21 +74,60 @@ const routes = [
       },
     ],
   },
-  { path: "/nodes", name: "nodes", component: NodesList },
+  {
+    path: "/nodes",
+    name: "nodes",
+    component: NodesList,
+    meta: { requiresAuth: true },
+  },
   {
     path: "/nodes/:nodeId",
     name: "node-detail",
     component: NodeDetail,
     props: true,
+    meta: { requiresAuth: true },
   },
-  { path: "/moderator/tickets", component: ModeratorTickets },
-  { path: "/moderator/tickets/:id", component: TicketDetail },
-  { path: "/moderator/history", component: Tickethistory },
-  { path: "/moderator/roles", component: ModeratorRoles },
-  { path: "/settings", name: "settings", component: Settings },
+  {
+    path: "/moderator/tickets",
+    component: ModeratorTickets,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/moderator/tickets/:id",
+    component: TicketDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/moderator/history",
+    component: Tickethistory,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/moderator/roles",
+    component: ModeratorRoles,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/settings",
+    name: "settings",
+    component: Settings,
+    meta: { requiresAuth: true },
+  },
 ];
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+router.beforeEach((to) => {
+  const authed = isAuthenticated();
+  if (to.meta.requiresAuth && !authed) {
+    return { name: "login", query: { redirect: to.fullPath } };
+  }
+  if (to.meta.guest && authed) {
+    return { path: "/projects" };
+  }
+});
+
+export default router;

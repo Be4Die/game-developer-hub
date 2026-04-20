@@ -733,12 +733,12 @@ const file_sso_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"new_status\x18\x02 \x01(\x0e2\x12.sso.v1.UserStatusR\tnewStatus\"@\n" +
 	"\x1cUserServiceSetStatusResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user2\x89\a\n" +
-	"\vUserService\x12x\n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user2\x86\a\n" +
+	"\vUserService\x12w\n" +
 	"\n" +
-	"GetProfile\x12$.sso.v1.UserServiceGetProfileRequest\x1a%.sso.v1.UserServiceGetProfileResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/users/profile\x12\x84\x01\n" +
-	"\rUpdateProfile\x12'.sso.v1.UserServiceUpdateProfileRequest\x1a(.sso.v1.UserServiceUpdateProfileResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/api/v1/users/profile\x12\x97\x01\n" +
-	"\x0eChangePassword\x12(.sso.v1.UserServiceChangePasswordRequest\x1a).sso.v1.UserServiceChangePasswordResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/users/profile:change-password\x12e\n" +
+	"GetProfile\x12$.sso.v1.UserServiceGetProfileRequest\x1a%.sso.v1.UserServiceGetProfileResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/user/profile\x12\x83\x01\n" +
+	"\rUpdateProfile\x12'.sso.v1.UserServiceUpdateProfileRequest\x1a(.sso.v1.UserServiceUpdateProfileResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*2\x14/api/v1/user/profile\x12\x96\x01\n" +
+	"\x0eChangePassword\x12(.sso.v1.UserServiceChangePasswordRequest\x1a).sso.v1.UserServiceChangePasswordResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/user/profile:change-password\x12e\n" +
 	"\x03Get\x12\x1d.sso.v1.UserServiceGetRequest\x1a\x1e.sso.v1.UserServiceGetResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/users/{user_id}\x12d\n" +
 	"\x06Search\x12 .sso.v1.UserServiceSearchRequest\x1a!.sso.v1.UserServiceSearchResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/users\x12\x89\x01\n" +
 	"\n" +

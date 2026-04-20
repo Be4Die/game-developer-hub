@@ -3,17 +3,17 @@
     <div class="header-left">
       <div class="logo"><Layers class="logo-icon" /><span>WELWISE</span></div>
       <nav class="main-nav">
-        <template v-if="user.role === 'Разработчик' || user.role === 'Владелец'">
+        <template v-if="userRole === 'Разработчик' || userRole === 'Владелец'">
           <router-link to="/projects" class="nav-item" active-class="active"><FolderGit2 class="icon-sm" /> Черновики</router-link>
         </template>
-        <template v-if="user.role === 'Владелец'">
+        <template v-if="userRole === 'Владелец'">
           <router-link to="/nodes" class="nav-item" active-class="active"><Server class="icon-sm" /> Ноды</router-link>
         </template>
-        <template v-if="user.role === 'Модератор'">
+        <template v-if="userRole === 'Модератор'">
           <router-link to="/moderator/tickets" class="nav-item" active-class="active"><Inbox class="icon-sm" /> Очередь тикетов</router-link>
           <router-link to="/moderator/history" class="nav-item" active-class="active"><History class="icon-sm" /> История тикетов</router-link>
         </template>
-        <template v-if="user.role === 'Администратор'">
+        <template v-if="userRole === 'Администратор'">
           <router-link to="/moderator/roles" class="nav-item" active-class="active"><Users class="icon-sm" /> Управление ролями</router-link>
         </template>
       </nav>
@@ -21,27 +21,19 @@
 
     <div class="header-right relative">
       <button class="profile-btn" @click="menuOpen = !menuOpen">
-        <User class="icon-sm" /> {{ user.name }}
+        <User class="icon-sm" /> {{ displayName }}
       </button>
 
       <div v-if="menuOpen" class="dropdown-overlay" @click="menuOpen = false"></div>
       <div v-if="menuOpen" class="dropdown">
         <div class="dropdown-header">
-          <strong>{{ user.name }}</strong>
-          <div class="text-muted">{{ user.email }}</div>
+          <strong>{{ displayName }}</strong>
+          <div class="text-muted">{{ userEmail }}</div>
+          <div class="text-muted">Роль: {{ userRole }}</div>
         </div>
         <div class="dropdown-body">
-          <div class="dropdown-item" style="cursor: default; padding-bottom: 0;">
-            <select v-model="user.role" class="role-select">
-              <option value="Разработчик">Роль: Разработчик</option>
-              <option value="Владелец">Роль: Владелец</option>
-              <option value="Модератор">Роль: Модератор</option>
-              <option value="Администратор">Роль: Администратор</option>
-            </select>
-          </div>
-          <div class="divider"></div>
           <router-link to="/settings" class="dropdown-item"><Settings class="icon-sm" /> Настройки</router-link>
-          <button class="dropdown-item text-danger"><LogOut class="icon-sm" /> Выйти</button>
+          <button class="dropdown-item text-danger" @click="handleLogout"><LogOut class="icon-sm" /> Выйти</button>
         </div>
       </div>
     </div>
@@ -49,10 +41,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { user } from '../store'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '../store/auth'
 import { Layers, FolderGit2, Server, User, Inbox, Settings, LogOut, Users, History } from 'lucide-vue-next'
+
+const router = useRouter()
+const { state: authState, logout } = useAuth()
 const menuOpen = ref(false)
+
+const ROLE_MAP = {
+  0: 'Пользователь',
+  1: 'Разработчик',
+  2: 'Модератор',
+  3: 'Администратор',
+}
+
+const displayName = computed(() => authState.user?.display_name || 'Пользователь')
+const userEmail = computed(() => authState.user?.email || '')
+const userRole = computed(() => ROLE_MAP[authState.user?.role] || 'Пользователь')
+
+async function handleLogout() {
+  await logout()
+  menuOpen.value = false
+  router.push('/login')
+}
 </script>
 
 <style scoped>

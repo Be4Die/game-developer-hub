@@ -715,20 +715,32 @@ tasks:
 
   # ==================== Stack (deployments/) ====================
   stack:up:
-    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Node, Frontend)"
+    desc: "Start full stack via docker compose (Postgres, Valkey, SSO Postgres, SSO Valkey, Orchestrator, SSO, Gateway, Node, Frontend)"
     dir: deployments
     cmds:
       - docker compose up -d --build
       - |
-        echo "Ожидание PostgreSQL..."
+        echo "Ожидание PostgreSQL (Orchestrator)..."
         for i in $(seq 1 20); do
           docker exec gdh-postgres pg_isready -U postgres >/dev/null 2>&1 && break
           sleep 1
         done
       - |
-        echo "Ожидание Valkey..."
+        echo "Ожидание Valkey (Orchestrator)..."
         for i in $(seq 1 20); do
           docker exec gdh-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание PostgreSQL (SSO)..."
+        for i in $(seq 1 20); do
+          docker exec gdh-sso-postgres pg_isready -U postgres >/dev/null 2>&1 && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание Valkey (SSO)..."
+        for i in $(seq 1 20); do
+          docker exec gdh-sso-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
           sleep 1
         done
       - |
@@ -737,7 +749,13 @@ tasks:
           bash -c "echo >/dev/tcp/localhost/50052" 2>/dev/null && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost:3000 (frontend), :50052 (Orchestrator gRPC), :50051 (SSO)"'
+      - |
+        echo "Ожидание SSO..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/50051" 2>/dev/null && break
+          sleep 1
+        done
+      - 'echo "Stack is ready: http://localhost:3000 (frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC)"'
 
   stack:down:
     desc: "Stop full stack and remove containers"
@@ -758,17 +776,22 @@ tasks:
       - docker compose up -d --build --force-recreate
 
   stack:db:init:
-    desc: "Initialize orchestrator database schema (run after stack:up)"
+    desc: "Initialize orchestrator and SSO database schemas (run after stack:up)"
     cmds:
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
-      - echo "✅ Database schema initialized"
+      - echo "✅ Orchestrator DB schema initialized"
+      - |
+        docker exec -i gdh-sso-postgres psql -U postgres -d sso < sso/migrations/init.sql
+      - echo "✅ SSO DB schema initialized"
 
   stack:db:reset:
-    desc: "Reset orchestrator database (drop, recreate, init)"
+    desc: "Reset orchestrator and SSO databases (drop, recreate, init)"
     cmds:
       - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - docker exec gdh-sso-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sso;"
+      - docker exec gdh-sso-postgres psql -U postgres -c "CREATE DATABASE sso;"
       - task: stack:db:init
 
   stack:seed:
@@ -788,13 +811,25 @@ tasks:
     cmds:
       - go run ./cmd/seed
 
+  stack:sso-seed:
+    desc: "Seed SSO with test users (requires running stack)"
+    dir: sso
+    vars:
+      SEED_USERS: "{{.SEED_USERS | default 3}}"
+      SEED_ADMINS: "{{.SEED_ADMINS | default 1}}"
+    env:
+      SEED_SSO_ADDR: "localhost:50051"
+      SEED_USERS: "{{.SEED_USERS}}"
+      SEED_ADMINS: "{{.SEED_ADMINS}}"
+    cmds:
+      - go run ./cmd/seed
+
   # ==================== Dev (orchestrator stack + frontend dev server) ====================
   dev:
-    desc: "Start orchestrator infra (Postgres, Valkey, Orchestrator, Node) + frontend dev server"
+    desc: "Start full stack + init databases"
     cmds:
       - task: stack:up
       - task: stack:db:init
-      - task: frontend:dev
 
   # ==================== All services (legacy single containers) ====================
   all:up:

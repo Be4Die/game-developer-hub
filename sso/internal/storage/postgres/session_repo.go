@@ -26,9 +26,9 @@ func (r *SessionRepository) Create(ctx context.Context, session domain.Session) 
 	const op = "postgres.SessionRepository.Create"
 
 	_, err := r.pool.Exec(ctx, `
-		INSERT INTO sessions (id, user_id, user_agent, ip_address, refresh_token_hash, created_at, last_used_at, expires_at, revoked, revoked_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	`, session.ID, session.UserID, session.UserAgent, session.IPAddress, session.RefreshTokenHash, session.CreatedAt, session.LastUsedAt, session.ExpiresAt, session.Revoked, session.RevokedAt)
+		INSERT INTO sessions (user_id, user_agent, ip_address, refresh_token_hash, created_at, last_used_at, expires_at, revoked, revoked_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`, session.UserID, session.UserAgent, session.IPAddress, session.RefreshTokenHash, session.CreatedAt, session.LastUsedAt, session.ExpiresAt, session.Revoked, session.RevokedAt)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return fmt.Errorf("%s: %w", op, domain.ErrAlreadyExists)
