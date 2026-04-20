@@ -25,8 +25,8 @@ func TestE2E_Nodes_Register_Manual(t *testing.T) {
 
 	nodeAddress := env.getNodeAddress(t)
 
-	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
-		Mode: &pb.RegisterNodeRequest_Manual{
+	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceRegisterRequest{
+		Mode: &pb.NodeServiceRegisterRequest_Manual{
 			Manual: &pb.RegisterNodeManual{
 				Address: nodeAddress,
 				Token:   "test-node-token",
@@ -79,8 +79,8 @@ func TestE2E_Nodes_Register_Authorize(t *testing.T) {
 	}
 
 	// Авторизуем через API.
-	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
-		Mode: &pb.RegisterNodeRequest_Authorize{
+	resp, err := env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceRegisterRequest{
+		Mode: &pb.NodeServiceRegisterRequest_Authorize{
 			Authorize: &pb.RegisterNodeAuthorize{
 				NodeId: node.ID,
 				Token:  token,
@@ -126,7 +126,7 @@ func TestE2E_Nodes_List(t *testing.T) {
 		_ = env.nodeState.UpdateHeartbeat(ctx, node.ID, &domain.ResourceUsage{})
 	}
 
-	resp, err := env.nodeClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.ListNodesRequest{})
+	resp, err := env.nodeClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceListRequest{})
 	if err != nil {
 		t.Fatalf("ListNodes failed: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestE2E_Nodes_Delete(t *testing.T) {
 		t.Fatalf("Create node failed: %v", err)
 	}
 
-	_, err := env.nodeClient.Delete(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.DeleteNodeRequest{NodeId: node.ID})
+	_, err := env.nodeClient.Delete(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceDeleteRequest{NodeId: node.ID})
 	if err != nil {
 		t.Fatalf("DeleteNode failed: %v", err)
 	}

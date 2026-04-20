@@ -18,7 +18,7 @@ func TestE2E_Health(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	resp, err := env.healthClient.Check(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.HealthCheckRequest{})
+	resp, err := env.healthClient.Check(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.HealthServiceCheckRequest{})
 	if err != nil {
 		t.Fatalf("HealthCheck failed: %v", err)
 	}

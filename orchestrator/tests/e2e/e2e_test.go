@@ -271,8 +271,8 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 
 	// Регистрируем ноду через gRPC API.
 	nsClient := pb.NewNodeServiceClient(conn)
-	_, err = nsClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
-		Mode: &pb.RegisterNodeRequest_Manual{
+	_, err = nsClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceRegisterRequest{
+		Mode: &pb.NodeServiceRegisterRequest_Manual{
 			Manual: &pb.RegisterNodeManual{
 				Address: nodeAddress,
 				Token:   "test-node-token",

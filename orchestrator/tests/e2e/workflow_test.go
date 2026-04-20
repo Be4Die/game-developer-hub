@@ -21,7 +21,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	defer cancel()
 
 	// Шаг 1: Health check.
-	healthResp, err := env.healthClient.Check(ctx, &pb.HealthCheckRequest{})
+	healthResp, err := env.healthClient.Check(ctx, &pb.HealthServiceCheckRequest{})
 	if err != nil {
 		t.Fatalf("HealthCheck failed: %v", err)
 	}
@@ -32,8 +32,8 @@ func TestE2E_FullWorkflow(t *testing.T) {
 
 	// Шаг 2: Register node via API.
 	nodeAddress := env.getNodeAddress(t)
-	_, err = env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.RegisterNodeRequest{
-		Mode: &pb.RegisterNodeRequest_Manual{
+	_, err = env.nodeClient.Register(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceRegisterRequest{
+		Mode: &pb.NodeServiceRegisterRequest_Manual{
 			Manual: &pb.RegisterNodeManual{
 				Address: nodeAddress,
 				Token:   "test-node-token",
@@ -47,7 +47,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	t.Log("Step 2: Node registered")
 
 	// Шаг 3: List nodes — should have 1.
-	listResp, err := env.nodeClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.ListNodesRequest{})
+	listResp, err := env.nodeClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceListRequest{})
 	if err != nil {
 		t.Fatalf("ListNodes failed: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 
 	// Шаг 4: List instances — empty.
 	gameID := int64(100)
-	instResp, err := env.instanceClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.ListInstancesRequest{GameId: gameID})
+	instResp, err := env.instanceClient.List(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.InstanceServiceListRequest{GameId: gameID})
 	if err != nil {
 		t.Fatalf("ListInstances failed: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	t.Log("Step 4: Instances empty (expected)")
 
 	// Шаг 5: Discovery — empty (no instances running).
-	discResp, err := env.discoveryClient.Discover(ctx, &pb.DiscoverServersRequest{GameId: gameID})
+	discResp, err := env.discoveryClient.DiscoveryServiceDiscover(ctx, &pb.DiscoveryServiceDiscoverRequest{GameId: gameID})
 	if err != nil {
 		t.Fatalf("DiscoverServers failed: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 
 	// Шаг 6: Delete node.
 	nodeID := listResp.Nodes[0].Id
-	_, err = env.nodeClient.Delete(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.DeleteNodeRequest{NodeId: nodeID})
+	_, err = env.nodeClient.Delete(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.NodeServiceDeleteRequest{NodeId: nodeID})
 	if err != nil {
 		t.Fatalf("DeleteNode failed: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestE2E_Discovery_LeastLoaded(t *testing.T) {
 
 	gameID := int64(200)
 
-	resp, err := env.discoveryClient.Discover(ctx, &pb.DiscoverServersRequest{GameId: gameID})
+	resp, err := env.discoveryClient.DiscoveryServiceDiscover(ctx, &pb.DiscoveryServiceDiscoverRequest{GameId: gameID})
 	if err != nil {
 		t.Fatalf("DiscoverServers failed: %v", err)
 	}
