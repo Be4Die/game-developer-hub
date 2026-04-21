@@ -310,21 +310,8 @@ func (s *NodeService) AnnounceNode(ctx context.Context, params AnnounceNodeParam
 
 	if err == nil {
 		if existing.Status == domain.NodeStatusOnline {
-			// Нода уже авторизована — обновляем системную информацию,
-			// но не меняем токен и статус.
-			existing.CPUCores = params.CPUCores
-			existing.TotalMemory = params.TotalMemoryBytes
-			existing.TotalDisk = params.TotalDiskBytes
-			existing.AgentVersion = params.AgentVersion
-			existing.LastPingAt = time.Now()
-			existing.UpdatedAt = time.Now()
-			if params.Region != "" {
-				existing.Region = params.Region
-			}
-			if err := s.nodeRepo.Update(ctx, existing); err != nil {
-				return nil, fmt.Errorf("NodeService.AnnounceNode: update online: %w", err)
-			}
-			return &AnnounceNodeResult{NodeID: existing.ID}, nil
+			// Нода уже авторизована — отказываем.
+			return nil, domain.ErrAlreadyExists
 		}
 		// Обновляем существующую неавторизованную ноду.
 		return s.updateAnnouncedNode(ctx, existing, params)

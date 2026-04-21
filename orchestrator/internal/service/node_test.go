@@ -555,6 +555,7 @@ func TestNodeService_AnnounceNode_Success(t *testing.T) {
 		CPUCores:         8,
 		TotalMemoryBytes: 16 * 1024 * 1024 * 1024,
 		TotalDiskBytes:   500 * 1024 * 1024 * 1024,
+		APIKey:           "test-api-key",
 	})
 
 	if err != nil {
@@ -567,10 +568,6 @@ func TestNodeService_AnnounceNode_Success(t *testing.T) {
 
 	if result.NodeID != 42 {
 		t.Errorf("expected NodeID 42, got %d", result.NodeID)
-	}
-
-	if result.Token == "" {
-		t.Error("expected non-empty token")
 	}
 
 	mu.Lock()
@@ -624,6 +621,7 @@ func TestNodeService_AnnounceNode_UpdateExistingUnauthorized(t *testing.T) {
 		CPUCores:         16,
 		TotalMemoryBytes: 32 * 1024 * 1024 * 1024,
 		TotalDiskBytes:   1000 * 1024 * 1024 * 1024,
+		APIKey:           "test-api-key",
 	})
 
 	if err != nil {
@@ -671,6 +669,7 @@ func TestNodeService_AnnounceNode_AlreadyOnline(t *testing.T) {
 		CPUCores:         8,
 		TotalMemoryBytes: 16 * 1024 * 1024 * 1024,
 		TotalDiskBytes:   500 * 1024 * 1024 * 1024,
+		APIKey:           "test-api-key",
 	})
 
 	if !errors.Is(err, domain.ErrAlreadyExists) {
