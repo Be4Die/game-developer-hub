@@ -300,7 +300,8 @@ func TestHeartbeatService_CheckNode_Success(t *testing.T) {
 		InactivityTimeout: 60 * time.Second,
 	}, log)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	err := svc.checkNode(ctx, node)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -333,7 +334,9 @@ func TestHeartbeatService_CheckNode_HeartbeatError_WithinTimeout(t *testing.T) {
 		InactivityTimeout: 60 * time.Second,
 	}, log)
 
-	err := svc.checkNode(context.Background(), node)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+	err := svc.checkNode(ctx, node)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -395,7 +398,9 @@ func TestHeartbeatService_CheckNode_HeartbeatError_TimeoutExceeded(t *testing.T)
 		InactivityTimeout: 60 * time.Second,
 	}, log)
 
-	err := svc.checkNode(context.Background(), node)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
+	err := svc.checkNode(ctx, node)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -478,7 +483,8 @@ func TestHeartbeatService_CheckAllNodes_SkipMaintenance(t *testing.T) {
 		InactivityTimeout: 60 * time.Second,
 	}, log)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	svc.checkAllNodes(ctx)
 
 	if heartbeatCalled {
@@ -500,7 +506,8 @@ func TestHeartbeatService_CheckAllNodes_ListError(t *testing.T) {
 		InactivityTimeout: 60 * time.Second,
 	}, log)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	// Should not panic.
 	svc.checkAllNodes(ctx)
 }

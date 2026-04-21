@@ -389,11 +389,6 @@ func (env *e2eTestEnv) cleanupTables(t *testing.T) {
 	}
 }
 
-// TestMain — точка входа для всех e2e тестов.
-func TestMain(m *testing.M) {
-	os.Exit(m.Run())
-}
-
 // ─── Helpers ────────────────────────────────────────────────────
 
 func ptrStr(s string) *string {

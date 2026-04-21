@@ -219,11 +219,6 @@ func (env *integrationTestEnv) Cleanup(t *testing.T) {
 	env.cleanupKeys(t)
 }
 
-// TestMain позволяет запускать тесты с общей логикой setup/teardown.
-func TestMain(m *testing.M) {
-	os.Exit(m.Run())
-}
-
 // ─── Helper: открыть SQL connection (для raw SQL тестов) ───────────────────
 
 func openSQL(t *testing.T, env *integrationTestEnv) *sql.DB {

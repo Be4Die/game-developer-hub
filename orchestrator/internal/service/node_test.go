@@ -44,7 +44,8 @@ func TestNodeService_RegisterNode_Manual_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.RegisterNode(ctx, RegisterNodeParams{
 		Address: address,
 		Token:   token,
@@ -108,7 +109,8 @@ func TestNodeService_RegisterNode_Manual_AlreadyExists(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	_, err := svc.RegisterNode(ctx, RegisterNodeParams{
 		Address: address,
 		Token:   "some-token",
@@ -150,7 +152,8 @@ func TestNodeService_RegisterNode_Authorize_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.RegisterNode(ctx, RegisterNodeParams{
 		NodeID: &nodeID,
 		Token:  token,
@@ -197,7 +200,8 @@ func TestNodeService_RegisterNode_Authorize_InvalidToken(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	_, err := svc.RegisterNode(ctx, RegisterNodeParams{
 		NodeID: &nodeID,
 		Token:  wrongToken,
@@ -226,7 +230,8 @@ func TestNodeService_RegisterNode_Authorize_NotUnauthorized(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	_, err := svc.RegisterNode(ctx, RegisterNodeParams{
 		NodeID: &nodeID,
 		Token:  token,
@@ -264,7 +269,8 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.ListNodes(ctx, "", nil)
 
 	if err != nil {
@@ -322,7 +328,8 @@ func TestNodeService_GetNode_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.GetNode(ctx, "", nodeID)
 
 	if err != nil {
@@ -390,7 +397,8 @@ func TestNodeService_DeleteNode_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, nodeState, instanceRepo, instanceState, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	err := svc.DeleteNode(ctx, "", nodeID)
 
 	if err != nil {
@@ -447,7 +455,8 @@ func TestNodeService_GetNodeUsage_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.GetNodeUsage(ctx, "", nodeID)
 
 	if err != nil {
@@ -547,7 +556,8 @@ func TestNodeService_AnnounceNode_Success(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
 		Address:          address,
 		Region:           "EU",
@@ -613,7 +623,8 @@ func TestNodeService_AnnounceNode_UpdateExistingUnauthorized(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	result, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
 		Address:          address,
 		Region:           "US",
@@ -662,7 +673,8 @@ func TestNodeService_AnnounceNode_AlreadyOnline(t *testing.T) {
 
 	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	t.Cleanup(cancel)
 	_, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
 		Address:          address,
 		AgentVersion:     "1.0.0",

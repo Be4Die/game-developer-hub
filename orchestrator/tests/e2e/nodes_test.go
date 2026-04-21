@@ -9,9 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 )
@@ -190,6 +187,3 @@ func (env *e2eTestEnv) getNodeAddress(t *testing.T) string {
 	}
 	return host + ":" + port.Port()
 }
-
-var _ = codes.OK
-var _ = status.Error

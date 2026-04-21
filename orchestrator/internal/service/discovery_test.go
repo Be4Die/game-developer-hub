@@ -221,7 +221,7 @@ func TestDiscoveryService_DiscoverServerError_GetPlayerCount(t *testing.T) {
 	}
 }
 
-func TestSortByPlayerCount(t *testing.T) {
+func TestDiscoveryService_SortByPlayerCount(t *testing.T) {
 	a := uint32(5)
 	b := uint32(1)
 	c := uint32(10)
