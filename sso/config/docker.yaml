@@ -3,16 +3,16 @@ grpc:
   port: 50051
   timeout: 10s
 db:
-  host: "sso-postgres"
+  host: "postgres"
   port: 5432
   user: "postgres"
   password: "postgres"
-  name: "sso"
+  name: "orchestrator" # единая БД, таблицы sso: users, sessions
   ssl_mode: "disable"
 kv:
-  addr: "sso-valkey:6379"
+  addr: "valkey:6379"
   password: ""
-  db: 0
+  db: 1 # SSO использует отдельный DB index
   key_ttl: 30m
 jwt:
   secret: "dev-jwt-secret-for-local-testing"

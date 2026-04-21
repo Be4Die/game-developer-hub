@@ -1,16 +1,17 @@
 # ═══════════════════════════════════════════════════════════════
 #  Game Developer Hub — полный стек для локальной разработки
 #
+#  Инфраструктура:
+#    postgres  — единая БД, таблицы orchestrator (nodes, server_builds,
+#                instances) и sso (users, sessions) не пересекаются
+#    valkey    — единое KV, orchestrator: db=0, sso: db=1
+#
 #  Сервисы:
-#    postgres       — БД оркестратора
-#    valkey         — key-value хранилище (heartbeat нод)
-#    sso-postgres   — БД SSO сервиса
-#    sso-valkey     — key-value хранилище SSO
-#    orchestrator   — gRPC API оркестратора
-#    sso            — gRPC API аутентификации
-#    gateway        — gRPC-gateway (HTTP/REST → gRPC)
+#    orchestrator     — gRPC API оркестратора
+#    sso              — gRPC API аутентификации
+#    gateway          — gRPC-gateway (HTTP/REST → gRPC)
 #    game-server-node — gRPC-агент ноды (Docker-in-Docker)
-#    frontend       — Vue SPA с nginx (production)
+#    frontend         — Vue SPA с nginx
 #
 #  Использование:
 #    docker compose up -d              # запустить всё
@@ -20,7 +21,7 @@
 # ═══════════════════════════════════════════════════════════════
 
 services:
-  # ── Инфраструктура (Orchestrator) ────────────────────────────
+  # ── Единая инфраструктура ─────────────────────────────────────
 
   postgres:
     image: postgres:17-alpine
@@ -33,6 +34,9 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Миграции применяются при первом старте (порядок по имени файла)
+      - ../orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
+      - ../sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -44,32 +48,6 @@ services:
     container_name: gdh-valkey
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # ── Инфраструктура (SSO) ─────────────────────────────────────
-
-  sso-postgres:
-    image: postgres:17-alpine
-    container_name: gdh-sso-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: sso
-    volumes:
-      - sso-pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  sso-valkey:
-    image: valkey/valkey:8-alpine
-    container_name: gdh-sso-valkey
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
@@ -110,9 +88,9 @@ services:
       SSO_API_KEY: dev-api-key-for-local-testing
       JWT_SECRET: dev-jwt-secret-for-local-testing
     depends_on:
-      sso-postgres:
+      postgres:
         condition: service_healthy
-      sso-valkey:
+      valkey:
         condition: service_healthy
     volumes:
       - ../sso/config:/app/config:ro
@@ -170,5 +148,4 @@ services:
 
 volumes:
   pgdata:
-  sso-pgdata:
   builds:
