@@ -526,3 +526,154 @@ func TestNodeService_ConstantTimeEqual(t *testing.T) {
 		})
 	}
 }
+
+func TestNodeService_AnnounceNode_Success(t *testing.T) {
+	address := "192.168.1.100:44044"
+	var createdNode *domain.Node
+	var mu sync.Mutex
+
+	nodeRepo := &hbMockNodeRepo{
+		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
+			return nil, domain.ErrNotFound
+		},
+		createFn: func(ctx context.Context, node *domain.Node) error {
+			mu.Lock()
+			defer mu.Unlock()
+			createdNode = node
+			node.ID = 42
+			return nil
+		},
+	}
+
+	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+
+	ctx := context.Background()
+	result, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
+		Address:          address,
+		Region:           "EU",
+		AgentVersion:     "1.2.3",
+		CPUCores:         8,
+		TotalMemoryBytes: 16 * 1024 * 1024 * 1024,
+		TotalDiskBytes:   500 * 1024 * 1024 * 1024,
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected result, got nil")
+	}
+
+	if result.NodeID != 42 {
+		t.Errorf("expected NodeID 42, got %d", result.NodeID)
+	}
+
+	if result.Token == "" {
+		t.Error("expected non-empty token")
+	}
+
+	mu.Lock()
+	if createdNode == nil {
+		t.Fatal("expected node to be created in repo")
+	}
+	if createdNode.Status != domain.NodeStatusUnauthorized {
+		t.Errorf("expected status Unauthorized, got %v", createdNode.Status)
+	}
+	if createdNode.OwnerID != "" {
+		t.Errorf("expected empty OwnerID, got %q", createdNode.OwnerID)
+	}
+	if createdNode.Address != address {
+		t.Errorf("expected address %q, got %q", address, createdNode.Address)
+	}
+	mu.Unlock()
+}
+
+func TestNodeService_AnnounceNode_UpdateExistingUnauthorized(t *testing.T) {
+	address := "192.168.1.100:44044"
+	existingNode := &domain.Node{
+		ID:        42,
+		Address:   address,
+		Status:    domain.NodeStatusUnauthorized,
+		OwnerID:   "",
+		TokenHash: []byte("old-hash"),
+	}
+
+	var updatedNode *domain.Node
+	var mu sync.Mutex
+
+	nodeRepo := &hbMockNodeRepo{
+		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
+			return existingNode, nil
+		},
+		updateFn: func(ctx context.Context, node *domain.Node) error {
+			mu.Lock()
+			defer mu.Unlock()
+			updatedNode = node
+			return nil
+		},
+	}
+
+	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+
+	ctx := context.Background()
+	result, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
+		Address:          address,
+		Region:           "US",
+		AgentVersion:     "2.0.0",
+		CPUCores:         16,
+		TotalMemoryBytes: 32 * 1024 * 1024 * 1024,
+		TotalDiskBytes:   1000 * 1024 * 1024 * 1024,
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.NodeID != 42 {
+		t.Errorf("expected NodeID 42, got %d", result.NodeID)
+	}
+
+	mu.Lock()
+	if updatedNode == nil {
+		t.Fatal("expected node to be updated in repo")
+	}
+	if updatedNode.Region != "US" {
+		t.Errorf("expected region US, got %q", updatedNode.Region)
+	}
+	if updatedNode.AgentVersion != "2.0.0" {
+		t.Errorf("expected agent version 2.0.0, got %q", updatedNode.AgentVersion)
+	}
+	mu.Unlock()
+}
+
+func TestNodeService_AnnounceNode_AlreadyOnline(t *testing.T) {
+	address := "192.168.1.100:44044"
+	existingNode := &domain.Node{
+		ID:      42,
+		Address: address,
+		Status:  domain.NodeStatusOnline,
+		OwnerID: "user-123",
+	}
+
+	nodeRepo := &hbMockNodeRepo{
+		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
+			return existingNode, nil
+		},
+	}
+
+	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+
+	ctx := context.Background()
+	_, err := svc.AnnounceNode(ctx, AnnounceNodeParams{
+		Address:          address,
+		AgentVersion:     "1.0.0",
+		CPUCores:         8,
+		TotalMemoryBytes: 16 * 1024 * 1024 * 1024,
+		TotalDiskBytes:   500 * 1024 * 1024 * 1024,
+	})
+
+	if !errors.Is(err, domain.ErrAlreadyExists) {
+		t.Fatalf("expected ErrAlreadyExists, got %v", err)
+	}
+}

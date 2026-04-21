@@ -141,7 +141,7 @@ func TestConfig_Validate(t *testing.T) {
 		errMsg  string
 	}{
 		{
-			name: "valid config",
+			name: "valid config manual mode",
 			cfg: Config{
 				Env: EnvLocal,
 				GRPC: GRPCConfig{
@@ -149,30 +149,29 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid dev env",
+			name: "valid auto-discovery mode",
 			cfg: Config{
-				Env: EnvDev,
+				Env: EnvLocal,
 				GRPC: GRPCConfig{
-					Port:    8080,
-					Timeout: time.Second,
+					Port:    50051,
+					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid prod env",
-			cfg: Config{
-				Env: EnvProd,
-				GRPC: GRPCConfig{
-					Port:    443,
-					Timeout: 10 * time.Second,
+				Orchestrator: OrchestratorConfig{
+					Mode:             "auto-discovery",
+					Address:          "orchestrator:50052",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
 				},
-				APIKey: "some-api-key",
 			},
 			wantErr: false,
 		},
@@ -184,6 +183,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "env is required",
@@ -197,6 +201,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "env must be one of: local, dev, prod",
@@ -210,6 +219,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -223,6 +237,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -236,6 +255,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 5 * time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "grpc.port must be between 1 and 65535",
@@ -249,6 +273,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: 0,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "grpc.timeout must be positive",
@@ -262,6 +291,11 @@ func TestConfig_Validate(t *testing.T) {
 					Timeout: -time.Second,
 				},
 				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "grpc.timeout must be positive",
@@ -274,9 +308,51 @@ func TestConfig_Validate(t *testing.T) {
 					Port:    50051,
 					Timeout: 5 * time.Second,
 				},
+				Orchestrator: OrchestratorConfig{
+					Mode:             "manual",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
 			},
 			wantErr: true,
 			errMsg:  "NODE_API_KEY is required",
+		},
+		{
+			name: "invalid orchestrator mode",
+			cfg: Config{
+				Env: EnvLocal,
+				GRPC: GRPCConfig{
+					Port:    50051,
+					Timeout: 5 * time.Second,
+				},
+				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "invalid",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
+			},
+			wantErr: true,
+			errMsg:  "orchestrator.mode must be one of: manual, auto-discovery",
+		},
+		{
+			name: "auto-discovery missing address",
+			cfg: Config{
+				Env: EnvLocal,
+				GRPC: GRPCConfig{
+					Port:    50051,
+					Timeout: 5 * time.Second,
+				},
+				APIKey: "some-api-key",
+				Orchestrator: OrchestratorConfig{
+					Mode:             "auto-discovery",
+					Address:          "",
+					AnnounceInterval: 30 * time.Second,
+					AnnounceTimeout:  10 * time.Second,
+				},
+			},
+			wantErr: true,
+			errMsg:  "orchestrator.address is required in auto-discovery mode",
 		},
 	}
 

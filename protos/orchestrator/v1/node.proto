@@ -34,6 +34,15 @@ service NodeService {
   rpc GetUsage(NodeServiceGetUsageRequest) returns (NodeServiceGetUsageResponse) {
     option (google.api.http) = {get: "/api/v1/nodes/{node_id}/usage"};
   }
+
+  // Анонсирование ноды. Нода сама заявляет о себе оркестратору.
+  // Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
+  rpc Announce(NodeServiceAnnounceRequest) returns (NodeServiceAnnounceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/announce"
+      body: "*"
+    };
+  }
 }
 
 // ─── Register ───────────────────────────────────────────────────────────────
@@ -100,4 +109,27 @@ message NodeServiceGetUsageResponse {
   int64 node_id = 1;
   ResourceUsage usage = 2;
   int32 active_instance_count = 3;
+}
+
+// ─── Announce ───────────────────────────────────────────────────────────────
+
+message NodeServiceAnnounceRequest {
+  // gRPC адрес ноды (host:port), по которому оркестратор будет подключаться.
+  string address = 1;
+  // Регион размещения ноды (опционально).
+  optional string region = 2;
+  // Версия агента ноды.
+  string agent_version = 3;
+  // Системная информация о ноде.
+  uint32 cpu_cores = 4;
+  uint64 total_memory_bytes = 5;
+  uint64 total_disk_bytes = 6;
+  // API-ключ ноды (NODE_API_KEY). Используется как токен авторизации:
+  // пользователь вводит этот же ключ для подключения ноды.
+  string api_key = 7;
+}
+
+message NodeServiceAnnounceResponse {
+  // ID созданной ноды в оркестраторе.
+  int64 node_id = 1;
 }

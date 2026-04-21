@@ -29,19 +29,21 @@ func NewNodeRepo(pool *pgxpool.Pool) *NodeRepo {
 }
 
 // Create добавляет новую ноду в реестр. Возвращает ErrAlreadyExists при дубликате.
+// После создания поле node.ID заполняется сгенерированным BIGSERIAL идентификатором.
 func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 	const q = `
-		INSERT INTO nodes (id, owner_id, address, token_hash, api_token, region, status,
+		INSERT INTO nodes (owner_id, address, token_hash, api_token, region, status,
 		                   cpu_cores, total_memory, total_disk, agent_version,
 		                   last_ping_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		RETURNING id
 	`
 
-	_, err := r.pool.Exec(ctx, q,
-		node.ID, node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status,
+	err := r.pool.QueryRow(ctx, q,
+		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status,
 		node.CPUCores, node.TotalMemory, node.TotalDisk, node.AgentVersion,
 		node.LastPingAt, node.CreatedAt, node.UpdatedAt,
-	)
+	).Scan(&node.ID)
 	if err != nil {
 		if isPgUniqueViolation(err) {
 			return domain.ErrAlreadyExists

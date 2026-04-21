@@ -110,6 +110,32 @@ func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.NodeServiceGetUsageR
 	}, nil
 }
 
+// Announce обрабатывает анонсирование ноды от самой ноды.
+// Не требует авторизации — нода сама заявляет о своем существовании.
+func (h *NodeHandler) Announce(ctx context.Context, req *pb.NodeServiceAnnounceRequest) (*pb.NodeServiceAnnounceResponse, error) {
+	params := service.AnnounceNodeParams{
+		Address:          req.GetAddress(),
+		AgentVersion:     req.GetAgentVersion(),
+		CPUCores:         req.GetCpuCores(),
+		TotalMemoryBytes: req.GetTotalMemoryBytes(),
+		TotalDiskBytes:   req.GetTotalDiskBytes(),
+		APIKey:           req.GetApiKey(),
+	}
+
+	if req.Region != nil {
+		params.Region = *req.Region
+	}
+
+	result, err := h.nodeService.AnnounceNode(ctx, params)
+	if err != nil {
+		return nil, domainError(err, "announce node")
+	}
+
+	return &pb.NodeServiceAnnounceResponse{
+		NodeId: result.NodeID,
+	}, nil
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 func nodeStatusFromProto(s pb.NodeStatus) domain.NodeStatus {

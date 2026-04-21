@@ -19,10 +19,33 @@ const (
 
 // Config хранит конфигурацию приложения.
 type Config struct {
-	Env    string     `yaml:"env" env-required:"true"`
-	GRPC   GRPCConfig `yaml:"grpc"`
-	Node   NodeConfig `yaml:"node"`
-	APIKey string     `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
+	Env          string             `yaml:"env" env-required:"true"`
+	GRPC         GRPCConfig         `yaml:"grpc"`
+	Node         NodeConfig         `yaml:"node"`
+	APIKey       string             `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
+	Orchestrator OrchestratorConfig `yaml:"orchestrator"`
+}
+
+// OrchestratorConfig хранит настройки для подключения к оркестратору.
+type OrchestratorConfig struct {
+	// Mode определяет режим работы: "manual" или "auto-discovery" (по умолчанию).
+	// В режиме auto-discovery нода сама анонсирует себя в оркестраторе.
+	Mode string `yaml:"mode" env-default:"auto-discovery"`
+
+	// Address - адрес оркестратора (host:port) для gRPC соединения.
+	// Используется только в режиме auto-discovery.
+	Address string `yaml:"address" env-default:"orchestrator:50052"`
+
+	// AnnounceInterval - интервал между повторными попытками анонсирования.
+	// Используется если первичный announce не удался.
+	AnnounceInterval time.Duration `yaml:"announce_interval" env-default:"30s"`
+
+	// AnnounceTimeout - таймаут на один announce запрос.
+	AnnounceTimeout time.Duration `yaml:"announce_timeout" env-default:"10s"`
+
+	// ExternalAddress - внешний адрес ноды, который будет передан оркестратору.
+	// Если пустой, нода попытается определить адрес автоматически.
+	ExternalAddress string `yaml:"external_address" env-default:""`
 }
 
 // GRPCConfig хранит настройки gRPC-сервера.
@@ -82,6 +105,23 @@ func (c *Config) Validate() error {
 
 	if c.APIKey == "" {
 		return errors.New("NODE_API_KEY is required")
+	}
+
+	// Валидация настроек оркестратора.
+	if c.Orchestrator.Mode != "manual" && c.Orchestrator.Mode != "auto-discovery" {
+		return errors.New("orchestrator.mode must be one of: manual, auto-discovery")
+	}
+
+	if c.Orchestrator.Mode == "auto-discovery" {
+		if c.Orchestrator.Address == "" {
+			return errors.New("orchestrator.address is required in auto-discovery mode")
+		}
+		if c.Orchestrator.AnnounceInterval <= 0 {
+			return errors.New("orchestrator.announce_interval must be positive")
+		}
+		if c.Orchestrator.AnnounceTimeout <= 0 {
+			return errors.New("orchestrator.announce_timeout must be positive")
+		}
 	}
 
 	return nil

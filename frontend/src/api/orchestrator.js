@@ -94,7 +94,16 @@ export function createLogStream(
 
 export function listNodes(status) {
   const params = {};
-  if (status && status !== "all") params.status = status;
+  if (status && status !== "all") {
+    // Map string status to proto enum value
+    const statusMap = {
+      unauthorized: "NODE_STATUS_UNAUTHORIZED",
+      online: "NODE_STATUS_ONLINE",
+      offline: "NODE_STATUS_OFFLINE",
+      maintenance: "NODE_STATUS_MAINTENANCE",
+    };
+    params.status = statusMap[status] || status;
+  }
   return http.get("/nodes", { params }).then((r) => r.data.nodes ?? []);
 }
 
@@ -103,7 +112,29 @@ export function getNode(nodeId) {
 }
 
 export function registerNode(payload) {
-  return http.post("/nodes", payload).then((r) => r.data);
+  // Convert payload to proto oneof format
+  // payload can be: { node_id, token } for authorize mode
+  // or: { address, token, region } for manual mode
+  let requestBody;
+  if (payload.node_id !== undefined) {
+    // Authorize mode (auto-discovery)
+    requestBody = {
+      authorize: {
+        node_id: payload.node_id,
+        token: payload.token,
+      },
+    };
+  } else {
+    // Manual mode
+    requestBody = {
+      manual: {
+        address: payload.address,
+        token: payload.token,
+        region: payload.region,
+      },
+    };
+  }
+  return http.post("/nodes", requestBody).then((r) => r.data);
 }
 
 export function deleteNode(nodeId) {

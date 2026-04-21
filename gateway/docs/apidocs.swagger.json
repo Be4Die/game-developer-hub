@@ -1,9 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "google/api/http.proto",
+    "title": "game_server_node/v1/common.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "DeploymentService"
+    },
+    {
+      "name": "DiscoveryService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],

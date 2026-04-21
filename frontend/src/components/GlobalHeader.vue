@@ -6,7 +6,7 @@
         <template v-if="userRole === 'Разработчик' || userRole === 'Владелец'">
           <router-link to="/projects" class="nav-item" active-class="active"><FolderGit2 class="icon-sm" /> Черновики</router-link>
         </template>
-        <template v-if="userRole === 'Владелец'">
+        <template v-if="userRole === 'Разработчик' || userRole === 'Владелец'">
           <router-link to="/nodes" class="nav-item" active-class="active"><Server class="icon-sm" /> Ноды</router-link>
         </template>
         <template v-if="userRole === 'Модератор'">

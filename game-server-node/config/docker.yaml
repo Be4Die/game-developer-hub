@@ -1,0 +1,13 @@
+env: "local"
+grpc:
+  port: 44044
+  timeout: 10h
+node:
+  region: "local"
+  version: "0.0.1"
+orchestrator:
+  mode: "auto-discovery"
+  address: "orchestrator:50052"
+  announce_interval: 30s
+  announce_timeout: 10s
+  external_address: "gdh-node:44044"

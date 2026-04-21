@@ -146,7 +146,7 @@ services:
       dockerfile: game-server-node/Dockerfile
     container_name: gdh-node
     environment:
-      CONFIG_PATH: /app/config/local.yaml
+      CONFIG_PATH: /app/config/docker.yaml
       NODE_API_KEY: dev-api-key-for-local-testing
     ports:
       - "44044:44044"

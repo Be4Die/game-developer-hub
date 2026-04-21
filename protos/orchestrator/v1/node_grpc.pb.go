@@ -24,6 +24,7 @@ const (
 	NodeService_Get_FullMethodName      = "/orchestrator.v1.NodeService/Get"
 	NodeService_Delete_FullMethodName   = "/orchestrator.v1.NodeService/Delete"
 	NodeService_GetUsage_FullMethodName = "/orchestrator.v1.NodeService/GetUsage"
+	NodeService_Announce_FullMethodName = "/orchestrator.v1.NodeService/Announce"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -42,6 +43,9 @@ type NodeServiceClient interface {
 	Delete(ctx context.Context, in *NodeServiceDeleteRequest, opts ...grpc.CallOption) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
 	GetUsage(ctx context.Context, in *NodeServiceGetUsageRequest, opts ...grpc.CallOption) (*NodeServiceGetUsageResponse, error)
+	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
+	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
+	Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -102,6 +106,16 @@ func (c *nodeServiceClient) GetUsage(ctx context.Context, in *NodeServiceGetUsag
 	return out, nil
 }
 
+func (c *nodeServiceClient) Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceAnnounceResponse)
+	err := c.cc.Invoke(ctx, NodeService_Announce_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -118,6 +132,9 @@ type NodeServiceServer interface {
 	Delete(context.Context, *NodeServiceDeleteRequest) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
 	GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error)
+	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
+	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
+	Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -142,6 +159,9 @@ func (UnimplementedNodeServiceServer) Delete(context.Context, *NodeServiceDelete
 }
 func (UnimplementedNodeServiceServer) GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
+}
+func (UnimplementedNodeServiceServer) Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Announce not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -254,6 +274,24 @@ func _NodeService_GetUsage_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_Announce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceAnnounceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).Announce(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_Announce_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).Announce(ctx, req.(*NodeServiceAnnounceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -280,6 +318,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUsage",
 			Handler:    _NodeService_GetUsage_Handler,
+		},
+		{
+			MethodName: "Announce",
+			Handler:    _NodeService_Announce_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

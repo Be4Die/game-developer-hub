@@ -6,10 +6,10 @@
         <button class="btn-outline back-btn" @click="$router.push('/nodes')">
           <ArrowLeft class="icon-sm" /> Ноды
         </button>
-        <h1>{{ node.address }}</h1>
+        <h1>{{ node.address || 'Нода' }}</h1>
         <StatusBadge v-if="node.status" :status="node.status" type="node" />
       </div>
-      <button class="btn-delete-lg" @click="showDeleteConfirm = true">
+      <button class="btn-delete-lg" @click="showDeleteConfirm = true" v-if="!isUnauthorized">
         <Trash2 class="icon-sm" /> Удалить ноду
       </button>
     </div>
@@ -20,7 +20,29 @@
       <button class="btn-outline btn-sm" @click="fetchNode">Повторить</button>
     </div>
 
-    <template v-if="!error">
+    <template v-if="!error && node.id">
+      <!-- Форма авторизации для неавторизованных нод -->
+      <div v-if="isUnauthorized" class="card auth-card">
+        <h3>Авторизация ноды</h3>
+        <p class="auth-hint">Эта нода анонсировала себя оркестратору и ожидает авторизации. Введите API-ключ ноды (NODE_API_KEY) чтобы подключить её.</p>
+        <div class="auth-form">
+          <div class="form-group">
+            <label>API-ключ ноды *</label>
+            <input
+              type="text"
+              v-model="authToken"
+              class="form-input"
+              placeholder="dev-api-key-for-local-testing"
+              @keyup.enter="submitAuthorize"
+            />
+          </div>
+          <div v-if="authError" class="auth-error">{{ authError }}</div>
+          <button class="btn-primary" @click="submitAuthorize" :disabled="!authToken || authorizing">
+            {{ authorizing ? 'Авторизация...' : 'Авторизовать ноду' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Информация -->
       <div class="card info-card">
         <h3>Информация о ноде</h3>
@@ -38,45 +60,47 @@
         </div>
       </div>
 
-      <!-- Ресурсы -->
-      <div class="section-header"><h2>Потребление ресурсов</h2></div>
-      <div class="resources-grid">
-        <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
-        <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" :max="node.total_memory_bytes" type="bytes" />
-        <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" :max="node.total_disk_bytes" type="bytes" />
-        <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
-      </div>
+      <!-- Ресурсы — только для авторизованных нод -->
+      <template v-if="!isUnauthorized">
+        <div class="section-header"><h2>Потребление ресурсов</h2></div>
+        <div class="resources-grid">
+          <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
+          <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" :max="node.total_memory_bytes" type="bytes" />
+          <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" :max="node.total_disk_bytes" type="bytes" />
+          <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
+        </div>
 
-      <!-- Активные инстансы -->
-      <div class="section-header">
-        <h2>Инстансы на ноде <span class="count">{{ activeCount }}</span></h2>
-      </div>
-      <div v-if="instancesLoading" class="loading-state">Загрузка...</div>
-      <div class="table-wrap" v-else-if="nodeInstances.length">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Имя</th>
-              <th>Игра</th>
-              <th>Версия</th>
-              <th>Статус</th>
-              <th>Игроки</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="inst in nodeInstances" :key="inst.id"
-                @click="$router.push(`/projects/${inst.game_id}/servers/instances/${inst.id}`)"
-                class="clickable-row">
-              <td class="cell-name">{{ inst.name || `#${inst.id}` }}</td>
-              <td>Игра #{{ inst.game_id }}</td>
-              <td><code>{{ inst.build_version }}</code></td>
-              <td><StatusBadge :status="inst.status" type="instance" /></td>
-              <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else class="empty-state">Нет инстансов на этой ноде</div>
+        <!-- Активные инстансы -->
+        <div class="section-header">
+          <h2>Инстансы на ноде <span class="count">{{ activeCount }}</span></h2>
+        </div>
+        <div v-if="instancesLoading" class="loading-state">Загрузка...</div>
+        <div class="table-wrap" v-else-if="nodeInstances.length">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Игра</th>
+                <th>Версия</th>
+                <th>Статус</th>
+                <th>Игроки</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="inst in nodeInstances" :key="inst.id"
+                  @click="$router.push(`/projects/${inst.game_id}/servers/instances/${inst.id}`)"
+                  class="clickable-row">
+                <td class="cell-name">{{ inst.name || `#${inst.id}` }}</td>
+                <td>Игра #{{ inst.game_id }}</td>
+                <td><code>{{ inst.build_version }}</code></td>
+                <td><StatusBadge :status="inst.status" type="instance" /></td>
+                <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else class="empty-state">Нет инстансов на этой ноде</div>
+      </template>
     </template>
 
     <!-- Подтверждение удаления -->
@@ -95,12 +119,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Trash2, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
-import { getNode, getNodeUsage, deleteNode, listInstances } from '../../api/orchestrator'
+import { getNode, getNodeUsage, deleteNode, registerNode, listInstances } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({ nodeId: { type: [String, Number], required: true } })
@@ -113,7 +137,11 @@ const instancesLoading = ref(true)
 const error = ref(null)
 const showDeleteConfirm = ref(false)
 const deleting = ref(false)
+const authToken = ref('')
+const authError = ref(null)
+const authorizing = ref(false)
 
+const isUnauthorized = computed(() => node.value.status === 'NODE_STATUS_UNAUTHORIZED')
 const activeCount = computed(() => usage.value.active_instance_count ?? 0)
 
 let usageInterval = null
@@ -121,7 +149,9 @@ let usageInterval = null
 async function fetchNode() {
   error.value = null
   try {
-    node.value = await getNode(props.nodeId)
+    const resp = await getNode(props.nodeId)
+    // API returns { node: { ... } }, extract the node object
+    node.value = resp?.node || resp || {}
   } catch (e) {
     error.value = e.response?.data?.message ?? e.message
   }
@@ -137,14 +167,33 @@ async function fetchUsage() {
 async function fetchInstances() {
   instancesLoading.value = true
   try {
-    // Получаем все инстансы и фильтруем по ноде
-    // TODO: когда API поддержит фильтрацию по node_id, убрать фильтрацию на клиенте
-    const allInstances = await listInstances(0) // 0 = все игры? Или нужен перебор
+    const allInstances = await listInstances(0)
     nodeInstances.value = allInstances.filter(i => i.node_id === Number(props.nodeId))
   } catch {
     nodeInstances.value = []
   } finally {
     instancesLoading.value = false
+  }
+}
+
+async function submitAuthorize() {
+  if (!authToken.value) return
+  authorizing.value = true
+  authError.value = null
+  try {
+    await registerNode({ node_id: Number(props.nodeId), token: authToken.value })
+    showToast('Нода авторизована')
+    await fetchNode()
+  } catch (e) {
+    if (e.response?.status === 401) {
+      authError.value = 'Неверный API-ключ ноды'
+    } else if (e.response?.status === 409) {
+      authError.value = 'Нода уже авторизована'
+    } else {
+      authError.value = e.response?.data?.message ?? 'Ошибка авторизации ноды'
+    }
+  } finally {
+    authorizing.value = false
   }
 }
 
@@ -172,18 +221,27 @@ function formatDateTime(ts) {
   return new Date(ts).toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+// Watch for node changes to load usage/instances when status changes to online
+watch(() => node.value.status, async (status) => {
+  if (status !== 'NODE_STATUS_UNAUTHORIZED' && !error.value) {
+    await fetchUsage()
+    await fetchInstances()
+    if (usageInterval) clearInterval(usageInterval)
+    usageInterval = setInterval(fetchUsage, 5000)
+  }
+})
+
 onMounted(async () => {
   await fetchNode()
-  await fetchUsage()
-  // Инстансы загружаем только если нода найдена
-  if (!error.value) {
+  if (!error.value && !isUnauthorized.value) {
+    await fetchUsage()
     await fetchInstances()
     usageInterval = setInterval(fetchUsage, 5000)
   }
 })
 
 onUnmounted(() => {
-  clearInterval(usageInterval)
+  if (usageInterval) clearInterval(usageInterval)
 })
 </script>
 
@@ -207,6 +265,12 @@ onUnmounted(() => {
   border-radius: var(--radius-md); margin-bottom: 16px; font-size: 0.88rem;
 }
 .btn-sm { padding: 4px 12px; font-size: 0.82rem; }
+
+.auth-card { margin-bottom: 24px; border: 2px solid var(--warning-light, #FEF3C7); }
+.auth-card h3 { margin: 0 0 8px; font-size: 0.95rem; color: #92400E; }
+.auth-hint { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 16px; line-height: 1.5; }
+.auth-form { display: flex; flex-direction: column; gap: 12px; }
+.auth-error { color: var(--danger); font-size: 0.85rem; font-weight: 500; }
 
 .info-card { margin-bottom: 24px; }
 .info-card h3 { margin: 0 0 16px; font-size: 0.95rem; }
@@ -242,6 +306,13 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 .modal p { margin: 8px 0; font-size: 0.9rem; color: var(--text-muted); }
 .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 .text-danger { color: var(--danger); font-weight: 600; }
+
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+.form-input {
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-main); font-size: 0.88rem;
+}
 
 @media (max-width: 768px) {
   .resources-grid { grid-template-columns: repeat(2, 1fr); }

@@ -1,0 +1,14 @@
+env: "local"
+grpc:
+  port: 44044
+  timeout: 10h
+node:
+  region: "local"
+  version: "0.0.1"
+  # eth_name: "eth0"  # Опционально: имя сетевого интерфейса для автоопределения адреса
+orchestrator:
+  mode: "auto-discovery"
+  address: "localhost:50052"  # Адрес оркестратора
+  announce_interval: 30s       # Интервал повторных попыток
+  announce_timeout: 10s        # Таймаут на announce запрос
+  # external_address: "192.168.1.100:44044"  # Опционально: явный внешний адрес

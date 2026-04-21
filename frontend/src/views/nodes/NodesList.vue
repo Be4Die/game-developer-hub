@@ -10,7 +10,7 @@
           <option value="offline">Не в сети</option>
           <option value="maintenance">Обслуживание</option>
         </select>
-        <button class="btn-primary" @click="showRegisterForm = true">
+        <button class="btn-primary" @click="openRegisterModal">
           <Plus class="icon-sm" /> Подключить ноду
         </button>
       </div>
@@ -69,42 +69,44 @@
       <div class="modal card">
         <h3>Подключить ноду</h3>
         <div class="tabs">
+          <button class="tab-btn" :class="{ active: registerTab === 'available' }" @click="registerTab = 'available'">Доступные ноды</button>
           <button class="tab-btn" :class="{ active: registerTab === 'manual' }" @click="registerTab = 'manual'">Ручной ввод</button>
-          <button class="tab-btn" :class="{ active: registerTab === 'authorize' }" @click="registerTab = 'authorize'">Авторизация обнаруженной</button>
+        </div>
+
+        <!-- Доступные ноды (auto-discovery) -->
+        <div v-if="registerTab === 'available'" class="form-content">
+          <div class="form-group">
+            <label>Доступная нода *</label>
+            <select v-model="availableForm.node_id" class="form-input">
+              <option value="" disabled>Выберите ноду</option>
+              <option v-for="n in availableNodes" :key="n.id" :value="n.id">
+                {{ n.address }} (ID: {{ n.id }})
+              </option>
+            </select>
+            <p v-if="!availableNodes.length" class="hint">Нет доступных нод для подключения. Убедитесь, что нода запущена в режиме auto-discovery.</p>
+          </div>
+          <div class="form-group">
+            <label>Ключ авторизации (API-ключ ноды) *</label>
+            <input type="text" v-model="availableForm.token" class="form-input" placeholder="dev-api-key-for-local-testing" />
+          </div>
+          <p class="hint">Ноды в этом списке самостоятельно анонсировали себя оркестратору и ожидают авторизации. Введите API-ключ ноды (NODE_API_KEY) для подключения.</p>
         </div>
 
         <!-- Ручной ввод -->
         <div v-if="registerTab === 'manual'" class="form-content">
           <div class="form-group">
             <label>Адрес (host:port) *</label>
-            <input type="text" v-model="manualForm.address" class="form-input" placeholder="192.168.1.100:50051" />
+            <input type="text" v-model="manualForm.address" class="form-input" placeholder="192.168.1.100:44044" />
           </div>
           <div class="form-group">
-            <label>Токен авторизации *</label>
-            <input type="text" v-model="manualForm.token" class="form-input" placeholder="node-token-xxx" />
+            <label>Ключ авторизации (API-ключ ноды) *</label>
+            <input type="text" v-model="manualForm.token" class="form-input" placeholder="dev-api-key-for-local-testing" />
           </div>
           <div class="form-group">
             <label>Регион (опционально)</label>
             <input type="text" v-model="manualForm.region" class="form-input" placeholder="EU" />
           </div>
-        </div>
-
-        <!-- Авторизация обнаруженной -->
-        <div v-if="registerTab === 'authorize'" class="form-content">
-          <div class="form-group">
-            <label>Обнаруженная нода *</label>
-            <select v-model="authorizeForm.node_id" class="form-input">
-              <option value="" disabled>Выберите ноду</option>
-              <option v-for="n in unauthorizedNodes" :key="n.id" :value="n.id">
-                {{ n.address }} (ID: {{ n.id }})
-              </option>
-            </select>
-            <p v-if="!unauthorizedNodes.length" class="hint">Нет обнаруженных неавторизованных нод</p>
-          </div>
-          <div class="form-group">
-            <label>Токен авторизации *</label>
-            <input type="text" v-model="authorizeForm.token" class="form-input" placeholder="node-token-xxx" />
-          </div>
+          <p class="hint">Введите адрес ноды и её API-ключ (NODE_API_KEY) для прямого подключения.</p>
         </div>
 
         <div v-if="registerError" class="start-error">{{ registerError }}</div>
@@ -133,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { Plus, Trash2, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import { listNodes, registerNode, deleteNode } from '../../api/orchestrator'
@@ -144,7 +146,7 @@ const loading = ref(true)
 const error = ref(null)
 const statusFilter = ref('all')
 const showRegisterForm = ref(false)
-const registerTab = ref('manual')
+const registerTab = ref('available')
 const registerError = ref(null)
 const registering = ref(false)
 const deleteTarget = ref(null)
@@ -152,18 +154,25 @@ const deleting = ref(false)
 const deletingId = ref(null)
 
 const manualForm = reactive({ address: '', token: '', region: '' })
-const authorizeForm = reactive({ node_id: '', token: '' })
+const availableForm = reactive({ node_id: '', token: '' })
 
 const filteredNodes = computed(() => {
   if (statusFilter.value === 'all') return nodes.value
-  return nodes.value.filter(n => n.status === statusFilter.value)
+  const statusMap = {
+    unauthorized: 'NODE_STATUS_UNAUTHORIZED',
+    online: 'NODE_STATUS_ONLINE',
+    offline: 'NODE_STATUS_OFFLINE',
+    maintenance: 'NODE_STATUS_MAINTENANCE',
+  }
+  const targetStatus = statusMap[statusFilter.value] || statusFilter.value
+  return nodes.value.filter(n => n.status === targetStatus)
 })
 
-const unauthorizedNodes = computed(() => nodes.value.filter(n => n.status === 'unauthorized'))
+const availableNodes = computed(() => nodes.value.filter(n => n.status === 'NODE_STATUS_UNAUTHORIZED' && (!n.owner_id || n.owner_id === '')))
 
 const canRegister = computed(() => {
   if (registerTab.value === 'manual') return manualForm.address && manualForm.token
-  return authorizeForm.node_id && authorizeForm.token
+  return availableForm.node_id && availableForm.token
 })
 
 async function fetchNodes() {
@@ -178,6 +187,12 @@ async function fetchNodes() {
   }
 }
 
+function openRegisterModal() {
+  registerTab.value = 'available'
+  registerError.value = null
+  showRegisterForm.value = true
+}
+
 async function submitRegister() {
   registering.value = true
   registerError.value = null
@@ -186,7 +201,7 @@ async function submitRegister() {
     payload = { address: manualForm.address, token: manualForm.token }
     if (manualForm.region) payload.region = manualForm.region
   } else {
-    payload = { node_id: Number(authorizeForm.node_id), token: authorizeForm.token }
+    payload = { node_id: Number(availableForm.node_id), token: availableForm.token }
   }
 
   try {
@@ -194,11 +209,11 @@ async function submitRegister() {
     showToast('Нода подключена и авторизована')
     showRegisterForm.value = false
     Object.assign(manualForm, { address: '', token: '', region: '' })
-    Object.assign(authorizeForm, { node_id: '', token: '' })
+    Object.assign(availableForm, { node_id: '', token: '' })
     await fetchNodes()
   } catch (e) {
     if (e.response?.status === 401) {
-      registerError.value = 'Неверный токен авторизации'
+      registerError.value = 'Неверный ключ авторизации'
     } else if (e.response?.status === 409) {
       registerError.value = 'Нода уже авторизована или уже существует'
     } else {
@@ -244,6 +259,16 @@ function formatTime(ts) {
   if (diff < 86400) return Math.floor(diff / 3600) + ' ч. назад'
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
+
+watch(showRegisterForm, async (show) => {
+  if (show) {
+    try {
+      nodes.value = await listNodes()
+    } catch (e) {
+      console.error('Failed to load nodes for modal:', e)
+    }
+  }
+})
 
 onMounted(fetchNodes)
 </script>

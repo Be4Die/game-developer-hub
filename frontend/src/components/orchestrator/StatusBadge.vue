@@ -16,6 +16,12 @@ const instanceMap = {
   stopping: { label: 'Останавливается', cls: 'warning' },
   stopped:  { label: 'Остановлен',  cls: 'muted' },
   crashed:  { label: 'Авария',      cls: 'danger' },
+  // Proto-format statuses
+  INSTANCE_STATUS_STARTING: { label: 'Запускается', cls: 'warning' },
+  INSTANCE_STATUS_RUNNING:  { label: 'Работает',    cls: 'success' },
+  INSTANCE_STATUS_STOPPING: { label: 'Останавливается', cls: 'warning' },
+  INSTANCE_STATUS_STOPPED:  { label: 'Остановлен',  cls: 'muted' },
+  INSTANCE_STATUS_CRASHED:  { label: 'Авария',      cls: 'danger' },
 }
 
 const nodeMap = {
@@ -23,6 +29,11 @@ const nodeMap = {
   online:       { label: 'В сети',          cls: 'success' },
   offline:      { label: 'Не в сети',       cls: 'muted' },
   maintenance:  { label: 'Обслуживание',    cls: 'warning' },
+  // Proto-format statuses (from gRPC-gateway JSON)
+  NODE_STATUS_UNAUTHORIZED: { label: 'Не авторизована', cls: 'warning' },
+  NODE_STATUS_ONLINE:       { label: 'В сети',          cls: 'success' },
+  NODE_STATUS_OFFLINE:      { label: 'Не в сети',       cls: 'muted' },
+  NODE_STATUS_MAINTENANCE:  { label: 'Обслуживание',    cls: 'warning' },
 }
 
 const map = computed(() => props.type === 'node' ? nodeMap : instanceMap)
