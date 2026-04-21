@@ -232,7 +232,7 @@ func (s *Seeder) seedUsers(ctx context.Context) {
 	s.log("    Зарегистрировано: %d", len(s.records))
 }
 
-func (s *Seeder) verifyEmails(ctx context.Context) {
+func (s *Seeder) verifyEmails(_ context.Context) {
 	s.log("  [VERIFY] Верификация email...")
 
 	// Получаем коды верификации из логов SSO

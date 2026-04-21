@@ -24,7 +24,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 
 // GetProfile возвращает профиль текущего пользователя (по JWT).
 // UserID извлекается из контекста, установленного JWT interceptor.
-func (h *UserHandler) GetProfile(ctx context.Context, req *pb.UserServiceGetProfileRequest) (*pb.UserServiceGetProfileResponse, error) {
+func (h *UserHandler) GetProfile(ctx context.Context, _ *pb.UserServiceGetProfileRequest) (*pb.UserServiceGetProfileResponse, error) {
 	// UserID извлекается из JWT контекста interceptor'ом.
 	userID := extractUserIDFromContext(ctx)
 	if userID == "" {

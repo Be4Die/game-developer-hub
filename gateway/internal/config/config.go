@@ -34,10 +34,7 @@ type CORSConfig struct {
 
 // Load загружает конфигурацию из YAML и переменных окружения.
 func Load() (*Config, error) {
-	cfgPath := os.Getenv("GATEWAY_CONFIG")
-	if cfgPath == "" {
-		cfgPath = "config/local.yaml"
-	}
+	_ = os.Getenv("GATEWAY_CONFIG") // NOTE: config file loading not implemented yet
 
 	var cfg Config
 	if err := envconfig.Process("gateway", &cfg); err != nil {

@@ -85,7 +85,9 @@ func parseFlags() SeedConfig {
 
 	if cfg.Games == 0 {
 		if v := os.Getenv("SEED_GAMES"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.Games)
+			if _, err := fmt.Sscanf(v, "%d", &cfg.Games); err != nil {
+				log.Printf("[WARN] invalid SEED_GAMES value") // #nosec G706 -- dev-only seed tool
+			}
 		}
 	}
 	if cfg.Games == 0 {
@@ -94,7 +96,9 @@ func parseFlags() SeedConfig {
 
 	if cfg.Instances == 0 {
 		if v := os.Getenv("SEED_INSTANCES"); v != "" {
-			fmt.Sscanf(v, "%d", &cfg.Instances)
+			if _, err := fmt.Sscanf(v, "%d", &cfg.Instances); err != nil {
+				log.Printf("[WARN] invalid SEED_INSTANCES value") // #nosec G706 -- dev-only seed tool
+			}
 		}
 	}
 	if cfg.Instances == 0 {
@@ -139,9 +143,7 @@ func (s *Seeder) Run(ctx context.Context) error {
 	}
 
 	// 3. Создаём инстансы
-	if err := s.seedInstances(ctx); err != nil {
-		return fmt.Errorf("создание инстансов: %w", err)
-	}
+	s.seedInstances(ctx)
 
 	s.log("[OK] Заполнение завершено успешно")
 	s.printSummary()
@@ -233,7 +235,7 @@ func (s *Seeder) loadImageGRPC(ctx context.Context, gameID int64, imageTag strin
 	return err
 }
 
-func (s *Seeder) seedInstances(ctx context.Context) (_ error) {
+func (s *Seeder) seedInstances(ctx context.Context) {
 	s.log("  [INSTANCES] Создание %d инстансов...", s.cfg.Instances)
 
 	ctx = s.withAuth(ctx)
@@ -273,7 +275,6 @@ func (s *Seeder) seedInstances(ctx context.Context) (_ error) {
 	}
 
 	s.log("    ✓ Создано инстансов: %d", created)
-	return nil
 }
 
 func (s *Seeder) withAuth(ctx context.Context) context.Context {
