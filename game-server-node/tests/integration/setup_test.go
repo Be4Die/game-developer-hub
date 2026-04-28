@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/config"
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/runtime/docker"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/runtime/docker"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/service"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
 	grpctransport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/grpc"

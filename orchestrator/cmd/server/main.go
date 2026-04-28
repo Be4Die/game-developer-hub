@@ -10,7 +10,7 @@ import (
 	_ "google.golang.org/grpc/encoding/gzip" // register gzip decompressor
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/app"
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 func main() {

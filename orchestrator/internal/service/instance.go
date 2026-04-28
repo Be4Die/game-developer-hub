@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 

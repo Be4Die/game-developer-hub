@@ -8,9 +8,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/client/orchestrator"
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/config"
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/sysinfo"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/client/orchestrator"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/sysinfo"
 )
 
 // AnnouncementService управляет процессом анонсирования ноды в оркестраторе.

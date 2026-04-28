@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc"

@@ -10,8 +10,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/client/grpcnode"
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/config"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
