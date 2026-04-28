@@ -15,6 +15,11 @@ service BuildService {
     };
   }
 
+  // Внутренний streaming upload для gateway → orchestrator.
+  // Первое сообщение содержит метаданные, последующие — чанки данных (64 КБ).
+  // Не имеет HTTP binding — используется только напрямую через gRPC.
+  rpc UploadStream(stream BuildServiceUploadStreamRequest) returns (BuildServiceUploadResponse);
+
   // Список билдов игры.
   rpc List(BuildServiceListRequest) returns (BuildServiceListResponse) {
     option (google.api.http) = {get: "/api/v1/games/{game_id}/builds"};
@@ -35,12 +40,30 @@ service BuildService {
 
 message BuildServiceUploadRequest {
   int64 game_id = 1;
-  // Docker image tar-архив (результат `docker save`).
+  // Данные архива (для unary upload через HTTP/gRPC-gateway).
   bytes image_data = 2;
   string build_version = 3;
   Protocol protocol = 4;
   uint32 internal_port = 5;
   uint32 max_players = 6;
+}
+
+// ─── UploadStream (internal, no HTTP binding) ───────────────────────────────
+
+message BuildServiceUploadStreamRequest {
+  oneof payload {
+    BuildUploadStreamMetadata metadata = 1;
+    // Рекомендуемый размер чанка — 64 КБ.
+    bytes chunk = 2;
+  }
+}
+
+message BuildUploadStreamMetadata {
+  int64 game_id = 1;
+  string build_version = 2;
+  Protocol protocol = 3;
+  uint32 internal_port = 4;
+  uint32 max_players = 5;
 }
 
 message BuildServiceUploadResponse {

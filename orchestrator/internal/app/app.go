@@ -109,9 +109,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}
 
 	// ─── Создание gRPC-сервера ──────────────────────────────────
+	// 2GB max message size for large build uploads
+	const maxMsgSize = 2 * 1024 * 1024 * 1024 // 2GB
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authInterceptor.Unary()),
 		grpc.StreamInterceptor(authInterceptor.Stream()),
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
 	)
 
 	pb.RegisterBuildServiceServer(gRPCServer, buildHandler)

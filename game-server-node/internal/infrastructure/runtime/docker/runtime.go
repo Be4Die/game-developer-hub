@@ -2,11 +2,19 @@
 package docker
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -66,8 +74,62 @@ func (r *Runtime) LoadImage(ctx context.Context, imageTag string, data io.Reader
 	return nil
 }
 
+// BuildImage собирает Docker-образ из исходного архива (zip/tar.gz).
+func (r *Runtime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
+	const op = "DockerRuntime.BuildImage"
+
+	r.log.Info("building docker image",
+		slog.String("op", op),
+		slog.String("image_tag", imageTag),
+		slog.Uint64("internal_port", uint64(internalPort)),
+	)
+
+	// Create temp directory for build context.
+	tmpDir, err := os.MkdirTemp("", "build-context-*")
+	if err != nil {
+		return fmt.Errorf("%s: create temp dir: %w", op, err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	unpackDir := filepath.Join(tmpDir, "unpack")
+	if err := os.MkdirAll(unpackDir, 0o750); err != nil {
+		return fmt.Errorf("%s: create unpack dir: %w", op, err)
+	}
+
+	// Read all archive data.
+	data, err := io.ReadAll(archive)
+	if err != nil {
+		return fmt.Errorf("%s: read archive: %w", op, err)
+	}
+
+	// Extract archive.
+	if err := r.extractArchive(bytes.NewReader(data), unpackDir); err != nil {
+		return fmt.Errorf("%s: extract archive: %w", op, err)
+	}
+
+	// Generate Dockerfile.
+	dockerfile := r.generateDockerfile(unpackDir, internalPort)
+	if err := os.WriteFile(filepath.Join(unpackDir, "Dockerfile"), []byte(dockerfile), 0o600); err != nil {
+		return fmt.Errorf("%s: write Dockerfile: %w", op, err)
+	}
+
+	// Run docker build.
+	cmd := exec.CommandContext(ctx, "docker", "build", "-t", imageTag, unpackDir) //nolint:gosec
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s: docker build: %w: %s", op, err, stderr.String())
+	}
+
+	r.log.Info("image built",
+		slog.String("op", op),
+		slog.String("image_tag", imageTag),
+	)
+	return nil
+}
+
 // CreateContainer создаёт контейнер с заданными параметрами.
-func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
+func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
 	const op = "Runtime.CreateContainer"
 
 	internalPort := nat.Port(fmt.Sprintf("%d/tcp", opts.InternalPort))
@@ -114,16 +176,26 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 
 	resp, err := r.cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Get the actual host port (Docker may auto-assign when HostPort is "0").
+	actualPort, inspectErr := r.getPort(ctx, resp.ID, opts.InternalPort)
+	if inspectErr != nil {
+		r.log.Warn("failed to inspect container for port",
+			slog.String("op", op),
+			slog.String("error", inspectErr.Error()),
+		)
 	}
 
 	r.log.Info("container created",
 		slog.String("op", op),
 		slog.String("container_id", resp.ID[:12]),
 		slog.String("image", opts.ImageTag),
+		slog.Uint64("host_port", uint64(actualPort)),
 	)
 
-	return resp.ID, nil
+	return resp.ID, actualPort, nil
 }
 
 // StartContainer запускает остановленный контейнер.
@@ -217,4 +289,189 @@ func calculateNetworkBytes(stats *container.StatsResponse) uint64 {
 		total += netStats.RxBytes + netStats.TxBytes
 	}
 	return total
+}
+
+// getPort inspects the container's NetworkSettings.Ports and returns the actual host port.
+// When HostPort is "0", Docker assigns a random port — this retrieves it.
+func (r *Runtime) getPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
+	inspect, err := r.cli.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return 0, fmt.Errorf("inspect container: %w", err)
+	}
+
+	portKey := fmt.Sprintf("%d/tcp", internalPort)
+	bindings, ok := inspect.NetworkSettings.Ports[nat.Port(portKey)]
+	if !ok || len(bindings) == 0 {
+		return 0, fmt.Errorf("no port binding found for %s", portKey)
+	}
+
+	// Use the first binding's HostPort.
+	hostPort := bindings[0].HostPort
+	if hostPort == "" {
+		return 0, fmt.Errorf("empty HostPort for %s", portKey)
+	}
+
+	var port uint32
+	if _, err := fmt.Sscanf(hostPort, "%d", &port); err != nil {
+		return 0, fmt.Errorf("parse host port %q: %w", hostPort, err)
+	}
+
+	return port, nil
+}
+
+// extractArchive распаковывает zip или tar.gz архив в целевую директорию.
+func (r *Runtime) extractArchive(reader io.Reader, destDir string) error {
+	buf := make([]byte, 4)
+	n, err := io.ReadFull(reader, buf)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		return fmt.Errorf("read header: %w", err)
+	}
+
+	// ZIP magic: PK\x03\x04
+	if n == 4 && buf[0] == 0x50 && buf[1] == 0x4B && buf[2] == 0x03 && buf[3] == 0x04 {
+		all, readErr := io.ReadAll(io.MultiReader(bytes.NewReader(buf), reader))
+		if readErr != nil {
+			return fmt.Errorf("read zip: %w", readErr)
+		}
+		return r.extractZip(all, destDir)
+	}
+
+	// This is tar.gz — try gzip reader first.
+	gzReader, gzErr := gzip.NewReader(io.MultiReader(bytes.NewReader(buf[:n]), reader))
+	if gzErr != nil {
+		// Not gzip, try plain tar.
+		return r.extractTar(io.MultiReader(bytes.NewReader(buf[:n]), reader), destDir)
+	}
+	defer func() { _ = gzReader.Close() }()
+
+	return r.extractTar(gzReader, destDir)
+}
+
+// extractZip извлекает файлы из ZIP-архива.
+func (r *Runtime) extractZip(data []byte, destDir string) error {
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return fmt.Errorf("open zip: %w", err)
+	}
+
+	for _, f := range reader.File {
+		if err := r.extractZipFile(f, destDir); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Runtime) extractZipFile(f *zip.File, destDir string) error {
+	cleanName := filepath.Clean(f.Name)
+	if filepath.IsAbs(cleanName) || strings.HasPrefix(cleanName, "..") {
+		return fmt.Errorf("zip file %q has invalid path", f.Name)
+	}
+
+	path := filepath.Join(destDir, cleanName)
+	if !strings.HasPrefix(filepath.Clean(path), filepath.Clean(destDir)) { //nolint:gosec
+		return fmt.Errorf("zip file %q escapes destination dir", f.Name)
+	}
+
+	if f.FileInfo().IsDir() {
+		return os.MkdirAll(path, 0o750)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+		return fmt.Errorf("mkdir %q: %w", filepath.Dir(path), err)
+	}
+
+	rc, err := f.Open()
+	if err != nil {
+		return fmt.Errorf("open zip entry %q: %w", f.Name, err)
+	}
+	defer func() { _ = rc.Close() }()
+
+	out, err := os.Create(path) //nolint:gosec
+	if err != nil {
+		return fmt.Errorf("create file %q: %w", path, err)
+	}
+	defer func() { _ = out.Close() }()
+
+	if _, err := io.Copy(out, rc); err != nil { //nolint:gosec
+		return fmt.Errorf("extract %q: %w", f.Name, err)
+	}
+
+	return nil
+}
+
+// extractTar извлекает файлы из tar-архива.
+func (r *Runtime) extractTar(reader io.Reader, destDir string) error {
+	tr := tar.NewReader(reader)
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			// Might be gzip — try to decompress.
+			return fmt.Errorf("tar read: %w", err)
+		}
+
+		cleanName := filepath.Clean(header.Name)
+		if filepath.IsAbs(cleanName) || strings.HasPrefix(cleanName, "..") {
+			return fmt.Errorf("tar file %q has invalid path", header.Name)
+		}
+
+		path := filepath.Join(destDir, cleanName) //nolint:gosec
+		if !strings.HasPrefix(filepath.Clean(path), filepath.Clean(destDir)) {
+			return fmt.Errorf("tar file %q escapes destination dir", header.Name)
+		}
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(path, 0o750); err != nil {
+				return fmt.Errorf("mkdir %q: %w", path, err)
+			}
+		case tar.TypeReg:
+			if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+				return fmt.Errorf("mkdir %q: %w", filepath.Dir(path), err)
+			}
+			out, err := os.Create(path) //nolint:gosec
+			if err != nil {
+				return fmt.Errorf("create file %q: %w", path, err)
+			}
+			if _, err := io.Copy(out, tr); err != nil { //nolint:gosec
+				_ = out.Close()
+				return fmt.Errorf("extract %q: %w", header.Name, err)
+			}
+			_ = out.Close()
+		}
+	}
+
+	return nil
+}
+
+// generateDockerfile создаёт минимальный Dockerfile для игрового сервера.
+func (r *Runtime) generateDockerfile(unpackDir string, internalPort uint32) string {
+	executable := "server"
+	_ = filepath.Walk(unpackDir, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if info.Mode()&0o111 != 0 || strings.HasSuffix(info.Name(), ".exe") {
+			executable = info.Name()
+			return filepath.SkipAll
+		}
+		return nil
+	})
+
+	return fmt.Sprintf(`FROM alpine:latest
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY . /app
+RUN chmod +x /app/%s
+EXPOSE %d
+CMD ["./%s"]
+`, executable, internalPort, executable)
 }

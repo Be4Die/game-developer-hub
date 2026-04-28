@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	DeploymentService_LoadImage_FullMethodName     = "/game_server_node.v1.DeploymentService/LoadImage"
+	DeploymentService_BuildImage_FullMethodName    = "/game_server_node.v1.DeploymentService/BuildImage"
 	DeploymentService_StartInstance_FullMethodName = "/game_server_node.v1.DeploymentService/StartInstance"
 	DeploymentService_StopInstance_FullMethodName  = "/game_server_node.v1.DeploymentService/StopInstance"
 	DeploymentService_StreamLogs_FullMethodName    = "/game_server_node.v1.DeploymentService/StreamLogs"
@@ -35,6 +36,9 @@ type DeploymentServiceClient interface {
 	// Загрузка Docker-образа (tar-архив, результат docker save).
 	// Первое сообщение стрима содержит метаданные, последующие — чанки данных.
 	LoadImage(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[LoadImageRequest, LoadImageResponse], error)
+	// Сборка Docker-образа из исходного архива (zip/tar.gz) на стороне ноды.
+	// Первое сообщение стрима содержит метаданные, последующие — чанки архива.
+	BuildImage(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[BuildImageRequest, BuildImageResponse], error)
 	// Запуск экземпляра игрового сервера из загруженного образа.
 	StartInstance(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
@@ -64,6 +68,19 @@ func (c *deploymentServiceClient) LoadImage(ctx context.Context, opts ...grpc.Ca
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_LoadImageClient = grpc.ClientStreamingClient[LoadImageRequest, LoadImageResponse]
 
+func (c *deploymentServiceClient) BuildImage(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[BuildImageRequest, BuildImageResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[1], DeploymentService_BuildImage_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[BuildImageRequest, BuildImageResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_BuildImageClient = grpc.ClientStreamingClient[BuildImageRequest, BuildImageResponse]
+
 func (c *deploymentServiceClient) StartInstance(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StartInstanceResponse)
@@ -86,7 +103,7 @@ func (c *deploymentServiceClient) StopInstance(ctx context.Context, in *StopInst
 
 func (c *deploymentServiceClient) StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamLogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[1], DeploymentService_StreamLogs_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[2], DeploymentService_StreamLogs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +130,9 @@ type DeploymentServiceServer interface {
 	// Загрузка Docker-образа (tar-архив, результат docker save).
 	// Первое сообщение стрима содержит метаданные, последующие — чанки данных.
 	LoadImage(grpc.ClientStreamingServer[LoadImageRequest, LoadImageResponse]) error
+	// Сборка Docker-образа из исходного архива (zip/tar.gz) на стороне ноды.
+	// Первое сообщение стрима содержит метаданные, последующие — чанки архива.
+	BuildImage(grpc.ClientStreamingServer[BuildImageRequest, BuildImageResponse]) error
 	// Запуск экземпляра игрового сервера из загруженного образа.
 	StartInstance(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
@@ -131,6 +151,9 @@ type UnimplementedDeploymentServiceServer struct{}
 
 func (UnimplementedDeploymentServiceServer) LoadImage(grpc.ClientStreamingServer[LoadImageRequest, LoadImageResponse]) error {
 	return status.Error(codes.Unimplemented, "method LoadImage not implemented")
+}
+func (UnimplementedDeploymentServiceServer) BuildImage(grpc.ClientStreamingServer[BuildImageRequest, BuildImageResponse]) error {
+	return status.Error(codes.Unimplemented, "method BuildImage not implemented")
 }
 func (UnimplementedDeploymentServiceServer) StartInstance(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StartInstance not implemented")
@@ -168,6 +191,13 @@ func _DeploymentService_LoadImage_Handler(srv interface{}, stream grpc.ServerStr
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_LoadImageServer = grpc.ClientStreamingServer[LoadImageRequest, LoadImageResponse]
+
+func _DeploymentService_BuildImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DeploymentServiceServer).BuildImage(&grpc.GenericServerStream[BuildImageRequest, BuildImageResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_BuildImageServer = grpc.ClientStreamingServer[BuildImageRequest, BuildImageResponse]
 
 func _DeploymentService_StartInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StartInstanceRequest)
@@ -236,6 +266,11 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "LoadImage",
 			Handler:       _DeploymentService_LoadImage_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "BuildImage",
+			Handler:       _DeploymentService_BuildImage_Handler,
 			ClientStreams: true,
 		},
 		{

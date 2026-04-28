@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -68,12 +67,13 @@ type UploadBuildParams struct {
 	MaxPlayers   uint32
 	Archive      io.Reader
 	ArchiveSize  int64
-	// ArchiveData — альтернатива Archive, когда данные уже в памяти (gRPC).
+	// ArchiveData — альтернатива Archive, когда данные уже в памяти (unary gRPC).
 	ArchiveData []byte
 }
 
-// UploadBuild загружает серверный билд: распаковывает архив, собирает Docker-образ,
-// сохраняет его в файловое хранилище, загружает на ноду и регистрирует метаданные.
+// UploadBuild загружает серверный билд: распаковывает архив для валидации,
+// отправляет архив на ноду для сборки Docker-образа, сохраняет архив в хранилище
+// и регистрирует метаданные.
 // Возвращает ErrNoAvailableNode при отсутствии свободных нод.
 // Превышение размера архива или лимита билдов на игру возвращает ошибку.
 func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParams) (*domain.ServerBuild, error) {
@@ -86,88 +86,88 @@ func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParam
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: max builds limit reached (%d)", p.limits.MaxBuildsPerGame)
 	}
 
+	// Определяем источник данных: streaming (Archive) или unary (ArchiveData).
+	var data []byte
+	if params.ArchiveData != nil {
+		// Unary mode — данные уже в памяти.
+		data = params.ArchiveData
+		params.ArchiveSize = int64(len(data))
+	} else if params.Archive != nil {
+		// Streaming mode — читаем весь архив для обработки.
+		data, err = io.ReadAll(params.Archive)
+		if err != nil {
+			return nil, fmt.Errorf("BuildPipeline.UploadBuild: read archive: %w", err)
+		}
+		params.ArchiveSize = int64(len(data))
+	} else {
+		return nil, fmt.Errorf("BuildPipeline.UploadBuild: no archive data")
+	}
+
 	// Шаг 2: проверка размера архива.
 	if params.ArchiveSize > p.limits.MaxBuildSizeBytes {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: archive size %d exceeds limit %d",
 			params.ArchiveSize, p.limits.MaxBuildSizeBytes)
 	}
 
-	// Создаём временную директорию для пайплайна.
+	// Создаём временную директорию для валидации архива.
 	tmpDir, err := os.MkdirTemp(p.workDir, "build-pipeline-*")
 	if err != nil {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: create temp dir: %w", err)
 	}
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	// Шаг 3: распаковка архива в temp-директорию.
+	// Шаг 3: распаковка архива для валидации.
 	unpackDir := filepath.Join(tmpDir, "unpack")
 	if err := os.MkdirAll(unpackDir, 0o750); err != nil {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: create unpack dir: %w", err)
 	}
-	if err := p.extractArchive(params.Archive, unpackDir); err != nil {
+	if err := p.extractArchive(bytes.NewReader(data), unpackDir); err != nil {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: extract archive: %w", err)
+	}
+
+	// Если internal port не указан, используем значение по умолчанию.
+	internalPort := params.InternalPort
+	if internalPort == 0 {
+		internalPort = 8080
 	}
 
 	// Шаг 4: определение image tag.
 	imageTag := fmt.Sprintf("welwise/game-%d:%s", params.GameID, params.Version)
 
-	// Шаг 5: создание Dockerfile.
-	dockerfile := p.generateDockerfile(unpackDir, params.InternalPort)
-	if err := os.WriteFile(filepath.Join(unpackDir, "Dockerfile"), []byte(dockerfile), 0o600); err != nil { //nolint:gosec
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: write Dockerfile: %w", err)
-	}
-
-	// Шаг 6: сборка Docker-образа.
-	if err := p.dockerBuild(ctx, unpackDir, imageTag); err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: docker build: %w", err)
-	}
-
-	// Шаг 7: сохранение образа в tar-файл.
-	imageTarPath := filepath.Join(tmpDir, "image.tar")
-	if err := p.dockerSave(ctx, imageTag, imageTarPath); err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: docker save: %w", err)
-	}
-
-	imageFileInfo, err := os.Stat(imageTarPath)
-	if err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: stat image tar: %w", err)
-	}
-
-	// Шаг 8: сохранение файла образа в файловое хранилище.
-	//nolint:gosec // путь сгенерирован внутри пайплайна, не пользовательский ввод
-	imageFile, err := os.Open(imageTarPath)
-	if err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: open image tar: %w", err)
-	}
-	defer func() { _ = imageFile.Close() }()
-
-	filePath, err := p.buildFS.Save(params.GameID, params.Version, imageFile, imageFileInfo.Size())
-	if err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: save to FS: %w", err)
-	}
-
-	// Шаг 9: выбор ноды для загрузки образа.
+	// Шаг 5: выбор ноды для сборки и запуска.
 	node, err := p.selectNode(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("BuildPipeline.UploadBuild: select node: %w", err)
 	}
 
-	// Шаг 10: загрузка Docker-образа на ноду через gRPC.
-	if err := p.loadImageToNode(ctx, node.Address, node.APIToken, params.GameID, imageTag, imageTarPath); err != nil {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuild: load image to node: %w", err)
+	// Шаг 6: отправка архива на ноду для сборки Docker-образа.
+	archiveReader := bytes.NewReader(data)
+	buildMeta := domain.BuildImageMetadata{
+		GameID:       params.GameID,
+		ImageTag:     imageTag,
+		InternalPort: internalPort,
+	}
+	if err := p.nodeClient.BuildImage(ctx, node.Address, node.APIToken, buildMeta, archiveReader); err != nil {
+		return nil, fmt.Errorf("BuildPipeline.UploadBuild: build image on node: %w", err)
 	}
 
-	// Шаг 11: регистрация метаданных в PostgreSQL.
+	// Шаг 7: сохранение исходного архива в файловое хранилище.
+	filePath, err := p.buildFS.Save(params.GameID, params.Version, bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("BuildPipeline.UploadBuild: save to FS: %w", err)
+	}
+
+	// Шаг 8: регистрация метаданных в PostgreSQL.
 	build := &domain.ServerBuild{
 		OwnerID:      params.OwnerID,
 		GameID:       params.GameID,
 		Version:      params.Version,
 		ImageTag:     imageTag,
 		Protocol:     params.Protocol,
-		InternalPort: params.InternalPort,
+		InternalPort: internalPort,
 		MaxPlayers:   params.MaxPlayers,
 		FileURL:      filePath,
-		FileSize:     imageFileInfo.Size(),
+		FileSize:     int64(len(data)),
 		CreatedAt:    time.Now(),
 	}
 
@@ -176,16 +176,6 @@ func (p *BuildPipeline) UploadBuild(ctx context.Context, params UploadBuildParam
 	}
 
 	return build, nil
-}
-
-// UploadBuildFromBytes загружает билд из данных в памяти (для gRPC).
-func (p *BuildPipeline) UploadBuildFromBytes(ctx context.Context, params UploadBuildParams) (*domain.ServerBuild, error) {
-	if len(params.ArchiveData) == 0 {
-		return nil, fmt.Errorf("BuildPipeline.UploadBuildFromBytes: archive data is empty")
-	}
-	params.Archive = bytes.NewReader(params.ArchiveData)
-	params.ArchiveSize = int64(len(params.ArchiveData))
-	return p.UploadBuild(ctx, params)
 }
 
 // extractArchive распаковывает zip или tar.gz архив в целевую директорию.
@@ -312,79 +302,6 @@ func (p *BuildPipeline) extractTar(r io.Reader, destDir string) error {
 			}
 			_ = out.Close()
 		}
-	}
-
-	return nil
-}
-
-// generateDockerfile создаёт минимальный Dockerfile для игрового сервера.
-func (p *BuildPipeline) generateDockerfile(unpackDir string, internalPort uint32) string {
-	executable := "server"
-	_ = filepath.Walk(unpackDir, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return nil
-		}
-		if info.Mode()&0o111 != 0 || strings.HasSuffix(info.Name(), ".exe") {
-			executable = "./" + info.Name()
-			return filepath.SkipAll
-		}
-		return nil
-	})
-
-	return fmt.Sprintf(`FROM alpine:latest
-RUN apk add --no-cache ca-certificates
-WORKDIR /app
-COPY . /app
-EXPOSE %d
-CMD [%q]
-`, internalPort, executable)
-}
-
-// dockerBuild запускает docker build в указанной директории.
-func (p *BuildPipeline) dockerBuild(ctx context.Context, contextDir, tag string) error {
-	cmd := exec.CommandContext(ctx, "docker", "build", "-t", tag, contextDir) //nolint:gosec
-	cmd.Stdout = io.Discard
-	cmd.Stderr = io.Discard
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("docker build: %w", err)
-	}
-	return nil
-}
-
-// dockerSave запускает docker save для сохранения образа в файл.
-func (p *BuildPipeline) dockerSave(ctx context.Context, tag, outPath string) error {
-	outFile, err := os.Create(outPath) //nolint:gosec // путь генерируется внутри пайплайна
-	if err != nil {
-		return fmt.Errorf("create output file: %w", err)
-	}
-	defer func() { _ = outFile.Close() }()
-
-	cmd := exec.CommandContext(ctx, "docker", "save", "-o", outPath, tag) //nolint:gosec
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("docker save: %w", err)
-	}
-	return nil
-}
-
-// loadImageToNode загружает Docker-образ на ноду через gRPC.
-func (p *BuildPipeline) loadImageToNode(ctx context.Context, nodeAddress, apiKey string, gameID int64, imageTag, tarPath string) error {
-	file, err := os.Open(tarPath) //nolint:gosec // путь генерируется внутри пайплайна
-	if err != nil {
-		return fmt.Errorf("open tar file: %w", err)
-	}
-	defer func() { _ = file.Close() }()
-
-	meta := domain.ImageMetadata{
-		GameID:   gameID,
-		ImageTag: imageTag,
-	}
-
-	_, err = p.nodeClient.LoadImage(ctx, nodeAddress, apiKey, meta, file)
-	if err != nil {
-		return fmt.Errorf("load image: %w", err)
 	}
 
 	return nil

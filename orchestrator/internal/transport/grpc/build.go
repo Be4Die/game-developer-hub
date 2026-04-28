@@ -2,9 +2,13 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"io"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // BuildHandler реализует BuildService.
@@ -18,7 +22,7 @@ func NewBuildHandler(pipeline *service.BuildPipeline) *BuildHandler {
 	return &BuildHandler{pipeline: pipeline}
 }
 
-// Upload загружает серверный билд.
+// Upload загружает серверный билд (unary, через grpc-gateway).
 func (h *BuildHandler) Upload(ctx context.Context, req *pb.BuildServiceUploadRequest) (*pb.BuildServiceUploadResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 
@@ -34,12 +38,89 @@ func (h *BuildHandler) Upload(ctx context.Context, req *pb.BuildServiceUploadReq
 		ArchiveSize:  int64(len(req.GetImageData())),
 	}
 
-	build, err := h.pipeline.UploadBuildFromBytes(ctx, params)
+	build, err := h.pipeline.UploadBuild(ctx, params)
 	if err != nil {
 		return nil, domainError(err, "upload build")
 	}
 
 	return &pb.BuildServiceUploadResponse{Build: buildToProto(build)}, nil
+}
+
+// UploadStream загружает серверный билд через client streaming (internal, no HTTP).
+// Первое сообщение содержит метаданные, последующие — чанки файла.
+func (h *BuildHandler) UploadStream(stream pb.BuildService_UploadStreamServer) error {
+	// Читаем первое сообщение с метаданными.
+	metaReq, err := stream.Recv()
+	if err == io.EOF {
+		return status.Error(codes.InvalidArgument, "missing upload metadata")
+	}
+	if err != nil {
+		return status.Errorf(codes.Internal, "read metadata: %v", err)
+	}
+
+	meta := metaReq.GetMetadata()
+	if meta == nil {
+		return status.Error(codes.InvalidArgument, "first message must contain metadata")
+	}
+
+	gameID := meta.GetGameId()
+	ownerID, _ := GetUserID(stream.Context())
+
+	params := service.UploadBuildParams{
+		GameID:       gameID,
+		OwnerID:      ownerID,
+		Version:      meta.GetBuildVersion(),
+		Protocol:     protocolFromProto(meta.GetProtocol()),
+		InternalPort: meta.GetInternalPort(),
+		MaxPlayers:   meta.GetMaxPlayers(),
+	}
+
+	// Создаём pipe для стриминга чанков в сервис.
+	pr, pw := io.Pipe()
+	params.Archive = pr
+
+	// Канал для передачи ошибки из горутины чтения.
+	done := make(chan error, 1)
+
+	go func() {
+		for {
+			req, recvErr := stream.Recv()
+			if recvErr == io.EOF {
+				_ = pw.Close()
+				done <- nil
+				return
+			}
+			if recvErr != nil {
+				_ = pw.CloseWithError(fmt.Errorf("stream recv: %w", recvErr))
+				done <- recvErr
+				return
+			}
+
+			chunk := req.GetChunk()
+			if len(chunk) == 0 {
+				continue
+			}
+
+			if _, writeErr := pw.Write(chunk); writeErr != nil {
+				_ = pw.CloseWithError(fmt.Errorf("pipe write: %w", writeErr))
+				done <- writeErr
+				return
+			}
+		}
+	}()
+
+	build, err := h.pipeline.UploadBuild(stream.Context(), params)
+
+	// Ждём завершения горутины чтения.
+	streamErr := <-done
+	if err == nil && streamErr != nil {
+		err = streamErr
+	}
+	if err != nil {
+		return domainError(err, "upload build")
+	}
+
+	return stream.SendAndClose(&pb.BuildServiceUploadResponse{Build: buildToProto(build)})
 }
 
 // List возвращает список билдов игры.

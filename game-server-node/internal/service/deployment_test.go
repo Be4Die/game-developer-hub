@@ -33,12 +33,16 @@ func (s *stubRuntime) LoadImage(ctx context.Context, imageTag string, data io.Re
 	return nil
 }
 
-func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
+func (s *stubRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
+	return nil
+}
+
+func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
 	if s.createErr != nil {
-		return "", s.createErr
+		return "", 0, s.createErr
 	}
 	s.createdContainerID = "stub-docker-id-123"
-	return s.createdContainerID, nil
+	return s.createdContainerID, opts.HostPort, nil
 }
 
 func (s *stubRuntime) StartContainer(ctx context.Context, containerID string) error {

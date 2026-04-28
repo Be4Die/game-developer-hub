@@ -15,7 +15,7 @@ func TestDockerRuntime_CreateAndRemoveContainer(t *testing.T) {
 	env := setupIntegration(t)
 	ctx := context.Background()
 
-	containerID, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
+	containerID, _, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: 8080,
 		HostPort:     0,
@@ -43,7 +43,7 @@ func TestDockerRuntime_CreateStartStopContainer(t *testing.T) {
 	env := setupIntegration(t)
 	ctx := context.Background()
 
-	containerID, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
+	containerID, _, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: 80,
 		HostPort:     0,
@@ -81,7 +81,7 @@ func TestDockerRuntime_ContainerLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// Контейнер пишет лог и живёт достаточно долго чтобы мы успели прочитать.
-	containerID, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
+	containerID, _, err := env.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: 80,
 		HostPort:     0,

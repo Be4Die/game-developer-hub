@@ -25,6 +25,65 @@ func NewDeploymentHandler(svc *service.DeploymentService) *DeploymentHandler {
 	return &DeploymentHandler{svc: svc}
 }
 
+// BuildImage собирает Docker-образ из исходного архива на стороне ноды.
+func (h *DeploymentHandler) BuildImage(stream pb.DeploymentService_BuildImageServer) error {
+	first, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "failed to receive metadata: %v", err)
+	}
+
+	meta := first.GetMetadata()
+	if meta == nil {
+		return status.Errorf(codes.InvalidArgument, "first message must contain metadata")
+	}
+
+	gameID := meta.GetGameId()
+	imageTag := meta.GetImageTag()
+	internalPort := meta.GetInternalPort()
+
+	pr, pw := io.Pipe()
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer func() { _ = pw.Close() }()
+
+		for {
+			req, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				errCh <- nil
+				return
+			}
+			if err != nil {
+				pw.CloseWithError(err)
+				errCh <- err
+				return
+			}
+
+			chunk := req.GetChunk()
+			if len(chunk) == 0 {
+				continue
+			}
+
+			if _, err := pw.Write(chunk); err != nil {
+				errCh <- err
+				return
+			}
+		}
+	}()
+
+	if err := h.svc.BuildImage(stream.Context(), gameID, imageTag, internalPort, pr); err != nil {
+		return status.Errorf(codes.Internal, "failed to build image: %v", err)
+	}
+
+	if err := <-errCh; err != nil {
+		return status.Errorf(codes.Internal, "failed reading chunks: %v", err)
+	}
+
+	return stream.SendAndClose(&pb.BuildImageResponse{
+		ImageTag: imageTag,
+	})
+}
+
 // LoadImage загружает образ через потоковую передачу чанков.
 func (h *DeploymentHandler) LoadImage(stream pb.DeploymentService_LoadImageServer) error {
 	first, err := stream.Recv()

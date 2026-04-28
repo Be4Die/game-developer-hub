@@ -2,14 +2,17 @@ import axios from "axios";
 
 const http = axios.create({
   baseURL: "/api/v1",
-  headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT token from localStorage to every request.
+// Attach JWT token and set Content-Type appropriately.
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem("gdh_access_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Only set JSON content type if body is not FormData (file upload).
+  if (config.data && !(config.data instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
   }
   return config;
 });
@@ -29,7 +32,6 @@ export function getBuild(gameId, buildVersion) {
 export function uploadBuild(gameId, formData, onProgress) {
   return http
     .post(`/games/${gameId}/builds`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress: onProgress,
     })
     .then((r) => r.data);

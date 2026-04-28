@@ -140,6 +140,63 @@ func (c *Client) LoadImage(ctx context.Context, nodeAddress, apiKey string, meta
 	}, nil
 }
 
+// BuildImage отправляет исходный архив на ноду для сборки Docker-образа.
+func (c *Client) BuildImage(ctx context.Context, nodeAddress, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return err
+	}
+
+	ctx = authContext(ctx, apiKey)
+	depClient := pb.NewDeploymentServiceClient(conn)
+	stream, err := depClient.BuildImage(ctx)
+	if err != nil {
+		return fmt.Errorf("BuildImage stream: %w", err)
+	}
+
+	// Отправляем метаданные первым сообщением.
+	if err := stream.Send(&pb.BuildImageRequest{
+		Payload: &pb.BuildImageRequest_Metadata{
+			Metadata: &pb.BuildImageMetadata{
+				GameId:       metadata.GameID,
+				ImageTag:     metadata.ImageTag,
+				InternalPort: metadata.InternalPort,
+			},
+		},
+	}); err != nil {
+		return fmt.Errorf("BuildImage metadata: %w", err)
+	}
+
+	// Чанками отправляем архив.
+	buf := make([]byte, 64*1024) // 64 KB chunks
+	for {
+		n, readErr := archive.Read(buf)
+		if n > 0 {
+			chunk := make([]byte, n)
+			copy(chunk, buf[:n])
+			if err := stream.Send(&pb.BuildImageRequest{
+				Payload: &pb.BuildImageRequest_Chunk{
+					Chunk: chunk,
+				},
+			}); err != nil {
+				return fmt.Errorf("BuildImage chunk: %w", err)
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return fmt.Errorf("BuildImage read: %w", readErr)
+		}
+	}
+
+	if _, err := stream.CloseAndRecv(); err != nil {
+		return fmt.Errorf("BuildImage close: %w", err)
+	}
+
+	return nil
+}
+
 // StartInstance запускает экземпляр игрового сервера на ноде.
 func (c *Client) StartInstance(ctx context.Context, nodeAddress, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
 	conn, err := c.getConn(ctx, nodeAddress)

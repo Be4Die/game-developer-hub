@@ -42,6 +42,33 @@ func NewDeploymentService(
 	}
 }
 
+// BuildImage собирает Docker-образ из исходного архива на стороне ноды.
+func (s *DeploymentService) BuildImage(ctx context.Context, gameID int64, imageTag string, internalPort uint32, archive io.Reader) error {
+	const op = "DeploymentService.BuildImage"
+
+	s.log.Info("building image",
+		slog.String("op", op),
+		slog.Int64("game_id", gameID),
+		slog.String("image_tag", imageTag),
+		slog.Uint64("internal_port", uint64(internalPort)),
+	)
+
+	if err := s.runtime.BuildImage(ctx, imageTag, internalPort, archive); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Remember which image belongs to which game.
+	s.imagesMu.Lock()
+	s.images[gameID] = imageTag
+	s.imagesMu.Unlock()
+
+	s.log.Info("image built",
+		slog.String("op", op),
+		slog.String("image_tag", imageTag),
+	)
+	return nil
+}
+
 // LoadImage загружает контейнер и связывает его с gameID.
 func (s *DeploymentService) LoadImage(ctx context.Context, gameID int64, imageTag string, data io.Reader) error {
 	const op = "DeploymentService.LoadImage"
@@ -103,7 +130,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	}
 
 	// Create container.
-	containerID, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
+	containerID, actualHostPort, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: opts.InternalPort,
 		HostPort:     hostPort,
@@ -131,7 +158,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		ImageTag:         imageTag,
 		Name:             opts.Name,
 		GameID:           opts.GameID,
-		Port:             hostPort,
+		Port:             actualHostPort,
 		Protocol:         opts.Protocol,
 		Status:           domain.InstanceStatusRunning,
 		MaxPlayers:       opts.MaxPlayers,
@@ -149,9 +176,10 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		slog.String("op", op),
 		slog.Int64("instance_id", id),
 		slog.String("container_id", containerID),
+		slog.Uint64("host_port", uint64(actualHostPort)),
 	)
 
-	return id, hostPort, nil
+	return id, actualHostPort, nil
 }
 
 // StopInstance останавливает инстанс и удаляет его контейнер.

@@ -36,8 +36,11 @@ type stubDiscoveryRuntime struct {
 func (s *stubDiscoveryRuntime) LoadImage(ctx context.Context, imageTag string, data io.Reader) error {
 	return nil
 }
-func (s *stubDiscoveryRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
-	return "", nil
+func (s *stubDiscoveryRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
+	return nil
+}
+func (s *stubDiscoveryRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
+	return "", 0, nil
 }
 func (s *stubDiscoveryRuntime) StartContainer(ctx context.Context, containerID string) error {
 	return nil

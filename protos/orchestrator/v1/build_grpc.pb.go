@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BuildService_Upload_FullMethodName = "/orchestrator.v1.BuildService/Upload"
-	BuildService_List_FullMethodName   = "/orchestrator.v1.BuildService/List"
-	BuildService_Get_FullMethodName    = "/orchestrator.v1.BuildService/Get"
-	BuildService_Delete_FullMethodName = "/orchestrator.v1.BuildService/Delete"
+	BuildService_Upload_FullMethodName       = "/orchestrator.v1.BuildService/Upload"
+	BuildService_UploadStream_FullMethodName = "/orchestrator.v1.BuildService/UploadStream"
+	BuildService_List_FullMethodName         = "/orchestrator.v1.BuildService/List"
+	BuildService_Get_FullMethodName          = "/orchestrator.v1.BuildService/Get"
+	BuildService_Delete_FullMethodName       = "/orchestrator.v1.BuildService/Delete"
 )
 
 // BuildServiceClient is the client API for BuildService service.
@@ -33,6 +34,10 @@ const (
 type BuildServiceClient interface {
 	// Загрузить серверный билд.
 	Upload(ctx context.Context, in *BuildServiceUploadRequest, opts ...grpc.CallOption) (*BuildServiceUploadResponse, error)
+	// Внутренний streaming upload для gateway → orchestrator.
+	// Первое сообщение содержит метаданные, последующие — чанки данных (64 КБ).
+	// Не имеет HTTP binding — используется только напрямую через gRPC.
+	UploadStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[BuildServiceUploadStreamRequest, BuildServiceUploadResponse], error)
 	// Список билдов игры.
 	List(ctx context.Context, in *BuildServiceListRequest, opts ...grpc.CallOption) (*BuildServiceListResponse, error)
 	// Информация о конкретном билде.
@@ -58,6 +63,19 @@ func (c *buildServiceClient) Upload(ctx context.Context, in *BuildServiceUploadR
 	}
 	return out, nil
 }
+
+func (c *buildServiceClient) UploadStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[BuildServiceUploadStreamRequest, BuildServiceUploadResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &BuildService_ServiceDesc.Streams[0], BuildService_UploadStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BuildService_UploadStreamClient = grpc.ClientStreamingClient[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]
 
 func (c *buildServiceClient) List(ctx context.Context, in *BuildServiceListRequest, opts ...grpc.CallOption) (*BuildServiceListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -97,6 +115,10 @@ func (c *buildServiceClient) Delete(ctx context.Context, in *BuildServiceDeleteR
 type BuildServiceServer interface {
 	// Загрузить серверный билд.
 	Upload(context.Context, *BuildServiceUploadRequest) (*BuildServiceUploadResponse, error)
+	// Внутренний streaming upload для gateway → orchestrator.
+	// Первое сообщение содержит метаданные, последующие — чанки данных (64 КБ).
+	// Не имеет HTTP binding — используется только напрямую через gRPC.
+	UploadStream(grpc.ClientStreamingServer[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]) error
 	// Список билдов игры.
 	List(context.Context, *BuildServiceListRequest) (*BuildServiceListResponse, error)
 	// Информация о конкретном билде.
@@ -115,6 +137,9 @@ type UnimplementedBuildServiceServer struct{}
 
 func (UnimplementedBuildServiceServer) Upload(context.Context, *BuildServiceUploadRequest) (*BuildServiceUploadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Upload not implemented")
+}
+func (UnimplementedBuildServiceServer) UploadStream(grpc.ClientStreamingServer[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]) error {
+	return status.Error(codes.Unimplemented, "method UploadStream not implemented")
 }
 func (UnimplementedBuildServiceServer) List(context.Context, *BuildServiceListRequest) (*BuildServiceListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
@@ -163,6 +188,13 @@ func _BuildService_Upload_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	return interceptor(ctx, in, info, handler)
 }
+
+func _BuildService_UploadStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(BuildServiceServer).UploadStream(&grpc.GenericServerStream[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type BuildService_UploadStreamServer = grpc.ClientStreamingServer[BuildServiceUploadStreamRequest, BuildServiceUploadResponse]
 
 func _BuildService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BuildServiceListRequest)
@@ -242,6 +274,12 @@ var BuildService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BuildService_Delete_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadStream",
+			Handler:       _BuildService_UploadStream_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "orchestrator/v1/build.proto",
 }

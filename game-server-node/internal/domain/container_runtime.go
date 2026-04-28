@@ -11,8 +11,13 @@ type ContainerRuntime interface {
 	// LoadImage загружает образ из потока данных.
 	LoadImage(ctx context.Context, imageTag string, data io.Reader) error
 
-	// CreateContainer создаёт контейнер и возвращает его ID.
-	CreateContainer(ctx context.Context, opts ContainerOpts) (containerID string, err error)
+	// BuildImage собирает образ из исходного архива (zip/tar.gz).
+	// internalPort — порт, который слушает процесс внутри контейнера.
+	BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error
+
+	// CreateContainer создаёт контейнер и возвращает его ID и фактический порт на хосте.
+	// Если для HostPort указано 0, Docker назначает порт автоматически — он возвращается вторым значением.
+	CreateContainer(ctx context.Context, opts ContainerOpts) (containerID string, hostPort uint32, err error)
 	// StartContainer запускает существующий контейнер.
 	StartContainer(ctx context.Context, containerID string) error
 	// StopContainer останавливает контейнер с заданным таймаутом.

@@ -120,8 +120,8 @@ func (a *JWTAuth) authenticate(ctx context.Context) (context.Context, error) {
 // isPublicMethod возвращает true для методов, не требующих аутентификации.
 func isPublicMethod(method string) bool {
 	switch method {
-	// DiscoverServers — публичный метод для game client.
-	case "/orchestrator.v1.DiscoveryService/Discover":
+	// DiscoveryServiceDiscover — публичный метод для game client.
+	case "/orchestrator.v1.DiscoveryService/DiscoveryServiceDiscover":
 		return true
 	// Announce — нода сама заявляет о себе, без JWT.
 	case "/orchestrator.v1.NodeService/Announce":

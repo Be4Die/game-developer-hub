@@ -9,6 +9,10 @@ import (
 // Абстрагирует конкретную реализацию gRPC-подключения к game-server-node.
 // apiKey — токен авторизации ноды (передается как "authorization: Bearer <apiKey>").
 type NodeClient interface {
+	// BuildImage отправляет исходный архив на ноду для сборки Docker-образа.
+	// Метаданные отправляются первым сообщением, далее — чанки архива.
+	BuildImage(ctx context.Context, nodeAddress, apiKey string, metadata BuildImageMetadata, archive io.Reader) error
+
 	// LoadImage загружает Docker-образ на ноду. Метаданные отправляются первым сообщением,
 	// далее — чанки данных. Возвращает подтверждение с размером загруженного образа.
 	LoadImage(ctx context.Context, nodeAddress, apiKey string, metadata ImageMetadata, chunks io.Reader) (*ImageLoadResult, error)
@@ -52,6 +56,13 @@ type LogStream interface {
 type ImageMetadata struct {
 	GameID   int64
 	ImageTag string
+}
+
+// BuildImageMetadata описывает параметры сборки Docker-образа на ноде.
+type BuildImageMetadata struct {
+	GameID       int64
+	ImageTag     string
+	InternalPort uint32
 }
 
 // ImageLoadResult описывает результат загрузки Docker-образа.

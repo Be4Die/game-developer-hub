@@ -12,6 +12,10 @@ service DeploymentService {
   // Первое сообщение стрима содержит метаданные, последующие — чанки данных.
   rpc LoadImage(stream LoadImageRequest) returns (LoadImageResponse);
 
+  // Сборка Docker-образа из исходного архива (zip/tar.gz) на стороне ноды.
+  // Первое сообщение стрима содержит метаданные, последующие — чанки архива.
+  rpc BuildImage(stream BuildImageRequest) returns (BuildImageResponse);
+
   // Запуск экземпляра игрового сервера из загруженного образа.
   rpc StartInstance(StartInstanceRequest) returns (StartInstanceResponse);
 
@@ -46,6 +50,25 @@ message ImageMetadata {
 message LoadImageResponse {
   string image_tag = 1;
   uint64 size_bytes = 2;
+}
+
+message BuildImageRequest {
+  oneof payload {
+    BuildImageMetadata metadata = 1;
+    // Рекомендуемый размер чанка — 64 КБ.
+    bytes chunk = 2;
+  }
+}
+
+message BuildImageMetadata {
+  int64 game_id = 1;
+  string image_tag = 2;
+  // Порт, который процесс слушивает внутри контейнера.
+  uint32 internal_port = 3;
+}
+
+message BuildImageResponse {
+  string image_tag = 1;
 }
 
 // Стратегия выделения хостового порта для экземпляра.
