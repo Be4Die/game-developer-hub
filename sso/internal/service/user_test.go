@@ -272,3 +272,182 @@ func TestUserService_SearchUsers(t *testing.T) {
 		}
 	})
 }
+
+func TestUserService_CreateModerator(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	log := newTestLogger()
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+
+		createdUser := &domain.User{
+			ID:            "mod-1",
+			Email:         "testmod@welwise.com",
+			DisplayName:   "Test Moderator",
+			Role:          domain.RoleModerator,
+			Status:        domain.StatusActive,
+			EmailVerified: true,
+		}
+
+		userRepo := &stubUserRepo{
+			createFunc: func(context.Context, domain.User) error { return nil },
+			getByEmailFunc: func(_ context.Context, email string) (*domain.User, error) {
+				if email == "testmod@welwise.com" {
+					return createdUser, nil
+				}
+				return nil, errors.New("not found")
+			},
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{hashToReturn: []byte("hashed-password")})
+
+		resp, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			Login:       "testmod",
+			Password:    "secure-password",
+			DisplayName: "Test Moderator",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp.User.Email != "testmod@welwise.com" {
+			t.Errorf("expected email testmod@welwise.com, got %s", resp.User.Email)
+		}
+		if resp.User.Role != domain.RoleModerator {
+			t.Errorf("expected role moderator, got %s", resp.User.Role.String())
+		}
+		if !resp.User.EmailVerified {
+			t.Error("expected email_verified to be true for internal user")
+		}
+	})
+
+	t.Run("duplicate email", func(t *testing.T) {
+		t.Parallel()
+
+		userRepo := &stubUserRepo{
+			createFunc: func(context.Context, domain.User) error { return domain.ErrAlreadyExists },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{hashToReturn: []byte("hash")})
+
+		_, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			Login:       "existing",
+			Password:    "password",
+			DisplayName: "Existing",
+		})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("hash error", func(t *testing.T) {
+		t.Parallel()
+
+		userRepo := &stubUserRepo{}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{hashErr: errors.New("hash error")})
+
+		_, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			Login:       "testmod",
+			Password:    "password",
+			DisplayName: "Test",
+		})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+}
+
+func TestUserService_DeleteUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	log := newTestLogger()
+
+	t.Run("delete moderator", func(t *testing.T) {
+		t.Parallel()
+
+		moderator := &domain.User{
+			ID:    "mod-1",
+			Role:  domain.RoleModerator,
+			Email: "mod@welwise.com",
+		}
+		userRepo := &stubUserRepo{
+			getByIDFunc: func(context.Context, string) (*domain.User, error) { return moderator, nil },
+			deleteFunc:  func(context.Context, string) error { return nil },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{})
+
+		err := svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: "mod-1"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("delete developer", func(t *testing.T) {
+		t.Parallel()
+
+		developer := &domain.User{
+			ID:    "dev-1",
+			Role:  domain.RoleDeveloper,
+			Email: "dev@example.com",
+		}
+		userRepo := &stubUserRepo{
+			getByIDFunc: func(context.Context, string) (*domain.User, error) { return developer, nil },
+			deleteFunc:  func(context.Context, string) error { return nil },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{})
+
+		err := svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: "dev-1"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("cannot delete admin", func(t *testing.T) {
+		t.Parallel()
+
+		admin := &domain.User{
+			ID:    "admin-1",
+			Role:  domain.RoleAdmin,
+			Email: "admin@welwise.com",
+		}
+		userRepo := &stubUserRepo{
+			getByIDFunc: func(context.Context, string) (*domain.User, error) { return admin, nil },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{})
+
+		err := svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: "admin-1"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		t.Parallel()
+
+		userRepo := &stubUserRepo{
+			getByIDFunc: func(context.Context, string) (*domain.User, error) { return nil, errors.New("not found") },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{})
+
+		err := svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: "nonexistent"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("delete error", func(t *testing.T) {
+		t.Parallel()
+
+		moderator := &domain.User{ID: "mod-1", Role: domain.RoleModerator}
+		userRepo := &stubUserRepo{
+			getByIDFunc: func(context.Context, string) (*domain.User, error) { return moderator, nil },
+			deleteFunc:  func(context.Context, string) error { return errors.New("db error") },
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{})
+
+		err := svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: "mod-1"})
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+	})
+}

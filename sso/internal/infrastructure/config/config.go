@@ -29,7 +29,21 @@ type Config struct {
 	Email EmailConfig `yaml:"email"`
 	// APIKey читается только из переменной окружения.
 	APIKey string `yaml:"-" env:"SSO_API_KEY" env-required:"true"`
+	// Admin — конфигурация учётной записи администратора.
+	Admin AdminConfig `yaml:"admin"`
 }
+
+// AdminConfig — конфигурация учётной записи администратора.
+type AdminConfig struct {
+	Email       string `yaml:"email" env-default:"admin@welwise.com"`
+	Password    string `yaml:"password" env:"ADMIN_PASSWORD" env-default:""`
+	DisplayName string `yaml:"display_name" env-default:"Administrator"`
+}
+
+const (
+	// WelwiseDomain — домен для внутренних пользователей.
+	WelwiseDomain = "@welwise.com"
+)
 
 // GRPCConfig — конфигурация gRPC сервера.
 type GRPCConfig struct {

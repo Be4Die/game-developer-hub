@@ -70,6 +70,17 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("app.New: create token manager: %w", err)
 	}
 
+	// 4.1. Обеспечение наличия администратора.
+	if cfg.Admin.Password != "" {
+		adminInit := service.NewAdminInitializer(
+			log, userRepo, passwordHasher,
+			cfg.Admin.Email, cfg.Admin.Password, cfg.Admin.DisplayName,
+		)
+		if err := adminInit.EnsureAdmin(context.Background()); err != nil {
+			log.Warn("failed to ensure admin user", slog.String("error", err.Error()))
+		}
+	}
+
 	// 5. Инициализация сервисов.
 	emailSender := service.NewStubEmailSender(log)
 	authService := service.NewAuthService(

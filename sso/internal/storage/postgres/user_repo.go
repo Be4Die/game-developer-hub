@@ -129,6 +129,20 @@ func (r *UserRepository) Search(ctx context.Context, query string, limit, offset
 	return users, total, nil
 }
 
+func (r *UserRepository) Delete(ctx context.Context, id string) error { //nolint:revive
+	const op = "postgres.UserRepository.Delete"
+
+	tag, err := r.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("%s: %w", op, domain.ErrNotFound)
+	}
+
+	return nil
+}
+
 type userScanner interface {
 	Scan(dest ...any) error
 }

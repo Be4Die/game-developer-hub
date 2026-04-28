@@ -124,8 +124,8 @@ func (s *AuthService) Login(ctx context.Context, req domain.LoginRequest) (domai
 		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrUserSuspended)
 	}
 
-	// Проверяем email_verified.
-	if !user.EmailVerified {
+	// Проверяем email_verified (кроме внутренних пользователей).
+	if !user.EmailVerified && !user.Role.IsInternal() {
 		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrEmailNotVerified)
 	}
 

@@ -1,5 +1,8 @@
 package domain
 
+// WelwiseDomain — домен для внутренних пользователей.
+const WelwiseDomain = "@welwise.com"
+
 // UserRole определяет роль пользователя в системе.
 type UserRole uint8
 
@@ -23,6 +26,12 @@ func (r UserRole) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+// IsInternal возвращает true для внутренних ролей (администратор и модераторы).
+// Внутренние пользователи не требуют верификации email.
+func (r UserRole) IsInternal() bool {
+	return r == RoleAdmin || r == RoleModerator
 }
 
 // ParseUserRole преобразует строковое представление роли в UserRole.

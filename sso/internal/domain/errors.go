@@ -17,4 +17,8 @@ var (
 	ErrEmailNotVerified = errors.New("email not verified")
 	// ErrUserSuspended возвращается при попытке входа заблокированного пользователя.
 	ErrUserSuspended = errors.New("user suspended")
+	// ErrCannotDeleteAdmin возвращается при попытке удалить администратора.
+	ErrCannotDeleteAdmin = errors.New("cannot delete admin user")
+	// ErrNotInternalUser возвращается при попытке создать внутреннего пользователя с внешним email.
+	ErrNotInternalUser = errors.New("only internal users can be created with welwise.com domain")
 )

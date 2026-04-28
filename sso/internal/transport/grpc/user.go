@@ -102,9 +102,9 @@ func (h *UserHandler) Get(ctx context.Context, req *pb.UserServiceGetRequest) (*
 	return &pb.UserServiceGetResponse{User: userToProto(user)}, nil
 }
 
-// SearchUsers выполняет поиск пользователей по запросу с пагинацией.
+// Search выполняет поиск пользователей по запросу с пагинацией.
 // Возвращает до 100 пользователей за один запрос.
-func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.UserServiceSearchRequest) (*pb.UserServiceSearchResponse, error) {
+func (h *UserHandler) Search(ctx context.Context, req *pb.UserServiceSearchRequest) (*pb.UserServiceSearchResponse, error) {
 	limit := 20
 	if req.Limit != nil {
 		limit = int(*req.Limit)
@@ -170,4 +170,43 @@ func (h *UserHandler) SetUserStatus(_ context.Context, req *pb.UserServiceSetSta
 
 	// TODO: реализовать в UserService
 	return nil, status.Error(codes.Unimplemented, "SetUserStatus not yet implemented in service layer")
+}
+
+// CreateModerator создаёт учётную запись модератора.
+// Доступно только администраторам.
+func (h *UserHandler) CreateModerator(ctx context.Context, req *pb.UserServiceCreateModeratorRequest) (*pb.UserServiceCreateModeratorResponse, error) {
+	if req.Login == "" {
+		return nil, status.Error(codes.InvalidArgument, "login is required")
+	}
+	if req.Password == "" {
+		return nil, status.Error(codes.InvalidArgument, "password is required")
+	}
+	if req.DisplayName == "" {
+		return nil, status.Error(codes.InvalidArgument, "display_name is required")
+	}
+
+	resp, err := h.svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+		Login:       req.Login,
+		Password:    req.Password,
+		DisplayName: req.DisplayName,
+	})
+	if err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.UserServiceCreateModeratorResponse{User: userToProto(resp.User)}, nil
+}
+
+// DeleteUser удаляет пользователя (hard delete).
+// Доступно только администраторам.
+func (h *UserHandler) DeleteUser(ctx context.Context, req *pb.UserServiceDeleteUserRequest) (*pb.UserServiceDeleteUserResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "user_id is required")
+	}
+
+	if err := h.svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: req.UserId}); err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.UserServiceDeleteUserResponse{Success: true}, nil
 }

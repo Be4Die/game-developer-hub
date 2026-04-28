@@ -27,3 +27,7 @@ smtp:
 email:
   verification_code_ttl: 24h
   reset_token_ttl: 1h
+admin:
+  email: "admin@welwise.com"
+  password: "Admin@12345"
+  display_name: "Administrator"

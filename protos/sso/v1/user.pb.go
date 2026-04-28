@@ -690,6 +690,199 @@ func (x *UserServiceSetStatusResponse) GetUser() *User {
 	return nil
 }
 
+type UserServiceCreateModeratorRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Логин модератора. Email будет сформирован как {login}@welwise.com.
+	Login         string `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
+	Password      string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	DisplayName   string `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserServiceCreateModeratorRequest) Reset() {
+	*x = UserServiceCreateModeratorRequest{}
+	mi := &file_sso_v1_user_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserServiceCreateModeratorRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserServiceCreateModeratorRequest) ProtoMessage() {}
+
+func (x *UserServiceCreateModeratorRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sso_v1_user_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserServiceCreateModeratorRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceCreateModeratorRequest) Descriptor() ([]byte, []int) {
+	return file_sso_v1_user_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *UserServiceCreateModeratorRequest) GetLogin() string {
+	if x != nil {
+		return x.Login
+	}
+	return ""
+}
+
+func (x *UserServiceCreateModeratorRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *UserServiceCreateModeratorRequest) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+type UserServiceCreateModeratorResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserServiceCreateModeratorResponse) Reset() {
+	*x = UserServiceCreateModeratorResponse{}
+	mi := &file_sso_v1_user_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserServiceCreateModeratorResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserServiceCreateModeratorResponse) ProtoMessage() {}
+
+func (x *UserServiceCreateModeratorResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sso_v1_user_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserServiceCreateModeratorResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceCreateModeratorResponse) Descriptor() ([]byte, []int) {
+	return file_sso_v1_user_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UserServiceCreateModeratorResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+type UserServiceDeleteUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserServiceDeleteUserRequest) Reset() {
+	*x = UserServiceDeleteUserRequest{}
+	mi := &file_sso_v1_user_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserServiceDeleteUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserServiceDeleteUserRequest) ProtoMessage() {}
+
+func (x *UserServiceDeleteUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sso_v1_user_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserServiceDeleteUserRequest.ProtoReflect.Descriptor instead.
+func (*UserServiceDeleteUserRequest) Descriptor() ([]byte, []int) {
+	return file_sso_v1_user_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UserServiceDeleteUserRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type UserServiceDeleteUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserServiceDeleteUserResponse) Reset() {
+	*x = UserServiceDeleteUserResponse{}
+	mi := &file_sso_v1_user_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserServiceDeleteUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserServiceDeleteUserResponse) ProtoMessage() {}
+
+func (x *UserServiceDeleteUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sso_v1_user_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserServiceDeleteUserResponse.ProtoReflect.Descriptor instead.
+func (*UserServiceDeleteUserResponse) Descriptor() ([]byte, []int) {
+	return file_sso_v1_user_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *UserServiceDeleteUserResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_sso_v1_user_proto protoreflect.FileDescriptor
 
 const file_sso_v1_user_proto_rawDesc = "" +
@@ -733,7 +926,17 @@ const file_sso_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"new_status\x18\x02 \x01(\x0e2\x12.sso.v1.UserStatusR\tnewStatus\"@\n" +
 	"\x1cUserServiceSetStatusResponse\x12 \n" +
-	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user2\x86\a\n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"x\n" +
+	"!UserServiceCreateModeratorRequest\x12\x14\n" +
+	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\"F\n" +
+	"\"UserServiceCreateModeratorResponse\x12 \n" +
+	"\x04user\x18\x01 \x01(\v2\f.sso.v1.UserR\x04user\"7\n" +
+	"\x1cUserServiceDeleteUserRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"9\n" +
+	"\x1dUserServiceDeleteUserResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x92\t\n" +
 	"\vUserService\x12w\n" +
 	"\n" +
 	"GetProfile\x12$.sso.v1.UserServiceGetProfileRequest\x1a%.sso.v1.UserServiceGetProfileResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/user/profile\x12\x83\x01\n" +
@@ -743,7 +946,10 @@ const file_sso_v1_user_proto_rawDesc = "" +
 	"\x06Search\x12 .sso.v1.UserServiceSearchRequest\x1a!.sso.v1.UserServiceSearchResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/users\x12\x89\x01\n" +
 	"\n" +
 	"ChangeRole\x12$.sso.v1.UserServiceChangeRoleRequest\x1a%.sso.v1.UserServiceChangeRoleResponse\".\x82\xd3\xe4\x93\x02(:\x01*2#/api/v1/users/{user_id}:change-role\x12\x85\x01\n" +
-	"\tSetStatus\x12#.sso.v1.UserServiceSetStatusRequest\x1a$.sso.v1.UserServiceSetStatusResponse\"-\x82\xd3\xe4\x93\x02':\x01*2\"/api/v1/users/{user_id}:set-statusB\x8a\x01\n" +
+	"\tSetStatus\x12#.sso.v1.UserServiceSetStatusRequest\x1a$.sso.v1.UserServiceSetStatusResponse\"-\x82\xd3\xe4\x93\x02':\x01*2\"/api/v1/users/{user_id}:set-status\x12\x8d\x01\n" +
+	"\x0fCreateModerator\x12).sso.v1.UserServiceCreateModeratorRequest\x1a*.sso.v1.UserServiceCreateModeratorResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/users/moderators\x12z\n" +
+	"\n" +
+	"DeleteUser\x12$.sso.v1.UserServiceDeleteUserRequest\x1a%.sso.v1.UserServiceDeleteUserResponse\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/users/{user_id}B\x8a\x01\n" +
 	"\n" +
 	"com.sso.v1B\tUserProtoP\x01Z8github.com/Be4Die/game-developer-hub/protos/sso/v1;ssov1\xa2\x02\x03SXX\xaa\x02\x06Sso.V1\xca\x02\x06Sso\\V1\xe2\x02\x12Sso\\V1\\GPBMetadata\xea\x02\aSso::V1b\x06proto3"
 
@@ -759,54 +965,63 @@ func file_sso_v1_user_proto_rawDescGZIP() []byte {
 	return file_sso_v1_user_proto_rawDescData
 }
 
-var file_sso_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_sso_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_sso_v1_user_proto_goTypes = []any{
-	(*UserServiceGetProfileRequest)(nil),      // 0: sso.v1.UserServiceGetProfileRequest
-	(*UserServiceGetProfileResponse)(nil),     // 1: sso.v1.UserServiceGetProfileResponse
-	(*UserServiceUpdateProfileRequest)(nil),   // 2: sso.v1.UserServiceUpdateProfileRequest
-	(*UserServiceUpdateProfileResponse)(nil),  // 3: sso.v1.UserServiceUpdateProfileResponse
-	(*UserServiceChangePasswordRequest)(nil),  // 4: sso.v1.UserServiceChangePasswordRequest
-	(*UserServiceChangePasswordResponse)(nil), // 5: sso.v1.UserServiceChangePasswordResponse
-	(*UserServiceGetRequest)(nil),             // 6: sso.v1.UserServiceGetRequest
-	(*UserServiceGetResponse)(nil),            // 7: sso.v1.UserServiceGetResponse
-	(*UserServiceSearchRequest)(nil),          // 8: sso.v1.UserServiceSearchRequest
-	(*UserServiceSearchResponse)(nil),         // 9: sso.v1.UserServiceSearchResponse
-	(*UserServiceChangeRoleRequest)(nil),      // 10: sso.v1.UserServiceChangeRoleRequest
-	(*UserServiceChangeRoleResponse)(nil),     // 11: sso.v1.UserServiceChangeRoleResponse
-	(*UserServiceSetStatusRequest)(nil),       // 12: sso.v1.UserServiceSetStatusRequest
-	(*UserServiceSetStatusResponse)(nil),      // 13: sso.v1.UserServiceSetStatusResponse
-	(*User)(nil),                              // 14: sso.v1.User
-	(UserRole)(0),                             // 15: sso.v1.UserRole
-	(UserStatus)(0),                           // 16: sso.v1.UserStatus
+	(*UserServiceGetProfileRequest)(nil),       // 0: sso.v1.UserServiceGetProfileRequest
+	(*UserServiceGetProfileResponse)(nil),      // 1: sso.v1.UserServiceGetProfileResponse
+	(*UserServiceUpdateProfileRequest)(nil),    // 2: sso.v1.UserServiceUpdateProfileRequest
+	(*UserServiceUpdateProfileResponse)(nil),   // 3: sso.v1.UserServiceUpdateProfileResponse
+	(*UserServiceChangePasswordRequest)(nil),   // 4: sso.v1.UserServiceChangePasswordRequest
+	(*UserServiceChangePasswordResponse)(nil),  // 5: sso.v1.UserServiceChangePasswordResponse
+	(*UserServiceGetRequest)(nil),              // 6: sso.v1.UserServiceGetRequest
+	(*UserServiceGetResponse)(nil),             // 7: sso.v1.UserServiceGetResponse
+	(*UserServiceSearchRequest)(nil),           // 8: sso.v1.UserServiceSearchRequest
+	(*UserServiceSearchResponse)(nil),          // 9: sso.v1.UserServiceSearchResponse
+	(*UserServiceChangeRoleRequest)(nil),       // 10: sso.v1.UserServiceChangeRoleRequest
+	(*UserServiceChangeRoleResponse)(nil),      // 11: sso.v1.UserServiceChangeRoleResponse
+	(*UserServiceSetStatusRequest)(nil),        // 12: sso.v1.UserServiceSetStatusRequest
+	(*UserServiceSetStatusResponse)(nil),       // 13: sso.v1.UserServiceSetStatusResponse
+	(*UserServiceCreateModeratorRequest)(nil),  // 14: sso.v1.UserServiceCreateModeratorRequest
+	(*UserServiceCreateModeratorResponse)(nil), // 15: sso.v1.UserServiceCreateModeratorResponse
+	(*UserServiceDeleteUserRequest)(nil),       // 16: sso.v1.UserServiceDeleteUserRequest
+	(*UserServiceDeleteUserResponse)(nil),      // 17: sso.v1.UserServiceDeleteUserResponse
+	(*User)(nil),                               // 18: sso.v1.User
+	(UserRole)(0),                              // 19: sso.v1.UserRole
+	(UserStatus)(0),                            // 20: sso.v1.UserStatus
 }
 var file_sso_v1_user_proto_depIdxs = []int32{
-	14, // 0: sso.v1.UserServiceGetProfileResponse.user:type_name -> sso.v1.User
-	14, // 1: sso.v1.UserServiceUpdateProfileResponse.user:type_name -> sso.v1.User
-	14, // 2: sso.v1.UserServiceGetResponse.user:type_name -> sso.v1.User
-	14, // 3: sso.v1.UserServiceSearchResponse.users:type_name -> sso.v1.User
-	15, // 4: sso.v1.UserServiceChangeRoleRequest.new_role:type_name -> sso.v1.UserRole
-	14, // 5: sso.v1.UserServiceChangeRoleResponse.user:type_name -> sso.v1.User
-	16, // 6: sso.v1.UserServiceSetStatusRequest.new_status:type_name -> sso.v1.UserStatus
-	14, // 7: sso.v1.UserServiceSetStatusResponse.user:type_name -> sso.v1.User
-	0,  // 8: sso.v1.UserService.GetProfile:input_type -> sso.v1.UserServiceGetProfileRequest
-	2,  // 9: sso.v1.UserService.UpdateProfile:input_type -> sso.v1.UserServiceUpdateProfileRequest
-	4,  // 10: sso.v1.UserService.ChangePassword:input_type -> sso.v1.UserServiceChangePasswordRequest
-	6,  // 11: sso.v1.UserService.Get:input_type -> sso.v1.UserServiceGetRequest
-	8,  // 12: sso.v1.UserService.Search:input_type -> sso.v1.UserServiceSearchRequest
-	10, // 13: sso.v1.UserService.ChangeRole:input_type -> sso.v1.UserServiceChangeRoleRequest
-	12, // 14: sso.v1.UserService.SetStatus:input_type -> sso.v1.UserServiceSetStatusRequest
-	1,  // 15: sso.v1.UserService.GetProfile:output_type -> sso.v1.UserServiceGetProfileResponse
-	3,  // 16: sso.v1.UserService.UpdateProfile:output_type -> sso.v1.UserServiceUpdateProfileResponse
-	5,  // 17: sso.v1.UserService.ChangePassword:output_type -> sso.v1.UserServiceChangePasswordResponse
-	7,  // 18: sso.v1.UserService.Get:output_type -> sso.v1.UserServiceGetResponse
-	9,  // 19: sso.v1.UserService.Search:output_type -> sso.v1.UserServiceSearchResponse
-	11, // 20: sso.v1.UserService.ChangeRole:output_type -> sso.v1.UserServiceChangeRoleResponse
-	13, // 21: sso.v1.UserService.SetStatus:output_type -> sso.v1.UserServiceSetStatusResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	18, // 0: sso.v1.UserServiceGetProfileResponse.user:type_name -> sso.v1.User
+	18, // 1: sso.v1.UserServiceUpdateProfileResponse.user:type_name -> sso.v1.User
+	18, // 2: sso.v1.UserServiceGetResponse.user:type_name -> sso.v1.User
+	18, // 3: sso.v1.UserServiceSearchResponse.users:type_name -> sso.v1.User
+	19, // 4: sso.v1.UserServiceChangeRoleRequest.new_role:type_name -> sso.v1.UserRole
+	18, // 5: sso.v1.UserServiceChangeRoleResponse.user:type_name -> sso.v1.User
+	20, // 6: sso.v1.UserServiceSetStatusRequest.new_status:type_name -> sso.v1.UserStatus
+	18, // 7: sso.v1.UserServiceSetStatusResponse.user:type_name -> sso.v1.User
+	18, // 8: sso.v1.UserServiceCreateModeratorResponse.user:type_name -> sso.v1.User
+	0,  // 9: sso.v1.UserService.GetProfile:input_type -> sso.v1.UserServiceGetProfileRequest
+	2,  // 10: sso.v1.UserService.UpdateProfile:input_type -> sso.v1.UserServiceUpdateProfileRequest
+	4,  // 11: sso.v1.UserService.ChangePassword:input_type -> sso.v1.UserServiceChangePasswordRequest
+	6,  // 12: sso.v1.UserService.Get:input_type -> sso.v1.UserServiceGetRequest
+	8,  // 13: sso.v1.UserService.Search:input_type -> sso.v1.UserServiceSearchRequest
+	10, // 14: sso.v1.UserService.ChangeRole:input_type -> sso.v1.UserServiceChangeRoleRequest
+	12, // 15: sso.v1.UserService.SetStatus:input_type -> sso.v1.UserServiceSetStatusRequest
+	14, // 16: sso.v1.UserService.CreateModerator:input_type -> sso.v1.UserServiceCreateModeratorRequest
+	16, // 17: sso.v1.UserService.DeleteUser:input_type -> sso.v1.UserServiceDeleteUserRequest
+	1,  // 18: sso.v1.UserService.GetProfile:output_type -> sso.v1.UserServiceGetProfileResponse
+	3,  // 19: sso.v1.UserService.UpdateProfile:output_type -> sso.v1.UserServiceUpdateProfileResponse
+	5,  // 20: sso.v1.UserService.ChangePassword:output_type -> sso.v1.UserServiceChangePasswordResponse
+	7,  // 21: sso.v1.UserService.Get:output_type -> sso.v1.UserServiceGetResponse
+	9,  // 22: sso.v1.UserService.Search:output_type -> sso.v1.UserServiceSearchResponse
+	11, // 23: sso.v1.UserService.ChangeRole:output_type -> sso.v1.UserServiceChangeRoleResponse
+	13, // 24: sso.v1.UserService.SetStatus:output_type -> sso.v1.UserServiceSetStatusResponse
+	15, // 25: sso.v1.UserService.CreateModerator:output_type -> sso.v1.UserServiceCreateModeratorResponse
+	17, // 26: sso.v1.UserService.DeleteUser:output_type -> sso.v1.UserServiceDeleteUserResponse
+	18, // [18:27] is the sub-list for method output_type
+	9,  // [9:18] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_sso_v1_user_proto_init() }
@@ -823,7 +1038,7 @@ func file_sso_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sso_v1_user_proto_rawDesc), len(file_sso_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

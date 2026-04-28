@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/sso/internal/domain"
 )
@@ -115,4 +116,78 @@ func (s *UserService) SearchUsers(ctx context.Context, req domain.SearchUsersReq
 		Users:      users,
 		TotalCount: total,
 	}, nil
+}
+
+// CreateModerator создаёт учётную запись модератора.
+// Внутренние пользователи не требуют верификации email.
+// Email формируется как {login}@welwise.com.
+func (s *UserService) CreateModerator(ctx context.Context, req domain.CreateModeratorRequest) (domain.CreateModeratorResponse, error) {
+	const op = "UserService.CreateModerator"
+
+	// Формируем email из логина.
+	email := req.Login + domain.WelwiseDomain
+
+	// Хешируем пароль.
+	passwordHash, err := s.passwordHasher.Hash(ctx, req.Password)
+	if err != nil {
+		return domain.CreateModeratorResponse{}, fmt.Errorf("%s: hash password: %w", op, err)
+	}
+
+	now := time.Now()
+	moderator := domain.User{
+		Email:         email,
+		PasswordHash:  passwordHash,
+		DisplayName:   req.DisplayName,
+		Role:          domain.RoleModerator,
+		Status:        domain.StatusActive,
+		EmailVerified: true, // Внутренние пользователи не требуют верификации.
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	if err := s.userRepo.Create(ctx, moderator); err != nil {
+		return domain.CreateModeratorResponse{}, fmt.Errorf("%s: create moderator: %w", op, err)
+	}
+
+	created, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return domain.CreateModeratorResponse{}, fmt.Errorf("%s: get created moderator: %w", op, err)
+	}
+
+	s.log.Info("moderator created",
+		slog.String("user_id", created.ID),
+		slog.String("email", email),
+		slog.String("display_name", req.DisplayName),
+	)
+
+	return domain.CreateModeratorResponse{User: *created}, nil
+}
+
+// DeleteUser удаляет пользователя (hard delete).
+// Администраторы не могут быть удалены (защита от удаления последнего админа).
+func (s *UserService) DeleteUser(ctx context.Context, req domain.DeleteUserRequest) error {
+	const op = "UserService.DeleteUser"
+
+	// Проверяем что пользователь существует.
+	user, err := s.userRepo.GetByID(ctx, req.UserID)
+	if err != nil {
+		return fmt.Errorf("%s: get user: %w", op, err)
+	}
+
+	// Запрещаем удаление администраторов.
+	if user.Role == domain.RoleAdmin {
+		return fmt.Errorf("%s: %w", op, domain.ErrCannotDeleteAdmin)
+	}
+
+	if err := s.userRepo.Delete(ctx, req.UserID); err != nil {
+		return fmt.Errorf("%s: delete user: %w", op, err)
+	}
+
+	s.log.Info("user deleted",
+		slog.String("user_id", req.UserID),
+		slog.String("email", user.Email),
+		slog.String("role", user.Role.String()),
+	)
+
+	return nil
 }

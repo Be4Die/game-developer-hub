@@ -19,13 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetProfile_FullMethodName     = "/sso.v1.UserService/GetProfile"
-	UserService_UpdateProfile_FullMethodName  = "/sso.v1.UserService/UpdateProfile"
-	UserService_ChangePassword_FullMethodName = "/sso.v1.UserService/ChangePassword"
-	UserService_Get_FullMethodName            = "/sso.v1.UserService/Get"
-	UserService_Search_FullMethodName         = "/sso.v1.UserService/Search"
-	UserService_ChangeRole_FullMethodName     = "/sso.v1.UserService/ChangeRole"
-	UserService_SetStatus_FullMethodName      = "/sso.v1.UserService/SetStatus"
+	UserService_GetProfile_FullMethodName      = "/sso.v1.UserService/GetProfile"
+	UserService_UpdateProfile_FullMethodName   = "/sso.v1.UserService/UpdateProfile"
+	UserService_ChangePassword_FullMethodName  = "/sso.v1.UserService/ChangePassword"
+	UserService_Get_FullMethodName             = "/sso.v1.UserService/Get"
+	UserService_Search_FullMethodName          = "/sso.v1.UserService/Search"
+	UserService_ChangeRole_FullMethodName      = "/sso.v1.UserService/ChangeRole"
+	UserService_SetStatus_FullMethodName       = "/sso.v1.UserService/SetStatus"
+	UserService_CreateModerator_FullMethodName = "/sso.v1.UserService/CreateModerator"
+	UserService_DeleteUser_FullMethodName      = "/sso.v1.UserService/DeleteUser"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -52,6 +54,12 @@ type UserServiceClient interface {
 	// Блокировка/разблокировка пользователя.
 	// Доступно только администраторам.
 	SetStatus(ctx context.Context, in *UserServiceSetStatusRequest, opts ...grpc.CallOption) (*UserServiceSetStatusResponse, error)
+	// Создание учётной записи модератора.
+	// Доступно только администраторам. Email верификация не требуется.
+	CreateModerator(ctx context.Context, in *UserServiceCreateModeratorRequest, opts ...grpc.CallOption) (*UserServiceCreateModeratorResponse, error)
+	// Удаление пользователя (hard delete).
+	// Доступно только администраторам. Администратор не может удалить другого администратора.
+	DeleteUser(ctx context.Context, in *UserServiceDeleteUserRequest, opts ...grpc.CallOption) (*UserServiceDeleteUserResponse, error)
 }
 
 type userServiceClient struct {
@@ -132,6 +140,26 @@ func (c *userServiceClient) SetStatus(ctx context.Context, in *UserServiceSetSta
 	return out, nil
 }
 
+func (c *userServiceClient) CreateModerator(ctx context.Context, in *UserServiceCreateModeratorRequest, opts ...grpc.CallOption) (*UserServiceCreateModeratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserServiceCreateModeratorResponse)
+	err := c.cc.Invoke(ctx, UserService_CreateModerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) DeleteUser(ctx context.Context, in *UserServiceDeleteUserRequest, opts ...grpc.CallOption) (*UserServiceDeleteUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserServiceDeleteUserResponse)
+	err := c.cc.Invoke(ctx, UserService_DeleteUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -156,6 +184,12 @@ type UserServiceServer interface {
 	// Блокировка/разблокировка пользователя.
 	// Доступно только администраторам.
 	SetStatus(context.Context, *UserServiceSetStatusRequest) (*UserServiceSetStatusResponse, error)
+	// Создание учётной записи модератора.
+	// Доступно только администраторам. Email верификация не требуется.
+	CreateModerator(context.Context, *UserServiceCreateModeratorRequest) (*UserServiceCreateModeratorResponse, error)
+	// Удаление пользователя (hard delete).
+	// Доступно только администраторам. Администратор не может удалить другого администратора.
+	DeleteUser(context.Context, *UserServiceDeleteUserRequest) (*UserServiceDeleteUserResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -186,6 +220,12 @@ func (UnimplementedUserServiceServer) ChangeRole(context.Context, *UserServiceCh
 }
 func (UnimplementedUserServiceServer) SetStatus(context.Context, *UserServiceSetStatusRequest) (*UserServiceSetStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetStatus not implemented")
+}
+func (UnimplementedUserServiceServer) CreateModerator(context.Context, *UserServiceCreateModeratorRequest) (*UserServiceCreateModeratorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateModerator not implemented")
+}
+func (UnimplementedUserServiceServer) DeleteUser(context.Context, *UserServiceDeleteUserRequest) (*UserServiceDeleteUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -334,6 +374,42 @@ func _UserService_SetStatus_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CreateModerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceCreateModeratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CreateModerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_CreateModerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CreateModerator(ctx, req.(*UserServiceCreateModeratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserServiceDeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_DeleteUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).DeleteUser(ctx, req.(*UserServiceDeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -368,6 +444,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetStatus",
 			Handler:    _UserService_SetStatus_Handler,
+		},
+		{
+			MethodName: "CreateModerator",
+			Handler:    _UserService_CreateModerator_Handler,
+		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _UserService_DeleteUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

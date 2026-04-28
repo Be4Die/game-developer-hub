@@ -37,6 +37,7 @@ type stubUserRepo struct {
 	getByEmailFunc func(context.Context, string) (*domain.User, error)
 	updateFunc     func(context.Context, domain.User) error
 	searchFunc     func(context.Context, string, int, int) ([]domain.User, int64, error)
+	deleteFunc     func(context.Context, string) error
 }
 
 func (s *stubUserRepo) Create(ctx context.Context, user domain.User) error {
@@ -57,6 +58,10 @@ func (s *stubUserRepo) Update(ctx context.Context, user domain.User) error {
 
 func (s *stubUserRepo) Search(ctx context.Context, query string, limit, offset int) ([]domain.User, int64, error) {
 	return s.searchFunc(ctx, query, limit, offset)
+}
+
+func (s *stubUserRepo) Delete(ctx context.Context, id string) error {
+	return s.deleteFunc(ctx, id)
 }
 
 type stubSessionRepo struct {

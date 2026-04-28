@@ -89,3 +89,20 @@ type SearchUsersResponse struct {
 	Users      []User
 	TotalCount int64
 }
+
+// CreateModeratorRequest — запрос на создание модератора администратором.
+type CreateModeratorRequest struct {
+	Login       string
+	Password    string
+	DisplayName string
+}
+
+// CreateModeratorResponse — результат создания модератора.
+type CreateModeratorResponse struct {
+	User User
+}
+
+// DeleteUserRequest — запрос на удаление пользователя.
+type DeleteUserRequest struct {
+	UserID string
+}
