@@ -101,6 +101,32 @@ services:
       retries: 10
       start_period: 10s
 
+  chat:
+    build:
+      context: ..
+      dockerfile: chat/Dockerfile
+    container_name: gdh-chat
+    environment:
+      CHAT_DB_HOST: gdh-postgres
+      CHAT_DB_PORT: 5432
+      CHAT_DB_USER: postgres
+      CHAT_DB_PASSWORD: postgres
+      CHAT_DB_NAME: orchestrator
+      CHAT_GRPC_ADDR: :9091
+      SSO_GRPC_ADDR: gdh-sso:50051
+      CHAT_SSO_API_KEY: dev-api-key-for-local-testing
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sso:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9091 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   gateway:
     build:
       context: ..
@@ -109,6 +135,7 @@ services:
     environment:
       ORCHESTRATOR_GRPC_ADDR: gdh-orchestrator:50052
       SSO_GRPC_ADDR: gdh-sso:50051
+      CHAT_GRPC_ADDR: gdh-chat:9091
       HTTP_ADDR: :8080
     ports:
       - "8080:8080"

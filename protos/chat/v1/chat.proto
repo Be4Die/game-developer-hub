@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package chat.v1;
+
+option go_package = "github.com/Be4Die/game-developer-hub/protos/chat/v1;chatpb";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+enum ChatType {
+  CHAT_TYPE_UNSPECIFIED = 0;
+  CHAT_TYPE_DIRECT = 1;
+  CHAT_TYPE_TICKET = 2;
+  CHAT_TYPE_PROJECT = 3;
+}
+
+message Chat {
+  string id = 1;
+  ChatType type = 2;
+  string title = 3;
+  repeated string participant_ids = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message Message {
+  string id = 1;
+  string chat_id = 2;
+  string author_id = 3;
+  string content = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+service ChatService {
+  rpc CreateChat(CreateChatRequest) returns (CreateChatResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/chats"
+      body: "*"
+    };
+  }
+
+  rpc GetChat(GetChatRequest) returns (GetChatResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/chats/{chat_id}"
+    };
+  }
+
+  rpc ListChats(ListChatsRequest) returns (ListChatsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/chats"
+    };
+  }
+
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/chats/{chat_id}/messages"
+      body: "*"
+    };
+  }
+
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/chats/{chat_id}/messages"
+    };
+  }
+
+  rpc AddParticipant(AddParticipantRequest) returns (AddParticipantResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/chats/{chat_id}/participants"
+      body: "*"
+    };
+  }
+
+  rpc RemoveParticipant(RemoveParticipantRequest) returns (RemoveParticipantResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/chats/{chat_id}/participants/{user_id}"
+    };
+  }
+}
+
+message CreateChatRequest {
+  ChatType type = 1;
+  string title = 2;
+  repeated string participant_ids = 3;
+}
+
+message CreateChatResponse {
+  Chat chat = 1;
+}
+
+message GetChatRequest {
+  string chat_id = 1;
+}
+
+message GetChatResponse {
+  Chat chat = 1;
+}
+
+message ListChatsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListChatsResponse {
+  repeated Chat chats = 1;
+  string next_page_token = 2;
+}
+
+message SendMessageRequest {
+  string chat_id = 1;
+  string content = 2;
+}
+
+message SendMessageResponse {
+  Message message = 1;
+}
+
+message GetMessagesRequest {
+  string chat_id = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  string next_page_token = 2;
+}
+
+message AddParticipantRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message AddParticipantResponse {
+  Chat chat = 1;
+}
+
+message RemoveParticipantRequest {
+  string chat_id = 1;
+  string user_id = 2;
+}
+
+message RemoveParticipantResponse {
+  Chat chat = 1;
+}

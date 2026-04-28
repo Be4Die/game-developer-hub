@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	chatpb "github.com/Be4Die/game-developer-hub/protos/chat/v1"
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 )
@@ -31,6 +32,7 @@ func run() error {
 	// Адреса gRPC-сервисов из переменных окружения.
 	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
+	chatAddr := envOr("CHAT_GRPC_ADDR", "chat:9091")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 
 	// Создаём mux с настройками JSON.
@@ -39,6 +41,7 @@ func run() error {
 			MarshalOptions: protojson.MarshalOptions{
 				UseProtoNames:   true,
 				EmitUnpopulated: true,
+				UseEnumNumbers:  true,
 			},
 			UnmarshalOptions: protojson.UnmarshalOptions{
 				DiscardUnknown: true,
@@ -62,6 +65,13 @@ func run() error {
 		return err
 	}
 	defer func() { _ = ssoConn.Close() }()
+
+	// Подключаемся к Chat.
+	chatConn, err := grpc.NewClient(chatAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = chatConn.Close() }()
 
 	// Регистрируем Orchestrator handlers.
 	if err := gwpb.RegisterBuildServiceHandler(ctx, mux, orchConn); err != nil {
@@ -88,6 +98,11 @@ func run() error {
 		return err
 	}
 
+	// Регистрируем Chat handlers.
+	if err := chatpb.RegisterChatServiceHandler(ctx, mux, chatConn); err != nil {
+		return err
+	}
+
 	// HTTP-сервер с CORS.
 	handler := corsMiddleware(mux)
 
@@ -108,6 +123,7 @@ func run() error {
 	log.Printf("HTTP gateway listening on %s", httpAddr)
 	log.Printf("  Orchestrator gRPC: %s", orchestratorAddr)
 	log.Printf("  SSO gRPC: %s", ssoAddr)
+	log.Printf("  Chat gRPC: %s", chatAddr)
 
 	return srv.ListenAndServe()
 }

@@ -30,6 +30,10 @@ const ROLE_MAP = {
   1: 'Разработчик',
   2: 'Модератор',
   3: 'Администратор',
+  'USER_ROLE_UNSPECIFIED': 'Пользователь',
+  'USER_ROLE_DEVELOPER': 'Разработчик',
+  'USER_ROLE_MODERATOR': 'Модератор',
+  'USER_ROLE_ADMIN': 'Администратор',
 }
 
 const userRole = computed(() => ROLE_MAP[authState.user?.role] || 'Пользователь')

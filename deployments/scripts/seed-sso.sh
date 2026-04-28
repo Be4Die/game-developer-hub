@@ -40,7 +40,7 @@ for entry in "${USERS_LIST[@]}"; do
   user_id=$(echo "$resp" | grep -o '"id":"[^"]*"' | head -1 | sed 's/"id":"//;s/"//')
 
   # Получаем код верификации из Valkey
-  code=$(docker exec gdh-sso-valkey valkey-cli GET "sso:verify:$email" 2>/dev/null || echo "")
+  code=$(docker exec gdh-valkey valkey-cli GET "sso:verify:$email" 2>/dev/null || echo "")
 
   if [ -n "$code" ] && [ "$code" != "(nil)" ]; then
     echo "  Код верификации: $code"
@@ -60,7 +60,7 @@ for entry in "${USERS_LIST[@]}"; do
   # Устанавливаем роль через БД (ChangeRole ещё не реализован в сервисе)
   if [ -n "$user_id" ] && [ "$role" != "1" ]; then
     echo "  Установка роли: $role_name (user_id=$user_id)"
-    docker exec gdh-sso-postgres psql -U postgres -d sso \
+    docker exec gdh-postgres psql -U postgres -d sso \
       -c "UPDATE users SET role=$role WHERE id='$user_id';" >/dev/null 2>&1
     echo "  Роль установлена"
   fi

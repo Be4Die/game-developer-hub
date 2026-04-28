@@ -27,7 +27,12 @@
 </template>
 
 <script setup>
-import { tickets } from '../store'
+import { onMounted } from 'vue'
+import { tickets, loadTickets } from '../store'
+
+onMounted(() => {
+  loadTickets()
+})
 
 const statusText = (status) => {
   const map = { new: 'Новый', in_progress: 'В работе', resolved: 'Решён' }

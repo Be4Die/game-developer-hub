@@ -36,14 +36,48 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { searchUsers } from '../api/sso'
 import { showToast } from '../store'
-const users = ref([
-  { id: 1, name: 'Михаил В.', email: 'mikhail@welwise.com', role: 'Администратор', registered: '2025-01-15', projects: 3, ticketsClosed: 5 },
-  { id: 2, name: 'Анна С.', email: 'anna@welwise.com', role: 'Модератор', registered: '2024-11-02', projects: 1, ticketsClosed: 12 },
-  { id: 3, name: 'Дмитрий К.', email: 'dmitry@welwise.com', role: 'Разработчик', registered: '2025-03-07', projects: 5, ticketsClosed: 0 },
-])
+
+const users = ref([])
+const loading = ref(false)
 const selectedUser = ref(null)
+
+const ROLE_MAP = {
+  0: 'Пользователь',
+  1: 'Разработчик',
+  2: 'Модератор',
+  3: 'Администратор',
+  'USER_ROLE_UNSPECIFIED': 'Пользователь',
+  'USER_ROLE_DEVELOPER': 'Разработчик',
+  'USER_ROLE_MODERATOR': 'Модератор',
+  'USER_ROLE_ADMIN': 'Администратор',
+}
+
+const fetchUsers = async () => {
+  loading.value = true
+  try {
+    const res = await searchUsers({ query: '' })
+    users.value = (res.users || []).map(u => ({
+      id: u.id,
+      name: u.display_name || u.email,
+      email: u.email,
+      role: ROLE_MAP[u.role] || 'Пользователь',
+      registered: u.created_at ? new Date(u.created_at).toLocaleDateString() : '—',
+      projects: 0,
+      ticketsClosed: 0
+    }))
+  } catch (err) {
+    console.error('Failed to fetch users:', err)
+    showToast('Ошибка загрузки пользователей', 'danger')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchUsers)
+
 const openUser = (u) => { selectedUser.value = { ...u } }
 const changeRole = (u) => { showToast(`Роль ${u.name} изменена на "${u.role}"`, 'success') }
 const changeRoleFromModal = (u, role) => {

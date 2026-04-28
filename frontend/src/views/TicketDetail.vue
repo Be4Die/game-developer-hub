@@ -101,14 +101,26 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { tickets, addMessage, updateTicketStatus, assignTicketToModerator, reopenTicket, user } from '../store'
+import { tickets, addMessage, loadMessages, loadTickets, showToast } from '../store'
+import { useAuth } from '../store/auth'
 
 const route = useRoute()
 const router = useRouter()
-const ticketId = parseInt(route.params.id)
+const { state: authState } = useAuth()
+const ticketId = route.params.id
 const ticket = computed(() => tickets.find(t => t.id === ticketId))
 
-if (!ticket.value) router.push('/moderator/tickets')
+onMounted(async () => {
+  if (tickets.length === 0) {
+    await loadTickets()
+  }
+  if (ticket.value) {
+    await loadMessages(ticketId, authState.user?.id)
+  } else {
+    router.push('/moderator/tickets')
+  }
+  scrollToBottom()
+})
 
 const newMessage = ref('')
 const chatContainer = ref(null)
@@ -120,17 +132,16 @@ const scrollToBottom = () => nextTick(() => {
 })
 
 watch(() => ticket.value?.messages.length, scrollToBottom)
-onMounted(scrollToBottom)
 
 const sendMessage = () => {
   if (!newMessage.value.trim()) return
-  addMessage(ticketId, newMessage.value, 'moderator')
+  addMessage(ticketId, newMessage.value, authState.user?.id)
   newMessage.value = ''
 }
 
-const takeTicket = () => assignTicketToModerator(ticketId, user.name)
-const resolveTicket = () => updateTicketStatus(ticketId, 'resolved')
-const handleReopen = () => reopenTicket(ticketId)
+const takeTicket = () => showToast('Функция взятия в работу в разработке', 'info')
+const resolveTicket = () => showToast('Функция закрытия тикета в разработке', 'info')
+const handleReopen = () => showToast('Функция переоткрытия в разработке', 'info')
 </script>
 
 <style scoped>

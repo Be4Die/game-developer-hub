@@ -85,3 +85,15 @@ export function revokeToken(session_id) {
 export function listSessions() {
   return http.get("/tokens/sessions").then((r) => r.data);
 }
+
+export function searchUsers({ query = "", limit = 20, offset = 0 } = {}) {
+  return http
+    .get("/users/search", { params: { query, limit, offset } })
+    .then((r) => r.data);
+}
+
+export function changeUserRole(userId, newRole) {
+  return http
+    .post("/users/change-role", { user_id: userId, new_role: newRole })
+    .then((r) => r.data);
+}

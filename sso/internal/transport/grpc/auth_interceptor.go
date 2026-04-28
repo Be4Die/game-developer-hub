@@ -38,7 +38,7 @@ func (a *APIKeyAuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 
 // isPublicMethod возвращает true для методов, не требующих API ключа.
 func isPublicMethod(method string) bool {
-	// Auth endpoints — публичные методы (не требуют API key).
+	// Auth & Token endpoints — публичные методы (не требуют API key/JWT).
 	return method == "/sso.v1.AuthService/Register" ||
 		method == "/sso.v1.AuthService/Login" ||
 		method == "/sso.v1.AuthService/RefreshToken" ||
@@ -46,7 +46,8 @@ func isPublicMethod(method string) bool {
 		method == "/sso.v1.AuthService/VerifyEmail" ||
 		method == "/sso.v1.AuthService/ResendVerificationEmail" ||
 		method == "/sso.v1.AuthService/RequestPasswordReset" ||
-		method == "/sso.v1.AuthService/ResetPassword"
+		method == "/sso.v1.AuthService/ResetPassword" ||
+		method == "/sso.v1.TokenService/ValidateToken"
 }
 
 func (a *APIKeyAuthInterceptor) validate(ctx context.Context) error {
