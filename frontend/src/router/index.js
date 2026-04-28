@@ -14,16 +14,20 @@ import InstanceDetail from "../views/servers/InstanceDetail.vue";
 import NodesList from "../views/nodes/NodesList.vue";
 import NodeDetail from "../views/nodes/NodeDetail.vue";
 import ModeratorTickets from "../views/ModeratorTickets.vue";
-import ModeratorRoles from "../views/ModeratorRoles.vue";
 import TicketDetail from "../views/TicketDetail.vue";
 import Tickethistory from "../views/Tickethistory.vue";
 import Settings from "../views/Settings.vue";
+import AdminDashboard from "../views/AdminDashboard.vue";
 
 const routes = [
   {
     path: "/",
     redirect: () => {
-      return isAuthenticated() ? "/projects" : "/login";
+      if (!isAuthenticated()) return "/login";
+      const user = JSON.parse(localStorage.getItem("gdh_user") || "null");
+      if (user?.role === "USER_ROLE_ADMIN") return "/admin/dashboard";
+      if (user?.role === "USER_ROLE_MODERATOR") return "/moderator/tickets";
+      return "/projects";
     },
   },
   { path: "/login", component: Login, meta: { guest: true } },
@@ -103,15 +107,16 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: "/moderator/roles",
-    component: ModeratorRoles,
-    meta: { requiresAuth: true },
-  },
-  {
     path: "/settings",
     name: "settings",
     component: Settings,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/admin/dashboard",
+    name: "admin-dashboard",
+    component: AdminDashboard,
+    meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];
 
@@ -127,6 +132,12 @@ router.beforeEach((to) => {
   }
   if (to.meta.guest && authed) {
     return { path: "/projects" };
+  }
+  if (to.meta.requiresAdmin) {
+    const user = JSON.parse(localStorage.getItem("gdh_user") || "null");
+    if (user?.role !== "USER_ROLE_ADMIN") {
+      return { path: "/projects" };
+    }
   }
 });
 

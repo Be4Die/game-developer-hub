@@ -65,8 +65,8 @@ watch(userRole, (newRole) => {
             router.push("/moderator/tickets");
         }
     } else if (newRole === "Администратор") {
-        if (!route.path.startsWith("/moderator/roles")) {
-            router.push("/moderator/roles");
+        if (!route.path.startsWith("/admin/dashboard")) {
+            router.push("/admin/dashboard");
         }
     }
 });

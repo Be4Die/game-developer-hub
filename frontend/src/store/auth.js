@@ -10,6 +10,7 @@ import {
 const STORAGE_KEYS = {
   accessToken: "gdh_access_token",
   refreshToken: "gdh_refresh_token",
+  user: "gdh_user",
 };
 
 const state = reactive({
@@ -20,18 +21,24 @@ const state = reactive({
   error: null,
 });
 
-function setTokens(accessToken, refreshToken) {
+function setTokens(accessToken, refreshToken, user) {
   state.accessToken = accessToken;
   state.refreshToken = refreshToken;
+  state.user = user;
   localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
   localStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+  if (user) {
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+  }
 }
 
 function clearTokens() {
   state.accessToken = null;
   state.refreshToken = null;
+  state.user = null;
   localStorage.removeItem(STORAGE_KEYS.accessToken);
   localStorage.removeItem(STORAGE_KEYS.refreshToken);
+  localStorage.removeItem(STORAGE_KEYS.user);
 }
 
 export async function login({ email, password }) {
@@ -39,8 +46,7 @@ export async function login({ email, password }) {
   state.error = null;
   try {
     const res = await ssoLogin({ email, password });
-    setTokens(res.tokens.access_token, res.tokens.refresh_token);
-    state.user = res.user;
+    setTokens(res.tokens.access_token, res.tokens.refresh_token, res.user);
     return res;
   } catch (err) {
     state.error = err.response?.data?.message || "Ошибка входа";
@@ -82,7 +88,7 @@ export async function refreshSession() {
   if (!state.refreshToken) return false;
   try {
     const res = await ssoRefreshToken(state.refreshToken);
-    setTokens(res.tokens.access_token, res.tokens.refresh_token);
+    setTokens(res.tokens.access_token, res.tokens.refresh_token, res.user);
     return true;
   } catch {
     clearTokens();
@@ -92,16 +98,29 @@ export async function refreshSession() {
 }
 
 export async function loadUser() {
-  if (!state.accessToken) return;
+  if (!state.accessToken) {
+    // Try to restore from localStorage
+    const savedUser = localStorage.getItem(STORAGE_KEYS.user);
+    if (savedUser) {
+      try {
+        state.user = JSON.parse(savedUser);
+      } catch {
+        // ignore
+      }
+    }
+    return;
+  }
   try {
     const res = await getCurrentUser();
     state.user = res.user;
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(res.user));
   } catch {
     const refreshed = await refreshSession();
     if (refreshed && state.accessToken) {
       try {
         const res = await getCurrentUser();
         state.user = res.user;
+        localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(res.user));
       } catch {
         clearTokens();
       }

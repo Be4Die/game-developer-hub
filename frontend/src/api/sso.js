@@ -60,6 +60,12 @@ export function getUser(userId) {
   return http.get(`/users/${userId}`).then((r) => r.data);
 }
 
+export function searchUsers({ query = "", limit = 100, offset = 0 } = {}) {
+  return http
+    .get("/users", { params: { query, limit, offset } })
+    .then((r) => r.data);
+}
+
 export function getCurrentUser() {
   return http.get("/user/profile").then((r) => r.data);
 }
@@ -84,4 +90,16 @@ export function revokeToken(session_id) {
 
 export function listSessions() {
   return http.get("/tokens/sessions").then((r) => r.data);
+}
+
+// ─── Admin: Moderator Management ───────────────────────
+
+export function createModerator({ login, password, display_name }) {
+  return http
+    .post("/users/moderators", { login, password, display_name })
+    .then((r) => r.data);
+}
+
+export function deleteUser(userId) {
+  return http.delete(`/users/${userId}`).then((r) => r.data);
 }

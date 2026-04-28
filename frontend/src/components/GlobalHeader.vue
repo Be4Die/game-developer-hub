@@ -5,25 +5,13 @@
                 <Layers class="logo-icon" /><span>WELWISE</span>
             </div>
             <nav class="main-nav">
-                <template
-                    v-if="
-                        userRole === 'Разработчик' ||
-                        userRole === 'Администратор'
-                    "
-                >
+                <template v-if="userRole === 'Разработчик'">
                     <router-link
                         to="/projects"
                         class="nav-item"
                         active-class="active"
                         ><FolderGit2 class="icon-sm" /> Проекты</router-link
                     >
-                </template>
-                <template
-                    v-if="
-                        userRole === 'Разработчик' ||
-                        userRole === 'Администратор'
-                    "
-                >
                     <router-link
                         to="/nodes"
                         class="nav-item"
@@ -48,11 +36,11 @@
                 </template>
                 <template v-if="userRole === 'Администратор'">
                     <router-link
-                        to="/moderator/roles"
+                        to="/admin/dashboard"
                         class="nav-item"
                         active-class="active"
-                        ><Users class="icon-sm" /> Управление
-                        ролями</router-link
+                        ><Users class="icon-sm" />
+                        Администрирование</router-link
                     >
                 </template>
             </nav>
