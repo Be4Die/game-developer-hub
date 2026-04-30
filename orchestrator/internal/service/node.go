@@ -309,11 +309,7 @@ func (s *NodeService) AnnounceNode(ctx context.Context, params AnnounceNodeParam
 	}
 
 	if err == nil {
-		if existing.Status == domain.NodeStatusOnline {
-			// Нода уже авторизована — отказываем.
-			return nil, domain.ErrAlreadyExists
-		}
-		// Обновляем существующую неавторизованную ноду.
+		// Нода с таким адресом уже существует — обновляем данные.
 		return s.updateAnnouncedNode(ctx, existing, params)
 	}
 

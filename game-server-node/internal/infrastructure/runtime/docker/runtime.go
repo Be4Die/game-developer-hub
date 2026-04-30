@@ -19,6 +19,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
@@ -229,6 +230,7 @@ func (r *Runtime) RemoveContainer(ctx context.Context, containerID string) error
 }
 
 // ContainerLogs возвращает поток stdout/stderr контейнера.
+// Демультиплексирует Docker multiplexed stream в чистый текстовый поток.
 func (r *Runtime) ContainerLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error) {
 	reader, err := r.cli.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
@@ -239,7 +241,15 @@ func (r *Runtime) ContainerLogs(ctx context.Context, containerID string, follow 
 	if err != nil {
 		return nil, fmt.Errorf("Runtime.ContainerLogs: %w", err)
 	}
-	return reader, nil
+
+	pr, pw := io.Pipe()
+	go func() {
+		defer func() { _ = reader.Close() }()
+		_, err := stdcopy.StdCopy(pw, pw, reader)
+		_ = pw.CloseWithError(err)
+	}()
+
+	return pr, nil
 }
 
 // ContainerStats возвращает метрики использования ресурсов контейнера.

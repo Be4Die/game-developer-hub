@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
@@ -84,6 +85,10 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 	// Обновляем адрес ноды для записи.
 	nodeAddr := node.Address
+	serverHost, _, err := net.SplitHostPort(nodeAddr)
+	if err != nil {
+		serverHost = nodeAddr
+	}
 
 	// Шаг 4: запуск инстанса на ноде через gRPC.
 	maxPlayers := build.MaxPlayers
@@ -125,7 +130,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		Status:           domain.InstanceStatusStarting,
 		MaxPlayers:       maxPlayers,
 		DeveloperPayload: params.DeveloperPayload,
-		ServerAddress:    nodeAddr,
+		ServerAddress:    serverHost,
 		StartedAt:        now,
 		CreatedAt:        now,
 		UpdatedAt:        now,

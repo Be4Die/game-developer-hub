@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"net"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
@@ -48,9 +49,14 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) ([
 			continue
 		}
 
+		host, _, err := net.SplitHostPort(node.Address)
+		if err != nil {
+			host = node.Address
+		}
+
 		endpoints = append(endpoints, domain.ServerEndpoint{
 			InstanceID:  inst.ID,
-			Address:     node.Address,
+			Address:     host,
 			Port:        inst.HostPort,
 			Protocol:    inst.Protocol,
 			PlayerCount: &playerCount,

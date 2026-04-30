@@ -42,6 +42,22 @@ func (a *APIKeyAuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 	}
 }
 
+// Stream возвращает stream interceptor для проверки API-ключа.
+func (a *APIKeyAuthInterceptor) Stream() grpc.StreamServerInterceptor {
+	return func(
+		srv interface{},
+		ss grpc.ServerStream,
+		_ *grpc.StreamServerInfo,
+		handler grpc.StreamHandler,
+	) error {
+		if err := a.validate(ss.Context()); err != nil {
+			return err
+		}
+
+		return handler(srv, ss)
+	}
+}
+
 // validate извлекает и проверяет API-ключ из контекста.
 func (a *APIKeyAuthInterceptor) validate(ctx context.Context) error {
 	md, ok := metadata.FromIncomingContext(ctx)

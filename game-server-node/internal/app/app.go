@@ -50,6 +50,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// Configure and register gRPC server.
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authInterceptor.Unary()),
+		grpc.StreamInterceptor(authInterceptor.Stream()),
 	)
 	pb.RegisterDiscoveryServiceServer(gRPCServer, discoveryHandler)
 	pb.RegisterDeploymentServiceServer(gRPCServer, deploymentHandler)
