@@ -129,8 +129,8 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: resolve port: %w", op, err)
 	}
 
-	// Create container.
-	containerID, actualHostPort, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
+	// Create container (does not start yet).
+	containerID, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: opts.InternalPort,
 		HostPort:     hostPort,
@@ -143,13 +143,22 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: create container: %w", op, err)
 	}
 
-	// Start container. If fails — cleanup step 1.
+	// Start container. If fails — cleanup.
 	if err := s.runtime.StartContainer(ctx, containerID); err != nil {
 		_ = s.runtime.RemoveContainer(ctx, containerID)
 		return 0, 0, fmt.Errorf("%s: start container: %w", op, err)
 	}
 
-	// Save to storage. If fails — cleanup steps 1+2.
+	// После запуска контейнера получаем реальный хост-порт ( dynamic ports may be assigned).
+	actualHostPort, err := s.runtime.GetHostPort(ctx, containerID, opts.InternalPort)
+	if err != nil {
+		// Останавливаем и удаляем контейнер, т.к. без порта инстанс нерабочий.
+		_ = s.runtime.StopContainer(ctx, containerID, 5*time.Second)
+		_ = s.runtime.RemoveContainer(ctx, containerID)
+		return 0, 0, fmt.Errorf("%s: get host port: %w", op, err)
+	}
+
+	// Save to storage. If fails — cleanup steps (stop+remove).
 	id := s.nextID.Add(1)
 
 	instance := domain.Instance{

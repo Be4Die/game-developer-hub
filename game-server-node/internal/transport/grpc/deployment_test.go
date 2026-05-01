@@ -19,16 +19,22 @@ import (
 )
 
 // Заглушка для Docker-а (чтобы не поднимать реальный контейнер)
-type fakeRuntime struct{}
+type fakeRuntime struct {
+	hostPort uint32
+}
 
 func (f *fakeRuntime) LoadImage(ctx context.Context, tag string, data io.Reader) error { return nil }
 func (f *fakeRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
 	return nil
 }
-func (f *fakeRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
-	return "cid", opts.HostPort, nil
+func (f *fakeRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
+	f.hostPort = opts.HostPort
+	return "cid", nil
 }
 func (f *fakeRuntime) StartContainer(ctx context.Context, id string) error { return nil }
+func (f *fakeRuntime) GetHostPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
+	return f.hostPort, nil
+}
 func (f *fakeRuntime) StopContainer(ctx context.Context, id string, t time.Duration) error {
 	return nil
 }

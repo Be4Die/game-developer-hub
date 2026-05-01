@@ -172,11 +172,14 @@ func (m *mockRuntime) LoadImage(ctx context.Context, imageTag string, data io.Re
 func (m *mockRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
 	return nil
 }
-func (m *mockRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
-	return "", 0, nil
+func (m *mockRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
+	return "", nil
 }
 func (m *mockRuntime) StartContainer(ctx context.Context, containerID string) error {
 	return nil
+}
+func (m *mockRuntime) GetHostPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
+	return 0, nil
 }
 func (m *mockRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {
 	return nil

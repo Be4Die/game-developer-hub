@@ -15,11 +15,17 @@ type ContainerRuntime interface {
 	// internalPort — порт, который слушает процесс внутри контейнера.
 	BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error
 
-	// CreateContainer создаёт контейнер и возвращает его ID и фактический порт на хосте.
-	// Если для HostPort указано 0, Docker назначает порт автоматически — он возвращается вторым значением.
-	CreateContainer(ctx context.Context, opts ContainerOpts) (containerID string, hostPort uint32, err error)
+	// CreateContainer создаёт контейнер (без запуска). Возвращает ID контейнера.
+	CreateContainer(ctx context.Context, opts ContainerOpts) (string, error)
+
 	// StartContainer запускает существующий контейнер.
 	StartContainer(ctx context.Context, containerID string) error
+
+	// GetHostPort возвращает реальный хост-порт, который Docker присвоил контейнеру
+	// после его запуска. Для динамических портов (HostPort=0) это фактический
+	// опубликованный порт; для статических — запрошенный порт.
+	GetHostPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error)
+
 	// StopContainer останавливает контейнер с заданным таймаутом.
 	StopContainer(ctx context.Context, containerID string, timeout time.Duration) error
 	// RemoveContainer удаляет контейнер безвозвратно.

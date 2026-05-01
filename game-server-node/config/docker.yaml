@@ -5,9 +5,11 @@ grpc:
 node:
   region: "local"
   version: "0.0.1"
+  # eth_name: "eth0"  # Опционально: имя сетевого интерфейса для автоопределения адреса
 orchestrator:
   mode: "auto-discovery"
   address: "orchestrator:50052"
   announce_interval: 30s
   announce_timeout: 10s
-  external_address: "gdh-node:44044"
+  # Используем адрес хоста для подключения клиентов извне Docker
+  external_address: "host.docker.internal:44044"

@@ -17,6 +17,8 @@ import (
 type stubRuntime struct {
 	createdContainerID string
 	started            bool
+	// HostPort to return for GetHostPort (set from CreateContainer opts)
+	hostPort uint32
 
 	// Fields to verify StopContainer behavior
 	stopContainerID string
@@ -37,12 +39,14 @@ func (s *stubRuntime) BuildImage(ctx context.Context, imageTag string, internalP
 	return nil
 }
 
-func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
+// CreateContainer создаёт контейнер (без запуска). В тестах возвращает ID и запоминает HostPort.
+func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	if s.createErr != nil {
-		return "", 0, s.createErr
+		return "", s.createErr
 	}
 	s.createdContainerID = "stub-docker-id-123"
-	return s.createdContainerID, opts.HostPort, nil
+	s.hostPort = opts.HostPort
+	return s.createdContainerID, nil
 }
 
 func (s *stubRuntime) StartContainer(ctx context.Context, containerID string) error {
@@ -51,6 +55,11 @@ func (s *stubRuntime) StartContainer(ctx context.Context, containerID string) er
 	}
 	s.started = true
 	return nil
+}
+
+func (s *stubRuntime) GetHostPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
+	// In stub, simply return the HostPort that was captured during CreateContainer.
+	return s.hostPort, nil
 }
 
 func (s *stubRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {

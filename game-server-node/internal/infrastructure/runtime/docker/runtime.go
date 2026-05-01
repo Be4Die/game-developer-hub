@@ -129,8 +129,19 @@ func (r *Runtime) BuildImage(ctx context.Context, imageTag string, internalPort 
 	return nil
 }
 
-// CreateContainer создаёт контейнер с заданными параметрами.
-func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, uint32, error) {
+// hostPortString возвращает строковое представление хостового порта для Docker.
+// Если порт равен 0, возвращается пустая строка — это сигнал Docker
+// выделить случайный свободный порт.
+func hostPortString(port uint32) string {
+	if port == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%d", port)
+}
+
+// CreateContainer создаёт контейнер (не запуская его). Возвращает ID контейнера.
+// Для получения присвоенного хостового порта используйте GetHostPort после старта контейнера.
+func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	const op = "Runtime.CreateContainer"
 
 	internalPort := nat.Port(fmt.Sprintf("%d/tcp", opts.InternalPort))
@@ -157,7 +168,7 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 	hostConfig := &container.HostConfig{
 		PortBindings: nat.PortMap{
 			internalPort: []nat.PortBinding{
-				{HostPort: fmt.Sprintf("%d", opts.HostPort)},
+				{HostPort: hostPortString(opts.HostPort)},
 			},
 		},
 	}
@@ -177,26 +188,16 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 
 	resp, err := r.cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {
-		return "", 0, fmt.Errorf("%s: %w", op, err)
-	}
-
-	// Get the actual host port (Docker may auto-assign when HostPort is "0").
-	actualPort, inspectErr := r.getPort(ctx, resp.ID, opts.InternalPort)
-	if inspectErr != nil {
-		r.log.Warn("failed to inspect container for port",
-			slog.String("op", op),
-			slog.String("error", inspectErr.Error()),
-		)
+		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	r.log.Info("container created",
 		slog.String("op", op),
 		slog.String("container_id", resp.ID[:12]),
 		slog.String("image", opts.ImageTag),
-		slog.Uint64("host_port", uint64(actualPort)),
 	)
 
-	return resp.ID, actualPort, nil
+	return resp.ID, nil
 }
 
 // StartContainer запускает остановленный контейнер.
@@ -301,32 +302,44 @@ func calculateNetworkBytes(stats *container.StatsResponse) uint64 {
 	return total
 }
 
-// getPort inspects the container's NetworkSettings.Ports and returns the actual host port.
-// When HostPort is "0", Docker assigns a random port — this retrieves it.
-func (r *Runtime) getPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
-	inspect, err := r.cli.ContainerInspect(ctx, containerID)
-	if err != nil {
-		return 0, fmt.Errorf("inspect container: %w", err)
-	}
-
+// GetHostPort возвращает реальный хост-порт, опубликованный для контейнера.
+// Вызывать после StartContainer, когда портовые привязки активны.
+// Для динамических портов (HostPort=0) Docker назначает случайный порт.
+// Метод повторяет попытки inspection, так как привязка может появиться не сразу.
+func (r *Runtime) GetHostPort(ctx context.Context, containerID string, internalPort uint32) (uint32, error) {
 	portKey := fmt.Sprintf("%d/tcp", internalPort)
-	bindings, ok := inspect.NetworkSettings.Ports[nat.Port(portKey)]
-	if !ok || len(bindings) == 0 {
-		return 0, fmt.Errorf("no port binding found for %s", portKey)
+
+	const maxRetries = 10
+	retryDelay := 200 * time.Millisecond
+
+	var lastErr error
+	for i := 0; i < maxRetries; i++ {
+		inspect, err := r.cli.ContainerInspect(ctx, containerID)
+		if err != nil {
+			return 0, fmt.Errorf("inspect container (attempt %d/%d): %w", i+1, maxRetries, err)
+		}
+
+		bindings, ok := inspect.NetworkSettings.Ports[nat.Port(portKey)]
+		if ok && len(bindings) > 0 {
+			hostPort := bindings[0].HostPort
+			if hostPort == "" {
+				lastErr = fmt.Errorf("HostPort empty for %s", portKey)
+				time.Sleep(retryDelay)
+				continue
+			}
+
+			var port uint32
+			if _, err := fmt.Sscanf(hostPort, "%d", &port); err != nil {
+				return 0, fmt.Errorf("parse host port %q: %w", hostPort, err)
+			}
+			return port, nil
+		}
+
+		lastErr = fmt.Errorf("no port binding for %s", portKey)
+		time.Sleep(retryDelay)
 	}
 
-	// Use the first binding's HostPort.
-	hostPort := bindings[0].HostPort
-	if hostPort == "" {
-		return 0, fmt.Errorf("empty HostPort for %s", portKey)
-	}
-
-	var port uint32
-	if _, err := fmt.Sscanf(hostPort, "%d", &port); err != nil {
-		return 0, fmt.Errorf("parse host port %q: %w", hostPort, err)
-	}
-
-	return port, nil
+	return 0, fmt.Errorf("failed to get port after %d retries: last error: %w", maxRetries, lastErr)
 }
 
 // extractArchive распаковывает zip или tar.gz архив в целевую директорию.
