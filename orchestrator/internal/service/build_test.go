@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 // ─── Mocks for BuildPipeline ────────────────────────────────────────────────
@@ -104,65 +104,6 @@ func (m *buildMockStorageFS) Exists(gameID int64, version string) bool {
 }
 
 // ─── Tests: generateDockerfile ───────────────────────────────────────────────
-
-func TestBuildPipeline_GenerateDockerfile_WithExecutable(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	// Create an executable file.
-	execPath := filepath.Join(tmpDir, "myserver")
-	if err := os.WriteFile(execPath, []byte("#!/bin/sh\necho hello"), 0o755); err != nil { //nolint:gosec // тест, нужен исполняемый файл
-		t.Fatalf("failed to create executable: %v", err)
-	}
-
-	pipeline := &BuildPipeline{}
-	dockerfile := pipeline.generateDockerfile(tmpDir, 8080)
-
-	if !strings.Contains(dockerfile, "EXPOSE 8080") {
-		t.Errorf("expected EXPOSE 8080 in Dockerfile, got:\n%s", dockerfile)
-	}
-	if !strings.Contains(dockerfile, `CMD ["./myserver"]`) {
-		t.Errorf("expected CMD [\"./myserver\"] in Dockerfile, got:\n%s", dockerfile)
-	}
-}
-
-func TestBuildPipeline_GenerateDockerfile_WithExe(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	// Create a .exe file (non-executable mode).
-	exePath := filepath.Join(tmpDir, "game.exe")
-	if err := os.WriteFile(exePath, []byte("MZ..."), 0o644); err != nil { //nolint:gosec // тест, нужен файл с обычными правами
-		t.Fatalf("failed to create exe: %v", err)
-	}
-
-	pipeline := &BuildPipeline{}
-	dockerfile := pipeline.generateDockerfile(tmpDir, 7777)
-
-	if !strings.Contains(dockerfile, "EXPOSE 7777") {
-		t.Errorf("expected EXPOSE 7777 in Dockerfile, got:\n%s", dockerfile)
-	}
-	if !strings.Contains(dockerfile, `CMD ["./game.exe"]`) {
-		t.Errorf("expected CMD [\"./game.exe\"] in Dockerfile, got:\n%s", dockerfile)
-	}
-}
-
-func TestBuildPipeline_GenerateDockerfile_NoExecutable_DefaultsToServer(t *testing.T) {
-	tmpDir := t.TempDir()
-
-	// Create a non-executable text file.
-	if err := os.WriteFile(filepath.Join(tmpDir, "readme.txt"), []byte("hello"), 0o644); err != nil { //nolint:gosec // тест, нужен читаемый файл
-		t.Fatalf("failed to create text file: %v", err)
-	}
-
-	pipeline := &BuildPipeline{}
-	dockerfile := pipeline.generateDockerfile(tmpDir, 3000)
-
-	if !strings.Contains(dockerfile, "EXPOSE 3000") {
-		t.Errorf("expected EXPOSE 3000 in Dockerfile, got:\n%s", dockerfile)
-	}
-	if !strings.Contains(dockerfile, `CMD ["server"]`) {
-		t.Errorf("expected CMD [\"server\"] in Dockerfile, got:\n%s", dockerfile)
-	}
-}
 
 // ─── Tests: extractZip ───────────────────────────────────────────────────────
 

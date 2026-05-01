@@ -267,17 +267,24 @@ func (m *instMockNodeStateStore) Delete(ctx context.Context, nodeID int64) error
 }
 
 type instMockNodeClient struct {
-	loadImageFn        func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
-	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
-	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
-	streamLogsFn       func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
-	getNodeInfoFn      func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
-	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
-	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
-	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
-	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
+	buildImageFn        func(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error
+	loadImageFn         func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
+	startInstanceFn     func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
+	stopInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
+	streamLogsFn        func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
+	getNodeInfoFn       func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
+	heartbeatFn         func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
+	listInstancesFn     func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
+	getInstanceFn       func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
+	getInstanceUsageFn  func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
 }
 
+func (m *instMockNodeClient) BuildImage(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error {
+	if m.buildImageFn != nil {
+		return m.buildImageFn(ctx, address, apiKey, metadata, archive)
+	}
+	return nil
+}
 func (m *instMockNodeClient) LoadImage(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
 	if m.loadImageFn != nil {
 		return m.loadImageFn(ctx, address, apiKey, meta, reader)

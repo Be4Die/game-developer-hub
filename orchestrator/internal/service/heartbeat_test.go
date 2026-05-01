@@ -20,6 +20,7 @@ type hbMockNodeClient struct {
 	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
 	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
 	streamLogsFn       func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
+	buildImageFn       func(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error
 	loadImageFn        func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
 	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
 	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
@@ -40,6 +41,12 @@ func (m *hbMockNodeClient) StopInstance(ctx context.Context, address, apiKey str
 }
 func (m *hbMockNodeClient) StreamLogs(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	return m.streamLogsFn(ctx, address, apiKey, req)
+}
+func (m *hbMockNodeClient) BuildImage(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error {
+	if m.buildImageFn != nil {
+		return m.buildImageFn(ctx, address, apiKey, metadata, archive)
+	}
+	return nil
 }
 func (m *hbMockNodeClient) LoadImage(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error) {
 	return m.loadImageFn(ctx, address, apiKey, meta, reader)
