@@ -129,6 +129,9 @@ func enrichedNodeToProto(n *service.EnrichedNode) *pb.Node {
 }
 
 func resourceUsageToProto(u *domain.ResourceUsage) *pb.ResourceUsage {
+	if u == nil {
+		return nil
+	}
 	return &pb.ResourceUsage{
 		CpuUsagePercent:    u.CPUUsagePercent,
 		MemoryUsedBytes:    u.MemoryUsedBytes,
