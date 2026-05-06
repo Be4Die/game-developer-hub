@@ -223,7 +223,7 @@ func instanceStatusFromProto(s pb.InstanceStatus) domain.InstanceStatus {
 	case pb.InstanceStatus_INSTANCE_STATUS_CRASHED:
 		return domain.InstanceStatusCrashed
 	default:
-		return 0
+		return domain.InstanceStatusStopped
 	}
 }
 

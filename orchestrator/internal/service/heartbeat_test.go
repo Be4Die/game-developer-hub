@@ -15,7 +15,7 @@ import (
 // ─── Mocks for HeartbeatService ─────────────────────────────────────────────
 
 type hbMockNodeClient struct {
-	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
+	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error)
 	getNodeInfoFn      func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
 	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
 	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
@@ -27,7 +27,7 @@ type hbMockNodeClient struct {
 	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
 }
 
-func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
+func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
 	return m.heartbeatFn(ctx, address, apiKey)
 }
 func (m *hbMockNodeClient) GetNodeInfo(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error) {
@@ -52,7 +52,10 @@ func (m *hbMockNodeClient) LoadImage(ctx context.Context, address, apiKey string
 	return m.loadImageFn(ctx, address, apiKey, meta, reader)
 }
 func (m *hbMockNodeClient) ListInstances(ctx context.Context, address, apiKey string) ([]*domain.Instance, error) {
-	return m.listInstancesFn(ctx, address, apiKey)
+	if m.listInstancesFn != nil {
+		return m.listInstancesFn(ctx, address, apiKey)
+	}
+	return []*domain.Instance{}, nil
 }
 func (m *hbMockNodeClient) GetInstance(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error) {
 	return m.getInstanceFn(ctx, address, apiKey, instanceID)
@@ -297,8 +300,8 @@ func TestHeartbeatService_CheckNode_Success(t *testing.T) {
 	}
 
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
-			return usage, nil
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+			return &domain.HeartbeatResult{Usage: usage, ActiveInstanceCount: 0}, nil
 		},
 	}
 
@@ -331,7 +334,7 @@ func TestHeartbeatService_CheckNode_HeartbeatError_WithinTimeout(t *testing.T) {
 	nodeRepo := &hbMockNodeRepo{}
 	nodeState := &hbMockNodeStateStore{}
 	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
 			return nil, context.DeadlineExceeded
 		},
 	}
@@ -393,12 +396,12 @@ func TestHeartbeatService_CheckNode_HeartbeatError_TimeoutExceeded(t *testing.T)
 		},
 	}
 
-	nodeState := &hbMockNodeStateStore{}
-	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
-			return nil, context.DeadlineExceeded
-		},
-	}
+nodeState := &hbMockNodeStateStore{}
+ 	nodeClient := &hbMockNodeClient{
+ 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+ 			return nil, context.DeadlineExceeded
+ 		},
+ 	}
 
 	svc := NewHeartbeatService(nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
@@ -443,13 +446,13 @@ func TestHeartbeatService_CheckNode_RecoverFromOffline(t *testing.T) {
 		updateHeartbeatFn: func(ctx context.Context, nodeID int64, u *domain.ResourceUsage) error { return nil },
 	}
 
-	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
-			return &domain.ResourceUsage{CPUUsagePercent: 10.0}, nil
-		},
-	}
+nodeClient := &hbMockNodeClient{
+ 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+ 			return &domain.HeartbeatResult{Usage: &domain.ResourceUsage{CPUUsagePercent: 10.0}}, nil
+ 		},
+ 	}
 
-	svc := NewHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
+ 	svc := NewHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -477,13 +480,13 @@ func TestHeartbeatService_CheckAllNodes_SkipMaintenance(t *testing.T) {
 		},
 	}
 
-	heartbeatCalled := false
-	nodeClient := &hbMockNodeClient{
-		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
-			heartbeatCalled = true
-			return nil, nil
-		},
-	}
+heartbeatCalled := false
+ 	nodeClient := &hbMockNodeClient{
+ 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+ 			heartbeatCalled = true
+ 			return nil, nil
+ 		},
+ 	}
 
 	svc := NewHeartbeatService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
