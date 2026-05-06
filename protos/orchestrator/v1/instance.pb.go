@@ -23,18 +23,16 @@ const (
 )
 
 type InstanceServiceStartRequest struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	GameId       int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	BuildVersion string                 `protobuf:"bytes,2,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
-	// Ручной (manual) или автоматический (auto) режим.
-	ServerMode       string            `protobuf:"bytes,3,opt,name=server_mode,json=serverMode,proto3" json:"server_mode,omitempty"`
-	Name             *string           `protobuf:"bytes,4,opt,name=name,proto3,oneof" json:"name,omitempty"`
-	PortAllocation   *PortAllocation   `protobuf:"bytes,5,opt,name=port_allocation,json=portAllocation,proto3,oneof" json:"port_allocation,omitempty"`
-	ResourceLimits   *ResourceLimits   `protobuf:"bytes,6,opt,name=resource_limits,json=resourceLimits,proto3,oneof" json:"resource_limits,omitempty"`
-	EnvVars          map[string]string `protobuf:"bytes,7,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Args             []string          `protobuf:"bytes,8,rep,name=args,proto3" json:"args,omitempty"`
-	DeveloperPayload map[string]string `protobuf:"bytes,9,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	MaxPlayers       *uint32           `protobuf:"varint,10,opt,name=max_players,json=maxPlayers,proto3,oneof" json:"max_players,omitempty"`
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	GameId           int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	BuildVersion     string                 `protobuf:"bytes,2,opt,name=build_version,json=buildVersion,proto3" json:"build_version,omitempty"`
+	Name             *string                `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	PortAllocation   *PortAllocation        `protobuf:"bytes,4,opt,name=port_allocation,json=portAllocation,proto3,oneof" json:"port_allocation,omitempty"`
+	ResourceLimits   *ResourceLimits        `protobuf:"bytes,5,opt,name=resource_limits,json=resourceLimits,proto3,oneof" json:"resource_limits,omitempty"`
+	EnvVars          map[string]string      `protobuf:"bytes,6,rep,name=env_vars,json=envVars,proto3" json:"env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Args             []string               `protobuf:"bytes,7,rep,name=args,proto3" json:"args,omitempty"`
+	DeveloperPayload map[string]string      `protobuf:"bytes,8,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	MaxPlayers       *uint32                `protobuf:"varint,9,opt,name=max_players,json=maxPlayers,proto3,oneof" json:"max_players,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -79,13 +77,6 @@ func (x *InstanceServiceStartRequest) GetGameId() int64 {
 func (x *InstanceServiceStartRequest) GetBuildVersion() string {
 	if x != nil {
 		return x.BuildVersion
-	}
-	return ""
-}
-
-func (x *InstanceServiceStartRequest) GetServerMode() string {
-	if x != nil {
-		return x.ServerMode
 	}
 	return ""
 }
@@ -716,20 +707,17 @@ var File_orchestrator_v1_instance_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\n" +
-	"\x1eorchestrator/v1/instance.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"\xf6\x05\n" +
+	"\x1eorchestrator/v1/instance.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"\xd5\x05\n" +
 	"\x1bInstanceServiceStartRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12#\n" +
-	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\x12\x1f\n" +
-	"\vserver_mode\x18\x03 \x01(\tR\n" +
-	"serverMode\x12\x17\n" +
-	"\x04name\x18\x04 \x01(\tH\x00R\x04name\x88\x01\x01\x12M\n" +
-	"\x0fport_allocation\x18\x05 \x01(\v2\x1f.orchestrator.v1.PortAllocationH\x01R\x0eportAllocation\x88\x01\x01\x12M\n" +
-	"\x0fresource_limits\x18\x06 \x01(\v2\x1f.orchestrator.v1.ResourceLimitsH\x02R\x0eresourceLimits\x88\x01\x01\x12T\n" +
-	"\benv_vars\x18\a \x03(\v29.orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntryR\aenvVars\x12\x12\n" +
-	"\x04args\x18\b \x03(\tR\x04args\x12o\n" +
-	"\x11developer_payload\x18\t \x03(\v2B.orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntryR\x10developerPayload\x12$\n" +
-	"\vmax_players\x18\n" +
-	" \x01(\rH\x03R\n" +
+	"\rbuild_version\x18\x02 \x01(\tR\fbuildVersion\x12\x17\n" +
+	"\x04name\x18\x03 \x01(\tH\x00R\x04name\x88\x01\x01\x12M\n" +
+	"\x0fport_allocation\x18\x04 \x01(\v2\x1f.orchestrator.v1.PortAllocationH\x01R\x0eportAllocation\x88\x01\x01\x12M\n" +
+	"\x0fresource_limits\x18\x05 \x01(\v2\x1f.orchestrator.v1.ResourceLimitsH\x02R\x0eresourceLimits\x88\x01\x01\x12T\n" +
+	"\benv_vars\x18\x06 \x03(\v29.orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntryR\aenvVars\x12\x12\n" +
+	"\x04args\x18\a \x03(\tR\x04args\x12o\n" +
+	"\x11developer_payload\x18\b \x03(\v2B.orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntryR\x10developerPayload\x12$\n" +
+	"\vmax_players\x18\t \x01(\rH\x03R\n" +
 	"maxPlayers\x88\x01\x01\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

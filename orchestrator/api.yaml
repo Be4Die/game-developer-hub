@@ -230,19 +230,10 @@ paths:
               type: object
               required:
                 - build_version
-                - server_mode
               properties:
                 build_version:
                   type: string
                   description: Версия билда для запуска
-                server_mode:
-                  type: string
-                  enum:
-                    - manual
-                    - auto
-                  description: |
-                    Ручной режим — разработчик сам управляет жизненным циклом.
-                    Автоматический — оркестратор поддерживает работоспособность.
                 name:
                   type: string
                   maxLength: 128

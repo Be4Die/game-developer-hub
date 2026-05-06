@@ -51,15 +51,13 @@ service InstanceService {
 message InstanceServiceStartRequest {
   int64 game_id = 1;
   string build_version = 2;
-  // Ручной (manual) или автоматический (auto) режим.
-  string server_mode = 3;
-  optional string name = 4;
-  optional PortAllocation port_allocation = 5;
-  optional ResourceLimits resource_limits = 6;
-  map<string, string> env_vars = 7;
-  repeated string args = 8;
-  map<string, string> developer_payload = 9;
-  optional uint32 max_players = 10;
+  optional string name = 3;
+  optional PortAllocation port_allocation = 4;
+  optional ResourceLimits resource_limits = 5;
+  map<string, string> env_vars = 6;
+  repeated string args = 7;
+  map<string, string> developer_payload = 8;
+  optional uint32 max_players = 9;
 }
 
 message InstanceServiceStartResponse {

@@ -74,17 +74,6 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Режим работы *</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" v-model="startForm.server_mode" value="manual" /> Ручной
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="startForm.server_mode" value="auto" /> Автоматический
-              </label>
-            </div>
-          </div>
-          <div class="form-group">
             <label>Имя (опционально)</label>
             <input type="text" v-model="startForm.name" class="form-input" placeholder="EU-1" maxlength="128" />
           </div>
@@ -109,7 +98,7 @@
         </div>
         <div v-if="startError" class="start-error">{{ startError }}</div>
         <div class="modal-actions">
-          <button class="btn-primary" @click="submitStart" :disabled="!startForm.build_version || !startForm.server_mode || starting">
+          <button class="btn-primary" @click="submitStart" :disabled="!startForm.build_version || starting">
             {{ starting ? 'Запуск...' : 'Запустить' }}
           </button>
           <button class="btn-outline" @click="showStartForm = false">Отмена</button>
@@ -141,7 +130,6 @@ const stoppingId = ref(null)
 
 const startForm = reactive({
   build_version: '',
-  server_mode: 'manual',
   name: '',
   max_players: null,
   env_vars: {},
@@ -176,7 +164,6 @@ async function submitStart() {
   startError.value = null
   const payload = {
     build_version: startForm.build_version,
-    server_mode: startForm.server_mode,
   }
   if (startForm.name) payload.name = startForm.name
   if (startForm.max_players) payload.max_players = startForm.max_players
@@ -187,7 +174,7 @@ async function submitStart() {
     await startInstance(props.gameId, payload)
     showToast('Инстанс запускается...')
     showStartForm.value = false
-    Object.assign(startForm, { build_version: '', server_mode: 'manual', name: '', max_players: null, env_vars: {}, args: [] })
+    Object.assign(startForm, { build_version: '', name: '', max_players: null, env_vars: {}, args: [] })
     await fetchInstances()
   } catch (e) {
     if (e.response?.status === 409) {
@@ -279,8 +266,6 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--bg-input); color: var(--text-main); font-size: 0.88rem;
 }
-.radio-group { display: flex; gap: 16px; padding-top: 4px; }
-.radio-label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer; }
 
 .args-list { display: flex; flex-direction: column; gap: 8px; }
 .arg-row { display: flex; gap: 8px; }

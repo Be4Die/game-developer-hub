@@ -48,7 +48,6 @@ entity "game_drafts" as drafts {
   cover_tall_url : varchar(512)
   video_url : varchar(512)
   * status : enum(draft, on_moderation, approved, rejected)
-  * server_mode : enum(manual, auto)
   * created_at : timestamp
   * updated_at : timestamp
 }
