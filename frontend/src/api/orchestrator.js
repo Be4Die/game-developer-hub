@@ -65,7 +65,19 @@ export function startInstance(gameId, payload) {
 
 export function stopInstance(gameId, instanceId, timeout = 30) {
   return http
-    .delete(`/games/${gameId}/instances/${instanceId}`, { params: { timeout } })
+    .post(`/games/${gameId}/instances/${instanceId}:stop`, { timeout })
+    .then((r) => r.data.instance ?? r.data);
+}
+
+export function deleteInstance(gameId, instanceId) {
+  return http
+    .delete(`/games/${gameId}/instances/${instanceId}`)
+    .then((r) => r.data);
+}
+
+export function restartInstance(gameId, instanceId) {
+  return http
+    .post(`/games/${gameId}/instances/${instanceId}:restart`)
     .then((r) => r.data.instance ?? r.data);
 }
 

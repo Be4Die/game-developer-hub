@@ -344,6 +344,45 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 	return nil
 }
 
+// DeleteInstance удаляет инстанс и его контейнер без graceful остановки.
+func (s *DeploymentService) DeleteInstance(ctx context.Context, instanceID int64) error {
+	const op = "DeploymentService.DeleteInstance"
+
+	instance, err := s.storage.GetInstanceByID(ctx, instanceID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Force stop the container (0 timeout = immediate kill).
+	if err := s.runtime.StopContainer(ctx, instance.ContainerID, 0); err != nil {
+		s.log.Warn("failed to stop container during delete",
+			slog.String("op", op),
+			slog.Int64("instance_id", instanceID),
+			slog.String("error", err.Error()),
+		)
+	}
+
+	// Remove the container.
+	if err := s.runtime.RemoveContainer(ctx, instance.ContainerID); err != nil {
+		s.log.Warn("failed to remove container during delete",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
+
+	// Delete the instance record from storage.
+	if err := s.storage.DeleteInstance(ctx, instanceID); err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	s.log.Info("instance deleted",
+		slog.String("op", op),
+		slog.Int64("instance_id", instanceID),
+	)
+
+	return nil
+}
+
 // StreamLogs возвращает поток логов контейнера инстанса.
 func (s *DeploymentService) StreamLogs(ctx context.Context, instanceID int64, follow bool) (io.ReadCloser, error) {
 	const op = "DeploymentService.StreamLogs"

@@ -33,6 +33,21 @@ service InstanceService {
     };
   }
 
+  // Удалить инстанс.
+  rpc Delete(InstanceServiceDeleteRequest) returns (InstanceServiceDeleteResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/games/{game_id}/instances/{instance_id}"
+    };
+  }
+
+  // Перезапустить инстанс.
+  rpc Restart(InstanceServiceRestartRequest) returns (InstanceServiceRestartResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/instances/{instance_id}:restart"
+      body: "*"
+    };
+  }
+
   // Поток журналов инстанса (server streaming) — использует SSE для HTTP.
   rpc StreamLogs(InstanceServiceStreamLogsRequest) returns (stream InstanceServiceStreamLogsResponse) {
     option (google.api.http) = {
@@ -96,6 +111,26 @@ message InstanceServiceStopRequest {
 }
 
 message InstanceServiceStopResponse {
+  Instance instance = 1;
+}
+
+// ─── Delete ─────────────────────────────────────────────────────────────────
+
+message InstanceServiceDeleteRequest {
+  int64 game_id = 1;
+  int64 instance_id = 2;
+}
+
+message InstanceServiceDeleteResponse {}
+
+// ─── Restart ────────────────────────────────────────────────────────────────
+
+message InstanceServiceRestartRequest {
+  int64 game_id = 1;
+  int64 instance_id = 2;
+}
+
+message InstanceServiceRestartResponse {
   Instance instance = 1;
 }
 

@@ -199,6 +199,18 @@ func (h *DeploymentHandler) StopInstance(
 	return &pb.StopInstanceResponse{}, nil
 }
 
+// DeleteInstance удаляет инстанс и его контейнер.
+func (h *DeploymentHandler) DeleteInstance(
+	ctx context.Context,
+	req *pb.DeleteInstanceRequest,
+) (*pb.DeleteInstanceResponse, error) {
+	if err := h.svc.DeleteInstance(ctx, req.GetInstanceId()); err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.DeleteInstanceResponse{}, nil
+}
+
 // StreamLogs возвращает поток логов контейнера.
 func (h *DeploymentHandler) StreamLogs(
 	req *pb.StreamLogsRequest,

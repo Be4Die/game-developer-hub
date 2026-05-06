@@ -8,8 +8,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -255,6 +255,25 @@ func (c *Client) StopInstance(ctx context.Context, nodeAddress, apiKey string, i
 	})
 	if err != nil {
 		return fmt.Errorf("StopInstance: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteInstance удаляет экземпляр и его контейнер.
+func (c *Client) DeleteInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return err
+	}
+
+	ctx = authContext(ctx, apiKey)
+	depClient := pb.NewDeploymentServiceClient(conn)
+	_, err = depClient.DeleteInstance(ctx, &pb.DeleteInstanceRequest{
+		InstanceId: instanceID,
+	})
+	if err != nil {
+		return fmt.Errorf("DeleteInstance: %w", err)
 	}
 
 	return nil

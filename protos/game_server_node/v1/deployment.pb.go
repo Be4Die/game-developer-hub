@@ -925,6 +925,86 @@ func (*StopInstanceResponse) Descriptor() ([]byte, []int) {
 	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{12}
 }
 
+type DeleteInstanceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    int64                  `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteInstanceRequest) Reset() {
+	*x = DeleteInstanceRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteInstanceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteInstanceRequest) ProtoMessage() {}
+
+func (x *DeleteInstanceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteInstanceRequest.ProtoReflect.Descriptor instead.
+func (*DeleteInstanceRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *DeleteInstanceRequest) GetInstanceId() int64 {
+	if x != nil {
+		return x.InstanceId
+	}
+	return 0
+}
+
+type DeleteInstanceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteInstanceResponse) Reset() {
+	*x = DeleteInstanceResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteInstanceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteInstanceResponse) ProtoMessage() {}
+
+func (x *DeleteInstanceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteInstanceResponse.ProtoReflect.Descriptor instead.
+func (*DeleteInstanceResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{14}
+}
+
 type StreamLogsRequest struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
 	InstanceId   int64                  `protobuf:"varint,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
@@ -939,7 +1019,7 @@ type StreamLogsRequest struct {
 
 func (x *StreamLogsRequest) Reset() {
 	*x = StreamLogsRequest{}
-	mi := &file_game_server_node_v1_deployment_proto_msgTypes[13]
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +1031,7 @@ func (x *StreamLogsRequest) String() string {
 func (*StreamLogsRequest) ProtoMessage() {}
 
 func (x *StreamLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_game_server_node_v1_deployment_proto_msgTypes[13]
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +1044,7 @@ func (x *StreamLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamLogsRequest.ProtoReflect.Descriptor instead.
 func (*StreamLogsRequest) Descriptor() ([]byte, []int) {
-	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{13}
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *StreamLogsRequest) GetInstanceId() int64 {
@@ -1013,7 +1093,7 @@ type StreamLogsResponse struct {
 
 func (x *StreamLogsResponse) Reset() {
 	*x = StreamLogsResponse{}
-	mi := &file_game_server_node_v1_deployment_proto_msgTypes[14]
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1105,7 @@ func (x *StreamLogsResponse) String() string {
 func (*StreamLogsResponse) ProtoMessage() {}
 
 func (x *StreamLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_game_server_node_v1_deployment_proto_msgTypes[14]
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1118,7 @@ func (x *StreamLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamLogsResponse.ProtoReflect.Descriptor instead.
 func (*StreamLogsResponse) Descriptor() ([]byte, []int) {
-	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{14}
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *StreamLogsResponse) GetTimestamp() *timestamppb.Timestamp {
@@ -1134,7 +1214,11 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x12'\n" +
 	"\x0ftimeout_seconds\x18\x02 \x01(\rR\x0etimeoutSeconds\"\x16\n" +
-	"\x14StopInstanceResponse\"\xd3\x01\n" +
+	"\x14StopInstanceResponse\"8\n" +
+	"\x15DeleteInstanceRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\x03R\n" +
+	"instanceId\"\x18\n" +
+	"\x16DeleteInstanceResponse\"\xd3\x01\n" +
 	"\x11StreamLogsRequest\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x12#\n" +
@@ -1150,13 +1234,14 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\tLogSource\x12\x1a\n" +
 	"\x16LOG_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOG_SOURCE_STDOUT\x10\x01\x12\x15\n" +
-	"\x11LOG_SOURCE_STDERR\x10\x022\x80\x04\n" +
+	"\x11LOG_SOURCE_STDERR\x10\x022\xeb\x04\n" +
 	"\x11DeploymentService\x12\\\n" +
 	"\tLoadImage\x12%.game_server_node.v1.LoadImageRequest\x1a&.game_server_node.v1.LoadImageResponse(\x01\x12_\n" +
 	"\n" +
 	"BuildImage\x12&.game_server_node.v1.BuildImageRequest\x1a'.game_server_node.v1.BuildImageResponse(\x01\x12f\n" +
 	"\rStartInstance\x12).game_server_node.v1.StartInstanceRequest\x1a*.game_server_node.v1.StartInstanceResponse\x12c\n" +
-	"\fStopInstance\x12(.game_server_node.v1.StopInstanceRequest\x1a).game_server_node.v1.StopInstanceResponse\x12_\n" +
+	"\fStopInstance\x12(.game_server_node.v1.StopInstanceRequest\x1a).game_server_node.v1.StopInstanceResponse\x12i\n" +
+	"\x0eDeleteInstance\x12*.game_server_node.v1.DeleteInstanceRequest\x1a+.game_server_node.v1.DeleteInstanceResponse\x12_\n" +
 	"\n" +
 	"StreamLogs\x12&.game_server_node.v1.StreamLogsRequest\x1a'.game_server_node.v1.StreamLogsResponse0\x01B\xe3\x01\n" +
 	"\x17com.game_server_node.v1B\x0fDeploymentProtoP\x01ZRgithub.com/Be4Die/game-developer-hub/protos/game_server_node/v1;game_server_nodev1\xa2\x02\x03GXX\xaa\x02\x11GameServerNode.V1\xca\x02\x11GameServerNode\\V1\xe2\x02\x1dGameServerNode\\V1\\GPBMetadata\xea\x02\x12GameServerNode::V1b\x06proto3"
@@ -1174,53 +1259,57 @@ func file_game_server_node_v1_deployment_proto_rawDescGZIP() []byte {
 }
 
 var file_game_server_node_v1_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_game_server_node_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_game_server_node_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_game_server_node_v1_deployment_proto_goTypes = []any{
-	(LogSource)(0),                // 0: game_server_node.v1.LogSource
-	(*LoadImageRequest)(nil),      // 1: game_server_node.v1.LoadImageRequest
-	(*ImageMetadata)(nil),         // 2: game_server_node.v1.ImageMetadata
-	(*LoadImageResponse)(nil),     // 3: game_server_node.v1.LoadImageResponse
-	(*BuildImageRequest)(nil),     // 4: game_server_node.v1.BuildImageRequest
-	(*BuildImageMetadata)(nil),    // 5: game_server_node.v1.BuildImageMetadata
-	(*BuildImageResponse)(nil),    // 6: game_server_node.v1.BuildImageResponse
-	(*PortAllocation)(nil),        // 7: game_server_node.v1.PortAllocation
-	(*PortRange)(nil),             // 8: game_server_node.v1.PortRange
-	(*ResourceLimits)(nil),        // 9: game_server_node.v1.ResourceLimits
-	(*StartInstanceRequest)(nil),  // 10: game_server_node.v1.StartInstanceRequest
-	(*StartInstanceResponse)(nil), // 11: game_server_node.v1.StartInstanceResponse
-	(*StopInstanceRequest)(nil),   // 12: game_server_node.v1.StopInstanceRequest
-	(*StopInstanceResponse)(nil),  // 13: game_server_node.v1.StopInstanceResponse
-	(*StreamLogsRequest)(nil),     // 14: game_server_node.v1.StreamLogsRequest
-	(*StreamLogsResponse)(nil),    // 15: game_server_node.v1.StreamLogsResponse
-	nil,                           // 16: game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
-	nil,                           // 17: game_server_node.v1.StartInstanceRequest.EnvVarsEntry
-	(Protocol)(0),                 // 18: game_server_node.v1.Protocol
-	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
+	(LogSource)(0),                 // 0: game_server_node.v1.LogSource
+	(*LoadImageRequest)(nil),       // 1: game_server_node.v1.LoadImageRequest
+	(*ImageMetadata)(nil),          // 2: game_server_node.v1.ImageMetadata
+	(*LoadImageResponse)(nil),      // 3: game_server_node.v1.LoadImageResponse
+	(*BuildImageRequest)(nil),      // 4: game_server_node.v1.BuildImageRequest
+	(*BuildImageMetadata)(nil),     // 5: game_server_node.v1.BuildImageMetadata
+	(*BuildImageResponse)(nil),     // 6: game_server_node.v1.BuildImageResponse
+	(*PortAllocation)(nil),         // 7: game_server_node.v1.PortAllocation
+	(*PortRange)(nil),              // 8: game_server_node.v1.PortRange
+	(*ResourceLimits)(nil),         // 9: game_server_node.v1.ResourceLimits
+	(*StartInstanceRequest)(nil),   // 10: game_server_node.v1.StartInstanceRequest
+	(*StartInstanceResponse)(nil),  // 11: game_server_node.v1.StartInstanceResponse
+	(*StopInstanceRequest)(nil),    // 12: game_server_node.v1.StopInstanceRequest
+	(*StopInstanceResponse)(nil),   // 13: game_server_node.v1.StopInstanceResponse
+	(*DeleteInstanceRequest)(nil),  // 14: game_server_node.v1.DeleteInstanceRequest
+	(*DeleteInstanceResponse)(nil), // 15: game_server_node.v1.DeleteInstanceResponse
+	(*StreamLogsRequest)(nil),      // 16: game_server_node.v1.StreamLogsRequest
+	(*StreamLogsResponse)(nil),     // 17: game_server_node.v1.StreamLogsResponse
+	nil,                            // 18: game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
+	nil,                            // 19: game_server_node.v1.StartInstanceRequest.EnvVarsEntry
+	(Protocol)(0),                  // 20: game_server_node.v1.Protocol
+	(*timestamppb.Timestamp)(nil),  // 21: google.protobuf.Timestamp
 }
 var file_game_server_node_v1_deployment_proto_depIdxs = []int32{
 	2,  // 0: game_server_node.v1.LoadImageRequest.metadata:type_name -> game_server_node.v1.ImageMetadata
 	5,  // 1: game_server_node.v1.BuildImageRequest.metadata:type_name -> game_server_node.v1.BuildImageMetadata
 	8,  // 2: game_server_node.v1.PortAllocation.range:type_name -> game_server_node.v1.PortRange
-	18, // 3: game_server_node.v1.StartInstanceRequest.protocol:type_name -> game_server_node.v1.Protocol
+	20, // 3: game_server_node.v1.StartInstanceRequest.protocol:type_name -> game_server_node.v1.Protocol
 	7,  // 4: game_server_node.v1.StartInstanceRequest.port_allocation:type_name -> game_server_node.v1.PortAllocation
-	16, // 5: game_server_node.v1.StartInstanceRequest.developer_payload:type_name -> game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
-	17, // 6: game_server_node.v1.StartInstanceRequest.env_vars:type_name -> game_server_node.v1.StartInstanceRequest.EnvVarsEntry
+	18, // 5: game_server_node.v1.StartInstanceRequest.developer_payload:type_name -> game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
+	19, // 6: game_server_node.v1.StartInstanceRequest.env_vars:type_name -> game_server_node.v1.StartInstanceRequest.EnvVarsEntry
 	9,  // 7: game_server_node.v1.StartInstanceRequest.resource_limits:type_name -> game_server_node.v1.ResourceLimits
-	19, // 8: game_server_node.v1.StreamLogsRequest.since:type_name -> google.protobuf.Timestamp
-	19, // 9: game_server_node.v1.StreamLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	21, // 8: game_server_node.v1.StreamLogsRequest.since:type_name -> google.protobuf.Timestamp
+	21, // 9: game_server_node.v1.StreamLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 10: game_server_node.v1.StreamLogsResponse.source:type_name -> game_server_node.v1.LogSource
 	1,  // 11: game_server_node.v1.DeploymentService.LoadImage:input_type -> game_server_node.v1.LoadImageRequest
 	4,  // 12: game_server_node.v1.DeploymentService.BuildImage:input_type -> game_server_node.v1.BuildImageRequest
 	10, // 13: game_server_node.v1.DeploymentService.StartInstance:input_type -> game_server_node.v1.StartInstanceRequest
 	12, // 14: game_server_node.v1.DeploymentService.StopInstance:input_type -> game_server_node.v1.StopInstanceRequest
-	14, // 15: game_server_node.v1.DeploymentService.StreamLogs:input_type -> game_server_node.v1.StreamLogsRequest
-	3,  // 16: game_server_node.v1.DeploymentService.LoadImage:output_type -> game_server_node.v1.LoadImageResponse
-	6,  // 17: game_server_node.v1.DeploymentService.BuildImage:output_type -> game_server_node.v1.BuildImageResponse
-	11, // 18: game_server_node.v1.DeploymentService.StartInstance:output_type -> game_server_node.v1.StartInstanceResponse
-	13, // 19: game_server_node.v1.DeploymentService.StopInstance:output_type -> game_server_node.v1.StopInstanceResponse
-	15, // 20: game_server_node.v1.DeploymentService.StreamLogs:output_type -> game_server_node.v1.StreamLogsResponse
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
+	14, // 15: game_server_node.v1.DeploymentService.DeleteInstance:input_type -> game_server_node.v1.DeleteInstanceRequest
+	16, // 16: game_server_node.v1.DeploymentService.StreamLogs:input_type -> game_server_node.v1.StreamLogsRequest
+	3,  // 17: game_server_node.v1.DeploymentService.LoadImage:output_type -> game_server_node.v1.LoadImageResponse
+	6,  // 18: game_server_node.v1.DeploymentService.BuildImage:output_type -> game_server_node.v1.BuildImageResponse
+	11, // 19: game_server_node.v1.DeploymentService.StartInstance:output_type -> game_server_node.v1.StartInstanceResponse
+	13, // 20: game_server_node.v1.DeploymentService.StopInstance:output_type -> game_server_node.v1.StopInstanceResponse
+	15, // 21: game_server_node.v1.DeploymentService.DeleteInstance:output_type -> game_server_node.v1.DeleteInstanceResponse
+	17, // 22: game_server_node.v1.DeploymentService.StreamLogs:output_type -> game_server_node.v1.StreamLogsResponse
+	17, // [17:23] is the sub-list for method output_type
+	11, // [11:17] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -1247,14 +1336,14 @@ func file_game_server_node_v1_deployment_proto_init() {
 	}
 	file_game_server_node_v1_deployment_proto_msgTypes[8].OneofWrappers = []any{}
 	file_game_server_node_v1_deployment_proto_msgTypes[9].OneofWrappers = []any{}
-	file_game_server_node_v1_deployment_proto_msgTypes[13].OneofWrappers = []any{}
+	file_game_server_node_v1_deployment_proto_msgTypes[15].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_server_node_v1_deployment_proto_rawDesc), len(file_game_server_node_v1_deployment_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

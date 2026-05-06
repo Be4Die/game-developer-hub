@@ -287,6 +287,7 @@ type instMockNodeClient struct {
 	listInstancesFn     func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
 	getInstanceFn       func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
 	getInstanceUsageFn  func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
+	deleteInstanceFn    func(ctx context.Context, address, apiKey string, instanceID int64) error
 }
 
 func (m *instMockNodeClient) BuildImage(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error {
@@ -348,6 +349,12 @@ func (m *instMockNodeClient) GetInstanceUsage(ctx context.Context, address, apiK
 		return m.getInstanceUsageFn(ctx, address, apiKey, instanceID)
 	}
 	return nil, nil
+}
+func (m *instMockNodeClient) DeleteInstance(ctx context.Context, address, apiKey string, instanceID int64) error {
+	if m.deleteInstanceFn != nil {
+		return m.deleteInstanceFn(ctx, address, apiKey, instanceID)
+	}
+	return nil
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

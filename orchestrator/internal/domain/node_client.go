@@ -23,6 +23,9 @@ type NodeClient interface {
 	// StopInstance выполняет graceful остановку экземпляра.
 	StopInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error
 
+	// DeleteInstance удаляет экземпляр и его контейнер.
+	DeleteInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) error
+
 	// StreamLogs открывает поток журналов инстанса. Читатель должен закрыть stream
 	// для освобождения ресурсов.
 	StreamLogs(ctx context.Context, nodeAddress, apiKey string, req StreamLogsRequest) (LogStream, error)

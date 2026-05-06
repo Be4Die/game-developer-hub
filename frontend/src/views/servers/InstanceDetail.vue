@@ -10,8 +10,14 @@
         <StatusBadge v-if="instance.status" :status="instance.status" type="instance" />
       </div>
       <div class="header-actions">
+        <button v-if="instance.status === 'running'" class="btn-restart" @click="handleRestart" :disabled="restarting">
+          <RotateCcw class="icon-sm" /> {{ restarting ? 'Перезапуск...' : 'Перезапустить' }}
+        </button>
         <button v-if="instance.status === 'running'" class="btn-stop-lg" @click="handleStop" :disabled="stopping">
           <Square class="icon-sm" /> {{ stopping ? 'Остановка...' : 'Остановить' }}
+        </button>
+        <button class="btn-delete" @click="handleDelete" :disabled="deleting">
+          <Trash2 class="icon-sm" /> {{ deleting ? 'Удаление...' : 'Удалить' }}
         </button>
       </div>
     </div>
@@ -74,11 +80,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Square, AlertCircle } from 'lucide-vue-next'
+import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
 import LogsViewer from '../../components/orchestrator/LogsViewer.vue'
-import { getInstance, getInstanceUsage, stopInstance } from '../../api/orchestrator'
+import { getInstance, getInstanceUsage, stopInstance, deleteInstance, restartInstance } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({
@@ -92,6 +98,8 @@ const usage = ref({ cpu_usage_percent: 0, memory_used_bytes: 0, disk_used_bytes:
 const loading = ref(true)
 const error = ref(null)
 const stopping = ref(false)
+const deleting = ref(false)
+const restarting = ref(false)
 
 let usageInterval = null
 
@@ -127,6 +135,33 @@ async function handleStop() {
   }
 }
 
+async function handleRestart() {
+  restarting.value = true
+  try {
+    await restartInstance(props.gameId, props.instanceId)
+    showToast('Инстанс перезапускается...')
+    await fetchInstance()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка перезапуска', 'error')
+  } finally {
+    restarting.value = false
+  }
+}
+
+async function handleDelete() {
+  if (!confirm('Удалить инстанс? Это действие нельзя отменить.')) return
+  deleting.value = true
+  try {
+    await deleteInstance(props.gameId, props.instanceId)
+    showToast('Инстанс удалён')
+    router.push(`/projects/${props.gameId}/servers/instances`)
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error')
+  } finally {
+    deleting.value = false
+  }
+}
+
 function formatDateTime(ts) {
   if (!ts) return '—'
   return new Date(ts).toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -158,6 +193,22 @@ onUnmounted(() => {
 }
 .btn-stop-lg:hover { background: var(--danger-light); }
 .btn-stop-lg:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-restart {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--primary); color: var(--primary);
+  padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;
+}
+.btn-restart:hover { background: var(--primary-light); }
+.btn-restart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-delete {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--danger); color: var(--danger);
+  padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;
+}
+.btn-delete:hover { background: var(--danger-light); }
+.btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .error-banner {
   display: flex; align-items: center; gap: 8px;

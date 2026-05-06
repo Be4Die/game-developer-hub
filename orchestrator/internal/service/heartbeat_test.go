@@ -25,6 +25,7 @@ type hbMockNodeClient struct {
 	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
 	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
 	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
+	deleteInstanceFn   func(ctx context.Context, address, apiKey string, instanceID int64) error
 }
 
 func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
@@ -62,6 +63,12 @@ func (m *hbMockNodeClient) GetInstance(ctx context.Context, address, apiKey stri
 }
 func (m *hbMockNodeClient) GetInstanceUsage(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error) {
 	return m.getInstanceUsageFn(ctx, address, apiKey, instanceID)
+}
+func (m *hbMockNodeClient) DeleteInstance(ctx context.Context, address, apiKey string, instanceID int64) error {
+	if m.deleteInstanceFn != nil {
+		return m.deleteInstanceFn(ctx, address, apiKey, instanceID)
+	}
+	return nil
 }
 
 type hbMockNodeRepo struct {

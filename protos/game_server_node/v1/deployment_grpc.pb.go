@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DeploymentService_LoadImage_FullMethodName     = "/game_server_node.v1.DeploymentService/LoadImage"
-	DeploymentService_BuildImage_FullMethodName    = "/game_server_node.v1.DeploymentService/BuildImage"
-	DeploymentService_StartInstance_FullMethodName = "/game_server_node.v1.DeploymentService/StartInstance"
-	DeploymentService_StopInstance_FullMethodName  = "/game_server_node.v1.DeploymentService/StopInstance"
-	DeploymentService_StreamLogs_FullMethodName    = "/game_server_node.v1.DeploymentService/StreamLogs"
+	DeploymentService_LoadImage_FullMethodName      = "/game_server_node.v1.DeploymentService/LoadImage"
+	DeploymentService_BuildImage_FullMethodName     = "/game_server_node.v1.DeploymentService/BuildImage"
+	DeploymentService_StartInstance_FullMethodName  = "/game_server_node.v1.DeploymentService/StartInstance"
+	DeploymentService_StopInstance_FullMethodName   = "/game_server_node.v1.DeploymentService/StopInstance"
+	DeploymentService_DeleteInstance_FullMethodName = "/game_server_node.v1.DeploymentService/DeleteInstance"
+	DeploymentService_StreamLogs_FullMethodName     = "/game_server_node.v1.DeploymentService/StreamLogs"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -43,6 +44,8 @@ type DeploymentServiceClient interface {
 	StartInstance(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
 	StopInstance(ctx context.Context, in *StopInstanceRequest, opts ...grpc.CallOption) (*StopInstanceResponse, error)
+	// Удаление экземпляра и его контейнера.
+	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
 	StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamLogsResponse], error)
 }
@@ -101,6 +104,16 @@ func (c *deploymentServiceClient) StopInstance(ctx context.Context, in *StopInst
 	return out, nil
 }
 
+func (c *deploymentServiceClient) DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteInstanceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_DeleteInstance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *deploymentServiceClient) StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamLogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[2], DeploymentService_StreamLogs_FullMethodName, cOpts...)
@@ -137,6 +150,8 @@ type DeploymentServiceServer interface {
 	StartInstance(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
 	StopInstance(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error)
+	// Удаление экземпляра и его контейнера.
+	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
 	StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error
 	mustEmbedUnimplementedDeploymentServiceServer()
@@ -160,6 +175,9 @@ func (UnimplementedDeploymentServiceServer) StartInstance(context.Context, *Star
 }
 func (UnimplementedDeploymentServiceServer) StopInstance(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StopInstance not implemented")
+}
+func (UnimplementedDeploymentServiceServer) DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteInstance not implemented")
 }
 func (UnimplementedDeploymentServiceServer) StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
@@ -235,6 +253,24 @@ func _DeploymentService_StopInstance_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeploymentService_DeleteInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).DeleteInstance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_DeleteInstance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).DeleteInstance(ctx, req.(*DeleteInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DeploymentService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamLogsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -260,6 +296,10 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopInstance",
 			Handler:    _DeploymentService_StopInstance_Handler,
+		},
+		{
+			MethodName: "DeleteInstance",
+			Handler:    _DeploymentService_DeleteInstance_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

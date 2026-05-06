@@ -106,6 +106,29 @@ func (h *InstanceHandler) Stop(ctx context.Context, req *pb.InstanceServiceStopR
 	return &pb.InstanceServiceStopResponse{Instance: instanceToProto(instance)}, nil
 }
 
+// Delete удаляет инстанс.
+func (h *InstanceHandler) Delete(ctx context.Context, req *pb.InstanceServiceDeleteRequest) (*pb.InstanceServiceDeleteResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	if err := h.instanceService.DeleteInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId()); err != nil {
+		return nil, domainError(err, "delete instance")
+	}
+
+	return &pb.InstanceServiceDeleteResponse{}, nil
+}
+
+// Restart перезапускает инстанс.
+func (h *InstanceHandler) Restart(ctx context.Context, req *pb.InstanceServiceRestartRequest) (*pb.InstanceServiceRestartResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	instance, err := h.instanceService.RestartInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
+	if err != nil {
+		return nil, domainError(err, "restart instance")
+	}
+
+	return &pb.InstanceServiceRestartResponse{Instance: instanceToProto(instance)}, nil
+}
+
 // StreamLogs стримит логи инстанса.
 func (h *InstanceHandler) StreamLogs(req *pb.InstanceServiceStreamLogsRequest, stream pb.InstanceService_StreamLogsServer) error {
 	ctx := stream.Context()

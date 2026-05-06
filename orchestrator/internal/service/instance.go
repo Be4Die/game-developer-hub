@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 // InstanceService управляет жизненным циклом экземпляров игровых серверов.
@@ -212,6 +212,87 @@ func (s *InstanceService) StopInstance(ctx context.Context, ownerID string, game
 	}
 
 	return instance, nil
+}
+
+// DeleteInstance удаляет экземпляр игрового сервера: останавливает контейнер на ноде,
+// удаляет запись из PostgreSQL и состояние из KV. Уменьшает счётчик активных инстансов на ноде.
+func (s *InstanceService) DeleteInstance(ctx context.Context, ownerID string, gameID, instanceID int64) error {
+	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	if err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: get instance: %w", err)
+	}
+	if instance.GameID != gameID {
+		return fmt.Errorf("InstanceService.DeleteInstance: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return domain.ErrForbidden
+	}
+
+	// Определяем ноду для gRPC-вызова.
+	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
+	if err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: get node: %w", err)
+	}
+
+	// gRPC удаление на ноде.
+	if err := s.nodeClient.DeleteInstance(ctx, node.Address, node.APIToken, instanceID); err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: node DeleteInstance: %w", err)
+	}
+
+	// Удаление из PostgreSQL.
+	if err := s.instanceRepo.Delete(ctx, instanceID); err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: delete from repo: %w", err)
+	}
+
+	// Удаление из KV.
+	if err := s.instanceState.Delete(ctx, instanceID); err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: delete KV state: %w", err)
+	}
+
+	// Уменьшаем счётчик на ноде.
+	if err := s.decrementNodeInstanceCount(ctx, node.ID); err != nil {
+		return fmt.Errorf("InstanceService.DeleteInstance: update node count: %w", err)
+	}
+
+	return nil
+}
+
+// RestartInstance перезапускает инстанс: останавливает текущий и запускает новый
+// с теми же параметрами.
+func (s *InstanceService) RestartInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error) {
+	// Шаг 1: получаем текущий инстанс.
+	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	if err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: get instance: %w", err)
+	}
+	if instance.GameID != gameID {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	// Шаг 2: останавливаем текущий инстанс.
+	if _, err := s.StopInstance(ctx, ownerID, gameID, instanceID, 30); err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: stop instance: %w", err)
+	}
+
+	// Шаг 3: запускаем новый инстанс с теми же параметрами.
+	params := StartInstanceParams{
+		OwnerID:          instance.OwnerID,
+		GameID:           instance.GameID,
+		BuildVersion:     instance.BuildVersion,
+		Name:             instance.Name,
+		MaxPlayers:       &instance.MaxPlayers,
+		DeveloperPayload: instance.DeveloperPayload,
+	}
+
+	newInstance, err := s.StartInstance(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: start instance: %w", err)
+	}
+
+	return newInstance, nil
 }
 
 // ListInstances возвращает список инстансов пользователя с обогащением из KV.

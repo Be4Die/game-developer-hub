@@ -22,6 +22,9 @@ service DeploymentService {
   // Graceful остановка экземпляра.
   rpc StopInstance(StopInstanceRequest) returns (StopInstanceResponse);
 
+  // Удаление экземпляра и его контейнера.
+  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
+
   // Стрим журналов экземпляра в реальном времени.
   rpc StreamLogs(StreamLogsRequest) returns (stream StreamLogsResponse);
 }
@@ -125,6 +128,12 @@ message StopInstanceRequest {
 }
 
 message StopInstanceResponse {}
+
+message DeleteInstanceRequest {
+  int64 instance_id = 1;
+}
+
+message DeleteInstanceResponse {}
 
 message StreamLogsRequest {
   int64 instance_id = 1;
