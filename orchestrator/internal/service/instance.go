@@ -90,7 +90,13 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		serverHost = nodeAddr
 	}
 
-	// Шаг 4: запуск инстанса на ноде через gRPC.
+	// Шаг 4: получаем ID из PostgreSQL заранее.
+	nextID, err := s.instanceRepo.GetNextID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("InstanceService.StartInstance: get next ID: %w", err)
+	}
+
+	// Шаг 5: запуск инстанса на ноде через gRPC с переданным ID.
 	maxPlayers := build.MaxPlayers
 	if params.MaxPlayers != nil {
 		maxPlayers = *params.MaxPlayers
@@ -98,6 +104,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 	startReq := domain.StartInstanceRequest{
 		GameID:           params.GameID,
+		InstanceID:       nextID, // Передаём выделенный ID
 		Name:             params.Name,
 		Protocol:         build.Protocol,
 		InternalPort:     build.InternalPort,
@@ -114,10 +121,10 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		return nil, fmt.Errorf("InstanceService.StartInstance: node StartInstance: %w", err)
 	}
 
-	// Шаг 5: запись метаданных в PG.
+	// Шаг 6: запись метаданных в PG.
 	now := time.Now()
 	instance := &domain.Instance{
-		ID:               result.InstanceID,
+		ID:               nextID,
 		OwnerID:          params.OwnerID,
 		NodeID:           node.ID,
 		ServerBuildID:    build.ID,
@@ -138,7 +145,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
 		// Откат: останавливаем инстанс на ноде.
-		_ = s.nodeClient.StopInstance(ctx, nodeAddr, node.APIToken, result.InstanceID, 0)
+		_ = s.nodeClient.StopInstance(ctx, nodeAddr, node.APIToken, nextID, 0)
 		return nil, fmt.Errorf("InstanceService.StartInstance: save instance: %w", err)
 	}
 
@@ -187,7 +194,7 @@ func (s *InstanceService) StopInstance(ctx context.Context, ownerID string, game
 		return nil, fmt.Errorf("InstanceService.StopInstance: node StopInstance: %w", err)
 	}
 
-	// Обновление статуса в PG.
+	// Обновление статуса в PG (оставляем запись для истории).
 	instance.Status = domain.InstanceStatusStopped
 	instance.UpdatedAt = time.Now()
 	if err := s.instanceRepo.Update(ctx, instance); err != nil {
@@ -200,7 +207,7 @@ func (s *InstanceService) StopInstance(ctx context.Context, ownerID string, game
 	}
 
 	// Уменьшаем счётчик на ноде.
-	if err := s.incrementNodeInstanceCount(ctx, node.ID, -1); err != nil {
+	if err := s.decrementNodeInstanceCount(ctx, node.ID); err != nil {
 		return nil, fmt.Errorf("InstanceService.StopInstance: update node count: %w", err)
 	}
 
@@ -220,9 +227,9 @@ func (s *InstanceService) ListInstances(ctx context.Context, ownerID string, gam
 			continue
 		}
 
-		enriched := &EnrichedInstance{Instance: inst}
+		enriched := &EnrichedInstance{Instance: inst, Status: inst.Status} // Default to PG status
 
-		// Обогащение из KV.
+		// Обогащение из KV - переопределяем если найдено
 		st, err := s.instanceState.GetStatus(ctx, inst.ID)
 		if err == nil {
 			enriched.Status = st
@@ -252,8 +259,12 @@ func (s *InstanceService) GetInstance(ctx context.Context, ownerID string, gameI
 		return nil, domain.ErrForbidden
 	}
 
-	enriched := &EnrichedInstance{Instance: instance}
+	enriched := &EnrichedInstance{
+		Instance: instance,
+		Status:   instance.Status, // Default to PG status
+	}
 
+	// Проверяем KV статус - если найден, используем его
 	st, err := s.instanceState.GetStatus(ctx, instanceID)
 	if err == nil {
 		enriched.Status = st
@@ -269,6 +280,7 @@ func (s *InstanceService) GetInstance(ctx context.Context, ownerID string, gameI
 
 // StreamInstanceLogs возвращает поток журналов инстанса.
 // Caller обязан закрыть stream после использования.
+// Возвращает ошибку, если инстанс не найден или не запущен на ноде.
 func (s *InstanceService) StreamInstanceLogs(ctx context.Context, ownerID string, gameID, instanceID int64, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
@@ -279,6 +291,11 @@ func (s *InstanceService) StreamInstanceLogs(ctx context.Context, ownerID string
 	}
 	if ownerID != "" && instance.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
+	}
+
+	// Проверяем, что инстанс не остановлен - логи доступны только для running инстансов
+	if instance.Status == domain.InstanceStatusStopped || instance.Status == domain.InstanceStatusCrashed {
+		return nil, fmt.Errorf("InstanceService.StreamInstanceLogs: instance %d is not running (status: %s)", instanceID, instance.Status)
 	}
 
 	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
@@ -315,9 +332,19 @@ func (s *InstanceService) GetInstanceUsage(ctx context.Context, ownerID string, 
 		return nil, domain.ErrForbidden
 	}
 
+	// Не пытаемся получить usage если инстанс не запущен
+	if instance.Status != domain.InstanceStatusRunning && instance.Status != domain.InstanceStatusStarting {
+		return &domain.ResourceUsage{}, nil
+	}
+
 	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.GetInstanceUsage: get node: %w", err)
+	}
+
+	// Проверяем что нода онлайн
+	if node.Status != domain.NodeStatusOnline {
+		return &domain.ResourceUsage{}, nil
 	}
 
 	usage, err = s.nodeClient.GetInstanceUsage(ctx, node.Address, node.APIToken, instanceID)
@@ -366,6 +393,20 @@ func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.S
 	}
 
 	return best, nil
+}
+
+// decrementNodeInstanceCount уменьшает счётчик активных инстансов на ноде.
+func (s *InstanceService) decrementNodeInstanceCount(ctx context.Context, nodeID int64) error {
+	current, err := s.nodeState.GetActiveInstanceCount(ctx, nodeID)
+	if err != nil {
+		current = 0
+	}
+
+	if current > 0 {
+		current--
+	}
+
+	return s.nodeState.SetActiveInstanceCount(ctx, nodeID, current)
 }
 
 // incrementNodeInstanceCount изменяет счётчик активных инстансов на ноде.

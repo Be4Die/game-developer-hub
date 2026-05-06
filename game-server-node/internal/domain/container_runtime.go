@@ -35,6 +35,16 @@ type ContainerRuntime interface {
 	ContainerLogs(ctx context.Context, containerID string, follow bool) (io.ReadCloser, error)
 	// ContainerStats возвращает текущие метрики использования ресурсов.
 	ContainerStats(ctx context.Context, containerID string) (ResourcesUsage, error)
+
+	// ListContainers возвращает информацию обо всех контейнерах на хосте.
+	ListContainers(ctx context.Context) ([]ContainerInfo, error)
+}
+
+// ContainerInfo содержит базовые данные о контейнере.
+type ContainerInfo struct {
+	ID     string
+	Labels map[string]string
+	Status string
 }
 
 // ContainerOpts задаёт параметры создания контейнера.
@@ -46,4 +56,5 @@ type ContainerOpts struct {
 	Args         []string
 	CPUMillis    *uint32
 	MemoryBytes  *uint64
+	Labels       map[string]string
 }

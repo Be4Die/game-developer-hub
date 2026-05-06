@@ -38,7 +38,7 @@ func NewAnnouncementService(log *slog.Logger, cfg *config.Config, sysProvider sy
 // Нода отправляет свой NODE_API_KEY, который оркестратор использует
 // как токен авторизации — пользователь вводит тот же NODE_API_KEY
 // для подключения ноды через дашборд.
-func (s *AnnouncementService) Announce(ctx context.Context) (*AnnouncementResult, error) {
+func (s *AnnouncementService) Announce(ctx context.Context, activeContainerIDs []string) (*AnnouncementResult, error) {
 	if s.cfg.Orchestrator.Mode != "auto-discovery" {
 		return nil, fmt.Errorf("AnnouncementService.Announce: mode is %s, expected auto-discovery", s.cfg.Orchestrator.Mode)
 	}
@@ -65,15 +65,16 @@ func (s *AnnouncementService) Announce(ctx context.Context) (*AnnouncementResult
 		_ = client.Close()
 	}()
 
-	// Формируем и отправляем запрос. Передаём NODE_API_KEY как api_key.
+	// Формируем и отправляем запрос. Передаём NODE_API_KEY как api_key и список контейнеров.
 	req := &orchestrator.AnnounceRequest{
-		Address:          address,
-		Region:           s.cfg.Node.Region,
-		AgentVersion:     s.cfg.Node.Version,
-		CPUCores:         resources.CPUCores,
-		TotalMemoryBytes: resources.TotalMemorySize,
-		TotalDiskBytes:   resources.TotalDiskSpace,
-		APIKey:           s.cfg.APIKey,
+		Address:             address,
+		Region:              s.cfg.Node.Region,
+		AgentVersion:        s.cfg.Node.Version,
+		CPUCores:            resources.CPUCores,
+		TotalMemoryBytes:    resources.TotalMemorySize,
+		TotalDiskBytes:      resources.TotalDiskSpace,
+		APIKey:              s.cfg.APIKey,
+		ActiveContainerIDs:  activeContainerIDs,
 	}
 
 	announceCtx, cancel := context.WithTimeout(ctx, s.cfg.Orchestrator.AnnounceTimeout)
@@ -96,12 +97,12 @@ func (s *AnnouncementService) Announce(ctx context.Context) (*AnnouncementResult
 
 // AnnounceWithRetry выполняет анонсирование с повторными попытками.
 // Продолжает попытки до успеха или отмены контекста.
-func (s *AnnouncementService) AnnounceWithRetry(ctx context.Context) (*AnnouncementResult, error) {
+func (s *AnnouncementService) AnnounceWithRetry(ctx context.Context, activeContainerIDs []string) (*AnnouncementResult, error) {
 	ticker := time.NewTicker(s.cfg.Orchestrator.AnnounceInterval)
 	defer ticker.Stop()
 
 	// Первая попытка сразу.
-	result, err := s.Announce(ctx)
+	result, err := s.Announce(ctx, activeContainerIDs)
 	if err == nil {
 		return result, nil
 	}
@@ -113,7 +114,7 @@ func (s *AnnouncementService) AnnounceWithRetry(ctx context.Context) (*Announcem
 		case <-ctx.Done():
 			return nil, fmt.Errorf("AnnouncementService.AnnounceWithRetry: %w", ctx.Err())
 		case <-ticker.C:
-			result, err := s.Announce(ctx)
+			result, err := s.Announce(ctx, activeContainerIDs)
 			if err == nil {
 				return result, nil
 			}

@@ -45,12 +45,13 @@ func (c *Client) Close() error {
 // Возвращает ID созданной ноды.
 func (c *Client) AnnounceNode(ctx context.Context, req *AnnounceRequest) (*AnnounceResponse, error) {
 	pbReq := &pb.NodeServiceAnnounceRequest{
-		Address:          req.Address,
-		AgentVersion:     req.AgentVersion,
-		CpuCores:         req.CPUCores,
-		TotalMemoryBytes: req.TotalMemoryBytes,
-		TotalDiskBytes:   req.TotalDiskBytes,
-		ApiKey:           req.APIKey,
+		Address:             req.Address,
+		AgentVersion:        req.AgentVersion,
+		CpuCores:            req.CPUCores,
+		TotalMemoryBytes:    req.TotalMemoryBytes,
+		TotalDiskBytes:      req.TotalDiskBytes,
+		ApiKey:              req.APIKey,
+		ActiveContainerIds:  req.ActiveContainerIDs,
 	}
 
 	if req.Region != "" {
@@ -69,13 +70,14 @@ func (c *Client) AnnounceNode(ctx context.Context, req *AnnounceRequest) (*Annou
 
 // AnnounceRequest содержит данные для анонсирования ноды.
 type AnnounceRequest struct {
-	Address          string
-	Region           string
-	AgentVersion     string
-	CPUCores         uint32
-	TotalMemoryBytes uint64
-	TotalDiskBytes   uint64
-	APIKey           string // NODE_API_KEY — используется как токен авторизации
+	Address             string
+	Region              string
+	AgentVersion        string
+	CPUCores            uint32
+	TotalMemoryBytes    uint64
+	TotalDiskBytes      uint64
+	APIKey              string // NODE_API_KEY — используется как токен авторизации
+	ActiveContainerIDs  []string
 }
 
 // AnnounceResponse содержит результат анонсирования ноды.

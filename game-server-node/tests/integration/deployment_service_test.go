@@ -58,13 +58,10 @@ func TestDeploymentService_FullLifecycle(t *testing.T) {
 		t.Fatalf("StopInstance failed: %v", err)
 	}
 
-	instance, err = env.storage.GetInstanceByID(ctx, instanceID)
-	if err != nil {
-		t.Fatalf("GetInstanceByID after stop failed: %v", err)
-	}
-
-	if instance.Status != domain.InstanceStatusStopped {
-		t.Errorf("expected status Stopped (%d), got %d", domain.InstanceStatusStopped, instance.Status)
+	// Verify instance is deleted from storage after successful stop
+	_, err = env.storage.GetInstanceByID(ctx, instanceID)
+	if err == nil {
+		t.Error("expected instance to be deleted from storage after stop, but it was found")
 	}
 }
 

@@ -59,6 +59,8 @@ type NodeConfig struct {
 	Region  string `yaml:"region" env-default:"unknown"`
 	Version string `yaml:"version" env-default:"0.0.1"`
 	EthName string `yaml:"eth_name" env-default:""`
+	// DataDir — директория для постоянных данных (image registry).
+	DataDir string `yaml:"data_dir" env-default:"/app/data"`
 }
 
 // MustLoad загружает конфигурацию из файла или env. Паникует при ошибке.

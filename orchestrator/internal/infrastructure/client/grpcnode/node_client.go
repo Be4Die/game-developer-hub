@@ -308,8 +308,8 @@ func (c *Client) GetNodeInfo(ctx context.Context, nodeAddress, apiKey string) (*
 	}, nil
 }
 
-// Heartbeat получает текущую загруженность ноды.
-func (c *Client) Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*domain.ResourceUsage, error) {
+// Heartbeat получает текущую загруженность ноды и количество активных инстансов.
+func (c *Client) Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*domain.HeartbeatResult, error) {
 	conn, err := c.getConn(ctx, nodeAddress)
 	if err != nil {
 		return nil, err
@@ -322,12 +322,20 @@ func (c *Client) Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*do
 		return nil, fmt.Errorf("Heartbeat: %w", err)
 	}
 
-	return &domain.ResourceUsage{
-		CPUUsagePercent:    resp.Usage.CpuUsagePercent,
-		MemoryUsedBytes:    resp.Usage.MemoryUsedBytes,
-		DiskUsedBytes:      resp.Usage.DiskUsedBytes,
-		NetworkBytesPerSec: resp.Usage.NetworkBytesPerSec,
-	}, nil
+	result := &domain.HeartbeatResult{
+		ActiveInstanceCount: resp.ActiveInstanceCount,
+	}
+
+	if resp.Usage != nil {
+		result.Usage = &domain.ResourceUsage{
+			CPUUsagePercent:    resp.Usage.CpuUsagePercent,
+			MemoryUsedBytes:    resp.Usage.MemoryUsedBytes,
+			DiskUsedBytes:      resp.Usage.DiskUsedBytes,
+			NetworkBytesPerSec: resp.Usage.NetworkBytesPerSec,
+		}
+	}
+
+	return result, nil
 }
 
 // ListInstances возвращает все экземпляры на ноде.
@@ -504,7 +512,8 @@ func fromPBInstanceStatus(s pb.InstanceStatus) domain.InstanceStatus {
 	case pb.InstanceStatus_INSTANCE_STATUS_CRASHED:
 		return domain.InstanceStatusCrashed
 	default:
-		return 0
+		// Для неизвестных/UNSPECIFIED возвращаем Stopped (инстанс не найден/неактивен)
+		return domain.InstanceStatusStopped
 	}
 }
 

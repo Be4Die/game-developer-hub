@@ -150,6 +150,7 @@ func (h *DeploymentHandler) StartInstance(
 
 	opts := service.StartInstanceOpts{
 		GameID:           req.GetGameId(),
+		InstanceID:       req.GetInstanceId(), // Может быть 0 — тогда нода генерирует сама
 		Name:             req.GetName(),
 		Protocol:         protoToProtocol(req.GetProtocol()),
 		InternalPort:     req.GetInternalPort(),

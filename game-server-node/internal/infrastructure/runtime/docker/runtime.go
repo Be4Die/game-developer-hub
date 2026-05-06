@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
@@ -147,7 +148,8 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 	internalPort := nat.Port(fmt.Sprintf("%d/tcp", opts.InternalPort))
 
 	containerConfig := &container.Config{
-		Image: opts.ImageTag,
+		Image:   opts.ImageTag,
+		Labels:  opts.Labels,
 		ExposedPorts: nat.PortSet{
 			internalPort: struct{}{},
 		},
@@ -340,6 +342,29 @@ func (r *Runtime) GetHostPort(ctx context.Context, containerID string, internalP
 	}
 
 	return 0, fmt.Errorf("failed to get port after %d retries: last error: %w", maxRetries, lastErr)
+}
+
+// ListContainers возвращает список всех контейнеров на хосте.
+func (r *Runtime) ListContainers(ctx context.Context) ([]domain.ContainerInfo, error) {
+	const op = "Runtime.ListContainers"
+
+	containers, err := r.cli.ContainerList(ctx, container.ListOptions{
+		Filters: filters.NewArgs(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	result := make([]domain.ContainerInfo, 0, len(containers))
+	for _, c := range containers {
+		result = append(result, domain.ContainerInfo{
+			ID:     c.ID,
+			Labels: c.Labels,
+			Status: c.State,
+		})
+	}
+
+	return result, nil
 }
 
 // extractArchive распаковывает zip или tar.gz архив в целевую директорию.

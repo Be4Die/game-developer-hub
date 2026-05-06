@@ -657,10 +657,13 @@ func (x *ResourceLimits) GetMemoryBytes() uint64 {
 }
 
 type StartInstanceRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	GameId   int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Protocol Protocol               `protobuf:"varint,3,opt,name=protocol,proto3,enum=game_server_node.v1.Protocol" json:"protocol,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	GameId int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	// Опциональный instance_id. Если не указан — нода генерирует сама.
+	// Если указан — нода использует переданный ID.
+	InstanceId *int64   `protobuf:"varint,11,opt,name=instance_id,json=instanceId,proto3,oneof" json:"instance_id,omitempty"`
+	Name       string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Protocol   Protocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=game_server_node.v1.Protocol" json:"protocol,omitempty"`
 	// Порт, который процесс слушает внутри контейнера.
 	InternalPort     uint32            `protobuf:"varint,4,opt,name=internal_port,json=internalPort,proto3" json:"internal_port,omitempty"`
 	PortAllocation   *PortAllocation   `protobuf:"bytes,5,opt,name=port_allocation,json=portAllocation,proto3" json:"port_allocation,omitempty"`
@@ -707,6 +710,13 @@ func (*StartInstanceRequest) Descriptor() ([]byte, []int) {
 func (x *StartInstanceRequest) GetGameId() int64 {
 	if x != nil {
 		return x.GameId
+	}
+	return 0
+}
+
+func (x *StartInstanceRequest) GetInstanceId() int64 {
+	if x != nil && x.InstanceId != nil {
+		return *x.InstanceId
 	}
 	return 0
 }
@@ -1092,9 +1102,11 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"cpu_millis\x18\x01 \x01(\rH\x00R\tcpuMillis\x88\x01\x01\x12&\n" +
 	"\fmemory_bytes\x18\x02 \x01(\x04H\x01R\vmemoryBytes\x88\x01\x01B\r\n" +
 	"\v_cpu_millisB\x0f\n" +
-	"\r_memory_bytes\"\xcf\x05\n" +
+	"\r_memory_bytes\"\x85\x06\n" +
 	"\x14StartInstanceRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x12\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12$\n" +
+	"\vinstance_id\x18\v \x01(\x03H\x00R\n" +
+	"instanceId\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
 	"\bprotocol\x18\x03 \x01(\x0e2\x1d.game_server_node.v1.ProtocolR\bprotocol\x12#\n" +
 	"\rinternal_port\x18\x04 \x01(\rR\finternalPort\x12L\n" +
@@ -1105,13 +1117,14 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\benv_vars\x18\b \x03(\v26.game_server_node.v1.StartInstanceRequest.EnvVarsEntryR\aenvVars\x12\x12\n" +
 	"\x04args\x18\t \x03(\tR\x04args\x12Q\n" +
 	"\x0fresource_limits\x18\n" +
-	" \x01(\v2#.game_server_node.v1.ResourceLimitsH\x00R\x0eresourceLimits\x88\x01\x01\x1aC\n" +
+	" \x01(\v2#.game_server_node.v1.ResourceLimitsH\x01R\x0eresourceLimits\x88\x01\x01\x1aC\n" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
 	"\fEnvVarsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x12\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0e\n" +
+	"\f_instance_idB\x12\n" +
 	"\x10_resource_limits\"U\n" +
 	"\x15StartInstanceResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +

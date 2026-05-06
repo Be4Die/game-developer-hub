@@ -68,6 +68,10 @@ func (s *stubDiscoveryRuntime) ContainerStats(ctx context.Context, containerID s
 	return s.usageToReturn, nil
 }
 
+func (s *stubDiscoveryRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInfo, error) {
+	return []domain.ContainerInfo{}, nil
+}
+
 func TestDiscoveryService_Heartbeat(t *testing.T) {
 	ctx := context.Background()
 

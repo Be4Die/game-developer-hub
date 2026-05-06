@@ -33,9 +33,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
@@ -197,6 +197,9 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	orchNodeClient := grpcnode.New(grpcCfg)
 	t.Cleanup(func() { orchNodeClient.Close() })
 
+	// ─── Логгер для сервисов и транспорта ───────────────────────
+	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
 	// ─── Сервисы ────────────────────────────────────────────────
 	limits := config.LimitsConfig{
 		MaxBuildsPerGame:    10,
@@ -215,11 +218,10 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		instanceRepo, instanceState, nodeRepo,
 	)
 	nodeService := service.NewNodeService(
-		nodeRepo, nodeState, instanceRepo, instanceState, orchNodeClient,
+		log, nodeRepo, nodeState, instanceRepo, instanceState, orchNodeClient,
 	)
 
 	// ─── gRPC-сервер ────────────────────────────────────────────
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	buildHandler := grpctransport.NewBuildHandler(buildPipeline)
 	instanceHandler := grpctransport.NewInstanceHandler(instanceService, limits.MaxLogTailLines)
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)

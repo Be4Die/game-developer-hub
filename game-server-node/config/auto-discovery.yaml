@@ -6,6 +6,7 @@ node:
   region: "local"
   version: "0.0.1"
   # eth_name: "eth0"  # Опционально: имя сетевого интерфейса для автоопределения адреса
+  data_dir: "/app/data"
 orchestrator:
   mode: "auto-discovery"
   address: "localhost:50052"  # Адрес оркестратора

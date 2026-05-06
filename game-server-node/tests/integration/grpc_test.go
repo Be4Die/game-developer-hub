@@ -71,14 +71,12 @@ func TestGRPC_FullLifecycle_StartAndStop(t *testing.T) {
 	}
 	_ = stopResp
 
-	getResp2, err := env.discoveryClient.GetInstance(ctx, getReq)
-	if err != nil {
-		t.Fatalf("GetInstance after stop failed: %v", err)
+	// After successful stop, instance is deleted from storage, so GetInstance should return NotFound
+	_, err = env.discoveryClient.GetInstance(ctx, getReq)
+	if err == nil {
+		t.Fatal("expected NotFound error after instance was stopped and deleted")
 	}
-
-	if getResp2.Instance.Status != pb.InstanceStatus_INSTANCE_STATUS_STOPPED {
-		t.Errorf("expected status STOPPED, got %s", getResp2.Instance.Status)
-	}
+	t.Logf("Got expected error after stop: %v", err)
 }
 
 // TestGRPC_Heartbeat проверяет heartbeat через gRPC.

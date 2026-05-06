@@ -133,6 +133,7 @@ services:
         condition: service_healthy
     volumes:
       - ../game-server-node/config:/app/config:ro
+      - node_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 
   frontend:
@@ -149,3 +150,4 @@ services:
 volumes:
   pgdata:
   builds:
+  node_data:

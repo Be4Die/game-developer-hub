@@ -97,6 +97,9 @@ message ResourceLimits {
 
 message StartInstanceRequest {
   int64 game_id = 1;
+  // Опциональный instance_id. Если не указан — нода генерирует сама.
+  // Если указан — нода использует переданный ID.
+  optional int64 instance_id = 11;
   string name = 2;
   Protocol protocol = 3;
   // Порт, который процесс слушает внутри контейнера.

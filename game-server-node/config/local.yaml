@@ -5,3 +5,4 @@ grpc:
 node:
   region: "local"
   version: "0.0.1"
+  data_dir: "/app/data"

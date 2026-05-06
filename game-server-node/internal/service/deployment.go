@@ -3,9 +3,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -16,9 +19,11 @@ import (
 // DeploymentService управляет развёртыванием игровых инстансов.
 // Безопасен для конкурентного использования.
 type DeploymentService struct {
-	log     *slog.Logger
-	storage domain.InstanceStorage
-	runtime domain.ContainerRuntime
+	log          *slog.Logger
+	storage      domain.InstanceStorage
+	runtime      domain.ContainerRuntime
+	imageMapPath string
+	nodeID       string
 
 	// Simple ID generator. In production — use UUID or database sequence.
 	nextID atomic.Int64
@@ -33,13 +38,87 @@ func NewDeploymentService(
 	log *slog.Logger,
 	storage domain.InstanceStorage,
 	runtime domain.ContainerRuntime,
+	imageMapPath string,
+	nodeID string,
 ) *DeploymentService {
-	return &DeploymentService{
-		log:     log,
-		storage: storage,
-		runtime: runtime,
-		images:  make(map[int64]string),
+	svc := &DeploymentService{
+		log:          log,
+		storage:      storage,
+		runtime:      runtime,
+		imageMapPath: imageMapPath,
+		nodeID:       nodeID,
+		images:       make(map[int64]string),
 	}
+
+	// Load persisted image registry (if any).
+	_ = svc.loadImageRegistry()
+
+	return svc
+}
+
+// loadImageRegistry загружает маппинг gameID→imageTag из JSON-файла.
+// При отсутствии файла или ошибке парсинга логирует предупреждение и продолжает с пустым маппингом.
+func (s *DeploymentService) loadImageRegistry() error {
+	if s.imageMapPath == "" {
+		// Нет пути — пропускаем
+		return nil
+	}
+
+	data, err := os.ReadFile(s.imageMapPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			s.log.Info("image registry not found, starting with empty registry",
+				slog.String("path", s.imageMapPath),
+			)
+			return nil
+		}
+		return fmt.Errorf("read image registry: %w", err)
+	}
+
+	registry := make(map[int64]string)
+	if err := json.Unmarshal(data, &registry); err != nil {
+		s.log.Warn("failed to parse image registry, starting with empty registry",
+			slog.String("path", s.imageMapPath),
+			slog.String("error", err.Error()),
+		)
+		return nil
+	}
+
+	s.imagesMu.Lock()
+	s.images = registry
+	s.imagesMu.Unlock()
+
+	s.log.Info("image registry loaded",
+		slog.Int("entries", len(registry)),
+		slog.String("path", s.imageMapPath),
+	)
+	return nil
+}
+
+// saveImageRegistry сохраняет текущий маппинг gameID→imageTag в JSON-файл.
+func (s *DeploymentService) saveImageRegistry() error {
+	if s.imageMapPath == "" {
+		return nil
+	}
+
+	s.imagesMu.RLock()
+	data, err := json.MarshalIndent(s.images, "", "  ")
+	s.imagesMu.RUnlock()
+
+	if err != nil {
+		return fmt.Errorf("marshal image registry: %w", err)
+	}
+
+	// Убедимся, что директория существует
+	if err := os.MkdirAll(filepath.Dir(s.imageMapPath), 0o750); err != nil {
+		return fmt.Errorf("create data directory: %w", err)
+	}
+
+	if err := os.WriteFile(s.imageMapPath, data, 0o600); err != nil {
+		return fmt.Errorf("write image registry: %w", err)
+	}
+
+	return nil
 }
 
 // BuildImage собирает Docker-образ из исходного архива на стороне ноды.
@@ -61,6 +140,14 @@ func (s *DeploymentService) BuildImage(ctx context.Context, gameID int64, imageT
 	s.imagesMu.Lock()
 	s.images[gameID] = imageTag
 	s.imagesMu.Unlock()
+
+	// Persist the registry.
+	if err := s.saveImageRegistry(); err != nil {
+		s.log.Warn("failed to save image registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
 
 	s.log.Info("image built",
 		slog.String("op", op),
@@ -88,6 +175,14 @@ func (s *DeploymentService) LoadImage(ctx context.Context, gameID int64, imageTa
 	s.images[gameID] = imageTag
 	s.imagesMu.Unlock()
 
+	// Persist the registry.
+	if err := s.saveImageRegistry(); err != nil {
+		s.log.Warn("failed to save image registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
+
 	s.log.Info("image loaded",
 		slog.String("op", op),
 		slog.String("image_tag", imageTag),
@@ -98,6 +193,7 @@ func (s *DeploymentService) LoadImage(ctx context.Context, gameID int64, imageTa
 // StartInstanceOpts задаёт параметры запуска инстанса.
 type StartInstanceOpts struct {
 	GameID           int64
+	InstanceID       int64 // Если != 0 — использовать этот ID вместо автогенерации
 	Name             string
 	Protocol         domain.Protocol
 	InternalPort     uint32
@@ -138,6 +234,11 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		Args:         opts.Args,
 		CPUMillis:    opts.CPUMillis,
 		MemoryBytes:  opts.MemoryBytes,
+		Labels: map[string]string{
+			"managed_by": "game-server-node",
+			"node_id":    s.nodeID,
+			"game_id":    fmt.Sprintf("%d", opts.GameID),
+		},
 	})
 	if err != nil {
 		return 0, 0, fmt.Errorf("%s: create container: %w", op, err)
@@ -159,7 +260,13 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	}
 
 	// Save to storage. If fails — cleanup steps (stop+remove).
-	id := s.nextID.Add(1)
+	// Если InstanceID передан — используем его, иначе генерируем свой.
+	var id int64
+	if opts.InstanceID != 0 {
+		id = opts.InstanceID
+	} else {
+		id = s.nextID.Add(1)
+	}
 
 	instance := domain.Instance{
 		ID:               id,
@@ -192,6 +299,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 }
 
 // StopInstance останавливает инстанс и удаляет его контейнер.
+// При успешной остановке запись удаляется из storage; при ошибке - статус меняется на Crashed.
 func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, timeout time.Duration) error {
 	const op = "DeploymentService.StopInstance"
 
@@ -219,9 +327,14 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 		)
 	}
 
-	// Mark as stopped.
-	instance.Status = domain.InstanceStatusStopped
-	_ = s.storage.RecordInstance(ctx, *instance)
+	// Delete the instance record from storage - instance is fully stopped.
+	if err := s.storage.DeleteInstance(ctx, instanceID); err != nil {
+		s.log.Warn("failed to delete instance from storage after stop",
+			slog.String("op", op),
+			slog.Int64("instance_id", instanceID),
+			slog.String("error", err.Error()),
+		)
+	}
 
 	s.log.Info("instance stopped",
 		slog.String("op", op),
@@ -285,4 +398,111 @@ func (s *DeploymentService) resolvePort(ctx context.Context, strategy domain.Por
 		// No strategy — let OS decide.
 		return 0, nil
 	}
+}
+
+// StopAllInstances останавливает все инстансы, управляемые этой нодой.
+// Вызывается при graceful shutdown.
+func (s *DeploymentService) StopAllInstances(ctx context.Context) error {
+	const op = "DeploymentService.StopAllInstances"
+
+	instances, err := s.storage.GetAllInstances(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	for _, inst := range instances {
+		// Пропускаем уже остановленные или критические.
+		if inst.Status == domain.InstanceStatusStopped || inst.Status == domain.InstanceStatusCrashed {
+			continue
+		}
+		if err := s.StopInstance(ctx, inst.ID, 10*time.Second); err != nil {
+			s.log.Warn("failed to stop instance during shutdown",
+				slog.Int64("instance_id", inst.ID),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+
+	return nil
+}
+
+// CleanupOrphans удаляет контейнеры, принадлежащие ноде, но отсутствующие в storage.
+// Вызывается при старте (остатки от краша) и при остановке (на всякий случай).
+func (s *DeploymentService) CleanupOrphans(ctx context.Context) error {
+	const op = "DeploymentService.CleanupOrphans"
+	s.log.Info("checking for orphan containers", slog.String("op", op))
+
+	// Получаем все контейнеры хоста.
+	containers, err := s.runtime.ListContainers(ctx)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	// Собираем множество известных containerID из storage.
+	knownContainers := make(map[string]struct{})
+	instances, err := s.storage.GetAllInstances(ctx)
+	if err != nil {
+		s.log.Warn("failed to get all instances for orphan check", slog.String("error", err.Error()))
+		// Продолжаем без этого списка — будем удалять только по labels, но проверим known later.
+	} else {
+		for _, inst := range instances {
+			knownContainers[inst.ContainerID] = struct{}{}
+		}
+	}
+
+	toRemove := make([]string, 0)
+	for _, c := range containers {
+		// Проверяем, что контейнер управляется этой нодой.
+		if c.Labels["managed_by"] != "game-server-node" {
+			continue
+		}
+		if c.Labels["node_id"] != s.nodeID {
+			continue
+		}
+		// Если контейнер известен (есть в storage), пропускаем.
+		if _, ok := knownContainers[c.ID]; ok {
+			continue
+		}
+		toRemove = append(toRemove, c.ID)
+	}
+
+	// Останавливаем и удаляем каждый орфан.
+	for _, cid := range toRemove {
+		s.log.Info("removing orphan container", slog.String("container_id", cid[:12]))
+		if err := s.runtime.StopContainer(ctx, cid, 10*time.Second); err != nil {
+			s.log.Warn("failed to stop orphan container",
+				slog.String("container_id", cid[:12]),
+				slog.String("error", err.Error()),
+			)
+		}
+		if err := s.runtime.RemoveContainer(ctx, cid); err != nil {
+			s.log.Warn("failed to remove orphan container",
+				slog.String("container_id", cid[:12]),
+				slog.String("error", err.Error()),
+			)
+		} else {
+			s.log.Info("orphan container removed", slog.String("container_id", cid[:12]))
+		}
+	}
+
+	s.log.Info("orphan cleanup finished", slog.Int("removed", len(toRemove)))
+	return nil
+}
+
+// GetActiveContainerIDs возвращает список ID контейнеров, управляемых этой нодой
+// (с labels managed_by=game-server-node и node_id=s.nodeID).
+func (s *DeploymentService) GetActiveContainerIDs(ctx context.Context) []string {
+	const op = "DeploymentService.GetActiveContainerIDs"
+	containers, err := s.runtime.ListContainers(ctx)
+	if err != nil {
+		s.log.Warn("failed to list containers", slog.String("op", op), slog.String("error", err.Error()))
+		return nil
+	}
+	var ids []string
+	for _, c := range containers {
+		if c.Labels["managed_by"] == "game-server-node" && c.Labels["node_id"] == s.nodeID {
+			ids = append(ids, c.ID)
+		}
+	}
+	return ids
 }

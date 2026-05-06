@@ -197,6 +197,10 @@ func (m *mockRuntime) ContainerStats(ctx context.Context, containerID string) (d
 	return m.usageToReturn, nil
 }
 
+func (m *mockRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInfo, error) {
+	return []domain.ContainerInfo{}, nil
+}
+
 func TestDiscoveryHandler_GetInstanceUsage(t *testing.T) {
 	ctx := context.Background()
 	storage := memory.NewStorage()
