@@ -98,7 +98,8 @@ let usageInterval = null
 async function fetchInstance() {
   error.value = null
   try {
-    instance.value = await getInstance(props.gameId, props.instanceId)
+    const resp = await getInstance(props.gameId, props.instanceId)
+    instance.value = resp?.instance || resp || {}
   } catch (e) {
     error.value = e.response?.data?.message ?? e.message
   } finally {

@@ -268,7 +268,7 @@ import {
     getNodeUsage,
     deleteNode,
     registerNode,
-    listInstances,
+    listNodeInstances,
 } from "../../api/orchestrator";
 import { showToast } from "../../store";
 
@@ -324,10 +324,8 @@ async function fetchUsage() {
 async function fetchInstances() {
     instancesLoading.value = true;
     try {
-        const allInstances = await listInstances(0);
-        nodeInstances.value = allInstances.filter(
-            (i) => i.node_id === Number(props.nodeId),
-        );
+        const instances = await listNodeInstances(props.nodeId);
+        nodeInstances.value = instances;
     } catch {
         nodeInstances.value = [];
     } finally {

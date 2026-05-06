@@ -273,7 +273,7 @@ type instMockNodeClient struct {
 	stopInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
 	streamLogsFn        func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
 	getNodeInfoFn       func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
-	heartbeatFn         func(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error)
+	heartbeatFn         func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error)
 	listInstancesFn     func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
 	getInstanceFn       func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
 	getInstanceUsageFn  func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
@@ -315,7 +315,7 @@ func (m *instMockNodeClient) GetNodeInfo(ctx context.Context, address, apiKey st
 	}
 	return nil, nil
 }
-func (m *instMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.ResourceUsage, error) {
+func (m *instMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
 	if m.heartbeatFn != nil {
 		return m.heartbeatFn(ctx, address, apiKey)
 	}
