@@ -31,7 +31,7 @@ defineProps({ gameId: { type: [String, Number], required: true } })
 .servers-subnav {
   display: flex;
   gap: 4px;
-  padding: 0 32px 16px;
+  padding: 16px 32px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 0;
   background: var(--bg-card);
