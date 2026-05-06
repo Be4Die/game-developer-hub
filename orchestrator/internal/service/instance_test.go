@@ -20,6 +20,7 @@ type instMockInstanceRepo struct {
 	updateFn      func(ctx context.Context, instance *domain.Instance) error
 	deleteFn      func(ctx context.Context, id int64) error
 	countByGameFn func(ctx context.Context, gameID int64) (int, error)
+	getNextIDFn   func(ctx context.Context) (int64, error)
 }
 
 func (m *instMockInstanceRepo) Create(ctx context.Context, instance *domain.Instance) error {
@@ -66,6 +67,15 @@ func (m *instMockInstanceRepo) CountByGame(ctx context.Context, gameID int64) (i
 }
 func (m *instMockInstanceRepo) CountActiveInstancesByBuild(ctx context.Context, buildID int64) (int, error) {
 	return 0, nil
+}
+func (m *instMockInstanceRepo) List(ctx context.Context) ([]*domain.Instance, error) {
+	return nil, nil
+}
+func (m *instMockInstanceRepo) GetNextID(ctx context.Context) (int64, error) {
+	if m.getNextIDFn != nil {
+		return m.getNextIDFn(ctx)
+	}
+	return 1, nil
 }
 
 type instMockInstanceState struct {
@@ -379,6 +389,9 @@ func TestInstanceService_StartInstance(t *testing.T) {
 				instanceRepo := &instMockInstanceRepo{
 					countByGameFn: func(ctx context.Context, gameID int64) (int, error) {
 						return 2, nil
+					},
+					getNextIDFn: func(ctx context.Context) (int64, error) {
+						return 42, nil
 					},
 					createFn: func(ctx context.Context, instance *domain.Instance) error {
 						return nil

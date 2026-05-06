@@ -191,6 +191,9 @@ func (m *hbMockInstanceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*d
 	}
 	return nil, nil
 }
+func (m *hbMockInstanceRepo) List(ctx context.Context) ([]*domain.Instance, error) {
+	return nil, nil
+}
 func (m *hbMockInstanceRepo) Update(ctx context.Context, instance *domain.Instance) error {
 	if m.updateFn != nil {
 		return m.updateFn(ctx, instance)
@@ -214,6 +217,9 @@ func (m *hbMockInstanceRepo) CountActiveInstancesByBuild(ctx context.Context, bu
 		return m.countActiveInstancesByBuild(ctx, buildID)
 	}
 	return 0, nil
+}
+func (m *hbMockInstanceRepo) GetNextID(ctx context.Context) (int64, error) {
+	return 1, nil
 }
 
 type hbMockInstanceState struct {

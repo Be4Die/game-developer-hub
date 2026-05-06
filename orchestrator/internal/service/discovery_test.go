@@ -25,12 +25,18 @@ func (m *discMockInstanceRepo) ListByGame(ctx context.Context, gameID int64, sta
 func (m *discMockInstanceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.Instance, error) {
 	return nil, nil
 }
+func (m *discMockInstanceRepo) List(ctx context.Context) ([]*domain.Instance, error) {
+	return nil, nil
+}
 func (m *discMockInstanceRepo) Update(ctx context.Context, instance *domain.Instance) error {
 	return nil
 }
 func (m *discMockInstanceRepo) Delete(ctx context.Context, id int64) error { return nil }
 func (m *discMockInstanceRepo) CountByGame(ctx context.Context, gameID int64) (int, error) {
 	return 0, nil
+}
+func (m *discMockInstanceRepo) GetNextID(ctx context.Context) (int64, error) {
+	return 1, nil
 }
 
 type discMockInstanceState struct {
