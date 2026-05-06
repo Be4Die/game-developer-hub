@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -87,7 +88,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	)
 
 	nodeService := service.NewNodeService(
-		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
+		log, nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
 	)
 
 	heartbeatService := service.NewHeartbeatService(
@@ -139,10 +140,16 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 // MustRun запускает gRPC-сервер и фоновые процессы. Блокирует вызов.
 func (a *App) MustRun() {
+	// Восстанавливаем состояния инстансов из БД в KV при старте.
+	restoreCtx, restoreCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	if err := a.heartbeatService.RestoreInstanceStatuses(restoreCtx); err != nil {
+		a.log.Warn("failed to restore instance statuses", slog.String("error", err.Error()))
+	}
+	restoreCancel()
+
 	// Запускаем heartbeat-сервис.
 	hbCtx, hbCancel := context.WithCancel(context.Background()) //nolint:gosec // hbCancel вызывается в MustStop
 	a.hbCancel = hbCancel
-
 	go func() {
 		a.log.Info("heartbeat service started")
 		a.heartbeatService.Run(hbCtx)
@@ -168,7 +175,6 @@ func (a *App) MustRun() {
 func (a *App) MustStop() {
 	a.once.Do(func() {
 		a.log.Info("shutting down gRPC server")
-
 		a.gRPCServer.GracefulStop()
 
 		if a.hbCancel != nil {

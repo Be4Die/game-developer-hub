@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
@@ -12,6 +14,7 @@ import (
 
 // NodeService управляет вычислительными нодами.
 type NodeService struct {
+	log           *slog.Logger
 	nodeRepo      domain.NodeRepo
 	nodeState     domain.NodeStateStore
 	instanceRepo  domain.InstanceRepo
@@ -21,6 +24,7 @@ type NodeService struct {
 
 // NewNodeService создаёт сервис управления нодами.
 func NewNodeService(
+	log *slog.Logger,
 	nodeRepo domain.NodeRepo,
 	nodeState domain.NodeStateStore,
 	instanceRepo domain.InstanceRepo,
@@ -33,6 +37,7 @@ func NewNodeService(
 		instanceRepo:  instanceRepo,
 		instanceState: instanceState,
 		nodeClient:    nodeClient,
+		log:           log,
 	}
 }
 
@@ -59,7 +64,6 @@ func (s *NodeService) registerNodeManual(ctx context.Context, ownerID, address, 
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("NodeService.registerNodeManual: get by address: %w", err)
 	}
-
 	if err == nil {
 		if existing.Status == domain.NodeStatusOnline {
 			return nil, domain.ErrAlreadyExists
@@ -109,7 +113,6 @@ func (s *NodeService) authorizeNode(ctx context.Context, ownerID string, nodeID 
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.authorizeNode: get node: %w", err)
 	}
-
 	if node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, fmt.Errorf("NodeService.authorizeNode: %w", domain.ErrForbidden)
 	}
@@ -144,7 +147,6 @@ func (s *NodeService) ListNodes(ctx context.Context, ownerID string, status *dom
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.ListNodes: %w", err)
 	}
-
 	result := make([]*EnrichedNode, 0, len(nodes))
 	for _, n := range nodes {
 		if ownerID != "" && n.OwnerID != "" && n.OwnerID != ownerID {
@@ -175,7 +177,6 @@ func (s *NodeService) GetNode(ctx context.Context, ownerID string, nodeID int64)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.GetNode: %w", err)
 	}
-
 	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
@@ -201,7 +202,6 @@ func (s *NodeService) DeleteNode(ctx context.Context, ownerID string, nodeID int
 	if err != nil {
 		return fmt.Errorf("NodeService.DeleteNode: get node: %w", err)
 	}
-
 	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return domain.ErrForbidden
 	}
@@ -235,20 +235,12 @@ func (s *NodeService) GetNodeUsage(ctx context.Context, ownerID string, nodeID i
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.GetNodeUsage: get node: %w", err)
 	}
-
 	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 
-	usage, err := s.nodeState.GetUsage(ctx, nodeID)
-	if err != nil {
-		return nil, fmt.Errorf("NodeService.GetNodeUsage: get usage: %w", err)
-	}
-
-	activeCount, err := s.nodeState.GetActiveInstanceCount(ctx, nodeID)
-	if err != nil {
-		activeCount = 0
-	}
+	usage, _ := s.nodeState.GetUsage(ctx, nodeID)
+	activeCount, _ := s.nodeState.GetActiveInstanceCount(ctx, nodeID)
 
 	return &NodeUsageResult{
 		NodeID:              node.ID,
@@ -285,13 +277,14 @@ func constantTimeEqual(a, b []byte) bool {
 
 // AnnounceNodeParams содержит параметры анонсирования ноды.
 type AnnounceNodeParams struct {
-	Address          string
-	Region           string
-	AgentVersion     string
-	CPUCores         uint32
-	TotalMemoryBytes uint64
-	TotalDiskBytes   uint64
-	APIKey           string // NODE_API_KEY ноды
+	Address            string
+	Region             string
+	AgentVersion       string
+	CPUCores           uint32
+	TotalMemoryBytes   uint64
+	TotalDiskBytes     uint64
+	APIKey             string // NODE_API_KEY ноды
+	ActiveContainerIDs []string
 }
 
 // AnnounceNodeResult содержит результат анонсирования ноды.
@@ -307,7 +300,6 @@ func (s *NodeService) AnnounceNode(ctx context.Context, params AnnounceNodeParam
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("NodeService.AnnounceNode: get by address: %w", err)
 	}
-
 	if err == nil {
 		// Нода с таким адресом уже существует — обновляем данные.
 		return s.updateAnnouncedNode(ctx, existing, params)
@@ -320,7 +312,6 @@ func (s *NodeService) createAnnouncedNode(ctx context.Context, params AnnounceNo
 	apiKey := params.APIKey
 	tokenHash := sha256.Sum256([]byte(apiKey))
 	now := time.Now()
-
 	node := &domain.Node{
 		OwnerID:      "",
 		Address:      params.Address,
@@ -347,10 +338,13 @@ func (s *NodeService) createAnnouncedNode(ctx context.Context, params AnnounceNo
 }
 
 func (s *NodeService) updateAnnouncedNode(ctx context.Context, existing *domain.Node, params AnnounceNodeParams) (*AnnounceNodeResult, error) {
+	if existing.Status == domain.NodeStatusOnline {
+		return nil, domain.ErrAlreadyExists
+	}
+
 	apiKey := params.APIKey
 	tokenHash := sha256.Sum256([]byte(apiKey))
 	now := time.Now()
-
 	existing.TokenHash = tokenHash[:]
 	existing.APIToken = apiKey
 	existing.Region = params.Region
@@ -368,4 +362,81 @@ func (s *NodeService) updateAnnouncedNode(ctx context.Context, existing *domain.
 	return &AnnounceNodeResult{
 		NodeID: existing.ID,
 	}, nil
+}
+
+// ListNodeInstances возвращает список инстансов на указанной ноде.
+func (s *NodeService) ListNodeInstances(ctx context.Context, ownerID string, nodeID int64) ([]*EnrichedInstance, error) {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.ListNodeInstances: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	instances, err := s.instanceRepo.ListByNode(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.ListNodeInstances: list instances: %w", err)
+	}
+
+	result := make([]*EnrichedInstance, 0, len(instances))
+	for _, inst := range instances {
+		enriched := &EnrichedInstance{Instance: inst, Status: inst.Status}
+
+		st, err := s.instanceState.GetStatus(ctx, inst.ID)
+		if err == nil {
+			enriched.Status = st
+		}
+
+		pc, err := s.instanceState.GetPlayerCount(ctx, inst.ID)
+		if err == nil {
+			enriched.PlayerCount = &pc
+		}
+
+		result = append(result, enriched)
+	}
+
+	return result, nil
+}
+
+// SyncInstances синхронизирует статусы инстансов с активными контейнерами на ноде.
+// Примечание: в доменной модели Instance отсутствует поле ContainerID, поэтому
+// сопоставление выполняется по строковому представлению Instance.ID.
+func (s *NodeService) SyncInstances(ctx context.Context, nodeID int64, activeContainerIDs []string) error {
+	const op = "NodeService.SyncInstances"
+
+	instances, err := s.instanceRepo.ListByNode(ctx, nodeID)
+	if err != nil {
+		return fmt.Errorf("%s: list instances: %w", op, err)
+	}
+
+	activeSet := make(map[string]struct{}, len(activeContainerIDs))
+	for _, cid := range activeContainerIDs {
+		activeSet[cid] = struct{}{}
+	}
+
+	now := time.Now()
+	for _, inst := range instances {
+		instIDStr := strconv.FormatInt(inst.ID, 10)
+		if inst.Status == domain.InstanceStatusRunning || inst.Status == domain.InstanceStatusStarting {
+			if _, ok := activeSet[instIDStr]; !ok {
+				inst.Status = domain.InstanceStatusStopped
+				inst.UpdatedAt = now
+				if err := s.instanceRepo.Update(ctx, inst); err != nil {
+					s.log.Warn("failed to update instance status during sync",
+						slog.Int64("instance_id", inst.ID),
+						slog.String("error", err.Error()),
+					)
+					continue
+				}
+				_ = s.instanceState.SetStatus(ctx, inst.ID, domain.InstanceStatusStopped)
+				s.log.Info("instance status updated during sync",
+					slog.Int64("instance_id", inst.ID),
+					slog.String("new_status", "stopped"),
+				)
+			}
+		}
+	}
+
+	return nil
 }

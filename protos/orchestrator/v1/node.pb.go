@@ -620,6 +620,94 @@ func (x *NodeServiceGetUsageResponse) GetActiveInstanceCount() int32 {
 	return 0
 }
 
+type NodeServiceListInstancesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceListInstancesRequest) Reset() {
+	*x = NodeServiceListInstancesRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceListInstancesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceListInstancesRequest) ProtoMessage() {}
+
+func (x *NodeServiceListInstancesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceListInstancesRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceListInstancesRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *NodeServiceListInstancesRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+type NodeServiceListInstancesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Instances     []*Instance            `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceListInstancesResponse) Reset() {
+	*x = NodeServiceListInstancesResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceListInstancesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceListInstancesResponse) ProtoMessage() {}
+
+func (x *NodeServiceListInstancesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceListInstancesResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceListInstancesResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *NodeServiceListInstancesResponse) GetInstances() []*Instance {
+	if x != nil {
+		return x.Instances
+	}
+	return nil
+}
+
 type NodeServiceAnnounceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// gRPC адрес ноды (host:port), по которому оркестратор будет подключаться.
@@ -633,15 +721,17 @@ type NodeServiceAnnounceRequest struct {
 	TotalMemoryBytes uint64 `protobuf:"varint,5,opt,name=total_memory_bytes,json=totalMemoryBytes,proto3" json:"total_memory_bytes,omitempty"`
 	TotalDiskBytes   uint64 `protobuf:"varint,6,opt,name=total_disk_bytes,json=totalDiskBytes,proto3" json:"total_disk_bytes,omitempty"`
 	// API-ключ ноды (NODE_API_KEY). Используется как токен авторизации:
-	// пользователь вводит этот же ключ для подключения ноды.
-	ApiKey        string `protobuf:"bytes,7,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// пользователь вводит тот же NODE_API_KEY для подключения ноды.
+	ApiKey string `protobuf:"bytes,7,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
+	// Список ID активных контейнеров на ноде (для синхронизации при старте).
+	ActiveContainerIds []string `protobuf:"bytes,8,rep,name=active_container_ids,json=activeContainerIds,proto3" json:"active_container_ids,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *NodeServiceAnnounceRequest) Reset() {
 	*x = NodeServiceAnnounceRequest{}
-	mi := &file_orchestrator_v1_node_proto_msgTypes[12]
+	mi := &file_orchestrator_v1_node_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -653,7 +743,7 @@ func (x *NodeServiceAnnounceRequest) String() string {
 func (*NodeServiceAnnounceRequest) ProtoMessage() {}
 
 func (x *NodeServiceAnnounceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_node_proto_msgTypes[12]
+	mi := &file_orchestrator_v1_node_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -666,7 +756,7 @@ func (x *NodeServiceAnnounceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeServiceAnnounceRequest.ProtoReflect.Descriptor instead.
 func (*NodeServiceAnnounceRequest) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{12}
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NodeServiceAnnounceRequest) GetAddress() string {
@@ -718,6 +808,13 @@ func (x *NodeServiceAnnounceRequest) GetApiKey() string {
 	return ""
 }
 
+func (x *NodeServiceAnnounceRequest) GetActiveContainerIds() []string {
+	if x != nil {
+		return x.ActiveContainerIds
+	}
+	return nil
+}
+
 type NodeServiceAnnounceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID созданной ноды в оркестраторе.
@@ -728,7 +825,7 @@ type NodeServiceAnnounceResponse struct {
 
 func (x *NodeServiceAnnounceResponse) Reset() {
 	*x = NodeServiceAnnounceResponse{}
-	mi := &file_orchestrator_v1_node_proto_msgTypes[13]
+	mi := &file_orchestrator_v1_node_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -740,7 +837,7 @@ func (x *NodeServiceAnnounceResponse) String() string {
 func (*NodeServiceAnnounceResponse) ProtoMessage() {}
 
 func (x *NodeServiceAnnounceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_node_proto_msgTypes[13]
+	mi := &file_orchestrator_v1_node_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -753,7 +850,7 @@ func (x *NodeServiceAnnounceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeServiceAnnounceResponse.ProtoReflect.Descriptor instead.
 func (*NodeServiceAnnounceResponse) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{13}
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *NodeServiceAnnounceResponse) GetNodeId() int64 {
@@ -799,7 +896,11 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\x1bNodeServiceGetUsageResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x124\n" +
 	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage\x122\n" +
-	"\x15active_instance_count\x18\x03 \x01(\x05R\x13activeInstanceCount\"\x91\x02\n" +
+	"\x15active_instance_count\x18\x03 \x01(\x05R\x13activeInstanceCount\":\n" +
+	"\x1fNodeServiceListInstancesRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\"[\n" +
+	" NodeServiceListInstancesResponse\x127\n" +
+	"\tinstances\x18\x01 \x03(\v2\x19.orchestrator.v1.InstanceR\tinstances\"\xc3\x02\n" +
 	"\x1aNodeServiceAnnounceRequest\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x1b\n" +
 	"\x06region\x18\x02 \x01(\tH\x00R\x06region\x88\x01\x01\x12#\n" +
@@ -807,16 +908,18 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\tcpu_cores\x18\x04 \x01(\rR\bcpuCores\x12,\n" +
 	"\x12total_memory_bytes\x18\x05 \x01(\x04R\x10totalMemoryBytes\x12(\n" +
 	"\x10total_disk_bytes\x18\x06 \x01(\x04R\x0etotalDiskBytes\x12\x17\n" +
-	"\aapi_key\x18\a \x01(\tR\x06apiKeyB\t\n" +
+	"\aapi_key\x18\a \x01(\tR\x06apiKey\x120\n" +
+	"\x14active_container_ids\x18\b \x03(\tR\x12activeContainerIdsB\t\n" +
 	"\a_region\"6\n" +
 	"\x1bNodeServiceAnnounceResponse\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\x03R\x06nodeId2\x96\x06\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId2\xb8\a\n" +
 	"\vNodeService\x12\x7f\n" +
 	"\bRegister\x12+.orchestrator.v1.NodeServiceRegisterRequest\x1a,.orchestrator.v1.NodeServiceRegisterResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/nodes\x12p\n" +
 	"\x04List\x12'.orchestrator.v1.NodeServiceListRequest\x1a(.orchestrator.v1.NodeServiceListResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/nodes\x12w\n" +
 	"\x03Get\x12&.orchestrator.v1.NodeServiceGetRequest\x1a'.orchestrator.v1.NodeServiceGetResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/nodes/{node_id}\x12\x80\x01\n" +
 	"\x06Delete\x12).orchestrator.v1.NodeServiceDeleteRequest\x1a*.orchestrator.v1.NodeServiceDeleteResponse\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/nodes/{node_id}\x12\x8c\x01\n" +
-	"\bGetUsage\x12+.orchestrator.v1.NodeServiceGetUsageRequest\x1a,.orchestrator.v1.NodeServiceGetUsageResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/nodes/{node_id}/usage\x12\x88\x01\n" +
+	"\bGetUsage\x12+.orchestrator.v1.NodeServiceGetUsageRequest\x1a,.orchestrator.v1.NodeServiceGetUsageResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/nodes/{node_id}/usage\x12\x9f\x01\n" +
+	"\rListInstances\x120.orchestrator.v1.NodeServiceListInstancesRequest\x1a1.orchestrator.v1.NodeServiceListInstancesResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/nodes/{node_id}/instances\x12\x88\x01\n" +
 	"\bAnnounce\x12+.orchestrator.v1.NodeServiceAnnounceRequest\x1a,.orchestrator.v1.NodeServiceAnnounceResponse\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/api/v1/nodes/announceB\xc9\x01\n" +
 	"\x13com.orchestrator.v1B\tNodeProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
@@ -832,51 +935,57 @@ func file_orchestrator_v1_node_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_node_proto_rawDescData
 }
 
-var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_orchestrator_v1_node_proto_goTypes = []any{
-	(*RegisterNodeManual)(nil),          // 0: orchestrator.v1.RegisterNodeManual
-	(*RegisterNodeAuthorize)(nil),       // 1: orchestrator.v1.RegisterNodeAuthorize
-	(*NodeServiceRegisterRequest)(nil),  // 2: orchestrator.v1.NodeServiceRegisterRequest
-	(*NodeServiceRegisterResponse)(nil), // 3: orchestrator.v1.NodeServiceRegisterResponse
-	(*NodeServiceListRequest)(nil),      // 4: orchestrator.v1.NodeServiceListRequest
-	(*NodeServiceListResponse)(nil),     // 5: orchestrator.v1.NodeServiceListResponse
-	(*NodeServiceGetRequest)(nil),       // 6: orchestrator.v1.NodeServiceGetRequest
-	(*NodeServiceGetResponse)(nil),      // 7: orchestrator.v1.NodeServiceGetResponse
-	(*NodeServiceDeleteRequest)(nil),    // 8: orchestrator.v1.NodeServiceDeleteRequest
-	(*NodeServiceDeleteResponse)(nil),   // 9: orchestrator.v1.NodeServiceDeleteResponse
-	(*NodeServiceGetUsageRequest)(nil),  // 10: orchestrator.v1.NodeServiceGetUsageRequest
-	(*NodeServiceGetUsageResponse)(nil), // 11: orchestrator.v1.NodeServiceGetUsageResponse
-	(*NodeServiceAnnounceRequest)(nil),  // 12: orchestrator.v1.NodeServiceAnnounceRequest
-	(*NodeServiceAnnounceResponse)(nil), // 13: orchestrator.v1.NodeServiceAnnounceResponse
-	(*Node)(nil),                        // 14: orchestrator.v1.Node
-	(NodeStatus)(0),                     // 15: orchestrator.v1.NodeStatus
-	(*ResourceUsage)(nil),               // 16: orchestrator.v1.ResourceUsage
+	(*RegisterNodeManual)(nil),               // 0: orchestrator.v1.RegisterNodeManual
+	(*RegisterNodeAuthorize)(nil),            // 1: orchestrator.v1.RegisterNodeAuthorize
+	(*NodeServiceRegisterRequest)(nil),       // 2: orchestrator.v1.NodeServiceRegisterRequest
+	(*NodeServiceRegisterResponse)(nil),      // 3: orchestrator.v1.NodeServiceRegisterResponse
+	(*NodeServiceListRequest)(nil),           // 4: orchestrator.v1.NodeServiceListRequest
+	(*NodeServiceListResponse)(nil),          // 5: orchestrator.v1.NodeServiceListResponse
+	(*NodeServiceGetRequest)(nil),            // 6: orchestrator.v1.NodeServiceGetRequest
+	(*NodeServiceGetResponse)(nil),           // 7: orchestrator.v1.NodeServiceGetResponse
+	(*NodeServiceDeleteRequest)(nil),         // 8: orchestrator.v1.NodeServiceDeleteRequest
+	(*NodeServiceDeleteResponse)(nil),        // 9: orchestrator.v1.NodeServiceDeleteResponse
+	(*NodeServiceGetUsageRequest)(nil),       // 10: orchestrator.v1.NodeServiceGetUsageRequest
+	(*NodeServiceGetUsageResponse)(nil),      // 11: orchestrator.v1.NodeServiceGetUsageResponse
+	(*NodeServiceListInstancesRequest)(nil),  // 12: orchestrator.v1.NodeServiceListInstancesRequest
+	(*NodeServiceListInstancesResponse)(nil), // 13: orchestrator.v1.NodeServiceListInstancesResponse
+	(*NodeServiceAnnounceRequest)(nil),       // 14: orchestrator.v1.NodeServiceAnnounceRequest
+	(*NodeServiceAnnounceResponse)(nil),      // 15: orchestrator.v1.NodeServiceAnnounceResponse
+	(*Node)(nil),                             // 16: orchestrator.v1.Node
+	(NodeStatus)(0),                          // 17: orchestrator.v1.NodeStatus
+	(*ResourceUsage)(nil),                    // 18: orchestrator.v1.ResourceUsage
+	(*Instance)(nil),                         // 19: orchestrator.v1.Instance
 }
 var file_orchestrator_v1_node_proto_depIdxs = []int32{
 	0,  // 0: orchestrator.v1.NodeServiceRegisterRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
 	1,  // 1: orchestrator.v1.NodeServiceRegisterRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
-	14, // 2: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
-	15, // 3: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
-	14, // 4: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
-	14, // 5: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
-	16, // 6: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	2,  // 7: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
-	4,  // 8: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
-	6,  // 9: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
-	8,  // 10: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
-	10, // 11: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
-	12, // 12: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
-	3,  // 13: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
-	5,  // 14: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
-	7,  // 15: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
-	9,  // 16: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
-	11, // 17: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
-	13, // 18: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	16, // 2: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
+	17, // 3: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
+	16, // 4: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
+	16, // 5: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
+	18, // 6: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	19, // 7: orchestrator.v1.NodeServiceListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
+	2,  // 8: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
+	4,  // 9: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
+	6,  // 10: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
+	8,  // 11: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
+	10, // 12: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
+	12, // 13: orchestrator.v1.NodeService.ListInstances:input_type -> orchestrator.v1.NodeServiceListInstancesRequest
+	14, // 14: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
+	3,  // 15: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
+	5,  // 16: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
+	7,  // 17: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
+	9,  // 18: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
+	11, // 19: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
+	13, // 20: orchestrator.v1.NodeService.ListInstances:output_type -> orchestrator.v1.NodeServiceListInstancesResponse
+	15, // 21: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
+	15, // [15:22] is the sub-list for method output_type
+	8,  // [8:15] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_node_proto_init() }
@@ -891,14 +1000,14 @@ func file_orchestrator_v1_node_proto_init() {
 		(*NodeServiceRegisterRequest_Authorize)(nil),
 	}
 	file_orchestrator_v1_node_proto_msgTypes[4].OneofWrappers = []any{}
-	file_orchestrator_v1_node_proto_msgTypes[12].OneofWrappers = []any{}
+	file_orchestrator_v1_node_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_node_proto_rawDesc), len(file_orchestrator_v1_node_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

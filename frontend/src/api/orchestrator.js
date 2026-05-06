@@ -75,7 +75,7 @@ export function getInstanceUsage(gameId, instanceId) {
     .then((r) => r.data.usage ?? r.data);
 }
 
-// ─── Логи (SSE) ───────────────────────────────────
+// ─── Логи (SSE / HTTP) ────────────────────────────
 
 export function createLogStream(
   gameId,
@@ -88,8 +88,50 @@ export function createLogStream(
   if (source && source !== "all") params.set("source", source);
   if (since) params.set("since", since);
 
+  const token = localStorage.getItem("gdh_access_token");
+  if (token) params.set("token", token);
+
   const url = `/api/v1/games/${gameId}/instances/${instanceId}/logs?${params.toString()}`;
   return new EventSource(url);
+}
+
+export async function fetchLogs(
+  gameId,
+  instanceId,
+  { tail = 100, source } = {},
+) {
+  const params = new URLSearchParams();
+  params.set("follow", "false");
+  params.set("tail", String(tail));
+  if (source && source !== "all") params.set("source", source);
+
+  const token = localStorage.getItem("gdh_access_token");
+  if (token) params.set("token", token);
+
+  const url = `/api/v1/games/${gameId}/instances/${instanceId}/logs?${params.toString()}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const text = await resp.text();
+
+  // Parse SSE format lines
+  const entries = [];
+  const lines = text.split("\n");
+  let currentData = null;
+  for (const line of lines) {
+    if (line.startsWith("event: ")) {
+      // ignore event type
+    } else if (line.startsWith("data: ")) {
+      currentData = line.slice(6);
+    } else if (line === "" && currentData !== null) {
+      try {
+        entries.push(JSON.parse(currentData));
+      } catch {
+        // ignore invalid data
+      }
+      currentData = null;
+    }
+  }
+  return entries;
 }
 
 // ─── Ноды ─────────────────────────────────────────
@@ -144,5 +186,18 @@ export function deleteNode(nodeId) {
 }
 
 export function getNodeUsage(nodeId) {
-  return http.get(`/nodes/${nodeId}/usage`).then((r) => r.data);
+  return http.get(`/nodes/${nodeId}/usage`).then((r) => {
+    const data = r.data;
+    return {
+      cpu_usage_percent: data.usage?.cpu_usage_percent ?? 0,
+      memory_used_bytes: data.usage?.memory_used_bytes ?? 0,
+      disk_used_bytes: data.usage?.disk_used_bytes ?? 0,
+      network_bytes_per_sec: data.usage?.network_bytes_per_sec ?? 0,
+      active_instance_count: data.active_instance_count ?? 0,
+    };
+  });
+}
+
+export function listNodeInstances(nodeId) {
+  return http.get(`/nodes/${nodeId}/instances`).then((r) => r.data.instances ?? []);
 }

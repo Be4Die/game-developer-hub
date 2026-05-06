@@ -18,6 +18,9 @@ type InstanceRepo interface {
 	// ListByNode возвращает все инстансы, запущенные на указанной ноде.
 	ListByNode(ctx context.Context, nodeID int64) ([]*Instance, error)
 
+	// List возвращает все инстансы.
+	List(ctx context.Context) ([]*Instance, error)
+
 	// Update обновляет персистентные поля инстанса. Возвращает ErrNotFound при отсутствии.
 	Update(ctx context.Context, instance *Instance) error
 
@@ -26,4 +29,7 @@ type InstanceRepo interface {
 
 	// CountByGame возвращает количество записей инстансов для игры.
 	CountByGame(ctx context.Context, gameID int64) (int, error)
+
+	// GetNextID возвращает следующий ID из последовательности PostgreSQL.
+	GetNextID(ctx context.Context) (int64, error)
 }

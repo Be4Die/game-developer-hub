@@ -35,6 +35,11 @@ service NodeService {
     option (google.api.http) = {get: "/api/v1/nodes/{node_id}/usage"};
   }
 
+  // Список инстансов на ноде.
+  rpc ListInstances(NodeServiceListInstancesRequest) returns (NodeServiceListInstancesResponse) {
+    option (google.api.http) = {get: "/api/v1/nodes/{node_id}/instances"};
+  }
+
   // Анонсирование ноды. Нода сама заявляет о себе оркестратору.
   // Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
   rpc Announce(NodeServiceAnnounceRequest) returns (NodeServiceAnnounceResponse) {
@@ -111,6 +116,16 @@ message NodeServiceGetUsageResponse {
   int32 active_instance_count = 3;
 }
 
+// ─── ListInstances ───────────────────────────────────────────────────────────
+
+message NodeServiceListInstancesRequest {
+  int64 node_id = 1;
+}
+
+message NodeServiceListInstancesResponse {
+  repeated Instance instances = 1;
+}
+
 // ─── Announce ───────────────────────────────────────────────────────────────
 
 message NodeServiceAnnounceRequest {
@@ -124,10 +139,12 @@ message NodeServiceAnnounceRequest {
   uint32 cpu_cores = 4;
   uint64 total_memory_bytes = 5;
   uint64 total_disk_bytes = 6;
-  // API-ключ ноды (NODE_API_KEY). Используется как токен авторизации:
-  // пользователь вводит этот же ключ для подключения ноды.
-  string api_key = 7;
-}
+   // API-ключ ноды (NODE_API_KEY). Используется как токен авторизации:
+   // пользователь вводит тот же NODE_API_KEY для подключения ноды.
+   string api_key = 7;
+   // Список ID активных контейнеров на ноде (для синхронизации при старте).
+   repeated string active_container_ids = 8;
+ }
 
 message NodeServiceAnnounceResponse {
   // ID созданной ноды в оркестраторе.

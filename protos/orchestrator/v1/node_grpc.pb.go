@@ -19,12 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NodeService_Register_FullMethodName = "/orchestrator.v1.NodeService/Register"
-	NodeService_List_FullMethodName     = "/orchestrator.v1.NodeService/List"
-	NodeService_Get_FullMethodName      = "/orchestrator.v1.NodeService/Get"
-	NodeService_Delete_FullMethodName   = "/orchestrator.v1.NodeService/Delete"
-	NodeService_GetUsage_FullMethodName = "/orchestrator.v1.NodeService/GetUsage"
-	NodeService_Announce_FullMethodName = "/orchestrator.v1.NodeService/Announce"
+	NodeService_Register_FullMethodName      = "/orchestrator.v1.NodeService/Register"
+	NodeService_List_FullMethodName          = "/orchestrator.v1.NodeService/List"
+	NodeService_Get_FullMethodName           = "/orchestrator.v1.NodeService/Get"
+	NodeService_Delete_FullMethodName        = "/orchestrator.v1.NodeService/Delete"
+	NodeService_GetUsage_FullMethodName      = "/orchestrator.v1.NodeService/GetUsage"
+	NodeService_ListInstances_FullMethodName = "/orchestrator.v1.NodeService/ListInstances"
+	NodeService_Announce_FullMethodName      = "/orchestrator.v1.NodeService/Announce"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -43,6 +44,8 @@ type NodeServiceClient interface {
 	Delete(ctx context.Context, in *NodeServiceDeleteRequest, opts ...grpc.CallOption) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
 	GetUsage(ctx context.Context, in *NodeServiceGetUsageRequest, opts ...grpc.CallOption) (*NodeServiceGetUsageResponse, error)
+	// Список инстансов на ноде.
+	ListInstances(ctx context.Context, in *NodeServiceListInstancesRequest, opts ...grpc.CallOption) (*NodeServiceListInstancesResponse, error)
 	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
 	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
 	Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error)
@@ -106,6 +109,16 @@ func (c *nodeServiceClient) GetUsage(ctx context.Context, in *NodeServiceGetUsag
 	return out, nil
 }
 
+func (c *nodeServiceClient) ListInstances(ctx context.Context, in *NodeServiceListInstancesRequest, opts ...grpc.CallOption) (*NodeServiceListInstancesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceListInstancesResponse)
+	err := c.cc.Invoke(ctx, NodeService_ListInstances_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *nodeServiceClient) Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NodeServiceAnnounceResponse)
@@ -132,6 +145,8 @@ type NodeServiceServer interface {
 	Delete(context.Context, *NodeServiceDeleteRequest) (*NodeServiceDeleteResponse, error)
 	// Потребление ресурсов ноды.
 	GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error)
+	// Список инстансов на ноде.
+	ListInstances(context.Context, *NodeServiceListInstancesRequest) (*NodeServiceListInstancesResponse, error)
 	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
 	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
 	Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error)
@@ -159,6 +174,9 @@ func (UnimplementedNodeServiceServer) Delete(context.Context, *NodeServiceDelete
 }
 func (UnimplementedNodeServiceServer) GetUsage(context.Context, *NodeServiceGetUsageRequest) (*NodeServiceGetUsageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsage not implemented")
+}
+func (UnimplementedNodeServiceServer) ListInstances(context.Context, *NodeServiceListInstancesRequest) (*NodeServiceListInstancesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInstances not implemented")
 }
 func (UnimplementedNodeServiceServer) Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Announce not implemented")
@@ -274,6 +292,24 @@ func _NodeService_GetUsage_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_ListInstances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceListInstancesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ListInstances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_ListInstances_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ListInstances(ctx, req.(*NodeServiceListInstancesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NodeService_Announce_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NodeServiceAnnounceRequest)
 	if err := dec(in); err != nil {
@@ -318,6 +354,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUsage",
 			Handler:    _NodeService_GetUsage_Handler,
+		},
+		{
+			MethodName: "ListInstances",
+			Handler:    _NodeService_ListInstances_Handler,
 		},
 		{
 			MethodName: "Announce",

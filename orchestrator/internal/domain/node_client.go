@@ -30,8 +30,8 @@ type NodeClient interface {
 	// GetNodeInfo запрашивает статические характеристики ноды.
 	GetNodeInfo(ctx context.Context, nodeAddress, apiKey string) (*NodeInfo, error)
 
-	// Heartbeat получает текущую загруженность ноды.
-	Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*ResourceUsage, error)
+	// Heartbeat получает текущую загруженность ноды и количество активных инстансов.
+	Heartbeat(ctx context.Context, nodeAddress, apiKey string) (*HeartbeatResult, error)
 
 	// ListInstances возвращает все экземпляры на ноде.
 	ListInstances(ctx context.Context, nodeAddress, apiKey string) ([]*Instance, error)
@@ -74,6 +74,7 @@ type ImageLoadResult struct {
 // StartInstanceRequest содержит параметры запуска экземпляра на ноде.
 type StartInstanceRequest struct {
 	GameID           int64
+	InstanceID       int64 // Если != 0 — передаём ноде, иначе нода генерирует сама
 	Name             string
 	Protocol         Protocol
 	InternalPort     uint32
@@ -107,4 +108,10 @@ type NodeInfo struct {
 	TotalDiskBytes   uint64
 	NetworkBandwidth uint64
 	AgentVersion     string
+}
+
+// HeartbeatResult содержит результат heartbeat от ноды.
+type HeartbeatResult struct {
+	Usage               *ResourceUsage
+	ActiveInstanceCount uint32
 }

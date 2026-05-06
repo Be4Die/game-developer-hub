@@ -110,6 +110,23 @@ func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.NodeServiceGetUsageR
 	}, nil
 }
 
+// ListInstances возвращает список инстансов на ноде.
+func (h *NodeHandler) ListInstances(ctx context.Context, req *pb.NodeServiceListInstancesRequest) (*pb.NodeServiceListInstancesResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	instances, err := h.nodeService.ListNodeInstances(ctx, ownerID, req.GetNodeId())
+	if err != nil {
+		return nil, domainError(err, "list node instances")
+	}
+
+	protos := make([]*pb.Instance, len(instances))
+	for i, inst := range instances {
+		protos[i] = instanceToProto(inst.Instance)
+	}
+
+	return &pb.NodeServiceListInstancesResponse{Instances: protos}, nil
+}
+
 // Announce обрабатывает анонсирование ноды от самой ноды.
 // Не требует авторизации — нода сама заявляет о своем существовании.
 func (h *NodeHandler) Announce(ctx context.Context, req *pb.NodeServiceAnnounceRequest) (*pb.NodeServiceAnnounceResponse, error) {

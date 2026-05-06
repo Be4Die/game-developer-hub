@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"io"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -11,11 +13,15 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 
+// testLogger возвращает логгер, который не пишет в вывод тестов.
+func testLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
+}
+
 func TestNodeService_RegisterNode_Manual_Success(t *testing.T) {
 	token := "test-token"
 	address := "node1:44044"
 	tokenHash := sha256.Sum256([]byte(token))
-
 	var createdNode *domain.Node
 	var mu sync.Mutex
 
@@ -42,7 +48,7 @@ func TestNodeService_RegisterNode_Manual_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -88,7 +94,6 @@ func TestNodeService_RegisterNode_Manual_Success(t *testing.T) {
 
 func TestNodeService_RegisterNode_Manual_AlreadyExists(t *testing.T) {
 	address := "node1:44044"
-
 	nodeRepo := &hbMockNodeRepo{
 		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
 			return &domain.Node{
@@ -107,7 +112,7 @@ func TestNodeService_RegisterNode_Manual_AlreadyExists(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -129,7 +134,6 @@ func TestNodeService_RegisterNode_Authorize_Success(t *testing.T) {
 	token := "correct-token"
 	tokenHash := sha256.Sum256([]byte(token))
 	nodeID := int64(42)
-
 	var updatedNode *domain.Node
 	var mu sync.Mutex
 
@@ -150,7 +154,7 @@ func TestNodeService_RegisterNode_Authorize_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -186,7 +190,6 @@ func TestNodeService_RegisterNode_Authorize_InvalidToken(t *testing.T) {
 	tokenHash := sha256.Sum256([]byte(correctToken))
 	nodeID := int64(42)
 	wrongToken := "wrong-token"
-
 	nodeRepo := &hbMockNodeRepo{
 		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
 			return &domain.Node{
@@ -198,7 +201,7 @@ func TestNodeService_RegisterNode_Authorize_InvalidToken(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -216,7 +219,6 @@ func TestNodeService_RegisterNode_Authorize_NotUnauthorized(t *testing.T) {
 	token := "some-token"
 	tokenHash := sha256.Sum256([]byte(token))
 	nodeID := int64(42)
-
 	nodeRepo := &hbMockNodeRepo{
 		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
 			return &domain.Node{
@@ -228,7 +230,7 @@ func TestNodeService_RegisterNode_Authorize_NotUnauthorized(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -248,7 +250,6 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 		{ID: 1, Address: "node1:44044", Status: domain.NodeStatusOnline, LastPingAt: now},
 		{ID: 2, Address: "node2:44044", Status: domain.NodeStatusOffline, LastPingAt: now.Add(-120 * time.Second)},
 	}
-
 	nodeRepo := &hbMockNodeRepo{
 		listFn: func(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error) {
 			return nodes, nil
@@ -267,7 +268,7 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -307,7 +308,6 @@ func TestNodeService_GetNode_Success(t *testing.T) {
 		Status:     domain.NodeStatusOnline,
 		LastPingAt: now,
 	}
-
 	nodeRepo := &hbMockNodeRepo{
 		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
 			return node, nil
@@ -326,7 +326,7 @@ func TestNodeService_GetNode_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -357,7 +357,6 @@ func TestNodeService_DeleteNode_Success(t *testing.T) {
 	nodeID := int64(1)
 	instance1 := &domain.Instance{ID: 10, NodeID: nodeID, Status: domain.InstanceStatusRunning}
 	instance2 := &domain.Instance{ID: 11, NodeID: nodeID, Status: domain.InstanceStatusRunning}
-
 	var updatedInstances []*domain.Instance
 	var mu sync.Mutex
 	var kvDeleted bool
@@ -395,7 +394,7 @@ func TestNodeService_DeleteNode_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, nodeState, instanceRepo, instanceState, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, nodeState, instanceRepo, instanceState, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -430,7 +429,6 @@ func TestNodeService_GetNodeUsage_Success(t *testing.T) {
 		ID:     nodeID,
 		Status: domain.NodeStatusOnline,
 	}
-
 	nodeRepo := &hbMockNodeRepo{
 		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
 			return node, nil
@@ -453,7 +451,7 @@ func TestNodeService_GetNodeUsage_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -481,7 +479,6 @@ func TestNodeService_ConstantTimeEqual(t *testing.T) {
 	hash1 := sha256.Sum256([]byte("hello"))
 	hash2 := sha256.Sum256([]byte("hello"))
 	hash3 := sha256.Sum256([]byte("world"))
-
 	tests := []struct {
 		name     string
 		a        []byte
@@ -540,7 +537,6 @@ func TestNodeService_AnnounceNode_Success(t *testing.T) {
 	address := "192.168.1.100:44044"
 	var createdNode *domain.Node
 	var mu sync.Mutex
-
 	nodeRepo := &hbMockNodeRepo{
 		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
 			return nil, domain.ErrNotFound
@@ -554,7 +550,7 @@ func TestNodeService_AnnounceNode_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -605,7 +601,6 @@ func TestNodeService_AnnounceNode_UpdateExistingUnauthorized(t *testing.T) {
 		OwnerID:   "",
 		TokenHash: []byte("old-hash"),
 	}
-
 	var updatedNode *domain.Node
 	var mu sync.Mutex
 
@@ -621,7 +616,7 @@ func TestNodeService_AnnounceNode_UpdateExistingUnauthorized(t *testing.T) {
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
@@ -664,14 +659,13 @@ func TestNodeService_AnnounceNode_AlreadyOnline(t *testing.T) {
 		Status:  domain.NodeStatusOnline,
 		OwnerID: "user-123",
 	}
-
 	nodeRepo := &hbMockNodeRepo{
 		getByAddressFn: func(ctx context.Context, addr string) (*domain.Node, error) {
 			return existingNode, nil
 		},
 	}
 
-	svc := NewNodeService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)

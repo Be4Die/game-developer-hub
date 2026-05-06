@@ -41,7 +41,7 @@ type InstanceServiceClient interface {
 	Get(ctx context.Context, in *InstanceServiceGetRequest, opts ...grpc.CallOption) (*InstanceServiceGetResponse, error)
 	// Остановить инстанс.
 	Stop(ctx context.Context, in *InstanceServiceStopRequest, opts ...grpc.CallOption) (*InstanceServiceStopResponse, error)
-	// Поток журналов инстанса (server streaming) — без HTTP-маппинга.
+	// Поток журналов инстанса (server streaming) — использует SSE для HTTP.
 	StreamLogs(ctx context.Context, in *InstanceServiceStreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse], error)
 	// Потребление ресурсов инстанса.
 	GetUsage(ctx context.Context, in *InstanceServiceGetUsageRequest, opts ...grpc.CallOption) (*InstanceServiceGetUsageResponse, error)
@@ -138,7 +138,7 @@ type InstanceServiceServer interface {
 	Get(context.Context, *InstanceServiceGetRequest) (*InstanceServiceGetResponse, error)
 	// Остановить инстанс.
 	Stop(context.Context, *InstanceServiceStopRequest) (*InstanceServiceStopResponse, error)
-	// Поток журналов инстанса (server streaming) — без HTTP-маппинга.
+	// Поток журналов инстанса (server streaming) — использует SSE для HTTP.
 	StreamLogs(*InstanceServiceStreamLogsRequest, grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]) error
 	// Потребление ресурсов инстанса.
 	GetUsage(context.Context, *InstanceServiceGetUsageRequest) (*InstanceServiceGetUsageResponse, error)

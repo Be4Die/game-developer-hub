@@ -42,7 +42,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { createLogStream } from '../../api/orchestrator'
+import { createLogStream, fetchLogs } from '../../api/orchestrator'
 
 const props = defineProps({
   gameId: { type: [String, Number], required: true },
@@ -61,9 +61,27 @@ function connect() {
   disconnect()
   entries.value = []
 
+  if (!follow.value) {
+    // Use HTTP fetch for non-streaming (follow=false)
+    connected.value = true
+    fetchLogs(props.gameId, props.instanceId, {
+      tail: tail.value,
+      source: sourceFilter.value,
+    })
+      .then((data) => {
+        entries.value = data
+        connected.value = false
+        nextTick(scrollToBottom)
+      })
+      .catch(() => {
+        connected.value = false
+      })
+    return
+  }
+
   try {
     eventSource = createLogStream(props.gameId, props.instanceId, {
-      follow: follow.value,
+      follow: true,
       tail: tail.value,
       source: sourceFilter.value,
     })
@@ -154,36 +172,58 @@ watch(() => [props.gameId, props.instanceId], () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: #1e1e2e;
+  background: var(--bg-card);
 }
 .logs-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #2a2a3c;
-  border-bottom: 1px solid #3a3a4c;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
   gap: 8px;
 }
 .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
 .toolbar-item {
   display: flex; align-items: center; gap: 4px;
-  font-size: 0.78rem; color: #cdd6f4; cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.toolbar-item input[type="checkbox"] {
+  accent-color: var(--primary);
 }
 .toolbar-input {
-  width: 60px; padding: 2px 6px; border: 1px solid #3a3a4c;
-  border-radius: 4px; background: #1e1e2e; color: #cdd6f4; font-size: 0.78rem;
+  width: 60px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 0.78rem;
 }
 .toolbar-select {
-  padding: 2px 6px; border: 1px solid #3a3a4c;
-  border-radius: 4px; background: #1e1e2e; color: #cdd6f4; font-size: 0.78rem;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 0.78rem;
 }
 .toolbar-btn {
-  padding: 4px 10px; border: 1px solid #3a3a4c;
-  border-radius: 4px; background: #2a2a3c; color: #cdd6f4; cursor: pointer; font-size: 0.78rem;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background 0.15s;
 }
-.toolbar-btn:hover { background: #3a3a4c; }
+.toolbar-btn:hover {
+  background: var(--bg-hover);
+}
 .logs-terminal {
   height: 340px;
   overflow-y: auto;
@@ -191,11 +231,30 @@ watch(() => [props.gameId, props.instanceId], () => {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.8rem;
   line-height: 1.6;
+  background: var(--bg-app);
+  color: var(--text-main);
 }
-.logs-empty { color: #6c7086; text-align: center; padding: 40px 0; }
-.log-line { white-space: pre-wrap; word-break: break-all; }
-.log-ts { color: #6c7086; margin-right: 8px; }
-.log-src { color: #89b4fa; margin-right: 8px; }
-.log-stdout .log-msg { color: #cdd6f4; }
-.log-stderr .log-msg { color: #f38ba8; }
+.logs-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px 0;
+}
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-ts {
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+.log-src {
+  color: var(--primary);
+  margin-right: 8px;
+}
+.log-stdout .log-msg {
+  color: var(--text-main);
+}
+.log-stderr .log-msg {
+  color: var(--danger);
+}
 </style>

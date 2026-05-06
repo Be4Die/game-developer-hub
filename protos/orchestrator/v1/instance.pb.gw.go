@@ -249,6 +249,51 @@ func local_request_InstanceService_Stop_0(ctx context.Context, marshaler runtime
 	return msg, metadata, err
 }
 
+var filter_InstanceService_StreamLogs_0 = &utilities.DoubleArray{Encoding: map[string]int{"game_id": 0, "instance_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+
+func request_InstanceService_StreamLogs_0(ctx context.Context, marshaler runtime.Marshaler, client InstanceServiceClient, req *http.Request, pathParams map[string]string) (InstanceService_StreamLogsClient, runtime.ServerMetadata, error) {
+	var (
+		protoReq InstanceServiceStreamLogsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["game_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "game_id")
+	}
+	protoReq.GameId, err = runtime.Int64(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "game_id", err)
+	}
+	val, ok = pathParams["instance_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "instance_id")
+	}
+	protoReq.InstanceId, err = runtime.Int64(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "instance_id", err)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_InstanceService_StreamLogs_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	stream, err := client.StreamLogs(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+}
+
 func request_InstanceService_GetUsage_0(ctx context.Context, marshaler runtime.Marshaler, client InstanceServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq InstanceServiceGetUsageRequest
@@ -390,6 +435,13 @@ func RegisterInstanceServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		}
 		forward_InstanceService_Stop_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+
+	mux.Handle(http.MethodGet, pattern_InstanceService_StreamLogs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
 	mux.Handle(http.MethodGet, pattern_InstanceService_GetUsage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -518,6 +570,23 @@ func RegisterInstanceServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 		}
 		forward_InstanceService_Stop_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_InstanceService_StreamLogs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/orchestrator.v1.InstanceService/StreamLogs", runtime.WithHTTPPathPattern("/api/v1/games/{game_id}/instances/{instance_id}/logs"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_InstanceService_StreamLogs_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_InstanceService_StreamLogs_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_InstanceService_GetUsage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -539,17 +608,19 @@ func RegisterInstanceServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 }
 
 var (
-	pattern_InstanceService_Start_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "games", "game_id", "instances"}, ""))
-	pattern_InstanceService_List_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "games", "game_id", "instances"}, ""))
-	pattern_InstanceService_Get_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v1", "games", "game_id", "instances", "instance_id"}, ""))
-	pattern_InstanceService_Stop_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v1", "games", "game_id", "instances", "instance_id"}, "stop"))
-	pattern_InstanceService_GetUsage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"api", "v1", "games", "game_id", "instances", "instance_id", "usage"}, ""))
+	pattern_InstanceService_Start_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "games", "game_id", "instances"}, ""))
+	pattern_InstanceService_List_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"api", "v1", "games", "game_id", "instances"}, ""))
+	pattern_InstanceService_Get_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v1", "games", "game_id", "instances", "instance_id"}, ""))
+	pattern_InstanceService_Stop_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"api", "v1", "games", "game_id", "instances", "instance_id"}, "stop"))
+	pattern_InstanceService_StreamLogs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"api", "v1", "games", "game_id", "instances", "instance_id", "logs"}, ""))
+	pattern_InstanceService_GetUsage_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"api", "v1", "games", "game_id", "instances", "instance_id", "usage"}, ""))
 )
 
 var (
-	forward_InstanceService_Start_0    = runtime.ForwardResponseMessage
-	forward_InstanceService_List_0     = runtime.ForwardResponseMessage
-	forward_InstanceService_Get_0      = runtime.ForwardResponseMessage
-	forward_InstanceService_Stop_0     = runtime.ForwardResponseMessage
-	forward_InstanceService_GetUsage_0 = runtime.ForwardResponseMessage
+	forward_InstanceService_Start_0      = runtime.ForwardResponseMessage
+	forward_InstanceService_List_0       = runtime.ForwardResponseMessage
+	forward_InstanceService_Get_0        = runtime.ForwardResponseMessage
+	forward_InstanceService_Stop_0       = runtime.ForwardResponseMessage
+	forward_InstanceService_StreamLogs_0 = runtime.ForwardResponseStream
+	forward_InstanceService_GetUsage_0   = runtime.ForwardResponseMessage
 )

@@ -781,14 +781,14 @@ const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\x1fInstanceServiceGetUsageResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x124\n" +
-	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\x9a\a\n" +
+	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\xd9\a\n" +
 	"\x0fInstanceService\x12\x92\x01\n" +
 	"\x05Start\x12,.orchestrator.v1.InstanceServiceStartRequest\x1a-.orchestrator.v1.InstanceServiceStartResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/games/{game_id}/instances\x12\x8c\x01\n" +
 	"\x04List\x12+.orchestrator.v1.InstanceServiceListRequest\x1a,.orchestrator.v1.InstanceServiceListResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/games/{game_id}/instances\x12\x97\x01\n" +
 	"\x03Get\x12*.orchestrator.v1.InstanceServiceGetRequest\x1a+.orchestrator.v1.InstanceServiceGetResponse\"7\x82\xd3\xe4\x93\x021\x12//api/v1/games/{game_id}/instances/{instance_id}\x12\xa2\x01\n" +
-	"\x04Stop\x12+.orchestrator.v1.InstanceServiceStopRequest\x1a,.orchestrator.v1.InstanceServiceStopResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/games/{game_id}/instances/{instance_id}:stop\x12u\n" +
+	"\x04Stop\x12+.orchestrator.v1.InstanceServiceStopRequest\x1a,.orchestrator.v1.InstanceServiceStopResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/games/{game_id}/instances/{instance_id}:stop\x12\xb3\x01\n" +
 	"\n" +
-	"StreamLogs\x121.orchestrator.v1.InstanceServiceStreamLogsRequest\x1a2.orchestrator.v1.InstanceServiceStreamLogsResponse0\x01\x12\xac\x01\n" +
+	"StreamLogs\x121.orchestrator.v1.InstanceServiceStreamLogsRequest\x1a2.orchestrator.v1.InstanceServiceStreamLogsResponse\"<\x82\xd3\xe4\x93\x026\x124/api/v1/games/{game_id}/instances/{instance_id}/logs0\x01\x12\xac\x01\n" +
 	"\bGetUsage\x12/.orchestrator.v1.InstanceServiceGetUsageRequest\x1a0.orchestrator.v1.InstanceServiceGetUsageResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/games/{game_id}/instances/{instance_id}/usageB\xcd\x01\n" +
 	"\x13com.orchestrator.v1B\rInstanceProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 

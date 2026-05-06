@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -103,8 +104,11 @@ func run() error {
 	// Custom handler для multipart upload — intercepts build upload.
 	buildUploadHandler := newBuildUploadHandler(orchConn)
 
+	// Custom handler для logs streaming — SSE over HTTP.
+	logsStreamHandler := newLogsStreamHandler(orchConn)
+
 	// HTTP-сервер с CORS и custom routing.
-	handler := corsMiddleware(buildUploadRouter(mux, buildUploadHandler))
+	handler := corsMiddleware(buildUploadRouter(mux, buildUploadHandler, logsStreamHandler))
 
 	srv := &http.Server{
 		Addr:         httpAddr,
@@ -264,25 +268,47 @@ func (h *buildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// buildUploadRouter маршрутизирует upload запросы к custom handler, остальные — к grpc-gateway.
-func buildUploadRouter(gw http.Handler, uploadHandler http.Handler) http.Handler {
+// buildUploadRouter маршрутизирует upload и logs запросы к custom handler, остальные — к grpc-gateway.
+func buildUploadRouter(gw http.Handler, uploadHandler, logsHandler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
 		isMultipart := len(ct) >= 19 && ct[:19] == "multipart/form-data"
 
+		// Check for logs streaming endpoint: GET /api/v1/games/{id}/instances/{instance_id}/logs
 		prefix := "/api/v1/games/"
-		suffix := "builds"
-		pathOK := len(r.URL.Path) >= 22 &&
+		suffix := "/instances/"
+		logsSuffix := "/logs"
+		pathOK := len(r.URL.Path) >= len(prefix)+len(suffix)+len(logsSuffix)+2 &&
 			r.URL.Path[:len(prefix)] == prefix &&
-			r.URL.Path[len(r.URL.Path)-len(suffix):] == suffix
+			r.URL.Path[len(r.URL.Path)-len(logsSuffix):] == logsSuffix &&
+			containsSubstring(r.URL.Path, suffix)
+
+		// Intercept GET /api/v1/games/{id}/instances/{instance_id}/logs for logs streaming.
+		if r.Method == http.MethodGet && pathOK {
+			logsHandler.ServeHTTP(w, r)
+			return
+		}
 
 		// Intercept POST /api/v1/games/{id}/builds with multipart/form-data.
-		if r.Method == http.MethodPost && isMultipart && pathOK {
+		buildSuffix := "builds"
+		buildPathOK := len(r.URL.Path) >= 22 &&
+			r.URL.Path[:len(prefix)] == prefix &&
+			r.URL.Path[len(r.URL.Path)-len(buildSuffix):] == buildSuffix
+		if r.Method == http.MethodPost && isMultipart && buildPathOK {
 			uploadHandler.ServeHTTP(w, r)
 			return
 		}
 		gw.ServeHTTP(w, r)
 	})
+}
+
+func containsSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
 
 func extractGameID(path string) (int64, error) {
@@ -366,4 +392,146 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// logsStreamHandler handles SSE streaming for instance logs.
+type logsStreamHandler struct {
+	client gwpb.InstanceServiceClient
+}
+
+func newLogsStreamHandler(conn *grpc.ClientConn) *logsStreamHandler {
+	return &logsStreamHandler{client: gwpb.NewInstanceServiceClient(conn)}
+}
+
+func (h *logsStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Extract game_id and instance_id from path: /api/v1/games/{game_id}/instances/{instance_id}/logs
+	gameID, instanceID, err := parseInstanceLogPath(r.URL.Path)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Parse query parameters
+	follow := r.URL.Query().Get("follow") == "true"
+	tailStr := r.URL.Query().Get("tail")
+	tail := int32(100)
+	if tailStr != "" {
+		if t, err := strconv.ParseInt(tailStr, 10, 32); err == nil && t > 0 {
+			tail = int32(t)
+		}
+	}
+
+	// Set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Create context with auth if present
+	ctx := r.Context()
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		token = r.URL.Query().Get("token")
+	}
+	if token != "" {
+		if !strings.HasPrefix(token, "Bearer ") {
+			token = "Bearer " + token
+		}
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	}
+	if apiKey := r.Header.Get("X-Api-Key"); apiKey != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
+	}
+
+	// Open gRPC stream
+	stream, err := h.client.StreamLogs(ctx, &gwpb.InstanceServiceStreamLogsRequest{
+		GameId:    gameID,
+		InstanceId: instanceID,
+		Follow:    follow,
+		Tail:      tail,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("create logs stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Stream log entries as SSE
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		resp, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return
+			}
+			log.Printf("logs stream error: %v", err)
+			return
+		}
+
+		// Format as SSE
+		fmt.Fprintf(w, "event: log\ndata: %s\n\n", formatLogEvent(resp.Entry))
+		flusher.Flush()
+	}
+}
+
+func parseInstanceLogPath(path string) (gameID, instanceID int64, err error) {
+	// /api/v1/games/{game_id}/instances/{instance_id}/logs
+	// Expected format: /api/v1/games/1/instances/1/logs
+
+	// Find positions of segments
+	prefix := "/api/v1/games/"
+	suffix := "/instances/"
+	logsSuffix := "/logs"
+
+	// Check prefix
+	if !strings.HasPrefix(path, prefix) {
+		return 0, 0, fmt.Errorf("path must start with %s", prefix)
+	}
+	remaining := path[len(prefix):]
+
+	// Find instances/ segment
+	instIdx := strings.Index(remaining, suffix)
+	if instIdx == -1 {
+		return 0, 0, fmt.Errorf("could not find '%s' in path", suffix)
+	}
+	gamePart := remaining[:instIdx]
+
+	remaining = remaining[instIdx+len(suffix):]
+
+	// Find logs suffix
+	logsIdx := strings.Index(remaining, logsSuffix)
+	if logsIdx == -1 {
+		return 0, 0, fmt.Errorf("could not find '%s' in path", logsSuffix)
+	}
+	instPart := remaining[:logsIdx]
+
+	gameID, err = strconv.ParseInt(gamePart, 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid game_id: %s", gamePart)
+	}
+	instanceID, err = strconv.ParseInt(instPart, 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid instance_id: %s", instPart)
+	}
+
+	return gameID, instanceID, nil
+}
+
+func formatLogEvent(entry *gwpb.LogEntry) string {
+	// Simple JSON format for log entry
+	return fmt.Sprintf(`{"timestamp":"%s","source":"%s","message":%s}`,
+		entry.Timestamp.AsTime().Format(time.RFC3339),
+		entry.Source.String(),
+		strconv.Quote(entry.Message),
+	)
 }

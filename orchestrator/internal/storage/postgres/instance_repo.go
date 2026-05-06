@@ -173,17 +173,49 @@ func (r *InstanceRepo) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// CountByGame возвращает количество записей инстансов для игры.
+// CountByGame возвращает количество активных (running/starting) инстансов для игры.
+// Останавливленные и сломавшиеся инстансы не учитываются в лимите.
 func (r *InstanceRepo) CountByGame(ctx context.Context, gameID int64) (int, error) {
-	const q = `SELECT COUNT(*) FROM instances WHERE game_id = $1`
+	const q = `SELECT COUNT(*) FROM instances WHERE game_id = $1 AND status IN ($2, $3)`
 
 	var count int
-	err := r.pool.QueryRow(ctx, q, gameID).Scan(&count)
+	err := r.pool.QueryRow(ctx, q, gameID, domain.InstanceStatusRunning, domain.InstanceStatusStarting).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("postgres.InstanceRepo.CountByGame: %w", err)
 	}
 
 	return count, nil
+}
+
+// List возвращает все инстансы.
+func (r *InstanceRepo) List(ctx context.Context) ([]*domain.Instance, error) {
+	const q = `
+		SELECT id, owner_id, node_id, server_build_id, game_id, name,
+		       build_version, protocol, host_port, internal_port,
+		       status, max_players, developer_payload,
+		       server_address, started_at, created_at, updated_at
+		FROM instances ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("postgres.InstanceRepo.List: %w", err)
+	}
+	defer rows.Close()
+
+	var instances []*domain.Instance
+	for rows.Next() {
+		inst, err := scanInstance(rows)
+		if err != nil {
+			return nil, err
+		}
+		instances = append(instances, inst)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("postgres.InstanceRepo.List: %w", err)
+	}
+
+	return instances, nil
 }
 
 type instanceScanner interface {
@@ -206,4 +238,14 @@ func scanInstance(s instanceScanner) (*domain.Instance, error) {
 	}
 
 	return inst, nil
+}
+
+// GetNextID возвращает следующий ID из последовательности PostgreSQL.
+func (r *InstanceRepo) GetNextID(ctx context.Context) (int64, error) {
+	var nextID int64
+	err := r.pool.QueryRow(ctx, "SELECT nextval('instances_id_seq')").Scan(&nextID)
+	if err != nil {
+		return 0, fmt.Errorf("postgres.InstanceRepo.GetNextID: %w", err)
+	}
+	return nextID, nil
 }

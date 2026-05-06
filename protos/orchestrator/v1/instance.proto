@@ -33,8 +33,12 @@ service InstanceService {
     };
   }
 
-  // Поток журналов инстанса (server streaming) — без HTTP-маппинга.
-  rpc StreamLogs(InstanceServiceStreamLogsRequest) returns (stream InstanceServiceStreamLogsResponse);
+  // Поток журналов инстанса (server streaming) — использует SSE для HTTP.
+  rpc StreamLogs(InstanceServiceStreamLogsRequest) returns (stream InstanceServiceStreamLogsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/games/{game_id}/instances/{instance_id}/logs"
+    };
+  }
 
   // Потребление ресурсов инстанса.
   rpc GetUsage(InstanceServiceGetUsageRequest) returns (InstanceServiceGetUsageResponse) {
