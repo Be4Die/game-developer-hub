@@ -10,10 +10,10 @@
         <StatusBadge v-if="instance.status" :status="instance.status" type="instance" />
       </div>
       <div class="header-actions">
-        <button v-if="instance.status === 'running'" class="btn-restart" @click="handleRestart" :disabled="restarting">
+        <button v-if="isRunning" class="btn-restart" @click="handleRestart" :disabled="restarting">
           <RotateCcw class="icon-sm" /> {{ restarting ? 'Перезапуск...' : 'Перезапустить' }}
         </button>
-        <button v-if="instance.status === 'running'" class="btn-stop-lg" @click="handleStop" :disabled="stopping">
+        <button v-if="isRunning" class="btn-stop-lg" @click="handleStop" :disabled="stopping">
           <Square class="icon-sm" /> {{ stopping ? 'Остановка...' : 'Остановить' }}
         </button>
         <button class="btn-delete" @click="handleDelete" :disabled="deleting">
@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
@@ -102,6 +102,30 @@ const deleting = ref(false)
 const restarting = ref(false)
 
 let usageInterval = null
+
+// Нормализация статуса из разных форматов API (число, proto-строка, короткая строка)
+const statusKey = computed(() => {
+  const s = instance.value.status
+  if (typeof s === 'number' || /^\d+$/.test(String(s))) {
+    const map = {
+      0: 'unspecified', 1: 'starting', 2: 'running',
+      3: 'stopping', 4: 'stopped', 5: 'crashed',
+    }
+    return map[Number(s)] ?? 'unspecified'
+  }
+  if (typeof s === 'string') {
+    if (s === 'INSTANCE_STATUS_RUNNING') return 'running'
+    if (s === 'INSTANCE_STATUS_STARTING') return 'starting'
+    if (s === 'INSTANCE_STATUS_STOPPING') return 'stopping'
+    if (s === 'INSTANCE_STATUS_STOPPED') return 'stopped'
+    if (s === 'INSTANCE_STATUS_CRASHED') return 'crashed'
+    return s.toLowerCase()
+  }
+  return ''
+})
+
+const isRunning = computed(() => statusKey.value === 'running')
+const isStopped = computed(() => statusKey.value === 'stopped' || statusKey.value === 'crashed')
 
 async function fetchInstance() {
   error.value = null
