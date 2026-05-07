@@ -5,7 +5,7 @@
                 {{ toast.message }}
             </div>
         </transition>
-        <GlobalHeader />
+        <GlobalHeader v-if="$route.path !== '/login'" />
         <main class="page-content">
             <div
                 v-if="
@@ -83,7 +83,6 @@ watch(userRole, (newRole) => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .moderator-stub {

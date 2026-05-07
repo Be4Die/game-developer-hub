@@ -82,8 +82,4 @@ const statusClass = computed(() => `badge-${map.value[statusKey.value]?.cls ?? '
   font-weight: 600;
   white-space: nowrap;
 }
-.badge-success { background: var(--success-light, #D1FAE5); color: #065F46; }
-.badge-warning { background: var(--warning-light, #FEF3C7); color: #92400E; }
-.badge-danger  { background: var(--danger-light, #FEF2F2); color: #991B1B; }
-.badge-muted   { background: var(--bg-hover, #F3F4F6); color: var(--text-muted); }
 </style>

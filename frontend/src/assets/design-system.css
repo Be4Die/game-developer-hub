@@ -43,7 +43,7 @@
     --primary-hover: #79c0ff;
     --primary-light: #1f2937;
     --success: #3fb950;
-    --success-light: #1f2937;
+    --success-light: #0f2818;
     --warning: #d29922;
     --warning-light: #3a2d0a;
     --danger: #f85149;
@@ -265,8 +265,15 @@ a {
 }
 
 .badge-neutral {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.badge-muted {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
 }
 
 .badge-primary {

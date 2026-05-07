@@ -15,7 +15,7 @@
     </aside>
 
     <!-- ЦЕНТР (Подгружает табы) -->
-    <main class="content-area scrollable">
+    <main class="content-area">
       <router-view />
     </main>
 
@@ -41,7 +41,7 @@ const route = useRoute()
 </script>
 
 <style scoped>
-.game-workspace { display: flex; height: calc(100vh - 60px); overflow: hidden; background: var(--bg-app); }
+    .game-workspace { display: flex; min-height: calc(100vh - 60px); background: var(--bg-app); }
 .scrollable { overflow-y: auto; }
 
 /* Левый сайдбар */

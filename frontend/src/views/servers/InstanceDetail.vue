@@ -32,8 +32,8 @@
     </div>
 
     <template v-if="!error">
-      <!-- Информация -->
-      <div class="info-grid">
+      <!-- Информация + Ресурсы -->
+      <div class="top-grid">
         <div class="card info-card">
           <h3>Информация</h3>
           <div class="info-rows">
@@ -49,26 +49,25 @@
           </div>
         </div>
 
-        <!-- developer_payload -->
-        <div class="card info-card" v-if="Object.keys(instance.developer_payload || {}).length">
-          <h3>Developer Payload</h3>
-          <div class="info-rows">
-            <div class="info-row" v-for="(v, k) in instance.developer_payload" :key="k">
-              <span class="info-label">{{ k }}</span><span class="info-val">{{ v }}</span>
-            </div>
+        <div class="card resources-card">
+          <h3>Потребление ресурсов</h3>
+          <div class="resources-grid">
+            <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
+            <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" type="bytes" />
+            <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" type="bytes" />
+            <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
           </div>
         </div>
       </div>
 
-      <!-- Ресурсы -->
-      <div class="section-header">
-        <h2>Потребление ресурсов</h2>
-      </div>
-      <div class="resources-grid">
-        <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
-        <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" type="bytes" />
-        <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" type="bytes" />
-        <ResourceUsageCard label="Сеть" :value="usage.network_bytes_per_sec" unit=" байт/с" type="raw" />
+      <!-- developer_payload -->
+      <div class="card info-card" v-if="Object.keys(instance.developer_payload || {}).length">
+        <h3>Developer Payload</h3>
+        <div class="info-rows">
+          <div class="info-row" v-for="(v, k) in instance.developer_payload" :key="k">
+            <span class="info-label">{{ k }}</span><span class="info-val">{{ v }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Логи -->
@@ -223,8 +222,9 @@ onUnmounted(() => {
 .tab-fade-in { animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 .header-left { display: flex; align-items: center; gap: 12px; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .header-left h1 { margin: 0; font-size: 1.3rem; }
 .back-btn { font-size: 0.82rem; padding: 6px 12px; }
 .btn-stop-lg {
@@ -266,21 +266,29 @@ onUnmounted(() => {
 }
 .btn-sm { padding: 4px 12px; font-size: 0.82rem; }
 
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-.info-card h3 { margin: 0 0 12px; font-size: 0.95rem; }
+.top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.info-card h3, .resources-card h3 { margin: 0 0 12px; font-size: 0.95rem; }
 .info-rows { display: flex; flex-direction: column; gap: 8px; }
 .info-row { display: flex; justify-content: space-between; gap: 16px; }
 .info-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; min-width: 120px; }
 .info-val { font-size: 0.88rem; font-weight: 500; text-align: right; }
 code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }
 
-.section-header { margin-bottom: 12px; }
+.resources-card {
+  display: flex;
+  flex-direction: column;
+}
+.resources-card .resources-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-content: space-between;
+}
+.section-header { margin: 24px 0 12px; }
 .section-header h2 { margin: 0; font-size: 1.05rem; }
 
-.resources-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-
 @media (max-width: 768px) {
-  .info-grid { grid-template-columns: 1fr; }
-  .resources-grid { grid-template-columns: repeat(2, 1fr); }
+  .top-grid { grid-template-columns: 1fr; }
 }
 </style>

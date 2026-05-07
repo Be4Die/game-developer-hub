@@ -1,5 +1,9 @@
 <template>
     <div class="auth-page">
+        <button class="theme-toggle" @click="toggleTheme" title="Переключить тему">
+            <Sun v-if="isDark" class="icon-sm" />
+            <Moon v-else class="icon-sm" />
+        </button>
         <div class="auth-brand">
             <LogoIcon :size="48" :textSize="28" :showSub="true" :glow="true" />
         </div>
@@ -164,11 +168,14 @@
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../store/auth";
+import { useTheme } from "../composables/useTheme";
 import { verifyEmail, resendVerificationEmail } from "../api/sso";
 import LogoIcon from "../components/LogoIcon.vue";
+import { Sun, Moon } from "lucide-vue-next";
 
 const router = useRouter();
 const { state: authState, login, register } = useAuth();
+const { isDark, toggleTheme } = useTheme();
 
 const mode = ref("login");
 const successMessage = ref("");
@@ -275,6 +282,31 @@ async function resendCode() {
     background: var(--bg-app);
     padding: 24px;
     gap: 24px;
+    position: relative;
+}
+
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.theme-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-main);
+    border-color: var(--border-secondary);
 }
 
 .auth-brand {

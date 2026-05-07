@@ -130,9 +130,14 @@ const userRole = computed(
 );
 
 async function handleLogout() {
-    await logout();
-    menuOpen.value = false;
-    router.push("/login");
+    try {
+        await logout();
+    } catch {
+        /* игнорируем ошибку API — в любом случае выходим */
+    } finally {
+        menuOpen.value = false;
+        router.push("/login");
+    }
 }
 </script>
 

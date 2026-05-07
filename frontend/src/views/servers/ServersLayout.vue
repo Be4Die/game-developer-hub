@@ -11,7 +11,7 @@
         <Play class="icon-sm" /> Инстансы
       </router-link>
     </div>
-    <div class="servers-content scrollable">
+    <div class="servers-content">
       <router-view />
     </div>
   </div>
@@ -26,14 +26,14 @@ defineProps({ gameId: { type: [String, Number], required: true } })
 .servers-layout {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 .servers-subnav {
   display: flex;
   gap: 4px;
-  padding: 16px 32px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin: 12px 32px 0;
   background: var(--bg-card);
 }
 .subnav-btn {
@@ -57,8 +57,6 @@ defineProps({ gameId: { type: [String, Number], required: true } })
 
 .servers-content {
   flex: 1;
-  padding: 24px 32px;
-  overflow-y: auto;
+  padding: 16px 32px 24px;
 }
-.scrollable { overflow-y: auto; }
 </style>
