@@ -53,7 +53,7 @@
         <section class="settings-section">
           <h2 class="section-title">Тема оформления</h2>
           <div class="theme-grid">
-            <div class="theme-card" :class="{ active: theme === 'light' }" @click="theme = 'light'">
+            <div class="theme-card" :class="{ active: !isDark }" @click="selectTheme('light')">
               <div class="theme-preview theme-preview-light">
                 <div class="preview-header"></div>
                 <div class="preview-body">
@@ -67,7 +67,7 @@
                 <span>Светлая</span>
               </div>
             </div>
-            <div class="theme-card" :class="{ active: theme === 'dark' }" @click="theme = 'dark'">
+            <div class="theme-card" :class="{ active: isDark }" @click="selectTheme('dark')">
               <div class="theme-preview theme-preview-dark">
                 <div class="preview-header"></div>
                 <div class="preview-body">
@@ -157,21 +157,19 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { ArrowLeft, Sun, Moon, MapPin, Settings2, User, MonitorPlay } from 'lucide-vue-next'
+import { useTheme } from '../composables/useTheme'
+
+const { isDark, setTheme } = useTheme()
 
 const activeTab = ref('general')
 const selectedLang = ref('ru')
-const theme = ref('light')
 const location = ref('moscow')
 
-watch(theme, (newTheme) => {
-  if (newTheme === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark')
-  } else {
-    document.documentElement.removeAttribute('data-theme')
-  }
-})
+function selectTheme(value) {
+    setTheme(value)
+}
 </script>
 
 <style scoped>

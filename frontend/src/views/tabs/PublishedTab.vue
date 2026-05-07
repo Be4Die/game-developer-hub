@@ -10,7 +10,7 @@
         <div class="actions">
           <button class="btn-prod-link" @click="showToast('Открытие Prod-среды...', 'info')">Перейти к игре (Prod)</button>
           <button class="btn-outline" @click="showToast('Данные обновлены', 'success')">Обновить</button>
-          <button class="btn-danger" @click="unpublish">Снять с публикации</button>
+          <button class="btn btn-danger" @click="unpublish">Снять с публикации</button>
         </div>
       </div>
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -113,8 +113,7 @@ const unpublish = () => showToast('Игра снята с публикации',
 .actions { display: flex; gap: 12px; }
 .btn-prod-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--success); border-radius: var(--radius-md); background: transparent; color: var(--success); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
 .btn-prod-link:hover { background: var(--success-light); }
-.btn-danger { padding: 8px 16px; border: none; border-radius: var(--radius-md); background: var(--danger); color: white; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
-.btn-danger:hover { opacity: 0.85; }
+
 .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-block;}
 .bg-green { background: var(--success-light); color: var(--success); }
 .section-head { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }

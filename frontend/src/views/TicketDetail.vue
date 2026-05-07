@@ -39,7 +39,7 @@
 
         <!-- Действия -->
         <div class="ticket-actions">
-          <button v-if="ticket.status === 'new'" class="btn-action btn-primary" @click="takeTicket">
+          <button v-if="ticket.status === 'new'" class="btn-action btn-action-primary" @click="takeTicket">
             Взять в работу
           </button>
           <button v-if="ticket.status === 'in_progress'" class="btn-action btn-success" @click="resolveTicket">
@@ -161,7 +161,7 @@ const handleReopen = () => reopenTicket(ticketId)
 .ticket-actions { display: flex; flex-direction: column; gap: 8px; }
 .btn-action { width: 100%; padding: 11px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; transition: opacity 0.2s; }
 .btn-action:hover { opacity: 0.85; }
-.btn-primary { background: var(--primary); color: white; }
+.btn-action-primary { background: var(--primary); color: white; }
 .btn-success { background: #10B981; color: white; }
 .btn-reopen { background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border) !important; }
 .ticket-resolved { text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; color: #059669; background: #D1FAE5; border-radius: var(--radius-md); }

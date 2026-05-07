@@ -1,9 +1,11 @@
 <template>
     <div class="page-container">
-        <h1>Администрирование</h1>
+        <div class="header-row">
+            <h1>Администрирование</h1>
+        </div>
 
         <!-- Tabs -->
-        <div class="tabs">
+        <div class="tabs-nav">
             <button
                 class="tab-btn"
                 :class="{ active: activeTab === 'users' }"
@@ -37,49 +39,44 @@
                 <div v-else-if="users.length === 0" class="empty-state">
                     Пользователи не найдены
                 </div>
-                <table v-else class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Имя</th>
-                            <th>Email</th>
-                            <th>Роль</th>
-                            <th>Статус</th>
-                            <th>Дата регистрации</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="u in users" :key="u.id" class="table-row">
-                            <td>
-                                <strong>{{ u.display_name }}</strong>
-                            </td>
-                            <td class="email-cell">{{ u.email }}</td>
-                            <td>
-                                <span
-                                    class="role-badge"
-                                    :class="roleClass(u.role)"
-                                >
-                                    {{ roleLabel(u.role) }}
-                                </span>
-                            </td>
-                            <td>
-                                <span
-                                    class="status-badge"
-                                    :class="statusClass(u.status)"
-                                >
-                                    {{ statusLabel(u.status) }}
-                                </span>
-                            </td>
-                            <td>{{ formatDate(u.created_at) }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div v-else class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Имя</th>
+                                <th>Email</th>
+                                <th>Роль</th>
+                                <th>Статус</th>
+                                <th>Дата регистрации</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="u in users" :key="u.id">
+                                <td><strong>{{ u.display_name }}</strong></td>
+                                <td class="email-cell">{{ u.email }}</td>
+                                <td>
+                                    <span class="badge" :class="roleClass(u.role)">
+                                        {{ roleLabel(u.role) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" :class="statusBadgeClass(u.status)">
+                                        <span class="status-dot"></span>
+                                        {{ statusLabel(u.status) }}
+                                    </span>
+                                </td>
+                                <td>{{ formatDate(u.created_at) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- Moderators Tab -->
         <div v-if="activeTab === 'moderators'" class="tab-content">
             <!-- Create Moderator Form -->
-            <div class="card create-form">
+            <div class="card">
                 <h2>Создать модератора</h2>
                 <form @submit.prevent="handleCreate" class="form-grid">
                     <div class="form-group">
@@ -94,9 +91,7 @@
                             />
                             <span class="email-domain">@welwise.com</span>
                         </div>
-                        <span class="form-hint"
-                            >Email будет сформирован автоматически</span
-                        >
+                        <span class="form-hint">Email будет сформирован автоматически</span>
                     </div>
                     <div class="form-group">
                         <label for="display_name">Имя</label>
@@ -122,14 +117,14 @@
                     <div class="form-group form-actions">
                         <button
                             type="submit"
-                            class="btn-primary"
+                            class="btn btn-primary"
                             :disabled="loading"
                         >
                             {{ loading ? "Создание..." : "Создать" }}
                         </button>
                     </div>
                 </form>
-                <div v-if="createdEmail" class="created-info">
+                <div v-if="createdEmail" class="alert alert-success" style="margin-top: 16px;">
                     <strong>Email для входа:</strong> {{ createdEmail }}
                 </div>
             </div>
@@ -140,45 +135,40 @@
                 <div v-if="moderators.length === 0" class="empty-state">
                     Нет активных модераторов
                 </div>
-                <table v-else class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Имя</th>
-                            <th>Email</th>
-                            <th>Статус</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="mod in moderators"
-                            :key="mod.id"
-                            class="table-row"
-                        >
-                            <td>
-                                <strong>{{ mod.display_name }}</strong>
-                            </td>
-                            <td class="email-cell">{{ mod.email }}</td>
-                            <td>
-                                <span
-                                    class="status-badge"
-                                    :class="statusClass(mod.status)"
-                                >
-                                    {{ statusLabel(mod.status) }}
-                                </span>
-                            </td>
-                            <td>
-                                <button
-                                    class="btn-danger btn-sm"
-                                    @click="confirmDelete(mod)"
-                                    :disabled="deleting"
-                                >
-                                    {{ deleting ? "Удаление..." : "Удалить" }}
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div v-else class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Имя</th>
+                                <th>Email</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="mod in moderators" :key="mod.id">
+                                <td><strong>{{ mod.display_name }}</strong></td>
+                                <td class="email-cell">{{ mod.email }}</td>
+                                <td>
+                                    <span class="badge" :class="statusBadgeClass(mod.status)">
+                                        <span class="status-dot"></span>
+                                        {{ statusLabel(mod.status) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button
+                                        class="btn btn-danger"
+                                        style="padding: 6px 14px; font-size: 0.8rem;"
+                                        @click="confirmDelete(mod)"
+                                        :disabled="deleting"
+                                    >
+                                        {{ deleting ? "Удаление..." : "Удалить" }}
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -190,25 +180,19 @@
                 @click.self="deleteTarget = null"
             >
                 <div class="modal-card">
-                    <button class="modal-close" @click="deleteTarget = null">
-                        &#x2715;
-                    </button>
+                    <button class="modal-close" @click="deleteTarget = null">&#x2715;</button>
                     <h3>Подтверждение удаления</h3>
                     <p>
                         Вы уверены, что хотите удалить модератора
-                        <strong>{{ deleteTarget.display_name }}</strong
-                        >?
+                        <strong>{{ deleteTarget.display_name }}</strong>?
                     </p>
                     <p class="warning-text">Это действие нельзя отменить.</p>
                     <div class="modal-actions">
-                        <button
-                            class="btn-secondary"
-                            @click="deleteTarget = null"
-                        >
+                        <button class="btn btn-secondary" @click="deleteTarget = null">
                             Отмена
                         </button>
                         <button
-                            class="btn-danger"
+                            class="btn btn-danger"
                             @click="handleDelete"
                             :disabled="deleting"
                         >
@@ -278,12 +262,12 @@ function roleClass(role) {
     switch (role) {
         case "USER_ROLE_ADMIN":
         case "admin":
-            return "role-admin";
+            return "badge-danger";
         case "USER_ROLE_MODERATOR":
         case "moderator":
-            return "role-moderator";
+            return "badge-warning";
         default:
-            return "role-developer";
+            return "badge-success";
     }
 }
 
@@ -300,13 +284,13 @@ function roleLabel(role) {
     }
 }
 
-function statusClass(status) {
+function statusBadgeClass(status) {
     switch (status) {
         case "USER_STATUS_ACTIVE":
         case "active":
-            return "status-active";
+            return "badge-success";
         default:
-            return "status-inactive";
+            return "badge-danger";
     }
 }
 
@@ -388,25 +372,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-container {
-    padding: 32px 40px;
-    max-width: 1100px;
-    margin: 0 auto;
-}
-
-h1 {
-    margin-bottom: 24px;
-    color: var(--text-main);
-}
-
-h2 {
-    margin: 0 0 20px;
-    font-size: 1.1rem;
-    color: var(--text-main);
-}
-
-/* Tabs */
-.tabs {
+.tabs-nav {
     display: flex;
     gap: 4px;
     margin-bottom: 24px;
@@ -439,22 +405,11 @@ h2 {
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Card */
 .card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 24px;
     margin-bottom: 24px;
 }
 
@@ -463,13 +418,15 @@ h2 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .card-header h2 {
     margin: 0;
+    font-size: 1.1rem;
 }
 
-/* Search */
 .search-input {
     padding: 8px 14px;
     border: 1px solid var(--border);
@@ -478,31 +435,14 @@ h2 {
     color: var(--text-main);
     font-size: 0.9rem;
     width: 280px;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
 }
 
 .search-input:focus {
-    outline: none;
     border-color: var(--primary);
-}
-
-/* Table */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-    text-align: left;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.data-table th {
-    background: var(--bg-app);
-    font-weight: 600;
-    color: var(--text-muted);
-    font-size: 0.85rem;
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .email-cell {
@@ -511,84 +451,16 @@ h2 {
     color: var(--text-muted);
 }
 
-/* Badges */
-.role-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 700;
-}
-
-.role-admin {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-}
-
-.role-moderator {
-    background: rgba(168, 85, 247, 0.15);
-    color: #a855f7;
-}
-
-.role-developer {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 700;
-}
-
-.status-active {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-}
-
-.status-inactive {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-}
-
-/* Form */
-.create-form {
-    margin-bottom: 24px;
-}
-
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
 
-.form-group {
+.form-actions {
+    justify-content: flex-end;
+    padding-top: 8px;
     display: flex;
-    flex-direction: column;
-}
-
-.form-group label {
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-.form-group input {
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-input);
-    color: var(--text-main);
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--primary);
 }
 
 .email-input-group {
@@ -598,21 +470,24 @@ h2 {
     border-radius: var(--radius-sm);
     background: var(--bg-input);
     overflow: hidden;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .email-input-group:focus-within {
     border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .email-input-group input {
     border: none;
     flex: 1;
     min-width: 0;
-}
-
-.email-input-group input:focus {
-    border: none;
+    padding: 10px 14px;
+    background: transparent;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
 }
 
 .email-domain {
@@ -631,94 +506,27 @@ h2 {
     color: var(--text-muted);
 }
 
-.form-actions {
-    justify-content: flex-end;
-    padding-top: 8px;
-}
-
-.created-info {
-    margin-top: 16px;
-    padding: 12px;
-    background: var(--success-light);
-    color: var(--success);
-    border-radius: var(--radius-sm);
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-/* Empty State */
 .empty-state {
     text-align: center;
     padding: 32px;
     color: var(--text-muted);
 }
 
-/* Buttons */
-.btn-primary {
-    padding: 10px 24px;
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--primary);
-    color: white;
+.warning-text {
+    color: var(--danger) !important;
     font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-danger {
-    padding: 6px 14px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: #ef4444;
-    color: white;
-    font-weight: 600;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-danger:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.btn-sm {
-    padding: 6px 14px;
-    font-size: 0.8rem;
-}
-
-.btn-secondary {
-    padding: 10px 24px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--bg-app);
-    color: var(--text-muted);
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-secondary:hover {
-    background: var(--bg-hover);
 }
 
 /* Modal */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
 }
 
 .modal-card {
@@ -731,6 +539,7 @@ h2 {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-shadow: var(--shadow-lg);
 }
 
 .modal-close {
@@ -742,6 +551,11 @@ h2 {
     font-size: 1rem;
     color: var(--text-muted);
     cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--text-main);
 }
 
 .modal-card h3 {
@@ -757,11 +571,6 @@ h2 {
     line-height: 1.5;
 }
 
-.warning-text {
-    color: #ef4444 !important;
-    font-weight: 600;
-}
-
 .modal-actions {
     display: flex;
     gap: 12px;
@@ -769,23 +578,9 @@ h2 {
     margin-top: 8px;
 }
 
-/* Animations */
-.toast-fade-enter-active,
-.toast-fade-leave-active {
-    transition: all 0.3s;
-}
-
-.toast-fade-enter-from,
-.toast-fade-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-}
-
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-    transition:
-        opacity 0.2s,
-        transform 0.2s;
+    transition: opacity 0.2s, transform 0.2s;
 }
 
 .modal-fade-enter-from,
@@ -807,6 +602,10 @@ h2 {
 
     .search-input {
         width: 100%;
+    }
+
+    .modal-card {
+        width: 90vw;
     }
 }
 </style>

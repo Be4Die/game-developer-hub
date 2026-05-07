@@ -1,99 +1,125 @@
 <template>
-  <div class="page-container">
-    <h1>Очередь тикетов</h1>
+    <div class="page-container">
+        <div class="header-row">
+            <div>
+                <div class="page-subtitle">Модерация</div>
+                <h1>Очередь тикетов</h1>
+            </div>
+        </div>
 
-    <div class="tickets-list">
-      <div
-          v-for="ticket in tickets"
-          :key="ticket.id"
-          class="ticket-card"
-          @click="$router.push(`/moderator/tickets/${ticket.id}`)"
-      >
-        <div class="ticket-header">
-          <span class="ticket-id">#{{ ticket.id }}</span>
-          <span class="ticket-status" :class="`status-${ticket.status}`">
-            {{ statusText(ticket.status) }}
-          </span>
+        <div class="tickets-list">
+            <div
+                v-for="ticket in tickets"
+                :key="ticket.id"
+                class="card ticket-card card-hover"
+                @click="$router.push(`/moderator/tickets/${ticket.id}`)"
+            >
+                <div class="ticket-header">
+                    <span class="ticket-id">#{{ ticket.id }}</span>
+                    <span class="badge" :class="statusBadgeClass(ticket.status)">
+                        <span class="status-dot"></span>
+                        {{ statusText(ticket.status) }}
+                    </span>
+                </div>
+                <h3 class="ticket-title">{{ ticket.title }}</h3>
+                <p class="ticket-desc">{{ ticket.description }}</p>
+                <div class="ticket-meta">
+                    <span>Приоритет: {{ ticket.priority }}</span>
+                    <span>Создан: {{ ticket.created }}</span>
+                </div>
+            </div>
         </div>
-        <h3 class="ticket-title">{{ ticket.title }}</h3>
-        <p class="ticket-desc">{{ ticket.description }}</p>
-        <div class="ticket-meta">
-          <span>Приоритет: {{ ticket.priority }}</span>
-          <span>Создан: {{ ticket.created }}</span>
-        </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <script setup>
 import { tickets } from '../store'
 
-const statusText = (status) => {
-  const map = { new: 'Новый', in_progress: 'В работе', resolved: 'Решён' }
-  return map[status] || status
+function statusText(status) {
+    const map = { new: 'Новый', in_progress: 'В работе', resolved: 'Решён' }
+    return map[status] || status
+}
+
+function statusBadgeClass(status) {
+    switch (status) {
+        case 'new': return 'badge-warning'
+        case 'in_progress': return 'badge-success'
+        case 'resolved': return 'badge-neutral'
+        default: return 'badge-neutral'
+    }
 }
 </script>
 
 <style scoped>
-.page-container {
-  padding: 32px 40px;
-  max-width: 1000px;
-  margin: 0 auto;
+.page-subtitle {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
 }
-h1 {
-  margin-bottom: 24px;
+
+.header-row h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
 }
+
 .tickets-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
+
 .ticket-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  cursor: pointer;
-  transition: 0.2s;
+    cursor: pointer;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
-.ticket-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
+
 .ticket-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+
 .ticket-id {
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    font-size: 0.85rem;
+    font-family: monospace;
 }
-.ticket-status {
-  font-size: 0.75rem;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 600;
-}
-.status-new { background: #FEF3C7; color: #D97706; }
-.status-in_progress { background: #EFF6FF; color: var(--primary); }
-.status-resolved { background: #D1FAE5; color: #059669; }
+
 .ticket-title {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
 }
+
 .ticket-desc {
-  color: var(--text-muted);
-  margin: 0 0 12px 0;
-  font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
+
 .ticket-meta {
-  display: flex;
-  gap: 16px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+    display: flex;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 </style>

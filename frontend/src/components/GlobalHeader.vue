@@ -1,73 +1,88 @@
 <template>
     <header class="top-header">
         <div class="header-left">
-            <div class="logo">
-                <Layers class="logo-icon" /><span>WELWISE</span>
-            </div>
+            <router-link to="/" class="logo-link">
+                <LogoIcon :size="28" :textSize="16" :showSub="false" :noHover="true" />
+            </router-link>
             <nav class="main-nav">
                 <template v-if="userRole === 'Разработчик'">
                     <router-link
                         to="/projects"
                         class="nav-item"
                         active-class="active"
-                        ><FolderGit2 class="icon-sm" /> Проекты</router-link
                     >
+                        <FolderGit2 class="icon-sm" /> Проекты
+                    </router-link>
                     <router-link
                         to="/nodes"
                         class="nav-item"
                         active-class="active"
-                        ><Server class="icon-sm" /> Игровые серверы</router-link
                     >
+                        <Server class="icon-sm" /> Игровые серверы
+                    </router-link>
                 </template>
                 <template v-if="userRole === 'Модератор'">
                     <router-link
                         to="/moderator/tickets"
                         class="nav-item"
                         active-class="active"
-                        ><Inbox class="icon-sm" /> Очередь тикетов</router-link
                     >
+                        <Inbox class="icon-sm" /> Очередь тикетов
+                    </router-link>
                     <router-link
                         to="/moderator/history"
                         class="nav-item"
                         active-class="active"
-                        ><History class="icon-sm" /> История
-                        тикетов</router-link
                     >
+                        <History class="icon-sm" /> История тикетов
+                    </router-link>
                 </template>
                 <template v-if="userRole === 'Администратор'">
                     <router-link
                         to="/admin/dashboard"
                         class="nav-item"
                         active-class="active"
-                        ><Users class="icon-sm" />
-                        Администрирование</router-link
                     >
+                        <Users class="icon-sm" /> Администрирование
+                    </router-link>
                 </template>
             </nav>
         </div>
 
-        <div v-if="isAuthenticated" class="header-right relative">
-            <button class="profile-btn" @click="menuOpen = !menuOpen">
-                <User class="icon-sm" /> {{ displayName }}
+        <div class="header-right">
+            <button class="theme-toggle" @click="toggleTheme" title="Переключить тему">
+                <Sun v-if="isDark" class="icon-sm" />
+                <Moon v-else class="icon-sm" />
             </button>
 
-            <div
-                v-if="menuOpen"
-                class="dropdown-overlay"
-                @click="menuOpen = false"
-            ></div>
-            <div v-if="menuOpen" class="dropdown">
-                <div class="dropdown-body">
-                    <router-link to="/settings" class="dropdown-item"
-                        ><Settings class="icon-sm" /> Настройки</router-link
-                    >
-                    <button
-                        class="dropdown-item text-danger"
-                        @click="handleLogout"
-                    >
-                        <LogOut class="icon-sm" /> Выйти
-                    </button>
-                </div>
+            <div v-if="isAuthenticated" class="profile-wrap relative">
+                <button class="profile-btn" @click="menuOpen = !menuOpen">
+                    <User class="icon-sm" />
+                    <span class="profile-name">{{ displayName }}</span>
+                    <ChevronDown class="icon-sm" :class="{ rotate: menuOpen }" />
+                </button>
+
+                <div
+                    v-if="menuOpen"
+                    class="dropdown-overlay"
+                    @click="menuOpen = false"
+                ></div>
+                <transition name="dropdown">
+                    <div v-if="menuOpen" class="dropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-name">{{ displayName }}</div>
+                            <div class="dropdown-email">{{ userEmail }}</div>
+                        </div>
+                        <div class="dropdown-body">
+                            <router-link to="/settings" class="dropdown-item" @click="menuOpen = false">
+                                <Settings class="icon-sm" /> Настройки
+                            </router-link>
+                            <button class="dropdown-item text-danger" @click="handleLogout">
+                                <LogOut class="icon-sm" /> Выйти
+                            </button>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </div>
     </header>
@@ -77,8 +92,9 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../store/auth";
+import { useTheme } from "../composables/useTheme";
+import LogoIcon from "./LogoIcon.vue";
 import {
-    Layers,
     FolderGit2,
     Server,
     User,
@@ -87,10 +103,14 @@ import {
     LogOut,
     Users,
     History,
+    Sun,
+    Moon,
+    ChevronDown,
 } from "lucide-vue-next";
 
 const router = useRouter();
 const { state: authState, logout } = useAuth();
+const { isDark, toggleTheme } = useTheme();
 const menuOpen = ref(false);
 
 const ROLE_MAP = {
@@ -128,43 +148,53 @@ async function handleLogout() {
     position: sticky;
     top: 0;
     z-index: 50;
+    backdrop-filter: blur(12px);
 }
+
 .header-left,
 .header-right {
     display: flex;
     align-items: center;
     gap: 32px;
 }
-.logo {
+
+.logo-link {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: var(--text-main);
+    text-decoration: none;
 }
-.logo-icon {
-    color: var(--primary);
-}
+
 .main-nav {
     display: flex;
-    gap: 24px;
+    gap: 8px;
 }
+
 .nav-item {
     display: flex;
     align-items: center;
     gap: 6px;
     font-weight: 500;
-    color: var(--text-main);
-    padding: 8px 0;
-    border-bottom: 2px solid transparent;
-}
-.nav-item.active {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-.text-muted {
+    font-size: 14px;
     color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.nav-item:hover {
+    color: var(--text-main);
+    background: var(--bg-secondary);
+}
+
+.nav-item.active {
+    color: var(--primary);
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+.profile-wrap {
+    position: relative;
 }
 
 .profile-btn {
@@ -173,45 +203,87 @@ async function handleLogout() {
     gap: 8px;
     background: transparent;
     border: 1px solid var(--border);
-    padding: 6px 16px;
+    padding: 6px 12px 6px 10px;
     border-radius: 20px;
     font-weight: 500;
+    font-size: 14px;
     cursor: pointer;
     color: var(--text-main);
+    transition: all 0.2s;
 }
+
+.profile-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--border-secondary);
+}
+
+.profile-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile-btn .rotate {
+    transform: rotate(180deg);
+    transition: transform 0.2s;
+}
+
 .relative {
     position: relative;
 }
+
 .dropdown-overlay {
     position: fixed;
     inset: 0;
     z-index: 90;
 }
+
 .dropdown {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: 220px;
+    width: 240px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     z-index: 100;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    animation: dropdownIn 0.2s ease-out;
 }
+
+@keyframes dropdownIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .dropdown-header {
-    padding: 12px;
-    background: var(--bg-app);
-    font-size: 0.85rem;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
-    border-radius: 8px 8px 0 0;
 }
+
+.dropdown-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.dropdown-email {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
 .dropdown-body {
     padding: 8px;
     display: flex;
     flex-direction: column;
 }
+
 .dropdown-item {
     display: flex;
     align-items: center;
@@ -220,33 +292,33 @@ async function handleLogout() {
     border: none;
     background: none;
     text-align: left;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     font-weight: 500;
+    font-size: 14px;
     color: var(--text-main);
     text-decoration: none;
+    transition: background 0.15s;
 }
+
 .dropdown-item:hover {
-    background: var(--bg-app);
+    background: var(--bg-secondary);
 }
-.divider {
-    height: 1px;
-    background: var(--border);
-    margin: 8px 0;
-}
-.role-select {
-    width: 100%;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-main);
-    font-weight: 600;
-}
+
 .text-danger {
     color: var(--danger);
 }
+
 .text-danger:hover {
     background: var(--danger-light);
+}
+
+@media (max-width: 768px) {
+    .main-nav {
+        display: none;
+    }
+    .profile-name {
+        display: none;
+    }
 }
 </style>

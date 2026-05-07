@@ -52,7 +52,7 @@ const route = useRoute()
 .game-nav { padding: 12px; display: flex; flex-direction: column; gap: 4px; }
 .nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: none; background: transparent; border-radius: var(--radius-md); font-size: 0.9rem; font-weight: 500; color: var(--text-muted); cursor: pointer; text-decoration: none;}
 .nav-btn:hover { background: var(--bg-app); color: var(--text-main); }
-.nav-btn.active { background: #EFF6FF; color: var(--primary); }
+.nav-btn.active { background: var(--primary-light); color: var(--primary); }
 
 .content-area { flex: 1; padding: 32px 40px; }
 
@@ -60,9 +60,9 @@ const route = useRoute()
 .chat-sidebar { width: 320px; background: var(--bg-card); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0;}
 .chat-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
 .chat-header h3 { margin: 0; font-size: 1rem; }
-.chat-messages { flex: 1; padding: 16px; display: flex; flex-direction: column; background: #F9FAFB; }
+.chat-messages { flex: 1; padding: 16px; display: flex; flex-direction: column; background: var(--bg-app); }
 .message.system { align-self: center; color: var(--text-muted); font-size: 0.75rem; background: none; }
-.chat-input-area { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: white;}
+.chat-input-area { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-card);}
 .chat-input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; outline: none; font-size: 0.9rem;}
 .send-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
 </style>

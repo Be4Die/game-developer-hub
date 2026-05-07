@@ -1,10 +1,14 @@
 <template>
     <div class="auth-page">
+        <div class="auth-brand">
+            <LogoIcon :size="48" :textSize="28" :showSub="true" :glow="true" />
+        </div>
+
         <div class="auth-card">
-            <div v-if="authState.error" class="auth-error">
+            <div v-if="authState.error" class="alert alert-danger">
                 {{ authState.error }}
             </div>
-            <div v-if="successMessage" class="auth-success">
+            <div v-if="successMessage" class="alert alert-success">
                 {{ successMessage }}
             </div>
 
@@ -14,7 +18,7 @@
                 @submit.prevent="handleLogin"
                 class="auth-form"
             >
-                <h2>Вход</h2>
+                <h2>Вход в систему</h2>
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input
@@ -25,9 +29,7 @@
                         required
                         @input="validateEmail"
                     />
-                    <span v-if="emailError" class="field-error">{{
-                        emailError
-                    }}</span>
+                    <span v-if="emailError" class="field-error">{{ emailError }}</span>
                 </div>
                 <div class="form-group">
                     <label for="password">Пароль</label>
@@ -41,16 +43,14 @@
                 </div>
                 <button
                     type="submit"
-                    class="btn-primary btn-full"
+                    class="btn btn-primary btn-full"
                     :disabled="authState.loading"
                 >
                     {{ authState.loading ? "Вход..." : "Войти" }}
                 </button>
                 <p class="auth-switch">
                     Нет аккаунта?
-                    <a href="#" @click.prevent="mode = 'register'"
-                        >Зарегистрироваться</a
-                    >
+                    <a href="#" @click.prevent="mode = 'register'">Зарегистрироваться</a>
                 </p>
             </form>
 
@@ -81,9 +81,7 @@
                         required
                         @input="validateEmail"
                     />
-                    <span v-if="emailError" class="field-error">{{
-                        emailError
-                    }}</span>
+                    <span v-if="emailError" class="field-error">{{ emailError }}</span>
                 </div>
                 <div class="form-group">
                     <label for="reg-password">Пароль</label>
@@ -101,28 +99,18 @@
                             <div
                                 class="strength-fill"
                                 :class="passwordStrength.class"
-                                :style="{
-                                    width: passwordStrength.percent + '%',
-                                }"
+                                :style="{ width: passwordStrength.percent + '%' }"
                             ></div>
                         </div>
-                        <span
-                            class="strength-label"
-                            :class="passwordStrength.class"
-                            >{{ passwordStrength.text }}</span
-                        >
+                        <span class="strength-label" :class="passwordStrength.class">{{ passwordStrength.text }}</span>
                     </div>
                 </div>
                 <button
                     type="submit"
-                    class="btn-primary btn-full"
+                    class="btn btn-primary btn-full"
                     :disabled="authState.loading"
                 >
-                    {{
-                        authState.loading
-                            ? "Регистрация..."
-                            : "Зарегистрироваться"
-                    }}
+                    {{ authState.loading ? "Регистрация..." : "Зарегистрироваться" }}
                 </button>
                 <p class="auth-switch">
                     Уже есть аккаунт?
@@ -138,8 +126,7 @@
             >
                 <h2>Подтверждение email</h2>
                 <p class="verify-info">
-                    На email <strong>{{ form.email }}</strong> отправлен код
-                    подтверждения.<br />
+                    На email <strong>{{ form.email }}</strong> отправлен код подтверждения.<br />
                     Введите 6-значный код из письма.
                 </p>
                 <div class="form-group">
@@ -156,21 +143,17 @@
                 </div>
                 <button
                     type="submit"
-                    class="btn-primary btn-full"
+                    class="btn btn-primary btn-full"
                     :disabled="authState.loading"
                 >
                     {{ authState.loading ? "Проверка..." : "Подтвердить" }}
                 </button>
                 <p class="auth-switch">
                     Не получили код?
-                    <a href="#" @click.prevent="resendCode"
-                        >Отправить повторно</a
-                    >
+                    <a href="#" @click.prevent="resendCode">Отправить повторно</a>
                 </p>
                 <p class="auth-switch">
-                    <a href="#" @click.prevent="mode = 'login'"
-                        >← Назад к входу</a
-                    >
+                    <a href="#" @click.prevent="mode = 'login'">← Назад к входу</a>
                 </p>
             </form>
         </div>
@@ -182,6 +165,7 @@ import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "../store/auth";
 import { verifyEmail, resendVerificationEmail } from "../api/sso";
+import LogoIcon from "../components/LogoIcon.vue";
 
 const router = useRouter();
 const { state: authState, login, register } = useAuth();
@@ -229,23 +213,11 @@ function checkPasswordStrength() {
     } else if (score <= 2) {
         passwordStrength.value = { percent: 40, text: "Слабый", class: "weak" };
     } else if (score === 3) {
-        passwordStrength.value = {
-            percent: 60,
-            text: "Средний",
-            class: "medium",
-        };
+        passwordStrength.value = { percent: 60, text: "Средний", class: "medium" };
     } else if (score === 4) {
-        passwordStrength.value = {
-            percent: 80,
-            text: "Хороший",
-            class: "strong",
-        };
+        passwordStrength.value = { percent: 80, text: "Хороший", class: "strong" };
     } else {
-        passwordStrength.value = {
-            percent: 100,
-            text: "Отличный",
-            class: "strong",
-        };
+        passwordStrength.value = { percent: 100, text: "Отличный", class: "strong" };
     }
 }
 
@@ -279,8 +251,7 @@ async function handleVerify() {
         mode.value = "login";
         form.password = "";
     } catch (err) {
-        authState.error =
-            err.response?.data?.message || "Неверный код подтверждения";
+        authState.error = err.response?.data?.message || "Неверный код подтверждения";
     }
 }
 
@@ -298,10 +269,19 @@ async function resendCode() {
 .auth-page {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: var(--bg-app);
     padding: 24px;
+    gap: 24px;
+}
+
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .auth-card {
@@ -311,51 +291,15 @@ async function resendCode() {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 40px 32px;
+    box-shadow: var(--shadow-lg);
 }
 
 .auth-form h2 {
     margin: 0 0 24px;
     font-size: 1.25rem;
+    font-weight: 700;
     text-align: center;
-}
-
-.form-group {
-    margin-bottom: 16px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-input);
-    color: var(--text-main);
-    font-size: 0.95rem;
-    transition: border-color 0.2s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-.btn-full {
-    width: 100%;
-    justify-content: center;
-    margin-top: 8px;
-}
-
-.btn-full:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    letter-spacing: -0.3px;
 }
 
 .auth-switch {
@@ -368,26 +312,7 @@ async function resendCode() {
 .auth-switch a {
     color: var(--primary);
     font-weight: 600;
-}
-
-.auth-error {
-    background: var(--danger-light);
-    color: var(--danger);
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.auth-success {
-    background: var(--success-light);
-    color: var(--success);
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 16px;
-    font-size: 0.9rem;
-    text-align: center;
+    text-decoration: none;
 }
 
 .verify-info {
@@ -419,17 +344,17 @@ async function resendCode() {
 .strength-fill {
     height: 100%;
     border-radius: 2px;
-    transition:
-        width 0.3s,
-        background 0.3s;
+    transition: width 0.3s, background 0.3s;
 }
 
 .strength-fill.weak {
     background: var(--danger);
 }
+
 .strength-fill.medium {
     background: var(--warning);
 }
+
 .strength-fill.strong {
     background: var(--success);
 }
@@ -443,9 +368,11 @@ async function resendCode() {
 .strength-label.weak {
     color: var(--danger);
 }
+
 .strength-label.medium {
     color: var(--warning);
 }
+
 .strength-label.strong {
     color: var(--success);
 }
