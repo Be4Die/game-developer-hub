@@ -129,6 +129,18 @@ func (h *InstanceHandler) Restart(ctx context.Context, req *pb.InstanceServiceRe
 	return &pb.InstanceServiceRestartResponse{Instance: instanceToProto(instance)}, nil
 }
 
+// Resume запускает остановленный инстанс.
+func (h *InstanceHandler) Resume(ctx context.Context, req *pb.InstanceServiceResumeRequest) (*pb.InstanceServiceResumeResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	instance, err := h.instanceService.ResumeInstance(ctx, ownerID, req.GetGameId(), req.GetInstanceId())
+	if err != nil {
+		return nil, domainError(err, "resume instance")
+	}
+
+	return &pb.InstanceServiceResumeResponse{Instance: instanceToProto(instance)}, nil
+}
+
 // StreamLogs стримит логи инстанса.
 func (h *InstanceHandler) StreamLogs(req *pb.InstanceServiceStreamLogsRequest, stream pb.InstanceService_StreamLogsServer) error {
 	ctx := stream.Context()

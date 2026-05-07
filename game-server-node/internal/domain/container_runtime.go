@@ -28,6 +28,8 @@ type ContainerRuntime interface {
 
 	// StopContainer останавливает контейнер с заданным таймаутом.
 	StopContainer(ctx context.Context, containerID string, timeout time.Duration) error
+	// RestartContainer перезапускает контейнер с заданным таймаутом.
+	RestartContainer(ctx context.Context, containerID string, timeout time.Duration) error
 	// RemoveContainer удаляет контейнер безвозвратно.
 	RemoveContainer(ctx context.Context, containerID string) error
 

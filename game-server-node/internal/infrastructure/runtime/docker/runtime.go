@@ -222,6 +222,18 @@ func (r *Runtime) StopContainer(ctx context.Context, containerID string, timeout
 	return nil
 }
 
+// RestartContainer перезапускает контейнер с заданным таймаутом.
+func (r *Runtime) RestartContainer(ctx context.Context, containerID string, timeout time.Duration) error {
+	timeoutSeconds := int(timeout.Seconds())
+
+	if err := r.cli.ContainerRestart(ctx, containerID, container.StopOptions{
+		Timeout: &timeoutSeconds,
+	}); err != nil {
+		return fmt.Errorf("Runtime.RestartContainer: %w", err)
+	}
+	return nil
+}
+
 // RemoveContainer удаляет контейнер безвозвратно.
 func (r *Runtime) RemoveContainer(ctx context.Context, containerID string) error {
 	if err := r.cli.ContainerRemove(ctx, containerID, container.RemoveOptions{

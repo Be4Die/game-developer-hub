@@ -54,6 +54,9 @@
               <button v-if="inst.status === 'running'" class="btn-stop" @click="handleStop(inst)" :disabled="stoppingId === inst.id" title="Остановить">
                 <Square class="icon-sm" />
               </button>
+              <button v-if="inst.status === 'stopped' || inst.status === 'crashed'" class="btn-resume" @click="handleResume(inst)" :disabled="resumingId === inst.id" title="Запустить">
+                <Play class="icon-sm" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -113,7 +116,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { Play, Square, AlertCircle } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import KeyValueEditor from '../../components/orchestrator/KeyValueEditor.vue'
-import { listInstances, startInstance, stopInstance, listBuilds } from '../../api/orchestrator'
+import { listInstances, startInstance, stopInstance, resumeInstance, listBuilds } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
@@ -127,6 +130,7 @@ const showStartForm = ref(false)
 const starting = ref(false)
 const startError = ref(null)
 const stoppingId = ref(null)
+const resumingId = ref(null)
 
 const startForm = reactive({
   build_version: '',
@@ -200,6 +204,19 @@ async function handleStop(inst) {
   }
 }
 
+async function handleResume(inst) {
+  resumingId.value = inst.id
+  try {
+    await resumeInstance(props.gameId, inst.id)
+    showToast(`Инстанс ${inst.name || inst.id} запускается...`)
+    await fetchInstances()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка запуска', 'error')
+  } finally {
+    resumingId.value = null
+  }
+}
+
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
@@ -253,6 +270,14 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 }
 .btn-stop:hover { color: var(--danger); border-color: var(--danger); }
 .btn-stop:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-resume {
+  background: none; border: 1px solid var(--border); padding: 4px 8px;
+  border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; color: var(--text-muted);
+}
+.btn-resume:hover { color: var(--success); border-color: var(--success); }
+.btn-resume:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }

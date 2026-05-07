@@ -81,6 +81,12 @@ export function restartInstance(gameId, instanceId) {
     .then((r) => r.data.instance ?? r.data);
 }
 
+export function resumeInstance(gameId, instanceId) {
+  return http
+    .post(`/games/${gameId}/instances/${instanceId}:resume`)
+    .then((r) => r.data.instance ?? r.data);
+}
+
 export function getInstanceUsage(gameId, instanceId) {
   return http
     .get(`/games/${gameId}/instances/${instanceId}/usage`)

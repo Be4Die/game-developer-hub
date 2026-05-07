@@ -23,6 +23,12 @@ type NodeClient interface {
 	// StopInstance выполняет graceful остановку экземпляра.
 	StopInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error
 
+	// RestartInstance перезапускает работающий экземпляр (docker restart).
+	RestartInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error
+
+	// StartStoppedInstance запускает остановленный экземпляр (docker start).
+	StartStoppedInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) error
+
 	// DeleteInstance удаляет экземпляр и его контейнер.
 	DeleteInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) error
 

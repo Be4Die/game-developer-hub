@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
@@ -236,7 +237,11 @@ func (s *InstanceService) DeleteInstance(ctx context.Context, ownerID string, ga
 
 	// gRPC удаление на ноде.
 	if err := s.nodeClient.DeleteInstance(ctx, node.Address, node.APIToken, instanceID); err != nil {
-		return fmt.Errorf("InstanceService.DeleteInstance: node DeleteInstance: %w", err)
+		if !grpcnode.IsGRPCNotFound(err) {
+			return fmt.Errorf("InstanceService.DeleteInstance: node DeleteInstance: %w", err)
+		}
+		// Нода не знает об инстансе — контейнер уже физически удалён.
+		// Продолжаем очистку локального состояния.
 	}
 
 	// Удаление из PostgreSQL.
@@ -257,10 +262,8 @@ func (s *InstanceService) DeleteInstance(ctx context.Context, ownerID string, ga
 	return nil
 }
 
-// RestartInstance перезапускает инстанс: останавливает текущий и запускает новый
-// с теми же параметрами.
+// RestartInstance перезапускает инстанс через docker restart на ноде.
 func (s *InstanceService) RestartInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error) {
-	// Шаг 1: получаем текущий инстанс.
 	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.RestartInstance: get instance: %w", err)
@@ -272,27 +275,62 @@ func (s *InstanceService) RestartInstance(ctx context.Context, ownerID string, g
 		return nil, domain.ErrForbidden
 	}
 
-	// Шаг 2: останавливаем текущий инстанс.
-	if _, err := s.StopInstance(ctx, ownerID, gameID, instanceID, 30); err != nil {
-		return nil, fmt.Errorf("InstanceService.RestartInstance: stop instance: %w", err)
-	}
-
-	// Шаг 3: запускаем новый инстанс с теми же параметрами.
-	params := StartInstanceParams{
-		OwnerID:          instance.OwnerID,
-		GameID:           instance.GameID,
-		BuildVersion:     instance.BuildVersion,
-		Name:             instance.Name,
-		MaxPlayers:       &instance.MaxPlayers,
-		DeveloperPayload: instance.DeveloperPayload,
-	}
-
-	newInstance, err := s.StartInstance(ctx, params)
+	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
 	if err != nil {
-		return nil, fmt.Errorf("InstanceService.RestartInstance: start instance: %w", err)
+		return nil, fmt.Errorf("InstanceService.RestartInstance: get node: %w", err)
 	}
 
-	return newInstance, nil
+	if err := s.nodeClient.RestartInstance(ctx, node.Address, node.APIToken, instanceID, 30); err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: node RestartInstance: %w", err)
+	}
+
+	instance.Status = domain.InstanceStatusRunning
+	instance.UpdatedAt = time.Now()
+	if err := s.instanceRepo.Update(ctx, instance); err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: update status: %w", err)
+	}
+	if err := s.instanceState.SetStatus(ctx, instance.ID, domain.InstanceStatusRunning); err != nil {
+		return nil, fmt.Errorf("InstanceService.RestartInstance: set KV status: %w", err)
+	}
+
+	return instance, nil
+}
+
+// ResumeInstance запускает остановленный инстанс (docker start на ноде).
+func (s *InstanceService) ResumeInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error) {
+	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+	if err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: get instance: %w", err)
+	}
+	if instance.GameID != gameID {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: instance %d does not belong to game %d", instanceID, gameID)
+	}
+	if ownerID != "" && instance.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	node, err := s.nodeRepo.GetByID(ctx, instance.NodeID)
+	if err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: get node: %w", err)
+	}
+
+	if err := s.nodeClient.StartStoppedInstance(ctx, node.Address, node.APIToken, instanceID); err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: node StartStoppedInstance: %w", err)
+	}
+
+	instance.Status = domain.InstanceStatusRunning
+	instance.UpdatedAt = time.Now()
+	if err := s.instanceRepo.Update(ctx, instance); err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: update status: %w", err)
+	}
+	if err := s.instanceState.SetStatus(ctx, instance.ID, domain.InstanceStatusRunning); err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: set KV status: %w", err)
+	}
+	if err := s.incrementNodeInstanceCount(ctx, node.ID, 1); err != nil {
+		return nil, fmt.Errorf("InstanceService.ResumeInstance: update node count: %w", err)
+	}
+
+	return instance, nil
 }
 
 // ListInstances возвращает список инстансов пользователя с обогащением из KV.

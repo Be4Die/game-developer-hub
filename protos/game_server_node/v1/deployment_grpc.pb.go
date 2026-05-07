@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DeploymentService_LoadImage_FullMethodName      = "/game_server_node.v1.DeploymentService/LoadImage"
-	DeploymentService_BuildImage_FullMethodName     = "/game_server_node.v1.DeploymentService/BuildImage"
-	DeploymentService_StartInstance_FullMethodName  = "/game_server_node.v1.DeploymentService/StartInstance"
-	DeploymentService_StopInstance_FullMethodName   = "/game_server_node.v1.DeploymentService/StopInstance"
-	DeploymentService_DeleteInstance_FullMethodName = "/game_server_node.v1.DeploymentService/DeleteInstance"
-	DeploymentService_StreamLogs_FullMethodName     = "/game_server_node.v1.DeploymentService/StreamLogs"
+	DeploymentService_LoadImage_FullMethodName            = "/game_server_node.v1.DeploymentService/LoadImage"
+	DeploymentService_BuildImage_FullMethodName           = "/game_server_node.v1.DeploymentService/BuildImage"
+	DeploymentService_StartInstance_FullMethodName        = "/game_server_node.v1.DeploymentService/StartInstance"
+	DeploymentService_StopInstance_FullMethodName         = "/game_server_node.v1.DeploymentService/StopInstance"
+	DeploymentService_RestartInstance_FullMethodName      = "/game_server_node.v1.DeploymentService/RestartInstance"
+	DeploymentService_StartStoppedInstance_FullMethodName = "/game_server_node.v1.DeploymentService/StartStoppedInstance"
+	DeploymentService_DeleteInstance_FullMethodName       = "/game_server_node.v1.DeploymentService/DeleteInstance"
+	DeploymentService_StreamLogs_FullMethodName           = "/game_server_node.v1.DeploymentService/StreamLogs"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -44,6 +46,10 @@ type DeploymentServiceClient interface {
 	StartInstance(ctx context.Context, in *StartInstanceRequest, opts ...grpc.CallOption) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
 	StopInstance(ctx context.Context, in *StopInstanceRequest, opts ...grpc.CallOption) (*StopInstanceResponse, error)
+	// Перезапуск работающего экземпляра (docker restart).
+	RestartInstance(ctx context.Context, in *RestartInstanceRequest, opts ...grpc.CallOption) (*RestartInstanceResponse, error)
+	// Запуск остановленного экземпляра (docker start).
+	StartStoppedInstance(ctx context.Context, in *StartStoppedInstanceRequest, opts ...grpc.CallOption) (*StartStoppedInstanceResponse, error)
 	// Удаление экземпляра и его контейнера.
 	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
@@ -104,6 +110,26 @@ func (c *deploymentServiceClient) StopInstance(ctx context.Context, in *StopInst
 	return out, nil
 }
 
+func (c *deploymentServiceClient) RestartInstance(ctx context.Context, in *RestartInstanceRequest, opts ...grpc.CallOption) (*RestartInstanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RestartInstanceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_RestartInstance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) StartStoppedInstance(ctx context.Context, in *StartStoppedInstanceRequest, opts ...grpc.CallOption) (*StartStoppedInstanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartStoppedInstanceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_StartStoppedInstance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *deploymentServiceClient) DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteInstanceResponse)
@@ -150,6 +176,10 @@ type DeploymentServiceServer interface {
 	StartInstance(context.Context, *StartInstanceRequest) (*StartInstanceResponse, error)
 	// Graceful остановка экземпляра.
 	StopInstance(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error)
+	// Перезапуск работающего экземпляра (docker restart).
+	RestartInstance(context.Context, *RestartInstanceRequest) (*RestartInstanceResponse, error)
+	// Запуск остановленного экземпляра (docker start).
+	StartStoppedInstance(context.Context, *StartStoppedInstanceRequest) (*StartStoppedInstanceResponse, error)
 	// Удаление экземпляра и его контейнера.
 	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
@@ -175,6 +205,12 @@ func (UnimplementedDeploymentServiceServer) StartInstance(context.Context, *Star
 }
 func (UnimplementedDeploymentServiceServer) StopInstance(context.Context, *StopInstanceRequest) (*StopInstanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StopInstance not implemented")
+}
+func (UnimplementedDeploymentServiceServer) RestartInstance(context.Context, *RestartInstanceRequest) (*RestartInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestartInstance not implemented")
+}
+func (UnimplementedDeploymentServiceServer) StartStoppedInstance(context.Context, *StartStoppedInstanceRequest) (*StartStoppedInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartStoppedInstance not implemented")
 }
 func (UnimplementedDeploymentServiceServer) DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInstance not implemented")
@@ -253,6 +289,42 @@ func _DeploymentService_StopInstance_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeploymentService_RestartInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestartInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).RestartInstance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_RestartInstance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).RestartInstance(ctx, req.(*RestartInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_StartStoppedInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartStoppedInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).StartStoppedInstance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_StartStoppedInstance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).StartStoppedInstance(ctx, req.(*StartStoppedInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DeploymentService_DeleteInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteInstanceRequest)
 	if err := dec(in); err != nil {
@@ -296,6 +368,14 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopInstance",
 			Handler:    _DeploymentService_StopInstance_Handler,
+		},
+		{
+			MethodName: "RestartInstance",
+			Handler:    _DeploymentService_RestartInstance_Handler,
+		},
+		{
+			MethodName: "StartStoppedInstance",
+			Handler:    _DeploymentService_StartStoppedInstance_Handler,
 		},
 		{
 			MethodName: "DeleteInstance",

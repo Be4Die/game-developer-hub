@@ -8,6 +8,8 @@ import (
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ─── Mocks for InstanceService ──────────────────────────────────────────────
@@ -726,6 +728,59 @@ func TestInstanceService_StopInstance(t *testing.T) {
 			wantErr:     true,
 			errContains: "get instance",
 		},
+		{
+			name:       "node returns NotFound — container already gone",
+			gameID:     1,
+			instanceID: 42,
+			timeoutSec: 10,
+			setupMocks: func() (*instMockInstanceRepo, *instMockInstanceState, *instMockBuildStorage, *instMockNodeRepo, *instMockNodeStateStore, *instMockNodeClient) {
+				instance := &domain.Instance{
+					ID:     42,
+					NodeID: 10,
+					GameID: 1,
+					Status: domain.InstanceStatusRunning,
+				}
+				node := &domain.Node{
+					ID:      10,
+					Address: "node1:44044",
+					Status:  domain.NodeStatusOnline,
+				}
+
+				instanceRepo := &instMockInstanceRepo{
+					getByIDFn: func(ctx context.Context, id int64) (*domain.Instance, error) {
+						return instance, nil
+					},
+					updateFn: func(ctx context.Context, inst *domain.Instance) error {
+						return nil
+					},
+				}
+				instanceState := &instMockInstanceState{
+					deleteFn: func(ctx context.Context, instanceID int64) error {
+						return nil
+					},
+				}
+				nodeRepo := &instMockNodeRepo{
+					getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+						return node, nil
+					},
+				}
+				nodeState := &instMockNodeStateStore{
+					getActiveInstanceCountFn: func(ctx context.Context, nodeID int64) (uint32, error) {
+						return 1, nil
+					},
+					setActiveInstanceCountFn: func(ctx context.Context, nodeID int64, count uint32) error {
+						return nil
+					},
+				}
+				nodeClient := &instMockNodeClient{
+					stopInstanceFn: func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
+						return status.Errorf(codes.NotFound, "instance with id %d: not found", instanceID)
+					},
+				}
+				return instanceRepo, instanceState, &instMockBuildStorage{}, nodeRepo, nodeState, nodeClient
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -873,6 +928,68 @@ func TestInstanceService_GetInstance_KVFallback(t *testing.T) {
 	// PlayerCount should be nil since KV failed.
 	if result.PlayerCount != nil {
 		t.Errorf("expected player count to be nil when KV fails, got %v", result.PlayerCount)
+	}
+}
+
+func TestInstanceService_DeleteInstance_NotFoundOnNode(t *testing.T) {
+	instance := &domain.Instance{
+		ID:     42,
+		NodeID: 10,
+		GameID: 1,
+		Status: domain.InstanceStatusRunning,
+	}
+	node := &domain.Node{
+		ID:      10,
+		Address: "node1:44044",
+		Status:  domain.NodeStatusOnline,
+	}
+
+	instanceRepo := &instMockInstanceRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Instance, error) {
+			return instance, nil
+		},
+		deleteFn: func(ctx context.Context, id int64) error {
+			return nil
+		},
+	}
+	instanceState := &instMockInstanceState{
+		deleteFn: func(ctx context.Context, instanceID int64) error {
+			return nil
+		},
+	}
+	nodeRepo := &instMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+	nodeState := &instMockNodeStateStore{
+		getActiveInstanceCountFn: func(ctx context.Context, nodeID int64) (uint32, error) {
+			return 1, nil
+		},
+		setActiveInstanceCountFn: func(ctx context.Context, nodeID int64, count uint32) error {
+			return nil
+		},
+	}
+	nodeClient := &instMockNodeClient{
+		deleteInstanceFn: func(ctx context.Context, address, apiKey string, instanceID int64) error {
+			return status.Errorf(codes.NotFound, "instance with id %d: not found", instanceID)
+		},
+	}
+
+	svc := NewInstanceService(
+		instanceRepo,
+		instanceState,
+		&instMockBuildStorage{},
+		nodeRepo,
+		nodeState,
+		nodeClient,
+		config.LimitsConfig{MaxInstancesPerGame: 5},
+	)
+
+	ctx := context.Background()
+	err := svc.DeleteInstance(ctx, "", 1, 42)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

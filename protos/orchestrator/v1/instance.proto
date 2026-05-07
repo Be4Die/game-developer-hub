@@ -48,6 +48,14 @@ service InstanceService {
     };
   }
 
+  // Запустить остановленный инстанс.
+  rpc Resume(InstanceServiceResumeRequest) returns (InstanceServiceResumeResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/instances/{instance_id}:resume"
+      body: "*"
+    };
+  }
+
   // Поток журналов инстанса (server streaming) — использует SSE для HTTP.
   rpc StreamLogs(InstanceServiceStreamLogsRequest) returns (stream InstanceServiceStreamLogsResponse) {
     option (google.api.http) = {
@@ -131,6 +139,17 @@ message InstanceServiceRestartRequest {
 }
 
 message InstanceServiceRestartResponse {
+  Instance instance = 1;
+}
+
+// ─── Resume ─────────────────────────────────────────────────────────────────
+
+message InstanceServiceResumeRequest {
+  int64 game_id = 1;
+  int64 instance_id = 2;
+}
+
+message InstanceServiceResumeResponse {
   Instance instance = 1;
 }
 

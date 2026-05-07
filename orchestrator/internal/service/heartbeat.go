@@ -157,6 +157,10 @@ func (s *HeartbeatService) checkNode(ctx context.Context, node *domain.Node) err
 	// Sync instance statuses from node (refreshes KV TTL).
 	_ = s.syncInstanceStatuses(ctx, node)
 
+	// Reconcile DB instances with node reality.
+	// Marks Running/Starting instances as Crashed if node no longer reports them.
+	_ = s.reconcileInstances(ctx, node)
+
 	// Обновляем статус ноды в PG если она была offline.
 	if node.Status == domain.NodeStatusOffline {
 		now := time.Now()
@@ -221,6 +225,54 @@ func (s *HeartbeatService) syncInstanceStatuses(ctx context.Context, node *domai
 			s.log.Debug("failed to update instance status in KV",
 				slog.Int64("instance_id", inst.ID),
 				slog.String("error", err.Error()),
+			)
+		}
+	}
+
+	return nil
+}
+
+// reconcileInstances сравнивает инстансы в БД с реальностью на ноде.
+// Инстансы со статусом Running/Starting, которых нет на ноде, помечаются как Crashed.
+func (s *HeartbeatService) reconcileInstances(ctx context.Context, node *domain.Node) error {
+	const op = "HeartbeatService.reconcileInstances"
+
+	// Получаем список инстансов с ноды.
+	nodeInstances, err := s.nodeClient.ListInstances(ctx, node.Address, node.APIToken)
+	if err != nil {
+		return fmt.Errorf("%s: list from node: %w", op, err)
+	}
+
+	nodeInstanceSet := make(map[int64]struct{}, len(nodeInstances))
+	for _, inst := range nodeInstances {
+		nodeInstanceSet[inst.ID] = struct{}{}
+	}
+
+	// Получаем ожидаемые инстансы из БД для этой ноды.
+	dbInstances, err := s.instanceRepo.ListByNode(ctx, node.ID)
+	if err != nil {
+		return fmt.Errorf("%s: list from db: %w", op, err)
+	}
+
+	now := time.Now()
+	for _, inst := range dbInstances {
+		if inst.Status != domain.InstanceStatusRunning && inst.Status != domain.InstanceStatusStarting {
+			continue
+		}
+		if _, ok := nodeInstanceSet[inst.ID]; !ok {
+			inst.Status = domain.InstanceStatusCrashed
+			inst.UpdatedAt = now
+			if err := s.instanceRepo.Update(ctx, inst); err != nil {
+				s.log.Warn("failed to update instance status during reconcile",
+					slog.Int64("instance_id", inst.ID),
+					slog.String("error", err.Error()),
+				)
+				continue
+			}
+			_ = s.instanceState.SetStatus(ctx, inst.ID, domain.InstanceStatusCrashed)
+			s.log.Info("instance marked as crashed during reconcile",
+				slog.Int64("instance_id", inst.ID),
+				slog.Int64("node_id", node.ID),
 			)
 		}
 	}

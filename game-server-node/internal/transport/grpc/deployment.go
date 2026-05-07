@@ -199,6 +199,32 @@ func (h *DeploymentHandler) StopInstance(
 	return &pb.StopInstanceResponse{}, nil
 }
 
+// RestartInstance перезапускает работающий инстанс.
+func (h *DeploymentHandler) RestartInstance(
+	ctx context.Context,
+	req *pb.RestartInstanceRequest,
+) (*pb.RestartInstanceResponse, error) {
+	timeout := time.Duration(req.GetTimeoutSeconds()) * time.Second
+
+	if err := h.svc.RestartInstance(ctx, req.GetInstanceId(), timeout); err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.RestartInstanceResponse{}, nil
+}
+
+// StartStoppedInstance запускает остановленный инстанс.
+func (h *DeploymentHandler) StartStoppedInstance(
+	ctx context.Context,
+	req *pb.StartStoppedInstanceRequest,
+) (*pb.StartStoppedInstanceResponse, error) {
+	if err := h.svc.StartStoppedInstance(ctx, req.GetInstanceId()); err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.StartStoppedInstanceResponse{}, nil
+}
+
 // DeleteInstance удаляет инстанс и его контейнер.
 func (h *DeploymentHandler) DeleteInstance(
 	ctx context.Context,

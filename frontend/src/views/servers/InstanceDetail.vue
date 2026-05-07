@@ -16,6 +16,9 @@
         <button v-if="isRunning" class="btn-stop-lg" @click="handleStop" :disabled="stopping">
           <Square class="icon-sm" /> {{ stopping ? 'Остановка...' : 'Остановить' }}
         </button>
+        <button v-if="isStopped" class="btn-resume" @click="handleResume" :disabled="resuming">
+          <Play class="icon-sm" /> {{ resuming ? 'Запуск...' : 'Запустить' }}
+        </button>
         <button class="btn-delete" @click="handleDelete" :disabled="deleting">
           <Trash2 class="icon-sm" /> {{ deleting ? 'Удаление...' : 'Удалить' }}
         </button>
@@ -80,11 +83,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2, Play } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
 import LogsViewer from '../../components/orchestrator/LogsViewer.vue'
-import { getInstance, getInstanceUsage, stopInstance, deleteInstance, restartInstance } from '../../api/orchestrator'
+import { getInstance, getInstanceUsage, stopInstance, deleteInstance, restartInstance, resumeInstance } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
 const props = defineProps({
@@ -100,6 +103,7 @@ const error = ref(null)
 const stopping = ref(false)
 const deleting = ref(false)
 const restarting = ref(false)
+const resuming = ref(false)
 
 let usageInterval = null
 
@@ -172,6 +176,19 @@ async function handleRestart() {
   }
 }
 
+async function handleResume() {
+  resuming.value = true
+  try {
+    await resumeInstance(props.gameId, props.instanceId)
+    showToast('Инстанс запускается...')
+    await fetchInstance()
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка запуска', 'error')
+  } finally {
+    resuming.value = false
+  }
+}
+
 async function handleDelete() {
   if (!confirm('Удалить инстанс? Это действие нельзя отменить.')) return
   deleting.value = true
@@ -225,6 +242,14 @@ onUnmounted(() => {
 }
 .btn-restart:hover { background: var(--primary-light); }
 .btn-restart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-resume {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--success); color: var(--success);
+  padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer;
+}
+.btn-resume:hover { background: var(--success-light); }
+.btn-resume:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-delete {
   display: flex; align-items: center; gap: 6px;

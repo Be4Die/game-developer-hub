@@ -22,6 +22,12 @@ service DeploymentService {
   // Graceful остановка экземпляра.
   rpc StopInstance(StopInstanceRequest) returns (StopInstanceResponse);
 
+  // Перезапуск работающего экземпляра (docker restart).
+  rpc RestartInstance(RestartInstanceRequest) returns (RestartInstanceResponse);
+
+  // Запуск остановленного экземпляра (docker start).
+  rpc StartStoppedInstance(StartStoppedInstanceRequest) returns (StartStoppedInstanceResponse);
+
   // Удаление экземпляра и его контейнера.
   rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
 
@@ -143,6 +149,20 @@ message StreamLogsRequest {
   uint32 tail = 4;
   optional google.protobuf.Timestamp since = 5;
 }
+
+message RestartInstanceRequest {
+  int64 instance_id = 1;
+  // 0 — таймаут по умолчанию.
+  uint32 timeout_seconds = 2;
+}
+
+message RestartInstanceResponse {}
+
+message StartStoppedInstanceRequest {
+  int64 instance_id = 1;
+}
+
+message StartStoppedInstanceResponse {}
 
 message StreamLogsResponse {
   google.protobuf.Timestamp timestamp = 1;

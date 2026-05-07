@@ -25,6 +25,7 @@ const (
 	InstanceService_Stop_FullMethodName       = "/orchestrator.v1.InstanceService/Stop"
 	InstanceService_Delete_FullMethodName     = "/orchestrator.v1.InstanceService/Delete"
 	InstanceService_Restart_FullMethodName    = "/orchestrator.v1.InstanceService/Restart"
+	InstanceService_Resume_FullMethodName     = "/orchestrator.v1.InstanceService/Resume"
 	InstanceService_StreamLogs_FullMethodName = "/orchestrator.v1.InstanceService/StreamLogs"
 	InstanceService_GetUsage_FullMethodName   = "/orchestrator.v1.InstanceService/GetUsage"
 )
@@ -47,6 +48,8 @@ type InstanceServiceClient interface {
 	Delete(ctx context.Context, in *InstanceServiceDeleteRequest, opts ...grpc.CallOption) (*InstanceServiceDeleteResponse, error)
 	// Перезапустить инстанс.
 	Restart(ctx context.Context, in *InstanceServiceRestartRequest, opts ...grpc.CallOption) (*InstanceServiceRestartResponse, error)
+	// Запустить остановленный инстанс.
+	Resume(ctx context.Context, in *InstanceServiceResumeRequest, opts ...grpc.CallOption) (*InstanceServiceResumeResponse, error)
 	// Поток журналов инстанса (server streaming) — использует SSE для HTTP.
 	StreamLogs(ctx context.Context, in *InstanceServiceStreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse], error)
 	// Потребление ресурсов инстанса.
@@ -121,6 +124,16 @@ func (c *instanceServiceClient) Restart(ctx context.Context, in *InstanceService
 	return out, nil
 }
 
+func (c *instanceServiceClient) Resume(ctx context.Context, in *InstanceServiceResumeRequest, opts ...grpc.CallOption) (*InstanceServiceResumeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InstanceServiceResumeResponse)
+	err := c.cc.Invoke(ctx, InstanceService_Resume_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *instanceServiceClient) StreamLogs(ctx context.Context, in *InstanceServiceStreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[InstanceServiceStreamLogsResponse], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &InstanceService_ServiceDesc.Streams[0], InstanceService_StreamLogs_FullMethodName, cOpts...)
@@ -168,6 +181,8 @@ type InstanceServiceServer interface {
 	Delete(context.Context, *InstanceServiceDeleteRequest) (*InstanceServiceDeleteResponse, error)
 	// Перезапустить инстанс.
 	Restart(context.Context, *InstanceServiceRestartRequest) (*InstanceServiceRestartResponse, error)
+	// Запустить остановленный инстанс.
+	Resume(context.Context, *InstanceServiceResumeRequest) (*InstanceServiceResumeResponse, error)
 	// Поток журналов инстанса (server streaming) — использует SSE для HTTP.
 	StreamLogs(*InstanceServiceStreamLogsRequest, grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]) error
 	// Потребление ресурсов инстанса.
@@ -199,6 +214,9 @@ func (UnimplementedInstanceServiceServer) Delete(context.Context, *InstanceServi
 }
 func (UnimplementedInstanceServiceServer) Restart(context.Context, *InstanceServiceRestartRequest) (*InstanceServiceRestartResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Restart not implemented")
+}
+func (UnimplementedInstanceServiceServer) Resume(context.Context, *InstanceServiceResumeRequest) (*InstanceServiceResumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Resume not implemented")
 }
 func (UnimplementedInstanceServiceServer) StreamLogs(*InstanceServiceStreamLogsRequest, grpc.ServerStreamingServer[InstanceServiceStreamLogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
@@ -335,6 +353,24 @@ func _InstanceService_Restart_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InstanceService_Resume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstanceServiceResumeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).Resume(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_Resume_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).Resume(ctx, req.(*InstanceServiceResumeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _InstanceService_StreamLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(InstanceServiceStreamLogsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -394,6 +430,10 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Restart",
 			Handler:    _InstanceService_Restart_Handler,
+		},
+		{
+			MethodName: "Resume",
+			Handler:    _InstanceService_Resume_Handler,
 		},
 		{
 			MethodName: "GetUsage",

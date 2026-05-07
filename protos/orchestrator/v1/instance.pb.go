@@ -655,6 +655,102 @@ func (x *InstanceServiceRestartResponse) GetInstance() *Instance {
 	return nil
 }
 
+type InstanceServiceResumeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	InstanceId    int64                  `protobuf:"varint,2,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceServiceResumeRequest) Reset() {
+	*x = InstanceServiceResumeRequest{}
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceServiceResumeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceServiceResumeRequest) ProtoMessage() {}
+
+func (x *InstanceServiceResumeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceServiceResumeRequest.ProtoReflect.Descriptor instead.
+func (*InstanceServiceResumeRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *InstanceServiceResumeRequest) GetGameId() int64 {
+	if x != nil {
+		return x.GameId
+	}
+	return 0
+}
+
+func (x *InstanceServiceResumeRequest) GetInstanceId() int64 {
+	if x != nil {
+		return x.InstanceId
+	}
+	return 0
+}
+
+type InstanceServiceResumeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Instance      *Instance              `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceServiceResumeResponse) Reset() {
+	*x = InstanceServiceResumeResponse{}
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceServiceResumeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceServiceResumeResponse) ProtoMessage() {}
+
+func (x *InstanceServiceResumeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceServiceResumeResponse.ProtoReflect.Descriptor instead.
+func (*InstanceServiceResumeResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *InstanceServiceResumeResponse) GetInstance() *Instance {
+	if x != nil {
+		return x.Instance
+	}
+	return nil
+}
+
 type InstanceServiceStreamLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
@@ -669,7 +765,7 @@ type InstanceServiceStreamLogsRequest struct {
 
 func (x *InstanceServiceStreamLogsRequest) Reset() {
 	*x = InstanceServiceStreamLogsRequest{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[12]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -681,7 +777,7 @@ func (x *InstanceServiceStreamLogsRequest) String() string {
 func (*InstanceServiceStreamLogsRequest) ProtoMessage() {}
 
 func (x *InstanceServiceStreamLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[12]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -694,7 +790,7 @@ func (x *InstanceServiceStreamLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceServiceStreamLogsRequest.ProtoReflect.Descriptor instead.
 func (*InstanceServiceStreamLogsRequest) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{12}
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *InstanceServiceStreamLogsRequest) GetGameId() int64 {
@@ -748,7 +844,7 @@ type InstanceServiceStreamLogsResponse struct {
 
 func (x *InstanceServiceStreamLogsResponse) Reset() {
 	*x = InstanceServiceStreamLogsResponse{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[13]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +856,7 @@ func (x *InstanceServiceStreamLogsResponse) String() string {
 func (*InstanceServiceStreamLogsResponse) ProtoMessage() {}
 
 func (x *InstanceServiceStreamLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[13]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +869,7 @@ func (x *InstanceServiceStreamLogsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use InstanceServiceStreamLogsResponse.ProtoReflect.Descriptor instead.
 func (*InstanceServiceStreamLogsResponse) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{13}
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *InstanceServiceStreamLogsResponse) GetEntry() *LogEntry {
@@ -793,7 +889,7 @@ type InstanceServiceGetUsageRequest struct {
 
 func (x *InstanceServiceGetUsageRequest) Reset() {
 	*x = InstanceServiceGetUsageRequest{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[14]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -805,7 +901,7 @@ func (x *InstanceServiceGetUsageRequest) String() string {
 func (*InstanceServiceGetUsageRequest) ProtoMessage() {}
 
 func (x *InstanceServiceGetUsageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[14]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -818,7 +914,7 @@ func (x *InstanceServiceGetUsageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceServiceGetUsageRequest.ProtoReflect.Descriptor instead.
 func (*InstanceServiceGetUsageRequest) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{14}
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *InstanceServiceGetUsageRequest) GetGameId() int64 {
@@ -845,7 +941,7 @@ type InstanceServiceGetUsageResponse struct {
 
 func (x *InstanceServiceGetUsageResponse) Reset() {
 	*x = InstanceServiceGetUsageResponse{}
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[15]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -857,7 +953,7 @@ func (x *InstanceServiceGetUsageResponse) String() string {
 func (*InstanceServiceGetUsageResponse) ProtoMessage() {}
 
 func (x *InstanceServiceGetUsageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_instance_proto_msgTypes[15]
+	mi := &file_orchestrator_v1_instance_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -870,7 +966,7 @@ func (x *InstanceServiceGetUsageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceServiceGetUsageResponse.ProtoReflect.Descriptor instead.
 func (*InstanceServiceGetUsageResponse) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{15}
+	return file_orchestrator_v1_instance_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *InstanceServiceGetUsageResponse) GetInstanceId() int64 {
@@ -944,6 +1040,12 @@ const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\vinstance_id\x18\x02 \x01(\x03R\n" +
 	"instanceId\"W\n" +
 	"\x1eInstanceServiceRestartResponse\x125\n" +
+	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"X\n" +
+	"\x1cInstanceServiceResumeRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
+	"\vinstance_id\x18\x02 \x01(\x03R\n" +
+	"instanceId\"V\n" +
+	"\x1dInstanceServiceResumeResponse\x125\n" +
 	"\binstance\x18\x01 \x01(\v2\x19.orchestrator.v1.InstanceR\binstance\"\x8d\x02\n" +
 	" InstanceServiceStreamLogsRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1f\n" +
@@ -964,15 +1066,15 @@ const file_orchestrator_v1_instance_proto_rawDesc = "" +
 	"\x1fInstanceServiceGetUsageResponse\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x124\n" +
-	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\xad\n" +
-	"\n" +
+	"\x05usage\x18\x02 \x01(\v2\x1e.orchestrator.v1.ResourceUsageR\x05usage2\xda\v\n" +
 	"\x0fInstanceService\x12\x92\x01\n" +
 	"\x05Start\x12,.orchestrator.v1.InstanceServiceStartRequest\x1a-.orchestrator.v1.InstanceServiceStartResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/games/{game_id}/instances\x12\x8c\x01\n" +
 	"\x04List\x12+.orchestrator.v1.InstanceServiceListRequest\x1a,.orchestrator.v1.InstanceServiceListResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/games/{game_id}/instances\x12\x97\x01\n" +
 	"\x03Get\x12*.orchestrator.v1.InstanceServiceGetRequest\x1a+.orchestrator.v1.InstanceServiceGetResponse\"7\x82\xd3\xe4\x93\x021\x12//api/v1/games/{game_id}/instances/{instance_id}\x12\xa2\x01\n" +
 	"\x04Stop\x12+.orchestrator.v1.InstanceServiceStopRequest\x1a,.orchestrator.v1.InstanceServiceStopResponse\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/games/{game_id}/instances/{instance_id}:stop\x12\xa0\x01\n" +
 	"\x06Delete\x12-.orchestrator.v1.InstanceServiceDeleteRequest\x1a..orchestrator.v1.InstanceServiceDeleteResponse\"7\x82\xd3\xe4\x93\x021*//api/v1/games/{game_id}/instances/{instance_id}\x12\xae\x01\n" +
-	"\aRestart\x12..orchestrator.v1.InstanceServiceRestartRequest\x1a/.orchestrator.v1.InstanceServiceRestartResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/games/{game_id}/instances/{instance_id}:restart\x12\xb3\x01\n" +
+	"\aRestart\x12..orchestrator.v1.InstanceServiceRestartRequest\x1a/.orchestrator.v1.InstanceServiceRestartResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/games/{game_id}/instances/{instance_id}:restart\x12\xaa\x01\n" +
+	"\x06Resume\x12-.orchestrator.v1.InstanceServiceResumeRequest\x1a..orchestrator.v1.InstanceServiceResumeResponse\"A\x82\xd3\xe4\x93\x02;:\x01*\"6/api/v1/games/{game_id}/instances/{instance_id}:resume\x12\xb3\x01\n" +
 	"\n" +
 	"StreamLogs\x121.orchestrator.v1.InstanceServiceStreamLogsRequest\x1a2.orchestrator.v1.InstanceServiceStreamLogsResponse\"<\x82\xd3\xe4\x93\x026\x124/api/v1/games/{game_id}/instances/{instance_id}/logs0\x01\x12\xac\x01\n" +
 	"\bGetUsage\x12/.orchestrator.v1.InstanceServiceGetUsageRequest\x1a0.orchestrator.v1.InstanceServiceGetUsageResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/games/{game_id}/instances/{instance_id}/usageB\xcd\x01\n" +
@@ -990,7 +1092,7 @@ func file_orchestrator_v1_instance_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_instance_proto_rawDescData
 }
 
-var file_orchestrator_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_orchestrator_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_orchestrator_v1_instance_proto_goTypes = []any{
 	(*InstanceServiceStartRequest)(nil),       // 0: orchestrator.v1.InstanceServiceStartRequest
 	(*InstanceServiceStartResponse)(nil),      // 1: orchestrator.v1.InstanceServiceStartResponse
@@ -1004,55 +1106,60 @@ var file_orchestrator_v1_instance_proto_goTypes = []any{
 	(*InstanceServiceDeleteResponse)(nil),     // 9: orchestrator.v1.InstanceServiceDeleteResponse
 	(*InstanceServiceRestartRequest)(nil),     // 10: orchestrator.v1.InstanceServiceRestartRequest
 	(*InstanceServiceRestartResponse)(nil),    // 11: orchestrator.v1.InstanceServiceRestartResponse
-	(*InstanceServiceStreamLogsRequest)(nil),  // 12: orchestrator.v1.InstanceServiceStreamLogsRequest
-	(*InstanceServiceStreamLogsResponse)(nil), // 13: orchestrator.v1.InstanceServiceStreamLogsResponse
-	(*InstanceServiceGetUsageRequest)(nil),    // 14: orchestrator.v1.InstanceServiceGetUsageRequest
-	(*InstanceServiceGetUsageResponse)(nil),   // 15: orchestrator.v1.InstanceServiceGetUsageResponse
-	nil,                                       // 16: orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
-	nil,                                       // 17: orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
-	(*PortAllocation)(nil),                    // 18: orchestrator.v1.PortAllocation
-	(*ResourceLimits)(nil),                    // 19: orchestrator.v1.ResourceLimits
-	(*Instance)(nil),                          // 20: orchestrator.v1.Instance
-	(InstanceStatus)(0),                       // 21: orchestrator.v1.InstanceStatus
-	(LogSource)(0),                            // 22: orchestrator.v1.LogSource
-	(*LogEntry)(nil),                          // 23: orchestrator.v1.LogEntry
-	(*ResourceUsage)(nil),                     // 24: orchestrator.v1.ResourceUsage
+	(*InstanceServiceResumeRequest)(nil),      // 12: orchestrator.v1.InstanceServiceResumeRequest
+	(*InstanceServiceResumeResponse)(nil),     // 13: orchestrator.v1.InstanceServiceResumeResponse
+	(*InstanceServiceStreamLogsRequest)(nil),  // 14: orchestrator.v1.InstanceServiceStreamLogsRequest
+	(*InstanceServiceStreamLogsResponse)(nil), // 15: orchestrator.v1.InstanceServiceStreamLogsResponse
+	(*InstanceServiceGetUsageRequest)(nil),    // 16: orchestrator.v1.InstanceServiceGetUsageRequest
+	(*InstanceServiceGetUsageResponse)(nil),   // 17: orchestrator.v1.InstanceServiceGetUsageResponse
+	nil,                                       // 18: orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
+	nil,                                       // 19: orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
+	(*PortAllocation)(nil),                    // 20: orchestrator.v1.PortAllocation
+	(*ResourceLimits)(nil),                    // 21: orchestrator.v1.ResourceLimits
+	(*Instance)(nil),                          // 22: orchestrator.v1.Instance
+	(InstanceStatus)(0),                       // 23: orchestrator.v1.InstanceStatus
+	(LogSource)(0),                            // 24: orchestrator.v1.LogSource
+	(*LogEntry)(nil),                          // 25: orchestrator.v1.LogEntry
+	(*ResourceUsage)(nil),                     // 26: orchestrator.v1.ResourceUsage
 }
 var file_orchestrator_v1_instance_proto_depIdxs = []int32{
-	18, // 0: orchestrator.v1.InstanceServiceStartRequest.port_allocation:type_name -> orchestrator.v1.PortAllocation
-	19, // 1: orchestrator.v1.InstanceServiceStartRequest.resource_limits:type_name -> orchestrator.v1.ResourceLimits
-	16, // 2: orchestrator.v1.InstanceServiceStartRequest.env_vars:type_name -> orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
-	17, // 3: orchestrator.v1.InstanceServiceStartRequest.developer_payload:type_name -> orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
-	20, // 4: orchestrator.v1.InstanceServiceStartResponse.instance:type_name -> orchestrator.v1.Instance
-	21, // 5: orchestrator.v1.InstanceServiceListRequest.status:type_name -> orchestrator.v1.InstanceStatus
-	20, // 6: orchestrator.v1.InstanceServiceListResponse.instances:type_name -> orchestrator.v1.Instance
-	20, // 7: orchestrator.v1.InstanceServiceGetResponse.instance:type_name -> orchestrator.v1.Instance
-	20, // 8: orchestrator.v1.InstanceServiceStopResponse.instance:type_name -> orchestrator.v1.Instance
-	20, // 9: orchestrator.v1.InstanceServiceRestartResponse.instance:type_name -> orchestrator.v1.Instance
-	22, // 10: orchestrator.v1.InstanceServiceStreamLogsRequest.source:type_name -> orchestrator.v1.LogSource
-	23, // 11: orchestrator.v1.InstanceServiceStreamLogsResponse.entry:type_name -> orchestrator.v1.LogEntry
-	24, // 12: orchestrator.v1.InstanceServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	0,  // 13: orchestrator.v1.InstanceService.Start:input_type -> orchestrator.v1.InstanceServiceStartRequest
-	2,  // 14: orchestrator.v1.InstanceService.List:input_type -> orchestrator.v1.InstanceServiceListRequest
-	4,  // 15: orchestrator.v1.InstanceService.Get:input_type -> orchestrator.v1.InstanceServiceGetRequest
-	6,  // 16: orchestrator.v1.InstanceService.Stop:input_type -> orchestrator.v1.InstanceServiceStopRequest
-	8,  // 17: orchestrator.v1.InstanceService.Delete:input_type -> orchestrator.v1.InstanceServiceDeleteRequest
-	10, // 18: orchestrator.v1.InstanceService.Restart:input_type -> orchestrator.v1.InstanceServiceRestartRequest
-	12, // 19: orchestrator.v1.InstanceService.StreamLogs:input_type -> orchestrator.v1.InstanceServiceStreamLogsRequest
-	14, // 20: orchestrator.v1.InstanceService.GetUsage:input_type -> orchestrator.v1.InstanceServiceGetUsageRequest
-	1,  // 21: orchestrator.v1.InstanceService.Start:output_type -> orchestrator.v1.InstanceServiceStartResponse
-	3,  // 22: orchestrator.v1.InstanceService.List:output_type -> orchestrator.v1.InstanceServiceListResponse
-	5,  // 23: orchestrator.v1.InstanceService.Get:output_type -> orchestrator.v1.InstanceServiceGetResponse
-	7,  // 24: orchestrator.v1.InstanceService.Stop:output_type -> orchestrator.v1.InstanceServiceStopResponse
-	9,  // 25: orchestrator.v1.InstanceService.Delete:output_type -> orchestrator.v1.InstanceServiceDeleteResponse
-	11, // 26: orchestrator.v1.InstanceService.Restart:output_type -> orchestrator.v1.InstanceServiceRestartResponse
-	13, // 27: orchestrator.v1.InstanceService.StreamLogs:output_type -> orchestrator.v1.InstanceServiceStreamLogsResponse
-	15, // 28: orchestrator.v1.InstanceService.GetUsage:output_type -> orchestrator.v1.InstanceServiceGetUsageResponse
-	21, // [21:29] is the sub-list for method output_type
-	13, // [13:21] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	20, // 0: orchestrator.v1.InstanceServiceStartRequest.port_allocation:type_name -> orchestrator.v1.PortAllocation
+	21, // 1: orchestrator.v1.InstanceServiceStartRequest.resource_limits:type_name -> orchestrator.v1.ResourceLimits
+	18, // 2: orchestrator.v1.InstanceServiceStartRequest.env_vars:type_name -> orchestrator.v1.InstanceServiceStartRequest.EnvVarsEntry
+	19, // 3: orchestrator.v1.InstanceServiceStartRequest.developer_payload:type_name -> orchestrator.v1.InstanceServiceStartRequest.DeveloperPayloadEntry
+	22, // 4: orchestrator.v1.InstanceServiceStartResponse.instance:type_name -> orchestrator.v1.Instance
+	23, // 5: orchestrator.v1.InstanceServiceListRequest.status:type_name -> orchestrator.v1.InstanceStatus
+	22, // 6: orchestrator.v1.InstanceServiceListResponse.instances:type_name -> orchestrator.v1.Instance
+	22, // 7: orchestrator.v1.InstanceServiceGetResponse.instance:type_name -> orchestrator.v1.Instance
+	22, // 8: orchestrator.v1.InstanceServiceStopResponse.instance:type_name -> orchestrator.v1.Instance
+	22, // 9: orchestrator.v1.InstanceServiceRestartResponse.instance:type_name -> orchestrator.v1.Instance
+	22, // 10: orchestrator.v1.InstanceServiceResumeResponse.instance:type_name -> orchestrator.v1.Instance
+	24, // 11: orchestrator.v1.InstanceServiceStreamLogsRequest.source:type_name -> orchestrator.v1.LogSource
+	25, // 12: orchestrator.v1.InstanceServiceStreamLogsResponse.entry:type_name -> orchestrator.v1.LogEntry
+	26, // 13: orchestrator.v1.InstanceServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	0,  // 14: orchestrator.v1.InstanceService.Start:input_type -> orchestrator.v1.InstanceServiceStartRequest
+	2,  // 15: orchestrator.v1.InstanceService.List:input_type -> orchestrator.v1.InstanceServiceListRequest
+	4,  // 16: orchestrator.v1.InstanceService.Get:input_type -> orchestrator.v1.InstanceServiceGetRequest
+	6,  // 17: orchestrator.v1.InstanceService.Stop:input_type -> orchestrator.v1.InstanceServiceStopRequest
+	8,  // 18: orchestrator.v1.InstanceService.Delete:input_type -> orchestrator.v1.InstanceServiceDeleteRequest
+	10, // 19: orchestrator.v1.InstanceService.Restart:input_type -> orchestrator.v1.InstanceServiceRestartRequest
+	12, // 20: orchestrator.v1.InstanceService.Resume:input_type -> orchestrator.v1.InstanceServiceResumeRequest
+	14, // 21: orchestrator.v1.InstanceService.StreamLogs:input_type -> orchestrator.v1.InstanceServiceStreamLogsRequest
+	16, // 22: orchestrator.v1.InstanceService.GetUsage:input_type -> orchestrator.v1.InstanceServiceGetUsageRequest
+	1,  // 23: orchestrator.v1.InstanceService.Start:output_type -> orchestrator.v1.InstanceServiceStartResponse
+	3,  // 24: orchestrator.v1.InstanceService.List:output_type -> orchestrator.v1.InstanceServiceListResponse
+	5,  // 25: orchestrator.v1.InstanceService.Get:output_type -> orchestrator.v1.InstanceServiceGetResponse
+	7,  // 26: orchestrator.v1.InstanceService.Stop:output_type -> orchestrator.v1.InstanceServiceStopResponse
+	9,  // 27: orchestrator.v1.InstanceService.Delete:output_type -> orchestrator.v1.InstanceServiceDeleteResponse
+	11, // 28: orchestrator.v1.InstanceService.Restart:output_type -> orchestrator.v1.InstanceServiceRestartResponse
+	13, // 29: orchestrator.v1.InstanceService.Resume:output_type -> orchestrator.v1.InstanceServiceResumeResponse
+	15, // 30: orchestrator.v1.InstanceService.StreamLogs:output_type -> orchestrator.v1.InstanceServiceStreamLogsResponse
+	17, // 31: orchestrator.v1.InstanceService.GetUsage:output_type -> orchestrator.v1.InstanceServiceGetUsageResponse
+	23, // [23:32] is the sub-list for method output_type
+	14, // [14:23] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_instance_proto_init() }
@@ -1063,14 +1170,14 @@ func file_orchestrator_v1_instance_proto_init() {
 	file_orchestrator_v1_common_proto_init()
 	file_orchestrator_v1_instance_proto_msgTypes[0].OneofWrappers = []any{}
 	file_orchestrator_v1_instance_proto_msgTypes[2].OneofWrappers = []any{}
-	file_orchestrator_v1_instance_proto_msgTypes[12].OneofWrappers = []any{}
+	file_orchestrator_v1_instance_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_instance_proto_rawDesc), len(file_orchestrator_v1_instance_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

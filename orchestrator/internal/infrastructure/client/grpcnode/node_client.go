@@ -3,6 +3,7 @@ package grpcnode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -12,10 +13,12 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // Client реализует domain.NodeClient через gRPC к game-server-node.
@@ -219,6 +222,10 @@ func (c *Client) StartInstance(ctx context.Context, nodeAddress, apiKey string, 
 		Args:             req.Args,
 	}
 
+	if req.InstanceID != 0 {
+		pbReq.InstanceId = &req.InstanceID
+	}
+
 	if req.ResourceLimits != nil {
 		pbReq.ResourceLimits = &pb.ResourceLimits{}
 		if req.ResourceLimits.CPUMillis != nil {
@@ -255,6 +262,45 @@ func (c *Client) StopInstance(ctx context.Context, nodeAddress, apiKey string, i
 	})
 	if err != nil {
 		return fmt.Errorf("StopInstance: %w", err)
+	}
+
+	return nil
+}
+
+// RestartInstance перезапускает работающий экземпляр (docker restart).
+func (c *Client) RestartInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64, timeoutSec uint32) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return err
+	}
+
+	ctx = authContext(ctx, apiKey)
+	depClient := pb.NewDeploymentServiceClient(conn)
+	_, err = depClient.RestartInstance(ctx, &pb.RestartInstanceRequest{
+		InstanceId:     instanceID,
+		TimeoutSeconds: timeoutSec,
+	})
+	if err != nil {
+		return fmt.Errorf("RestartInstance: %w", err)
+	}
+
+	return nil
+}
+
+// StartStoppedInstance запускает остановленный экземпляр (docker start).
+func (c *Client) StartStoppedInstance(ctx context.Context, nodeAddress, apiKey string, instanceID int64) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return err
+	}
+
+	ctx = authContext(ctx, apiKey)
+	depClient := pb.NewDeploymentServiceClient(conn)
+	_, err = depClient.StartStoppedInstance(ctx, &pb.StartStoppedInstanceRequest{
+		InstanceId: instanceID,
+	})
+	if err != nil {
+		return fmt.Errorf("StartStoppedInstance: %w", err)
 	}
 
 	return nil
@@ -569,6 +615,18 @@ func fromPBLogSource(s pb.LogSource) domain.LogSource {
 	default:
 		return 0
 	}
+}
+
+// IsGRPCNotFound проверяет, является ли ошибка gRPC-статусом codes.NotFound.
+func IsGRPCNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	st, ok := status.FromError(err)
+	if ok {
+		return st.Code() == codes.NotFound
+	}
+	return IsGRPCNotFound(errors.Unwrap(err))
 }
 
 var _ domain.NodeClient = (*Client)(nil)

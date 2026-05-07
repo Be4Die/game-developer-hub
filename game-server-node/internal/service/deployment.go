@@ -298,8 +298,8 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	return id, actualHostPort, nil
 }
 
-// StopInstance останавливает инстанс и удаляет его контейнер.
-// При успешной остановке запись удаляется из storage; при ошибке - статус меняется на Crashed.
+// StopInstance останавливает контейнер инстанса.
+// Контейнер остаётся в Docker, запись в storage обновляется на Stopped.
 func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, timeout time.Duration) error {
 	const op = "DeploymentService.StopInstance"
 
@@ -312,31 +312,70 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 	instance.Status = domain.InstanceStatusStopping
 	_ = s.storage.RecordInstance(ctx, *instance)
 
-	// Stop the container.
+	// Stop the container (do NOT remove).
 	if err := s.runtime.StopContainer(ctx, instance.ContainerID, timeout); err != nil {
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Remove the container (cleanup).
-	if err := s.runtime.RemoveContainer(ctx, instance.ContainerID); err != nil {
-		s.log.Warn("failed to remove container",
-			slog.String("op", op),
-			slog.String("error", err.Error()),
-		)
-	}
-
-	// Delete the instance record from storage - instance is fully stopped.
-	if err := s.storage.DeleteInstance(ctx, instanceID); err != nil {
-		s.log.Warn("failed to delete instance from storage after stop",
-			slog.String("op", op),
-			slog.Int64("instance_id", instanceID),
-			slog.String("error", err.Error()),
-		)
-	}
+	// Update status to Stopped, keep container and storage record.
+	instance.Status = domain.InstanceStatusStopped
+	_ = s.storage.RecordInstance(ctx, *instance)
 
 	s.log.Info("instance stopped",
+		slog.String("op", op),
+		slog.Int64("instance_id", instanceID),
+	)
+
+	return nil
+}
+
+// RestartInstance перезапускает работающий инстанс (docker restart).
+func (s *DeploymentService) RestartInstance(ctx context.Context, instanceID int64, timeout time.Duration) error {
+	const op = "DeploymentService.RestartInstance"
+
+	instance, err := s.storage.GetInstanceByID(ctx, instanceID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := s.runtime.RestartContainer(ctx, instance.ContainerID, timeout); err != nil {
+		instance.Status = domain.InstanceStatusCrashed
+		_ = s.storage.RecordInstance(ctx, *instance)
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	instance.Status = domain.InstanceStatusRunning
+	_ = s.storage.RecordInstance(ctx, *instance)
+
+	s.log.Info("instance restarted",
+		slog.String("op", op),
+		slog.Int64("instance_id", instanceID),
+	)
+
+	return nil
+}
+
+// StartStoppedInstance запускает остановленный инстанс (docker start).
+func (s *DeploymentService) StartStoppedInstance(ctx context.Context, instanceID int64) error {
+	const op = "DeploymentService.StartStoppedInstance"
+
+	instance, err := s.storage.GetInstanceByID(ctx, instanceID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := s.runtime.StartContainer(ctx, instance.ContainerID); err != nil {
+		instance.Status = domain.InstanceStatusCrashed
+		_ = s.storage.RecordInstance(ctx, *instance)
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	instance.Status = domain.InstanceStatusRunning
+	_ = s.storage.RecordInstance(ctx, *instance)
+
+	s.log.Info("instance started from stopped",
 		slog.String("op", op),
 		slog.Int64("instance_id", instanceID),
 	)
@@ -526,6 +565,12 @@ func (s *DeploymentService) CleanupOrphans(ctx context.Context) error {
 
 	s.log.Info("orphan cleanup finished", slog.Int("removed", len(toRemove)))
 	return nil
+}
+
+// SetNodeID устанавливает ID ноды, полученный от оркестратора.
+// Должен быть вызван до операций с контейнерами (CleanupOrphans, StartInstance).
+func (s *DeploymentService) SetNodeID(nodeID string) {
+	s.nodeID = nodeID
 }
 
 // GetActiveContainerIDs возвращает список ID контейнеров, управляемых этой нодой

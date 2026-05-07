@@ -534,3 +534,65 @@ func TestHeartbeatService_CheckAllNodes_ListError(t *testing.T) {
 	// Should not panic.
 	svc.checkAllNodes(ctx)
 }
+
+func TestHeartbeatService_ReconcileInstances(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	node := &domain.Node{
+		ID:      1,
+		Address: "node1:44044",
+		Status:  domain.NodeStatusOnline,
+	}
+
+	// DB has 3 instances: 10 (Running), 11 (Starting), 12 (Stopped)
+	// Node reports only instance 10.
+	updatedInstances := make(map[int64]domain.InstanceStatus)
+	instanceRepo := &hbMockInstanceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 10, NodeID: 1, Status: domain.InstanceStatusRunning},
+				{ID: 11, NodeID: 1, Status: domain.InstanceStatusStarting},
+				{ID: 12, NodeID: 1, Status: domain.InstanceStatusStopped},
+			}, nil
+		},
+		updateFn: func(ctx context.Context, inst *domain.Instance) error {
+			updatedInstances[inst.ID] = inst.Status
+			return nil
+		},
+	}
+
+	instanceState := &hbMockInstanceState{
+		setStatusFn: func(ctx context.Context, instanceID int64, status domain.InstanceStatus) error {
+			return nil
+		},
+	}
+
+	nodeClient := &hbMockNodeClient{
+		listInstancesFn: func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 10, Status: domain.InstanceStatusRunning},
+			}, nil
+		},
+	}
+
+	svc := NewHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, nodeClient, config.NodeHeartbeatCfg{
+		CheckInterval:     15 * time.Second,
+		InactivityTimeout: 60 * time.Second,
+	}, log)
+
+	ctx := context.Background()
+	err := svc.reconcileInstances(ctx, node)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if updatedInstances[10] != 0 {
+		t.Errorf("instance 10 should not be updated, got status %d", updatedInstances[10])
+	}
+	if updatedInstances[11] != domain.InstanceStatusCrashed {
+		t.Errorf("instance 11 should be marked crashed, got status %d", updatedInstances[11])
+	}
+	if updatedInstances[12] != 0 {
+		t.Errorf("instance 12 should not be updated (already stopped), got status %d", updatedInstances[12])
+	}
+}
