@@ -51,6 +51,9 @@ func (s *stubDiscoveryRuntime) GetHostPort(ctx context.Context, containerID stri
 func (s *stubDiscoveryRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {
 	return nil
 }
+func (s *stubDiscoveryRuntime) RestartContainer(ctx context.Context, containerID string, timeout time.Duration) error {
+	return nil
+}
 func (s *stubDiscoveryRuntime) RemoveContainer(ctx context.Context, containerID string) error {
 	return nil
 }

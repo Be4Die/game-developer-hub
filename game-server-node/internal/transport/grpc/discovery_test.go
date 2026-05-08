@@ -184,6 +184,9 @@ func (m *mockRuntime) GetHostPort(ctx context.Context, containerID string, inter
 func (m *mockRuntime) StopContainer(ctx context.Context, containerID string, timeout time.Duration) error {
 	return nil
 }
+func (m *mockRuntime) RestartContainer(ctx context.Context, containerID string, timeout time.Duration) error {
+	return nil
+}
 func (m *mockRuntime) RemoveContainer(ctx context.Context, containerID string) error {
 	return nil
 }

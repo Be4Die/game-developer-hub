@@ -19,11 +19,12 @@ import (
 // DeploymentService управляет развёртыванием игровых инстансов.
 // Безопасен для конкурентного использования.
 type DeploymentService struct {
-	log          *slog.Logger
-	storage      domain.InstanceStorage
-	runtime      domain.ContainerRuntime
-	imageMapPath string
-	nodeID       string
+	log              *slog.Logger
+	storage          domain.InstanceStorage
+	runtime          domain.ContainerRuntime
+	imageMapPath     string
+	containerMapPath string
+	nodeID           string
 
 	// Simple ID generator. In production — use UUID or database sequence.
 	nextID atomic.Int64
@@ -39,19 +40,24 @@ func NewDeploymentService(
 	storage domain.InstanceStorage,
 	runtime domain.ContainerRuntime,
 	imageMapPath string,
+	containerMapPath string,
 	nodeID string,
 ) *DeploymentService {
 	svc := &DeploymentService{
-		log:          log,
-		storage:      storage,
-		runtime:      runtime,
-		imageMapPath: imageMapPath,
-		nodeID:       nodeID,
-		images:       make(map[int64]string),
+		log:              log,
+		storage:          storage,
+		runtime:          runtime,
+		imageMapPath:     imageMapPath,
+		containerMapPath: containerMapPath,
+		nodeID:           nodeID,
+		images:           make(map[int64]string),
 	}
 
 	// Load persisted image registry (if any).
 	_ = svc.loadImageRegistry()
+
+	// Load persisted container registry (if any).
+	_ = svc.loadContainerRegistry()
 
 	return svc
 }
@@ -116,6 +122,89 @@ func (s *DeploymentService) saveImageRegistry() error {
 
 	if err := os.WriteFile(s.imageMapPath, data, 0o600); err != nil {
 		return fmt.Errorf("write image registry: %w", err)
+	}
+
+	return nil
+}
+
+// loadContainerRegistry загружает инстансы из JSON-файла в in-memory storage.
+// При отсутствии файла или ошибке парсинга логирует предупреждение и продолжает с пустым registry.
+func (s *DeploymentService) loadContainerRegistry() error {
+	if s.containerMapPath == "" {
+		return nil
+	}
+
+	data, err := os.ReadFile(s.containerMapPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			s.log.Info("container registry not found, starting with empty registry",
+				slog.String("path", s.containerMapPath),
+			)
+			return nil
+		}
+		return fmt.Errorf("read container registry: %w", err)
+	}
+
+	registry := make(map[int64]domain.Instance)
+	if err := json.Unmarshal(data, &registry); err != nil {
+		s.log.Warn("failed to parse container registry, starting with empty registry",
+			slog.String("path", s.containerMapPath),
+			slog.String("error", err.Error()),
+		)
+		return nil
+	}
+
+	var maxID int64
+	for id, inst := range registry {
+		if id > maxID {
+			maxID = id
+		}
+		if err := s.storage.RecordInstance(context.Background(), inst); err != nil {
+			s.log.Warn("failed to record instance from registry",
+				slog.Int64("instance_id", id),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+
+	if maxID > 0 {
+		s.nextID.Store(maxID)
+	}
+
+	s.log.Info("container registry loaded",
+		slog.Int("entries", len(registry)),
+		slog.String("path", s.containerMapPath),
+	)
+	return nil
+}
+
+// saveContainerRegistry сохраняет все инстансы из in-memory storage в JSON-файл.
+func (s *DeploymentService) saveContainerRegistry() error {
+	if s.containerMapPath == "" {
+		return nil
+	}
+
+	instances, err := s.storage.GetAllInstances(context.Background())
+	if err != nil {
+		return fmt.Errorf("get all instances: %w", err)
+	}
+
+	registry := make(map[int64]domain.Instance, len(instances))
+	for _, inst := range instances {
+		registry[inst.ID] = inst
+	}
+
+	data, err := json.MarshalIndent(registry, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal container registry: %w", err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(s.containerMapPath), 0o750); err != nil {
+		return fmt.Errorf("create data directory: %w", err)
+	}
+
+	if err := os.WriteFile(s.containerMapPath, data, 0o600); err != nil {
+		return fmt.Errorf("write container registry: %w", err)
 	}
 
 	return nil
@@ -288,6 +377,13 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: save instance: %w", op, err)
 	}
 
+	if err := s.saveContainerRegistry(); err != nil {
+		s.log.Warn("failed to save container registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
+
 	s.log.Info("instance started",
 		slog.String("op", op),
 		slog.Int64("instance_id", id),
@@ -316,12 +412,27 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 	if err := s.runtime.StopContainer(ctx, instance.ContainerID, timeout); err != nil {
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
+
+		if errSave := s.saveContainerRegistry(); errSave != nil {
+			s.log.Warn("failed to save container registry",
+				slog.String("op", op),
+				slog.String("error", errSave.Error()),
+			)
+		}
+
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	// Update status to Stopped, keep container and storage record.
 	instance.Status = domain.InstanceStatusStopped
 	_ = s.storage.RecordInstance(ctx, *instance)
+
+	if err := s.saveContainerRegistry(); err != nil {
+		s.log.Warn("failed to save container registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
 
 	s.log.Info("instance stopped",
 		slog.String("op", op),
@@ -343,11 +454,26 @@ func (s *DeploymentService) RestartInstance(ctx context.Context, instanceID int6
 	if err := s.runtime.RestartContainer(ctx, instance.ContainerID, timeout); err != nil {
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
+
+		if errSave := s.saveContainerRegistry(); errSave != nil {
+			s.log.Warn("failed to save container registry",
+				slog.String("op", op),
+				slog.String("error", errSave.Error()),
+			)
+		}
+
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	instance.Status = domain.InstanceStatusRunning
 	_ = s.storage.RecordInstance(ctx, *instance)
+
+	if err := s.saveContainerRegistry(); err != nil {
+		s.log.Warn("failed to save container registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
 
 	s.log.Info("instance restarted",
 		slog.String("op", op),
@@ -369,11 +495,26 @@ func (s *DeploymentService) StartStoppedInstance(ctx context.Context, instanceID
 	if err := s.runtime.StartContainer(ctx, instance.ContainerID); err != nil {
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
+
+		if errSave := s.saveContainerRegistry(); errSave != nil {
+			s.log.Warn("failed to save container registry",
+				slog.String("op", op),
+				slog.String("error", errSave.Error()),
+			)
+		}
+
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	instance.Status = domain.InstanceStatusRunning
 	_ = s.storage.RecordInstance(ctx, *instance)
+
+	if err := s.saveContainerRegistry(); err != nil {
+		s.log.Warn("failed to save container registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	}
 
 	s.log.Info("instance started from stopped",
 		slog.String("op", op),
@@ -412,6 +553,13 @@ func (s *DeploymentService) DeleteInstance(ctx context.Context, instanceID int64
 	// Delete the instance record from storage.
 	if err := s.storage.DeleteInstance(ctx, instanceID); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if err := s.saveContainerRegistry(); err != nil {
+		s.log.Warn("failed to save container registry",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
 	}
 
 	s.log.Info("instance deleted",

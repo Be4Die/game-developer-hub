@@ -38,6 +38,9 @@ func (f *fakeRuntime) GetHostPort(ctx context.Context, containerID string, inter
 func (f *fakeRuntime) StopContainer(ctx context.Context, id string, t time.Duration) error {
 	return nil
 }
+func (f *fakeRuntime) RestartContainer(ctx context.Context, id string, t time.Duration) error {
+	return nil
+}
 func (f *fakeRuntime) RemoveContainer(ctx context.Context, id string) error { return nil }
 func (f *fakeRuntime) ContainerLogs(ctx context.Context, id string, follow bool) (io.ReadCloser, error) {
 	// Return empty reader to avoid nil pointer panic
@@ -58,7 +61,7 @@ func TestDeploymentHandler_StartInstance(t *testing.T) {
 	storage := memory.NewStorage()
 
 	// Собираем DeploymentService с in-memory базой и фейковым докером
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	// Симулируем предварительную загрузку образа
@@ -97,7 +100,7 @@ func TestDeploymentHandler_StopInstance_NotFound(t *testing.T) {
 	// Проверяем, что хэндлер правильно возвращает 404, если инстанса нет
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
- 	svc := service.NewDeploymentService(log, memory.NewStorage(), &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, memory.NewStorage(), &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	req := &pb.StopInstanceRequest{
@@ -124,7 +127,7 @@ func TestDeploymentHandler_StopInstance_Success(t *testing.T) {
 		Status:      domain.InstanceStatusRunning,
 	})
 
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	req := &pb.StopInstanceRequest{
@@ -148,7 +151,7 @@ func TestDeploymentHandler_StartInstance_Handler(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
 
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	// Pre-load image
@@ -183,7 +186,7 @@ func TestDeploymentHandler_LoadImage(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	mockStream := &mockLoadImageStream{
@@ -212,7 +215,7 @@ func TestDeploymentHandler_StreamLogs(t *testing.T) {
 		ContainerID: "container-abc",
 	})
 
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	req := &pb.StreamLogsRequest{InstanceId: 1}
@@ -230,7 +233,7 @@ func TestDeploymentHandler_StreamLogs_NotFound(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
 
- 	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "")
+  	svc := service.NewDeploymentService(log, storage, &fakeRuntime{}, "", "", "")
 	handler := NewDeploymentHandler(svc)
 
 	req := &pb.StreamLogsRequest{InstanceId: 999}

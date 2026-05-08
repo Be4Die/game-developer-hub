@@ -90,7 +90,7 @@ func setupIntegration(t *testing.T) *integrationTestEnv {
 	cfg := testConfig(0)
 
 	discoverySvc := service.NewDiscoveryService(storage, runtime, cfg)
- 	deploymentSvc := service.NewDeploymentService(log, storage, runtime, "", "")
+  	deploymentSvc := service.NewDeploymentService(log, storage, runtime, "", "", "")
 
 	discoveryHdl := grpctransport.NewDiscoveryHandler(discoverySvc)
 	deploymentHdl := grpctransport.NewDeploymentHandler(deploymentSvc)

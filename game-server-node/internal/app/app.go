@@ -47,10 +47,11 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}
 
 	imageMapPath := filepath.Join(dataDir, "images.json")
+	containerMapPath := filepath.Join(dataDir, "containers.json")
 
 	// Initialize services.
 	discoverySvc := service.NewDiscoveryService(storage, runtime, cfg)
-	deploymentSvc := service.NewDeploymentService(log, storage, runtime, imageMapPath, "")
+	deploymentSvc := service.NewDeploymentService(log, storage, runtime, imageMapPath, containerMapPath, "")
 
 	// Initialize transport layer.
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoverySvc)
