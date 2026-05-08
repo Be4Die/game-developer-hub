@@ -267,6 +267,86 @@ func logSourceFromProto(s pb.LogSource) domain.LogSource {
 	}
 }
 
+func orchestrationModeToProto(m domain.OrchestrationMode) pb.OrchestrationMode {
+	switch m {
+	case domain.OrchestrationModeDisabled:
+		return pb.OrchestrationMode_ORCHESTRATION_MODE_DISABLED
+	case domain.OrchestrationModeKeepAlive:
+		return pb.OrchestrationMode_ORCHESTRATION_MODE_KEEP_ALIVE
+	case domain.OrchestrationModeScaleToZero:
+		return pb.OrchestrationMode_ORCHESTRATION_MODE_SCALE_TO_ZERO
+	default:
+		return pb.OrchestrationMode_ORCHESTRATION_MODE_UNSPECIFIED
+	}
+}
+
+func orchestrationModeFromProto(m pb.OrchestrationMode) domain.OrchestrationMode {
+	switch m {
+	case pb.OrchestrationMode_ORCHESTRATION_MODE_DISABLED:
+		return domain.OrchestrationModeDisabled
+	case pb.OrchestrationMode_ORCHESTRATION_MODE_KEEP_ALIVE:
+		return domain.OrchestrationModeKeepAlive
+	case pb.OrchestrationMode_ORCHESTRATION_MODE_SCALE_TO_ZERO:
+		return domain.OrchestrationModeScaleToZero
+	default:
+		return domain.OrchestrationModeDisabled
+	}
+}
+
+func scaleBehaviorToProto(b domain.ScaleBehavior) pb.ScaleBehavior {
+	switch b {
+	case domain.ScaleBehaviorSpawn:
+		return pb.ScaleBehavior_SCALE_BEHAVIOR_SPAWN
+	case domain.ScaleBehaviorQueue:
+		return pb.ScaleBehavior_SCALE_BEHAVIOR_QUEUE
+	default:
+		return pb.ScaleBehavior_SCALE_BEHAVIOR_UNSPECIFIED
+	}
+}
+
+func scaleBehaviorFromProto(b pb.ScaleBehavior) domain.ScaleBehavior {
+	switch b {
+	case pb.ScaleBehavior_SCALE_BEHAVIOR_SPAWN:
+		return domain.ScaleBehaviorSpawn
+	case pb.ScaleBehavior_SCALE_BEHAVIOR_QUEUE:
+		return domain.ScaleBehaviorQueue
+	default:
+		return domain.ScaleBehaviorSpawn
+	}
+}
+
+func gamePolicyToProto(p *domain.GamePolicy) *pb.GamePolicy {
+	return &pb.GamePolicy{
+		GameId:                p.GameID,
+		Mode:                  orchestrationModeToProto(p.Mode),
+		TargetInstances:       p.TargetInstances,
+		AutoRestart:           p.AutoRestart,
+		ScaleToZeroTimeout:    p.ScaleToZeroTimeout,
+		DefaultBuildVersion:   p.DefaultBuildVersion,
+		MaxPlayersPerInstance: p.MaxPlayersPerInstance,
+		MaxInstancesPerGame:   p.MaxInstancesPerGame,
+		ScaleBehavior:         scaleBehaviorToProto(p.ScaleBehavior),
+		NodePreference:        p.NodePreference,
+		CreatedAt:             timestamppb.New(p.CreatedAt),
+		UpdatedAt:             timestamppb.New(p.UpdatedAt),
+	}
+}
+
+func gamePolicyFromProto(req *pb.GamePolicyServiceSetRequest) *domain.GamePolicy {
+	return &domain.GamePolicy{
+		GameID:                req.GetGameId(),
+		Mode:                  orchestrationModeFromProto(req.GetMode()),
+		TargetInstances:       req.GetTargetInstances(),
+		AutoRestart:           req.GetAutoRestart(),
+		ScaleToZeroTimeout:    req.GetScaleToZeroTimeout(),
+		DefaultBuildVersion:   req.GetDefaultBuildVersion(),
+		MaxPlayersPerInstance: req.GetMaxPlayersPerInstance(),
+		MaxInstancesPerGame:   req.GetMaxInstancesPerGame(),
+		ScaleBehavior:         scaleBehaviorFromProto(req.GetScaleBehavior()),
+		NodePreference:        req.GetNodePreference(),
+	}
+}
+
 // domainError мапит доменные ошибки на gRPC статусы.
 func domainError(err error, action string) error {
 	if err == nil {

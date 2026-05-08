@@ -12,12 +12,16 @@ import (
 
 // HeartbeatService — фоновый сервис мониторинга жизнеспособности нод.
 // Запускается как горутина, периодически опрашивает ноды через gRPC Heartbeat.
+// Также применяет политики оркестрации: авто-рестарт crashed-инстансов.
 type HeartbeatService struct {
 	nodeRepo          domain.NodeRepo
 	nodeState         domain.NodeStateStore
 	instanceRepo      domain.InstanceRepo
 	instanceState     domain.InstanceStateStore
 	nodeClient        domain.NodeClient
+	buildRepo         domain.BuildStorage
+	policyService     *GamePolicyService
+	instanceService   *InstanceService
 	checkInterval     time.Duration
 	inactivityTimeout time.Duration
 	log               *slog.Logger
@@ -30,6 +34,9 @@ func NewHeartbeatService(
 	instanceRepo domain.InstanceRepo,
 	instanceState domain.InstanceStateStore,
 	nodeClient domain.NodeClient,
+	buildRepo domain.BuildStorage,
+	policyService *GamePolicyService,
+	instanceService *InstanceService,
 	hb config.NodeHeartbeatCfg,
 	log *slog.Logger,
 ) *HeartbeatService {
@@ -39,6 +46,9 @@ func NewHeartbeatService(
 		instanceRepo:      instanceRepo,
 		instanceState:     instanceState,
 		nodeClient:        nodeClient,
+		buildRepo:         buildRepo,
+		policyService:     policyService,
+		instanceService:   instanceService,
 		checkInterval:     hb.CheckInterval,
 		inactivityTimeout: hb.InactivityTimeout,
 		log:               log,
@@ -89,6 +99,9 @@ func (s *HeartbeatService) checkAllNodes(ctx context.Context) {
 			)
 		}
 	}
+
+	// Применяем политики оркестрации после проверки всех нод.
+	s.enforcePolicies(ctx)
 }
 
 func (s *HeartbeatService) checkNode(ctx context.Context, node *domain.Node) error {
@@ -234,6 +247,7 @@ func (s *HeartbeatService) syncInstanceStatuses(ctx context.Context, node *domai
 
 // reconcileInstances сравнивает инстансы в БД с реальностью на ноде.
 // Инстансы со статусом Running/Starting, которых нет на ноде, помечаются как Crashed.
+// Если политика игры требует auto_restart — перезапускает crashed инстанс.
 func (s *HeartbeatService) reconcileInstances(ctx context.Context, node *domain.Node) error {
 	const op = "HeartbeatService.reconcileInstances"
 
@@ -274,10 +288,116 @@ func (s *HeartbeatService) reconcileInstances(ctx context.Context, node *domain.
 				slog.Int64("instance_id", inst.ID),
 				slog.Int64("node_id", node.ID),
 			)
+
+			// Проверяем политику и перезапускаем если нужно.
+			go s.maybeAutoRestart(context.Background(), inst)
 		}
 	}
 
 	return nil
+}
+
+// maybeAutoRestart проверяет политику игры и перезапускает инстанс при auto_restart.
+func (s *HeartbeatService) maybeAutoRestart(ctx context.Context, inst *domain.Instance) {
+	policy, err := s.policyService.Get(ctx, inst.GameID)
+	if err != nil {
+		s.log.Warn("failed to get policy for auto-restart",
+			slog.Int64("game_id", inst.GameID),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	if !policy.AutoRestart {
+		return
+	}
+
+	_, err = s.instanceService.RestartInstance(ctx, "", inst.GameID, inst.ID)
+	if err != nil {
+		s.log.Warn("auto-restart failed",
+			slog.Int64("instance_id", inst.ID),
+			slog.Int64("game_id", inst.GameID),
+			slog.String("error", err.Error()),
+		)
+		return
+	}
+
+	s.log.Info("instance auto-restarted",
+		slog.Int64("instance_id", inst.ID),
+		slog.Int64("game_id", inst.GameID),
+	)
+}
+
+// enforcePolicies применяет политики оркестрации после heartbeat-цикла.
+// Для игр в режиме keep_alive проверяет наличие target_instances и запускает недостающие.
+func (s *HeartbeatService) enforcePolicies(ctx context.Context) {
+	// Получаем все инстансы.
+	instances, err := s.instanceRepo.List(ctx)
+	if err != nil {
+		s.log.Warn("enforcePolicies: failed to list instances", slog.String("error", err.Error()))
+		return
+	}
+
+	// Группируем инстансы по game_id.
+	gameInstances := make(map[int64][]*domain.Instance)
+	for _, inst := range instances {
+		gameInstances[inst.GameID] = append(gameInstances[inst.GameID], inst)
+	}
+
+	for gameID, insts := range gameInstances {
+		policy, err := s.policyService.Get(ctx, gameID)
+		if err != nil || !policy.IsAuto() {
+			continue
+		}
+
+		// Считаем активные (running/starting) инстансы.
+		activeCount := 0
+		for _, inst := range insts {
+			if inst.Status == domain.InstanceStatusRunning || inst.Status == domain.InstanceStatusStarting {
+				activeCount++
+			}
+		}
+
+		// Для keep_alive: запускаем недостающие инстансы.
+		if policy.Mode == domain.OrchestrationModeKeepAlive && activeCount < int(policy.TargetInstances) {
+			needed := int(policy.TargetInstances) - activeCount
+			s.log.Info("keep_alive policy: starting missing instances",
+				slog.Int64("game_id", gameID),
+				slog.Int("needed", needed),
+			)
+			for i := 0; i < needed; i++ {
+				go s.autoStartInstance(ctx, gameID, policy)
+			}
+		}
+	}
+}
+
+// autoStartInstance запускает инстанс для игры на основе политики.
+func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
+	buildVersion := policy.DefaultBuildVersion
+	if buildVersion == "latest" || buildVersion == "" {
+		// Пытаемся найти последний билд.
+		builds, err := s.buildRepo.ListByGame(ctx, gameID, 1)
+		if err == nil && len(builds) > 0 {
+			buildVersion = builds[0].Version
+		} else {
+			s.log.Warn("autoStartInstance: no builds found for game",
+				slog.Int64("game_id", gameID),
+			)
+			return
+		}
+	}
+
+	_, err := s.instanceService.StartInstance(ctx, StartInstanceParams{
+		GameID:       gameID,
+		BuildVersion: buildVersion,
+	})
+	if err != nil {
+		s.log.Warn("autoStartInstance failed",
+			slog.Int64("game_id", gameID),
+			slog.String("error", err.Error()),
+		)
+	}
 }
 
 // markNodeOffline переводит ноду в offline и все её инстансы в crashed.

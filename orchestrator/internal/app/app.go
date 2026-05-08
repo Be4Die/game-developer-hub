@@ -66,6 +66,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	nodeRepo := postgres.NewNodeRepo(pool)
 	instanceRepo := postgres.NewInstanceRepo(pool)
 	buildRepo := postgres.NewBuildStorage(pool)
+	policyRepo := postgres.NewGamePolicyRepo(pool)
 
 	// ─── Хранилища (Valkey) ─────────────────────────────────────
 	nodeState := valkey.NewNodeStateStore(valkeyClient, cfg.KV.KeyTTL)
@@ -83,8 +84,10 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		instanceRepo, instanceState, buildRepo, nodeRepo, nodeState, nodeClient, cfg.Limits,
 	)
 
+	policyService := service.NewGamePolicyService(policyRepo)
+
 	discoveryService := service.NewDiscoveryService(
-		instanceRepo, instanceState, nodeRepo,
+		instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceService,
 	)
 
 	nodeService := service.NewNodeService(
@@ -92,7 +95,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	)
 
 	heartbeatService := service.NewHeartbeatService(
-		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
+		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, buildRepo, policyService, instanceService,
 		cfg.NodeHeartbeat, log,
 	)
 
@@ -102,6 +105,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
 	nodeHandler := grpctransport.NewNodeHandler(nodeService)
 	healthHandler := grpctransport.NewHealthHandler("1.0.0")
+	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
 
 	// ─── Аутентификация ─────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
@@ -124,6 +128,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	pb.RegisterDiscoveryServiceServer(gRPCServer, discoveryHandler)
 	pb.RegisterNodeServiceServer(gRPCServer, nodeHandler)
 	pb.RegisterHealthServiceServer(gRPCServer, healthHandler)
+	pb.RegisterGamePolicyServiceServer(gRPCServer, policyHandler)
 
 	log.Info("all components initialized")
 

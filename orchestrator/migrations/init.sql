@@ -114,6 +114,33 @@ CREATE TRIGGER trigger_instances_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица game_policies — политики оркестрации серверов проекта
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS game_policies (
+    game_id                  BIGINT PRIMARY KEY,          -- ID игры (денормализовано, FK нет)
+    mode                     SMALLINT NOT NULL DEFAULT 1, -- 1=disabled, 2=keep_alive, 3=scale_to_zero
+    target_instances         INTEGER NOT NULL DEFAULT 1,
+    auto_restart             BOOLEAN NOT NULL DEFAULT false,
+    scale_to_zero_timeout    INTEGER NOT NULL DEFAULT 10, -- минут
+    default_build_version    TEXT NOT NULL DEFAULT 'latest',
+    max_players_per_instance INTEGER NOT NULL DEFAULT 100,
+    max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
+    scale_behavior           SMALLINT NOT NULL DEFAULT 1, -- 1=spawn, 2=queue
+    node_preference          TEXT NOT NULL DEFAULT 'auto',
+    created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE game_policies IS 'Политики автоматической оркестрации серверов по проектам';
+COMMENT ON COLUMN game_policies.mode IS '1=disabled, 2=keep_alive, 3=scale_to_zero';
+COMMENT ON COLUMN game_policies.scale_behavior IS '1=spawn, 2=queue';
+
+CREATE TRIGGER trigger_game_policies_updated_at
+    BEFORE UPDATE ON game_policies
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Очистка и пересоздание последовательностей (для тестов)
 -- ─────────────────────────────────────────────────────────────────────────────
 

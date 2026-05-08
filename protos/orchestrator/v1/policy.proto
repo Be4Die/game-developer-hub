@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "orchestrator/v1/common.proto";
+
+// Режим оркестрации серверов проекта.
+enum OrchestrationMode {
+  ORCHESTRATION_MODE_UNSPECIFIED = 0;
+  ORCHESTRATION_MODE_DISABLED = 1;      // только ручное управление
+  ORCHESTRATION_MODE_KEEP_ALIVE = 2;    // держать target_instances запущенными
+  ORCHESTRATION_MODE_SCALE_TO_ZERO = 3; // гасить при простое, поднимать по требованию
+}
+
+// Поведение при переполнении инстанса.
+enum ScaleBehavior {
+  SCALE_BEHAVIOR_UNSPECIFIED = 0;
+  SCALE_BEHAVIOR_SPAWN = 1;  // поднять новый инстанс
+  SCALE_BEHAVIOR_QUEUE = 2;  // игроки ждут в очереди
+}
+
+// Политика оркестрации серверов для конкретной игры.
+message GamePolicy {
+  int64 game_id = 1;
+  OrchestrationMode mode = 2;
+  int32 target_instances = 3;
+  bool auto_restart = 4;
+  int32 scale_to_zero_timeout = 5; // минут
+  string default_build_version = 6;
+  int32 max_players_per_instance = 7;
+  int32 max_instances_per_game = 8;
+  ScaleBehavior scale_behavior = 9;
+  string node_preference = 10;       // "auto" или "node-<id>"
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// Сервис управления политиками оркестрации.
+service GamePolicyService {
+  // Получить политику игры.
+  rpc Get(GamePolicyServiceGetRequest) returns (GamePolicyServiceGetResponse) {
+    option (google.api.http) = {get: "/api/v1/games/{game_id}/policy"};
+  }
+
+  // Установить или обновить политику игры.
+  rpc Set(GamePolicyServiceSetRequest) returns (GamePolicyServiceSetResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/policy"
+      body: "*"
+    };
+  }
+}
+
+message GamePolicyServiceGetRequest {
+  int64 game_id = 1;
+}
+
+message GamePolicyServiceGetResponse {
+  GamePolicy policy = 1;
+}
+
+message GamePolicyServiceSetRequest {
+  int64 game_id = 1;
+  OrchestrationMode mode = 2;
+  int32 target_instances = 3;
+  bool auto_restart = 4;
+  int32 scale_to_zero_timeout = 5;
+  string default_build_version = 6;
+  int32 max_players_per_instance = 7;
+  int32 max_instances_per_game = 8;
+  ScaleBehavior scale_behavior = 9;
+  string node_preference = 10;
+}
+
+message GamePolicyServiceSetResponse {
+  GamePolicy policy = 1;
+}

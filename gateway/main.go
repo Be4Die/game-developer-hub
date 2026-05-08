@@ -92,6 +92,9 @@ func run() error {
 	if err := gwpb.RegisterDiscoveryServiceHandler(ctx, mux, orchConn); err != nil {
 		return err
 	}
+	if err := gwpb.RegisterGamePolicyServiceHandler(ctx, mux, orchConn); err != nil {
+		return err
+	}
 
 	// Регистрируем SSO handlers.
 	if err := ssopb.RegisterAuthServiceHandler(ctx, mux, ssoConn); err != nil {
