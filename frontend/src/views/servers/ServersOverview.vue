@@ -30,6 +30,123 @@
       </div>
     </div>
 
+    <!-- Политика оркестрации -->
+    <div class="policy-section">
+      <div class="policy-header" @click="policyExpanded = !policyExpanded">
+        <div class="policy-title">
+          <Settings2 class="icon-sm" />
+          <strong>Политика оркестрации</strong>
+          <span v-if="policy && !policyEditing" class="policy-mode-badge">
+            {{ modeLabels[policy.mode] || policy.mode }}
+          </span>
+        </div>
+        <button v-if="!policyEditing" class="btn-icon" @click.stop="startEdit">
+          Изменить
+        </button>
+        <ChevronDown v-if="policyExpanded" class="icon-sm" />
+        <ChevronRight v-else class="icon-sm" />
+      </div>
+
+      <div v-if="policyExpanded" class="policy-body">
+        <div v-if="policyLoading" class="policy-loading">Загрузка…</div>
+
+        <div v-else-if="!policyEditing && policy" class="policy-read">
+          <div class="policy-grid">
+            <div class="policy-item">
+              <span class="policy-label">Режим</span>
+              <span class="policy-value">{{ modeLabels[policy.mode] || policy.mode }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Целевое число инстансов</span>
+              <span class="policy-value">{{ policy.target_instances }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Авторестарт при падении</span>
+              <span class="policy-value">{{ policy.auto_restart ? 'Включён' : 'Отключён' }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Таймаут простоя (мин)</span>
+              <span class="policy-value">{{ policy.scale_to_zero_timeout }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Версия билда по умолчанию</span>
+              <span class="policy-value">{{ policy.default_build_version }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Макс. игроков / инстанс</span>
+              <span class="policy-value">{{ policy.max_players_per_instance }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Макс. инстансов на игру</span>
+              <span class="policy-value">{{ policy.max_instances_per_game }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">При переполнении</span>
+              <span class="policy-value">{{ behaviorLabels[policy.scale_behavior] || policy.scale_behavior }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Нода</span>
+              <span class="policy-value">{{ policy.node_preference }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="policyEditing" class="policy-edit">
+          <div class="policy-form">
+            <label>
+              Режим оркестрации
+              <select v-model="policyDraft.mode">
+                <option value="ORCHESTRATION_MODE_DISABLED">Только ручное управление</option>
+                <option value="ORCHESTRATION_MODE_KEEP_ALIVE">Держать запущенным</option>
+                <option value="ORCHESTRATION_MODE_SCALE_TO_ZERO">Экономичный (scale-to-zero)</option>
+              </select>
+            </label>
+            <label>
+              Целевое число инстансов
+              <input v-model.number="policyDraft.target_instances" type="number" min="0" />
+            </label>
+            <label class="checkbox">
+              <input v-model="policyDraft.auto_restart" type="checkbox" />
+              Авторестарт при падении
+            </label>
+            <label>
+              Таймаут простоя (мин)
+              <input v-model.number="policyDraft.scale_to_zero_timeout" type="number" min="1" />
+            </label>
+            <label>
+              Версия билда по умолчанию
+              <input v-model="policyDraft.default_build_version" type="text" />
+            </label>
+            <label>
+              Макс. игроков / инстанс
+              <input v-model.number="policyDraft.max_players_per_instance" type="number" min="1" />
+            </label>
+            <label>
+              Макс. инстансов на игру
+              <input v-model.number="policyDraft.max_instances_per_game" type="number" min="1" />
+            </label>
+            <label>
+              При переполнении
+              <select v-model="policyDraft.scale_behavior">
+                <option value="SCALE_BEHAVIOR_SPAWN">Запускать новый инстанс</option>
+                <option value="SCALE_BEHAVIOR_QUEUE">Очередь игроков</option>
+              </select>
+            </label>
+            <label>
+              Нода
+              <input v-model="policyDraft.node_preference" type="text" />
+            </label>
+          </div>
+          <div class="policy-actions">
+            <button class="btn-primary" @click="savePolicy" :disabled="policyLoading">
+              <Save class="icon-sm" /> Сохранить
+            </button>
+            <button class="btn-outline" @click="cancelEdit">Отмена</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Быстрые действия -->
     <div class="quick-actions">
       <router-link :to="`/projects/${gameId}/servers/builds`" class="action-card">
@@ -83,11 +200,11 @@
   </div>
 </template>
 
-<script setup>
+    <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Upload, Play, AlertCircle } from 'lucide-vue-next'
+import { Upload, Play, AlertCircle, ChevronDown, ChevronRight, Save, Settings2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
-import { listBuilds, listInstances, listNodes } from '../../api/orchestrator'
+import { listBuilds, listInstances, listNodes, getPolicy, setPolicy } from '../../api/orchestrator'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
 
@@ -97,9 +214,29 @@ const nodes = ref([])
 const loading = ref(true)
 const error = ref(null)
 
+// Политика оркестрации
+const policy = ref(null)
+const policyLoading = ref(false)
+const policyExpanded = ref(false)
+const policyEditing = ref(false)
+const policyDraft = ref({})
+
 const runningCount = computed(() => instances.value.filter(i => i.status === 'running').length)
 const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0))
 const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online').length)
+
+const modeLabels = {
+  ORCHESTRATION_MODE_UNSPECIFIED: 'Не задан',
+  ORCHESTRATION_MODE_DISABLED: 'Только ручное управление',
+  ORCHESTRATION_MODE_KEEP_ALIVE: 'Держать запущенным',
+  ORCHESTRATION_MODE_SCALE_TO_ZERO: 'Экономичный (scale-to-zero)',
+}
+
+const behaviorLabels = {
+  SCALE_BEHAVIOR_UNSPECIFIED: 'Не задан',
+  SCALE_BEHAVIOR_SPAWN: 'Запускать новый инстанс',
+  SCALE_BEHAVIOR_QUEUE: 'Очередь игроков',
+}
 
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -124,7 +261,66 @@ async function fetchAll() {
   }
 }
 
-onMounted(fetchAll)
+async function loadPolicy() {
+  policyLoading.value = true
+  try {
+    const p = await getPolicy(props.gameId)
+    policy.value = p
+  } catch (e) {
+    // Политика может отсутствовать — это нормально, будет default.
+    policy.value = {
+      mode: 'ORCHESTRATION_MODE_DISABLED',
+      target_instances: 1,
+      auto_restart: false,
+      scale_to_zero_timeout: 10,
+      default_build_version: 'latest',
+      max_players_per_instance: 100,
+      max_instances_per_game: 1,
+      scale_behavior: 'SCALE_BEHAVIOR_SPAWN',
+      node_preference: 'auto',
+    }
+  } finally {
+    policyLoading.value = false
+  }
+}
+
+function startEdit() {
+  policyDraft.value = { ...policy.value }
+  policyEditing.value = true
+}
+
+function cancelEdit() {
+  policyEditing.value = false
+}
+
+async function savePolicy() {
+  policyLoading.value = true
+  try {
+    const payload = {
+      mode: policyDraft.value.mode,
+      target_instances: Number(policyDraft.value.target_instances),
+      auto_restart: Boolean(policyDraft.value.auto_restart),
+      scale_to_zero_timeout: Number(policyDraft.value.scale_to_zero_timeout),
+      default_build_version: policyDraft.value.default_build_version,
+      max_players_per_instance: Number(policyDraft.value.max_players_per_instance),
+      max_instances_per_game: Number(policyDraft.value.max_instances_per_game),
+      scale_behavior: policyDraft.value.scale_behavior,
+      node_preference: policyDraft.value.node_preference,
+    }
+    const p = await setPolicy(props.gameId, payload)
+    policy.value = p
+    policyEditing.value = false
+  } catch (e) {
+    alert('Не удалось сохранить политику: ' + e.message)
+  } finally {
+    policyLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchAll()
+  loadPolicy()
+})
 </script>
 
 <style scoped>
@@ -201,5 +397,106 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 @media (max-width: 768px) {
   .summary-grid { grid-template-columns: repeat(2, 1fr); }
   .quick-actions { grid-template-columns: 1fr; }
+}
+
+/* Политика оркестрации */
+.policy-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.policy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.policy-header:hover { background: var(--bg-hover); }
+.policy-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+.policy-mode-badge {
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+.policy-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 16px;
+}
+.policy-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.policy-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.policy-value {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+.policy-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding-top: 16px;
+}
+.policy-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+.policy-form input,
+.policy-form select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font-size: 0.88rem;
+}
+.policy-form .checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.policy-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.policy-loading {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .policy-grid { grid-template-columns: 1fr; }
+  .policy-form { grid-template-columns: 1fr; }
 }
 </style>

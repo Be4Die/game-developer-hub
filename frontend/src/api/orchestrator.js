@@ -268,3 +268,13 @@ export function getNodeUsage(nodeId) {
 export function listNodeInstances(nodeId) {
   return http.get(`/nodes/${nodeId}/instances`).then((r) => (r.data.instances ?? []).map(normalizeInstance));
 }
+
+// ─── Политики оркестрации ─────────────────────────
+
+export function getPolicy(gameId) {
+  return http.get(`/games/${gameId}/policy`).then((r) => r.data.policy ?? r.data);
+}
+
+export function setPolicy(gameId, payload) {
+  return http.post(`/games/${gameId}/policy`, payload).then((r) => r.data.policy ?? r.data);
+}
