@@ -36,13 +36,7 @@
         <div class="policy-title">
           <Settings2 class="icon-sm" />
           <strong>Политика оркестрации</strong>
-          <span v-if="policy && !policyEditing" class="policy-mode-badge">
-            {{ modeLabels[policy.mode] || policy.mode }}
-          </span>
         </div>
-        <button v-if="!policyEditing" class="btn-icon" @click.stop="startEdit">
-          Изменить
-        </button>
         <ChevronDown v-if="policyExpanded" class="icon-sm" />
         <ChevronRight v-else class="icon-sm" />
       </div>
@@ -88,6 +82,11 @@
               <span class="policy-label">Нода</span>
               <span class="policy-value">{{ policy.node_preference }}</span>
             </div>
+          </div>
+          <div class="policy-read-actions">
+            <button class="btn-outline btn-sm" @click="startEdit">
+              Изменить
+            </button>
           </div>
         </div>
 
@@ -217,7 +216,7 @@ const error = ref(null)
 // Политика оркестрации
 const policy = ref(null)
 const policyLoading = ref(false)
-const policyExpanded = ref(false)
+const policyExpanded = ref(true)
 const policyEditing = ref(false)
 const policyDraft = ref({})
 
@@ -423,14 +422,6 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   gap: 10px;
   font-size: 0.95rem;
 }
-.policy-mode-badge {
-  font-size: 0.75rem;
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: var(--primary-light);
-  color: var(--primary);
-  font-weight: 600;
-}
 .policy-body {
   padding: 0 20px 20px;
   border-top: 1px solid var(--border);
@@ -493,6 +484,85 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   padding: 20px;
   text-align: center;
   color: var(--text-muted);
+}
+
+.policy-read-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* Скрываем стрелки у числовых полей */
+.policy-form input[type="number"]::-webkit-outer-spin-button,
+.policy-form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.policy-form input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Кастомный чекбокс */
+.policy-form .checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.policy-form .checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: 0.15s;
+  flex-shrink: 0;
+}
+.policy-form .checkbox input[type="checkbox"]:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.policy-form .checkbox input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.policy-form .checkbox input[type="checkbox"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* Кнопка Изменить */
+.btn-outline {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.btn-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 0.82rem;
 }
 
 @media (max-width: 768px) {
