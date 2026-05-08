@@ -515,6 +515,7 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
+  padding: 0;
   border: 1.5px solid var(--border);
   border-radius: 4px;
   background: var(--bg-secondary);
@@ -530,13 +531,13 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
 .policy-form .checkbox input[type="checkbox"]:checked::after {
   content: "";
   position: absolute;
-  left: 5px;
-  top: 1px;
+  left: 50%;
+  top: 45%;
   width: 5px;
   height: 10px;
   border: solid #fff;
   border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 .policy-form .checkbox input[type="checkbox"]:focus {
   outline: none;
