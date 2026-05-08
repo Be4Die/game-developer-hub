@@ -17,6 +17,55 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+// ─── Status normalization ─────────────────────────
+
+const instanceStatusMap = {
+  INSTANCE_STATUS_UNSPECIFIED: "stopped",
+  INSTANCE_STATUS_STARTING: "starting",
+  INSTANCE_STATUS_RUNNING: "running",
+  INSTANCE_STATUS_STOPPING: "stopping",
+  INSTANCE_STATUS_STOPPED: "stopped",
+  INSTANCE_STATUS_CRASHED: "crashed",
+};
+
+const nodeStatusMap = {
+  NODE_STATUS_UNSPECIFIED: "offline",
+  NODE_STATUS_UNAUTHORIZED: "unauthorized",
+  NODE_STATUS_ONLINE: "online",
+  NODE_STATUS_OFFLINE: "offline",
+  NODE_STATUS_MAINTENANCE: "maintenance",
+};
+
+function normalizeInstanceStatus(status) {
+  if (!status) return "stopped";
+  if (instanceStatusMap[status]) return instanceStatusMap[status];
+  // Already in short format
+  return status;
+}
+
+function normalizeNodeStatus(status) {
+  if (!status) return "offline";
+  if (nodeStatusMap[status]) return nodeStatusMap[status];
+  // Already in short format
+  return status;
+}
+
+function normalizeInstance(raw) {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    status: normalizeInstanceStatus(raw.status),
+  };
+}
+
+function normalizeNode(raw) {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    status: normalizeNodeStatus(raw.status),
+  };
+}
+
 // ─── Билды ────────────────────────────────────────
 
 export function listBuilds(gameId) {
@@ -50,23 +99,23 @@ export function listInstances(gameId, status) {
   if (status && status !== "all") params.status = status;
   return http
     .get(`/games/${gameId}/instances`, { params })
-    .then((r) => r.data.instances ?? []);
+    .then((r) => (r.data.instances ?? []).map(normalizeInstance));
 }
 
 export function getInstance(gameId, instanceId) {
   return http
     .get(`/games/${gameId}/instances/${instanceId}`)
-    .then((r) => r.data);
+    .then((r) => normalizeInstance(r.data));
 }
 
 export function startInstance(gameId, payload) {
-  return http.post(`/games/${gameId}/instances`, payload).then((r) => r.data);
+  return http.post(`/games/${gameId}/instances`, payload).then((r) => normalizeInstance(r.data));
 }
 
 export function stopInstance(gameId, instanceId, timeout = 30) {
   return http
     .post(`/games/${gameId}/instances/${instanceId}:stop`, { timeout })
-    .then((r) => r.data.instance ?? r.data);
+    .then((r) => normalizeInstance(r.data.instance ?? r.data));
 }
 
 export function deleteInstance(gameId, instanceId) {
@@ -78,13 +127,13 @@ export function deleteInstance(gameId, instanceId) {
 export function restartInstance(gameId, instanceId) {
   return http
     .post(`/games/${gameId}/instances/${instanceId}:restart`)
-    .then((r) => r.data.instance ?? r.data);
+    .then((r) => normalizeInstance(r.data.instance ?? r.data));
 }
 
 export function resumeInstance(gameId, instanceId) {
   return http
     .post(`/games/${gameId}/instances/${instanceId}:resume`)
-    .then((r) => r.data.instance ?? r.data);
+    .then((r) => normalizeInstance(r.data.instance ?? r.data));
 }
 
 export function getInstanceUsage(gameId, instanceId) {
@@ -166,11 +215,11 @@ export function listNodes(status) {
     };
     params.status = statusMap[status] || status;
   }
-  return http.get("/nodes", { params }).then((r) => r.data.nodes ?? []);
+  return http.get("/nodes", { params }).then((r) => (r.data.nodes ?? []).map(normalizeNode));
 }
 
 export function getNode(nodeId) {
-  return http.get(`/nodes/${nodeId}`).then((r) => r.data);
+  return http.get(`/nodes/${nodeId}`).then((r) => normalizeNode(r.data));
 }
 
 export function registerNode(payload) {
@@ -196,7 +245,7 @@ export function registerNode(payload) {
       },
     };
   }
-  return http.post("/nodes", requestBody).then((r) => r.data);
+  return http.post("/nodes", requestBody).then((r) => normalizeNode(r.data));
 }
 
 export function deleteNode(nodeId) {
@@ -217,5 +266,5 @@ export function getNodeUsage(nodeId) {
 }
 
 export function listNodeInstances(nodeId) {
-  return http.get(`/nodes/${nodeId}/instances`).then((r) => r.data.instances ?? []);
+  return http.get(`/nodes/${nodeId}/instances`).then((r) => (r.data.instances ?? []).map(normalizeInstance));
 }
