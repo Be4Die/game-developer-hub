@@ -76,6 +76,16 @@
       </div>
       <LogsViewer :game-id="gameId" :instance-id="instanceId" />
     </template>
+
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      title="Удалить инстанс"
+      message="Это действие нельзя отменить. Инстанс и все связанные данные будут безвозвратно удалены."
+      confirm-text="Удалить"
+      cancel-text="Отмена"
+      type="danger"
+      @confirm="onDeleteConfirm"
+    />
   </div>
 </template>
 
@@ -86,6 +96,7 @@ import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2, Play } from 'lucide-
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import ResourceUsageCard from '../../components/orchestrator/ResourceUsageCard.vue'
 import LogsViewer from '../../components/orchestrator/LogsViewer.vue'
+import ConfirmDialog from '../../components/orchestrator/ConfirmDialog.vue'
 import { getInstance, getInstanceUsage, stopInstance, deleteInstance, restartInstance, resumeInstance } from '../../api/orchestrator'
 import { showToast } from '../../store'
 
@@ -103,6 +114,7 @@ const stopping = ref(false)
 const deleting = ref(false)
 const restarting = ref(false)
 const resuming = ref(false)
+const showDeleteDialog = ref(false)
 
 let usageInterval = null
 
@@ -188,8 +200,11 @@ async function handleResume() {
   }
 }
 
-async function handleDelete() {
-  if (!confirm('Удалить инстанс? Это действие нельзя отменить.')) return
+function handleDelete() {
+  showDeleteDialog.value = true
+}
+
+async function onDeleteConfirm() {
   deleting.value = true
   try {
     await deleteInstance(props.gameId, props.instanceId)

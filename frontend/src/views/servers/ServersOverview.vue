@@ -80,7 +80,7 @@
             </div>
             <div class="policy-item">
               <span class="policy-label">Нода</span>
-              <span class="policy-value">{{ policy.node_preference }}</span>
+              <span class="policy-value">{{ nodePreferenceLabel(policy.node_preference) }}</span>
             </div>
           </div>
           <div class="policy-read-actions">
@@ -93,7 +93,10 @@
         <div v-else-if="policyEditing" class="policy-edit">
           <div class="policy-form">
             <label>
-              Режим оркестрации
+              <span class="label-row">
+                Режим оркестрации
+                <Tooltip position="right">Определяет базовое поведение оркестратора.<br><br>«Только ручное управление» — никакого авто-вмешательства.<br>«Держать запущенным» — поддерживает целевое число инстансов.<br>«Экономичный» — останавливает при простое, запускает при обнаружении игроков.</Tooltip>
+              </span>
               <select v-model="policyDraft.mode">
                 <option value="ORCHESTRATION_MODE_DISABLED">Только ручное управление</option>
                 <option value="ORCHESTRATION_MODE_KEEP_ALIVE">Держать запущенным</option>
@@ -101,59 +104,68 @@
               </select>
             </label>
             <label>
-              Целевое число инстансов
+              <span class="label-row">
+                Целевое число инстансов
+                <Tooltip position="right">Сколько инстансов должно быть запущено в режиме «Держать запущенным».<br><br>При падении одного из них оркестратор автоматически поднимет новый, чтобы поддержать это число.</Tooltip>
+              </span>
               <input v-model.number="policyDraft.target_instances" type="number" min="0" />
             </label>
             <label class="checkbox">
               <input v-model="policyDraft.auto_restart" type="checkbox" />
-              Авторестарт при падении
+              <span class="label-row">
+                Авторестарт при падении
+                <Tooltip position="right">Если включён, оркестратор автоматически перезапустит инстанс при краше.<br><br>Если контейнер был удалён — запустит новый инстанс взамен.</Tooltip>
+              </span>
             </label>
             <label>
-              Таймаут простоя (мин)
+              <span class="label-row">
+                Таймаут простоя (мин)
+                <Tooltip position="right">Актуально только в режиме «Экономичный».<br><br>Через сколько минут без игроков инстанс будет автоматически остановлен для экономии ресурсов.</Tooltip>
+              </span>
               <input v-model.number="policyDraft.scale_to_zero_timeout" type="number" min="1" />
             </label>
             <label>
-              Версия билда по умолчанию
+              <span class="label-row">
+                Версия билда по умолчанию
+                <Tooltip position="right">Какой билд использовать при авто-старте инстанса.<br><br>Выберите конкретную версию или оставьте «latest» — тогда всегда будет использоваться последний загруженный билд.</Tooltip>
+              </span>
               <select v-model="policyDraft.default_build_version">
                 <option value="latest">latest</option>
                 <option v-for="b in builds" :key="b.build_version" :value="b.build_version">{{ b.build_version }}</option>
               </select>
             </label>
             <label>
-              Макс. игроков / инстанс
+              <span class="label-row">
+                Макс. игроков / инстанс
+                <Tooltip position="right">Порог для определения переполнения.<br><br>Если число игроков достигает или превышает это значение, срабатывает выбранное поведение при переполнении: запуск нового инстанса или очередь.</Tooltip>
+              </span>
               <input v-model.number="policyDraft.max_players_per_instance" type="number" min="1" />
             </label>
             <label>
-              Макс. инстансов на игру
+              <span class="label-row">
+                Макс. инстансов на игру
+                <Tooltip position="right">Абсолютный потолок количества инстансов для защиты от неконтролируемого масштабирования.<br><br>Учитываются все инстансы: запущенные, остановленные и упавшие.</Tooltip>
+              </span>
               <input v-model.number="policyDraft.max_instances_per_game" type="number" min="1" />
             </label>
             <label>
-              При переполнении
-              <div class="radio-group">
-                <label class="radio">
-                  <input v-model="policyDraft.scale_behavior" type="radio" value="SCALE_BEHAVIOR_SPAWN" />
-                  Запускать новый инстанс
-                </label>
-                <label class="radio">
-                  <input v-model="policyDraft.scale_behavior" type="radio" value="SCALE_BEHAVIOR_QUEUE" />
-                  Очередь игроков
-                </label>
-              </div>
+              <span class="label-row">
+                При переполнении
+                <Tooltip position="right">Что делать, когда инстанс заполнен.<br><br>«Запускать новый инстанс» — оркестратор поднимет дополнительный сервер.<br>«Очередь игроков» — новые игроки будут ждать освобождения слотов.</Tooltip>
+              </span>
+              <select v-model="policyDraft.scale_behavior">
+                <option value="SCALE_BEHAVIOR_SPAWN">Запускать новый инстанс</option>
+                <option value="SCALE_BEHAVIOR_QUEUE">Очередь игроков</option>
+              </select>
             </label>
             <label>
-              Нода
-              <div class="radio-group">
-                <label class="radio">
-                  <input v-model="nodePreferenceType" type="radio" value="auto" />
-                  Авто
-                </label>
-                <label class="radio">
-                  <input v-model="nodePreferenceType" type="radio" value="specific" />
-                  Конкретная нода
-                </label>
-              </div>
-              <select v-if="nodePreferenceType === 'specific'" v-model="selectedNodeId">
-                <option v-for="n in onlineNodesList" :key="n.id" :value="n.id">{{ n.address }}</option>
+              <span class="label-row">
+                Нода
+                <Tooltip position="right">На какой ноде развёртывать инстансы при авто-старте.<br><br>«Авто» — оркестратор сам выберет наименее загруженную онлайн-ноду.<br>«Конкретная нода» — все авто-старты будут направлены на выбранный сервер.</Tooltip>
+              </span>
+              <select v-model="policyDraft.node_preference">
+                <option value="auto">Авто</option>
+                <option v-for="n in onlineNodesList" :key="n.id" :value="`node-${n.id}`">{{ n.address }}</option>
               </select>
             </label>
           </div>
@@ -224,6 +236,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { Upload, Play, AlertCircle, ChevronDown, ChevronRight, Save, Settings2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
+import Tooltip from '../../components/orchestrator/Tooltip.vue'
 import { listBuilds, listInstances, listNodes, getPolicy, setPolicy } from '../../api/orchestrator'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
@@ -246,9 +259,6 @@ const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.
 const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online').length)
 const onlineNodesList = computed(() => nodes.value.filter(n => n.status === 'online'))
 
-const nodePreferenceType = ref('auto')
-const selectedNodeId = ref(null)
-
 const modeLabels = {
   ORCHESTRATION_MODE_UNSPECIFIED: 'Не задан',
   ORCHESTRATION_MODE_DISABLED: 'Только ручное управление',
@@ -264,6 +274,16 @@ const behaviorLabels = {
 
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+function nodePreferenceLabel(val) {
+  if (!val || val === 'auto') return 'Авто'
+  const match = String(val).match(/node-(\d+)/)
+  if (match) {
+    const node = nodes.value.find(n => String(n.id) === match[1])
+    return node ? `${node.address} (node-${node.id})` : val
+  }
+  return val
 }
 
 async function fetchAll() {
@@ -310,14 +330,6 @@ async function loadPolicy() {
 
 function startEdit() {
   policyDraft.value = { ...policy.value }
-  if (policyDraft.value.node_preference && policyDraft.value.node_preference !== 'auto') {
-    nodePreferenceType.value = 'specific'
-    const match = policyDraft.value.node_preference.match(/node-(\d+)/)
-    selectedNodeId.value = match ? parseInt(match[1]) : null
-  } else {
-    nodePreferenceType.value = 'auto'
-    selectedNodeId.value = null
-  }
   policyEditing.value = true
 }
 
@@ -328,10 +340,6 @@ function cancelEdit() {
 async function savePolicy() {
   policyLoading.value = true
   try {
-    let nodePreference = 'auto'
-    if (nodePreferenceType.value === 'specific' && selectedNodeId.value) {
-      nodePreference = `node-${selectedNodeId.value}`
-    }
     const payload = {
       mode: policyDraft.value.mode,
       target_instances: Number(policyDraft.value.target_instances),
@@ -341,7 +349,7 @@ async function savePolicy() {
       max_players_per_instance: Number(policyDraft.value.max_players_per_instance),
       max_instances_per_game: Number(policyDraft.value.max_instances_per_game),
       scale_behavior: policyDraft.value.scale_behavior,
-      node_preference: nodePreference,
+      node_preference: policyDraft.value.node_preference || 'auto',
     }
     const p = await setPolicy(props.gameId, payload)
     policy.value = p
@@ -497,6 +505,11 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   font-size: 0.85rem;
   color: var(--text-main);
   font-weight: 500;
+}
+.policy-form .label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .policy-form input,
 .policy-form select {
