@@ -1,0 +1,26 @@
+# Dummy Game Server Configuration
+
+# Game server settings
+game:
+  id: 1
+  name: "dummy-game"
+  max_players: 16
+
+# TCP game server port
+game_port: 7777
+
+# HTTP admin/status port
+http_port: 7778
+
+# Orchestrator integration (optional)
+orchestrator:
+  enabled: false
+  gateway_url: "http://localhost:8080"
+  # instance_id and game_id are usually provided by orchestrator env vars
+  # but can be overridden here
+  game_id: 1
+
+# Logging
+log:
+  level: "info"   # debug, info, warn, error
+  json: false
