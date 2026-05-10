@@ -30,7 +30,9 @@ func (h *GamePolicyHandler) Get(ctx context.Context, req *pb.GamePolicyServiceGe
 
 // Set создаёт или обновляет политику игры.
 func (h *GamePolicyHandler) Set(ctx context.Context, req *pb.GamePolicyServiceSetRequest) (*pb.GamePolicyServiceSetResponse, error) {
+	ownerID, _ := GetUserID(ctx)
 	policy := gamePolicyFromProto(req)
+	policy.OwnerID = ownerID
 	policy, err := h.policyService.Set(ctx, policy)
 	if err != nil {
 		return nil, domainError(err, "set game policy")

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
@@ -66,6 +67,57 @@ func (m *discMockInstanceState) GetUsage(ctx context.Context, instanceID int64) 
 	return nil, nil
 }
 func (m *discMockInstanceState) Delete(ctx context.Context, instanceID int64) error { return nil }
+func (m *discMockInstanceState) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error { return nil }
+func (m *discMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) { return time.Time{}, domain.ErrNotFound }
+func (m *discMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error { return nil }
+
+type discMockBuildStorage struct {
+	listByGameFn func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error)
+}
+
+func (m *discMockBuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error { return nil }
+func (m *discMockBuildStorage) GetByID(ctx context.Context, id int64) (*domain.ServerBuild, error) {
+	return nil, nil
+}
+func (m *discMockBuildStorage) GetByVersion(ctx context.Context, gameID int64, version string) (*domain.ServerBuild, error) {
+	return nil, nil
+}
+func (m *discMockBuildStorage) ListByGame(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+	if m.listByGameFn != nil {
+		return m.listByGameFn(ctx, gameID, limit)
+	}
+	return nil, nil
+}
+func (m *discMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) { return 0, nil }
+func (m *discMockBuildStorage) Delete(ctx context.Context, id int64) error { return nil }
+func (m *discMockBuildStorage) CountActiveInstancesByBuild(ctx context.Context, buildID int64) (int, error) {
+	return 0, nil
+}
+
+type discMockGamePolicyRepo struct {
+	getFn func(ctx context.Context, gameID int64) (*domain.GamePolicy, error)
+}
+
+func (m *discMockGamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
+	if m.getFn != nil {
+		return m.getFn(ctx, gameID)
+	}
+	return nil, domain.ErrNotFound
+}
+func (m *discMockGamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) error { return nil }
+func (m *discMockGamePolicyRepo) Delete(ctx context.Context, gameID int64) error { return nil }
+func (m *discMockGamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, error) { return nil, nil }
+
+type discMockInstanceStarter struct {
+	startInstanceFn func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
+}
+
+func (m *discMockInstanceStarter) StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+	if m.startInstanceFn != nil {
+		return m.startInstanceFn(ctx, params)
+	}
+	return nil, nil
+}
 
 type discMockNodeRepo struct {
 	getByIDFn func(ctx context.Context, id int64) (*domain.Node, error)
@@ -84,6 +136,24 @@ func (m *discMockNodeRepo) List(ctx context.Context, status *domain.NodeStatus) 
 }
 func (m *discMockNodeRepo) Delete(ctx context.Context, id int64) error         { return nil }
 func (m *discMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error { return nil }
+
+func newTestDiscoveryService(
+	instanceRepo domain.InstanceRepo,
+	instanceState domain.InstanceStateStore,
+	nodeRepo domain.NodeRepo,
+	buildRepo domain.BuildStorage,
+	policyRepo domain.GamePolicyRepo,
+	instanceSvc instanceStarter,
+) *DiscoveryService {
+	if policyRepo == nil {
+		policyRepo = &discMockGamePolicyRepo{}
+	}
+	policyService := NewGamePolicyService(policyRepo)
+	if instanceSvc == nil {
+		instanceSvc = &discMockInstanceStarter{}
+	}
+	return NewDiscoveryService(instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceSvc)
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -114,7 +184,7 @@ func TestDiscoveryService_DiscoverServers_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewDiscoveryService(instanceRepo, instanceState, nodeRepo)
+	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
 	endpoints, err := svc.DiscoverServers(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -139,7 +209,7 @@ func TestDiscoveryService_DiscoverServers_EmptyList(t *testing.T) {
 			return []*domain.Instance{}, nil
 		},
 	}
-	svc := NewDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{})
+	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, nil, nil, nil)
 	endpoints, err := svc.DiscoverServers(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -155,7 +225,7 @@ func TestDiscoveryService_DiscoverServers_ListError(t *testing.T) {
 			return nil, context.Canceled
 		},
 	}
-	svc := NewDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{})
+	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, nil, nil, nil)
 	_, err := svc.DiscoverServers(context.Background(), 42)
 	if err == nil {
 		t.Fatal("expected error, got nil")
@@ -183,7 +253,7 @@ func TestDiscoveryService_DiscoverServers_NodeNotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewDiscoveryService(instanceRepo, instanceState, nodeRepo)
+	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
 	endpoints, err := svc.DiscoverServers(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -214,7 +284,7 @@ func TestDiscoveryService_DiscoverServerError_GetPlayerCount(t *testing.T) {
 		},
 	}
 
-	svc := NewDiscoveryService(instanceRepo, instanceState, nodeRepo)
+	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
 	endpoints, err := svc.DiscoverServers(context.Background(), 42)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -261,5 +331,54 @@ func TestSortByPlayerCount_NilValues(t *testing.T) {
 
 	if endpoints[0].InstanceID != 2 {
 		t.Errorf("expected nil player count first, got %d", endpoints[0].InstanceID)
+	}
+}
+
+func TestDiscoveryService_DiscoverServers_AutoStart(t *testing.T) {
+	instanceRepo := &discMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{}, nil
+		},
+	}
+
+	started := false
+	instanceSvc := &discMockInstanceStarter{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			started = true
+			return &domain.Instance{ID: 99}, nil
+		},
+	}
+
+	policyRepo := &discMockGamePolicyRepo{
+		getFn: func(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
+			return &domain.GamePolicy{
+				GameID:              gameID,
+				OwnerID:             "test-user",
+				Mode:                domain.OrchestrationModeKeepAlive,
+				TargetInstances:     1,
+				DefaultBuildVersion: "latest",
+				MaxInstancesPerGame: 5,
+			}, nil
+		},
+	}
+
+	buildRepo := &discMockBuildStorage{
+		listByGameFn: func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+			return []*domain.ServerBuild{{Version: "v1.0.0"}}, nil
+		},
+	}
+
+	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, buildRepo, policyRepo, instanceSvc)
+
+	_, err := svc.DiscoverServers(context.Background(), 42)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// autoStartInstance запускается в отдельной горутине.
+	time.Sleep(100 * time.Millisecond)
+
+	if !started {
+		t.Error("expected auto-start to be triggered when no running instances exist")
 	}
 }

@@ -48,6 +48,7 @@ func (b ScaleBehavior) String() string {
 // GamePolicy описывает правила автоматической оркестрации серверов для конкретной игры.
 type GamePolicy struct {
 	GameID                int64
+	OwnerID               string // ID владельца проекта (из JWT)
 	Mode                  OrchestrationMode
 	TargetInstances       int32
 	AutoRestart           bool

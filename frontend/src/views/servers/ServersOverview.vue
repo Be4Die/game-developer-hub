@@ -114,7 +114,10 @@
             </label>
             <label>
               Версия билда по умолчанию
-              <input v-model="policyDraft.default_build_version" type="text" />
+              <select v-model="policyDraft.default_build_version">
+                <option value="latest">latest</option>
+                <option v-for="b in builds" :key="b.build_version" :value="b.build_version">{{ b.build_version }}</option>
+              </select>
             </label>
             <label>
               Макс. игроков / инстанс
@@ -126,14 +129,32 @@
             </label>
             <label>
               При переполнении
-              <select v-model="policyDraft.scale_behavior">
-                <option value="SCALE_BEHAVIOR_SPAWN">Запускать новый инстанс</option>
-                <option value="SCALE_BEHAVIOR_QUEUE">Очередь игроков</option>
-              </select>
+              <div class="radio-group">
+                <label class="radio">
+                  <input v-model="policyDraft.scale_behavior" type="radio" value="SCALE_BEHAVIOR_SPAWN" />
+                  Запускать новый инстанс
+                </label>
+                <label class="radio">
+                  <input v-model="policyDraft.scale_behavior" type="radio" value="SCALE_BEHAVIOR_QUEUE" />
+                  Очередь игроков
+                </label>
+              </div>
             </label>
             <label>
               Нода
-              <input v-model="policyDraft.node_preference" type="text" />
+              <div class="radio-group">
+                <label class="radio">
+                  <input v-model="nodePreferenceType" type="radio" value="auto" />
+                  Авто
+                </label>
+                <label class="radio">
+                  <input v-model="nodePreferenceType" type="radio" value="specific" />
+                  Конкретная нода
+                </label>
+              </div>
+              <select v-if="nodePreferenceType === 'specific'" v-model="selectedNodeId">
+                <option v-for="n in onlineNodesList" :key="n.id" :value="n.id">{{ n.address }}</option>
+              </select>
             </label>
           </div>
           <div class="policy-actions">
@@ -223,6 +244,10 @@ const policyDraft = ref({})
 const runningCount = computed(() => instances.value.filter(i => i.status === 'running').length)
 const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0))
 const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online').length)
+const onlineNodesList = computed(() => nodes.value.filter(n => n.status === 'online'))
+
+const nodePreferenceType = ref('auto')
+const selectedNodeId = ref(null)
 
 const modeLabels = {
   ORCHESTRATION_MODE_UNSPECIFIED: 'Не задан',
@@ -285,6 +310,14 @@ async function loadPolicy() {
 
 function startEdit() {
   policyDraft.value = { ...policy.value }
+  if (policyDraft.value.node_preference && policyDraft.value.node_preference !== 'auto') {
+    nodePreferenceType.value = 'specific'
+    const match = policyDraft.value.node_preference.match(/node-(\d+)/)
+    selectedNodeId.value = match ? parseInt(match[1]) : null
+  } else {
+    nodePreferenceType.value = 'auto'
+    selectedNodeId.value = null
+  }
   policyEditing.value = true
 }
 
@@ -295,6 +328,10 @@ function cancelEdit() {
 async function savePolicy() {
   policyLoading.value = true
   try {
+    let nodePreference = 'auto'
+    if (nodePreferenceType.value === 'specific' && selectedNodeId.value) {
+      nodePreference = `node-${selectedNodeId.value}`
+    }
     const payload = {
       mode: policyDraft.value.mode,
       target_instances: Number(policyDraft.value.target_instances),
@@ -304,7 +341,7 @@ async function savePolicy() {
       max_players_per_instance: Number(policyDraft.value.max_players_per_instance),
       max_instances_per_game: Number(policyDraft.value.max_instances_per_game),
       scale_behavior: policyDraft.value.scale_behavior,
-      node_preference: policyDraft.value.node_preference,
+      node_preference: nodePreference,
     }
     const p = await setPolicy(props.gameId, payload)
     policy.value = p
@@ -474,6 +511,22 @@ code { background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; fo
   flex-direction: row;
   align-items: center;
   gap: 8px;
+}
+.policy-form .radio-group {
+  display: flex;
+  gap: 16px;
+}
+.policy-form .radio {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.policy-form .radio input[type="radio"] {
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 .policy-actions {
   display: flex;

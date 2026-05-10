@@ -70,6 +70,7 @@ type e2eTestEnv struct {
 	nodeRepo        *postgres.NodeRepo
 	instanceRepo    *postgres.InstanceRepo
 	buildStorage    *postgres.BuildStorage
+	policyRepo      *postgres.GamePolicyRepo
 	buildFS         domain.BuildStorageFS
 	nodeState       *valkey.NodeStateStore
 	instanceState   *valkey.InstanceStateStore
@@ -79,6 +80,7 @@ type e2eTestEnv struct {
 	instanceClient  pb.InstanceServiceClient
 	discoveryClient pb.DiscoveryServiceClient
 	nodeClient      pb.NodeServiceClient
+	policyClient    pb.GamePolicyServiceClient
 	healthClient    pb.HealthServiceClient
 	log             *slog.Logger
 }
@@ -180,6 +182,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	nodeRepo := postgres.NewNodeRepo(pool)
 	instanceRepo := postgres.NewInstanceRepo(pool)
 	buildStorage := postgres.NewBuildStorage(pool)
+	policyRepo := postgres.NewGamePolicyRepo(pool)
 	keyTTL := 45 * time.Second
 	nodeState := valkey.NewNodeStateStore(redisClient, keyTTL)
 	instanceState := valkey.NewInstanceStateStore(redisClient, keyTTL)
@@ -211,11 +214,12 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	buildPipeline := service.NewBuildPipeline(
 		buildStorage, buildFS, orchNodeClient, nodeRepo, nodeState, limits,
 	)
+	policyService := service.NewGamePolicyService(policyRepo)
 	instanceService := service.NewInstanceService(
 		instanceRepo, instanceState, buildStorage, nodeRepo, nodeState, orchNodeClient, limits,
 	)
 	discoveryService := service.NewDiscoveryService(
-		instanceRepo, instanceState, nodeRepo,
+		instanceRepo, instanceState, nodeRepo, buildStorage, policyService, instanceService,
 	)
 	nodeService := service.NewNodeService(
 		log, nodeRepo, nodeState, instanceRepo, instanceState, orchNodeClient,
@@ -226,6 +230,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	instanceHandler := grpctransport.NewInstanceHandler(instanceService, limits.MaxLogTailLines)
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
 	nodeHandler := grpctransport.NewNodeHandler(nodeService)
+	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
 	healthHandler := grpctransport.NewHealthHandler("e2e-1.0.0")
 
 	authInterceptor, err := grpctransport.NewJWTAuth(e2eJWTSecret, e2eIssuer)
@@ -242,6 +247,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	pb.RegisterInstanceServiceServer(grpcServer, instanceHandler)
 	pb.RegisterDiscoveryServiceServer(grpcServer, discoveryHandler)
 	pb.RegisterNodeServiceServer(grpcServer, nodeHandler)
+	pb.RegisterGamePolicyServiceServer(grpcServer, policyHandler)
 	pb.RegisterHealthServiceServer(grpcServer, healthHandler)
 
 	// Запуск на случайном порту.
@@ -297,6 +303,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		nodeRepo:        nodeRepo,
 		instanceRepo:    instanceRepo,
 		buildStorage:    buildStorage,
+		policyRepo:      policyRepo,
 		buildFS:         buildFS,
 		nodeState:       nodeState,
 		instanceState:   instanceState,
@@ -306,6 +313,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		instanceClient:  pb.NewInstanceServiceClient(conn),
 		discoveryClient: pb.NewDiscoveryServiceClient(conn),
 		nodeClient:      nsClient,
+		policyClient:    pb.NewGamePolicyServiceClient(conn),
 		healthClient:    pb.NewHealthServiceClient(conn),
 		log:             log,
 	}
@@ -366,6 +374,21 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 			started_at       TIMESTAMP NOT NULL,
 			created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS game_policies (
+			game_id                  BIGINT PRIMARY KEY,
+			owner_id                 TEXT NOT NULL DEFAULT '',
+			mode                     SMALLINT NOT NULL DEFAULT 1,
+			target_instances         INTEGER NOT NULL DEFAULT 1,
+			auto_restart             BOOLEAN NOT NULL DEFAULT false,
+			scale_to_zero_timeout    INTEGER NOT NULL DEFAULT 10,
+			default_build_version    TEXT NOT NULL DEFAULT 'latest',
+			max_players_per_instance INTEGER NOT NULL DEFAULT 100,
+			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
+			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
+			node_preference          TEXT NOT NULL DEFAULT 'auto',
+			created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
 	}
 

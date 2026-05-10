@@ -55,6 +55,7 @@ type StartInstanceParams struct {
 	Args             []string
 	DeveloperPayload map[string]string
 	MaxPlayers       *uint32
+	NodePreference   string // "auto" или "node-<id>"
 }
 
 // StartInstance запускает новый экземпляр игрового сервера на доступной ноде.
@@ -79,7 +80,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 	}
 
 	// Шаг 3: выбор ноды.
-	node, err := s.selectNodeForInstance(ctx, build)
+	node, err := s.selectNodeForInstance(ctx, build, params.NodePreference)
 	if err != nil {
 		return nil, fmt.Errorf("InstanceService.StartInstance: select node: %w", err)
 	}
@@ -192,7 +193,10 @@ func (s *InstanceService) StopInstance(ctx context.Context, ownerID string, game
 
 	// gRPC остановка.
 	if err := s.nodeClient.StopInstance(ctx, node.Address, node.APIToken, instanceID, timeoutSec); err != nil {
-		return nil, fmt.Errorf("InstanceService.StopInstance: node StopInstance: %w", err)
+		if !grpcnode.IsGRPCNotFound(err) {
+			return nil, fmt.Errorf("InstanceService.StopInstance: node StopInstance: %w", err)
+		}
+		// Нода не знает об инстансе — контейнер уже физически остановлен.
 	}
 
 	// Обновление статуса в PG (оставляем запись для истории).
@@ -482,7 +486,24 @@ type EnrichedInstance struct {
 }
 
 // selectNodeForInstance выбирает ноду с наименьшей загрузкой.
-func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.ServerBuild) (*domain.Node, error) {
+// Если nodePreference = "auto" — выбирает любую онлайн-ноду.
+// Если nodePreference = "node-<id>" — выбирает конкретную ноду (должна быть online).
+func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.ServerBuild, nodePreference string) (*domain.Node, error) {
+	// Если указана конкретная нода — пробуем найти её.
+	if nodePreference != "" && nodePreference != "auto" {
+		var nodeID int64
+		if _, err := fmt.Sscanf(nodePreference, "node-%d", &nodeID); err == nil && nodeID > 0 {
+			node, err := s.nodeRepo.GetByID(ctx, nodeID)
+			if err != nil {
+				return nil, domain.ErrNoAvailableNode
+			}
+			if node.Status != domain.NodeStatusOnline {
+				return nil, domain.ErrNoAvailableNode
+			}
+			return node, nil
+		}
+	}
+
 	nodes, err := s.nodeRepo.List(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("selectNodeForInstance: list nodes: %w", err)

@@ -119,6 +119,7 @@ CREATE TRIGGER trigger_instances_updated_at
 
 CREATE TABLE IF NOT EXISTS game_policies (
     game_id                  BIGINT PRIMARY KEY,          -- ID игры (денормализовано, FK нет)
+    owner_id                 TEXT NOT NULL DEFAULT '',     -- ID владельца проекта (из JWT)
     mode                     SMALLINT NOT NULL DEFAULT 1, -- 1=disabled, 2=keep_alive, 3=scale_to_zero
     target_instances         INTEGER NOT NULL DEFAULT 1,
     auto_restart             BOOLEAN NOT NULL DEFAULT false,

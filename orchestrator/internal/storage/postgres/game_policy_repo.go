@@ -23,7 +23,7 @@ func NewGamePolicyRepo(pool *pgxpool.Pool) *GamePolicyRepo {
 // Get возвращает политику игры. Возвращает ErrNotFound при отсутствии.
 func (r *GamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
 	const q = `
-		SELECT game_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
+		SELECT game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
 		       default_build_version, max_players_per_instance, max_instances_per_game,
 		       scale_behavior, node_preference, created_at, updated_at
 		FROM game_policies WHERE game_id = $1
@@ -36,11 +36,12 @@ func (r *GamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain.GamePol
 // Set создаёт или обновляет политику игры (UPSERT).
 func (r *GamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) error {
 	const q = `
-		INSERT INTO game_policies (game_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
+		INSERT INTO game_policies (game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
 		                           default_build_version, max_players_per_instance, max_instances_per_game,
 		                           scale_behavior, node_preference, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
 		ON CONFLICT (game_id) DO UPDATE SET
+			owner_id = EXCLUDED.owner_id,
 			mode = EXCLUDED.mode,
 			target_instances = EXCLUDED.target_instances,
 			auto_restart = EXCLUDED.auto_restart,
@@ -54,7 +55,7 @@ func (r *GamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) err
 	`
 
 	_, err := r.pool.Exec(ctx, q,
-		policy.GameID, policy.Mode, policy.TargetInstances, policy.AutoRestart, policy.ScaleToZeroTimeout,
+		policy.GameID, policy.OwnerID, policy.Mode, policy.TargetInstances, policy.AutoRestart, policy.ScaleToZeroTimeout,
 		policy.DefaultBuildVersion, policy.MaxPlayersPerInstance, policy.MaxInstancesPerGame,
 		policy.ScaleBehavior, policy.NodePreference,
 	)
@@ -80,6 +81,37 @@ func (r *GamePolicyRepo) Delete(ctx context.Context, gameID int64) error {
 	return nil
 }
 
+// ListAll возвращает все сохранённые политики.
+func (r *GamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, error) {
+	const q = `
+		SELECT game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
+		       default_build_version, max_players_per_instance, max_instances_per_game,
+		       scale_behavior, node_preference, created_at, updated_at
+		FROM game_policies
+		ORDER BY game_id
+	`
+
+	rows, err := r.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("postgres.GamePolicyRepo.ListAll: %w", err)
+	}
+	defer rows.Close()
+
+	var policies []*domain.GamePolicy
+	for rows.Next() {
+		p, err := scanGamePolicy(rows)
+		if err != nil {
+			return nil, fmt.Errorf("postgres.GamePolicyRepo.ListAll: scan: %w", err)
+		}
+		policies = append(policies, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("postgres.GamePolicyRepo.ListAll: rows error: %w", err)
+	}
+
+	return policies, nil
+}
+
 type gamePolicyScanner interface {
 	Scan(dest ...any) error
 }
@@ -87,7 +119,7 @@ type gamePolicyScanner interface {
 func scanGamePolicy(s gamePolicyScanner) (*domain.GamePolicy, error) {
 	p := &domain.GamePolicy{}
 	err := s.Scan(
-		&p.GameID, &p.Mode, &p.TargetInstances, &p.AutoRestart, &p.ScaleToZeroTimeout,
+		&p.GameID, &p.OwnerID, &p.Mode, &p.TargetInstances, &p.AutoRestart, &p.ScaleToZeroTimeout,
 		&p.DefaultBuildVersion, &p.MaxPlayersPerInstance, &p.MaxInstancesPerGame,
 		&p.ScaleBehavior, &p.NodePreference, &p.CreatedAt, &p.UpdatedAt,
 	)

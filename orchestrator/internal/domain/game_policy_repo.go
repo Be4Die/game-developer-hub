@@ -12,4 +12,7 @@ type GamePolicyRepo interface {
 
 	// Delete удаляет политику игры. Возвращает ErrNotFound при отсутствии.
 	Delete(ctx context.Context, gameID int64) error
+
+	// ListAll возвращает все сохранённые политики.
+	ListAll(ctx context.Context) ([]*GamePolicy, error)
 }

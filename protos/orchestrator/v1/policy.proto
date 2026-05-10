@@ -24,17 +24,18 @@ enum ScaleBehavior {
 // Политика оркестрации серверов для конкретной игры.
 message GamePolicy {
   int64 game_id = 1;
-  OrchestrationMode mode = 2;
-  int32 target_instances = 3;
-  bool auto_restart = 4;
-  int32 scale_to_zero_timeout = 5; // минут
-  string default_build_version = 6;
-  int32 max_players_per_instance = 7;
-  int32 max_instances_per_game = 8;
-  ScaleBehavior scale_behavior = 9;
-  string node_preference = 10;       // "auto" или "node-<id>"
-  google.protobuf.Timestamp created_at = 11;
-  google.protobuf.Timestamp updated_at = 12;
+  string owner_id = 2;             // ID владельца проекта (из JWT)
+  OrchestrationMode mode = 3;
+  int32 target_instances = 4;
+  bool auto_restart = 5;
+  int32 scale_to_zero_timeout = 6; // минут
+  string default_build_version = 7;
+  int32 max_players_per_instance = 8;
+  int32 max_instances_per_game = 9;
+  ScaleBehavior scale_behavior = 10;
+  string node_preference = 11;       // "auto" или "node-<id>"
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
 }
 
 // Сервис управления политиками оркестрации.
@@ -63,15 +64,16 @@ message GamePolicyServiceGetResponse {
 
 message GamePolicyServiceSetRequest {
   int64 game_id = 1;
-  OrchestrationMode mode = 2;
-  int32 target_instances = 3;
-  bool auto_restart = 4;
-  int32 scale_to_zero_timeout = 5;
-  string default_build_version = 6;
-  int32 max_players_per_instance = 7;
-  int32 max_instances_per_game = 8;
-  ScaleBehavior scale_behavior = 9;
-  string node_preference = 10;
+  string owner_id = 2;
+  OrchestrationMode mode = 3;
+  int32 target_instances = 4;
+  bool auto_restart = 5;
+  int32 scale_to_zero_timeout = 6;
+  string default_build_version = 7;
+  int32 max_players_per_instance = 8;
+  int32 max_instances_per_game = 9;
+  ScaleBehavior scale_behavior = 10;
+  string node_preference = 11;
 }
 
 message GamePolicyServiceSetResponse {

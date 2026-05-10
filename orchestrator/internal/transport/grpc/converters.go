@@ -318,6 +318,7 @@ func scaleBehaviorFromProto(b pb.ScaleBehavior) domain.ScaleBehavior {
 func gamePolicyToProto(p *domain.GamePolicy) *pb.GamePolicy {
 	return &pb.GamePolicy{
 		GameId:                p.GameID,
+		OwnerId:               p.OwnerID,
 		Mode:                  orchestrationModeToProto(p.Mode),
 		TargetInstances:       p.TargetInstances,
 		AutoRestart:           p.AutoRestart,
@@ -335,6 +336,7 @@ func gamePolicyToProto(p *domain.GamePolicy) *pb.GamePolicy {
 func gamePolicyFromProto(req *pb.GamePolicyServiceSetRequest) *domain.GamePolicy {
 	return &domain.GamePolicy{
 		GameID:                req.GetGameId(),
+		OwnerID:               req.GetOwnerId(),
 		Mode:                  orchestrationModeFromProto(req.GetMode()),
 		TargetInstances:       req.GetTargetInstances(),
 		AutoRestart:           req.GetAutoRestart(),

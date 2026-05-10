@@ -132,6 +132,7 @@ func (s *InstanceStateStore) Delete(ctx context.Context, instanceID int64) error
 		keyInstanceStatus + strconv.FormatInt(instanceID, 10),
 		keyInstanceCount + strconv.FormatInt(instanceID, 10),
 		keyInstanceUsage + strconv.FormatInt(instanceID, 10),
+		keyInstanceZeroSince + strconv.FormatInt(instanceID, 10),
 	}
 
 	err := s.client.Del(ctx, keys...).Err()
@@ -139,5 +140,40 @@ func (s *InstanceStateStore) Delete(ctx context.Context, instanceID int64) error
 		return fmt.Errorf("valkey.InstanceStateStore.Delete: %w", err)
 	}
 
+	return nil
+}
+
+// SetZeroPlayersSince записывает timestamp начала нулевого онлайна.
+// TTL = 0 (no expiration) — ключ должен жить минимум scale_to_zero_timeout минут,
+// а общий TTL конфига (45 сек) слишком короткий для этого.
+func (s *InstanceStateStore) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error {
+	key := keyInstanceZeroSince + strconv.FormatInt(instanceID, 10)
+	err := s.client.Set(ctx, key, t.Unix(), 0).Err()
+	if err != nil {
+		return fmt.Errorf("valkey.InstanceStateStore.SetZeroPlayersSince: %w", err)
+	}
+	return nil
+}
+
+// GetZeroPlayersSince возвращает timestamp начала нулевого онлайна.
+func (s *InstanceStateStore) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) {
+	key := keyInstanceZeroSince + strconv.FormatInt(instanceID, 10)
+	val, err := s.client.Get(ctx, key).Int64()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return time.Time{}, domain.ErrNotFound
+		}
+		return time.Time{}, fmt.Errorf("valkey.InstanceStateStore.GetZeroPlayersSince: %w", err)
+	}
+	return time.Unix(val, 0), nil
+}
+
+// DeleteZeroPlayersSince удаляет timestamp нулевого онлайна.
+func (s *InstanceStateStore) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error {
+	key := keyInstanceZeroSince + strconv.FormatInt(instanceID, 10)
+	err := s.client.Del(ctx, key).Err()
+	if err != nil {
+		return fmt.Errorf("valkey.InstanceStateStore.DeleteZeroPlayersSince: %w", err)
+	}
 	return nil
 }

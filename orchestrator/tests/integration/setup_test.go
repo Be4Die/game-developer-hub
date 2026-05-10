@@ -181,6 +181,21 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 			created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
+		`CREATE TABLE IF NOT EXISTS game_policies (
+			game_id                  BIGINT PRIMARY KEY,
+			owner_id                 TEXT NOT NULL DEFAULT '',
+			mode                     SMALLINT NOT NULL DEFAULT 1,
+			target_instances         INTEGER NOT NULL DEFAULT 1,
+			auto_restart             BOOLEAN NOT NULL DEFAULT false,
+			scale_to_zero_timeout    INTEGER NOT NULL DEFAULT 10,
+			default_build_version    TEXT NOT NULL DEFAULT 'latest',
+			max_players_per_instance INTEGER NOT NULL DEFAULT 100,
+			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
+			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
+			node_preference          TEXT NOT NULL DEFAULT 'auto',
+			created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
 	}
 
 	for _, migration := range migrations {

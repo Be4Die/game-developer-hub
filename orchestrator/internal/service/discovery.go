@@ -8,14 +8,19 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 
+// instanceStarter описывает методы InstanceService, нужные DiscoveryService.
+type instanceStarter interface {
+	StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
+}
+
 // DiscoveryService предоставляет данные для подключения к игровым серверам.
 type DiscoveryService struct {
-	instanceRepo    domain.InstanceRepo
-	instanceState   domain.InstanceStateStore
-	nodeRepo        domain.NodeRepo
-	buildRepo       domain.BuildStorage
-	policyService   *GamePolicyService
-	instanceService *InstanceService
+	instanceRepo  domain.InstanceRepo
+	instanceState domain.InstanceStateStore
+	nodeRepo      domain.NodeRepo
+	buildRepo     domain.BuildStorage
+	policyService *GamePolicyService
+	instanceSvc   instanceStarter
 }
 
 // NewDiscoveryService создаёт сервис обнаружения серверов.
@@ -25,15 +30,15 @@ func NewDiscoveryService(
 	nodeRepo domain.NodeRepo,
 	buildRepo domain.BuildStorage,
 	policyService *GamePolicyService,
-	instanceService *InstanceService,
+	instanceSvc instanceStarter,
 ) *DiscoveryService {
 	return &DiscoveryService{
-		instanceRepo:    instanceRepo,
-		instanceState:   instanceState,
-		nodeRepo:        nodeRepo,
-		buildRepo:       buildRepo,
-		policyService:   policyService,
-		instanceService: instanceService,
+		instanceRepo:  instanceRepo,
+		instanceState: instanceState,
+		nodeRepo:      nodeRepo,
+		buildRepo:     buildRepo,
+		policyService: policyService,
+		instanceSvc:   instanceSvc,
 	}
 }
 
@@ -93,6 +98,12 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) ([
 // autoStartInstance запускает инстанс для игры на основе политики.
 // Вызывается асинхронно из DiscoverServers.
 func (s *DiscoveryService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
+	// Проверяем лимит инстансов из политики (все статусы).
+	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
+	if int32(len(all)) >= policy.MaxInstancesPerGame {
+		return // Лимит достигнут.
+	}
+
 	buildVersion := policy.DefaultBuildVersion
 	if buildVersion == "latest" || buildVersion == "" {
 		// Пытаемся найти последний билд.
@@ -104,10 +115,18 @@ func (s *DiscoveryService) autoStartInstance(ctx context.Context, gameID int64, 
 		}
 	}
 
-	_, _ = s.instanceService.StartInstance(ctx, StartInstanceParams{
-		GameID:       gameID,
-		BuildVersion: buildVersion,
-	})
+	params := StartInstanceParams{
+		GameID:         gameID,
+		OwnerID:        policy.OwnerID,
+		BuildVersion:   buildVersion,
+		NodePreference: policy.NodePreference,
+	}
+	if policy.MaxPlayersPerInstance > 0 {
+		mp := uint32(policy.MaxPlayersPerInstance)
+		params.MaxPlayers = &mp
+	}
+
+	_, _ = s.instanceSvc.StartInstance(ctx, params)
 }
 
 // sortByPlayerCount сортирует эндпоинты по возрастанию player_count.

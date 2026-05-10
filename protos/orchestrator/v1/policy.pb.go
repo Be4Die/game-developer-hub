@@ -130,17 +130,18 @@ func (ScaleBehavior) EnumDescriptor() ([]byte, []int) {
 type GamePolicy struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	GameId                int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	Mode                  OrchestrationMode      `protobuf:"varint,2,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
-	TargetInstances       int32                  `protobuf:"varint,3,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
-	AutoRestart           bool                   `protobuf:"varint,4,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
-	ScaleToZeroTimeout    int32                  `protobuf:"varint,5,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"` // минут
-	DefaultBuildVersion   string                 `protobuf:"bytes,6,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
-	MaxPlayersPerInstance int32                  `protobuf:"varint,7,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
-	MaxInstancesPerGame   int32                  `protobuf:"varint,8,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
-	ScaleBehavior         ScaleBehavior          `protobuf:"varint,9,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
-	NodePreference        string                 `protobuf:"bytes,10,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"` // "auto" или "node-<id>"
-	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt             *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OwnerId               string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"` // ID владельца проекта (из JWT)
+	Mode                  OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
+	TargetInstances       int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
+	AutoRestart           bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
+	ScaleToZeroTimeout    int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"` // минут
+	DefaultBuildVersion   string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
+	MaxPlayersPerInstance int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
+	MaxInstancesPerGame   int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
+	ScaleBehavior         ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
+	NodePreference        string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"` // "auto" или "node-<id>"
+	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt             *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -180,6 +181,13 @@ func (x *GamePolicy) GetGameId() int64 {
 		return x.GameId
 	}
 	return 0
+}
+
+func (x *GamePolicy) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *GamePolicy) GetMode() OrchestrationMode {
@@ -350,15 +358,16 @@ func (x *GamePolicyServiceGetResponse) GetPolicy() *GamePolicy {
 type GamePolicyServiceSetRequest struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	GameId                int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	Mode                  OrchestrationMode      `protobuf:"varint,2,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
-	TargetInstances       int32                  `protobuf:"varint,3,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
-	AutoRestart           bool                   `protobuf:"varint,4,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
-	ScaleToZeroTimeout    int32                  `protobuf:"varint,5,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"`
-	DefaultBuildVersion   string                 `protobuf:"bytes,6,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
-	MaxPlayersPerInstance int32                  `protobuf:"varint,7,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
-	MaxInstancesPerGame   int32                  `protobuf:"varint,8,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
-	ScaleBehavior         ScaleBehavior          `protobuf:"varint,9,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
-	NodePreference        string                 `protobuf:"bytes,10,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`
+	OwnerId               string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Mode                  OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
+	TargetInstances       int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
+	AutoRestart           bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
+	ScaleToZeroTimeout    int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"`
+	DefaultBuildVersion   string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
+	MaxPlayersPerInstance int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
+	MaxInstancesPerGame   int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
+	ScaleBehavior         ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
+	NodePreference        string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -398,6 +407,13 @@ func (x *GamePolicyServiceSetRequest) GetGameId() int64 {
 		return x.GameId
 	}
 	return 0
+}
+
+func (x *GamePolicyServiceSetRequest) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
 }
 
 func (x *GamePolicyServiceSetRequest) GetMode() OrchestrationMode {
@@ -511,40 +527,42 @@ var File_orchestrator_v1_policy_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\xe6\x04\n" +
+	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\x81\x05\n" +
 	"\n" +
 	"GamePolicy\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x126\n" +
-	"\x04mode\x18\x02 \x01(\x0e2\".orchestrator.v1.OrchestrationModeR\x04mode\x12)\n" +
-	"\x10target_instances\x18\x03 \x01(\x05R\x0ftargetInstances\x12!\n" +
-	"\fauto_restart\x18\x04 \x01(\bR\vautoRestart\x121\n" +
-	"\x15scale_to_zero_timeout\x18\x05 \x01(\x05R\x12scaleToZeroTimeout\x122\n" +
-	"\x15default_build_version\x18\x06 \x01(\tR\x13defaultBuildVersion\x127\n" +
-	"\x18max_players_per_instance\x18\a \x01(\x05R\x15maxPlayersPerInstance\x123\n" +
-	"\x16max_instances_per_game\x18\b \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
-	"\x0escale_behavior\x18\t \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
-	"\x0fnode_preference\x18\n" +
-	" \x01(\tR\x0enodePreference\x129\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x126\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\".orchestrator.v1.OrchestrationModeR\x04mode\x12)\n" +
+	"\x10target_instances\x18\x04 \x01(\x05R\x0ftargetInstances\x12!\n" +
+	"\fauto_restart\x18\x05 \x01(\bR\vautoRestart\x121\n" +
+	"\x15scale_to_zero_timeout\x18\x06 \x01(\x05R\x12scaleToZeroTimeout\x122\n" +
+	"\x15default_build_version\x18\a \x01(\tR\x13defaultBuildVersion\x127\n" +
+	"\x18max_players_per_instance\x18\b \x01(\x05R\x15maxPlayersPerInstance\x123\n" +
+	"\x16max_instances_per_game\x18\t \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
+	"\x0escale_behavior\x18\n" +
+	" \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
+	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x129\n" +
 	"\n" +
-	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"6\n" +
+	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"6\n" +
 	"\x1bGamePolicyServiceGetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"S\n" +
 	"\x1cGamePolicyServiceGetResponse\x123\n" +
-	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\x81\x04\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\x9c\x04\n" +
 	"\x1bGamePolicyServiceSetRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x126\n" +
-	"\x04mode\x18\x02 \x01(\x0e2\".orchestrator.v1.OrchestrationModeR\x04mode\x12)\n" +
-	"\x10target_instances\x18\x03 \x01(\x05R\x0ftargetInstances\x12!\n" +
-	"\fauto_restart\x18\x04 \x01(\bR\vautoRestart\x121\n" +
-	"\x15scale_to_zero_timeout\x18\x05 \x01(\x05R\x12scaleToZeroTimeout\x122\n" +
-	"\x15default_build_version\x18\x06 \x01(\tR\x13defaultBuildVersion\x127\n" +
-	"\x18max_players_per_instance\x18\a \x01(\x05R\x15maxPlayersPerInstance\x123\n" +
-	"\x16max_instances_per_game\x18\b \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
-	"\x0escale_behavior\x18\t \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
-	"\x0fnode_preference\x18\n" +
-	" \x01(\tR\x0enodePreference\"S\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
+	"\bowner_id\x18\x02 \x01(\tR\aownerId\x126\n" +
+	"\x04mode\x18\x03 \x01(\x0e2\".orchestrator.v1.OrchestrationModeR\x04mode\x12)\n" +
+	"\x10target_instances\x18\x04 \x01(\x05R\x0ftargetInstances\x12!\n" +
+	"\fauto_restart\x18\x05 \x01(\bR\vautoRestart\x121\n" +
+	"\x15scale_to_zero_timeout\x18\x06 \x01(\x05R\x12scaleToZeroTimeout\x122\n" +
+	"\x15default_build_version\x18\a \x01(\tR\x13defaultBuildVersion\x127\n" +
+	"\x18max_players_per_instance\x18\b \x01(\x05R\x15maxPlayersPerInstance\x123\n" +
+	"\x16max_instances_per_game\x18\t \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
+	"\x0escale_behavior\x18\n" +
+	" \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
+	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\"S\n" +
 	"\x1cGamePolicyServiceSetResponse\x123\n" +
 	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy*\xa1\x01\n" +
 	"\x11OrchestrationMode\x12\"\n" +

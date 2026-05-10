@@ -152,6 +152,11 @@ func (a *App) MustRun() {
 	}
 	restoreCancel()
 
+	// Сразу применяем политики оркестрации, чтобы не ждать первого heartbeat тика.
+	enforceCtx, enforceCancel := context.WithTimeout(context.Background(), 60*time.Second)
+	a.heartbeatService.EnforcePolicies(enforceCtx)
+	enforceCancel()
+
 	// Запускаем heartbeat-сервис.
 	hbCtx, hbCancel := context.WithCancel(context.Background()) //nolint:gosec // hbCancel вызывается в MustStop
 	a.hbCancel = hbCancel

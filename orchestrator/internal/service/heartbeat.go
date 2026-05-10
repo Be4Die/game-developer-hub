@@ -10,6 +10,13 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 
+// instanceOrchestrator описывает методы InstanceService, нужные HeartbeatService.
+type instanceOrchestrator interface {
+	StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
+	RestartInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error)
+	StopInstance(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error)
+}
+
 // HeartbeatService — фоновый сервис мониторинга жизнеспособности нод.
 // Запускается как горутина, периодически опрашивает ноды через gRPC Heartbeat.
 // Также применяет политики оркестрации: авто-рестарт crashed-инстансов.
@@ -21,7 +28,7 @@ type HeartbeatService struct {
 	nodeClient        domain.NodeClient
 	buildRepo         domain.BuildStorage
 	policyService     *GamePolicyService
-	instanceService   *InstanceService
+	instanceSvc       instanceOrchestrator
 	checkInterval     time.Duration
 	inactivityTimeout time.Duration
 	log               *slog.Logger
@@ -36,7 +43,7 @@ func NewHeartbeatService(
 	nodeClient domain.NodeClient,
 	buildRepo domain.BuildStorage,
 	policyService *GamePolicyService,
-	instanceService *InstanceService,
+	instanceSvc instanceOrchestrator,
 	hb config.NodeHeartbeatCfg,
 	log *slog.Logger,
 ) *HeartbeatService {
@@ -48,7 +55,7 @@ func NewHeartbeatService(
 		nodeClient:        nodeClient,
 		buildRepo:         buildRepo,
 		policyService:     policyService,
-		instanceService:   instanceService,
+		instanceSvc:       instanceSvc,
 		checkInterval:     hb.CheckInterval,
 		inactivityTimeout: hb.InactivityTimeout,
 		log:               log,
@@ -101,7 +108,9 @@ func (s *HeartbeatService) checkAllNodes(ctx context.Context) {
 	}
 
 	// Применяем политики оркестрации после проверки всех нод.
-	s.enforcePolicies(ctx)
+	s.EnforcePolicies(ctx)
+	s.enforceScaleToZero(ctx)
+	s.enforceScaleUp(ctx)
 }
 
 func (s *HeartbeatService) checkNode(ctx context.Context, node *domain.Node) error {
@@ -240,6 +249,14 @@ func (s *HeartbeatService) syncInstanceStatuses(ctx context.Context, node *domai
 				slog.String("error", err.Error()),
 			)
 		}
+		if inst.PlayerCount != nil {
+			if err := s.instanceState.SetPlayerCount(ctx, inst.ID, *inst.PlayerCount); err != nil {
+				s.log.Debug("failed to update player count in KV",
+					slog.Int64("instance_id", inst.ID),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
 	}
 
 	return nil
@@ -298,6 +315,7 @@ func (s *HeartbeatService) reconcileInstances(ctx context.Context, node *domain.
 }
 
 // maybeAutoRestart проверяет политику игры и перезапускает инстанс при auto_restart.
+// Сначала пробует быстрый docker restart; если контейнер уже удалён — создаёт новый инстанс.
 func (s *HeartbeatService) maybeAutoRestart(ctx context.Context, inst *domain.Instance) {
 	policy, err := s.policyService.Get(ctx, inst.GameID)
 	if err != nil {
@@ -312,68 +330,94 @@ func (s *HeartbeatService) maybeAutoRestart(ctx context.Context, inst *domain.In
 		return
 	}
 
-	_, err = s.instanceService.RestartInstance(ctx, "", inst.GameID, inst.ID)
-	if err != nil {
-		s.log.Warn("auto-restart failed",
+	// Сначала пробуем быстрый docker restart (работает если контейнер ещё на ноде).
+	_, err = s.instanceSvc.RestartInstance(ctx, "", inst.GameID, inst.ID)
+	if err == nil {
+		s.log.Info("instance auto-restarted",
 			slog.Int64("instance_id", inst.ID),
 			slog.Int64("game_id", inst.GameID),
-			slog.String("error", err.Error()),
 		)
 		return
 	}
 
-	s.log.Info("instance auto-restarted",
+	// Если restart не сработал (контейнер удалён при краше), создаём новый инстанс.
+	s.log.Warn("auto-restart (restart) failed, starting new instance",
 		slog.Int64("instance_id", inst.ID),
 		slog.Int64("game_id", inst.GameID),
+		slog.String("error", err.Error()),
 	)
+	s.autoStartInstance(ctx, inst.GameID, policy)
 }
 
-// enforcePolicies применяет политики оркестрации после heartbeat-цикла.
+// EnforcePolicies применяет политики оркестрации.
 // Для игр в режиме keep_alive проверяет наличие target_instances и запускает недостающие.
-func (s *HeartbeatService) enforcePolicies(ctx context.Context) {
-	// Получаем все инстансы.
-	instances, err := s.instanceRepo.List(ctx)
+// Также обрабатывает scale_to_zero для поддержки target_instances.
+// Может вызываться как из heartbeat-цикла, так и при старте сервера.
+func (s *HeartbeatService) EnforcePolicies(ctx context.Context) {
+	policies, err := s.policyService.ListAll(ctx)
 	if err != nil {
-		s.log.Warn("enforcePolicies: failed to list instances", slog.String("error", err.Error()))
+		s.log.Warn("enforcePolicies: failed to list policies", slog.String("error", err.Error()))
 		return
 	}
 
-	// Группируем инстансы по game_id.
-	gameInstances := make(map[int64][]*domain.Instance)
-	for _, inst := range instances {
-		gameInstances[inst.GameID] = append(gameInstances[inst.GameID], inst)
-	}
-
-	for gameID, insts := range gameInstances {
-		policy, err := s.policyService.Get(ctx, gameID)
-		if err != nil || !policy.IsAuto() {
+	for _, policy := range policies {
+		if !policy.IsAuto() {
 			continue
 		}
 
-		// Считаем активные (running/starting) инстансы.
-		activeCount := 0
-		for _, inst := range insts {
-			if inst.Status == domain.InstanceStatusRunning || inst.Status == domain.InstanceStatusStarting {
-				activeCount++
-			}
+		// Считаем ВСЕ инстансы (включая stopped), чтобы отличить ручную остановку
+		// от отсутствия инстансов. Если total >= target — значит разработчик
+		// остановил вручную, система не поднимает новые.
+		allInstances, err := s.instanceRepo.ListByGame(ctx, policy.GameID, nil)
+		if err != nil {
+			s.log.Warn("enforcePolicies: failed to list instances",
+				slog.Int64("game_id", policy.GameID),
+				slog.String("error", err.Error()),
+			)
+			continue
 		}
 
-		// Для keep_alive: запускаем недостающие инстансы.
-		if policy.Mode == domain.OrchestrationModeKeepAlive && activeCount < int(policy.TargetInstances) {
-			needed := int(policy.TargetInstances) - activeCount
-			s.log.Info("keep_alive policy: starting missing instances",
-				slog.Int64("game_id", gameID),
-				slog.Int("needed", needed),
+		totalCount := len(allInstances)
+		if totalCount >= int(policy.TargetInstances) {
+			// Достаточно инстансов (включая остановленные вручную).
+			continue
+		}
+
+		// Проверяем лимит max_instances_per_game по ВСЕМ инстансам.
+		if int32(totalCount) >= policy.MaxInstancesPerGame {
+			s.log.Info("policy: max_instances_per_game reached",
+				slog.Int64("game_id", policy.GameID),
+				slog.Int("total", totalCount),
+				slog.Int("target", int(policy.TargetInstances)),
 			)
-			for i := 0; i < needed; i++ {
-				go s.autoStartInstance(ctx, gameID, policy)
-			}
+			continue
+		}
+
+		needed := int(policy.TargetInstances) - totalCount
+		s.log.Info("policy: starting missing instances",
+			slog.Int64("game_id", policy.GameID),
+			slog.String("mode", policy.Mode.String()),
+			slog.Int("needed", needed),
+		)
+		for i := 0; i < needed; i++ {
+			go s.autoStartInstance(context.Background(), policy.GameID, policy)
 		}
 	}
 }
 
 // autoStartInstance запускает инстанс для игры на основе политики.
 func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
+	// Проверяем лимит инстансов из политики (все статусы).
+	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
+	if int32(len(all)) >= policy.MaxInstancesPerGame {
+		s.log.Warn("autoStartInstance: max_instances_per_game reached",
+			slog.Int64("game_id", gameID),
+			slog.Int("current", len(all)),
+			slog.Int("max", int(policy.MaxInstancesPerGame)),
+		)
+		return
+	}
+
 	buildVersion := policy.DefaultBuildVersion
 	if buildVersion == "latest" || buildVersion == "" {
 		// Пытаемся найти последний билд.
@@ -388,15 +432,126 @@ func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, 
 		}
 	}
 
-	_, err := s.instanceService.StartInstance(ctx, StartInstanceParams{
-		GameID:       gameID,
-		BuildVersion: buildVersion,
-	})
+	params := StartInstanceParams{
+		GameID:         gameID,
+		OwnerID:        policy.OwnerID,
+		BuildVersion:   buildVersion,
+		NodePreference: policy.NodePreference,
+	}
+	if policy.MaxPlayersPerInstance > 0 {
+		mp := uint32(policy.MaxPlayersPerInstance)
+		params.MaxPlayers = &mp
+	}
+
+	_, err := s.instanceSvc.StartInstance(ctx, params)
 	if err != nil {
 		s.log.Warn("autoStartInstance failed",
 			slog.Int64("game_id", gameID),
 			slog.String("error", err.Error()),
 		)
+	}
+}
+
+// enforceScaleToZero останавливает running-инстансы с 0 игроками
+// при превышении scale_to_zero_timeout (только для режима scale_to_zero).
+func (s *HeartbeatService) enforceScaleToZero(ctx context.Context) {
+	policies, err := s.policyService.ListAll(ctx)
+	if err != nil {
+		s.log.Warn("enforceScaleToZero: failed to list policies", slog.String("error", err.Error()))
+		return
+	}
+
+	for _, policy := range policies {
+		if policy.Mode != domain.OrchestrationModeScaleToZero {
+			continue
+		}
+		if policy.ScaleToZeroTimeout <= 0 {
+			continue
+		}
+
+		status := domain.InstanceStatusRunning
+		instances, err := s.instanceRepo.ListByGame(ctx, policy.GameID, &status)
+		if err != nil {
+			s.log.Warn("enforceScaleToZero: failed to list instances",
+				slog.Int64("game_id", policy.GameID),
+				slog.String("error", err.Error()),
+			)
+			continue
+		}
+
+		threshold := time.Duration(policy.ScaleToZeroTimeout) * time.Minute
+		for _, inst := range instances {
+			pc, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
+			if pc > 0 {
+				// Есть игроки — сбрасываем zero-timer если был.
+				_ = s.instanceState.DeleteZeroPlayersSince(ctx, inst.ID)
+				continue
+			}
+
+			zeroSince, err := s.instanceState.GetZeroPlayersSince(ctx, inst.ID)
+			if err != nil {
+				// Первый раз видим 0 игроков — запоминаем.
+				_ = s.instanceState.SetZeroPlayersSince(ctx, inst.ID, time.Now())
+				continue
+			}
+
+			if time.Since(zeroSince) >= threshold {
+				// Таймаут превышен — останавливаем инстанс.
+				s.log.Info("scale_to_zero: stopping idle instance",
+					slog.Int64("instance_id", inst.ID),
+					slog.Int64("game_id", policy.GameID),
+					slog.Duration("idle", time.Since(zeroSince)),
+				)
+				_, _ = s.instanceSvc.StopInstance(ctx, policy.OwnerID, policy.GameID, inst.ID, 0)
+				_ = s.instanceState.DeleteZeroPlayersSince(ctx, inst.ID)
+			}
+		}
+	}
+}
+
+// enforceScaleUp поднимает дополнительный инстанс, если running-инстанс заполнен
+// (player_count >= max_players_per_instance) и scale_behavior = spawn.
+func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
+	policies, err := s.policyService.ListAll(ctx)
+	if err != nil {
+		s.log.Warn("enforceScaleUp: failed to list policies", slog.String("error", err.Error()))
+		return
+	}
+
+	for _, policy := range policies {
+		if !policy.IsAuto() || policy.ScaleBehavior != domain.ScaleBehaviorSpawn {
+			continue
+		}
+
+		status := domain.InstanceStatusRunning
+		instances, err := s.instanceRepo.ListByGame(ctx, policy.GameID, &status)
+		if err != nil {
+			s.log.Warn("enforceScaleUp: failed to list instances",
+				slog.Int64("game_id", policy.GameID),
+				slog.String("error", err.Error()),
+			)
+			continue
+		}
+
+		// Считаем текущее общее количество инстансов (все статусы) для лимита.
+		all, _ := s.instanceRepo.ListByGame(ctx, policy.GameID, nil)
+		if int32(len(all)) >= policy.MaxInstancesPerGame {
+			continue
+		}
+
+		for _, inst := range instances {
+			pc, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
+			if pc >= uint32(policy.MaxPlayersPerInstance) {
+				s.log.Info("scale_up: instance full, spawning new",
+					slog.Int64("instance_id", inst.ID),
+					slog.Int64("game_id", policy.GameID),
+					slog.Uint64("players", uint64(pc)),
+					slog.Int("max", int(policy.MaxPlayersPerInstance)),
+				)
+				go s.autoStartInstance(context.Background(), policy.GameID, policy)
+				break // Одно масштабирование за цикл.
+			}
+		}
 	}
 }
 
@@ -419,8 +574,21 @@ func (s *HeartbeatService) markNodeOffline(ctx context.Context, node *domain.Nod
 	for _, inst := range instances {
 		inst.Status = domain.InstanceStatusCrashed
 		inst.UpdatedAt = now
-		_ = s.instanceRepo.Update(ctx, inst)
+		if err := s.instanceRepo.Update(ctx, inst); err != nil {
+			s.log.Warn("failed to update instance status during markNodeOffline",
+				slog.Int64("instance_id", inst.ID),
+				slog.String("error", err.Error()),
+			)
+			continue
+		}
 		_ = s.instanceState.SetStatus(ctx, inst.ID, domain.InstanceStatusCrashed)
+		s.log.Info("instance marked as crashed (node offline)",
+			slog.Int64("instance_id", inst.ID),
+			slog.Int64("node_id", node.ID),
+		)
+
+		// Проверяем политику и перезапускаем если нужно.
+		go s.maybeAutoRestart(context.Background(), inst)
 	}
 
 	return nil

@@ -16,11 +16,12 @@ import (
 
 // Префиксы ключей в хранилище.
 const (
-	keyInstanceStatus = "inst:st:"
-	keyInstanceCount  = "inst:pc:"
-	keyInstanceUsage  = "inst:us:"
-	keyNodeUsage      = "node:us:"
-	keyNodeInstCount  = "node:ic:"
+	keyInstanceStatus    = "inst:st:"
+	keyInstanceCount     = "inst:pc:"
+	keyInstanceUsage     = "inst:us:"
+	keyInstanceZeroSince = "inst:zs:"
+	keyNodeUsage         = "node:us:"
+	keyNodeInstCount     = "node:ic:"
 )
 
 // NodeStateStore реализует domain.NodeStateStore поверх Valkey.

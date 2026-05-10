@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
@@ -132,6 +133,9 @@ func (m *instMockInstanceState) Delete(ctx context.Context, instanceID int64) er
 	}
 	return nil
 }
+func (m *instMockInstanceState) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error { return nil }
+func (m *instMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) { return time.Time{}, domain.ErrNotFound }
+func (m *instMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error { return nil }
 
 type instMockBuildStorage struct {
 	createFn                    func(ctx context.Context, build *domain.ServerBuild) error
@@ -314,6 +318,12 @@ func (m *instMockNodeClient) StopInstance(ctx context.Context, address, apiKey s
 	if m.stopInstanceFn != nil {
 		return m.stopInstanceFn(ctx, address, apiKey, instanceID, timeoutSec)
 	}
+	return nil
+}
+func (m *instMockNodeClient) RestartInstance(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
+	return nil
+}
+func (m *instMockNodeClient) StartStoppedInstance(ctx context.Context, address, apiKey string, instanceID int64) error {
 	return nil
 }
 func (m *instMockNodeClient) StreamLogs(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {

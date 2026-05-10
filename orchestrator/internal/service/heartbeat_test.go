@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -39,6 +40,12 @@ func (m *hbMockNodeClient) StartInstance(ctx context.Context, address, apiKey st
 }
 func (m *hbMockNodeClient) StopInstance(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
 	return m.stopInstanceFn(ctx, address, apiKey, instanceID, timeoutSec)
+}
+func (m *hbMockNodeClient) RestartInstance(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
+	return nil
+}
+func (m *hbMockNodeClient) StartStoppedInstance(ctx context.Context, address, apiKey string, instanceID int64) error {
+	return nil
 }
 func (m *hbMockNodeClient) StreamLogs(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error) {
 	return m.streamLogsFn(ctx, address, apiKey, req)
@@ -229,14 +236,72 @@ func (m *hbMockInstanceRepo) GetNextID(ctx context.Context) (int64, error) {
 	return 1, nil
 }
 
+type hbMockBuildStorage struct {
+	listByGameFn func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error)
+}
+
+func (m *hbMockBuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error { return nil }
+func (m *hbMockBuildStorage) GetByID(ctx context.Context, id int64) (*domain.ServerBuild, error) {
+	return nil, nil
+}
+func (m *hbMockBuildStorage) GetByVersion(ctx context.Context, gameID int64, version string) (*domain.ServerBuild, error) {
+	return nil, nil
+}
+func (m *hbMockBuildStorage) ListByGame(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+	if m.listByGameFn != nil {
+		return m.listByGameFn(ctx, gameID, limit)
+	}
+	return nil, nil
+}
+func (m *hbMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) { return 0, nil }
+func (m *hbMockBuildStorage) Delete(ctx context.Context, id int64) error { return nil }
+func (m *hbMockBuildStorage) CountActiveInstancesByBuild(ctx context.Context, buildID int64) (int, error) {
+	return 0, nil
+}
+
+type hbMockGamePolicyRepo struct {
+	getFn     func(ctx context.Context, gameID int64) (*domain.GamePolicy, error)
+	setFn     func(ctx context.Context, policy *domain.GamePolicy) error
+	deleteFn  func(ctx context.Context, gameID int64) error
+	listAllFn func(ctx context.Context) ([]*domain.GamePolicy, error)
+}
+
+func (m *hbMockGamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
+	if m.getFn != nil {
+		return m.getFn(ctx, gameID)
+	}
+	return nil, domain.ErrNotFound
+}
+func (m *hbMockGamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) error {
+	if m.setFn != nil {
+		return m.setFn(ctx, policy)
+	}
+	return nil
+}
+func (m *hbMockGamePolicyRepo) Delete(ctx context.Context, gameID int64) error {
+	if m.deleteFn != nil {
+		return m.deleteFn(ctx, gameID)
+	}
+	return nil
+}
+func (m *hbMockGamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, error) {
+	if m.listAllFn != nil {
+		return m.listAllFn(ctx)
+	}
+	return nil, nil
+}
+
 type hbMockInstanceState struct {
-	setStatusFn      func(ctx context.Context, instanceID int64, status domain.InstanceStatus) error
-	getStatusFn      func(ctx context.Context, instanceID int64) (domain.InstanceStatus, error)
-	setPlayerCountFn func(ctx context.Context, instanceID int64, count uint32) error
-	getPlayerCountFn func(ctx context.Context, instanceID int64) (uint32, error)
-	setUsageFn       func(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error
-	getUsageFn       func(ctx context.Context, instanceID int64) (*domain.ResourceUsage, error)
-	deleteFn         func(ctx context.Context, instanceID int64) error
+	setStatusFn          func(ctx context.Context, instanceID int64, status domain.InstanceStatus) error
+	getStatusFn          func(ctx context.Context, instanceID int64) (domain.InstanceStatus, error)
+	setPlayerCountFn     func(ctx context.Context, instanceID int64, count uint32) error
+	getPlayerCountFn     func(ctx context.Context, instanceID int64) (uint32, error)
+	setUsageFn           func(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error
+	getUsageFn           func(ctx context.Context, instanceID int64) (*domain.ResourceUsage, error)
+	deleteFn             func(ctx context.Context, instanceID int64) error
+	setZeroSinceFn       func(ctx context.Context, instanceID int64, t time.Time) error
+	getZeroSinceFn       func(ctx context.Context, instanceID int64) (time.Time, error)
+	deleteZeroSinceFn    func(ctx context.Context, instanceID int64) error
 }
 
 func (m *hbMockInstanceState) SetStatus(ctx context.Context, instanceID int64, status domain.InstanceStatus) error {
@@ -281,6 +346,87 @@ func (m *hbMockInstanceState) Delete(ctx context.Context, instanceID int64) erro
 	}
 	return nil
 }
+func (m *hbMockInstanceState) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error {
+	if m.setZeroSinceFn != nil {
+		return m.setZeroSinceFn(ctx, instanceID, t)
+	}
+	return nil
+}
+func (m *hbMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) {
+	if m.getZeroSinceFn != nil {
+		return m.getZeroSinceFn(ctx, instanceID)
+	}
+	return time.Time{}, domain.ErrNotFound
+}
+func (m *hbMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error {
+	if m.deleteZeroSinceFn != nil {
+		return m.deleteZeroSinceFn(ctx, instanceID)
+	}
+	return nil
+}
+
+// hbMockInstanceOrchestrator мок для instanceOrchestrator.
+type hbMockInstanceOrchestrator struct {
+	startInstanceFn  func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
+	restartInstanceFn func(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error)
+	stopInstanceFn   func(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error)
+}
+
+func (m *hbMockInstanceOrchestrator) StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+	if m.startInstanceFn != nil {
+		return m.startInstanceFn(ctx, params)
+	}
+	return nil, nil
+}
+func (m *hbMockInstanceOrchestrator) RestartInstance(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error) {
+	if m.restartInstanceFn != nil {
+		return m.restartInstanceFn(ctx, ownerID, gameID, instanceID)
+	}
+	return nil, nil
+}
+func (m *hbMockInstanceOrchestrator) StopInstance(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error) {
+	if m.stopInstanceFn != nil {
+		return m.stopInstanceFn(ctx, ownerID, gameID, instanceID, timeoutSec)
+	}
+	return nil, nil
+}
+
+// newTestHeartbeatService создаёт HeartbeatService с дефолтными моками.
+func newTestHeartbeatService(
+	nodeRepo domain.NodeRepo,
+	nodeState domain.NodeStateStore,
+	instanceRepo domain.InstanceRepo,
+	instanceState domain.InstanceStateStore,
+	nodeClient domain.NodeClient,
+	buildRepo domain.BuildStorage,
+	policyRepo domain.GamePolicyRepo,
+	instanceSvc instanceOrchestrator,
+	hbCfg config.NodeHeartbeatCfg,
+	log *slog.Logger,
+) *HeartbeatService {
+	if buildRepo == nil {
+		buildRepo = &hbMockBuildStorage{}
+	}
+	if policyRepo == nil {
+		policyRepo = &hbMockGamePolicyRepo{}
+	}
+	policyService := NewGamePolicyService(policyRepo)
+	if instanceSvc == nil {
+		instanceSvc = &hbMockInstanceOrchestrator{}
+	}
+	return NewHeartbeatService(
+		nodeRepo,
+		nodeState,
+		instanceRepo,
+		instanceState,
+		nodeClient,
+		buildRepo,
+		policyService,
+		instanceSvc,
+		hbCfg,
+		log,
+	)
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -318,7 +464,7 @@ func TestHeartbeatService_CheckNode_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -352,7 +498,7 @@ func TestHeartbeatService_CheckNode_HeartbeatError_WithinTimeout(t *testing.T) {
 		},
 	}
 
-	svc := NewHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -409,14 +555,14 @@ func TestHeartbeatService_CheckNode_HeartbeatError_TimeoutExceeded(t *testing.T)
 		},
 	}
 
-nodeState := &hbMockNodeStateStore{}
- 	nodeClient := &hbMockNodeClient{
- 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
- 			return nil, context.DeadlineExceeded
- 		},
- 	}
+	nodeState := &hbMockNodeStateStore{}
+	nodeClient := &hbMockNodeClient{
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+			return nil, context.DeadlineExceeded
+		},
+	}
 
-	svc := NewHeartbeatService(nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -459,13 +605,13 @@ func TestHeartbeatService_CheckNode_RecoverFromOffline(t *testing.T) {
 		updateHeartbeatFn: func(ctx context.Context, nodeID int64, u *domain.ResourceUsage) error { return nil },
 	}
 
-nodeClient := &hbMockNodeClient{
- 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
- 			return &domain.HeartbeatResult{Usage: &domain.ResourceUsage{CPUUsagePercent: 10.0}}, nil
- 		},
- 	}
+	nodeClient := &hbMockNodeClient{
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+			return &domain.HeartbeatResult{Usage: &domain.ResourceUsage{CPUUsagePercent: 10.0}}, nil
+		},
+	}
 
- 	svc := NewHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, nodeState, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -493,15 +639,15 @@ func TestHeartbeatService_CheckAllNodes_SkipMaintenance(t *testing.T) {
 		},
 	}
 
-heartbeatCalled := false
- 	nodeClient := &hbMockNodeClient{
- 		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
- 			heartbeatCalled = true
- 			return nil, nil
- 		},
- 	}
+	heartbeatCalled := false
+	nodeClient := &hbMockNodeClient{
+		heartbeatFn: func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
+			heartbeatCalled = true
+			return nil, nil
+		},
+	}
 
-	svc := NewHeartbeatService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -524,7 +670,7 @@ func TestHeartbeatService_CheckAllNodes_ListError(t *testing.T) {
 		},
 	}
 
-	svc := NewHeartbeatService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{}, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{}, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -575,7 +721,7 @@ func TestHeartbeatService_ReconcileInstances(t *testing.T) {
 		},
 	}
 
-	svc := NewHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, nodeClient, config.NodeHeartbeatCfg{
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, nodeClient, nil, &hbMockGamePolicyRepo{}, nil, config.NodeHeartbeatCfg{
 		CheckInterval:     15 * time.Second,
 		InactivityTimeout: 60 * time.Second,
 	}, log)
@@ -594,5 +740,481 @@ func TestHeartbeatService_ReconcileInstances(t *testing.T) {
 	}
 	if updatedInstances[12] != 0 {
 		t.Errorf("instance 12 should not be updated (already stopped), got status %d", updatedInstances[12])
+	}
+}
+
+func TestHeartbeatService_EnforcePolicies_KeepAlive_NoInstances(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:                gameID,
+					OwnerID:               "test-user",
+					Mode:                  domain.OrchestrationModeKeepAlive,
+					TargetInstances:       3,
+					AutoRestart:           true,
+					DefaultBuildVersion:   "latest",
+					MaxPlayersPerInstance: 100,
+					MaxInstancesPerGame:   5,
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{}, nil // нет инстансов
+		},
+	}
+
+	buildRepo := &hbMockBuildStorage{
+		listByGameFn: func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+			return []*domain.ServerBuild{{Version: "v1.0.0"}}, nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, &hbMockInstanceState{}, &hbMockNodeClient{}, buildRepo, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.EnforcePolicies(ctx)
+
+	// Даём горутинам время запуститься (в реальном коде они fire-and-forget).
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 3 {
+		t.Errorf("expected 3 instances to be started, got %d", startedCount)
+	}
+}
+
+func TestHeartbeatService_EnforcePolicies_KeepAlive_AfterManualStop(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:                gameID,
+					OwnerID:               "test-user",
+					Mode:                  domain.OrchestrationModeKeepAlive,
+					TargetInstances:       1,
+					AutoRestart:           true,
+					DefaultBuildVersion:   "latest",
+					MaxPlayersPerInstance: 100,
+					MaxInstancesPerGame:   5,
+				},
+			}, nil
+		},
+	}
+
+	// Один остановленный инстанс вручную — total=1 >= target=1, не поднимаем.
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 1, GameID: gameID, Status: domain.InstanceStatusStopped},
+			}, nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, &hbMockInstanceState{}, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.EnforcePolicies(ctx)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 0 {
+		t.Errorf("expected 0 starts after manual stop (total >= target), got %d", startedCount)
+	}
+}
+
+func TestHeartbeatService_EnforcePolicies_Disabled_DoesNothing(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:          1,
+					OwnerID:         "test-user",
+					Mode:            domain.OrchestrationModeDisabled,
+					TargetInstances: 3,
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{}, nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, &hbMockInstanceState{}, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.EnforcePolicies(ctx)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 0 {
+		t.Errorf("expected 0 starts for disabled policy, got %d", startedCount)
+	}
+}
+
+func TestHeartbeatService_EnforcePolicies_MaxInstancesReached(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:              gameID,
+					Mode:                domain.OrchestrationModeKeepAlive,
+					TargetInstances:     5,
+					AutoRestart:         true,
+					DefaultBuildVersion: "latest",
+					MaxInstancesPerGame: 2, // лимит ниже target
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 1, GameID: gameID, Status: domain.InstanceStatusRunning},
+				{ID: 2, GameID: gameID, Status: domain.InstanceStatusRunning},
+			}, nil // уже на лимите
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, &hbMockInstanceState{}, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.EnforcePolicies(ctx)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 0 {
+		t.Errorf("expected 0 starts when max_instances reached, got %d", startedCount)
+	}
+}
+
+func TestHeartbeatService_MaybeAutoRestart_RestartFails_StartsNew(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	instanceID := int64(99)
+	startedNew := false
+
+	policyRepo := &hbMockGamePolicyRepo{
+		getFn: func(ctx context.Context, id int64) (*domain.GamePolicy, error) {
+			return &domain.GamePolicy{
+				GameID:              gameID,
+				Mode:                domain.OrchestrationModeKeepAlive,
+				AutoRestart:         true,
+				DefaultBuildVersion: "latest",
+				MaxInstancesPerGame: 5,
+			}, nil
+		},
+	}
+
+	buildRepo := &hbMockBuildStorage{
+		listByGameFn: func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+			return []*domain.ServerBuild{{Version: "v1.0.0"}}, nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		restartInstanceFn: func(ctx context.Context, ownerID string, gameID, instID int64) (*domain.Instance, error) {
+			return nil, fmt.Errorf("container not found")
+		},
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedNew = true
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{}, buildRepo, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	inst := &domain.Instance{ID: instanceID, GameID: gameID, Status: domain.InstanceStatusCrashed}
+	svc.maybeAutoRestart(context.Background(), inst)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if !startedNew {
+		t.Error("expected new instance to be started when RestartInstance fails")
+	}
+}
+
+func TestHeartbeatService_EnforceScaleToZero_StopsIdleInstance(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	instanceID := int64(10)
+	stopped := false
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:              gameID,
+					Mode:                domain.OrchestrationModeScaleToZero,
+					TargetInstances:     0,
+					ScaleToZeroTimeout:  1, // 1 минута
+					DefaultBuildVersion: "latest",
+					MaxInstancesPerGame: 5,
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: instanceID, GameID: gameID, Status: domain.InstanceStatusRunning},
+			}, nil
+		},
+	}
+
+	instanceState := &hbMockInstanceState{
+		getPlayerCountFn: func(ctx context.Context, id int64) (uint32, error) {
+			return 0, nil
+		},
+		getZeroSinceFn: func(ctx context.Context, id int64) (time.Time, error) {
+			return time.Now().Add(-2 * time.Minute), nil // простаивает 2 минуты
+		},
+		deleteZeroSinceFn: func(ctx context.Context, id int64) error {
+			return nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		stopInstanceFn: func(ctx context.Context, ownerID string, gameID, instID int64, timeoutSec uint32) (*domain.Instance, error) {
+			stopped = true
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.enforceScaleToZero(ctx)
+
+	if !stopped {
+		t.Error("expected idle instance to be stopped")
+	}
+}
+
+func TestHeartbeatService_EnforceScaleToZero_KeepsBusyInstance(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	stopped := false
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:              gameID,
+					Mode:                domain.OrchestrationModeScaleToZero,
+					ScaleToZeroTimeout:  1,
+					MaxInstancesPerGame: 5,
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 1, GameID: gameID, Status: domain.InstanceStatusRunning},
+			}, nil
+		},
+	}
+
+	instanceState := &hbMockInstanceState{
+		getPlayerCountFn: func(ctx context.Context, id int64) (uint32, error) {
+			return 5, nil // есть игроки
+		},
+		deleteZeroSinceFn: func(ctx context.Context, id int64) error {
+			return nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		stopInstanceFn: func(ctx context.Context, ownerID string, gameID, instID int64, timeoutSec uint32) (*domain.Instance, error) {
+			stopped = true
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.enforceScaleToZero(ctx)
+
+	if stopped {
+		t.Error("expected busy instance NOT to be stopped")
+	}
+}
+
+func TestHeartbeatService_EnforceScaleUp_SpawnsWhenFull(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:                gameID,
+					OwnerID:               "test-user",
+					Mode:                  domain.OrchestrationModeKeepAlive,
+					TargetInstances:       1,
+					MaxPlayersPerInstance: 10,
+					MaxInstancesPerGame:   5,
+					ScaleBehavior:         domain.ScaleBehaviorSpawn,
+					DefaultBuildVersion:   "latest",
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			if status != nil && *status == domain.InstanceStatusRunning {
+				return []*domain.Instance{
+					{ID: 1, GameID: gameID, Status: domain.InstanceStatusRunning},
+				}, nil
+			}
+			return []*domain.Instance{{ID: 1, GameID: gameID}}, nil // total=1 < max=5
+		},
+	}
+
+	instanceState := &hbMockInstanceState{
+		getPlayerCountFn: func(ctx context.Context, id int64) (uint32, error) {
+			return 10, nil // полностью заполнен
+		},
+	}
+
+	buildRepo := &hbMockBuildStorage{
+		listByGameFn: func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+			return []*domain.ServerBuild{{Version: "v1.0.0"}}, nil
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, &hbMockNodeClient{}, buildRepo, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.enforceScaleUp(ctx)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 1 {
+		t.Errorf("expected 1 new instance when full, got %d", startedCount)
+	}
+}
+
+func TestHeartbeatService_EnforceScaleUp_DoesNothingWhenQueue(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	gameID := int64(42)
+	startedCount := 0
+
+	policyRepo := &hbMockGamePolicyRepo{
+		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
+			return []*domain.GamePolicy{
+				{
+					GameID:                gameID,
+					OwnerID:               "test-user",
+					Mode:                  domain.OrchestrationModeKeepAlive,
+					MaxPlayersPerInstance: 10,
+					ScaleBehavior:         domain.ScaleBehaviorQueue,
+					DefaultBuildVersion:   "latest",
+				},
+			}, nil
+		},
+	}
+
+	instanceRepo := &hbMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 1, GameID: gameID, Status: domain.InstanceStatusRunning},
+			}, nil
+		},
+	}
+
+	instanceState := &hbMockInstanceState{
+		getPlayerCountFn: func(ctx context.Context, id int64) (uint32, error) {
+			return 10, nil // полностью заполнен
+		},
+	}
+
+	instanceSvc := &hbMockInstanceOrchestrator{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			startedCount++
+			return nil, nil
+		},
+	}
+
+	svc := newTestHeartbeatService(&hbMockNodeRepo{}, &hbMockNodeStateStore{}, instanceRepo, instanceState, &hbMockNodeClient{}, nil, policyRepo, instanceSvc, config.NodeHeartbeatCfg{}, log)
+
+	ctx := context.Background()
+	svc.enforceScaleUp(ctx)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if startedCount != 0 {
+		t.Errorf("expected 0 starts for queue behavior, got %d", startedCount)
 	}
 }

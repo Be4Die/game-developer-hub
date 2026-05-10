@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // InstanceStateStore хранит горячее состояние инстансов в KV (Valkey/Redis).
 // Эфемерные данные: текущий статус, player_count, resource_usage.
@@ -26,4 +29,14 @@ type InstanceStateStore interface {
 
 	// Delete удаляет все ключи состояния инстанса.
 	Delete(ctx context.Context, instanceID int64) error
+
+	// SetZeroPlayersSince записывает timestamp начала нулевого онлайна.
+	SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error
+
+	// GetZeroPlayersSince возвращает timestamp начала нулевого онлайна.
+	// ErrNotFound если ключ отсутствует.
+	GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error)
+
+	// DeleteZeroPlayersSince удаляет timestamp нулевого онлайна.
+	DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error
 }
