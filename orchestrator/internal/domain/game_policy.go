@@ -58,6 +58,9 @@ type GamePolicy struct {
 	MaxInstancesPerGame   int32
 	ScaleBehavior         ScaleBehavior
 	NodePreference        string // "auto" или "node-<id>"
+	QueueReservationSec   int32  // секунды на подключение после резервации
+	QueueMaxWaitSec       int32  // макс. время ожидания в очереди
+	QueueHeartbeatTimeout int32  // выкидывание при отсутствии heartbeat (сек)
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 }

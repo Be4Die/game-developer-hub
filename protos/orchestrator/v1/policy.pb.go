@@ -128,22 +128,25 @@ func (ScaleBehavior) EnumDescriptor() ([]byte, []int) {
 
 // Политика оркестрации серверов для конкретной игры.
 type GamePolicy struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	GameId                int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	OwnerId               string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"` // ID владельца проекта (из JWT)
-	Mode                  OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
-	TargetInstances       int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
-	AutoRestart           bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
-	ScaleToZeroTimeout    int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"` // минут
-	DefaultBuildVersion   string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
-	MaxPlayersPerInstance int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
-	MaxInstancesPerGame   int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
-	ScaleBehavior         ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
-	NodePreference        string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"` // "auto" или "node-<id>"
-	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt             *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	GameId                  int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	OwnerId                 string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"` // ID владельца проекта (из JWT)
+	Mode                    OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
+	TargetInstances         int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
+	AutoRestart             bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
+	ScaleToZeroTimeout      int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"` // минут
+	DefaultBuildVersion     string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
+	MaxPlayersPerInstance   int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
+	MaxInstancesPerGame     int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
+	ScaleBehavior           ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
+	NodePreference          string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`                               // "auto" или "node-<id>"
+	QueueReservationSeconds int32                  `protobuf:"varint,14,opt,name=queue_reservation_seconds,json=queueReservationSeconds,proto3" json:"queue_reservation_seconds,omitempty"` // секунды на подключение после резервации
+	QueueMaxWaitSeconds     int32                  `protobuf:"varint,15,opt,name=queue_max_wait_seconds,json=queueMaxWaitSeconds,proto3" json:"queue_max_wait_seconds,omitempty"`           // макс. время ожидания в очереди
+	QueueHeartbeatTimeout   int32                  `protobuf:"varint,16,opt,name=queue_heartbeat_timeout,json=queueHeartbeatTimeout,proto3" json:"queue_heartbeat_timeout,omitempty"`       // выкидывание при отсутствии heartbeat (сек)
+	CreatedAt               *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt               *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GamePolicy) Reset() {
@@ -253,6 +256,27 @@ func (x *GamePolicy) GetNodePreference() string {
 	return ""
 }
 
+func (x *GamePolicy) GetQueueReservationSeconds() int32 {
+	if x != nil {
+		return x.QueueReservationSeconds
+	}
+	return 0
+}
+
+func (x *GamePolicy) GetQueueMaxWaitSeconds() int32 {
+	if x != nil {
+		return x.QueueMaxWaitSeconds
+	}
+	return 0
+}
+
+func (x *GamePolicy) GetQueueHeartbeatTimeout() int32 {
+	if x != nil {
+		return x.QueueHeartbeatTimeout
+	}
+	return 0
+}
+
 func (x *GamePolicy) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -356,20 +380,23 @@ func (x *GamePolicyServiceGetResponse) GetPolicy() *GamePolicy {
 }
 
 type GamePolicyServiceSetRequest struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	GameId                int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
-	OwnerId               string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	Mode                  OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
-	TargetInstances       int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
-	AutoRestart           bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
-	ScaleToZeroTimeout    int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"`
-	DefaultBuildVersion   string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
-	MaxPlayersPerInstance int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
-	MaxInstancesPerGame   int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
-	ScaleBehavior         ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
-	NodePreference        string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	GameId                  int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	OwnerId                 string                 `protobuf:"bytes,2,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	Mode                    OrchestrationMode      `protobuf:"varint,3,opt,name=mode,proto3,enum=orchestrator.v1.OrchestrationMode" json:"mode,omitempty"`
+	TargetInstances         int32                  `protobuf:"varint,4,opt,name=target_instances,json=targetInstances,proto3" json:"target_instances,omitempty"`
+	AutoRestart             bool                   `protobuf:"varint,5,opt,name=auto_restart,json=autoRestart,proto3" json:"auto_restart,omitempty"`
+	ScaleToZeroTimeout      int32                  `protobuf:"varint,6,opt,name=scale_to_zero_timeout,json=scaleToZeroTimeout,proto3" json:"scale_to_zero_timeout,omitempty"`
+	DefaultBuildVersion     string                 `protobuf:"bytes,7,opt,name=default_build_version,json=defaultBuildVersion,proto3" json:"default_build_version,omitempty"`
+	MaxPlayersPerInstance   int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
+	MaxInstancesPerGame     int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
+	ScaleBehavior           ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
+	NodePreference          string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`
+	QueueReservationSeconds int32                  `protobuf:"varint,12,opt,name=queue_reservation_seconds,json=queueReservationSeconds,proto3" json:"queue_reservation_seconds,omitempty"`
+	QueueMaxWaitSeconds     int32                  `protobuf:"varint,13,opt,name=queue_max_wait_seconds,json=queueMaxWaitSeconds,proto3" json:"queue_max_wait_seconds,omitempty"`
+	QueueHeartbeatTimeout   int32                  `protobuf:"varint,14,opt,name=queue_heartbeat_timeout,json=queueHeartbeatTimeout,proto3" json:"queue_heartbeat_timeout,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GamePolicyServiceSetRequest) Reset() {
@@ -479,6 +506,27 @@ func (x *GamePolicyServiceSetRequest) GetNodePreference() string {
 	return ""
 }
 
+func (x *GamePolicyServiceSetRequest) GetQueueReservationSeconds() int32 {
+	if x != nil {
+		return x.QueueReservationSeconds
+	}
+	return 0
+}
+
+func (x *GamePolicyServiceSetRequest) GetQueueMaxWaitSeconds() int32 {
+	if x != nil {
+		return x.QueueMaxWaitSeconds
+	}
+	return 0
+}
+
+func (x *GamePolicyServiceSetRequest) GetQueueHeartbeatTimeout() int32 {
+	if x != nil {
+		return x.QueueHeartbeatTimeout
+	}
+	return 0
+}
+
 type GamePolicyServiceSetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Policy        *GamePolicy            `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
@@ -527,7 +575,7 @@ var File_orchestrator_v1_policy_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\x81\x05\n" +
+	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\xaa\x06\n" +
 	"\n" +
 	"GamePolicy\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
@@ -541,7 +589,10 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x16max_instances_per_game\x18\t \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
 	"\x0escale_behavior\x18\n" +
 	" \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
-	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x129\n" +
+	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x12:\n" +
+	"\x19queue_reservation_seconds\x18\x0e \x01(\x05R\x17queueReservationSeconds\x123\n" +
+	"\x16queue_max_wait_seconds\x18\x0f \x01(\x05R\x13queueMaxWaitSeconds\x126\n" +
+	"\x17queue_heartbeat_timeout\x18\x10 \x01(\x05R\x15queueHeartbeatTimeout\x129\n" +
 	"\n" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
@@ -549,7 +600,7 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x1bGamePolicyServiceGetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"S\n" +
 	"\x1cGamePolicyServiceGetResponse\x123\n" +
-	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\x9c\x04\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\xc5\x05\n" +
 	"\x1bGamePolicyServiceSetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x126\n" +
@@ -562,7 +613,10 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x16max_instances_per_game\x18\t \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
 	"\x0escale_behavior\x18\n" +
 	" \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
-	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\"S\n" +
+	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x12:\n" +
+	"\x19queue_reservation_seconds\x18\f \x01(\x05R\x17queueReservationSeconds\x123\n" +
+	"\x16queue_max_wait_seconds\x18\r \x01(\x05R\x13queueMaxWaitSeconds\x126\n" +
+	"\x17queue_heartbeat_timeout\x18\x0e \x01(\x05R\x15queueHeartbeatTimeout\"S\n" +
 	"\x1cGamePolicyServiceSetResponse\x123\n" +
 	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy*\xa1\x01\n" +
 	"\x11OrchestrationMode\x12\"\n" +

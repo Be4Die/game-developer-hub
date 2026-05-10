@@ -71,9 +71,11 @@ type e2eTestEnv struct {
 	instanceRepo    *postgres.InstanceRepo
 	buildStorage    *postgres.BuildStorage
 	policyRepo      *postgres.GamePolicyRepo
+	queueEventRepo  *postgres.QueueEventRepo
 	buildFS         domain.BuildStorageFS
 	nodeState       *valkey.NodeStateStore
 	instanceState   *valkey.InstanceStateStore
+	queueStore      *valkey.QueueStore
 	grpcServer      *grpc.Server
 	grpcConn        *grpc.ClientConn
 	buildClient     pb.BuildServiceClient
@@ -81,6 +83,7 @@ type e2eTestEnv struct {
 	discoveryClient pb.DiscoveryServiceClient
 	nodeClient      pb.NodeServiceClient
 	policyClient    pb.GamePolicyServiceClient
+	queueClient     pb.QueueServiceClient
 	healthClient    pb.HealthServiceClient
 	log             *slog.Logger
 }
@@ -183,9 +186,11 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	instanceRepo := postgres.NewInstanceRepo(pool)
 	buildStorage := postgres.NewBuildStorage(pool)
 	policyRepo := postgres.NewGamePolicyRepo(pool)
+	queueEventRepo := postgres.NewQueueEventRepo(pool)
 	keyTTL := 45 * time.Second
 	nodeState := valkey.NewNodeStateStore(redisClient, keyTTL)
 	instanceState := valkey.NewInstanceStateStore(redisClient, keyTTL)
+	queueStore := valkey.NewQueueStore(redisClient)
 	buildFS := filesystem.NewBuildStorageFS(t.TempDir())
 
 	// ─── gRPC-клиент к реальной ноде ────────────────────────────
@@ -215,11 +220,14 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		buildStorage, buildFS, orchNodeClient, nodeRepo, nodeState, limits,
 	)
 	policyService := service.NewGamePolicyService(policyRepo)
+	queueService := service.NewQueueService(
+		queueStore, queueEventRepo, policyService, instanceRepo, instanceState, nodeRepo, log,
+	)
 	instanceService := service.NewInstanceService(
 		instanceRepo, instanceState, buildStorage, nodeRepo, nodeState, orchNodeClient, limits,
 	)
 	discoveryService := service.NewDiscoveryService(
-		instanceRepo, instanceState, nodeRepo, buildStorage, policyService, instanceService,
+		instanceRepo, instanceState, nodeRepo, buildStorage, policyService, instanceService, queueService,
 	)
 	nodeService := service.NewNodeService(
 		log, nodeRepo, nodeState, instanceRepo, instanceState, orchNodeClient,
@@ -231,6 +239,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
 	nodeHandler := grpctransport.NewNodeHandler(nodeService)
 	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
+	queueHandler := grpctransport.NewQueueHandler(queueService)
 	healthHandler := grpctransport.NewHealthHandler("e2e-1.0.0")
 
 	authInterceptor, err := grpctransport.NewJWTAuth(e2eJWTSecret, e2eIssuer)
@@ -248,6 +257,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	pb.RegisterDiscoveryServiceServer(grpcServer, discoveryHandler)
 	pb.RegisterNodeServiceServer(grpcServer, nodeHandler)
 	pb.RegisterGamePolicyServiceServer(grpcServer, policyHandler)
+	pb.RegisterQueueServiceServer(grpcServer, queueHandler)
 	pb.RegisterHealthServiceServer(grpcServer, healthHandler)
 
 	// Запуск на случайном порту.
@@ -304,9 +314,11 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		instanceRepo:    instanceRepo,
 		buildStorage:    buildStorage,
 		policyRepo:      policyRepo,
+		queueEventRepo:  queueEventRepo,
 		buildFS:         buildFS,
 		nodeState:       nodeState,
 		instanceState:   instanceState,
+		queueStore:      queueStore,
 		grpcServer:      grpcServer,
 		grpcConn:        conn,
 		buildClient:     pb.NewBuildServiceClient(conn),
@@ -314,6 +326,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		discoveryClient: pb.NewDiscoveryServiceClient(conn),
 		nodeClient:      nsClient,
 		policyClient:    pb.NewGamePolicyServiceClient(conn),
+		queueClient:     pb.NewQueueServiceClient(conn),
 		healthClient:    pb.NewHealthServiceClient(conn),
 		log:             log,
 	}
@@ -387,8 +400,20 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
 			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
 			node_preference          TEXT NOT NULL DEFAULT 'auto',
+			queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
+			queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
+			queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,
 			created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
+		)`,
+		`CREATE TABLE IF NOT EXISTS queue_events (
+			id           BIGSERIAL PRIMARY KEY,
+			game_id      BIGINT NOT NULL,
+			player_id    TEXT NOT NULL,
+			event_type   SMALLINT NOT NULL,
+			instance_id  BIGINT,
+			wait_seconds INT,
+			created_at   TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,
 	}
 
@@ -404,10 +429,15 @@ func (env *e2eTestEnv) cleanupTables(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
 
-	stmt := "TRUNCATE instances, server_builds, nodes RESTART IDENTITY CASCADE"
+	stmt := "TRUNCATE instances, server_builds, nodes, queue_events RESTART IDENTITY CASCADE"
 	if _, err := env.pool.Exec(ctx, stmt); err != nil {
 		t.Fatalf("failed to clean tables: %v", err)
 	}
+
+	if err := env.redisClient.FlushDB(ctx).Err(); err != nil {
+		t.Fatalf("failed to flush valkey: %v", err)
+	}
+}
 
 	if err := env.redisClient.FlushDB(ctx).Err(); err != nil {
 		t.Fatalf("failed to flush valkey: %v", err)

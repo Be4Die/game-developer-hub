@@ -158,7 +158,7 @@ func newTestDiscoveryService(
 	if instanceSvc == nil {
 		instanceSvc = &discMockInstanceStarter{}
 	}
-	return NewDiscoveryService(instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceSvc)
+	return NewDiscoveryService(instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceSvc, nil)
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ func TestDiscoveryService_DiscoverServers_Success(t *testing.T) {
 	}
 
 	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestDiscoveryService_DiscoverServers_EmptyList(t *testing.T) {
 		},
 	}
 	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, nil, nil, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -235,7 +235,7 @@ func TestDiscoveryService_DiscoverServers_ListError(t *testing.T) {
 		},
 	}
 	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, nil, nil, nil)
-	_, err := svc.DiscoverServers(context.Background(), 42)
+	_, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
@@ -266,7 +266,7 @@ func TestDiscoveryService_DiscoverServers_NodeNotFound(t *testing.T) {
 	}
 
 	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -300,7 +300,7 @@ func TestDiscoveryService_DiscoverServerError_GetPlayerCount(t *testing.T) {
 	}
 
 	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, nil, nil, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -389,7 +389,7 @@ func TestDiscoveryService_DiscoverServers_AutoStart(t *testing.T) {
 
 	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, buildRepo, policyRepo, instanceSvc)
 
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -446,12 +446,12 @@ func TestDiscoveryService_DiscoverServers_FullAndQueue(t *testing.T) {
 	}
 
 	svc := newTestDiscoveryService(instanceRepo, instanceState, nodeRepo, buildRepo, policyRepo, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Status != domain.DiscoveryStatusCapacityReached {
-		t.Fatalf("expected status CAPACITY_REACHED, got %v", result.Status)
+	if result.Status != domain.DiscoveryStatusQueue {
+		t.Fatalf("expected status QUEUE, got %v", result.Status)
 	}
 }
 
@@ -473,7 +473,7 @@ func TestDiscoveryService_DiscoverServers_StartingInstances(t *testing.T) {
 	}
 
 	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, nodeRepo, nil, nil, nil)
-	result, err := svc.DiscoverServers(context.Background(), 42)
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

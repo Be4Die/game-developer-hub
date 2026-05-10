@@ -13,6 +13,11 @@ type instanceStarter interface {
 	StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
 }
 
+// queueProcessor описывает методы QueueService, нужные DiscoveryService.
+type queueProcessor interface {
+	Status(ctx context.Context, gameID int64, playerID string) (*QueueStatusResult, error)
+}
+
 // DiscoveryService предоставляет данные для подключения к игровым серверам.
 type DiscoveryService struct {
 	instanceRepo  domain.InstanceRepo
@@ -21,6 +26,7 @@ type DiscoveryService struct {
 	buildRepo     domain.BuildStorage
 	policyService *GamePolicyService
 	instanceSvc   instanceStarter
+	queueSvc      queueProcessor
 }
 
 // NewDiscoveryService создаёт сервис обнаружения серверов.
@@ -31,6 +37,7 @@ func NewDiscoveryService(
 	buildRepo domain.BuildStorage,
 	policyService *GamePolicyService,
 	instanceSvc instanceStarter,
+	queueSvc queueProcessor,
 ) *DiscoveryService {
 	return &DiscoveryService{
 		instanceRepo:  instanceRepo,
@@ -39,6 +46,7 @@ func NewDiscoveryService(
 		buildRepo:     buildRepo,
 		policyService: policyService,
 		instanceSvc:   instanceSvc,
+		queueSvc:      queueSvc,
 	}
 }
 
@@ -50,7 +58,21 @@ func NewDiscoveryService(
 //   - STARTING — нет свободных running, но инстансы стартуют (или запущен асинхронный auto-start).
 //   - CAPACITY_REACHED — все инстансы заполнены, новых запустить нельзя (лимит или queue-режим).
 //   - UNAVAILABLE — авто-оркестрация выключена или не настроена.
-func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) (*domain.DiscoveryResult, error) {
+//   - QUEUE — все серверы заняты, scale_behavior=queue, нужно встать в очередь.
+//   - RESERVED — для этого player_id есть активная резервация слота.
+func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, playerID string) (*domain.DiscoveryResult, error) {
+	// 0. Если передан player_id — проверяем резервацию.
+	if playerID != "" && s.queueSvc != nil {
+		result, err := s.queueSvc.Status(ctx, gameID, playerID)
+		if err == nil && result.Status == domain.QueueStatusReserved && result.ReservedEndpoint != nil {
+			return &domain.DiscoveryResult{
+				Status:  domain.DiscoveryStatusReserved,
+				Servers: []domain.ServerEndpoint{*result.ReservedEndpoint},
+				Message: "Slot reserved, please connect",
+			}, nil
+		}
+	}
+
 	// 1. Получаем running-инстансы.
 	runningStatus := domain.InstanceStatusRunning
 	running, err := s.instanceRepo.ListByGame(ctx, gameID, &runningStatus)
@@ -132,6 +154,14 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) (*
 	// 7. Политика auto. Проверяем, можем ли запустить новый инстанс.
 	canStart, reason := s.canAutoStart(ctx, gameID, policy)
 	if !canStart {
+		// Если scale_behavior = queue — отправляем в очередь вместо capacity_reached
+		if policy.ScaleBehavior == domain.ScaleBehaviorQueue {
+			return &domain.DiscoveryResult{
+				Status:  domain.DiscoveryStatusQueue,
+				Servers: endpoints,
+				Message: "All servers are full. Join the queue.",
+			}, nil
+		}
 		return &domain.DiscoveryResult{
 			Status:  domain.DiscoveryStatusCapacityReached,
 			Servers: endpoints,
@@ -142,9 +172,9 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) (*
 	// 8. Если running есть, но все заполнены — решаем по scale_behavior.
 	if len(running) > 0 && policy.ScaleBehavior == domain.ScaleBehaviorQueue {
 		return &domain.DiscoveryResult{
-			Status:  domain.DiscoveryStatusCapacityReached,
+			Status:  domain.DiscoveryStatusQueue,
 			Servers: endpoints,
-			Message: "All servers are full. Waiting in queue.",
+			Message: "All servers are full. Join the queue.",
 		}, nil
 	}
 

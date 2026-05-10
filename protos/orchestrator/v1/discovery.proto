@@ -15,6 +15,7 @@ service DiscoveryService {
 
 message DiscoveryServiceDiscoverRequest {
   int64 game_id = 1;
+  string player_id = 2;
 }
 
 message DiscoveryServiceDiscoverResponse {

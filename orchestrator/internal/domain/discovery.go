@@ -10,6 +10,8 @@ const (
 	DiscoveryStatusStarting
 	DiscoveryStatusCapacityReached
 	DiscoveryStatusUnavailable
+	DiscoveryStatusQueue
+	DiscoveryStatusReserved
 )
 
 func (s DiscoveryStatus) String() string {
@@ -22,6 +24,10 @@ func (s DiscoveryStatus) String() string {
 		return "capacity_reached"
 	case DiscoveryStatusUnavailable:
 		return "unavailable"
+	case DiscoveryStatusQueue:
+		return "queue"
+	case DiscoveryStatusReserved:
+		return "reserved"
 	default:
 		return "unspecified"
 	}

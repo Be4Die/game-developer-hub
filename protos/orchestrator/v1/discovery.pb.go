@@ -25,6 +25,7 @@ const (
 type DiscoveryServiceDiscoverRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -64,6 +65,13 @@ func (x *DiscoveryServiceDiscoverRequest) GetGameId() int64 {
 		return x.GameId
 	}
 	return 0
+}
+
+func (x *DiscoveryServiceDiscoverRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
 }
 
 type DiscoveryServiceDiscoverResponse struct {
@@ -130,9 +138,10 @@ var File_orchestrator_v1_discovery_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_discovery_proto_rawDesc = "" +
 	"\n" +
-	"\x1forchestrator/v1/discovery.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\":\n" +
+	"\x1forchestrator/v1/discovery.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"W\n" +
 	"\x1fDiscoveryServiceDiscoverRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"\xb1\x01\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"\xb1\x01\n" +
 	" DiscoveryServiceDiscoverResponse\x129\n" +
 	"\aservers\x18\x01 \x03(\v2\x1f.orchestrator.v1.ServerEndpointR\aservers\x128\n" +
 	"\x06status\x18\x02 \x01(\x0e2 .orchestrator.v1.DiscoveryStatusR\x06status\x12\x18\n" +

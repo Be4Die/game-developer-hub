@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package orchestrator.v1;
+
+import "google/api/annotations.proto";
+import "orchestrator/v1/common.proto";
+
+// Статус позиции в очереди.
+enum QueueStatus {
+  QUEUE_STATUS_UNSPECIFIED = 0;
+  QUEUE_STATUS_WAITING = 1;    // ожидает слот
+  QUEUE_STATUS_RESERVED = 2;   // слот зарезервирован
+  QUEUE_STATUS_EXPIRED = 3;    // reservation истёк или heartbeat потерян
+}
+
+// Сервис очереди игроков (client-side FIFO).
+service QueueService {
+  // Встать в очередь.
+  rpc Join(QueueServiceJoinRequest) returns (QueueServiceJoinResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/queue/join"
+      body: "*"
+    };
+  }
+
+  // Heartbeat / статус в очереди.
+  rpc Heartbeat(QueueServiceHeartbeatRequest) returns (QueueServiceHeartbeatResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/games/{game_id}/queue/heartbeat"
+      body: "*"
+    };
+  }
+
+  // Покинуть очередь (опционально — leave).
+  rpc Leave(QueueServiceLeaveRequest) returns (QueueServiceLeaveResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/games/{game_id}/queue/leave"
+    };
+  }
+
+  // Получить статус очереди (read-only, без обновления heartbeat).
+  rpc Status(QueueServiceStatusRequest) returns (QueueServiceStatusResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/games/{game_id}/queue/status"
+    };
+  }
+}
+
+message QueueServiceJoinRequest {
+  int64 game_id = 1;
+  string player_id = 2;
+  string mode = 3; // опциональный режим очереди (default "")
+}
+
+message QueueServiceJoinResponse {
+  QueueStatus status = 1;
+  int32 position = 2;
+  int32 total_in_queue = 3;
+  int32 estimated_wait_seconds = 4;
+}
+
+message QueueServiceHeartbeatRequest {
+  int64 game_id = 1;
+  string player_id = 2;
+}
+
+message QueueServiceHeartbeatResponse {
+  QueueStatus status = 1;
+  int32 position = 2;
+  int32 total_in_queue = 3;
+  int32 estimated_wait_seconds = 4;
+  // Заполняется только при status=RESERVED
+  optional ServerEndpoint reserved_endpoint = 5;
+  // Время истечения резервации (unix timestamp сек)
+  optional int64 reserved_until_unix = 6;
+}
+
+message QueueServiceLeaveRequest {
+  int64 game_id = 1;
+  string player_id = 2;
+}
+
+message QueueServiceLeaveResponse {}
+
+message QueueServiceStatusRequest {
+  int64 game_id = 1;
+  string player_id = 2;
+}
+
+message QueueServiceStatusResponse {
+  QueueStatus status = 1;
+  int32 position = 2;
+  int32 total_in_queue = 3;
+  int32 estimated_wait_seconds = 4;
+  optional ServerEndpoint reserved_endpoint = 5;
+  optional int64 reserved_until_unix = 6;
+}

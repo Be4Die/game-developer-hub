@@ -109,3 +109,44 @@ func (s LogSource) String() string {
 		return "unknown"
 	}
 }
+
+// ─── QueueStatus ─────────────────────────────────────────────────────────────
+
+// QueueStatus описывает состояние игрока в очереди.
+type QueueStatus uint8
+
+// Состояния очереди.
+const (
+	QueueStatusWaiting QueueStatus = iota + 1
+	QueueStatusReserved
+	QueueStatusExpired
+)
+
+func (s QueueStatus) String() string {
+	switch s {
+	case QueueStatusWaiting:
+		return "waiting"
+	case QueueStatusReserved:
+		return "reserved"
+	case QueueStatusExpired:
+		return "expired"
+	default:
+		return "unknown"
+	}
+}
+
+// ─── QueueEventType ──────────────────────────────────────────────────────────
+
+// QueueEventType описывает тип события в аудит-логе очереди.
+type QueueEventType uint8
+
+// Типы событий очереди.
+const (
+	QueueEventJoin QueueEventType = iota + 1
+	QueueEventReserved
+	QueueEventConnected
+	QueueEventTimeout
+	QueueEventLeave
+	QueueEventCancel
+)
+

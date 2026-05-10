@@ -20,7 +20,7 @@ func NewDiscoveryHandler(svc *service.DiscoveryService) *DiscoveryHandler {
 
 // DiscoveryServiceDiscover возвращает доступные серверы для подключения.
 func (h *DiscoveryHandler) DiscoveryServiceDiscover(ctx context.Context, req *pb.DiscoveryServiceDiscoverRequest) (*pb.DiscoveryServiceDiscoverResponse, error) {
-	result, err := h.discoveryService.DiscoverServers(ctx, req.GetGameId())
+	result, err := h.discoveryService.DiscoverServers(ctx, req.GetGameId(), req.GetPlayerId())
 	if err != nil {
 		return nil, domainError(err, "discover servers")
 	}

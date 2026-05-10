@@ -423,6 +423,7 @@ func newTestHeartbeatService(
 		buildRepo,
 		policyService,
 		instanceSvc,
+		nil, // queueSvc
 		hbCfg,
 		log,
 	)

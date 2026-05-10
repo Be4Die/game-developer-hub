@@ -174,6 +174,10 @@ func discoveryStatusToProto(s domain.DiscoveryStatus) pb.DiscoveryStatus {
 		return pb.DiscoveryStatus_DISCOVERY_STATUS_CAPACITY_REACHED
 	case domain.DiscoveryStatusUnavailable:
 		return pb.DiscoveryStatus_DISCOVERY_STATUS_UNAVAILABLE
+	case domain.DiscoveryStatusQueue:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_QUEUE
+	case domain.DiscoveryStatusReserved:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_RESERVED
 	default:
 		return pb.DiscoveryStatus_DISCOVERY_STATUS_UNSPECIFIED
 	}
@@ -330,21 +334,37 @@ func scaleBehaviorFromProto(b pb.ScaleBehavior) domain.ScaleBehavior {
 	}
 }
 
+func queueStatusToProto(s domain.QueueStatus) pb.QueueStatus {
+	switch s {
+	case domain.QueueStatusWaiting:
+		return pb.QueueStatus_QUEUE_STATUS_WAITING
+	case domain.QueueStatusReserved:
+		return pb.QueueStatus_QUEUE_STATUS_RESERVED
+	case domain.QueueStatusExpired:
+		return pb.QueueStatus_QUEUE_STATUS_EXPIRED
+	default:
+		return pb.QueueStatus_QUEUE_STATUS_UNSPECIFIED
+	}
+}
+
 func gamePolicyToProto(p *domain.GamePolicy) *pb.GamePolicy {
 	return &pb.GamePolicy{
-		GameId:                p.GameID,
-		OwnerId:               p.OwnerID,
-		Mode:                  orchestrationModeToProto(p.Mode),
-		TargetInstances:       p.TargetInstances,
-		AutoRestart:           p.AutoRestart,
-		ScaleToZeroTimeout:    p.ScaleToZeroTimeout,
-		DefaultBuildVersion:   p.DefaultBuildVersion,
-		MaxPlayersPerInstance: p.MaxPlayersPerInstance,
-		MaxInstancesPerGame:   p.MaxInstancesPerGame,
-		ScaleBehavior:         scaleBehaviorToProto(p.ScaleBehavior),
-		NodePreference:        p.NodePreference,
-		CreatedAt:             timestamppb.New(p.CreatedAt),
-		UpdatedAt:             timestamppb.New(p.UpdatedAt),
+		GameId:                  p.GameID,
+		OwnerId:                 p.OwnerID,
+		Mode:                    orchestrationModeToProto(p.Mode),
+		TargetInstances:         p.TargetInstances,
+		AutoRestart:             p.AutoRestart,
+		ScaleToZeroTimeout:      p.ScaleToZeroTimeout,
+		DefaultBuildVersion:     p.DefaultBuildVersion,
+		MaxPlayersPerInstance:   p.MaxPlayersPerInstance,
+		MaxInstancesPerGame:     p.MaxInstancesPerGame,
+		ScaleBehavior:           scaleBehaviorToProto(p.ScaleBehavior),
+		NodePreference:          p.NodePreference,
+		QueueReservationSeconds: p.QueueReservationSec,
+		QueueMaxWaitSeconds:     p.QueueMaxWaitSec,
+		QueueHeartbeatTimeout:   p.QueueHeartbeatTimeout,
+		CreatedAt:               timestamppb.New(p.CreatedAt),
+		UpdatedAt:               timestamppb.New(p.UpdatedAt),
 	}
 }
 
@@ -361,6 +381,9 @@ func gamePolicyFromProto(req *pb.GamePolicyServiceSetRequest) *domain.GamePolicy
 		MaxInstancesPerGame:   req.GetMaxInstancesPerGame(),
 		ScaleBehavior:         scaleBehaviorFromProto(req.GetScaleBehavior()),
 		NodePreference:        req.GetNodePreference(),
+		QueueReservationSec:   req.GetQueueReservationSeconds(),
+		QueueMaxWaitSec:       req.GetQueueMaxWaitSeconds(),
+		QueueHeartbeatTimeout: req.GetQueueHeartbeatTimeout(),
 	}
 }
 

@@ -29,6 +29,7 @@ type HeartbeatService struct {
 	buildRepo         domain.BuildStorage
 	policyService     *GamePolicyService
 	instanceSvc       instanceOrchestrator
+	queueSvc          *QueueService
 	checkInterval     time.Duration
 	inactivityTimeout time.Duration
 	log               *slog.Logger
@@ -44,6 +45,7 @@ func NewHeartbeatService(
 	buildRepo domain.BuildStorage,
 	policyService *GamePolicyService,
 	instanceSvc instanceOrchestrator,
+	queueSvc *QueueService,
 	hb config.NodeHeartbeatCfg,
 	log *slog.Logger,
 ) *HeartbeatService {
@@ -56,6 +58,7 @@ func NewHeartbeatService(
 		buildRepo:         buildRepo,
 		policyService:     policyService,
 		instanceSvc:       instanceSvc,
+		queueSvc:          queueSvc,
 		checkInterval:     hb.CheckInterval,
 		inactivityTimeout: hb.InactivityTimeout,
 		log:               log,
@@ -111,6 +114,7 @@ func (s *HeartbeatService) checkAllNodes(ctx context.Context) {
 	s.EnforcePolicies(ctx)
 	s.enforceScaleToZero(ctx)
 	s.enforceScaleUp(ctx)
+	s.processQueues(ctx)
 }
 
 func (s *HeartbeatService) checkNode(ctx context.Context, node *domain.Node) error {
@@ -592,4 +596,31 @@ func (s *HeartbeatService) markNodeOffline(ctx context.Context, node *domain.Nod
 	}
 
 	return nil
+}
+
+// processQueues обрабатывает очереди игроков для всех игр с активной политикой.
+// Вызывается после каждого цикла heartbeat.
+func (s *HeartbeatService) processQueues(ctx context.Context) {
+	if s.queueSvc == nil {
+		return
+	}
+
+	policies, err := s.policyService.ListAll(ctx)
+	if err != nil {
+		s.log.Warn("processQueues: failed to list policies", slog.String("error", err.Error()))
+		return
+	}
+
+	for _, policy := range policies {
+		if policy.ScaleBehavior != domain.ScaleBehaviorQueue {
+			continue
+		}
+
+		if err := s.queueSvc.ProcessQueue(ctx, policy.GameID); err != nil {
+			s.log.Debug("processQueues: failed",
+				slog.Int64("game_id", policy.GameID),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
 }

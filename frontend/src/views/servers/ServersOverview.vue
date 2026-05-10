@@ -28,6 +28,10 @@
         <span class="summary-label">Ноды</span>
         <span class="summary-value">{{ loading ? '...' : onlineNodes }}<span class="summary-sub"> / {{ nodes.length }}</span></span>
       </div>
+      <div class="summary-card">
+        <span class="summary-label">В очереди</span>
+        <span class="summary-value">{{ loading ? '...' : queueCount }}</span>
+      </div>
     </div>
 
     <!-- Политика оркестрации -->
@@ -77,6 +81,14 @@
             <div class="policy-item">
               <span class="policy-label">При переполнении</span>
               <span class="policy-value">{{ behaviorLabels[policy.scale_behavior] || policy.scale_behavior }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Резервация (сек)</span>
+              <span class="policy-value">{{ policy.queue_reservation_seconds ?? 30 }}</span>
+            </div>
+            <div class="policy-item">
+              <span class="policy-label">Heartbeat таймаут (сек)</span>
+              <span class="policy-value">{{ policy.queue_heartbeat_timeout ?? 15 }}</span>
             </div>
             <div class="policy-item">
               <span class="policy-label">Нода</span>
@@ -158,6 +170,51 @@
                 <option value="SCALE_BEHAVIOR_QUEUE">Очередь игроков</option>
               </select>
             </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Резервация слота (сек)
+                <Tooltip position="right">Сколько секунд даётся игроку на подключение после выделения слота.</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_reservation_seconds" type="number" min="5" max="300" />
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Heartbeat таймаут (сек)
+                <Tooltip position="right">Выкидывание из очереди при отсутствии heartbeat.</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_heartbeat_timeout" type="number" min="5" max="300" />
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Макс. ожидание (сек)
+                <Tooltip position="right">Авто-отмена после указанного времени в очереди.</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_max_wait_seconds" type="number" min="30" max="3600" />
+            </label>
+            <label>
+              <span class="label-row">
+                Нода
+                <Tooltip position="right">На какой ноде развёртывать инстансы при авто-старте.<br><br>«Авто» — оркестратор сам выберет наименее загруженную онлайн-ноду.<br>«Конкретная нода» — все авто-старты будут направлены на выбранный сервер.</Tooltip>
+              </span>
+              <select v-model="policyDraft.node_preference">
+                <option value="auto">Авто</option>
+                <option v-for="n in onlineNodesList" :key="n.id" :value="`node-${n.id}`">{{ n.address }}</option>
+              </select>
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Резервация слота (сек)
+                <Tooltip position="right">Сколько времени у игрока есть на подключение после выдачи слота.</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_reservation_seconds" type="number" min="5" max="300" />
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Heartbeat таймаут (сек)
+                <Tooltip position="right">Выкидывание из очереди если клиент не пинговал указанное время.</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_heartbeat_timeout" type="number" min="5" max="120" />
+            </label>
             <label>
               <span class="label-row">
                 Нода
@@ -237,7 +294,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Upload, Play, AlertCircle, ChevronDown, ChevronRight, Save, Settings2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import Tooltip from '../../components/orchestrator/Tooltip.vue'
-import { listBuilds, listInstances, listNodes, getPolicy, setPolicy } from '../../api/orchestrator'
+import { listBuilds, listInstances, listNodes, getPolicy, setPolicy, statusQueue } from '../../api/orchestrator'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
 
@@ -258,6 +315,7 @@ const runningCount = computed(() => instances.value.filter(i => i.status === 'ru
 const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0))
 const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online').length)
 const onlineNodesList = computed(() => nodes.value.filter(n => n.status === 'online'))
+const queueCount = computed(() => policy.value?.scale_behavior === 'SCALE_BEHAVIOR_QUEUE' ? 'active' : 0)
 
 const modeLabels = {
   ORCHESTRATION_MODE_UNSPECIFIED: 'Не задан',
@@ -322,6 +380,9 @@ async function loadPolicy() {
       max_instances_per_game: 1,
       scale_behavior: 'SCALE_BEHAVIOR_SPAWN',
       node_preference: 'auto',
+      queue_reservation_seconds: 30,
+      queue_max_wait_seconds: 300,
+      queue_heartbeat_timeout: 15,
     }
   } finally {
     policyLoading.value = false
@@ -350,6 +411,9 @@ async function savePolicy() {
       max_instances_per_game: Number(policyDraft.value.max_instances_per_game),
       scale_behavior: policyDraft.value.scale_behavior,
       node_preference: policyDraft.value.node_preference || 'auto',
+      queue_reservation_seconds: Number(policyDraft.value.queue_reservation_seconds ?? 30),
+      queue_max_wait_seconds: Number(policyDraft.value.queue_max_wait_seconds ?? 300),
+      queue_heartbeat_timeout: Number(policyDraft.value.queue_heartbeat_timeout ?? 15),
     }
     const p = await setPolicy(props.gameId, payload)
     policy.value = p

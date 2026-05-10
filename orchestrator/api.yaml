@@ -750,6 +750,139 @@ paths:
           $ref: "#/components/responses/InternalError"
 
   # ═══════════════════════════════════════════
+  #  ОЧЕРЕДЬ (Queue)
+  # ═══════════════════════════════════════════
+
+  /games/{gameId}/queue/join:
+    post:
+      summary: Встать в очередь
+      description: Добавляет игрока в FIFO-очередь на подключение к серверу.
+      operationId: joinQueue
+      tags:
+        - queue
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - player_id
+              properties:
+                player_id:
+                  type: string
+                mode:
+                  type: string
+                  description: Опциональный режим очереди
+      responses:
+        "200":
+          description: Игрок добавлен в очередь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueStatus"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/queue/heartbeat:
+    post:
+      summary: Heartbeat очереди
+      description: |
+        Обновляет heartbeat игрока и возвращает текущий статус.
+        Клиент должен вызывать каждые 3–5 секунд.
+      operationId: heartbeatQueue
+      tags:
+        - queue
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - player_id
+              properties:
+                player_id:
+                  type: string
+      responses:
+        "200":
+          description: Статус очереди
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueStatus"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/queue/leave:
+    delete:
+      summary: Покинуть очередь
+      description: Удаляет игрока из очереди.
+      operationId: leaveQueue
+      tags:
+        - queue
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: player_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Игрок удалён из очереди
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /games/{gameId}/queue/status:
+    get:
+      summary: Статус очереди (read-only)
+      description: Возвращает статус без обновления heartbeat.
+      operationId: statusQueue
+      tags:
+        - queue
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: player_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Статус очереди
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueStatus"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════
   #  HEALTH
   # ═══════════════════════════════════════════
 
@@ -922,12 +1055,16 @@ components:
         - starting
         - capacity_reached
         - unavailable
+        - queue
+        - reserved
       description: |
         Статус ответа discovery.
         `ready` — есть свободные серверы.
         `starting` — серверы запускаются, нужно подождать.
         `capacity_reached` — все серверы заняты, лимит достигнут.
         `unavailable` — авто-оркестрация выключена или не настроена.
+        `queue` — все серверы заняты, доступна очередь.
+        `reserved` — слот зарезервирован для этого игрока.
 
     DiscoveryResult:
       type: object
@@ -1098,6 +1235,27 @@ components:
           $ref: "#/components/schemas/LogSource"
         message:
           type: string
+
+    # ─── Очередь ──────────────────────────────
+
+    QueueStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [waiting, reserved, expired]
+        position:
+          type: integer
+          description: Позиция в очереди (1-based)
+        total_in_queue:
+          type: integer
+        estimated_wait_seconds:
+          type: integer
+        reserved_endpoint:
+          $ref: "#/components/schemas/ServerEndpoint"
+        reserved_until_unix:
+          type: integer
+          format: int64
 
     # ─── Ошибки ───────────────────────────────
 

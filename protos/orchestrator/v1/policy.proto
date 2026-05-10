@@ -34,6 +34,9 @@ message GamePolicy {
   int32 max_instances_per_game = 9;
   ScaleBehavior scale_behavior = 10;
   string node_preference = 11;       // "auto" или "node-<id>"
+  int32 queue_reservation_seconds = 14;  // секунды на подключение после резервации
+  int32 queue_max_wait_seconds = 15;     // макс. время ожидания в очереди
+  int32 queue_heartbeat_timeout = 16;    // выкидывание при отсутствии heartbeat (сек)
   google.protobuf.Timestamp created_at = 12;
   google.protobuf.Timestamp updated_at = 13;
 }
@@ -74,6 +77,9 @@ message GamePolicyServiceSetRequest {
   int32 max_instances_per_game = 9;
   ScaleBehavior scale_behavior = 10;
   string node_preference = 11;
+  int32 queue_reservation_seconds = 12;
+  int32 queue_max_wait_seconds = 13;
+  int32 queue_heartbeat_timeout = 14;
 }
 
 message GamePolicyServiceSetResponse {

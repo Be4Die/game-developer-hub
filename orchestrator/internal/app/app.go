@@ -67,10 +67,12 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	instanceRepo := postgres.NewInstanceRepo(pool)
 	buildRepo := postgres.NewBuildStorage(pool)
 	policyRepo := postgres.NewGamePolicyRepo(pool)
+	queueEventRepo := postgres.NewQueueEventRepo(pool)
 
 	// ─── Хранилища (Valkey) ─────────────────────────────────────
 	nodeState := valkey.NewNodeStateStore(valkeyClient, cfg.KV.KeyTTL)
 	instanceState := valkey.NewInstanceStateStore(valkeyClient, cfg.KV.KeyTTL)
+	queueStore := valkey.NewQueueStore(valkeyClient)
 
 	// ─── Хранилище файлов ───────────────────────────────────────
 	buildFS := filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
@@ -86,8 +88,12 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	policyService := service.NewGamePolicyService(policyRepo)
 
+	queueService := service.NewQueueService(
+		queueStore, queueEventRepo, policyService, instanceRepo, instanceState, nodeRepo, log,
+	)
+
 	discoveryService := service.NewDiscoveryService(
-		instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceService,
+		instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceService, queueService,
 	)
 
 	nodeService := service.NewNodeService(
@@ -95,7 +101,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	)
 
 	heartbeatService := service.NewHeartbeatService(
-		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, buildRepo, policyService, instanceService,
+		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, buildRepo, policyService, instanceService, queueService,
 		cfg.NodeHeartbeat, log,
 	)
 
@@ -106,6 +112,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	nodeHandler := grpctransport.NewNodeHandler(nodeService)
 	healthHandler := grpctransport.NewHealthHandler("1.0.0")
 	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
+	queueHandler := grpctransport.NewQueueHandler(queueService)
 
 	// ─── Аутентификация ─────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
@@ -129,6 +136,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	pb.RegisterNodeServiceServer(gRPCServer, nodeHandler)
 	pb.RegisterHealthServiceServer(gRPCServer, healthHandler)
 	pb.RegisterGamePolicyServiceServer(gRPCServer, policyHandler)
+	pb.RegisterQueueServiceServer(gRPCServer, queueHandler)
 
 	log.Info("all components initialized")
 

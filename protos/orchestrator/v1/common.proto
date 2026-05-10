@@ -156,6 +156,8 @@ enum DiscoveryStatus {
   DISCOVERY_STATUS_STARTING = 2;
   DISCOVERY_STATUS_CAPACITY_REACHED = 3;
   DISCOVERY_STATUS_UNAVAILABLE = 4;
+  DISCOVERY_STATUS_QUEUE = 5;       // все серверы заняты, встаньте в очередь
+  DISCOVERY_STATUS_RESERVED = 6;    // слот зарезервирован
 }
 
 // Запись журнала.

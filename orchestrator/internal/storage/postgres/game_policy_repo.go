@@ -25,7 +25,9 @@ func (r *GamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain.GamePol
 	const q = `
 		SELECT game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
 		       default_build_version, max_players_per_instance, max_instances_per_game,
-		       scale_behavior, node_preference, created_at, updated_at
+		       scale_behavior, node_preference,
+		       queue_reservation_seconds, queue_max_wait_seconds, queue_heartbeat_timeout,
+		       created_at, updated_at
 		FROM game_policies WHERE game_id = $1
 	`
 
@@ -38,8 +40,10 @@ func (r *GamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) err
 	const q = `
 		INSERT INTO game_policies (game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
 		                           default_build_version, max_players_per_instance, max_instances_per_game,
-		                           scale_behavior, node_preference, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+		                           scale_behavior, node_preference,
+		                           queue_reservation_seconds, queue_max_wait_seconds, queue_heartbeat_timeout,
+		                           created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
 		ON CONFLICT (game_id) DO UPDATE SET
 			owner_id = EXCLUDED.owner_id,
 			mode = EXCLUDED.mode,
@@ -51,6 +55,9 @@ func (r *GamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) err
 			max_instances_per_game = EXCLUDED.max_instances_per_game,
 			scale_behavior = EXCLUDED.scale_behavior,
 			node_preference = EXCLUDED.node_preference,
+			queue_reservation_seconds = EXCLUDED.queue_reservation_seconds,
+			queue_max_wait_seconds = EXCLUDED.queue_max_wait_seconds,
+			queue_heartbeat_timeout = EXCLUDED.queue_heartbeat_timeout,
 			updated_at = NOW()
 	`
 
@@ -58,6 +65,7 @@ func (r *GamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) err
 		policy.GameID, policy.OwnerID, policy.Mode, policy.TargetInstances, policy.AutoRestart, policy.ScaleToZeroTimeout,
 		policy.DefaultBuildVersion, policy.MaxPlayersPerInstance, policy.MaxInstancesPerGame,
 		policy.ScaleBehavior, policy.NodePreference,
+		policy.QueueReservationSec, policy.QueueMaxWaitSec, policy.QueueHeartbeatTimeout,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.GamePolicyRepo.Set: %w", err)
@@ -86,7 +94,9 @@ func (r *GamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, err
 	const q = `
 		SELECT game_id, owner_id, mode, target_instances, auto_restart, scale_to_zero_timeout,
 		       default_build_version, max_players_per_instance, max_instances_per_game,
-		       scale_behavior, node_preference, created_at, updated_at
+		       scale_behavior, node_preference,
+		       queue_reservation_seconds, queue_max_wait_seconds, queue_heartbeat_timeout,
+		       created_at, updated_at
 		FROM game_policies
 		ORDER BY game_id
 	`
@@ -121,7 +131,9 @@ func scanGamePolicy(s gamePolicyScanner) (*domain.GamePolicy, error) {
 	err := s.Scan(
 		&p.GameID, &p.OwnerID, &p.Mode, &p.TargetInstances, &p.AutoRestart, &p.ScaleToZeroTimeout,
 		&p.DefaultBuildVersion, &p.MaxPlayersPerInstance, &p.MaxInstancesPerGame,
-		&p.ScaleBehavior, &p.NodePreference, &p.CreatedAt, &p.UpdatedAt,
+		&p.ScaleBehavior, &p.NodePreference,
+		&p.QueueReservationSec, &p.QueueMaxWaitSec, &p.QueueHeartbeatTimeout,
+		&p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

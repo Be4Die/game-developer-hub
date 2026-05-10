@@ -305,6 +305,8 @@ const (
 	DiscoveryStatus_DISCOVERY_STATUS_STARTING         DiscoveryStatus = 2
 	DiscoveryStatus_DISCOVERY_STATUS_CAPACITY_REACHED DiscoveryStatus = 3
 	DiscoveryStatus_DISCOVERY_STATUS_UNAVAILABLE      DiscoveryStatus = 4
+	DiscoveryStatus_DISCOVERY_STATUS_QUEUE            DiscoveryStatus = 5 // все серверы заняты, встаньте в очередь
+	DiscoveryStatus_DISCOVERY_STATUS_RESERVED         DiscoveryStatus = 6 // слот зарезервирован
 )
 
 // Enum value maps for DiscoveryStatus.
@@ -315,6 +317,8 @@ var (
 		2: "DISCOVERY_STATUS_STARTING",
 		3: "DISCOVERY_STATUS_CAPACITY_REACHED",
 		4: "DISCOVERY_STATUS_UNAVAILABLE",
+		5: "DISCOVERY_STATUS_QUEUE",
+		6: "DISCOVERY_STATUS_RESERVED",
 	}
 	DiscoveryStatus_value = map[string]int32{
 		"DISCOVERY_STATUS_UNSPECIFIED":      0,
@@ -322,6 +326,8 @@ var (
 		"DISCOVERY_STATUS_STARTING":         2,
 		"DISCOVERY_STATUS_CAPACITY_REACHED": 3,
 		"DISCOVERY_STATUS_UNAVAILABLE":      4,
+		"DISCOVERY_STATUS_QUEUE":            5,
+		"DISCOVERY_STATUS_RESERVED":         6,
 	}
 )
 
@@ -1485,13 +1491,15 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"$PORT_ALLOCATION_STRATEGY_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cPORT_ALLOCATION_STRATEGY_ANY\x10\x01\x12\"\n" +
 	"\x1ePORT_ALLOCATION_STRATEGY_EXACT\x10\x02\x12\"\n" +
-	"\x1ePORT_ALLOCATION_STRATEGY_RANGE\x10\x03*\xb7\x01\n" +
+	"\x1ePORT_ALLOCATION_STRATEGY_RANGE\x10\x03*\xf2\x01\n" +
 	"\x0fDiscoveryStatus\x12 \n" +
 	"\x1cDISCOVERY_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16DISCOVERY_STATUS_READY\x10\x01\x12\x1d\n" +
 	"\x19DISCOVERY_STATUS_STARTING\x10\x02\x12%\n" +
 	"!DISCOVERY_STATUS_CAPACITY_REACHED\x10\x03\x12 \n" +
-	"\x1cDISCOVERY_STATUS_UNAVAILABLE\x10\x04B\xcb\x01\n" +
+	"\x1cDISCOVERY_STATUS_UNAVAILABLE\x10\x04\x12\x1a\n" +
+	"\x16DISCOVERY_STATUS_QUEUE\x10\x05\x12\x1d\n" +
+	"\x19DISCOVERY_STATUS_RESERVED\x10\x06B\xcb\x01\n" +
 	"\x13com.orchestrator.v1B\vCommonProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
