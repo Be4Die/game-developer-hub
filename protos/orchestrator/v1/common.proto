@@ -149,6 +149,15 @@ message ServerEndpoint {
   uint32 max_players = 6;
 }
 
+// Статус ответа discovery.
+enum DiscoveryStatus {
+  DISCOVERY_STATUS_UNSPECIFIED = 0;
+  DISCOVERY_STATUS_READY = 1;
+  DISCOVERY_STATUS_STARTING = 2;
+  DISCOVERY_STATUS_CAPACITY_REACHED = 3;
+  DISCOVERY_STATUS_UNAVAILABLE = 4;
+}
+
 // Запись журнала.
 message LogEntry {
   google.protobuf.Timestamp timestamp = 1;

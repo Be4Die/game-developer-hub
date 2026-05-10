@@ -69,6 +69,8 @@ func (x *DiscoveryServiceDiscoverRequest) GetGameId() int64 {
 type DiscoveryServiceDiscoverResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Servers       []*ServerEndpoint      `protobuf:"bytes,1,rep,name=servers,proto3" json:"servers,omitempty"`
+	Status        DiscoveryStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=orchestrator.v1.DiscoveryStatus" json:"status,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -110,15 +112,31 @@ func (x *DiscoveryServiceDiscoverResponse) GetServers() []*ServerEndpoint {
 	return nil
 }
 
+func (x *DiscoveryServiceDiscoverResponse) GetStatus() DiscoveryStatus {
+	if x != nil {
+		return x.Status
+	}
+	return DiscoveryStatus_DISCOVERY_STATUS_UNSPECIFIED
+}
+
+func (x *DiscoveryServiceDiscoverResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_orchestrator_v1_discovery_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_discovery_proto_rawDesc = "" +
 	"\n" +
 	"\x1forchestrator/v1/discovery.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\":\n" +
 	"\x1fDiscoveryServiceDiscoverRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"]\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"\xb1\x01\n" +
 	" DiscoveryServiceDiscoverResponse\x129\n" +
-	"\aservers\x18\x01 \x03(\v2\x1f.orchestrator.v1.ServerEndpointR\aservers2\xbe\x01\n" +
+	"\aservers\x18\x01 \x03(\v2\x1f.orchestrator.v1.ServerEndpointR\aservers\x128\n" +
+	"\x06status\x18\x02 \x01(\x0e2 .orchestrator.v1.DiscoveryStatusR\x06status\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage2\xbe\x01\n" +
 	"\x10DiscoveryService\x12\xa9\x01\n" +
 	"\x18DiscoveryServiceDiscover\x120.orchestrator.v1.DiscoveryServiceDiscoverRequest\x1a1.orchestrator.v1.DiscoveryServiceDiscoverResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/games/{game_id}/discoverB\xce\x01\n" +
 	"\x13com.orchestrator.v1B\x0eDiscoveryProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
@@ -140,16 +158,18 @@ var file_orchestrator_v1_discovery_proto_goTypes = []any{
 	(*DiscoveryServiceDiscoverRequest)(nil),  // 0: orchestrator.v1.DiscoveryServiceDiscoverRequest
 	(*DiscoveryServiceDiscoverResponse)(nil), // 1: orchestrator.v1.DiscoveryServiceDiscoverResponse
 	(*ServerEndpoint)(nil),                   // 2: orchestrator.v1.ServerEndpoint
+	(DiscoveryStatus)(0),                     // 3: orchestrator.v1.DiscoveryStatus
 }
 var file_orchestrator_v1_discovery_proto_depIdxs = []int32{
 	2, // 0: orchestrator.v1.DiscoveryServiceDiscoverResponse.servers:type_name -> orchestrator.v1.ServerEndpoint
-	0, // 1: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:input_type -> orchestrator.v1.DiscoveryServiceDiscoverRequest
-	1, // 2: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:output_type -> orchestrator.v1.DiscoveryServiceDiscoverResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: orchestrator.v1.DiscoveryServiceDiscoverResponse.status:type_name -> orchestrator.v1.DiscoveryStatus
+	0, // 2: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:input_type -> orchestrator.v1.DiscoveryServiceDiscoverRequest
+	1, // 3: orchestrator.v1.DiscoveryService.DiscoveryServiceDiscover:output_type -> orchestrator.v1.DiscoveryServiceDiscoverResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_discovery_proto_init() }

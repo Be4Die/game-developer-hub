@@ -164,6 +164,21 @@ func serverEndpointToProto(ep domain.ServerEndpoint) *pb.ServerEndpoint {
 	}
 }
 
+func discoveryStatusToProto(s domain.DiscoveryStatus) pb.DiscoveryStatus {
+	switch s {
+	case domain.DiscoveryStatusReady:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_READY
+	case domain.DiscoveryStatusStarting:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_STARTING
+	case domain.DiscoveryStatusCapacityReached:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_CAPACITY_REACHED
+	case domain.DiscoveryStatusUnavailable:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_UNAVAILABLE
+	default:
+		return pb.DiscoveryStatus_DISCOVERY_STATUS_UNSPECIFIED
+	}
+}
+
 // ─── Enum Converters ─────────────────────────────────────────────────────────
 
 func protocolToProto(p domain.Protocol) pb.Protocol {

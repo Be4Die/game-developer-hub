@@ -20,15 +20,19 @@ func NewDiscoveryHandler(svc *service.DiscoveryService) *DiscoveryHandler {
 
 // DiscoveryServiceDiscover возвращает доступные серверы для подключения.
 func (h *DiscoveryHandler) DiscoveryServiceDiscover(ctx context.Context, req *pb.DiscoveryServiceDiscoverRequest) (*pb.DiscoveryServiceDiscoverResponse, error) {
-	endpoints, err := h.discoveryService.DiscoverServers(ctx, req.GetGameId())
+	result, err := h.discoveryService.DiscoverServers(ctx, req.GetGameId())
 	if err != nil {
 		return nil, domainError(err, "discover servers")
 	}
 
-	resp := make([]*pb.ServerEndpoint, 0, len(endpoints))
-	for _, ep := range endpoints {
-		resp = append(resp, serverEndpointToProto(ep))
+	servers := make([]*pb.ServerEndpoint, 0, len(result.Servers))
+	for _, ep := range result.Servers {
+		servers = append(servers, serverEndpointToProto(ep))
 	}
 
-	return &pb.DiscoveryServiceDiscoverResponse{Servers: resp}, nil
+	return &pb.DiscoveryServiceDiscoverResponse{
+		Servers: servers,
+		Status:  discoveryStatusToProto(result.Status),
+		Message: result.Message,
+	}, nil
 }

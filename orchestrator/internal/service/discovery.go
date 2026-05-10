@@ -42,36 +42,36 @@ func NewDiscoveryService(
 	}
 }
 
-// DiscoverServers возвращает список доступных серверов для подключения.
-// Серверы сортируются по принципу least-loaded (меньше игроков — выше приоритет).
-// Если нет запущенных инстансов и политика игры требует автозапуска,
-// инициирует асинхронный запуск инстанса (для scale-to-zero и keep-alive).
-func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) ([]domain.ServerEndpoint, error) {
-	// Получаем все running-инстансы игры.
-	status := domain.InstanceStatusRunning
-	instances, err := s.instanceRepo.ListByGame(ctx, gameID, &status)
+// DiscoverServers возвращает список доступных серверов для подключения
+// вместе со статусом, который помогает клиенту понять текущую ситуацию.
+//
+// Сценарии:
+//   - READY — есть running-инстансы со свободными слотами.
+//   - STARTING — нет свободных running, но инстансы стартуют (или запущен асинхронный auto-start).
+//   - CAPACITY_REACHED — все инстансы заполнены, новых запустить нельзя (лимит или queue-режим).
+//   - UNAVAILABLE — авто-оркестрация выключена или не настроена.
+func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) (*domain.DiscoveryResult, error) {
+	// 1. Получаем running-инстансы.
+	runningStatus := domain.InstanceStatusRunning
+	running, err := s.instanceRepo.ListByGame(ctx, gameID, &runningStatus)
 	if err != nil {
-		return nil, fmt.Errorf("DiscoveryService.DiscoverServers: list instances: %w", err)
+		return nil, fmt.Errorf("DiscoveryService.DiscoverServers: list running instances: %w", err)
 	}
 
-	// Если нет running инстансов — проверяем политику и пытаемся запустить.
-	if len(instances) == 0 {
-		policy, err := s.policyService.Get(ctx, gameID)
-		if err == nil && policy.IsAuto() {
-			// Асинхронный запуск, чтобы не блокировать ответ.
-			go s.autoStartInstance(context.Background(), gameID, policy)
-		}
-	}
+	// 2. Получаем starting-инстансы.
+	startingStatus := domain.InstanceStatusStarting
+	starting, _ := s.instanceRepo.ListByGame(ctx, gameID, &startingStatus)
 
-	endpoints := make([]domain.ServerEndpoint, 0, len(instances))
-	for _, inst := range instances {
-		// Обогащаем из KV.
+	// 3. Формируем endpoints из running и проверяем наличие свободных слотов.
+	endpoints := make([]domain.ServerEndpoint, 0, len(running))
+	hasAvailable := false
+
+	for _, inst := range running {
 		playerCount, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
 
 		node, err := s.nodeRepo.GetByID(ctx, inst.NodeID)
 		if err != nil {
-			// Если нода не найдена — пропускаем инстанс.
-			continue
+			continue // Нода не найдена — пропускаем инстанс.
 		}
 
 		host, _, err := net.SplitHostPort(node.Address)
@@ -87,31 +87,119 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64) ([
 			PlayerCount: &playerCount,
 			MaxPlayers:  inst.MaxPlayers,
 		})
+
+		if playerCount < inst.MaxPlayers {
+			hasAvailable = true
+		}
 	}
 
-	// Сортировка по least-loaded (наименьшее количество игроков первым).
-	sortByPlayerCount(endpoints)
+	// 4. Есть доступные running → READY.
+	if hasAvailable {
+		sortByPlayerCount(endpoints)
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusReady,
+			Servers: endpoints,
+		}, nil
+	}
 
-	return endpoints, nil
+	// 5. Нет доступных running, но есть starting → STARTING.
+	if len(starting) > 0 {
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusStarting,
+			Servers: endpoints,
+			Message: "Server instances are starting, please wait",
+		}, nil
+	}
+
+	// 6. Нет running и нет starting. Проверяем политику.
+	policy, err := s.policyService.Get(ctx, gameID)
+	if err != nil || policy == nil {
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusUnavailable,
+			Servers: endpoints,
+			Message: "Game is not configured for auto-orchestration",
+		}, nil
+	}
+
+	if !policy.IsAuto() {
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusUnavailable,
+			Servers: endpoints,
+			Message: "Auto-start is disabled for this game",
+		}, nil
+	}
+
+	// 7. Политика auto. Проверяем, можем ли запустить новый инстанс.
+	canStart, reason := s.canAutoStart(ctx, gameID, policy)
+	if !canStart {
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusCapacityReached,
+			Servers: endpoints,
+			Message: reason,
+		}, nil
+	}
+
+	// 8. Если running есть, но все заполнены — решаем по scale_behavior.
+	if len(running) > 0 && policy.ScaleBehavior == domain.ScaleBehaviorQueue {
+		return &domain.DiscoveryResult{
+			Status:  domain.DiscoveryStatusCapacityReached,
+			Servers: endpoints,
+			Message: "All servers are full. Waiting in queue.",
+		}, nil
+	}
+
+	// 9. Запускаем асинхронно.
+	go s.autoStartInstance(context.Background(), gameID, policy)
+
+	return &domain.DiscoveryResult{
+		Status:  domain.DiscoveryStatusStarting,
+		Servers: endpoints,
+		Message: "Spinning up a new server instance",
+	}, nil
+}
+
+// canAutoStart выполняет быструю синхронную проверку возможности запуска
+// без сетевых вызовов (лимит инстансов и наличие билда).
+func (s *DiscoveryService) canAutoStart(ctx context.Context, gameID int64, policy *domain.GamePolicy) (bool, string) {
+	// Проверка лимита инстансов.
+	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
+	if int32(len(all)) >= policy.MaxInstancesPerGame {
+		return false, "Maximum instance limit reached for this game"
+	}
+
+	// Проверка наличия билда.
+	buildVersion := policy.DefaultBuildVersion
+	if buildVersion == "latest" || buildVersion == "" {
+		builds, err := s.buildRepo.ListByGame(ctx, gameID, 1)
+		if err != nil || len(builds) == 0 {
+			return false, "No server builds available for this game"
+		}
+	} else {
+		_, err := s.buildRepo.GetByVersion(ctx, gameID, buildVersion)
+		if err != nil {
+			return false, "Default build version not found"
+		}
+	}
+
+	return true, ""
 }
 
 // autoStartInstance запускает инстанс для игры на основе политики.
 // Вызывается асинхронно из DiscoverServers.
 func (s *DiscoveryService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
-	// Проверяем лимит инстансов из политики (все статусы).
+	// Дополнительная проверка лимита (race condition).
 	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
 	if int32(len(all)) >= policy.MaxInstancesPerGame {
-		return // Лимит достигнут.
+		return
 	}
 
 	buildVersion := policy.DefaultBuildVersion
 	if buildVersion == "latest" || buildVersion == "" {
-		// Пытаемся найти последний билд.
 		builds, err := s.buildRepo.ListByGame(ctx, gameID, 1)
 		if err == nil && len(builds) > 0 {
 			buildVersion = builds[0].Version
 		} else {
-			return // Нет билдов для запуска.
+			return
 		}
 	}
 

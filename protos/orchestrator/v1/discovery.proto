@@ -19,4 +19,6 @@ message DiscoveryServiceDiscoverRequest {
 
 message DiscoveryServiceDiscoverResponse {
   repeated ServerEndpoint servers = 1;
+  DiscoveryStatus status = 2;
+  string message = 3;
 }

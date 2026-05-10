@@ -516,12 +516,16 @@ paths:
       description: |
         Эндпоинт для клиентов игр (Unity, JS Native Lib).
 
-        Возвращает данные для подключения к доступному серверу указанной игры.
-        Если серверов нет — возвращает пустой список.
+        Возвращает данные для подключения к доступным серверам указанной игры
+        вместе со статусом, который помогает клиенту понять текущую ситуацию:
 
-        Клиент игры должен вызывать этот эндпоинт периодически, чтобы получить
-        актуальный адрес сервера. Оркестратор выбирает сервер с наименьшим
-        количеством игроков (join-the-shortest-queue).
+        - `ready` — есть серверы со свободными слотами, можно подключаться.
+        - `starting` — серверы запускаются, клиенту нужно подождать и повторить запрос.
+        - `capacity_reached` — все серверы заполнены, новых запустить нельзя.
+        - `unavailable` — авто-оркестрация выключена или игра не настроена.
+
+        Клиент игры должен вызывать этот эндпоинт периодически (например, каждые 5 сек),
+        пока не получит статус `ready`.
       operationId: discoverServer
       tags:
         - discovery
@@ -534,16 +538,11 @@ paths:
             format: int64
       responses:
         "200":
-          description: Список доступных серверов
+          description: Результат обнаружения серверов
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  servers:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ServerEndpoint"
+                $ref: "#/components/schemas/DiscoveryResult"
         "500":
           $ref: "#/components/responses/InternalError"
 
@@ -915,6 +914,35 @@ components:
           format: date-time
 
     # ─── Discovery ────────────────────────────
+
+    DiscoveryStatus:
+      type: string
+      enum:
+        - ready
+        - starting
+        - capacity_reached
+        - unavailable
+      description: |
+        Статус ответа discovery.
+        `ready` — есть свободные серверы.
+        `starting` — серверы запускаются, нужно подождать.
+        `capacity_reached` — все серверы заняты, лимит достигнут.
+        `unavailable` — авто-оркестрация выключена или не настроена.
+
+    DiscoveryResult:
+      type: object
+      description: Результат обнаружения серверов для клиента игры
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServerEndpoint"
+          description: Список доступных серверов (может быть пустым)
+        status:
+          $ref: "#/components/schemas/DiscoveryStatus"
+        message:
+          type: string
+          description: Human-readable пояснение к статусу
 
     ServerEndpoint:
       type: object
