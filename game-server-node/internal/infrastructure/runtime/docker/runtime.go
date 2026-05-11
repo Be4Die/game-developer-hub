@@ -19,6 +19,7 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
@@ -109,18 +110,43 @@ func (r *Runtime) BuildImage(ctx context.Context, imageTag string, internalPort 
 		return fmt.Errorf("%s: extract archive: %w", op, err)
 	}
 
+	// Validate extracted archive: must not be empty and must contain executable.
+	if empty, err := r.isDirEmpty(unpackDir); err != nil {
+		return fmt.Errorf("%s: check unpack dir: %w", op, err)
+	} else if empty {
+		return fmt.Errorf("%s: archive is empty after extraction", op)
+	}
+
+	execFile := r.findExecutable(unpackDir)
+	if execFile == "" {
+		return fmt.Errorf("%s: no executable file found in archive", op)
+	}
+
 	// Generate Dockerfile.
-	dockerfile := r.generateDockerfile(unpackDir, internalPort)
+	dockerfile := r.generateDockerfile(execFile, internalPort)
 	if err := os.WriteFile(filepath.Join(unpackDir, "Dockerfile"), []byte(dockerfile), 0o600); err != nil {
 		return fmt.Errorf("%s: write Dockerfile: %w", op, err)
 	}
 
-	// Run docker build.
-	cmd := exec.CommandContext(ctx, "docker", "build", "-t", imageTag, unpackDir) //nolint:gosec
+	// Run docker build with cleanup flags to remove intermediate containers even on failure.
+	cmd := exec.CommandContext(ctx, "docker", "build", "--rm", "--force-rm", "-t", imageTag, unpackDir) //nolint:gosec
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("%s: docker build: %w: %s", op, err, stderr.String())
+
+	buildErr := cmd.Run()
+
+	// If build failed, aggressively cleanup any dangling artifacts created by this build.
+	if buildErr != nil {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := r.CleanupBuildArtifacts(cleanupCtx, imageTag); err != nil {
+			r.log.Warn("failed to cleanup build artifacts",
+				slog.String("op", op),
+				slog.String("image_tag", imageTag),
+				slog.String("error", err.Error()),
+			)
+		}
+		return fmt.Errorf("%s: docker build: %w: %s", op, buildErr, stderr.String())
 	}
 
 	r.log.Info("image built",
@@ -435,7 +461,7 @@ func (r *Runtime) extractZipFile(f *zip.File, destDir string) error {
 	}
 
 	if f.FileInfo().IsDir() {
-		return os.MkdirAll(path, 0o750)
+		return os.MkdirAll(path, f.Mode())
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
@@ -487,7 +513,7 @@ func (r *Runtime) extractTar(reader io.Reader, destDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(path, 0o750); err != nil {
+			if err := os.MkdirAll(path, os.FileMode(header.Mode)); err != nil {
 				return fmt.Errorf("mkdir %q: %w", path, err)
 			}
 		case tar.TypeReg:
@@ -503,15 +529,43 @@ func (r *Runtime) extractTar(reader io.Reader, destDir string) error {
 				return fmt.Errorf("extract %q: %w", header.Name, err)
 			}
 			_ = out.Close()
+			// Preserve original file permissions from tar header.
+			if err := os.Chmod(path, os.FileMode(header.Mode)); err != nil {
+				return fmt.Errorf("chmod %q: %w", path, err)
+			}
 		}
 	}
 
 	return nil
 }
 
-// generateDockerfile создаёт минимальный Dockerfile для игрового сервера.
-func (r *Runtime) generateDockerfile(unpackDir string, internalPort uint32) string {
-	executable := "server"
+// isDirEmpty проверяет, что директория не пуста (игнорирует поддиректории).
+func (r *Runtime) isDirEmpty(dir string) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+	for _, e := range entries {
+		if !e.IsDir() {
+			return false, nil
+		}
+		// recurse into subdirectories to find any files
+		subEmpty, err := r.isDirEmpty(filepath.Join(dir, e.Name()))
+		if err != nil {
+			return false, err
+		}
+		if !subEmpty {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+// findExecutable ищет первый исполняемый файл или .exe в распакованном архиве.
+// Если executable-бит не найден, делает fallback на файлы без расширения в корне архива
+// (актуально для Windows-архивов, где права доступа не сохраняются).
+func (r *Runtime) findExecutable(unpackDir string) string {
+	var executable string
 	_ = filepath.Walk(unpackDir, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -525,7 +579,43 @@ func (r *Runtime) generateDockerfile(unpackDir string, internalPort uint32) stri
 		}
 		return nil
 	})
+	if executable != "" {
+		return executable
+	}
 
+	// Fallback: ищем файлы без расширения в корне архива.
+	// Windows-тарболы часто не сохраняют executable-бит.
+	entries, err := os.ReadDir(unpackDir)
+	if err != nil {
+		return ""
+	}
+	var candidates []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if filepath.Ext(name) == "" && name != "Dockerfile" {
+			candidates = append(candidates, name)
+		}
+	}
+	if len(candidates) == 0 {
+		return ""
+	}
+	if len(candidates) == 1 {
+		return candidates[0]
+	}
+	// Если несколько — предпочитаем "server", иначе первый по алфавиту.
+	for _, c := range candidates {
+		if c == "server" || c == "game" || c == "app" || c == "main" {
+			return c
+		}
+	}
+	return candidates[0]
+}
+
+// generateDockerfile создаёт минимальный Dockerfile для игрового сервера.
+func (r *Runtime) generateDockerfile(executable string, internalPort uint32) string {
 	return fmt.Sprintf(`FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
@@ -534,4 +624,60 @@ RUN chmod +x /app/%s
 EXPOSE %d
 CMD ["./%s"]
 `, executable, internalPort, executable)
+}
+
+// CleanupBuildArtifacts удаляет артефакты неудачной сборки: промежуточные контейнеры
+// и dangling-образы, а также принудительно удаляет образ по тегу если он существует.
+func (r *Runtime) CleanupBuildArtifacts(ctx context.Context, imageTag string) error {
+	const op = "DockerRuntime.CleanupBuildArtifacts"
+
+	// 1. Remove any containers that were created during a failed build (intermediate containers).
+	//    Docker labels intermediate containers with a specific hash, but we also
+		//    prune containers with "exited" status to be safe.
+	pruneResp, err := r.cli.ContainersPrune(ctx, filters.NewArgs(
+		filters.Arg("status", "exited"),
+	))
+	if err != nil {
+		r.log.Warn("containers prune failed",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	} else {
+		r.log.Info("containers pruned",
+			slog.String("op", op),
+			slog.Int("deleted", len(pruneResp.ContainersDeleted)),
+			slog.Uint64("space_reclaimed", pruneResp.SpaceReclaimed),
+		)
+	}
+
+	// 2. Remove the target image tag if it was partially created.
+	if imageTag != "" {
+		_, err = r.cli.ImageRemove(ctx, imageTag, image.RemoveOptions{Force: true})
+		if err != nil && !client.IsErrNotFound(err) {
+			r.log.Warn("failed to remove image",
+				slog.String("op", op),
+				slog.String("image_tag", imageTag),
+				slog.String("error", err.Error()),
+			)
+		}
+	}
+
+	// 3. Prune dangling images (untagged intermediate layers).
+	imgPruneResp, err := r.cli.ImagesPrune(ctx, filters.NewArgs(
+		filters.Arg("dangling", "true"),
+	))
+	if err != nil {
+		r.log.Warn("images prune failed",
+			slog.String("op", op),
+			slog.String("error", err.Error()),
+		)
+	} else {
+		r.log.Info("images pruned",
+			slog.String("op", op),
+			slog.Int("deleted", len(imgPruneResp.ImagesDeleted)),
+			slog.Uint64("space_reclaimed", imgPruneResp.SpaceReclaimed),
+		)
+	}
+
+	return nil
 }

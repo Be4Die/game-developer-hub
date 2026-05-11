@@ -39,6 +39,10 @@ func (s *stubRuntime) BuildImage(ctx context.Context, imageTag string, internalP
 	return nil
 }
 
+func (s *stubRuntime) CleanupBuildArtifacts(ctx context.Context, imageTag string) error {
+	return nil
+}
+
 // CreateContainer создаёт контейнер (без запуска). В тестах возвращает ID и запоминает HostPort.
 func (s *stubRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	if s.createErr != nil {

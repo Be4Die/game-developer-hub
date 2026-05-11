@@ -27,6 +27,10 @@ func (f *fakeRuntime) LoadImage(ctx context.Context, tag string, data io.Reader)
 func (f *fakeRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
 	return nil
 }
+
+func (f *fakeRuntime) CleanupBuildArtifacts(ctx context.Context, imageTag string) error {
+	return nil
+}
 func (f *fakeRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	f.hostPort = opts.HostPort
 	return "cid", nil

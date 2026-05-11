@@ -15,6 +15,10 @@ type ContainerRuntime interface {
 	// internalPort — порт, который слушает процесс внутри контейнера.
 	BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error
 
+	// CleanupBuildArtifacts удаляет артефакты неудачной сборки
+	// (промежуточные контейнеры и dangling-образы).
+	CleanupBuildArtifacts(ctx context.Context, imageTag string) error
+
 	// CreateContainer создаёт контейнер (без запуска). Возвращает ID контейнера.
 	CreateContainer(ctx context.Context, opts ContainerOpts) (string, error)
 

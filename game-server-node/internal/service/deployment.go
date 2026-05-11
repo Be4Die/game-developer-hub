@@ -32,6 +32,10 @@ type DeploymentService struct {
 	// game_id → image_tag mapping, populated by LoadImage.
 	images   map[int64]string
 	imagesMu sync.RWMutex
+
+	// Periodic cleanup for build artifacts and orphan containers.
+	cleanupTicker *time.Ticker
+	stopCleanup   chan struct{}
 }
 
 // NewDeploymentService создаёт сервис для управления развёртыванием.
@@ -737,4 +741,52 @@ func (s *DeploymentService) GetActiveContainerIDs(ctx context.Context) []string 
 		}
 	}
 	return ids
+}
+
+// StartPeriodicCleanup запускает фоновый тикер, который периодически удаляет
+// зависшие артефакты сборки (exited-контейнеры и dangling-образы).
+func (s *DeploymentService) StartPeriodicCleanup(interval time.Duration) {
+	const op = "DeploymentService.StartPeriodicCleanup"
+
+	if s.cleanupTicker != nil {
+		s.cleanupTicker.Stop()
+	}
+	s.stopCleanup = make(chan struct{})
+	s.cleanupTicker = time.NewTicker(interval)
+
+	go func() {
+		for {
+			select {
+			case <-s.cleanupTicker.C:
+				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+				if err := s.CleanupOrphans(ctx); err != nil {
+					s.log.Warn("periodic orphan cleanup failed",
+						slog.String("op", op),
+						slog.String("error", err.Error()),
+					)
+				}
+				// Also prune any dangling build artifacts.
+				if err := s.runtime.CleanupBuildArtifacts(ctx, ""); err != nil {
+					s.log.Warn("periodic build artifact cleanup failed",
+						slog.String("op", op),
+						slog.String("error", err.Error()),
+					)
+				}
+				cancel()
+			case <-s.stopCleanup:
+				return
+			}
+		}
+	}()
+
+	s.log.Info("periodic cleanup started", slog.String("op", op), slog.Duration("interval", interval))
+}
+
+// StopPeriodicCleanup останавливает фоновый тикер очистки.
+func (s *DeploymentService) StopPeriodicCleanup() {
+	if s.cleanupTicker != nil {
+		s.cleanupTicker.Stop()
+		close(s.stopCleanup)
+		s.cleanupTicker = nil
+	}
 }

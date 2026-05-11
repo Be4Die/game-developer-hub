@@ -172,6 +172,10 @@ func (m *mockRuntime) LoadImage(ctx context.Context, imageTag string, data io.Re
 func (m *mockRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
 	return nil
 }
+
+func (m *mockRuntime) CleanupBuildArtifacts(ctx context.Context, imageTag string) error {
+	return nil
+}
 func (m *mockRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	return "", nil
 }

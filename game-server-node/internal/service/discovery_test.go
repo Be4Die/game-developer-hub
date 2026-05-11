@@ -39,6 +39,10 @@ func (s *stubDiscoveryRuntime) LoadImage(ctx context.Context, imageTag string, d
 func (s *stubDiscoveryRuntime) BuildImage(ctx context.Context, imageTag string, internalPort uint32, archive io.Reader) error {
 	return nil
 }
+
+func (s *stubDiscoveryRuntime) CleanupBuildArtifacts(ctx context.Context, imageTag string) error {
+	return nil
+}
 func (s *stubDiscoveryRuntime) CreateContainer(ctx context.Context, opts domain.ContainerOpts) (string, error) {
 	return "", nil
 }

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/runtime/docker"
@@ -113,6 +114,9 @@ func (a *App) MustRun() {
 		a.log.Warn("failed to cleanup orphan containers", slog.String("error", err.Error()))
 	}
 
+	// Start periodic background cleanup to remove dangling build artifacts.
+	a.deploymentSvc.StartPeriodicCleanup(5 * time.Minute)
+
 	if err := a.runGRPCServer(); err != nil {
 		panic(err)
 	}
@@ -138,6 +142,9 @@ func (a *App) runGRPCServer() error {
 func (a *App) MustStop() {
 	a.log.Info("stopping gRPC server", slog.Int("port", a.config.GRPC.Port))
 	a.gRPCServer.GracefulStop()
+
+	// Stop background cleanup ticker.
+	a.deploymentSvc.StopPeriodicCleanup()
 
 	// Stop all managed instances.
 	ctx := context.Background()
