@@ -11,6 +11,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
+const defaultStopTimeoutSec = 30
+
 // InstanceService управляет жизненным циклом экземпляров игровых серверов.
 type InstanceService struct {
 	instanceRepo  domain.InstanceRepo
@@ -147,7 +149,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
 		// Откат: останавливаем инстанс на ноде.
-		_ = s.nodeClient.StopInstance(ctx, nodeAddr, node.APIToken, nextID, 0)
+		_ = s.nodeClient.StopInstance(ctx, nodeAddr, node.APIToken, nextID, defaultStopTimeoutSec)
 		return nil, fmt.Errorf("InstanceService.StartInstance: save instance: %w", err)
 	}
 

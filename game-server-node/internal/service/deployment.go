@@ -16,6 +16,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
+const defaultDeleteStopTimeout = 30 * time.Second
+
 // DeploymentService управляет развёртыванием игровых инстансов.
 // Безопасен для конкурентного использования.
 type DeploymentService struct {
@@ -528,7 +530,7 @@ func (s *DeploymentService) StartStoppedInstance(ctx context.Context, instanceID
 	return nil
 }
 
-// DeleteInstance удаляет инстанс и его контейнер без graceful остановки.
+// DeleteInstance удаляет инстанс и его контейнер с graceful остановкой.
 func (s *DeploymentService) DeleteInstance(ctx context.Context, instanceID int64) error {
 	const op = "DeploymentService.DeleteInstance"
 
@@ -537,8 +539,8 @@ func (s *DeploymentService) DeleteInstance(ctx context.Context, instanceID int64
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Force stop the container (0 timeout = immediate kill).
-	if err := s.runtime.StopContainer(ctx, instance.ContainerID, 0); err != nil {
+	// Graceful stop the container before removal.
+	if err := s.runtime.StopContainer(ctx, instance.ContainerID, defaultDeleteStopTimeout); err != nil {
 		s.log.Warn("failed to stop container during delete",
 			slog.String("op", op),
 			slog.Int64("instance_id", instanceID),

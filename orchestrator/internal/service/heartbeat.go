@@ -506,7 +506,7 @@ func (s *HeartbeatService) enforceScaleToZero(ctx context.Context) {
 					slog.Int64("game_id", policy.GameID),
 					slog.Duration("idle", time.Since(zeroSince)),
 				)
-				_, _ = s.instanceSvc.StopInstance(ctx, policy.OwnerID, policy.GameID, inst.ID, 0)
+				_, _ = s.instanceSvc.StopInstance(ctx, policy.OwnerID, policy.GameID, inst.ID, defaultStopTimeoutSec)
 				_ = s.instanceState.DeleteZeroPlayersSince(ctx, inst.ID)
 			}
 		}
