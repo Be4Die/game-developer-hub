@@ -129,6 +129,9 @@ CREATE TABLE IF NOT EXISTS game_policies (
     max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
     scale_behavior           SMALLINT NOT NULL DEFAULT 1, -- 1=spawn, 2=queue
     node_preference          TEXT NOT NULL DEFAULT 'auto',
+    queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
+    queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
+    queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,
     created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -136,10 +139,33 @@ CREATE TABLE IF NOT EXISTS game_policies (
 COMMENT ON TABLE game_policies IS 'Политики автоматической оркестрации серверов по проектам';
 COMMENT ON COLUMN game_policies.mode IS '1=disabled, 2=keep_alive, 3=scale_to_zero';
 COMMENT ON COLUMN game_policies.scale_behavior IS '1=spawn, 2=queue';
+COMMENT ON COLUMN game_policies.queue_reservation_seconds IS 'Секунды на подключение после резервации слота';
+COMMENT ON COLUMN game_policies.queue_max_wait_seconds    IS 'Макс. время ожидания в очереди до авто-отмены';
+COMMENT ON COLUMN game_policies.queue_heartbeat_timeout   IS 'Выкидывание из очереди при отсутствии heartbeat (сек)';
 
 CREATE TRIGGER trigger_game_policies_updated_at
     BEFORE UPDATE ON game_policies
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица queue_events — аудит-лог очереди
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS queue_events (
+    id           BIGSERIAL PRIMARY KEY,
+    game_id      BIGINT NOT NULL,
+    player_id    TEXT NOT NULL,
+    event_type   SMALLINT NOT NULL, -- 1=join, 2=reserved, 3=connected, 4=timeout, 5=leave, 6=cancel
+    instance_id  BIGINT,
+    wait_seconds INT,
+    created_at   TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE queue_events IS 'Аудит-лог событий очереди игроков';
+COMMENT ON COLUMN queue_events.event_type IS '1=join, 2=reserved, 3=connected, 4=timeout, 5=leave, 6=cancel';
+
+CREATE INDEX IF NOT EXISTS idx_queue_events_game ON queue_events(game_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_queue_events_player ON queue_events(game_id, player_id, created_at);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Очистка и пересоздание последовательностей (для тестов)
