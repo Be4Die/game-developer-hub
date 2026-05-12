@@ -44,6 +44,13 @@ service QueueService {
       get: "/api/v1/games/{game_id}/queue/status"
     };
   }
+
+  // Получить количество игроков в очереди (для мониторинга).
+  rpc Count(QueueServiceCountRequest) returns (QueueServiceCountResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/games/{game_id}/queue/count"
+    };
+  }
 }
 
 message QueueServiceJoinRequest {
@@ -94,4 +101,12 @@ message QueueServiceStatusResponse {
   int32 estimated_wait_seconds = 4;
   optional ServerEndpoint reserved_endpoint = 5;
   optional int64 reserved_until_unix = 6;
+}
+
+message QueueServiceCountRequest {
+  int64 game_id = 1;
+}
+
+message QueueServiceCountResponse {
+  int64 count = 1;
 }

@@ -294,7 +294,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Upload, Play, AlertCircle, ChevronDown, ChevronRight, Save, Settings2 } from 'lucide-vue-next'
 import StatusBadge from '../../components/orchestrator/StatusBadge.vue'
 import Tooltip from '../../components/orchestrator/Tooltip.vue'
-import { listBuilds, listInstances, listNodes, getPolicy, setPolicy, statusQueue } from '../../api/orchestrator'
+import { listBuilds, listInstances, listNodes, getPolicy, setPolicy, getQueueCount } from '../../api/orchestrator'
 
 const props = defineProps({ gameId: { type: [String, Number], required: true } })
 
@@ -315,7 +315,7 @@ const runningCount = computed(() => instances.value.filter(i => i.status === 'ru
 const totalPlayers = computed(() => instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0))
 const onlineNodes = computed(() => nodes.value.filter(n => n.status === 'online').length)
 const onlineNodesList = computed(() => nodes.value.filter(n => n.status === 'online'))
-const queueCount = computed(() => policy.value?.scale_behavior === 'SCALE_BEHAVIOR_QUEUE' ? 'active' : 0)
+const queueCount = ref(0)
 
 const modeLabels = {
   ORCHESTRATION_MODE_UNSPECIFIED: 'Не задан',
@@ -344,6 +344,19 @@ function nodePreferenceLabel(val) {
   return val
 }
 
+async function fetchQueueCount() {
+  if (policy.value?.scale_behavior !== 'SCALE_BEHAVIOR_QUEUE') {
+    queueCount.value = 0
+    return
+  }
+  try {
+    const count = await getQueueCount(props.gameId)
+    queueCount.value = Number(count)
+  } catch (e) {
+    queueCount.value = 0
+  }
+}
+
 async function fetchAll() {
   loading.value = true
   error.value = null
@@ -356,6 +369,7 @@ async function fetchAll() {
     builds.value = b
     instances.value = i
     nodes.value = n
+    await fetchQueueCount()
   } catch (e) {
     error.value = e.message
   } finally {

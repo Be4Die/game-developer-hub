@@ -565,6 +565,94 @@ func (x *QueueServiceStatusResponse) GetReservedUntilUnix() int64 {
 	return 0
 }
 
+type QueueServiceCountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueueServiceCountRequest) Reset() {
+	*x = QueueServiceCountRequest{}
+	mi := &file_orchestrator_v1_queue_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueueServiceCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueueServiceCountRequest) ProtoMessage() {}
+
+func (x *QueueServiceCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_queue_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueueServiceCountRequest.ProtoReflect.Descriptor instead.
+func (*QueueServiceCountRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_queue_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *QueueServiceCountRequest) GetGameId() int64 {
+	if x != nil {
+		return x.GameId
+	}
+	return 0
+}
+
+type QueueServiceCountResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int64                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueueServiceCountResponse) Reset() {
+	*x = QueueServiceCountResponse{}
+	mi := &file_orchestrator_v1_queue_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueueServiceCountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueueServiceCountResponse) ProtoMessage() {}
+
+func (x *QueueServiceCountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_queue_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueueServiceCountResponse.ProtoReflect.Descriptor instead.
+func (*QueueServiceCountResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_queue_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *QueueServiceCountResponse) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_orchestrator_v1_queue_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_queue_proto_rawDesc = "" +
@@ -606,17 +694,22 @@ const file_orchestrator_v1_queue_proto_rawDesc = "" +
 	"\x11reserved_endpoint\x18\x05 \x01(\v2\x1f.orchestrator.v1.ServerEndpointH\x00R\x10reservedEndpoint\x88\x01\x01\x123\n" +
 	"\x13reserved_until_unix\x18\x06 \x01(\x03H\x01R\x11reservedUntilUnix\x88\x01\x01B\x14\n" +
 	"\x12_reserved_endpointB\x16\n" +
-	"\x14_reserved_until_unix*z\n" +
+	"\x14_reserved_until_unix\"3\n" +
+	"\x18QueueServiceCountRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"1\n" +
+	"\x19QueueServiceCountResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x03R\x05count*z\n" +
 	"\vQueueStatus\x12\x1c\n" +
 	"\x18QUEUE_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14QUEUE_STATUS_WAITING\x10\x01\x12\x19\n" +
 	"\x15QUEUE_STATUS_RESERVED\x10\x02\x12\x18\n" +
-	"\x14QUEUE_STATUS_EXPIRED\x10\x032\xdc\x04\n" +
+	"\x14QUEUE_STATUS_EXPIRED\x10\x032\xea\x05\n" +
 	"\fQueueService\x12\x8a\x01\n" +
 	"\x04Join\x12(.orchestrator.v1.QueueServiceJoinRequest\x1a).orchestrator.v1.QueueServiceJoinResponse\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/games/{game_id}/queue/join\x12\x9e\x01\n" +
 	"\tHeartbeat\x12-.orchestrator.v1.QueueServiceHeartbeatRequest\x1a..orchestrator.v1.QueueServiceHeartbeatResponse\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/api/v1/games/{game_id}/queue/heartbeat\x12\x8b\x01\n" +
 	"\x05Leave\x12).orchestrator.v1.QueueServiceLeaveRequest\x1a*.orchestrator.v1.QueueServiceLeaveResponse\"+\x82\xd3\xe4\x93\x02%*#/api/v1/games/{game_id}/queue/leave\x12\x8f\x01\n" +
-	"\x06Status\x12*.orchestrator.v1.QueueServiceStatusRequest\x1a+.orchestrator.v1.QueueServiceStatusResponse\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/games/{game_id}/queue/statusB\xca\x01\n" +
+	"\x06Status\x12*.orchestrator.v1.QueueServiceStatusRequest\x1a+.orchestrator.v1.QueueServiceStatusResponse\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/games/{game_id}/queue/status\x12\x8b\x01\n" +
+	"\x05Count\x12).orchestrator.v1.QueueServiceCountRequest\x1a*.orchestrator.v1.QueueServiceCountResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/games/{game_id}/queue/countB\xca\x01\n" +
 	"\x13com.orchestrator.v1B\n" +
 	"QueueProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
@@ -633,7 +726,7 @@ func file_orchestrator_v1_queue_proto_rawDescGZIP() []byte {
 }
 
 var file_orchestrator_v1_queue_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_orchestrator_v1_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_orchestrator_v1_queue_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_orchestrator_v1_queue_proto_goTypes = []any{
 	(QueueStatus)(0),                      // 0: orchestrator.v1.QueueStatus
 	(*QueueServiceJoinRequest)(nil),       // 1: orchestrator.v1.QueueServiceJoinRequest
@@ -644,27 +737,31 @@ var file_orchestrator_v1_queue_proto_goTypes = []any{
 	(*QueueServiceLeaveResponse)(nil),     // 6: orchestrator.v1.QueueServiceLeaveResponse
 	(*QueueServiceStatusRequest)(nil),     // 7: orchestrator.v1.QueueServiceStatusRequest
 	(*QueueServiceStatusResponse)(nil),    // 8: orchestrator.v1.QueueServiceStatusResponse
-	(*ServerEndpoint)(nil),                // 9: orchestrator.v1.ServerEndpoint
+	(*QueueServiceCountRequest)(nil),      // 9: orchestrator.v1.QueueServiceCountRequest
+	(*QueueServiceCountResponse)(nil),     // 10: orchestrator.v1.QueueServiceCountResponse
+	(*ServerEndpoint)(nil),                // 11: orchestrator.v1.ServerEndpoint
 }
 var file_orchestrator_v1_queue_proto_depIdxs = []int32{
-	0, // 0: orchestrator.v1.QueueServiceJoinResponse.status:type_name -> orchestrator.v1.QueueStatus
-	0, // 1: orchestrator.v1.QueueServiceHeartbeatResponse.status:type_name -> orchestrator.v1.QueueStatus
-	9, // 2: orchestrator.v1.QueueServiceHeartbeatResponse.reserved_endpoint:type_name -> orchestrator.v1.ServerEndpoint
-	0, // 3: orchestrator.v1.QueueServiceStatusResponse.status:type_name -> orchestrator.v1.QueueStatus
-	9, // 4: orchestrator.v1.QueueServiceStatusResponse.reserved_endpoint:type_name -> orchestrator.v1.ServerEndpoint
-	1, // 5: orchestrator.v1.QueueService.Join:input_type -> orchestrator.v1.QueueServiceJoinRequest
-	3, // 6: orchestrator.v1.QueueService.Heartbeat:input_type -> orchestrator.v1.QueueServiceHeartbeatRequest
-	5, // 7: orchestrator.v1.QueueService.Leave:input_type -> orchestrator.v1.QueueServiceLeaveRequest
-	7, // 8: orchestrator.v1.QueueService.Status:input_type -> orchestrator.v1.QueueServiceStatusRequest
-	2, // 9: orchestrator.v1.QueueService.Join:output_type -> orchestrator.v1.QueueServiceJoinResponse
-	4, // 10: orchestrator.v1.QueueService.Heartbeat:output_type -> orchestrator.v1.QueueServiceHeartbeatResponse
-	6, // 11: orchestrator.v1.QueueService.Leave:output_type -> orchestrator.v1.QueueServiceLeaveResponse
-	8, // 12: orchestrator.v1.QueueService.Status:output_type -> orchestrator.v1.QueueServiceStatusResponse
-	9, // [9:13] is the sub-list for method output_type
-	5, // [5:9] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0,  // 0: orchestrator.v1.QueueServiceJoinResponse.status:type_name -> orchestrator.v1.QueueStatus
+	0,  // 1: orchestrator.v1.QueueServiceHeartbeatResponse.status:type_name -> orchestrator.v1.QueueStatus
+	11, // 2: orchestrator.v1.QueueServiceHeartbeatResponse.reserved_endpoint:type_name -> orchestrator.v1.ServerEndpoint
+	0,  // 3: orchestrator.v1.QueueServiceStatusResponse.status:type_name -> orchestrator.v1.QueueStatus
+	11, // 4: orchestrator.v1.QueueServiceStatusResponse.reserved_endpoint:type_name -> orchestrator.v1.ServerEndpoint
+	1,  // 5: orchestrator.v1.QueueService.Join:input_type -> orchestrator.v1.QueueServiceJoinRequest
+	3,  // 6: orchestrator.v1.QueueService.Heartbeat:input_type -> orchestrator.v1.QueueServiceHeartbeatRequest
+	5,  // 7: orchestrator.v1.QueueService.Leave:input_type -> orchestrator.v1.QueueServiceLeaveRequest
+	7,  // 8: orchestrator.v1.QueueService.Status:input_type -> orchestrator.v1.QueueServiceStatusRequest
+	9,  // 9: orchestrator.v1.QueueService.Count:input_type -> orchestrator.v1.QueueServiceCountRequest
+	2,  // 10: orchestrator.v1.QueueService.Join:output_type -> orchestrator.v1.QueueServiceJoinResponse
+	4,  // 11: orchestrator.v1.QueueService.Heartbeat:output_type -> orchestrator.v1.QueueServiceHeartbeatResponse
+	6,  // 12: orchestrator.v1.QueueService.Leave:output_type -> orchestrator.v1.QueueServiceLeaveResponse
+	8,  // 13: orchestrator.v1.QueueService.Status:output_type -> orchestrator.v1.QueueServiceStatusResponse
+	10, // 14: orchestrator.v1.QueueService.Count:output_type -> orchestrator.v1.QueueServiceCountResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_queue_proto_init() }
@@ -681,7 +778,7 @@ func file_orchestrator_v1_queue_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_queue_proto_rawDesc), len(file_orchestrator_v1_queue_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

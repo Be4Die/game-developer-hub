@@ -23,6 +23,7 @@ const (
 	QueueService_Heartbeat_FullMethodName = "/orchestrator.v1.QueueService/Heartbeat"
 	QueueService_Leave_FullMethodName     = "/orchestrator.v1.QueueService/Leave"
 	QueueService_Status_FullMethodName    = "/orchestrator.v1.QueueService/Status"
+	QueueService_Count_FullMethodName     = "/orchestrator.v1.QueueService/Count"
 )
 
 // QueueServiceClient is the client API for QueueService service.
@@ -39,6 +40,8 @@ type QueueServiceClient interface {
 	Leave(ctx context.Context, in *QueueServiceLeaveRequest, opts ...grpc.CallOption) (*QueueServiceLeaveResponse, error)
 	// Получить статус очереди (read-only, без обновления heartbeat).
 	Status(ctx context.Context, in *QueueServiceStatusRequest, opts ...grpc.CallOption) (*QueueServiceStatusResponse, error)
+	// Получить количество игроков в очереди (для мониторинга).
+	Count(ctx context.Context, in *QueueServiceCountRequest, opts ...grpc.CallOption) (*QueueServiceCountResponse, error)
 }
 
 type queueServiceClient struct {
@@ -89,6 +92,16 @@ func (c *queueServiceClient) Status(ctx context.Context, in *QueueServiceStatusR
 	return out, nil
 }
 
+func (c *queueServiceClient) Count(ctx context.Context, in *QueueServiceCountRequest, opts ...grpc.CallOption) (*QueueServiceCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueueServiceCountResponse)
+	err := c.cc.Invoke(ctx, QueueService_Count_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueueServiceServer is the server API for QueueService service.
 // All implementations must embed UnimplementedQueueServiceServer
 // for forward compatibility.
@@ -103,6 +116,8 @@ type QueueServiceServer interface {
 	Leave(context.Context, *QueueServiceLeaveRequest) (*QueueServiceLeaveResponse, error)
 	// Получить статус очереди (read-only, без обновления heartbeat).
 	Status(context.Context, *QueueServiceStatusRequest) (*QueueServiceStatusResponse, error)
+	// Получить количество игроков в очереди (для мониторинга).
+	Count(context.Context, *QueueServiceCountRequest) (*QueueServiceCountResponse, error)
 	mustEmbedUnimplementedQueueServiceServer()
 }
 
@@ -124,6 +139,9 @@ func (UnimplementedQueueServiceServer) Leave(context.Context, *QueueServiceLeave
 }
 func (UnimplementedQueueServiceServer) Status(context.Context, *QueueServiceStatusRequest) (*QueueServiceStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Status not implemented")
+}
+func (UnimplementedQueueServiceServer) Count(context.Context, *QueueServiceCountRequest) (*QueueServiceCountResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Count not implemented")
 }
 func (UnimplementedQueueServiceServer) mustEmbedUnimplementedQueueServiceServer() {}
 func (UnimplementedQueueServiceServer) testEmbeddedByValue()                      {}
@@ -218,6 +236,24 @@ func _QueueService_Status_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _QueueService_Count_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueueServiceCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueueServiceServer).Count(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QueueService_Count_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueueServiceServer).Count(ctx, req.(*QueueServiceCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // QueueService_ServiceDesc is the grpc.ServiceDesc for QueueService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +276,10 @@ var QueueService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Status",
 			Handler:    _QueueService_Status_Handler,
+		},
+		{
+			MethodName: "Count",
+			Handler:    _QueueService_Count_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

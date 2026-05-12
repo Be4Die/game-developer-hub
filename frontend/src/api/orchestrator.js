@@ -297,6 +297,10 @@ export function statusQueue(gameId, playerId) {
   return http.get(`/games/${gameId}/queue/status`, { params: { player_id: playerId } }).then((r) => r.data);
 }
 
+export function getQueueCount(gameId) {
+  return http.get(`/games/${gameId}/queue/count`).then((r) => r.data.count ?? 0);
+}
+
 export function discoverServers(gameId, playerId = "") {
   const params = {};
   if (playerId) params.player_id = playerId;

@@ -44,6 +44,15 @@ func (h *QueueHandler) QueueServiceLeave(ctx context.Context, req *pb.QueueServi
 	return &pb.QueueServiceLeaveResponse{}, nil
 }
 
+// Count возвращает количество игроков в очереди.
+func (h *QueueHandler) Count(ctx context.Context, req *pb.QueueServiceCountRequest) (*pb.QueueServiceCountResponse, error) {
+	count, err := h.queueService.Count(ctx, req.GetGameId())
+	if err != nil {
+		return nil, domainError(err, "queue count")
+	}
+	return &pb.QueueServiceCountResponse{Count: count}, nil
+}
+
 // QueueServiceStatus возвращает статус без обновления heartbeat.
 func (h *QueueHandler) QueueServiceStatus(ctx context.Context, req *pb.QueueServiceStatusRequest) (*pb.QueueServiceStatusResponse, error) {
 	result, err := h.queueService.Status(ctx, req.GetGameId(), req.GetPlayerId())

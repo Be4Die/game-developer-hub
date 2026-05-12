@@ -270,6 +270,15 @@ func (s *QueueService) CleanupExpired(ctx context.Context, gameID int64, policy 
 	return expired, nil
 }
 
+// Count возвращает количество игроков в очереди.
+func (s *QueueService) Count(ctx context.Context, gameID int64) (int64, error) {
+	count, err := s.store.Count(ctx, gameID)
+	if err != nil {
+		return 0, fmt.Errorf("QueueService.Count: %w", err)
+	}
+	return count, nil
+}
+
 // estimateWait оценивает время ожидания (грубая эвристика).
 func (s *QueueService) estimateWait(position int64) int32 {
 	// Примерно 20 сек на игрока впереди (можно улучшить по статистике)
