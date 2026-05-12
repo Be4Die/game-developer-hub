@@ -38,6 +38,7 @@ type Instance struct {
 	Protocol         Protocol
 	Status           InstanceStatus
 	PlayerCount      *uint32
+	QueueSize        *uint32
 	MaxPlayers       uint32
 	DeveloperPayload map[string]string
 	StartedAt        time.Time

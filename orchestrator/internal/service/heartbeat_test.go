@@ -296,6 +296,8 @@ type hbMockInstanceState struct {
 	getStatusFn          func(ctx context.Context, instanceID int64) (domain.InstanceStatus, error)
 	setPlayerCountFn     func(ctx context.Context, instanceID int64, count uint32) error
 	getPlayerCountFn     func(ctx context.Context, instanceID int64) (uint32, error)
+	setQueueSizeFn       func(ctx context.Context, instanceID int64, size uint32) error
+	getQueueSizeFn       func(ctx context.Context, instanceID int64) (uint32, error)
 	setUsageFn           func(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error
 	getUsageFn           func(ctx context.Context, instanceID int64) (*domain.ResourceUsage, error)
 	deleteFn             func(ctx context.Context, instanceID int64) error
@@ -325,6 +327,18 @@ func (m *hbMockInstanceState) SetPlayerCount(ctx context.Context, instanceID int
 func (m *hbMockInstanceState) GetPlayerCount(ctx context.Context, instanceID int64) (uint32, error) {
 	if m.getPlayerCountFn != nil {
 		return m.getPlayerCountFn(ctx, instanceID)
+	}
+	return 0, nil
+}
+func (m *hbMockInstanceState) SetQueueSize(ctx context.Context, instanceID int64, size uint32) error {
+	if m.setQueueSizeFn != nil {
+		return m.setQueueSizeFn(ctx, instanceID, size)
+	}
+	return nil
+}
+func (m *hbMockInstanceState) GetQueueSize(ctx context.Context, instanceID int64) (uint32, error) {
+	if m.getQueueSizeFn != nil {
+		return m.getQueueSizeFn(ctx, instanceID)
 	}
 	return 0, nil
 }

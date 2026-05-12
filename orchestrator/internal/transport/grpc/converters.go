@@ -334,6 +334,28 @@ func scaleBehaviorFromProto(b pb.ScaleBehavior) domain.ScaleBehavior {
 	}
 }
 
+func queueLocationToProto(l domain.QueueLocation) pb.QueueLocation {
+	switch l {
+	case domain.QueueLocationClient:
+		return pb.QueueLocation_QUEUE_LOCATION_CLIENT
+	case domain.QueueLocationServer:
+		return pb.QueueLocation_QUEUE_LOCATION_SERVER
+	default:
+		return pb.QueueLocation_QUEUE_LOCATION_UNSPECIFIED
+	}
+}
+
+func queueLocationFromProto(l pb.QueueLocation) domain.QueueLocation {
+	switch l {
+	case pb.QueueLocation_QUEUE_LOCATION_CLIENT:
+		return domain.QueueLocationClient
+	case pb.QueueLocation_QUEUE_LOCATION_SERVER:
+		return domain.QueueLocationServer
+	default:
+		return domain.QueueLocationClient
+	}
+}
+
 func queueStatusToProto(s domain.QueueStatus) pb.QueueStatus {
 	switch s {
 	case domain.QueueStatusWaiting:
@@ -360,6 +382,8 @@ func gamePolicyToProto(p *domain.GamePolicy) *pb.GamePolicy {
 		MaxInstancesPerGame:     p.MaxInstancesPerGame,
 		ScaleBehavior:           scaleBehaviorToProto(p.ScaleBehavior),
 		NodePreference:          p.NodePreference,
+		QueueLocation:           queueLocationToProto(p.QueueLocation),
+		QueueScaleUpThreshold:   p.QueueScaleUpThreshold,
 		QueueReservationSeconds: p.QueueReservationSec,
 		QueueMaxWaitSeconds:     p.QueueMaxWaitSec,
 		QueueHeartbeatTimeout:   p.QueueHeartbeatTimeout,
@@ -381,6 +405,8 @@ func gamePolicyFromProto(req *pb.GamePolicyServiceSetRequest) *domain.GamePolicy
 		MaxInstancesPerGame:   req.GetMaxInstancesPerGame(),
 		ScaleBehavior:         scaleBehaviorFromProto(req.GetScaleBehavior()),
 		NodePreference:        req.GetNodePreference(),
+		QueueLocation:         queueLocationFromProto(req.GetQueueLocation()),
+		QueueScaleUpThreshold: req.GetQueueScaleUpThreshold(),
 		QueueReservationSec:   req.GetQueueReservationSeconds(),
 		QueueMaxWaitSec:       req.GetQueueMaxWaitSeconds(),
 		QueueHeartbeatTimeout: req.GetQueueHeartbeatTimeout(),

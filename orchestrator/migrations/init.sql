@@ -129,6 +129,8 @@ CREATE TABLE IF NOT EXISTS game_policies (
     max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
     scale_behavior           SMALLINT NOT NULL DEFAULT 1, -- 1=spawn, 2=queue
     node_preference          TEXT NOT NULL DEFAULT 'auto',
+    queue_location            SMALLINT NOT NULL DEFAULT 1, -- 1=client, 2=server
+    queue_scale_up_threshold  INTEGER NOT NULL DEFAULT 0,  -- 0 = auto (max_players / 2)
     queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
     queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
     queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,
@@ -139,6 +141,8 @@ CREATE TABLE IF NOT EXISTS game_policies (
 COMMENT ON TABLE game_policies IS 'Политики автоматической оркестрации серверов по проектам';
 COMMENT ON COLUMN game_policies.mode IS '1=disabled, 2=keep_alive, 3=scale_to_zero';
 COMMENT ON COLUMN game_policies.scale_behavior IS '1=spawn, 2=queue';
+COMMENT ON COLUMN game_policies.queue_location IS '1=client, 2=server';
+COMMENT ON COLUMN game_policies.queue_scale_up_threshold IS 'Порог очереди для масштабирования (0 = auto)';
 COMMENT ON COLUMN game_policies.queue_reservation_seconds IS 'Секунды на подключение после резервации слота';
 COMMENT ON COLUMN game_policies.queue_max_wait_seconds    IS 'Макс. время ожидания в очереди до авто-отмены';
 COMMENT ON COLUMN game_policies.queue_heartbeat_timeout   IS 'Выкидывание из очереди при отсутствии heartbeat (сек)';

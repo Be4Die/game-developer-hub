@@ -556,6 +556,10 @@ func fromPBInstance(inst *pb.Instance) *domain.Instance {
 		pc := inst.GetPlayerCount()
 		result.PlayerCount = &pc
 	}
+	if inst.QueueSize != nil {
+		qs := inst.GetQueueSize()
+		result.QueueSize = &qs
+	}
 
 	if inst.StartedAt != nil {
 		result.StartedAt = inst.StartedAt.AsTime()

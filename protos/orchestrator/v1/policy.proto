@@ -21,6 +21,13 @@ enum ScaleBehavior {
   SCALE_BEHAVIOR_QUEUE = 2;  // игроки ждут в очереди
 }
 
+// Где реализована очередь: на клиенте (оркестратор) или на сервере (игровой сервер).
+enum QueueLocation {
+  QUEUE_LOCATION_UNSPECIFIED = 0;
+  QUEUE_LOCATION_CLIENT = 1;  // client-side queue в оркестраторе
+  QUEUE_LOCATION_SERVER = 2;  // server-side queue внутри игрового сервера
+}
+
 // Политика оркестрации серверов для конкретной игры.
 message GamePolicy {
   int64 game_id = 1;
@@ -34,6 +41,8 @@ message GamePolicy {
   int32 max_instances_per_game = 9;
   ScaleBehavior scale_behavior = 10;
   string node_preference = 11;       // "auto" или "node-<id>"
+  QueueLocation queue_location = 17;   // где реализована очередь (client/server)
+  int32 queue_scale_up_threshold = 18;   // порог очереди для масштабирования (server-side)
   int32 queue_reservation_seconds = 14;  // секунды на подключение после резервации
   int32 queue_max_wait_seconds = 15;     // макс. время ожидания в очереди
   int32 queue_heartbeat_timeout = 16;    // выкидывание при отсутствии heartbeat (сек)
@@ -80,6 +89,8 @@ message GamePolicyServiceSetRequest {
   int32 queue_reservation_seconds = 12;
   int32 queue_max_wait_seconds = 13;
   int32 queue_heartbeat_timeout = 14;
+  QueueLocation queue_location = 15;
+  int32 queue_scale_up_threshold = 16;
 }
 
 message GamePolicyServiceSetResponse {

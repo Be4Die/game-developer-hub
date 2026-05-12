@@ -27,6 +27,7 @@ type DeploymentService struct {
 	imageMapPath     string
 	containerMapPath string
 	nodeID           string
+	reportPort       int // порт HTTP-сервера отчётов, 0 = отключён
 
 	// Simple ID generator. In production — use UUID or database sequence.
 	nextID atomic.Int64
@@ -320,12 +321,23 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: resolve port: %w", op, err)
 	}
 
+	// Подготавливаем env vars.
+	envVars := make(map[string]string, len(opts.EnvVars)+2)
+	for k, v := range opts.EnvVars {
+		envVars[k] = v
+	}
+	// Инжектируем URL для отчётов, если HTTP-сервер отчётов включён.
+	if s.reportPort > 0 {
+		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://host.docker.internal:%d/v1/report", s.reportPort)
+		envVars["GAME_SERVER_NODE_INSTANCE_ID"] = fmt.Sprintf("%d", opts.InstanceID)
+	}
+
 	// Create container (does not start yet).
 	containerID, err := s.runtime.CreateContainer(ctx, domain.ContainerOpts{
 		ImageTag:     imageTag,
 		InternalPort: opts.InternalPort,
 		HostPort:     hostPort,
-		EnvVars:      opts.EnvVars,
+		EnvVars:      envVars,
 		Args:         opts.Args,
 		CPUMillis:    opts.CPUMillis,
 		MemoryBytes:  opts.MemoryBytes,
@@ -725,6 +737,12 @@ func (s *DeploymentService) CleanupOrphans(ctx context.Context) error {
 // Должен быть вызван до операций с контейнерами (CleanupOrphans, StartInstance).
 func (s *DeploymentService) SetNodeID(nodeID string) {
 	s.nodeID = nodeID
+}
+
+// SetReportPort устанавливает порт HTTP-сервера отчётов.
+// Если > 0, при старте инстанса будет инжектироваться GAME_SERVER_NODE_REPORT_URL.
+func (s *DeploymentService) SetReportPort(port int) {
+	s.reportPort = port
 }
 
 // GetActiveContainerIDs возвращает список ID контейнеров, управляемых этой нодой

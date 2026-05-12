@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/sysinfo"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/service"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
+	httpreport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/http"
 	grpctransport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/grpc"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc"
@@ -26,8 +28,10 @@ type App struct {
 	log             *slog.Logger
 	config          *config.Config
 	gRPCServer      *grpc.Server
+	reportServer    *http.Server
 	announcementSvc *service.AnnouncementService
 	deploymentSvc   *service.DeploymentService
+	storage         *memory.Storage
 }
 
 // New создаёт приложение со всеми инициализированными компонентами.
@@ -76,12 +80,20 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		announcementSvc = service.NewAnnouncementService(log, cfg, sysProvider)
 	}
 
+	// HTTP-сервер отчётов (только localhost, недоступен извне).
+	var reportServer *http.Server
+	if cfg.Report.Port > 0 {
+		reportServer = httpreport.NewReportServer(log, storage, cfg.Report.Port)
+	}
+
 	return &App{
 		log:             log,
 		config:          cfg,
 		gRPCServer:      gRPCServer,
+		reportServer:    reportServer,
 		announcementSvc: announcementSvc,
 		deploymentSvc:   deploymentSvc,
+		storage:         storage,
 	}, nil
 }
 
@@ -108,6 +120,11 @@ func (a *App) MustRun() {
 		fmt.Printf("═══════════════════════════════════════════════════\n")
 	}
 
+	// Передаём порт отчётов в deployment service.
+	if a.config.Report.Port > 0 {
+		a.deploymentSvc.SetReportPort(a.config.Report.Port)
+	}
+
 	// Cleanup any orphan containers from previous runs.
 	// Must be called AFTER we know our NodeID from the orchestrator.
 	if err := a.deploymentSvc.CleanupOrphans(ctx); err != nil {
@@ -116,6 +133,16 @@ func (a *App) MustRun() {
 
 	// Start periodic background cleanup to remove dangling build artifacts.
 	a.deploymentSvc.StartPeriodicCleanup(5 * time.Minute)
+
+	// Запускаем HTTP-сервер отчётов (localhost only).
+	if a.reportServer != nil {
+		go func() {
+			a.log.Info("report server listening", slog.String("addr", a.reportServer.Addr))
+			if err := a.reportServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				a.log.Error("report server failed", slog.String("error", err.Error()))
+			}
+		}()
+	}
 
 	if err := a.runGRPCServer(); err != nil {
 		panic(err)
@@ -142,6 +169,12 @@ func (a *App) runGRPCServer() error {
 func (a *App) MustStop() {
 	a.log.Info("stopping gRPC server", slog.Int("port", a.config.GRPC.Port))
 	a.gRPCServer.GracefulStop()
+
+	// Stop HTTP report server.
+	if a.reportServer != nil {
+		a.log.Info("stopping report server")
+		_ = a.reportServer.Close()
+	}
 
 	// Stop background cleanup ticker.
 	a.deploymentSvc.StopPeriodicCleanup()

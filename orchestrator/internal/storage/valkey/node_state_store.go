@@ -18,6 +18,7 @@ import (
 const (
 	keyInstanceStatus    = "inst:st:"
 	keyInstanceCount     = "inst:pc:"
+	keyInstanceQueue     = "inst:qs:"
 	keyInstanceUsage     = "inst:us:"
 	keyInstanceZeroSince = "inst:zs:"
 	keyNodeUsage         = "node:us:"

@@ -126,6 +126,56 @@ func (ScaleBehavior) EnumDescriptor() ([]byte, []int) {
 	return file_orchestrator_v1_policy_proto_rawDescGZIP(), []int{1}
 }
 
+// Где реализована очередь: на клиенте (оркестратор) или на сервере (игровой сервер).
+type QueueLocation int32
+
+const (
+	QueueLocation_QUEUE_LOCATION_UNSPECIFIED QueueLocation = 0
+	QueueLocation_QUEUE_LOCATION_CLIENT      QueueLocation = 1 // client-side queue в оркестраторе
+	QueueLocation_QUEUE_LOCATION_SERVER      QueueLocation = 2 // server-side queue внутри игрового сервера
+)
+
+// Enum value maps for QueueLocation.
+var (
+	QueueLocation_name = map[int32]string{
+		0: "QUEUE_LOCATION_UNSPECIFIED",
+		1: "QUEUE_LOCATION_CLIENT",
+		2: "QUEUE_LOCATION_SERVER",
+	}
+	QueueLocation_value = map[string]int32{
+		"QUEUE_LOCATION_UNSPECIFIED": 0,
+		"QUEUE_LOCATION_CLIENT":      1,
+		"QUEUE_LOCATION_SERVER":      2,
+	}
+)
+
+func (x QueueLocation) Enum() *QueueLocation {
+	p := new(QueueLocation)
+	*p = x
+	return p
+}
+
+func (x QueueLocation) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (QueueLocation) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_policy_proto_enumTypes[2].Descriptor()
+}
+
+func (QueueLocation) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_policy_proto_enumTypes[2]
+}
+
+func (x QueueLocation) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use QueueLocation.Descriptor instead.
+func (QueueLocation) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_policy_proto_rawDescGZIP(), []int{2}
+}
+
 // Политика оркестрации серверов для конкретной игры.
 type GamePolicy struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
@@ -139,10 +189,12 @@ type GamePolicy struct {
 	MaxPlayersPerInstance   int32                  `protobuf:"varint,8,opt,name=max_players_per_instance,json=maxPlayersPerInstance,proto3" json:"max_players_per_instance,omitempty"`
 	MaxInstancesPerGame     int32                  `protobuf:"varint,9,opt,name=max_instances_per_game,json=maxInstancesPerGame,proto3" json:"max_instances_per_game,omitempty"`
 	ScaleBehavior           ScaleBehavior          `protobuf:"varint,10,opt,name=scale_behavior,json=scaleBehavior,proto3,enum=orchestrator.v1.ScaleBehavior" json:"scale_behavior,omitempty"`
-	NodePreference          string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`                               // "auto" или "node-<id>"
-	QueueReservationSeconds int32                  `protobuf:"varint,14,opt,name=queue_reservation_seconds,json=queueReservationSeconds,proto3" json:"queue_reservation_seconds,omitempty"` // секунды на подключение после резервации
-	QueueMaxWaitSeconds     int32                  `protobuf:"varint,15,opt,name=queue_max_wait_seconds,json=queueMaxWaitSeconds,proto3" json:"queue_max_wait_seconds,omitempty"`           // макс. время ожидания в очереди
-	QueueHeartbeatTimeout   int32                  `protobuf:"varint,16,opt,name=queue_heartbeat_timeout,json=queueHeartbeatTimeout,proto3" json:"queue_heartbeat_timeout,omitempty"`       // выкидывание при отсутствии heartbeat (сек)
+	NodePreference          string                 `protobuf:"bytes,11,opt,name=node_preference,json=nodePreference,proto3" json:"node_preference,omitempty"`                                  // "auto" или "node-<id>"
+	QueueLocation           QueueLocation          `protobuf:"varint,17,opt,name=queue_location,json=queueLocation,proto3,enum=orchestrator.v1.QueueLocation" json:"queue_location,omitempty"` // где реализована очередь (client/server)
+	QueueScaleUpThreshold   int32                  `protobuf:"varint,18,opt,name=queue_scale_up_threshold,json=queueScaleUpThreshold,proto3" json:"queue_scale_up_threshold,omitempty"`        // порог очереди для масштабирования (server-side)
+	QueueReservationSeconds int32                  `protobuf:"varint,14,opt,name=queue_reservation_seconds,json=queueReservationSeconds,proto3" json:"queue_reservation_seconds,omitempty"`    // секунды на подключение после резервации
+	QueueMaxWaitSeconds     int32                  `protobuf:"varint,15,opt,name=queue_max_wait_seconds,json=queueMaxWaitSeconds,proto3" json:"queue_max_wait_seconds,omitempty"`              // макс. время ожидания в очереди
+	QueueHeartbeatTimeout   int32                  `protobuf:"varint,16,opt,name=queue_heartbeat_timeout,json=queueHeartbeatTimeout,proto3" json:"queue_heartbeat_timeout,omitempty"`          // выкидывание при отсутствии heartbeat (сек)
 	CreatedAt               *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt               *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields           protoimpl.UnknownFields
@@ -254,6 +306,20 @@ func (x *GamePolicy) GetNodePreference() string {
 		return x.NodePreference
 	}
 	return ""
+}
+
+func (x *GamePolicy) GetQueueLocation() QueueLocation {
+	if x != nil {
+		return x.QueueLocation
+	}
+	return QueueLocation_QUEUE_LOCATION_UNSPECIFIED
+}
+
+func (x *GamePolicy) GetQueueScaleUpThreshold() int32 {
+	if x != nil {
+		return x.QueueScaleUpThreshold
+	}
+	return 0
 }
 
 func (x *GamePolicy) GetQueueReservationSeconds() int32 {
@@ -395,6 +461,8 @@ type GamePolicyServiceSetRequest struct {
 	QueueReservationSeconds int32                  `protobuf:"varint,12,opt,name=queue_reservation_seconds,json=queueReservationSeconds,proto3" json:"queue_reservation_seconds,omitempty"`
 	QueueMaxWaitSeconds     int32                  `protobuf:"varint,13,opt,name=queue_max_wait_seconds,json=queueMaxWaitSeconds,proto3" json:"queue_max_wait_seconds,omitempty"`
 	QueueHeartbeatTimeout   int32                  `protobuf:"varint,14,opt,name=queue_heartbeat_timeout,json=queueHeartbeatTimeout,proto3" json:"queue_heartbeat_timeout,omitempty"`
+	QueueLocation           QueueLocation          `protobuf:"varint,15,opt,name=queue_location,json=queueLocation,proto3,enum=orchestrator.v1.QueueLocation" json:"queue_location,omitempty"`
+	QueueScaleUpThreshold   int32                  `protobuf:"varint,16,opt,name=queue_scale_up_threshold,json=queueScaleUpThreshold,proto3" json:"queue_scale_up_threshold,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -527,6 +595,20 @@ func (x *GamePolicyServiceSetRequest) GetQueueHeartbeatTimeout() int32 {
 	return 0
 }
 
+func (x *GamePolicyServiceSetRequest) GetQueueLocation() QueueLocation {
+	if x != nil {
+		return x.QueueLocation
+	}
+	return QueueLocation_QUEUE_LOCATION_UNSPECIFIED
+}
+
+func (x *GamePolicyServiceSetRequest) GetQueueScaleUpThreshold() int32 {
+	if x != nil {
+		return x.QueueScaleUpThreshold
+	}
+	return 0
+}
+
 type GamePolicyServiceSetResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Policy        *GamePolicy            `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
@@ -575,7 +657,7 @@ var File_orchestrator_v1_policy_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\xaa\x06\n" +
+	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\xaa\a\n" +
 	"\n" +
 	"GamePolicy\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
@@ -589,7 +671,9 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x16max_instances_per_game\x18\t \x01(\x05R\x13maxInstancesPerGame\x12E\n" +
 	"\x0escale_behavior\x18\n" +
 	" \x01(\x0e2\x1e.orchestrator.v1.ScaleBehaviorR\rscaleBehavior\x12'\n" +
-	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x12:\n" +
+	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x12E\n" +
+	"\x0equeue_location\x18\x11 \x01(\x0e2\x1e.orchestrator.v1.QueueLocationR\rqueueLocation\x127\n" +
+	"\x18queue_scale_up_threshold\x18\x12 \x01(\x05R\x15queueScaleUpThreshold\x12:\n" +
 	"\x19queue_reservation_seconds\x18\x0e \x01(\x05R\x17queueReservationSeconds\x123\n" +
 	"\x16queue_max_wait_seconds\x18\x0f \x01(\x05R\x13queueMaxWaitSeconds\x126\n" +
 	"\x17queue_heartbeat_timeout\x18\x10 \x01(\x05R\x15queueHeartbeatTimeout\x129\n" +
@@ -600,7 +684,7 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x1bGamePolicyServiceGetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\"S\n" +
 	"\x1cGamePolicyServiceGetResponse\x123\n" +
-	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\xc5\x05\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy\"\xc5\x06\n" +
 	"\x1bGamePolicyServiceSetRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x126\n" +
@@ -616,7 +700,9 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\x0fnode_preference\x18\v \x01(\tR\x0enodePreference\x12:\n" +
 	"\x19queue_reservation_seconds\x18\f \x01(\x05R\x17queueReservationSeconds\x123\n" +
 	"\x16queue_max_wait_seconds\x18\r \x01(\x05R\x13queueMaxWaitSeconds\x126\n" +
-	"\x17queue_heartbeat_timeout\x18\x0e \x01(\x05R\x15queueHeartbeatTimeout\"S\n" +
+	"\x17queue_heartbeat_timeout\x18\x0e \x01(\x05R\x15queueHeartbeatTimeout\x12E\n" +
+	"\x0equeue_location\x18\x0f \x01(\x0e2\x1e.orchestrator.v1.QueueLocationR\rqueueLocation\x127\n" +
+	"\x18queue_scale_up_threshold\x18\x10 \x01(\x05R\x15queueScaleUpThreshold\"S\n" +
 	"\x1cGamePolicyServiceSetResponse\x123\n" +
 	"\x06policy\x18\x01 \x01(\v2\x1b.orchestrator.v1.GamePolicyR\x06policy*\xa1\x01\n" +
 	"\x11OrchestrationMode\x12\"\n" +
@@ -627,7 +713,11 @@ const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\rScaleBehavior\x12\x1e\n" +
 	"\x1aSCALE_BEHAVIOR_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14SCALE_BEHAVIOR_SPAWN\x10\x01\x12\x18\n" +
-	"\x14SCALE_BEHAVIOR_QUEUE\x10\x022\xb0\x02\n" +
+	"\x14SCALE_BEHAVIOR_QUEUE\x10\x02*e\n" +
+	"\rQueueLocation\x12\x1e\n" +
+	"\x1aQUEUE_LOCATION_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15QUEUE_LOCATION_CLIENT\x10\x01\x12\x19\n" +
+	"\x15QUEUE_LOCATION_SERVER\x10\x022\xb0\x02\n" +
 	"\x11GamePolicyService\x12\x8a\x01\n" +
 	"\x03Get\x12,.orchestrator.v1.GamePolicyServiceGetRequest\x1a-.orchestrator.v1.GamePolicyServiceGetResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/games/{game_id}/policy\x12\x8d\x01\n" +
 	"\x03Set\x12,.orchestrator.v1.GamePolicyServiceSetRequest\x1a-.orchestrator.v1.GamePolicyServiceSetResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/games/{game_id}/policyB\xcb\x01\n" +
@@ -645,36 +735,39 @@ func file_orchestrator_v1_policy_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_policy_proto_rawDescData
 }
 
-var file_orchestrator_v1_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_orchestrator_v1_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_orchestrator_v1_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_orchestrator_v1_policy_proto_goTypes = []any{
 	(OrchestrationMode)(0),               // 0: orchestrator.v1.OrchestrationMode
 	(ScaleBehavior)(0),                   // 1: orchestrator.v1.ScaleBehavior
-	(*GamePolicy)(nil),                   // 2: orchestrator.v1.GamePolicy
-	(*GamePolicyServiceGetRequest)(nil),  // 3: orchestrator.v1.GamePolicyServiceGetRequest
-	(*GamePolicyServiceGetResponse)(nil), // 4: orchestrator.v1.GamePolicyServiceGetResponse
-	(*GamePolicyServiceSetRequest)(nil),  // 5: orchestrator.v1.GamePolicyServiceSetRequest
-	(*GamePolicyServiceSetResponse)(nil), // 6: orchestrator.v1.GamePolicyServiceSetResponse
-	(*timestamppb.Timestamp)(nil),        // 7: google.protobuf.Timestamp
+	(QueueLocation)(0),                   // 2: orchestrator.v1.QueueLocation
+	(*GamePolicy)(nil),                   // 3: orchestrator.v1.GamePolicy
+	(*GamePolicyServiceGetRequest)(nil),  // 4: orchestrator.v1.GamePolicyServiceGetRequest
+	(*GamePolicyServiceGetResponse)(nil), // 5: orchestrator.v1.GamePolicyServiceGetResponse
+	(*GamePolicyServiceSetRequest)(nil),  // 6: orchestrator.v1.GamePolicyServiceSetRequest
+	(*GamePolicyServiceSetResponse)(nil), // 7: orchestrator.v1.GamePolicyServiceSetResponse
+	(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
 }
 var file_orchestrator_v1_policy_proto_depIdxs = []int32{
 	0,  // 0: orchestrator.v1.GamePolicy.mode:type_name -> orchestrator.v1.OrchestrationMode
 	1,  // 1: orchestrator.v1.GamePolicy.scale_behavior:type_name -> orchestrator.v1.ScaleBehavior
-	7,  // 2: orchestrator.v1.GamePolicy.created_at:type_name -> google.protobuf.Timestamp
-	7,  // 3: orchestrator.v1.GamePolicy.updated_at:type_name -> google.protobuf.Timestamp
-	2,  // 4: orchestrator.v1.GamePolicyServiceGetResponse.policy:type_name -> orchestrator.v1.GamePolicy
-	0,  // 5: orchestrator.v1.GamePolicyServiceSetRequest.mode:type_name -> orchestrator.v1.OrchestrationMode
-	1,  // 6: orchestrator.v1.GamePolicyServiceSetRequest.scale_behavior:type_name -> orchestrator.v1.ScaleBehavior
-	2,  // 7: orchestrator.v1.GamePolicyServiceSetResponse.policy:type_name -> orchestrator.v1.GamePolicy
-	3,  // 8: orchestrator.v1.GamePolicyService.Get:input_type -> orchestrator.v1.GamePolicyServiceGetRequest
-	5,  // 9: orchestrator.v1.GamePolicyService.Set:input_type -> orchestrator.v1.GamePolicyServiceSetRequest
-	4,  // 10: orchestrator.v1.GamePolicyService.Get:output_type -> orchestrator.v1.GamePolicyServiceGetResponse
-	6,  // 11: orchestrator.v1.GamePolicyService.Set:output_type -> orchestrator.v1.GamePolicyServiceSetResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	2,  // 2: orchestrator.v1.GamePolicy.queue_location:type_name -> orchestrator.v1.QueueLocation
+	8,  // 3: orchestrator.v1.GamePolicy.created_at:type_name -> google.protobuf.Timestamp
+	8,  // 4: orchestrator.v1.GamePolicy.updated_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: orchestrator.v1.GamePolicyServiceGetResponse.policy:type_name -> orchestrator.v1.GamePolicy
+	0,  // 6: orchestrator.v1.GamePolicyServiceSetRequest.mode:type_name -> orchestrator.v1.OrchestrationMode
+	1,  // 7: orchestrator.v1.GamePolicyServiceSetRequest.scale_behavior:type_name -> orchestrator.v1.ScaleBehavior
+	2,  // 8: orchestrator.v1.GamePolicyServiceSetRequest.queue_location:type_name -> orchestrator.v1.QueueLocation
+	3,  // 9: orchestrator.v1.GamePolicyServiceSetResponse.policy:type_name -> orchestrator.v1.GamePolicy
+	4,  // 10: orchestrator.v1.GamePolicyService.Get:input_type -> orchestrator.v1.GamePolicyServiceGetRequest
+	6,  // 11: orchestrator.v1.GamePolicyService.Set:input_type -> orchestrator.v1.GamePolicyServiceSetRequest
+	5,  // 12: orchestrator.v1.GamePolicyService.Get:output_type -> orchestrator.v1.GamePolicyServiceGetResponse
+	7,  // 13: orchestrator.v1.GamePolicyService.Set:output_type -> orchestrator.v1.GamePolicyServiceSetResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_policy_proto_init() }
@@ -688,7 +781,7 @@ func file_orchestrator_v1_policy_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_policy_proto_rawDesc), len(file_orchestrator_v1_policy_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,

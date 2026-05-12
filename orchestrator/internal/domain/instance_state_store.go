@@ -21,6 +21,12 @@ type InstanceStateStore interface {
 	// GetPlayerCount возвращает текущее количество игроков.
 	GetPlayerCount(ctx context.Context, instanceID int64) (uint32, error)
 
+	// SetQueueSize обновляет размер очереди на инстансе и сбрасывает TTL.
+	SetQueueSize(ctx context.Context, instanceID int64, size uint32) error
+
+	// GetQueueSize возвращает текущий размер очереди на инстансе.
+	GetQueueSize(ctx context.Context, instanceID int64) (uint32, error)
+
 	// SetUsage обновляет метрики потребления ресурсов и сбрасывает TTL.
 	SetUsage(ctx context.Context, instanceID int64, usage *ResourceUsage) error
 

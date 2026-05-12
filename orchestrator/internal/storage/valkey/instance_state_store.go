@@ -88,6 +88,38 @@ func (s *InstanceStateStore) GetPlayerCount(ctx context.Context, instanceID int6
 	return uint32(count), nil
 }
 
+// SetQueueSize обновляет размер очереди на инстансе и сбрасывает TTL.
+func (s *InstanceStateStore) SetQueueSize(ctx context.Context, instanceID int64, size uint32) error {
+	key := keyInstanceQueue + strconv.FormatInt(instanceID, 10)
+
+	err := s.client.Set(ctx, key, size, s.ttl).Err()
+	if err != nil {
+		return fmt.Errorf("valkey.InstanceStateStore.SetQueueSize: %w", err)
+	}
+
+	return nil
+}
+
+// GetQueueSize возвращает текущий размер очереди на инстансе.
+// Возвращает ErrNotFound если ключ отсутствует.
+func (s *InstanceStateStore) GetQueueSize(ctx context.Context, instanceID int64) (uint32, error) {
+	key := keyInstanceQueue + strconv.FormatInt(instanceID, 10)
+
+	size, err := s.client.Get(ctx, key).Uint64()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return 0, domain.ErrNotFound
+		}
+		return 0, fmt.Errorf("valkey.InstanceStateStore.GetQueueSize: %w", err)
+	}
+
+	if size > uint64(^uint32(0)) {
+		return 0, fmt.Errorf("valkey.InstanceStateStore.GetQueueSize: size %d overflows uint32", size)
+	}
+
+	return uint32(size), nil
+}
+
 // SetUsage обновляет метрики потребления ресурсов инстанса и сбрасывает TTL.
 func (s *InstanceStateStore) SetUsage(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error {
 	key := keyInstanceUsage + strconv.FormatInt(instanceID, 10)
@@ -131,6 +163,7 @@ func (s *InstanceStateStore) Delete(ctx context.Context, instanceID int64) error
 	keys := []string{
 		keyInstanceStatus + strconv.FormatInt(instanceID, 10),
 		keyInstanceCount + strconv.FormatInt(instanceID, 10),
+		keyInstanceQueue + strconv.FormatInt(instanceID, 10),
 		keyInstanceUsage + strconv.FormatInt(instanceID, 10),
 		keyInstanceZeroSince + strconv.FormatInt(instanceID, 10),
 	}

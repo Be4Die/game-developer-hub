@@ -261,6 +261,14 @@ func (s *HeartbeatService) syncInstanceStatuses(ctx context.Context, node *domai
 				)
 			}
 		}
+		if inst.QueueSize != nil {
+			if err := s.instanceState.SetQueueSize(ctx, inst.ID, *inst.QueueSize); err != nil {
+				s.log.Debug("failed to update queue size in KV",
+					slog.Int64("instance_id", inst.ID),
+					slog.String("error", err.Error()),
+				)
+			}
+		}
 	}
 
 	return nil
@@ -514,7 +522,8 @@ func (s *HeartbeatService) enforceScaleToZero(ctx context.Context) {
 }
 
 // enforceScaleUp поднимает дополнительный инстанс, если running-инстанс заполнен
-// (player_count >= max_players_per_instance) и scale_behavior = spawn.
+// (player_count >= max_players_per_instance) и scale_behavior = spawn,
+// или если queue_size >= queue_scale_up_threshold при server-side queue.
 func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 	policies, err := s.policyService.ListAll(ctx)
 	if err != nil {
@@ -523,7 +532,7 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 	}
 
 	for _, policy := range policies {
-		if !policy.IsAuto() || policy.ScaleBehavior != domain.ScaleBehaviorSpawn {
+		if !policy.IsAuto() {
 			continue
 		}
 
@@ -544,13 +553,39 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 		}
 
 		for _, inst := range instances {
-			pc, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
-			if pc >= uint32(policy.MaxPlayersPerInstance) {
-				s.log.Info("scale_up: instance full, spawning new",
+			shouldScale := false
+			scaleReason := ""
+
+			if policy.ScaleBehavior == domain.ScaleBehaviorSpawn {
+				pc, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
+				if pc >= uint32(policy.MaxPlayersPerInstance) {
+					shouldScale = true
+					scaleReason = "instance full"
+				}
+			}
+
+			// Server-side queue: масштабируемся по размеру очереди.
+			if policy.QueueLocation == domain.QueueLocationServer {
+				qs, err := s.instanceState.GetQueueSize(ctx, inst.ID)
+				if err == nil {
+					threshold := policy.QueueScaleUpThreshold
+					if threshold <= 0 {
+						threshold = policy.MaxPlayersPerInstance / 2
+						if threshold <= 0 {
+							threshold = 1
+						}
+					}
+					if qs >= uint32(threshold) {
+						shouldScale = true
+						scaleReason = fmt.Sprintf("server queue size %d >= threshold %d", qs, threshold)
+					}
+				}
+			}
+
+			if shouldScale {
+				s.log.Info("scale_up: "+scaleReason+", spawning new",
 					slog.Int64("instance_id", inst.ID),
 					slog.Int64("game_id", policy.GameID),
-					slog.Uint64("players", uint64(pc)),
-					slog.Int("max", int(policy.MaxPlayersPerInstance)),
 				)
 				go s.autoStartInstance(context.Background(), policy.GameID, policy)
 				break // Одно масштабирование за цикл.

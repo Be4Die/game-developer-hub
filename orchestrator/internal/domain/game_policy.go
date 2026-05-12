@@ -45,6 +45,26 @@ func (b ScaleBehavior) String() string {
 	}
 }
 
+// QueueLocation определяет, где реализована очередь игроков.
+type QueueLocation uint8
+
+// Варианты расположения очереди.
+const (
+	QueueLocationClient QueueLocation = iota + 1 // client-side queue в оркестраторе
+	QueueLocationServer                           // server-side queue внутри игрового сервера
+)
+
+func (l QueueLocation) String() string {
+	switch l {
+	case QueueLocationClient:
+		return "client"
+	case QueueLocationServer:
+		return "server"
+	default:
+		return "unknown"
+	}
+}
+
 // GamePolicy описывает правила автоматической оркестрации серверов для конкретной игры.
 type GamePolicy struct {
 	GameID                int64
@@ -58,6 +78,8 @@ type GamePolicy struct {
 	MaxInstancesPerGame   int32
 	ScaleBehavior         ScaleBehavior
 	NodePreference        string // "auto" или "node-<id>"
+	QueueLocation         QueueLocation // где реализована очередь (client/server)
+	QueueScaleUpThreshold int32  // порог очереди для масштабирования (server-side queue)
 	QueueReservationSec   int32  // секунды на подключение после резервации
 	QueueMaxWaitSec       int32  // макс. время ожидания в очереди
 	QueueHeartbeatTimeout int32  // выкидывание при отсутствии heartbeat (сек)

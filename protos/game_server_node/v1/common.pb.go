@@ -150,10 +150,12 @@ type Instance struct {
 	Status       InstanceStatus         `protobuf:"varint,7,opt,name=status,proto3,enum=game_server_node.v1.InstanceStatus" json:"status,omitempty"`
 	// Отсутствует, если игровой сервер не реализовал механизм отчёта.
 	PlayerCount *uint32 `protobuf:"varint,8,opt,name=player_count,json=playerCount,proto3,oneof" json:"player_count,omitempty"`
-	MaxPlayers  uint32  `protobuf:"varint,9,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
+	// Отсутствует, если игровой сервер не реализовал механизм отчёта.
+	QueueSize  *uint32 `protobuf:"varint,9,opt,name=queue_size,json=queueSize,proto3,oneof" json:"queue_size,omitempty"`
+	MaxPlayers uint32  `protobuf:"varint,10,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
 	// Произвольные метаданные, задаваемые разработчиком игры.
-	DeveloperPayload map[string]string      `protobuf:"bytes,10,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	DeveloperPayload map[string]string      `protobuf:"bytes,11,rep,name=developer_payload,json=developerPayload,proto3" json:"developer_payload,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	StartedAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -240,6 +242,13 @@ func (x *Instance) GetStatus() InstanceStatus {
 func (x *Instance) GetPlayerCount() uint32 {
 	if x != nil && x.PlayerCount != nil {
 		return *x.PlayerCount
+	}
+	return 0
+}
+
+func (x *Instance) GetQueueSize() uint32 {
+	if x != nil && x.QueueSize != nil {
+		return *x.QueueSize
 	}
 	return 0
 }
@@ -342,7 +351,7 @@ var File_game_server_node_v1_common_proto protoreflect.FileDescriptor
 
 const file_game_server_node_v1_common_proto_rawDesc = "" +
 	"\n" +
-	" game_server_node/v1/common.proto\x12\x13game_server_node.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x04\n" +
+	" game_server_node/v1/common.proto\x12\x13game_server_node.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf8\x04\n" +
 	"\bInstance\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x12\x12\n" +
@@ -352,17 +361,20 @@ const file_game_server_node_v1_common_proto_rawDesc = "" +
 	"\x04port\x18\x05 \x01(\rR\x04port\x129\n" +
 	"\bprotocol\x18\x06 \x01(\x0e2\x1d.game_server_node.v1.ProtocolR\bprotocol\x12;\n" +
 	"\x06status\x18\a \x01(\x0e2#.game_server_node.v1.InstanceStatusR\x06status\x12&\n" +
-	"\fplayer_count\x18\b \x01(\rH\x00R\vplayerCount\x88\x01\x01\x12\x1f\n" +
-	"\vmax_players\x18\t \x01(\rR\n" +
-	"maxPlayers\x12`\n" +
-	"\x11developer_payload\x18\n" +
-	" \x03(\v23.game_server_node.v1.Instance.DeveloperPayloadEntryR\x10developerPayload\x129\n" +
+	"\fplayer_count\x18\b \x01(\rH\x00R\vplayerCount\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"started_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x1aC\n" +
+	"queue_size\x18\t \x01(\rH\x01R\tqueueSize\x88\x01\x01\x12\x1f\n" +
+	"\vmax_players\x18\n" +
+	" \x01(\rR\n" +
+	"maxPlayers\x12`\n" +
+	"\x11developer_payload\x18\v \x03(\v23.game_server_node.v1.Instance.DeveloperPayloadEntryR\x10developerPayload\x129\n" +
+	"\n" +
+	"started_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tstartedAt\x1aC\n" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\xc2\x01\n" +
+	"\r_player_countB\r\n" +
+	"\v_queue_size\"\xc2\x01\n" +
 	"\rResourceUsage\x12*\n" +
 	"\x11cpu_usage_percent\x18\x01 \x01(\x01R\x0fcpuUsagePercent\x12*\n" +
 	"\x11memory_used_bytes\x18\x02 \x01(\x04R\x0fmemoryUsedBytes\x12&\n" +

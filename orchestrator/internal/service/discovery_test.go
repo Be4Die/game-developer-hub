@@ -60,6 +60,12 @@ func (m *discMockInstanceState) SetPlayerCount(ctx context.Context, instanceID i
 func (m *discMockInstanceState) GetPlayerCount(ctx context.Context, instanceID int64) (uint32, error) {
 	return m.getPlayerCountFn(ctx, instanceID)
 }
+func (m *discMockInstanceState) SetQueueSize(ctx context.Context, instanceID int64, size uint32) error {
+	return nil
+}
+func (m *discMockInstanceState) GetQueueSize(ctx context.Context, instanceID int64) (uint32, error) {
+	return 0, nil
+}
 func (m *discMockInstanceState) SetUsage(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error {
 	return nil
 }

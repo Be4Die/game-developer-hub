@@ -16,6 +16,7 @@ type Instance struct {
 	InternalPort     uint32
 	Status           InstanceStatus
 	PlayerCount      *uint32
+	QueueSize        *uint32
 	MaxPlayers       uint32
 	DeveloperPayload map[string]string
 	ServerAddress    string // IP-адрес ноды для клиентов

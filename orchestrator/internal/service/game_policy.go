@@ -60,6 +60,8 @@ func defaultPolicy(gameID int64) *domain.GamePolicy {
 		MaxInstancesPerGame:   1,
 		ScaleBehavior:         domain.ScaleBehaviorSpawn,
 		NodePreference:        "auto",
+		QueueLocation:         domain.QueueLocationClient,
+		QueueScaleUpThreshold: 0,
 		QueueReservationSec:   30,
 		QueueMaxWaitSec:       300,
 		QueueHeartbeatTimeout: 15,

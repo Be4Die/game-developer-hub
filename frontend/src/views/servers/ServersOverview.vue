@@ -82,6 +82,10 @@
               <span class="policy-label">При переполнении</span>
               <span class="policy-value">{{ behaviorLabels[policy.scale_behavior] || policy.scale_behavior }}</span>
             </div>
+            <div v-if="policy.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'" class="policy-item">
+              <span class="policy-label">Расположение очереди</span>
+              <span class="policy-value">{{ queueLocationLabels[policy.queue_location] || policy.queue_location }}</span>
+            </div>
             <div class="policy-item">
               <span class="policy-label">Резервация (сек)</span>
               <span class="policy-value">{{ policy.queue_reservation_seconds ?? 30 }}</span>
@@ -169,6 +173,23 @@
                 <option value="SCALE_BEHAVIOR_SPAWN">Запускать новый инстанс</option>
                 <option value="SCALE_BEHAVIOR_QUEUE">Очередь игроков</option>
               </select>
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
+              <span class="label-row">
+                Расположение очереди
+                <Tooltip position="right">Где реализована очередь игроков.<br><br>«На стороне клиента» — оркестратор управляет очередью, игроки polling'ят статус.<br>«На стороне сервера» — игровой сервер сам управляет очередью, оркестратор только масштабирует по размеру очереди.</Tooltip>
+              </span>
+              <select v-model="policyDraft.queue_location">
+                <option value="QUEUE_LOCATION_CLIENT">На стороне клиента</option>
+                <option value="QUEUE_LOCATION_SERVER">На стороне сервера</option>
+              </select>
+            </label>
+            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE' && policyDraft.queue_location === 'QUEUE_LOCATION_SERVER'">
+              <span class="label-row">
+                Порог масштабирования по очереди
+                <Tooltip position="right">При каком размере очереди на игровом сервере запускать новый инстанс. 0 = автоматически (половина max_players).</Tooltip>
+              </span>
+              <input v-model.number="policyDraft.queue_scale_up_threshold" type="number" min="0" max="1000" />
             </label>
             <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
               <span class="label-row">
@@ -330,6 +351,12 @@ const behaviorLabels = {
   SCALE_BEHAVIOR_QUEUE: 'Очередь игроков',
 }
 
+const queueLocationLabels = {
+  QUEUE_LOCATION_UNSPECIFIED: 'Не задан',
+  QUEUE_LOCATION_CLIENT: 'На стороне клиента',
+  QUEUE_LOCATION_SERVER: 'На стороне сервера',
+}
+
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
@@ -394,6 +421,8 @@ async function loadPolicy() {
       max_instances_per_game: 1,
       scale_behavior: 'SCALE_BEHAVIOR_SPAWN',
       node_preference: 'auto',
+      queue_location: 'QUEUE_LOCATION_CLIENT',
+      queue_scale_up_threshold: 0,
       queue_reservation_seconds: 30,
       queue_max_wait_seconds: 300,
       queue_heartbeat_timeout: 15,
@@ -425,6 +454,8 @@ async function savePolicy() {
       max_instances_per_game: Number(policyDraft.value.max_instances_per_game),
       scale_behavior: policyDraft.value.scale_behavior,
       node_preference: policyDraft.value.node_preference || 'auto',
+      queue_location: policyDraft.value.queue_location || 'QUEUE_LOCATION_CLIENT',
+      queue_scale_up_threshold: Number(policyDraft.value.queue_scale_up_threshold ?? 0),
       queue_reservation_seconds: Number(policyDraft.value.queue_reservation_seconds ?? 30),
       queue_max_wait_seconds: Number(policyDraft.value.queue_max_wait_seconds ?? 300),
       queue_heartbeat_timeout: Number(policyDraft.value.queue_heartbeat_timeout ?? 15),

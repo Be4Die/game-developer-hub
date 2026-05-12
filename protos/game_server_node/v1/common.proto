@@ -35,10 +35,12 @@ message Instance {
   InstanceStatus status = 7;
   // Отсутствует, если игровой сервер не реализовал механизм отчёта.
   optional uint32 player_count = 8;
-  uint32 max_players = 9;
+  // Отсутствует, если игровой сервер не реализовал механизм отчёта.
+  optional uint32 queue_size = 9;
+  uint32 max_players = 10;
   // Произвольные метаданные, задаваемые разработчиком игры.
-  map<string, string> developer_payload = 10;
-  google.protobuf.Timestamp started_at = 11;
+  map<string, string> developer_payload = 11;
+  google.protobuf.Timestamp started_at = 12;
 }
 
 // Текущее потребление ресурсов (ноды или экземпляра).

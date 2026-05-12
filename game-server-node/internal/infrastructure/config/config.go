@@ -21,6 +21,7 @@ const (
 type Config struct {
 	Env          string             `yaml:"env" env-required:"true"`
 	GRPC         GRPCConfig         `yaml:"grpc"`
+	Report       ReportConfig       `yaml:"report"`
 	Node         NodeConfig         `yaml:"node"`
 	APIKey       string             `yaml:"-" env:"NODE_API_KEY" env-required:"true"`
 	Orchestrator OrchestratorConfig `yaml:"orchestrator"`
@@ -52,6 +53,13 @@ type OrchestratorConfig struct {
 type GRPCConfig struct {
 	Port    int           `yaml:"port"`
 	Timeout time.Duration `yaml:"timeout"`
+}
+
+// ReportConfig хранит настройки HTTP-сервера для приёма отчётов от игровых серверов.
+type ReportConfig struct {
+	// Port — порт HTTP-сервера отчётов. Должен быть недоступен извне (localhost).
+	// 0 — сервер отчётов отключён.
+	Port int `yaml:"port" env-default:"44045"`
 }
 
 // NodeConfig хранит информацию об узле.
@@ -99,6 +107,10 @@ func (c *Config) Validate() error {
 
 	if c.GRPC.Port <= 0 || c.GRPC.Port > 65535 {
 		return errors.New("grpc.port must be between 1 and 65535")
+	}
+
+	if c.Report.Port < 0 || c.Report.Port > 65535 {
+		return errors.New("report.port must be between 0 and 65535")
 	}
 
 	if c.GRPC.Timeout <= 0 {

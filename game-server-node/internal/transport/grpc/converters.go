@@ -29,6 +29,9 @@ func instanceToProto(inst *domain.Instance) *pb.Instance {
 	if inst.PlayerCount != nil {
 		p.PlayerCount = inst.PlayerCount
 	}
+	if inst.QueueSize != nil {
+		p.QueueSize = inst.QueueSize
+	}
 
 	return p
 }
