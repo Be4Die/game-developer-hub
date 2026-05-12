@@ -12,5 +12,5 @@ orchestrator:
   address: "orchestrator:50052"
   announce_interval: 30s
   announce_timeout: 10s
-  # Используем адрес хоста для подключения клиентов извне Docker
-  external_address: "host.docker.internal:44044"
+  # Используем адрес шлюза Docker bridge для подключения клиентов извне Docker (Linux)
+  external_address: "172.17.0.1:44044"

@@ -61,6 +61,7 @@ services:
       context: ..
       dockerfile: orchestrator/Dockerfile
     container_name: gdh-orchestrator
+    restart: unless-stopped
     environment:
       CONFIG_PATH: /app/config/local.yaml
     depends_on:
@@ -83,6 +84,7 @@ services:
       context: ..
       dockerfile: sso/Dockerfile
     container_name: gdh-sso
+    restart: unless-stopped
     environment:
       CONFIG_PATH: /app/config/docker.yaml
       SSO_API_KEY: dev-api-key-for-local-testing
@@ -128,6 +130,7 @@ services:
       NODE_API_KEY: dev-api-key-for-local-testing
     ports:
       - "44044:44044"
+      - "44045:44045"
     depends_on:
       orchestrator:
         condition: service_healthy

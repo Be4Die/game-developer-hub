@@ -88,7 +88,7 @@ func NewReportServer(log *slog.Logger, storage *memory.Storage, port int) *http.
 	mux.Handle("/v1/report", NewReportHandler(log, storage))
 
 	return &http.Server{
-		Addr:    "127.0.0.1:" + strconv.Itoa(port),
+		Addr:    "0.0.0.0:" + strconv.Itoa(port),
 		Handler: mux,
 	}
 }

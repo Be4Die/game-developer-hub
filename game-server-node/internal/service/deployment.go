@@ -328,7 +328,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	}
 	// Инжектируем URL для отчётов, если HTTP-сервер отчётов включён.
 	if s.reportPort > 0 {
-		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://host.docker.internal:%d/v1/report", s.reportPort)
+		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://172.17.0.1:%d/v1/report", s.reportPort)
 		envVars["GAME_SERVER_NODE_INSTANCE_ID"] = fmt.Sprintf("%d", opts.InstanceID)
 	}
 
