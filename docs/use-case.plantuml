@@ -1,5 +1,4 @@
-@startuml UC_Complete
-
+@startuml
 left to right direction
 skinparam actorStyle awesome
 
@@ -24,15 +23,10 @@ skinparam usecase {
 '  АКТЁРЫ
 ' ═══════════════════════════════
 
-actor "Владелец\n(Owner)" as Owner
 actor "Разработчик" as Dev
-actor "Подключённый\nразработчик" as ConnDev
 actor "Администратор" as Admin
 actor "Модератор" as Mod
 actor "Клиент игры" as GameClient
-
-Owner --|> Dev
-ConnDev --|> Dev
 
 ' ═══════════════════════════════
 '  АВТОРИЗАЦИЯ
@@ -40,8 +34,6 @@ ConnDev --|> Dev
 
 usecase "Зарегистрироваться" as REG <<auth>>
 usecase "Авторизоваться" as AUTH <<auth>>
-usecase "Восстановить пароль" as RESTORE <<auth>>
-usecase "Управлять профилем" as PROFILE <<auth>>
 usecase "Создать учётную запись\nмодератора" as CREATE_MOD <<auth>>
 
 ' ═══════════════════════════════
@@ -52,7 +44,6 @@ usecase "Просмотреть список проектов" as LIST <<proj>>
 usecase "Создать черновик игры" as CREATE <<proj>>
 usecase "Загрузить билд\nклиентской части" as UPLOAD <<proj>>
 usecase "Заполнить метаданные игры" as META <<proj>>
-usecase "Управлять доступом\nк проекту" as ACCESS <<proj>>
 
 ' ═══════════════════════════════
 '  МОДЕРАЦИЯ И ПУБЛИКАЦИЯ
@@ -92,8 +83,8 @@ usecase "Скачать отчёт за период" as REPORT <<stat>>
 
 Dev -- REG
 Dev -- AUTH
-Dev -- PROFILE
 Dev -- LIST
+Dev -- CREATE
 Dev -- UPLOAD
 Dev -- META
 Dev -- SEND
@@ -103,23 +94,15 @@ Dev -- MODE
 Dev -- START
 Dev -- STOP
 Dev -- LOGS
+Dev -- NODE
 Dev -- STATS
 Dev -- REPORT
-
-' ═══════════════════════════════
-'  СВЯЗИ: Только Владелец
-' ═══════════════════════════════
-
-Owner -- CREATE
-Owner -- ACCESS
-Owner -- NODE
 
 ' ═══════════════════════════════
 '  СВЯЗИ: Модератор
 ' ═══════════════════════════════
 
 Mod -- AUTH
-Mod -- PROFILE
 Mod -- QUEUE
 Mod -- MODERATE
 Mod -- CHAT
@@ -148,7 +131,6 @@ MODERATE ..> VERDICT : <<include>>
 '  EXTEND
 ' ═══════════════════════════════
 
-RESTORE ..> AUTH : <<extend>>
 APPROVE ..> VERDICT : <<extend>>
 REMARKS ..> VERDICT : <<extend>>
 
@@ -164,5 +146,4 @@ legend right
   |<#F3E5F5> | Оркестрация серверов |
   |<#FFFDE7> | Аналитика и отчётность |
 endlegend
-
 @enduml
