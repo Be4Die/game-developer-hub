@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"os"
 	"path/filepath"
 	"sync"
@@ -17,6 +18,16 @@ import (
 )
 
 const defaultDeleteStopTimeout = 30 * time.Second
+
+// dockerHost возвращает хостовый адрес доступный изнутри Docker-контейнеров.
+// Docker Desktop (Windows/macOS) предоставляет host.docker.internal.
+// Linux Docker Engine использует bridge gateway 172.17.0.1.
+func dockerHost() string {
+	if _, err := net.LookupHost("host.docker.internal"); err == nil {
+		return "host.docker.internal"
+	}
+	return "172.17.0.1"
+}
 
 // DeploymentService управляет развёртыванием игровых инстансов.
 // Безопасен для конкурентного использования.
@@ -328,7 +339,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	}
 	// Инжектируем URL для отчётов, если HTTP-сервер отчётов включён.
 	if s.reportPort > 0 {
-		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://172.17.0.1:%d/v1/report", s.reportPort)
+		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://%s:%d/v1/report", dockerHost(), s.reportPort)
 		envVars["GAME_SERVER_NODE_INSTANCE_ID"] = fmt.Sprintf("%d", opts.InstanceID)
 	}
 

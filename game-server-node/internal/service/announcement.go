@@ -125,20 +125,22 @@ func (s *AnnouncementService) AnnounceWithRetry(ctx context.Context, activeConta
 
 // determineExternalAddress определяет внешний адрес ноды.
 // Если задан external_address в конфиге — использует его.
-// Иначе пытается определить автоматически.
+// Иначе пытается определить автоматически:
+//   - Docker Desktop (Windows/macOS): host.docker.internal
+//   - Linux Docker Engine: 172.17.0.1 (bridge gateway)
 func (s *AnnouncementService) determineExternalAddress() (string, error) {
 	// Если задан явный адрес — используем его.
 	if s.cfg.Orchestrator.ExternalAddress != "" {
 		return s.cfg.Orchestrator.ExternalAddress, nil
 	}
 
-	// Иначе пытаемся определить автоматически.
-	addr, err := s.getAutoAddress()
-	if err != nil {
-		return "", err
+	// Пробуем host.docker.internal (работает на Docker Desktop из коробки).
+	if addrs, err := net.LookupHost("host.docker.internal"); err == nil && len(addrs) > 0 {
+		return fmt.Sprintf("host.docker.internal:%d", s.cfg.GRPC.Port), nil
 	}
 
-	return addr, nil
+	// Fallback на стандартный gateway Linux Docker bridge.
+	return fmt.Sprintf("172.17.0.1:%d", s.cfg.GRPC.Port), nil
 }
 
 // getAutoAddress определяет адрес автоматически.
