@@ -222,30 +222,6 @@
                 <option v-for="n in onlineNodesList" :key="n.id" :value="`node-${n.id}`">{{ n.address }}</option>
               </select>
             </label>
-            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
-              <span class="label-row">
-                Резервация слота (сек)
-                <Tooltip position="right">Сколько времени у игрока есть на подключение после выдачи слота.</Tooltip>
-              </span>
-              <input v-model.number="policyDraft.queue_reservation_seconds" type="number" min="5" max="300" />
-            </label>
-            <label v-if="policyDraft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
-              <span class="label-row">
-                Heartbeat таймаут (сек)
-                <Tooltip position="right">Выкидывание из очереди если клиент не пинговал указанное время.</Tooltip>
-              </span>
-              <input v-model.number="policyDraft.queue_heartbeat_timeout" type="number" min="5" max="120" />
-            </label>
-            <label>
-              <span class="label-row">
-                Нода
-                <Tooltip position="right">На какой ноде развёртывать инстансы при авто-старте.<br><br>«Авто» — оркестратор сам выберет наименее загруженную онлайн-ноду.<br>«Конкретная нода» — все авто-старты будут направлены на выбранный сервер.</Tooltip>
-              </span>
-              <select v-model="policyDraft.node_preference">
-                <option value="auto">Авто</option>
-                <option v-for="n in onlineNodesList" :key="n.id" :value="`node-${n.id}`">{{ n.address }}</option>
-              </select>
-            </label>
           </div>
           <div class="policy-actions">
             <button class="btn-primary" @click="savePolicy" :disabled="policyLoading">
