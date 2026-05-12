@@ -715,32 +715,20 @@ tasks:
 
   # ==================== Stack (deployments/) ====================
   stack:up:
-    desc: "Start full stack via docker compose (Postgres, Valkey, SSO Postgres, SSO Valkey, Orchestrator, SSO, Gateway, Node, Frontend)"
+    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Gateway, Node, Frontend)"
     dir: deployments
     cmds:
       - docker compose up -d --build
       - |
-        echo "Ожидание PostgreSQL (Orchestrator)..."
+        echo "Ожидание PostgreSQL..."
         for i in $(seq 1 20); do
           docker exec gdh-postgres pg_isready -U postgres >/dev/null 2>&1 && break
           sleep 1
         done
       - |
-        echo "Ожидание Valkey (Orchestrator)..."
+        echo "Ожидание Valkey..."
         for i in $(seq 1 20); do
           docker exec gdh-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
-          sleep 1
-        done
-      - |
-        echo "Ожидание PostgreSQL (SSO)..."
-        for i in $(seq 1 20); do
-          docker exec gdh-sso-postgres pg_isready -U postgres >/dev/null 2>&1 && break
-          sleep 1
-        done
-      - |
-        echo "Ожидание Valkey (SSO)..."
-        for i in $(seq 1 20); do
-          docker exec gdh-sso-valkey valkey-cli ping 2>/dev/null | grep -q PONG && break
           sleep 1
         done
       - |
@@ -782,7 +770,7 @@ tasks:
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
       - echo "✅ Orchestrator DB schema initialized"
       - |
-        docker exec -i gdh-sso-postgres psql -U postgres -d sso < sso/migrations/init.sql
+        docker exec -i gdh-postgres psql -U postgres -d orchestrator < sso/migrations/init.sql
       - echo "✅ SSO DB schema initialized"
 
   stack:db:reset:
@@ -790,8 +778,6 @@ tasks:
     cmds:
       - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
-      - docker exec gdh-sso-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sso;"
-      - docker exec gdh-sso-postgres psql -U postgres -c "CREATE DATABASE sso;"
       - task: stack:db:init
 
   stack:seed:
