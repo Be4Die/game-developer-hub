@@ -4,7 +4,7 @@
     <aside class="game-sidebar">
       <div class="game-header">
         <button class="back-btn" @click="$router.push('/projects')"><ArrowLeft class="icon-sm" /> К списку</button>
-        <h2 class="game-title-short">Проект #{{ id }}</h2>
+        <h2 class="game-title-short">{{ projectTitle }}</h2>
       </div>
       <nav class="game-nav">
         <router-link :to="`/projects/${id}/stats`" class="nav-btn" active-class="active"><BarChart2 class="icon-sm" /> Статистика</router-link>
@@ -36,8 +36,27 @@
 <script setup>
 import { ArrowLeft, BarChart2, PenTool, CheckCircle, Server, MessageSquare, Send } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
-defineProps(['id'])
+import { computed, ref, watch } from 'vue'
+import { getProject } from '../api/projects'
+
+const props = defineProps(['id'])
 const route = useRoute()
+
+const project = ref(null)
+
+async function loadProject() {
+  try {
+    project.value = await getProject(props.id)
+  } catch (err) {
+    // silently fail, fallback to id
+  }
+}
+
+watch(() => props.id, loadProject, { immediate: true })
+
+const projectTitle = computed(() => {
+  return project.value?.title_ru || project.value?.title_en || `Проект #${props.id}`
+})
 </script>
 
 <style scoped>

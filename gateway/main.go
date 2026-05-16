@@ -20,6 +20,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	projpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 )
 
@@ -36,6 +37,7 @@ func run() error {
 	// Адреса gRPC-сервисов из переменных окружения.
 	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
+	projectManagerAddr := envOr("PROJECT_MANAGER_GRPC_ADDR", "project-manager:50053")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 
 	// Создаём mux с настройками JSON.
@@ -104,14 +106,30 @@ func run() error {
 		return err
 	}
 
+	// Подключаемся к Project Manager.
+	projConn, err := grpc.NewClient(projectManagerAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = projConn.Close() }()
+
+	// Регистрируем Project Manager handlers.
+	if err := projpb.RegisterProjectServiceHandler(ctx, mux, projConn); err != nil {
+		return err
+	}
+
 	// Custom handler для multipart upload — intercepts build upload.
 	buildUploadHandler := newBuildUploadHandler(orchConn)
 
 	// Custom handler для logs streaming — SSE over HTTP.
 	logsStreamHandler := newLogsStreamHandler(orchConn)
 
+	// Custom handlers для project-manager multipart uploads.
+	projectBuildUploadHandler := newProjectBuildUploadHandler(projConn)
+	projectMediaUploadHandler := newProjectMediaUploadHandler(projConn)
+
 	// HTTP-сервер с CORS и custom routing.
-	handler := corsMiddleware(buildUploadRouter(mux, buildUploadHandler, logsStreamHandler))
+	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectMediaUploadHandler))
 
 	srv := &http.Server{
 		Addr:         httpAddr,
@@ -271,8 +289,12 @@ func (h *buildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// buildUploadRouter маршрутизирует upload и logs запросы к custom handler, остальные — к grpc-gateway.
-func buildUploadRouter(gw http.Handler, uploadHandler, logsHandler http.Handler) http.Handler {
+// customRouter маршрутизирует upload и logs запросы к custom handler, остальные — к grpc-gateway.
+func customRouter(
+	gw http.Handler,
+	buildUploadHandler, logsHandler http.Handler,
+	projectBuildUploadHandler, projectMediaUploadHandler http.Handler,
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
 		isMultipart := len(ct) >= 19 && ct[:19] == "multipart/form-data"
@@ -293,14 +315,36 @@ func buildUploadRouter(gw http.Handler, uploadHandler, logsHandler http.Handler)
 		}
 
 		// Intercept POST /api/v1/games/{id}/builds with multipart/form-data.
-		buildSuffix := "builds"
+		buildSuffix := "/builds"
 		buildPathOK := len(r.URL.Path) >= 22 &&
 			r.URL.Path[:len(prefix)] == prefix &&
 			r.URL.Path[len(r.URL.Path)-len(buildSuffix):] == buildSuffix
 		if r.Method == http.MethodPost && isMultipart && buildPathOK {
-			uploadHandler.ServeHTTP(w, r)
+			buildUploadHandler.ServeHTTP(w, r)
 			return
 		}
+
+		// Intercept POST /api/v1/projects/{id}/builds with multipart/form-data.
+		projectPrefix := "/api/v1/projects/"
+		projectBuildSuffix := "/builds"
+		projectBuildPathOK := len(r.URL.Path) >= len(projectPrefix)+len(projectBuildSuffix)+1 &&
+			r.URL.Path[:len(projectPrefix)] == projectPrefix &&
+			r.URL.Path[len(r.URL.Path)-len(projectBuildSuffix):] == projectBuildSuffix
+		if r.Method == http.MethodPost && isMultipart && projectBuildPathOK {
+			projectBuildUploadHandler.ServeHTTP(w, r)
+			return
+		}
+
+		// Intercept POST /api/v1/projects/{id}/media with multipart/form-data.
+		projectMediaSuffix := "/media"
+		projectMediaPathOK := len(r.URL.Path) >= len(projectPrefix)+len(projectMediaSuffix)+1 &&
+			r.URL.Path[:len(projectPrefix)] == projectPrefix &&
+			r.URL.Path[len(r.URL.Path)-len(projectMediaSuffix):] == projectMediaSuffix
+		if r.Method == http.MethodPost && isMultipart && projectMediaPathOK {
+			projectMediaUploadHandler.ServeHTTP(w, r)
+			return
+		}
+
 		gw.ServeHTTP(w, r)
 	})
 }
@@ -537,4 +581,163 @@ func formatLogEvent(entry *gwpb.LogEntry) string {
 		entry.Source.String(),
 		strconv.Quote(entry.Message),
 	)
+}
+
+// ─── Project Manager Custom Handlers ──────────────────────────────
+
+// projectBuildUploadHandler принимает multipart/form-data и отправляет билд в project-manager.
+type projectBuildUploadHandler struct {
+	client projpb.ProjectServiceClient
+}
+
+func newProjectBuildUploadHandler(conn *grpc.ClientConn) *projectBuildUploadHandler {
+	return &projectBuildUploadHandler{client: projpb.NewProjectServiceClient(conn)}
+}
+
+func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := r.ParseMultipartForm(128 << 20); err != nil { // 128MB
+		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	projectID, err := extractProjectID(r.URL.Path, "/builds")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	version := r.FormValue("version")
+	if version == "" {
+		http.Error(w, "missing 'version' field", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "missing 'file' field", http.StatusBadRequest)
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("read file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	ctx := r.Context()
+	if token := r.Header.Get("Authorization"); token != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	}
+
+	resp, err := h.client.UploadBuild(ctx, &projpb.ProjectUploadBuildRequest{
+		ProjectId: projectID,
+		Version:   version,
+		Data:      data,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("upload build: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	marshaler := &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true},
+	}
+	jsonBytes, _ := marshaler.Marshal(resp)
+	_, _ = w.Write(jsonBytes)
+}
+
+// projectMediaUploadHandler принимает multipart/form-data и отправляет медиа в project-manager.
+type projectMediaUploadHandler struct {
+	client projpb.ProjectServiceClient
+}
+
+func newProjectMediaUploadHandler(conn *grpc.ClientConn) *projectMediaUploadHandler {
+	return &projectMediaUploadHandler{client: projpb.NewProjectServiceClient(conn)}
+}
+
+func (h *projectMediaUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB
+		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	projectID, err := extractProjectID(r.URL.Path, "/media")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	mediaType := r.FormValue("media_type")
+	if mediaType == "" {
+		http.Error(w, "missing 'media_type' field", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "missing 'file' field", http.StatusBadRequest)
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("read file: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	ctx := r.Context()
+	if token := r.Header.Get("Authorization"); token != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
+	}
+
+	resp, err := h.client.UploadMedia(ctx, &projpb.ProjectUploadMediaRequest{
+		ProjectId: projectID,
+		MediaType: mediaType,
+		Data:      data,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("upload media: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	marshaler := &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true},
+	}
+	jsonBytes, _ := marshaler.Marshal(resp)
+	_, _ = w.Write(jsonBytes)
+}
+
+func extractProjectID(path, suffix string) (int64, error) {
+	prefix := "/api/v1/projects/"
+	if len(path) < len(prefix)+len(suffix)+1 {
+		return 0, fmt.Errorf("invalid project path")
+	}
+	if !strings.HasPrefix(path, prefix) {
+		return 0, fmt.Errorf("invalid project path prefix")
+	}
+	if !strings.HasSuffix(path, suffix) {
+		return 0, fmt.Errorf("invalid project path suffix")
+	}
+	idStr := path[len(prefix) : len(path)-len(suffix)]
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid project_id: %s", idStr)
+	}
+	return id, nil
 }

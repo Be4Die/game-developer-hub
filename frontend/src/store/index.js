@@ -15,6 +15,24 @@ export const showToast = (message, type = 'success') => {
     setTimeout(() => { toast.show = false }, 3000)
 }
 
+// --- DRAFT PROJECT (shared between DraftTab and PublishedTab) ---
+export const draftProject = reactive({
+    meta: {
+        titleRu: '',
+        titleEn: '',
+        seoRu: '',
+        seoEn: '',
+        about: ''
+    },
+    media: {
+        icon: null,      // { file, preview }
+        coverMain: null, // { file, preview }
+        video: null      // { file, preview }
+    },
+    builds: [],          // { version: string, date: string }
+    activeBuildVersion: null
+})
+
 // --- TICKETS ---
 export const tickets = reactive([
     {
