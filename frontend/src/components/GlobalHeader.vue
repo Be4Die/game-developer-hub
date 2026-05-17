@@ -23,18 +23,11 @@
                 </template>
                 <template v-if="userRole === 'Модератор'">
                     <router-link
-                        to="/moderator/tickets"
+                        to="/moderator"
                         class="nav-item"
                         active-class="active"
                     >
-                        <Inbox class="icon-sm" /> Очередь тикетов
-                    </router-link>
-                    <router-link
-                        to="/moderator/history"
-                        class="nav-item"
-                        active-class="active"
-                    >
-                        <History class="icon-sm" /> История тикетов
+                        <Inbox class="icon-sm" /> Панель модератора
                     </router-link>
                 </template>
                 <template v-if="userRole === 'Администратор'">

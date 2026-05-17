@@ -764,20 +764,26 @@ tasks:
       - docker compose up -d --build --force-recreate
 
   stack:db:init:
-    desc: "Initialize orchestrator and SSO database schemas (run after stack:up)"
+    desc: "Initialize orchestrator, SSO and chat database schemas (run after stack:up)"
     cmds:
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE chat;" 2>/dev/null || echo "Database chat already exists"
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
       - echo "✅ Orchestrator DB schema initialized"
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < sso/migrations/init.sql
       - echo "✅ SSO DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d chat < chat/migrations/init.sql
+      - echo "✅ Chat DB schema initialized"
 
   stack:db:reset:
-    desc: "Reset orchestrator and SSO databases (drop, recreate, init)"
+    desc: "Reset orchestrator, SSO and chat databases (drop, recreate, init)"
     cmds:
       - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS chat;"
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE chat;"
       - task: stack:db:init
 
   stack:seed:

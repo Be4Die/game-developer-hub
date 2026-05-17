@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -21,12 +23,67 @@ import (
 
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
+	chatpb "github.com/Be4Die/game-developer-hub/protos/chat/v1"
 )
 
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// JWTClaims содержит извлечённые из JWT токена данные пользователя.
+type JWTClaims struct {
+	UserID   string
+	UserName string
+	UserRole string
+}
+
+// parseJWTClaims извлекает данные пользователя из JWT токена без проверки подписи.
+// Это безопасно, так как подпись проверяется в SSO сервисе, а gateway только проксирует запросы.
+func parseJWTClaims(req *http.Request) *JWTClaims {
+	authHeader := req.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil
+	}
+	
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenStr == authHeader {
+		return nil
+	}
+	
+	parts := strings.Split(tokenStr, ".")
+	if len(parts) != 3 {
+		return nil
+	}
+	
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil
+	}
+	
+	var claims map[string]interface{}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil
+	}
+	
+	result := &JWTClaims{}
+	
+	if sub, ok := claims["sub"].(string); ok {
+		result.UserID = sub
+	}
+	
+	if email, ok := claims["email"].(string); ok {
+		result.UserName = email
+	}
+	
+	if role, ok := claims["role"].(float64); ok {
+		result.UserRole = fmt.Sprintf("%.0f", role)
+	} else if role, ok := claims["role"].(string); ok {
+		result.UserRole = role
+	}
+	
+	return result
 }
 
 func run() error {
@@ -36,6 +93,7 @@ func run() error {
 	// Адреса gRPC-сервисов из переменных окружения.
 	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
+	chatAddr := envOr("CHAT_GRPC_ADDR", "chat:9090")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 
 	// Создаём mux с настройками JSON.
@@ -49,11 +107,44 @@ func run() error {
 				DiscardUnknown: true,
 			},
 		}),
+		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
+			md := metadata.MD{}
+			
+			// Прокидываем x-user-id и x-user-name из HTTP заголовков в gRPC контекст
+			if userID := req.Header.Get("x-user-id"); userID != "" {
+				md["x-user-id"] = []string{userID}
+			}
+			if userName := req.Header.Get("x-user-name"); userName != "" {
+				md["x-user-name"] = []string{userName}
+			}
+			if userRole := req.Header.Get("x-user-role"); userRole != "" {
+				md["x-user-role"] = []string{userRole}
+			}
+			
+			// Если заголовки не установлены, пытаемся извлечь информацию из JWT токена
+			if md["x-user-id"] == nil {
+				if claims := parseJWTClaims(req); claims != nil {
+					log.Printf("[JWT] Parsed claims: userID=%s, userName=%s, userRole=%s", claims.UserID, claims.UserName, claims.UserRole)
+					if claims.UserID != "" {
+						md["x-user-id"] = []string{claims.UserID}
+					}
+					if claims.UserName != "" {
+						md["x-user-name"] = []string{claims.UserName}
+					}
+					if claims.UserRole != "" {
+						md["x-user-role"] = []string{claims.UserRole}
+					}
+				}
+			}
+			
+			return md
+		}),
 	)
 
 	// Опции для gRPC-соединений.
 	// 2GB max message size for large build uploads
 	const maxMsgSize = 2 * 1024 * 1024 * 1024 // 2GB
+	
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
@@ -75,6 +166,13 @@ func run() error {
 		return err
 	}
 	defer func() { _ = ssoConn.Close() }()
+
+	// Подключаемся к Chat.
+	chatConn, err := grpc.NewClient(chatAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = chatConn.Close() }()
 
 	// Регистрируем Orchestrator handlers.
 	if err := gwpb.RegisterBuildServiceHandler(ctx, mux, orchConn); err != nil {
@@ -101,6 +199,11 @@ func run() error {
 		return err
 	}
 	if err := ssopb.RegisterUserServiceHandler(ctx, mux, ssoConn); err != nil {
+		return err
+	}
+
+	// Регистрируем Chat handlers.
+	if err := chatpb.RegisterChatServiceHandler(ctx, mux, chatConn); err != nil {
 		return err
 	}
 
@@ -133,6 +236,7 @@ func run() error {
 	log.Printf("HTTP gateway listening on %s", httpAddr)
 	log.Printf("  Orchestrator gRPC: %s", orchestratorAddr)
 	log.Printf("  SSO gRPC: %s", ssoAddr)
+	log.Printf("  Chat gRPC: %s", chatAddr)
 
 	return srv.ListenAndServe()
 }

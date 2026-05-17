@@ -14,6 +14,18 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+export function getAuthHeaders() {
+  const token = localStorage.getItem("gdh_access_token");
+  const user = JSON.parse(localStorage.getItem("gdh_user") || "null");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  if (user?.id) {
+    headers["x-user-id"] = user.id;
+    headers["x-user-name"] = user.display_name || user.username || user.email || "User";
+    headers["x-user-role"] = user.role || "USER_ROLE_USER";
+  }
+  return headers;
+}
+
 // ─── Auth ──────────────────────────────────────────────
 
 export function register({ email, password, display_name }) {
@@ -102,4 +114,11 @@ export function createModerator({ login, password, display_name }) {
 
 export function deleteUser(userId) {
   return http.delete(`/users/${userId}`).then((r) => r.data);
+}
+
+export function getModerators() {
+  return http.get("/users", { params: { limit: 100, offset: 0 } }).then((r) => {
+    const users = r.data.users || [];
+    return users.filter(u => u.role === "USER_ROLE_MODERATOR" || u.role === "moderator");
+  });
 }

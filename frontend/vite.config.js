@@ -19,6 +19,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/orchestrator\/v1/, ""),
       },
+      "/api/v1/chat": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
       "/api/v1": {
         target: "http://localhost:8080",
         changeOrigin: true,

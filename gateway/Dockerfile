@@ -2,16 +2,18 @@ FROM golang:1.25.3-alpine AS builder
 
 WORKDIR /src
 
-# Копируем go.mod/go.sum основного модуля protos.
+# Копируем protos первым для replace directive
+COPY protos/ ./protos/
+
+# Копируем go.mod/go.sum protos
 COPY protos/go.mod protos/go.sum ./protos/
 
-# Копируем go.mod/go.sum gateway.
+# Копируем go.mod/go.sum gateway
 COPY gateway/go.mod gateway/go.sum ./gateway/
 
 RUN cd gateway && go mod download
 
-# Копируем весь проект.
-COPY protos/ ./protos/
+# Копируем gateway
 COPY gateway/ ./gateway/
 
 WORKDIR /src/gateway
