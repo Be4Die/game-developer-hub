@@ -22,13 +22,13 @@ func (s *ProjectStorage) projectDir(projectID int64) string {
 	return filepath.Join(s.basePath, strconv.FormatInt(projectID, 10))
 }
 
-func (s *ProjectStorage) buildsDir(projectID int64) string {
-	return filepath.Join(s.projectDir(projectID), "builds")
+func (s *ProjectStorage) assetsDir(projectID int64) string {
+	return filepath.Join(s.projectDir(projectID), "assets")
 }
 
-// SaveIcon сохраняет иконку проекта.
+// SaveIcon сохраняет иконку проекта в директорию assets.
 func (s *ProjectStorage) SaveIcon(projectID int64, data []byte) (string, error) {
-	dir := s.projectDir(projectID)
+	dir := s.assetsDir(projectID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("fs.SaveIcon mkdir: %w", err)
 	}
@@ -39,9 +39,9 @@ func (s *ProjectStorage) SaveIcon(projectID int64, data []byte) (string, error) 
 	return path, nil
 }
 
-// SaveCover сохраняет обложку проекта.
+// SaveCover сохраняет обложку проекта в директорию assets.
 func (s *ProjectStorage) SaveCover(projectID int64, data []byte) (string, error) {
-	dir := s.projectDir(projectID)
+	dir := s.assetsDir(projectID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("fs.SaveCover mkdir: %w", err)
 	}
@@ -52,9 +52,9 @@ func (s *ProjectStorage) SaveCover(projectID int64, data []byte) (string, error)
 	return path, nil
 }
 
-// SaveVideo сохраняет видео проекта.
+// SaveVideo сохраняет видео проекта в директорию assets.
 func (s *ProjectStorage) SaveVideo(projectID int64, data []byte) (string, error) {
-	dir := s.projectDir(projectID)
+	dir := s.assetsDir(projectID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("fs.SaveVideo mkdir: %w", err)
 	}
@@ -65,9 +65,9 @@ func (s *ProjectStorage) SaveVideo(projectID int64, data []byte) (string, error)
 	return path, nil
 }
 
-// SaveBuild сохраняет билд проекта.
+// SaveBuild сохраняет билд проекта в корень директории проекта.
 func (s *ProjectStorage) SaveBuild(projectID int64, version string, data []byte) (string, error) {
-	dir := s.buildsDir(projectID)
+	dir := s.projectDir(projectID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", fmt.Errorf("fs.SaveBuild mkdir: %w", err)
 	}
@@ -78,9 +78,9 @@ func (s *ProjectStorage) SaveBuild(projectID int64, version string, data []byte)
 	return path, nil
 }
 
-// DeleteBuild удаляет билд.
+// DeleteBuild удаляет билд из корня директории проекта.
 func (s *ProjectStorage) DeleteBuild(projectID int64, version string) error {
-	path := filepath.Join(s.buildsDir(projectID), version+".zip")
+	path := filepath.Join(s.projectDir(projectID), version+".zip")
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("fs.DeleteBuild: %w", err)
 	}
@@ -96,9 +96,9 @@ func (s *ProjectStorage) DeleteProjectDir(projectID int64) error {
 	return nil
 }
 
-// BuildExists проверяет существование билда.
+// BuildExists проверяет существование билда в корне директории проекта.
 func (s *ProjectStorage) BuildExists(projectID int64, version string) bool {
-	path := filepath.Join(s.buildsDir(projectID), version+".zip")
+	path := filepath.Join(s.projectDir(projectID), version+".zip")
 	_, err := os.Stat(path)
 	return err == nil
 }

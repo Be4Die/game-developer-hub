@@ -9,7 +9,7 @@
       <nav class="game-nav">
         <router-link :to="`/projects/${id}/stats`" class="nav-btn" active-class="active"><BarChart2 class="icon-sm" /> Статистика</router-link>
         <router-link :to="`/projects/${id}/draft`" class="nav-btn" active-class="active"><PenTool class="icon-sm" /> Черновик</router-link>
-        <router-link :to="`/projects/${id}/published`" class="nav-btn" active-class="active"><CheckCircle class="icon-sm" /> Опубликовано</router-link>
+        <router-link v-if="isPublished" :to="`/projects/${id}/published`" class="nav-btn" active-class="active"><CheckCircle class="icon-sm" /> Опубликовано</router-link>
         <router-link :to="`/projects/${id}/servers`" class="nav-btn" active-class="active"><Server class="icon-sm" /> Сервера</router-link>
       </nav>
     </aside>
@@ -35,14 +35,16 @@
 
 <script setup>
 import { ArrowLeft, BarChart2, PenTool, CheckCircle, Server, MessageSquare, Send } from 'lucide-vue-next'
-import { useRoute } from 'vue-router'
-import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { computed, ref, watch, provide } from 'vue'
 import { getProject } from '../api/projects'
 
 const props = defineProps(['id'])
 const route = useRoute()
+const router = useRouter()
 
 const project = ref(null)
+provide('project', project)
 
 async function loadProject() {
   try {
@@ -57,6 +59,15 @@ watch(() => props.id, loadProject, { immediate: true })
 const projectTitle = computed(() => {
   return project.value?.title_ru || project.value?.title_en || `Проект #${props.id}`
 })
+
+const isPublished = computed(() => project.value?.status === 3)
+
+// Редирект с "published" на "draft", если проект загружен и не опубликован
+watch(() => [route.name, project.value?.status], ([name]) => {
+  if (name === 'published' && project.value && !isPublished.value) {
+    router.replace(`/projects/${props.id}/draft`)
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>

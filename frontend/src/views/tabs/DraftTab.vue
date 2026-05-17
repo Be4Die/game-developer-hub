@@ -11,6 +11,7 @@
           <button class="btn-dev-link" @click="showToast('Открытие Dev-среды...', 'info')">Перейти к игре (Dev)</button>
           <button class="btn-outline" @click="saveMeta">Сохранить</button>
           <button class="btn-primary" @click="showToast('Отправлено модератору!', 'success')">На модерацию</button>
+          <button class="btn-dev" @click="simulatePublish">[DEV] Симулировать публикацию</button>
         </div>
       </div>
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -138,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import { UploadCloud, CheckCircle, Image as ImageIcon, Film } from 'lucide-vue-next'
 import { showToast } from '../../store'
@@ -148,6 +149,7 @@ import pako from 'pako'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id)
+const project = inject('project')
 
 const meta = ref({ title_ru: '', title_en: '', seo_ru: '', seo_en: '', about: '' })
 const media = ref({ icon: false, cover: false, video: false })
@@ -343,6 +345,13 @@ function setActiveBuild(version) {
   activeBuildVersion.value = version
   showToast(`Активная версия изменена на ${version}`, 'success')
 }
+
+function simulatePublish() {
+  if (project && project.value) {
+    project.value.status = 3
+    showToast('Статус изменён на "Опубликована" (dev)', 'info')
+  }
+}
 </script>
 
 <style scoped>
@@ -354,6 +363,8 @@ function setActiveBuild(version) {
 .actions { display: flex; gap: 12px; }
 .btn-dev-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--text-muted); border-radius: var(--radius-md); background: transparent; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
 .btn-dev-link:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-hover); }
+.btn-dev { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px dashed var(--danger); border-radius: var(--radius-md); background: var(--danger-light); color: var(--danger); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+.btn-dev:hover { background: var(--danger); color: white; }
 .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-block;}
 .bg-yellow { background: var(--warning-light); color: var(--warning); }
 .section-head { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
