@@ -47,8 +47,7 @@ func (s *ChatService) SendMessage(ctx context.Context, conversationID, senderID,
 	if err == nil {
 		conv.LastMessage = content
 		conv.LastMessageAt = msg.CreatedAt
-		// Увеличиваем счетчик непрочитанных для получателя
-		if conv.UserID != senderID {
+		if conv.UserID == senderID {
 			conv.UnreadCount++
 		}
 		s.conversationRepo.Update(ctx, conv)
@@ -108,6 +107,7 @@ func (s *ChatService) CreateConversation(ctx context.Context, userID, userName, 
 
 	conv := &domain.Conversation{
 		UserID:          userID,
+		UserName:        userName,
 		ParticipantID:   participantID,
 		ParticipantName: participantName,
 		LastMessage:     "",

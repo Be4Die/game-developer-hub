@@ -119,6 +119,14 @@ export function deleteUser(userId) {
 export function getModerators() {
   return http.get("/users", { params: { limit: 100, offset: 0 } }).then((r) => {
     const users = r.data.users || [];
-    return users.filter(u => u.role === "USER_ROLE_MODERATOR" || u.role === "moderator");
+    const mods = users.filter(u =>
+      u.role === "USER_ROLE_MODERATOR" || u.role === "moderator" || u.role === 2
+    );
+    mods.sort((a, b) => {
+      const aScore = (a.email || "").includes("moderator") ? 0 : 1;
+      const bScore = (b.email || "").includes("moderator") ? 0 : 1;
+      return aScore - bScore;
+    });
+    return mods;
   });
 }

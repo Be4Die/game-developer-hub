@@ -5,15 +5,28 @@
       <div class="form-toolbar">
         <div class="title-block">
           <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">Настройка черновика</h1>
-          <span class="status-badge bg-yellow">Заполнение данных</span>
+          <span class="status-badge bg-yellow" v-if="!moderationStatus">Заполнение данных</span>
+          <span class="status-badge bg-yellow" v-else-if="moderationStatus === 'pending'">На модерации</span>
+          <span class="status-badge bg-green" v-else-if="moderationStatus === 'approved'">Одобрено</span>
+          <span class="status-badge bg-red" v-else-if="moderationStatus === 'rejected'">Отклонено</span>
         </div>
         <div class="actions">
           <button class="btn-dev-link" @click="showToast('Открытие Dev-среды...', 'info')">Перейти к игре (Dev)</button>
           <button class="btn-outline" @click="saveMeta">Сохранить</button>
-          <button class="btn-primary" @click="showToast('Отправлено модератору!', 'success')">На модерацию</button>
+          <button class="btn-primary" @click="submitForModeration" :disabled="submitting || moderationStatus === 'pending' || moderationStatus === 'approved'">
+            {{ submitting ? 'Отправка...' : 'На модерацию' }}
+          </button>
           <button class="btn-dev" @click="simulatePublish">[DEV] Симулировать публикацию</button>
         </div>
       </div>
+
+      <div v-if="moderationStatus === 'rejected' && rejectionReason" class="card rejection-notice">
+        <strong>Причина отказа:</strong> {{ rejectionReason }}
+      </div>
+      <div v-else-if="moderationStatus === 'approved'" class="card approval-notice">
+        Игра одобрена модератором. Можно переходить к публикации.
+      </div>
+
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
         <div class="section-head"><h3>Основная информация</h3></div>
@@ -144,6 +157,7 @@ import { useRoute } from 'vue-router'
 import { UploadCloud, CheckCircle, Image as ImageIcon, Film } from 'lucide-vue-next'
 import { showToast } from '../../store'
 import { getProject, updateProject, uploadBuild, listBuilds, uploadMedia } from '../../api/projects'
+import { moderationApi, moderationToTicket } from '../../api/moderation'
 import JSZip from 'jszip'
 import pako from 'pako'
 
@@ -155,6 +169,10 @@ const meta = ref({ title_ru: '', title_en: '', seo_ru: '', seo_en: '', about: ''
 const media = ref({ icon: false, cover: false, video: false })
 const activeBuildVersion = ref('')
 
+const submitting = ref(false)
+const moderationStatus = ref(null)
+const rejectionReason = ref('')
+
 const newBuildVersion = ref('')
 const buildStatus = ref('idle')
 const buildProgress = ref(0)
@@ -163,6 +181,20 @@ const recentBuilds = ref([])
 
 let autoSaveTimeout = null
 let skipAutoSave = false
+
+async function loadModerationStatus() {
+  const gameId = parseInt(projectId.value, 10)
+  if (!gameId) return
+  try {
+    const data = await moderationApi.getStatus(gameId)
+    if (!data) return
+    const ticket = moderationToTicket(data.moderation)
+    moderationStatus.value = ticket.status
+    rejectionReason.value = ticket.rejectionReason
+  } catch {
+    // moderation service unavailable
+  }
+}
 
 async function loadProject() {
   skipAutoSave = true
@@ -185,6 +217,7 @@ async function loadProject() {
     if (!activeBuildVersion.value && builds.length > 0) {
       activeBuildVersion.value = builds[0].version
     }
+    await loadModerationStatus()
   } catch (err) {
     showToast('Не удалось загрузить данные проекта', 'danger')
   }
@@ -192,6 +225,34 @@ async function loadProject() {
 }
 
 onMounted(loadProject)
+
+async function submitForModeration() {
+  const gameId = parseInt(projectId.value, 10)
+  if (!gameId) {
+    showToast('Не удалось определить ID игры', 'danger')
+    return
+  }
+  if (!meta.value.title_ru.trim()) {
+    showToast('Укажите название игры', 'danger')
+    return
+  }
+  submitting.value = true
+  try {
+    await saveMeta(true)
+    await moderationApi.submitForReview(
+      gameId,
+      meta.value.title_ru.trim(),
+      meta.value.about.trim() || meta.value.title_ru.trim()
+    )
+    moderationStatus.value = 'pending'
+    rejectionReason.value = ''
+    showToast('Отправлено модератору!', 'success')
+  } catch (e) {
+    showToast(e.message || 'Ошибка отправки на модерацию', 'danger')
+  } finally {
+    submitting.value = false
+  }
+}
 
 async function saveMeta(silent = false) {
   try {
@@ -367,6 +428,10 @@ function simulatePublish() {
 .btn-dev:hover { background: var(--danger); color: white; }
 .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-block;}
 .bg-yellow { background: var(--warning-light); color: var(--warning); }
+.bg-green { background: var(--success-light); color: var(--success); }
+.bg-red { background: #FEE2E2; color: #DC2626; }
+.rejection-notice { padding: 16px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; font-size: 0.9rem; line-height: 1.5; }
+.approval-notice { padding: 16px; background: var(--success-light); border: 1px solid var(--success); color: var(--success); font-size: 0.9rem; }
 .section-head { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
 .section-head h3 { margin: 0; font-size: 1.1rem; }
 

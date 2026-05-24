@@ -856,6 +856,7 @@ tasks:
     desc: "Initialize all database schemas (run after stack:up)"
     cmds:
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE chat;" 2>/dev/null || echo "Database chat already exists"
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE moderation;" 2>/dev/null || echo "Database moderation already exists"
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
       - echo "✅ Orchestrator DB schema initialized"
@@ -868,6 +869,9 @@ tasks:
       - |
         docker exec -i gdh-postgres psql -U postgres -d chat < chat/migrations/init.sql
       - echo "✅ Chat DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d moderation < moderation/migrations/001_create_game_moderations.sql
+      - echo "✅ Moderation DB schema initialized"
 
   stack:db:reset:
     desc: "Reset orchestrator, SSO and chat databases (drop, recreate, init)"

@@ -655,11 +655,11 @@ func (x *GetUnreadCountResponse) GetTotalUnread() int32 {
 }
 
 type CreateConversationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ParticipantId  string                 `protobuf:"bytes,1,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ParticipantId   string                 `protobuf:"bytes,1,opt,name=participant_id,json=participantId,proto3" json:"participant_id,omitempty"`
 	ParticipantName string                 `protobuf:"bytes,2,opt,name=participant_name,json=participantName,proto3" json:"participant_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateConversationRequest) Reset() {
@@ -761,13 +761,15 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x10participant_name\x18\x03 \x01(\tR\x0fparticipantName\x12!\n" +
 	"\flast_message\x18\x04 \x01(\tR\vlastMessage\x12&\n" +
 	"\x0flast_message_at\x18\x05 \x01(\x03R\rlastMessageAt\x12!\n" +
-	"\funread_count\x18\x06 \x01(\x05R\vunreadCount\"\xd2\x01\n" +
+	"\funread_count\x18\x06 \x01(\x05R\vunreadCount\"\xf3\x01\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0fconversation_id\x18\x02 \x01(\tR\x0econversationId\x12\x1b\n" +
 	"\tsender_id\x18\x03 \x01(\tR\bsenderId\x12\x1f\n" +
 	"\vsender_name\x18\x04 \x01(\tR\n" +
-	"senderName\x12\x18\n" +
+	"senderName\x12\x1f\n" +
+	"\vsender_role\x18\b \x01(\tR\n" +
+	"senderRole\x12\x18\n" +
 	"\acontent\x18\x05 \x01(\tR\acontent\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\x03R\tcreatedAt\x12\x17\n" +
@@ -792,9 +794,10 @@ const file_chat_v1_chat_proto_rawDesc = "" +
 	"\x12MarkAsReadResponse\"\x17\n" +
 	"\x15GetUnreadCountRequest\";\n" +
 	"\x16GetUnreadCountResponse\x12!\n" +
-	"\ftotal_unread\x18\x01 \x01(\x05R\vtotalUnread\"B\n" +
+	"\ftotal_unread\x18\x01 \x01(\x05R\vtotalUnread\"m\n" +
 	"\x19CreateConversationRequest\x12%\n" +
-	"\x0eparticipant_id\x18\x01 \x01(\tR\rparticipantId\"W\n" +
+	"\x0eparticipant_id\x18\x01 \x01(\tR\rparticipantId\x12)\n" +
+	"\x10participant_name\x18\x02 \x01(\tR\x0fparticipantName\"W\n" +
 	"\x1aCreateConversationResponse\x129\n" +
 	"\fconversation\x18\x01 \x01(\v2\x15.chat.v1.ConversationR\fconversation2\xfd\x05\n" +
 	"\vChatService\x12j\n" +

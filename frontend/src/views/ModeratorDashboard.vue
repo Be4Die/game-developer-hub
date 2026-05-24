@@ -73,7 +73,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { chatApi } from '../api/chat'
-import { tickets } from '../store'
+import { tickets, loadTickets } from '../store'
+import { ticketStatusText } from '../api/moderation'
 
 const router = useRouter()
 const conversations = ref([])
@@ -87,6 +88,7 @@ onMounted(async () => {
     } catch (e) {
         console.error('Failed to load conversations:', e)
     }
+    await loadTickets()
 })
 
 function openConversation(id) {
@@ -105,15 +107,14 @@ function formatTime(timestamp) {
 }
 
 function statusText(status) {
-    const map = { new: 'Новый', in_progress: 'В работе', resolved: 'Решён' }
-    return map[status] || status
+    return ticketStatusText(status)
 }
 
 function statusBadgeClass(status) {
     switch (status) {
-        case 'new': return 'badge-warning'
-        case 'in_progress': return 'badge-success'
-        case 'resolved': return 'badge-neutral'
+        case 'pending': return 'badge-warning'
+        case 'approved': return 'badge-success'
+        case 'rejected': return 'badge-neutral'
         default: return 'badge-neutral'
     }
 }

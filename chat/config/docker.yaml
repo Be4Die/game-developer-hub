@@ -5,7 +5,7 @@ grpc:
   timeout: 30s
 
 db:
-  host: gdh-postgres
+  host: postgres
   port: 5432
   user: postgres
   password: postgres
@@ -14,6 +14,6 @@ db:
   max_conns: 25
 
 kv:
-  addr: gdh-valkey:6379
+  addr: valkey:6379
   password: ""
   db: 2

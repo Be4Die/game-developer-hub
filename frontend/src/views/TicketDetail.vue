@@ -5,8 +5,6 @@
     </button>
 
     <div class="ticket-layout">
-
-      <!-- Левая колонка: инфо -->
       <div class="ticket-sidebar">
         <div class="sidebar-card">
           <div class="ticket-id">#{{ ticket.id }}</div>
@@ -19,15 +17,11 @@
           <div class="meta-list">
             <div class="meta-item">
               <span class="meta-label">Приоритет</span>
-              <span class="meta-value" :class="`priority-${ticket.priority}`">{{ ticket.priority }}</span>
+              <span class="meta-value">{{ ticket.priority }}</span>
             </div>
             <div class="meta-item">
               <span class="meta-label">Создан</span>
               <span class="meta-value">{{ ticket.created }}</span>
-            </div>
-            <div class="meta-item" v-if="ticket.developerName">
-              <span class="meta-label">Назначен</span>
-              <span class="meta-value">{{ ticket.developerName }}</span>
             </div>
           </div>
 
@@ -35,65 +29,95 @@
             <div class="description-label">Описание</div>
             <p class="description-text">{{ ticket.description }}</p>
           </div>
+
+          <div v-if="ticket.status === 'rejected' && ticket.rejectionReason" class="rejection-block">
+            <div class="description-label">Причина отказа</div>
+            <p class="rejection-text">{{ ticket.rejectionReason }}</p>
+          </div>
         </div>
 
-        <!-- Действия -->
-        <div class="ticket-actions">
-          <button v-if="ticket.status === 'new'" class="btn-action btn-action-primary" @click="takeTicket">
-            Взять в работу
+        <div class="ticket-actions" v-if="ticket.status === 'pending'">
+          <button class="btn-action btn-success" @click="handleApprove" :disabled="actionLoading">
+            ✓ Одобрить игру
           </button>
-          <button v-if="ticket.status === 'in_progress'" class="btn-action btn-success" @click="resolveTicket">
-            ✓ Закрыть тикет
+          <button class="btn-action btn-danger" @click="showRejectModal = true" :disabled="actionLoading">
+            ✕ Отклонить игру
           </button>
-          <template v-if="ticket.status === 'resolved'">
-            <div class="ticket-resolved">✓ Тикет закрыт</div>
-            <button class="btn-action btn-reopen" @click="handleReopen">
-              ↩ Открыть повторно
-            </button>
-          </template>
         </div>
 
-        <button class="history-link" @click="$router.push('/moderator/history')">
-          📋 История тикетов
-        </button>
+        <div v-else-if="ticket.status === 'approved'" class="result-banner approved">
+          ✓ Игра одобрена и может быть опубликована
+        </div>
+        <div v-else-if="ticket.status === 'rejected'" class="result-banner rejected">
+          ✕ Игра отклонена
+        </div>
       </div>
 
-      <!-- Правая колонка: чат -->
       <div class="chat-column">
         <div class="chat-header">
-          <h3>Обсуждение</h3>
-          <span class="messages-count">{{ ticket.messages.length }} сообщений</span>
+          <h3>Обсуждение с разработчиком</h3>
+          <span class="messages-count">{{ messages.length }} сообщений</span>
         </div>
 
         <div class="chat-messages" ref="chatContainer">
-          <div v-if="ticket.messages.length === 0" class="chat-empty">
-            Сообщений пока нет. Начните обсуждение.
-          </div>
-          <div v-for="msg in ticket.messages" :key="msg.id" class="message-wrap" :class="msg.role">
-            <div class="message-bubble" :class="msg.role">
+          <div v-if="chatLoading" class="chat-empty">Загрузка чата...</div>
+          <div v-else-if="!conversationId" class="chat-empty">Чат с разработчиком пока недоступен</div>
+          <div v-else-if="messages.length === 0" class="chat-empty">Сообщений пока нет. Начните обсуждение.</div>
+          <div
+            v-else
+            v-for="msg in messages"
+            :key="msg.id"
+            class="message-wrap"
+            :class="{ own: isOwnMessage(msg) }"
+          >
+            <div class="message-bubble" :class="{ own: isOwnMessage(msg) }">
               <div class="message-meta">
-                <span class="message-author">{{ msg.author }}</span>
-                <span class="message-time">{{ msg.timestamp }}</span>
+                <span class="message-author">{{ formatSender(msg) }}</span>
+                <span class="message-time">{{ formatTime(msg.created_at) }}</span>
               </div>
-              <div class="message-text">{{ msg.text }}</div>
+              <div class="message-text">{{ msg.content }}</div>
             </div>
           </div>
         </div>
 
-        <div class="chat-input-area">
+        <div class="chat-input-area" v-if="conversationId">
           <textarea
-              v-model="newMessage"
-              placeholder="Напишите сообщение... Ctrl+Enter для отправки"
-              rows="3"
-              @keyup.ctrl.enter="sendMessage"
+            v-model="newMessage"
+            placeholder="Напишите сообщение... Ctrl+Enter для отправки"
+            rows="3"
+            @keyup.ctrl.enter="sendMessage"
           ></textarea>
           <div class="input-footer">
             <span class="input-hint">Ctrl+Enter — отправить</span>
-            <button class="send-btn" @click="sendMessage" :disabled="!newMessage.trim()">Отправить</button>
+            <button class="send-btn" @click="sendMessage" :disabled="!newMessage.trim() || sending">
+              {{ sending ? '...' : 'Отправить' }}
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
+    <div v-if="showRejectModal" class="modal-overlay" @click.self="showRejectModal = false">
+      <div class="modal-card">
+        <h3>Отклонить игру</h3>
+        <p class="modal-hint">Укажите причину отказа — разработчик увидит её в карточке заявки.</p>
+        <textarea
+          v-model="rejectReason"
+          placeholder="Например: не загружена иконка, описание слишком короткое..."
+          rows="4"
+          autofocus
+        ></textarea>
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="showRejectModal = false">Отмена</button>
+          <button
+            class="btn-confirm-reject"
+            @click="handleReject"
+            :disabled="!rejectReason.trim() || actionLoading"
+          >
+            Отклонить
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -101,97 +125,211 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { tickets, addMessage, updateTicketStatus, assignTicketToModerator, reopenTicket, user } from '../store'
+import { tickets, approveTicket, rejectTicket, showToast } from '../store'
+import { moderationApi, moderationToTicket, ticketStatusText } from '../api/moderation'
+import { chatApi } from '../api/chat'
+import { useAuth } from '../store/auth'
+import { useConversationPolling } from '../composables/useChatNotifications'
 
 const route = useRoute()
 const router = useRouter()
-const ticketId = parseInt(route.params.id)
-const ticket = computed(() => tickets.find(t => t.id === ticketId))
+const ticketId = parseInt(route.params.id, 10)
+const { state: authState } = useAuth()
 
-if (!ticket.value) router.push('/moderator/tickets')
-
+const ticket = ref(null)
+const messages = ref([])
 const newMessage = ref('')
 const chatContainer = ref(null)
+const conversationId = ref(null)
+const chatLoading = ref(false)
+const sending = ref(false)
+const actionLoading = ref(false)
+const showRejectModal = ref(false)
+const rejectReason = ref('')
 
-const statusText = (s) => ({ new: 'Новый', in_progress: 'В работе', resolved: 'Решён' }[s] || s)
+const statusText = ticketStatusText
+const currentUserId = computed(() => authState.user?.id)
 
-const scrollToBottom = () => nextTick(() => {
-  if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-})
+useConversationPolling(
+  () => conversationId.value,
+  () => currentUserId.value,
+  (msgs) => {
+    messages.value = msgs
+    scrollToBottom()
+  }
+)
 
-watch(() => ticket.value?.messages.length, scrollToBottom)
-onMounted(scrollToBottom)
-
-const sendMessage = () => {
-  if (!newMessage.value.trim()) return
-  addMessage(ticketId, newMessage.value, 'moderator')
-  newMessage.value = ''
+async function loadTicket() {
+  const local = tickets.find(t => t.id === ticketId)
+  if (local) {
+    ticket.value = { ...local }
+    return
+  }
+  try {
+    const data = await moderationApi.getStatus(ticketId)
+    ticket.value = moderationToTicket(data.moderation)
+  } catch {
+    router.push('/moderator/tickets')
+  }
 }
 
-const takeTicket = () => assignTicketToModerator(ticketId, user.name)
-const resolveTicket = () => updateTicketStatus(ticketId, 'resolved')
-const handleReopen = () => reopenTicket(ticketId)
+async function findConversation() {
+  if (!ticket.value?.developerId) return
+  chatLoading.value = true
+  try {
+    const data = await chatApi.getConversations()
+    const devId = ticket.value.developerId
+    const conv = (data.conversations || []).find(c =>
+      c.participant_id === devId || c.participantId === devId
+    )
+    if (conv) {
+      conversationId.value = conv.id
+      return
+    }
+    const created = await chatApi.createConversation(devId, 'Разработчик')
+    conversationId.value = created.conversation?.id
+  } catch (e) {
+    console.error('Failed to init chat:', e)
+  } finally {
+    chatLoading.value = false
+  }
+}
+
+function isOwnMessage(msg) {
+  return (msg.sender_id || msg.senderId) === currentUserId.value
+}
+
+function formatSender(msg) {
+  return isOwnMessage(msg) ? 'Вы' : (msg.sender_name || msg.senderName || 'Разработчик')
+}
+
+function formatTime(timestamp) {
+  if (!timestamp) return ''
+  return new Date(timestamp * 1000).toLocaleString('ru-RU', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  })
+}
+
+function scrollToBottom() {
+  nextTick(() => {
+    if (chatContainer.value) chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  })
+}
+
+watch(() => messages.value.length, scrollToBottom)
+
+async function sendMessage() {
+  if (!newMessage.value.trim() || !conversationId.value) return
+  sending.value = true
+  try {
+    await chatApi.sendMessage(conversationId.value, newMessage.value)
+    newMessage.value = ''
+    showToast('Сообщение отправлено', 'success')
+    await refreshMessages()
+  } catch {
+    showToast('Не удалось отправить сообщение', 'error')
+  } finally {
+    sending.value = false
+  }
+}
+
+async function refreshMessages() {
+  if (!conversationId.value) return
+  const data = await chatApi.getMessages(conversationId.value)
+  messages.value = (data.messages || []).reverse()
+  await chatApi.markAsRead(conversationId.value)
+  scrollToBottom()
+}
+
+async function handleApprove() {
+  actionLoading.value = true
+  try {
+    ticket.value = await approveTicket(ticketId)
+  } catch (e) {
+    showToast(e.message || 'Ошибка одобрения', 'error')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleReject() {
+  if (!rejectReason.value.trim()) return
+  actionLoading.value = true
+  try {
+    ticket.value = await rejectTicket(ticketId, rejectReason.value.trim())
+    showRejectModal.value = false
+    rejectReason.value = ''
+  } catch (e) {
+    showToast(e.message || 'Ошибка отклонения', 'error')
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await loadTicket()
+  if (!ticket.value) return
+  await findConversation()
+  if (conversationId.value) await refreshMessages()
+})
 </script>
 
 <style scoped>
 .ticket-detail { padding: 28px 40px; max-width: 1300px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-.back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; margin-bottom: 20px; padding: 6px 0; font-weight: 500; transition: color 0.2s; }
+.back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; margin-bottom: 20px; padding: 6px 0; font-weight: 500; }
 .back-btn:hover { color: var(--text-main); }
-.back-arrow { font-size: 1.1rem; }
 .ticket-layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
-
 .ticket-sidebar { display: flex; flex-direction: column; gap: 12px; }
 .sidebar-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-.ticket-id { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em; }
-.ticket-title { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-main); line-height: 1.4; }
+.ticket-id { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+.ticket-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
 .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; width: fit-content; }
-.status-new { background: #FEF3C7; color: #D97706; }
-.status-in_progress { background: #EFF6FF; color: var(--primary); }
-.status-resolved { background: #D1FAE5; color: #059669; }
+.status-pending { background: #FEF3C7; color: #D97706; }
+.status-approved { background: #D1FAE5; color: #059669; }
+.status-rejected { background: #FEE2E2; color: #DC2626; }
 .meta-list { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.meta-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; }
+.meta-item { display: flex; justify-content: space-between; font-size: 0.88rem; }
 .meta-label { color: var(--text-muted); }
-.meta-value { font-weight: 600; color: var(--text-main); }
-.priority-Высокий { color: #EF4444; }
-.priority-Средний { color: #F59E0B; }
-.priority-Низкий { color: #10B981; }
-.description-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-.description-text { margin: 0; font-size: 0.9rem; color: var(--text-main); line-height: 1.6; }
-
+.meta-value { font-weight: 600; }
+.description-label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+.description-text { margin: 0; font-size: 0.9rem; line-height: 1.6; }
+.rejection-block { padding: 12px; background: #FEF2F2; border-radius: var(--radius-md); border: 1px solid #FECACA; }
+.rejection-text { margin: 0; font-size: 0.9rem; color: #B91C1C; line-height: 1.5; }
 .ticket-actions { display: flex; flex-direction: column; gap: 8px; }
-.btn-action { width: 100%; padding: 11px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; transition: opacity 0.2s; }
-.btn-action:hover { opacity: 0.85; }
-.btn-action-primary { background: var(--primary); color: white; }
+.btn-action { width: 100%; padding: 11px; border-radius: var(--radius-md); font-weight: 600; border: none; cursor: pointer; }
+.btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-success { background: #10B981; color: white; }
-.btn-reopen { background: var(--bg-app); color: var(--text-main); border: 1px solid var(--border) !important; }
-.ticket-resolved { text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; color: #059669; background: #D1FAE5; border-radius: var(--radius-md); }
-
-.history-link { width: 100%; padding: 10px; border-radius: var(--radius-md); background: none; border: 1px dashed var(--border); color: var(--text-muted); font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: 0.2s; text-align: center; box-sizing: border-box; }
-.history-link:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-app); }
-
+.btn-danger { background: #EF4444; color: white; }
+.result-banner { text-align: center; padding: 12px; font-weight: 600; border-radius: var(--radius-md); font-size: 0.9rem; }
+.result-banner.approved { color: #059669; background: #D1FAE5; }
+.result-banner.rejected { color: #DC2626; background: #FEE2E2; }
 .chat-column { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; min-height: 580px; max-height: calc(100vh - 160px); }
-.chat-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
-.chat-header h3 { margin: 0; font-size: 1rem; color: var(--text-main); }
-.messages-count { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+.chat-header { display: flex; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
+.chat-header h3 { margin: 0; font-size: 1rem; }
+.messages-count { font-size: 0.8rem; color: var(--text-muted); }
 .chat-messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; background: var(--bg-app); }
 .chat-empty { margin: auto; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
 .message-wrap { display: flex; }
-.message-wrap.moderator { justify-content: flex-end; }
-.message-wrap.developer { justify-content: flex-start; }
-.message-bubble { max-width: 68%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.5; }
-.message-bubble.moderator { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
-.message-bubble.developer { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); border-bottom-left-radius: 4px; }
+.message-wrap.own { justify-content: flex-end; }
+.message-bubble { max-width: 68%; padding: 10px 14px; border-radius: 14px; font-size: 0.9rem; background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.message-bubble.own { background: var(--primary); color: white; border: none; border-bottom-right-radius: 4px; border-bottom-left-radius: 14px; }
 .message-meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 5px; }
 .message-author { font-size: 0.72rem; font-weight: 700; }
-.message-bubble.moderator .message-author { color: rgba(255,255,255,0.75); }
-.message-bubble.developer .message-author { color: var(--text-muted); }
+.message-bubble.own .message-author { color: rgba(255,255,255,0.75); }
 .message-time { font-size: 0.7rem; opacity: 0.6; }
 .chat-input-area { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
-.chat-input-area textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); font-family: inherit; font-size: 0.9rem; resize: none; background: var(--bg-app); color: var(--text-main); box-sizing: border-box; outline: none; transition: border-color 0.2s; }
-.chat-input-area textarea:focus { border-color: var(--primary); }
+.chat-input-area textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-family: inherit; font-size: 0.9rem; resize: none; background: var(--bg-app); box-sizing: border-box; }
 .input-footer { display: flex; justify-content: space-between; align-items: center; }
 .input-hint { font-size: 0.78rem; color: var(--text-muted); }
-.send-btn { background: var(--primary); color: white; border: none; padding: 9px 22px; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s, opacity 0.2s; }
-.send-btn:hover:not(:disabled) { background: var(--primary-hover); }
+.send-btn { background: var(--primary); color: white; border: none; padding: 9px 22px; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; }
 .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: 28px; width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; margin: 20px; }
+.modal-card h3 { margin: 0; }
+.modal-hint { margin: 0; font-size: 0.88rem; color: var(--text-muted); }
+.modal-card textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-family: inherit; box-sizing: border-box; background: var(--bg-app); }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-cancel { padding: 9px 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; cursor: pointer; font-weight: 600; }
+.btn-confirm-reject { padding: 9px 18px; border: none; border-radius: var(--radius-md); background: #EF4444; color: white; cursor: pointer; font-weight: 600; }
+.btn-confirm-reject:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

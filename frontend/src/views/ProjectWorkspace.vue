@@ -45,7 +45,7 @@
           class="chat-input"
           @keyup.enter="sendMessage"
         />
-        <button class="send-btn" @click="() => { console.log('Button clicked'); sendMessage(); }" :disabled="!newMessage.trim()"><Send class="icon-sm" /></button>
+        <button class="send-btn" @click="sendMessage" :disabled="!newMessage.trim()"><Send class="icon-sm" /></button>
       </div>
     </aside>
   </div>
@@ -59,6 +59,8 @@ import { getProject } from '../api/projects'
 import { chatApi } from '../api/chat'
 import { getModerators } from '../api/sso'
 import { useAuth } from '../store/auth'
+import { showToast } from '../store'
+import { useConversationPolling } from '../composables/useChatNotifications'
 
 const props = defineProps(['id'])
 const route = useRoute()
@@ -105,6 +107,15 @@ const loading = ref(false)
 const messagesContainer = ref(null)
 const conversationId = ref(null)
 
+useConversationPolling(
+  () => conversationId.value,
+  () => currentUserId.value,
+  (msgs) => {
+    messages.value = msgs
+    scrollToBottom()
+  }
+)
+
 async function initChat() {
   loading.value = true
   try {
@@ -144,9 +155,11 @@ async function sendMessage() {
   try {
     await chatApi.sendMessage(conversationId.value, newMessage.value)
     newMessage.value = ''
+    showToast('Сообщение отправлено', 'success')
     await loadMessages()
   } catch (e) {
     console.error('Failed to send message:', e)
+    showToast('Не удалось отправить сообщение', 'error')
   }
 }
 

@@ -20,21 +20,21 @@ func NewConversationRepository(pool *pgxpool.Pool) domain.ConversationRepository
 func (r *conversationRepo) Create(ctx context.Context, conv *domain.Conversation) error {
 	conv.ID = uuid.New().String()
 	query := `
-		INSERT INTO chat_conversations (id, user_id, participant_id, participant_name, last_message, last_message_at, unread_count)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO chat_conversations (id, user_id, user_name, participant_id, participant_name, last_message, last_message_at, unread_count)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
-	_, err := r.pool.Exec(ctx, query, conv.ID, conv.UserID, conv.ParticipantID, conv.ParticipantName, conv.LastMessage, conv.LastMessageAt, conv.UnreadCount)
+	_, err := r.pool.Exec(ctx, query, conv.ID, conv.UserID, conv.UserName, conv.ParticipantID, conv.ParticipantName, conv.LastMessage, conv.LastMessageAt, conv.UnreadCount)
 	return err
 }
 
 func (r *conversationRepo) GetByID(ctx context.Context, id string) (*domain.Conversation, error) {
 	query := `
-		SELECT id, user_id, participant_id, participant_name, last_message, last_message_at, unread_count
+		SELECT id, user_id, user_name, participant_id, participant_name, last_message, last_message_at, unread_count
 		FROM chat_conversations WHERE id = $1
 	`
 	var conv domain.Conversation
 	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&conv.ID, &conv.UserID, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount,
+		&conv.ID, &conv.UserID, &conv.UserName, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount,
 	)
 	if err != nil {
 		return nil, err
@@ -44,14 +44,14 @@ func (r *conversationRepo) GetByID(ctx context.Context, id string) (*domain.Conv
 
 func (r *conversationRepo) GetByParticipants(ctx context.Context, userID1, userID2 string) (*domain.Conversation, error) {
 	query := `
-		SELECT id, user_id, participant_id, participant_name, last_message, last_message_at, unread_count
+		SELECT id, user_id, user_name, participant_id, participant_name, last_message, last_message_at, unread_count
 		FROM chat_conversations 
 		WHERE user_id = $1 AND participant_id = $2
 		LIMIT 1
 	`
 	var conv domain.Conversation
 	err := r.pool.QueryRow(ctx, query, userID1, userID2).Scan(
-		&conv.ID, &conv.UserID, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount,
+		&conv.ID, &conv.UserID, &conv.UserName, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount,
 	)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (r *conversationRepo) GetByParticipants(ctx context.Context, userID1, userI
 
 func (r *conversationRepo) ListByUser(ctx context.Context, userID string) ([]domain.Conversation, error) {
 	query := `
-		SELECT id, user_id, participant_id, participant_name, last_message, last_message_at, unread_count
+		SELECT id, user_id, user_name, participant_id, participant_name, last_message, last_message_at, unread_count
 		FROM chat_conversations WHERE user_id = $1 OR participant_id = $1
 		ORDER BY last_message_at DESC
 	`
@@ -74,7 +74,7 @@ func (r *conversationRepo) ListByUser(ctx context.Context, userID string) ([]dom
 	var conversations []domain.Conversation
 	for rows.Next() {
 		var conv domain.Conversation
-		if err := rows.Scan(&conv.ID, &conv.UserID, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount); err != nil {
+		if err := rows.Scan(&conv.ID, &conv.UserID, &conv.UserName, &conv.ParticipantID, &conv.ParticipantName, &conv.LastMessage, &conv.LastMessageAt, &conv.UnreadCount); err != nil {
 			return nil, err
 		}
 		conversations = append(conversations, conv)
@@ -206,6 +206,12 @@ func InitSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		CREATE INDEX IF NOT EXISTS idx_messages_created_at ON chat_messages(created_at);
 	`
 	_, err := pool.Exec(ctx, schema)
+	if err != nil {
+		return err
+	}
+
+	// Migration: add user_name column if not exists
+	_, err = pool.Exec(ctx, "ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS user_name VARCHAR(255) NOT NULL DEFAULT ''")
 	if err != nil {
 		return err
 	}

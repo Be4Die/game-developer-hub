@@ -34,6 +34,7 @@ import GlobalHeader from "./components/GlobalHeader.vue";
 import ChatWidget from "./components/chat/ChatWidget.vue";
 import { toast } from "./store";
 import { useAuth } from "./store/auth";
+import { startChatNotifications, stopChatNotifications } from "./composables/useChatNotifications";
 
 const router = useRouter();
 const route = useRoute();
@@ -57,6 +58,11 @@ const isChatRoute = computed(() => {
 onMounted(() => {
     loadUser();
 });
+
+watch(() => authState.accessToken, (token) => {
+    if (token) startChatNotifications();
+    else stopChatNotifications();
+}, { immediate: true });
 
 watch(userRole, (newRole) => {
     if (newRole === "Разработчик") {

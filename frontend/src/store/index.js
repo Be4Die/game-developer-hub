@@ -36,38 +36,40 @@ export const draftProject = reactive({
 // --- TICKETS ---
 export const tickets = reactive([])
 
-export const addMessage = (ticketId, text, role) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (ticket) {
-        const author = role === 'moderator' ? 'Модератор' : 'Разработчик'
-        ticket.messages.push({ id: Date.now(), author, text, timestamp: new Date().toLocaleString(), role })
-        showToast(`Сообщение отправлено в тикет #${ticketId}`, 'success')
-    }
+export async function loadTickets() {
+  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
+  try {
+    const data = await moderationApi.listPending()
+    const items = (data.moderations || []).map(moderationToTicket)
+    tickets.splice(0, tickets.length, ...items)
+  } catch (e) {
+    console.error('Failed to load moderation tickets:', e)
+  }
 }
 
-export const updateTicketStatus = (ticketId, status) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (ticket) {
-        ticket.status = status
-        if (status === 'resolved') ticket.closedAt = new Date().toISOString().slice(0,10)
-        showToast(`Статус тикета #${ticketId} изменён`, 'info')
-    }
+function upsertTicket(updated) {
+  const idx = tickets.findIndex(t => t.id === updated.id)
+  if (idx >= 0) {
+    Object.assign(tickets[idx], updated)
+  } else {
+    tickets.push(updated)
+  }
 }
 
-export const assignTicketToModerator = (ticketId, moderatorName) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (ticket && ticket.status === 'new') {
-        ticket.status = 'in_progress'
-        ticket.developerName = moderatorName
-        showToast(`Тикет #${ticketId} взят в работу`, 'success')
-    }
+export async function approveTicket(gameId) {
+  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
+  const data = await moderationApi.approve(gameId)
+  const updated = moderationToTicket(data.moderation)
+  upsertTicket(updated)
+  showToast('Игра одобрена', 'success')
+  return updated
 }
 
-export const reopenTicket = (ticketId) => {
-    const ticket = tickets.find(t => t.id === ticketId)
-    if (ticket && ticket.status === 'resolved') {
-        ticket.status = 'in_progress'
-        ticket.closedAt = null
-        showToast(`Тикет #${ticketId} открыт повторно`, 'info')
-    }
+export async function rejectTicket(gameId, reason) {
+  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
+  const data = await moderationApi.reject(gameId, reason)
+  const updated = moderationToTicket(data.moderation)
+  upsertTicket(updated)
+  showToast('Игра отклонена', 'info')
+  return updated
 }

@@ -6,13 +6,14 @@ import (
 )
 
 type Conversation struct {
-	ID            string
-	UserID        string
-	ParticipantID string
+	ID              string
+	UserID          string
+	UserName        string
+	ParticipantID   string
 	ParticipantName string
-	LastMessage   string
-	LastMessageAt time.Time
-	UnreadCount   int
+	LastMessage     string
+	LastMessageAt   time.Time
+	UnreadCount     int
 }
 
 type Message struct {

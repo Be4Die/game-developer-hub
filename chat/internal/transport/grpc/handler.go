@@ -106,7 +106,7 @@ func (h *ChatHandler) GetConversations(ctx context.Context, req *pb.GetConversat
 
 	pbConversations := make([]*pb.Conversation, len(conversations))
 	for i, conv := range conversations {
-		pbConversations[i] = convertConversation(&conv)
+		pbConversations[i] = convertConversation(&conv, userID)
 	}
 
 	return &pb.GetConversationsResponse{
@@ -188,18 +188,27 @@ func (h *ChatHandler) CreateConversation(ctx context.Context, req *pb.CreateConv
 	}
 
 	return &pb.CreateConversationResponse{
-		Conversation: convertConversation(conv),
+		Conversation: convertConversation(conv, userID),
 	}, nil
 }
 
-func convertConversation(conv *domain.Conversation) *pb.Conversation {
+func convertConversation(conv *domain.Conversation, viewerID string) *pb.Conversation {
+	participantID := conv.ParticipantID
+	participantName := conv.ParticipantName
+	if viewerID == conv.ParticipantID {
+		participantID = conv.UserID
+		participantName = conv.UserName
+		if participantName == "" {
+			participantName = "Разработчик"
+		}
+	}
 	return &pb.Conversation{
-		Id:             conv.ID,
-		ParticipantId:  conv.ParticipantID,
-		ParticipantName: conv.ParticipantName,
-		LastMessage:    conv.LastMessage,
-		LastMessageAt:  conv.LastMessageAt.Unix(),
-		UnreadCount:    int32(conv.UnreadCount),
+		Id:              conv.ID,
+		ParticipantId:   participantID,
+		ParticipantName: participantName,
+		LastMessage:     conv.LastMessage,
+		LastMessageAt:   conv.LastMessageAt.Unix(),
+		UnreadCount:     int32(conv.UnreadCount),
 	}
 }
 

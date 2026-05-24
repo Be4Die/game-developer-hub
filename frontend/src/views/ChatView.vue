@@ -41,6 +41,8 @@ import { useRoute } from 'vue-router'
 import { ArrowLeft, Send } from 'lucide-vue-next'
 import { chatApi } from '../api/chat'
 import { useAuth } from '../store/auth'
+import { showToast } from '../store'
+import { useConversationPolling } from '../composables/useChatNotifications'
 
 const route = useRoute()
 const { state: authState } = useAuth()
@@ -52,6 +54,15 @@ const loading = ref(false)
 const conversationId = ref(route.params.id)
 const conversationName = ref('Загрузка...')
 const messagesContainer = ref(null)
+
+useConversationPolling(
+  () => conversationId.value,
+  () => currentUserId.value,
+  (msgs) => {
+    messages.value = msgs
+    scrollToBottom()
+  }
+)
 
 async function loadConversationInfo() {
   try {
@@ -69,7 +80,6 @@ async function loadMessages() {
   loading.value = true
   try {
     const data = await chatApi.getMessages(conversationId.value)
-    console.log('Messages loaded:', JSON.stringify(data.messages, null, 2))
     messages.value = (data.messages || []).reverse()
     await chatApi.markAsRead(conversationId.value)
     await nextTick()
@@ -86,9 +96,11 @@ async function sendMessage() {
   try {
     await chatApi.sendMessage(conversationId.value, newMessage.value)
     newMessage.value = ''
+    showToast('Сообщение отправлено', 'success')
     await loadMessages()
   } catch (e) {
     console.error('Failed to send message:', e)
+    showToast('Не удалось отправить сообщение', 'error')
   }
 }
 
