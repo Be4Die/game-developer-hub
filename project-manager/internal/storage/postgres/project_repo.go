@@ -120,6 +120,43 @@ type projectScanner interface {
 	Scan(dest ...any) error
 }
 
+// InitSchema создаёт таблицы project-manager, если их ещё нет (для существующих volume Postgres).
+func InitSchema(ctx context.Context, pool *pgxpool.Pool) error {
+	schema := `
+		CREATE TABLE IF NOT EXISTS projects (
+			id          BIGSERIAL PRIMARY KEY,
+			owner_id    TEXT NOT NULL,
+			title_ru    TEXT NOT NULL DEFAULT '',
+			title_en    TEXT NOT NULL DEFAULT '',
+			seo_ru      TEXT NOT NULL DEFAULT '',
+			seo_en      TEXT NOT NULL DEFAULT '',
+			about       TEXT NOT NULL DEFAULT '',
+			status      SMALLINT NOT NULL DEFAULT 1,
+			icon_path   TEXT NOT NULL DEFAULT '',
+			cover_path  TEXT NOT NULL DEFAULT '',
+			video_path  TEXT NOT NULL DEFAULT '',
+			active_build_version TEXT NOT NULL DEFAULT '',
+			created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+			updated_at  TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+		CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
+		CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+
+		CREATE TABLE IF NOT EXISTS project_builds (
+			id          BIGSERIAL PRIMARY KEY,
+			project_id  BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+			version     TEXT NOT NULL,
+			file_path   TEXT NOT NULL,
+			file_size   BIGINT NOT NULL,
+			created_at  TIMESTAMP NOT NULL DEFAULT NOW(),
+			UNIQUE (project_id, version)
+		);
+		CREATE INDEX IF NOT EXISTS idx_project_builds_project ON project_builds(project_id, created_at DESC);
+	`
+	_, err := pool.Exec(ctx, schema)
+	return err
+}
+
 func scanProject(s projectScanner) (*domain.Project, error) {
 	var p domain.Project
 	err := s.Scan(

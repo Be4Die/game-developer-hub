@@ -2,28 +2,28 @@
     <div class="page-container">
         <div class="header-row">
             <div>
-                <div class="page-subtitle">╨Я╤А╨╛╨╡╨║╤В╤Л</div>
-                <h1>╨Ь╨╛╨╕ ╨╕╨│╤А╤Л</h1>
+                <div class="page-subtitle">Проекты</div>
+                <h1>Мои игры</h1>
             </div>
             <button class="btn btn-primary" @click="createNewGame">
                 <Plus class="icon-sm" />
-                ╨Ф╨╛╨▒╨░╨▓╨╕╤В╤М ╨╕╨│╤А╤Г
+                Добавить игру
             </button>
         </div>
 
         <div v-if="loading" class="empty-state">
-            <p>╨Ч╨░╨│╤А╤Г╨╖╨║╨░ ╨┐╤А╨╛╨╡╨║╤В╨╛╨▓...</p>
+            <p>Загрузка проектов...</p>
         </div>
 
         <div v-else-if="games.length === 0" class="empty-state">
             <div class="empty-icon">
                 <Gamepad2 class="icon-md" />
             </div>
-            <h3>╨Я╨╛╨║╨░ ╨╜╨╡╤В ╨┐╤А╨╛╨╡╨║╤В╨╛╨▓</h3>
-            <p>╨б╨╛╨╖╨┤╨░╨╣╤В╨╡ ╤Б╨▓╨╛╤О ╨┐╨╡╤А╨▓╤Г╤О ╨╕╨│╤А╤Г, ╤З╤В╨╛╨▒╤Л ╨╜╨░╤З╨░╤В╤М ╤А╨░╨▒╨╛╤В╤Г</p>
+            <h3>Пока нет проектов</h3>
+            <p>Создайте свою первую игру, чтобы начать работу</p>
             <button class="btn btn-primary" @click="createNewGame">
                 <Plus class="icon-sm" />
-                ╨б╨╛╨╖╨┤╨░╤В╤М ╨┐╤А╨╛╨╡╨║╤В
+                Создать проект
             </button>
         </div>
 
@@ -40,7 +40,7 @@
                         {{ statusLabel(game.status) }}
                     </span>
                 </div>
-                <h3 class="project-title">{{ game.title_ru || game.title_en || '╨С╨╡╨╖ ╨╜╨░╨╖╨▓╨░╨╜╨╕╤П' }}</h3>
+                <h3 class="project-title">{{ game.title_ru || game.title_en || 'Без названия' }}</h3>
                 <p class="project-meta">ID: {{ game.id }}</p>
                 <div class="project-arrow">
                     <ArrowRight class="icon-sm" />
@@ -90,8 +90,8 @@ function statusIndicatorClass(status) {
 }
 
 function statusLabel(status) {
-    const map = { 1: "╨з╨╡╤А╨╜╨╛╨▓╨╕╨║", 2: "╨Э╨░ ╨╝╨╛╨┤╨╡╤А╨░╤Ж╨╕╨╕", 3: "╨Ю╨┐╤Г╨▒╨╗╨╕╨║╨╛╨▓╨░╨╜╨░", 4: "╨Ю╤В╨║╨╗╨╛╨╜╨╡╨╜╨░" };
-    return map[status] || "╨з╨╡╤А╨╜╨╛╨▓╨╕╨║";
+    const map = { 1: "Черновик", 2: "На модерации", 3: "Опубликована", 4: "Отклонена" };
+    return map[status] || "Черновик";
 }
 
 async function loadProjects() {
@@ -99,7 +99,7 @@ async function loadProjects() {
     try {
         games.value = await listProjects();
     } catch (err) {
-        showToast("╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨╖╨░╨│╤А╤Г╨╖╨╕╤В╤М ╨┐╤А╨╛╨╡╨║╤В╤Л", "danger");
+        showToast("Не удалось загрузить проекты", "danger");
     } finally {
         loading.value = false;
     }
@@ -107,12 +107,12 @@ async function loadProjects() {
 
 const createNewGame = async () => {
     try {
-        const project = await createProject({ title_ru: "╨Э╨╛╨▓╤Л╨╣ ╨┐╤А╨╛╨╡╨║╤В", title_en: "New Project" });
+        const project = await createProject({ title_ru: "Новый проект", title_en: "New Project" });
         resetDraftProject();
         games.value.push(project);
         router.push(`/projects/${project.id}/draft`);
     } catch (err) {
-        showToast("╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨╛╨╖╨┤╨░╤В╤М ╨┐╤А╨╛╨╡╨║╤В", "danger");
+        showToast("Не удалось создать проект", "danger");
     }
 };
 
@@ -168,11 +168,6 @@ onMounted(loadProjects);
     box-shadow: 0 0 0 3px var(--success-light);
 }
 
-.indicator-neutral {
-    background: var(--text-tertiary);
-    box-shadow: 0 0 0 3px var(--bg-tertiary);
-}
-
 .indicator-warning {
     background: var(--warning);
     box-shadow: 0 0 0 3px var(--warning-light);
@@ -181,6 +176,11 @@ onMounted(loadProjects);
 .indicator-danger {
     background: var(--danger);
     box-shadow: 0 0 0 3px #FEE2E2;
+}
+
+.indicator-neutral {
+    background: var(--text-tertiary);
+    box-shadow: 0 0 0 3px var(--bg-tertiary);
 }
 
 .badge-warning {
