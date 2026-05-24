@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package project_manager.v1;
+option go_package = "github.com/Be4Die/game-developer-hub/protos/project_manager/v1";
+
+import "google/api/annotations.proto";
+
+// Project статус проекта.
+enum ProjectStatus {
+  PROJECT_STATUS_UNSPECIFIED = 0;
+  PROJECT_STATUS_DRAFT = 1;
+  PROJECT_STATUS_PENDING = 2;
+  PROJECT_STATUS_PUBLISHED = 3;
+  PROJECT_STATUS_REJECTED = 4;
+}
+
+// Project сообщение проекта.
+message Project {
+  int64 id = 1;
+  string owner_id = 2;
+  string title_ru = 3;
+  string title_en = 4;
+  string seo_ru = 5;
+  string seo_en = 6;
+  string about = 7;
+  ProjectStatus status = 8;
+  string icon_path = 9;
+  string cover_path = 10;
+  string video_path = 11;
+  string active_build_version = 12;
+  string created_at = 13;
+  string updated_at = 14;
+}
+
+// ProjectBuild сообщение билда.
+message ProjectBuild {
+  int64 id = 1;
+  int64 project_id = 2;
+  string version = 3;
+  string file_path = 4;
+  int64 file_size = 5;
+  string created_at = 6;
+}
+
+// ─── Create ───────────────────────────────────────────
+message ProjectCreateRequest {
+  string title_ru = 1;
+  string title_en = 2;
+}
+
+message ProjectCreateResponse {
+  Project project = 1;
+}
+
+// ─── Get ──────────────────────────────────────────────
+message ProjectGetRequest {
+  int64 id = 1;
+}
+
+message ProjectGetResponse {
+  Project project = 1;
+}
+
+// ─── List ─────────────────────────────────────────────
+message ProjectListRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ProjectListResponse {
+  repeated Project projects = 1;
+}
+
+// ─── Update ───────────────────────────────────────────
+message ProjectUpdateRequest {
+  int64 id = 1;
+  string title_ru = 2;
+  string title_en = 3;
+  string seo_ru = 4;
+  string seo_en = 5;
+  string about = 6;
+  string active_build_version = 7;
+}
+
+message ProjectUpdateResponse {
+  Project project = 1;
+}
+
+// ─── Delete ───────────────────────────────────────────
+message ProjectDeleteRequest {
+  int64 id = 1;
+}
+
+message ProjectDeleteResponse {
+  bool success = 1;
+}
+
+// ─── Upload Build ─────────────────────────────────────
+message ProjectUploadBuildRequest {
+  int64 project_id = 1;
+  string version = 2;
+  bytes data = 3;
+}
+
+message ProjectUploadBuildResponse {
+  bool success = 1;
+}
+
+// ─── List Builds ──────────────────────────────────────
+message ProjectListBuildsRequest {
+  int64 project_id = 1;
+}
+
+message ProjectListBuildsResponse {
+  repeated ProjectBuild builds = 1;
+}
+
+// ─── Delete Build ─────────────────────────────────────
+message ProjectDeleteBuildRequest {
+  int64 project_id = 1;
+  string version = 2;
+}
+
+message ProjectDeleteBuildResponse {
+  bool success = 1;
+}
+
+// ─── Upload Media ─────────────────────────────────────
+message ProjectUploadMediaRequest {
+  int64 project_id = 1;
+  string media_type = 2; // icon, cover, video
+  bytes data = 3;
+}
+
+message ProjectUploadMediaResponse {
+  bool success = 1;
+}
+
+// ─── Service ──────────────────────────────────────────
+service ProjectService {
+  rpc Create(ProjectCreateRequest) returns (ProjectCreateResponse) {
+    option (google.api.http) = { post: "/api/v1/projects", body: "*" };
+  }
+  rpc Get(ProjectGetRequest) returns (ProjectGetResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{id}" };
+  }
+  rpc List(ProjectListRequest) returns (ProjectListResponse) {
+    option (google.api.http) = { get: "/api/v1/projects" };
+  }
+  rpc Update(ProjectUpdateRequest) returns (ProjectUpdateResponse) {
+    option (google.api.http) = { patch: "/api/v1/projects/{id}", body: "*" };
+  }
+  rpc Delete(ProjectDeleteRequest) returns (ProjectDeleteResponse) {
+    option (google.api.http) = { delete: "/api/v1/projects/{id}" };
+  }
+
+  rpc UploadBuild(ProjectUploadBuildRequest) returns (ProjectUploadBuildResponse);
+  rpc ListBuilds(ProjectListBuildsRequest) returns (ProjectListBuildsResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{project_id}/builds" };
+  }
+  rpc DeleteBuild(ProjectDeleteBuildRequest) returns (ProjectDeleteBuildResponse) {
+    option (google.api.http) = { delete: "/api/v1/projects/{project_id}/builds/{version}" };
+  }
+
+  rpc UploadMedia(ProjectUploadMediaRequest) returns (ProjectUploadMediaResponse);
+}

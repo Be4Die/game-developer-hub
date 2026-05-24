@@ -1,0 +1,22 @@
+# Конфигурация для локальной разработки
+
+env: "local"
+
+grpc:
+  port: 50053
+
+db:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  database: "orchestrator"
+  ssl_mode: "disable"
+
+storage:
+  projects_path: "./data/projects"
+  max_build_versions: 5
+
+jwt:
+  secret: "dev-jwt-secret-for-local-testing"
+  issuer: "sso"

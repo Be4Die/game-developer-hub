@@ -4,12 +4,12 @@
     <aside class="game-sidebar">
       <div class="game-header">
         <button class="back-btn" @click="$router.push('/projects')"><ArrowLeft class="icon-sm" /> К списку</button>
-        <h2 class="game-title-short">Проект #{{ id }}</h2>
+        <h2 class="game-title-short">{{ projectTitle }}</h2>
       </div>
       <nav class="game-nav">
         <router-link :to="`/projects/${id}/stats`" class="nav-btn" active-class="active"><BarChart2 class="icon-sm" /> Статистика</router-link>
         <router-link :to="`/projects/${id}/draft`" class="nav-btn" active-class="active"><PenTool class="icon-sm" /> Черновик</router-link>
-        <router-link :to="`/projects/${id}/published`" class="nav-btn" active-class="active"><CheckCircle class="icon-sm" /> Опубликовано</router-link>
+        <router-link v-if="isPublished" :to="`/projects/${id}/published`" class="nav-btn" active-class="active"><CheckCircle class="icon-sm" /> Опубликовано</router-link>
         <router-link :to="`/projects/${id}/servers`" class="nav-btn" active-class="active"><Server class="icon-sm" /> Сервера</router-link>
       </nav>
     </aside>
@@ -52,16 +52,46 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, nextTick, computed, watch, provide } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, BarChart2, PenTool, CheckCircle, Server, MessageSquare, Send } from 'lucide-vue-next'
-import { useRoute } from 'vue-router'
+import { getProject } from '../api/projects'
 import { chatApi } from '../api/chat'
 import { getModerators } from '../api/sso'
 import { useAuth } from '../store/auth'
 
-defineProps(['id'])
+const props = defineProps(['id'])
 const route = useRoute()
+const router = useRouter()
 
+// ─── Project data (shared with child tabs) ───────────────────
+const project = ref(null)
+provide('project', project)
+
+async function loadProject() {
+  try {
+    project.value = await getProject(props.id)
+  } catch (err) {
+    // silently fail, fallback to id
+  }
+}
+
+watch(() => props.id, loadProject, { immediate: true })
+
+const projectTitle = computed(() => {
+  return project.value?.title_ru || project.value?.title_en || `Проект #${props.id}`
+})
+
+const isPublished = computed(() => project.value?.status === 3)
+
+// Редирект с "published" на "draft", если проект загружен и не опубликован
+watch(() => [route.name, project.value?.status], ([name]) => {
+  if (name === 'published' && project.value && !isPublished.value) {
+    router.replace(`/projects/${props.id}/draft`)
+  }
+}, { immediate: true })
+
+// ─── Chat with moderator (right sidebar) ─────────────────────
 const isDraftRoute = computed(() => {
   return route.name === 'draft' || route.path.includes('/draft')
 })

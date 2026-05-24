@@ -9,8 +9,9 @@
         </div>
         <div class="actions">
           <button class="btn-dev-link" @click="showToast('Открытие Dev-среды...', 'info')">Перейти к игре (Dev)</button>
-          <button class="btn-outline" @click="showToast('Сохранено!', 'success')">Сохранить</button>
+          <button class="btn-outline" @click="saveMeta">Сохранить</button>
           <button class="btn-primary" @click="showToast('Отправлено модератору!', 'success')">На модерацию</button>
+          <button class="btn-dev" @click="simulatePublish">[DEV] Симулировать публикацию</button>
         </div>
       </div>
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -19,33 +20,32 @@
         <div class="input-row">
           <div class="input-group">
             <label>Название игры на русском <span class="req">*</span></label>
-            <input type="text" class="input-control" />
+            <input type="text" class="input-control" v-model="meta.title_ru" />
           </div>
           <div class="input-group">
             <label>Название игры на английском <span class="req">*</span></label>
-            <input type="text" class="input-control" />
+            <input type="text" class="input-control" v-model="meta.title_en" />
           </div>
         </div>
         <div class="input-row">
           <div class="input-group">
-            <label>SEO Описание (RU) <span class="req">*</span> <span class="char-count">0/180</span></label>
-            <textarea class="input-control" rows="2" maxlength="180"></textarea>
+            <label>SEO Описание (RU) <span class="req">*</span> <span class="char-count">{{ meta.seo_ru.length }}/180</span></label>
+            <textarea class="input-control" rows="2" maxlength="180" v-model="meta.seo_ru"></textarea>
           </div>
           <div class="input-group">
-            <label>SEO Описание (EN) <span class="req">*</span> <span class="char-count">0/180</span></label>
-            <textarea class="input-control" rows="2" maxlength="180"></textarea>
+            <label>SEO Описание (EN) <span class="req">*</span> <span class="char-count">{{ meta.seo_en.length }}/180</span></label>
+            <textarea class="input-control" rows="2" maxlength="180" v-model="meta.seo_en"></textarea>
           </div>
         </div>
         <div class="input-group" style="margin-top: 16px;">
-          <label>Описание "Об Игре" <span class="req">*</span> <span class="char-count">0/800</span></label>
-          <textarea class="input-control" rows="4" maxlength="800"></textarea>
+          <label>Описание "Об Игре" <span class="req">*</span> <span class="char-count">{{ meta.about.length }}/800</span></label>
+          <textarea class="input-control" rows="4" maxlength="800" v-model="meta.about"></textarea>
         </div>
       </div>
 
       <!-- СКРЫТЫЕ ИНПУТЫ ДЛЯ МЕДИА И БИЛДОВ -->
       <input type="file" ref="fileIcon" accept="image/png" hidden @change="handleFile('icon', $event)" />
-      <input type="file" ref="fileCoverMain" accept="image/png" hidden @change="handleFile('coverMain', $event)" />
-      <input type="file" ref="fileCoverVert" accept="image/png" hidden @change="handleFile('coverVert', $event)" />
+      <input type="file" ref="fileCoverMain" accept="image/png" hidden @change="handleFile('cover', $event)" />
       <input type="file" ref="fileVideo" accept="video/mp4" hidden @change="handleFile('video', $event)" />
       <input type="file" ref="fileZip" accept=".zip,.tar.gz" hidden @change="handleZipUpload" />
 
@@ -60,26 +60,19 @@
             <span class="m-title">{{ media.icon ? 'Загружено' : 'Иконка' }}</span>
             <span class="m-req">512 x 512, png</span>
           </div>
-          <!-- Главная обложка -->
-          <div class="media-item" :class="{ uploaded: media.coverMain }" @click="$refs.fileCoverMain.click()">
-            <CheckCircle v-if="media.coverMain" class="icon-md text-green" />
+          <!-- Обложка -->
+          <div class="media-item" :class="{ uploaded: media.cover }" @click="$refs.fileCoverMain.click()">
+            <CheckCircle v-if="media.cover" class="icon-md text-green" />
             <ImageIcon v-else class="icon-md" />
-            <span class="m-title">{{ media.coverMain ? 'Загружено' : 'Главная обложка' }}</span>
-            <span class="m-req">1280 x 720, png</span>
-          </div>
-          <!-- Вертикальная обложка -->
-          <div class="media-item" :class="{ uploaded: media.coverVert }" @click="$refs.fileCoverVert.click()">
-            <CheckCircle v-if="media.coverVert" class="icon-md text-green" />
-            <ImageIcon v-else class="icon-md" />
-            <span class="m-title">{{ media.coverVert ? 'Загружено' : 'Вертикальная' }}</span>
-            <span class="m-req">650 x 820, png</span>
+            <span class="m-title">{{ media.cover ? 'Загружено' : 'Обложка' }}</span>
+            <span class="m-req">800 x 470, png</span>
           </div>
           <!-- Видео -->
           <div class="media-item" :class="{ uploaded: media.video }" @click="$refs.fileVideo.click()">
             <CheckCircle v-if="media.video" class="icon-md text-green" />
             <Film v-else class="icon-md" />
             <span class="m-title">{{ media.video ? 'Загружено' : 'Видео' }}</span>
-            <span class="m-req">До 12 МБ, без звука</span>
+            <span class="m-req">До 12 МБ</span>
           </div>
         </div>
       </div>
@@ -88,10 +81,15 @@
       <div class="card form-section">
         <div class="section-head"><h3>Билд</h3></div>
 
+        <div class="input-group" style="margin-bottom: 16px;">
+          <label>Версия билда <span class="req">*</span></label>
+          <input type="text" v-model="newBuildVersion" class="input-control" placeholder="1.0.0" :disabled="buildStatus !== 'idle'" />
+        </div>
+
         <!-- Ожидание загрузки -->
         <div v-if="buildStatus === 'idle'" class="dropzone" @click="$refs.fileZip.click()">
           <UploadCloud style="width:32px; height:32px; color: var(--text-muted); margin-bottom:8px;" />
-          <span style="display:block; font-weight:600;">Нажмите для загрузки .zip архива</span>
+          <span style="display:block; font-weight:600;">Нажмите для загрузки .zip или .tar.gz архива</span>
         </div>
 
         <!-- Идет загрузка -->
@@ -109,8 +107,30 @@
         <div v-if="buildStatus === 'done'" class="upload-success-box">
           <CheckCircle class="icon-md text-green" />
           <div>
-            <span style="display:block; font-weight:600;">Билд успешно загружен и развернут!</span>
-            <button class="btn-text mt-8" @click="buildStatus = 'idle'">Загрузить новую версию</button>
+            <span style="display:block; font-weight:600;">Билд v{{ uploadedVersion }} успешно загружен!</span>
+            <button class="btn-text mt-8" @click="resetBuildUpload">Загрузить новую версию</button>
+          </div>
+        </div>
+
+        <!-- Список версий -->
+        <div v-if="recentBuilds.length" class="build-versions">
+          <h4 class="versions-title">Версии (последние 5)</h4>
+          <div
+            v-for="b in recentBuilds"
+            :key="b.version"
+            class="build-row"
+            :class="{ active: activeBuildVersion === b.version }"
+          >
+            <div class="build-info">
+              <strong>{{ b.version }}</strong>
+              <span class="build-date">{{ b.created_at }}</span>
+            </div>
+            <button
+              v-if="activeBuildVersion !== b.version"
+              class="btn-text"
+              @click="setActiveBuild(b.version)"
+            >Сделать активной</button>
+            <span v-else class="active-label">Активная</span>
           </div>
         </div>
       </div>
@@ -119,46 +139,218 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
+import { useRoute } from 'vue-router'
 import { UploadCloud, CheckCircle, Image as ImageIcon, Film } from 'lucide-vue-next'
 import { showToast } from '../../store'
+import { getProject, updateProject, uploadBuild, listBuilds, uploadMedia } from '../../api/projects'
+import JSZip from 'jszip'
+import pako from 'pako'
 
-const media = ref({
-  icon: false,
-  coverMain: false,
-  coverVert: false,
-  video: false
-})
+const route = useRoute()
+const projectId = computed(() => route.params.id)
+const project = inject('project')
 
-const handleFile = (type, event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  showToast('Файл загружается...', 'info')
-  setTimeout(() => {
-    media.value[type] = true
-    showToast('Медиафайл успешно сохранен', 'success')
-  }, 1000)
-}
+const meta = ref({ title_ru: '', title_en: '', seo_ru: '', seo_en: '', about: '' })
+const media = ref({ icon: false, cover: false, video: false })
+const activeBuildVersion = ref('')
 
+const newBuildVersion = ref('')
 const buildStatus = ref('idle')
 const buildProgress = ref(0)
+const uploadedVersion = ref('')
+const recentBuilds = ref([])
 
-const handleZipUpload = (event) => {
+let autoSaveTimeout = null
+let skipAutoSave = false
+
+async function loadProject() {
+  skipAutoSave = true
+  try {
+    const project = await getProject(projectId.value)
+    meta.value = {
+      title_ru: project.title_ru || '',
+      title_en: project.title_en || '',
+      seo_ru: project.seo_ru || '',
+      seo_en: project.seo_en || '',
+      about: project.about || ''
+    }
+    media.value.icon = !!project.icon_path
+    media.value.cover = !!project.cover_path
+    media.value.video = !!project.video_path
+    activeBuildVersion.value = project.active_build_version || ''
+
+    const builds = await listBuilds(projectId.value)
+    recentBuilds.value = builds
+    if (!activeBuildVersion.value && builds.length > 0) {
+      activeBuildVersion.value = builds[0].version
+    }
+  } catch (err) {
+    showToast('Не удалось загрузить данные проекта', 'danger')
+  }
+  setTimeout(() => { skipAutoSave = false }, 1600)
+}
+
+onMounted(loadProject)
+
+async function saveMeta(silent = false) {
+  try {
+    const payload = {
+      ...meta.value,
+      active_build_version: activeBuildVersion.value
+    }
+    await updateProject(projectId.value, payload)
+    if (!silent) showToast('Сохранено!', 'success')
+  } catch (err) {
+    if (!silent) showToast('Ошибка сохранения', 'danger')
+  }
+}
+
+// Автосохранение метаданных при изменении (debounce 1.5с)
+watch(
+  () => ({ ...meta.value, active_build_version: activeBuildVersion.value }),
+  () => {
+    if (skipAutoSave) return
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout)
+    autoSaveTimeout = setTimeout(() => saveMeta(true), 1500)
+  },
+  { deep: true }
+)
+
+function validateImageDimensions(file, expectedWidth, expectedHeight) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(img.src)
+      if (img.width === expectedWidth && img.height === expectedHeight) {
+        resolve(true)
+      } else {
+        reject(new Error(`Разрешение должно быть ${expectedWidth}x${expectedHeight}px (загружено ${img.width}x${img.height})`))
+      }
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error('Не удалось загрузить изображение'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+const handleFile = async (type, event) => {
   const file = event.target.files[0]
   if (!file) return
+  try {
+    if (type === 'icon') {
+      await validateImageDimensions(file, 512, 512)
+    } else if (type === 'cover') {
+      await validateImageDimensions(file, 800, 470)
+    }
+    await uploadMedia(projectId.value, type, file)
+    media.value[type] = true
+    showToast('Медиафайл успешно сохранен', 'success')
+  } catch (err) {
+    showToast(err.message || 'Ошибка загрузки', 'danger')
+  } finally {
+    event.target.value = ''
+  }
+}
+
+async function checkZipForIndexHtml(arrayBuffer) {
+  const zip = await JSZip.loadAsync(arrayBuffer)
+  const entry = zip.file('index.html')
+  if (!entry) throw new Error('В корне архива отсутствует index.html')
+}
+
+function checkTarGzForIndexHtml(arrayBuffer) {
+  const inflated = pako.inflate(new Uint8Array(arrayBuffer))
+  let offset = 0
+  while (offset < inflated.length) {
+    let name = ''
+    for (let i = 0; i < 100; i++) {
+      if (inflated[offset + i] === 0) break
+      name += String.fromCharCode(inflated[offset + i])
+    }
+    if (name === 'index.html') return true
+    if (name.length === 0) break
+    let sizeStr = ''
+    for (let i = 124; i < 136; i++) {
+      sizeStr += String.fromCharCode(inflated[offset + i])
+    }
+    const size = parseInt(sizeStr.trim(), 8) || 0
+    offset += 512 + Math.ceil(size / 512) * 512
+  }
+  throw new Error('В корне архива отсутствует index.html')
+}
+
+const handleZipUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const version = newBuildVersion.value.trim()
+  if (!version) {
+    showToast('Укажите версию билда перед загрузкой', 'danger')
+    event.target.value = ''
+    return
+  }
+
+  const name = file.name.toLowerCase()
+  const isZip = name.endsWith('.zip')
+  const isTarGz = name.endsWith('.tar.gz')
+
+  if (!isZip && !isTarGz) {
+    showToast('Допустимые форматы: .zip и .tar.gz', 'danger')
+    event.target.value = ''
+    return
+  }
+
+  try {
+    const buffer = await file.arrayBuffer()
+    if (isZip) {
+      await checkZipForIndexHtml(buffer)
+    } else {
+      checkTarGzForIndexHtml(buffer)
+    }
+  } catch (err) {
+    showToast(err.message, 'danger')
+    event.target.value = ''
+    return
+  }
+
   buildStatus.value = 'uploading'
   buildProgress.value = 0
-  const interval = setInterval(() => {
-    buildProgress.value += Math.floor(Math.random() * 15) + 5
-    if (buildProgress.value >= 100) {
-      buildProgress.value = 100
-      clearInterval(interval)
-      setTimeout(() => {
-        buildStatus.value = 'done'
-        showToast('Билд развернут в Dev-среде!', 'success')
-      }, 500)
-    }
-  }, 300)
+
+  try {
+    await uploadBuild(projectId.value, version, file, (p) => {
+      buildProgress.value = p
+    })
+    buildStatus.value = 'done'
+    uploadedVersion.value = version
+    newBuildVersion.value = ''
+    activeBuildVersion.value = version
+    await loadProject()
+    showToast('Билд развернут в Dev-среде!', 'success')
+  } catch (err) {
+    buildStatus.value = 'idle'
+    showToast('Ошибка загрузки билда', 'danger')
+  }
+}
+
+function resetBuildUpload() {
+  buildStatus.value = 'idle'
+  buildProgress.value = 0
+  uploadedVersion.value = ''
+}
+
+function setActiveBuild(version) {
+  activeBuildVersion.value = version
+  showToast(`Активная версия изменена на ${version}`, 'success')
+}
+
+function simulatePublish() {
+  if (project && project.value) {
+    project.value.status = 3
+    showToast('Статус изменён на "Опубликована" (dev)', 'info')
+  }
 }
 </script>
 
@@ -171,6 +363,8 @@ const handleZipUpload = (event) => {
 .actions { display: flex; gap: 12px; }
 .btn-dev-link { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--text-muted); border-radius: var(--radius-md); background: transparent; color: var(--text-muted); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
 .btn-dev-link:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-hover); }
+.btn-dev { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px dashed var(--danger); border-radius: var(--radius-md); background: var(--danger-light); color: var(--danger); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
+.btn-dev:hover { background: var(--danger); color: white; }
 .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; display: inline-block;}
 .bg-yellow { background: var(--warning-light); color: var(--warning); }
 .section-head { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
@@ -202,4 +396,12 @@ const handleZipUpload = (event) => {
 .upload-success-box { display: flex; align-items: center; gap: 16px; border-color: var(--success); background: var(--success-light); }
 .btn-text { background: none; border: none; color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0; }
 .mt-8 { margin-top: 8px; }
+
+.build-versions { margin-top: 16px; }
+.versions-title { margin: 16px 0 8px; font-size: 0.9rem; color: var(--text-main); }
+.build-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: 8px; transition: 0.2s; }
+.build-row.active { border-color: var(--success); background: var(--success-light); }
+.build-info { display: flex; align-items: center; gap: 8px; }
+.build-date { font-size: 0.75rem; color: var(--text-muted); }
+.active-label { color: var(--success); font-size: 0.8rem; font-weight: 600; }
 </style>
