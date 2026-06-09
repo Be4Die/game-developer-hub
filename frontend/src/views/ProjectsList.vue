@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="page-container">
         <div class="header-row">
             <div>
@@ -11,7 +11,11 @@
             </button>
         </div>
 
-        <div v-if="games.length === 0" class="empty-state">
+        <div v-if="loading" class="empty-state">
+            <p>Загрузка проектов...</p>
+        </div>
+
+        <div v-else-if="games.length === 0" class="empty-state">
             <div class="empty-icon">
                 <Gamepad2 class="icon-md" />
             </div>
@@ -28,15 +32,15 @@
                 class="card project-card card-hover"
                 v-for="game in games"
                 :key="game.id"
-                @click="$router.push(`/projects/${game.id}`)"
+                @click="$router.push(`/projects/${game.id}/draft`)"
             >
                 <div class="project-status-row">
                     <span class="status-indicator" :class="statusIndicatorClass(game.status)"></span>
                     <span class="badge" :class="statusClass(game.status)">
-                        {{ game.status }}
+                        {{ statusLabel(game.status) }}
                     </span>
                 </div>
-                <h3 class="project-title">{{ game.title }}</h3>
+                <h3 class="project-title">{{ game.title_ru || game.title_en || 'Без названия' }}</h3>
                 <p class="project-meta">ID: {{ game.id }}</p>
                 <div class="project-arrow">
                     <ArrowRight class="icon-sm" />
@@ -47,33 +51,72 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Plus, Gamepad2, ArrowRight } from "lucide-vue-next";
+import { draftProject } from "../store";
+import { listProjects, createProject } from "../api/projects";
+import { showToast } from "../store";
 
 const router = useRouter();
+const games = ref([]);
+const loading = ref(false);
 
-const games = ref([
-    { id: 1, title: "RIVALS", status: "Опубликована" },
-    { id: 2, title: "Новый проект", status: "Черновик" },
-]);
+function resetDraftProject() {
+    draftProject.meta.titleRu = ''
+    draftProject.meta.titleEn = ''
+    draftProject.meta.seoRu = ''
+    draftProject.meta.seoEn = ''
+    draftProject.meta.about = ''
+    draftProject.media.icon = null
+    draftProject.media.coverMain = null
+    draftProject.media.video = null
+    draftProject.builds = []
+    draftProject.activeBuildVersion = null
+}
 
 function statusClass(status) {
-    if (status === "Опубликована") return "badge-success";
-    if (status === "Черновик") return "badge-neutral";
+    if (status === 3) return "badge-success";
+    if (status === 2) return "badge-warning";
+    if (status === 4) return "badge-danger";
     return "badge-neutral";
 }
 
 function statusIndicatorClass(status) {
-    if (status === "Опубликована") return "indicator-success";
-    if (status === "Черновик") return "indicator-neutral";
+    if (status === 3) return "indicator-success";
+    if (status === 2) return "indicator-warning";
+    if (status === 4) return "indicator-danger";
     return "indicator-neutral";
 }
 
-const createNewGame = () => {
-    const newId = Date.now();
-    router.push(`/projects/${newId}/draft`);
+function statusLabel(status) {
+    const map = { 1: "Черновик", 2: "На модерации", 3: "Опубликована", 4: "Отклонена" };
+    return map[status] || "Черновик";
+}
+
+async function loadProjects() {
+    loading.value = true;
+    try {
+        games.value = await listProjects();
+    } catch (err) {
+        showToast("Не удалось загрузить проекты", "danger");
+    } finally {
+        loading.value = false;
+    }
+}
+
+const createNewGame = async () => {
+    try {
+        const project = await createProject({ title_ru: "Новый проект", title_en: "New Project" });
+        resetDraftProject();
+        games.value.push(project);
+        router.push(`/projects/${project.id}/draft`);
+    } catch (err) {
+        showToast("Не удалось создать проект", "danger");
+    }
 };
+
+onMounted(loadProjects);
 </script>
 
 <style scoped>
@@ -125,9 +168,29 @@ const createNewGame = () => {
     box-shadow: 0 0 0 3px var(--success-light);
 }
 
+.indicator-warning {
+    background: var(--warning);
+    box-shadow: 0 0 0 3px var(--warning-light);
+}
+
+.indicator-danger {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px #FEE2E2;
+}
+
 .indicator-neutral {
     background: var(--text-tertiary);
     box-shadow: 0 0 0 3px var(--bg-tertiary);
+}
+
+.badge-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-danger {
+    background: #FEE2E2;
+    color: #DC2626;
 }
 
 .project-title {

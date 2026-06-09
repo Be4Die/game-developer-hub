@@ -2,13 +2,15 @@
 #  Game Developer Hub — полный стек для локальной разработки
 #
 #  Инфраструктура:
-#    postgres  — единая БД, таблицы orchestrator (nodes, server_builds,
-#                instances) и sso (users, sessions) не пересекаются
-#    valkey    — единое KV, orchestrator: db=0, sso: db=1
+#    postgres  — единая БД, таблицы orchestrator, sso, project-manager, chat
+#                не пересекаются (разные префиксы/схемы или проверка в коде)
+#    valkey    — единое KV, orchestrator: db=0, sso: db=1, chat: db=2
 #
 #  Сервисы:
 #    orchestrator     — gRPC API оркестратора
 #    sso              — gRPC API аутентификации
+#    project-manager  — gRPC API управления проектами
+#    chat             — gRPC API чата
 #    gateway          — gRPC-gateway (HTTP/REST → gRPC)
 #    game-server-node — gRPC-агент ноды (Docker-in-Docker)
 #    frontend         — Vue SPA с nginx
@@ -16,7 +18,7 @@
 #  Использование:
 #    docker compose up -d              # запустить всё
 #    docker compose up -d --build      # пересобрать и запустить
-#    docker compose logs -f orchestrator
+#    docker compose logs -f project-manager
 #    docker compose down -v            # остановить и удалить тома
 # ═══════════════════════════════════════════════════════════════
 
@@ -37,6 +39,8 @@ services:
       # Миграции применяются при первом старте (порядок по имени файла)
       - ../orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
       - ../sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
+      - ../chat/migrations/init.sql:/docker-entrypoint-initdb.d/03-chat.sql:ro
+      - ../project-manager/migrations/init.sql:/docker-entrypoint-initdb.d/04-project-manager.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -103,6 +107,37 @@ services:
       retries: 10
       start_period: 10s
 
+  chat:
+    build:
+      context: ..
+      dockerfile: chat/Dockerfile
+    container_name: gdh-chat
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      CHAT_API_KEY: dev-api-key-for-local-testing
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    volumes:
+      - ../chat/config:/app/config:ro
+
+  moderation:
+    build:
+      context: ..
+      dockerfile: moderation/Dockerfile
+    container_name: gdh-moderation
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../moderation/config:/app/config:ro
+
   gateway:
     build:
       context: ..
@@ -111,6 +146,9 @@ services:
     environment:
       ORCHESTRATOR_GRPC_ADDR: gdh-orchestrator:50052
       SSO_GRPC_ADDR: gdh-sso:50051
+      CHAT_GRPC_ADDR: gdh-chat:50053
+      PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
+      MODERATION_GRPC_ADDR: gdh-moderation:50053
       HTTP_ADDR: :8080
     ports:
       - "8080:8080"
@@ -119,6 +157,35 @@ services:
         condition: service_healthy
       sso:
         condition: service_healthy
+      chat:
+        condition: service_started
+      project-manager:
+        condition: service_started
+      moderation:
+        condition: service_started
+
+  project-manager:
+    build:
+      context: ..
+      dockerfile: project-manager/Dockerfile
+    container_name: gdh-project-manager
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      JWT_SECRET: dev-jwt-secret-for-local-testing
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "50053:50053"
+    volumes:
+      - project_data:/data/projects
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50053 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   game-server-node:
     build:
@@ -154,3 +221,4 @@ volumes:
   pgdata:
   builds:
   node_data:
+  project_data:

@@ -13,11 +13,13 @@ import ServerInstances from "../views/servers/ServerInstances.vue";
 import InstanceDetail from "../views/servers/InstanceDetail.vue";
 import NodesList from "../views/nodes/NodesList.vue";
 import NodeDetail from "../views/nodes/NodeDetail.vue";
+import ModeratorDashboard from "../views/ModeratorDashboard.vue";
 import ModeratorTickets from "../views/ModeratorTickets.vue";
 import TicketDetail from "../views/TicketDetail.vue";
 import Tickethistory from "../views/Tickethistory.vue";
 import Settings from "../views/Settings.vue";
 import AdminDashboard from "../views/AdminDashboard.vue";
+import ChatView from "../views/ChatView.vue";
 
 const routes = [
   {
@@ -26,7 +28,7 @@ const routes = [
       if (!isAuthenticated()) return "/login";
       const user = JSON.parse(localStorage.getItem("gdh_user") || "null");
       if (user?.role === "USER_ROLE_ADMIN") return "/admin/dashboard";
-      if (user?.role === "USER_ROLE_MODERATOR") return "/moderator/tickets";
+      if (user?.role === "USER_ROLE_MODERATOR") return "/moderator";
       return "/projects";
     },
   },
@@ -92,6 +94,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/moderator",
+    component: ModeratorDashboard,
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/moderator/tickets",
     component: ModeratorTickets,
     meta: { requiresAuth: true },
@@ -104,6 +111,11 @@ const routes = [
   {
     path: "/moderator/history",
     component: Tickethistory,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/chat/:id",
+    component: ChatView,
     meta: { requiresAuth: true },
   },
   {

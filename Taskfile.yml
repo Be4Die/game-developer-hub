@@ -21,6 +21,12 @@ vars:
   SSO_CONTAINER_NAME: "sso"
   SSO_GRPC_PORT: 50051
 
+  # Project Manager
+  PROJECT_MANAGER_IMAGE_NAME: "project-manager"
+  PROJECT_MANAGER_IMAGE_TAG: "latest"
+  PROJECT_MANAGER_CONTAINER_NAME: "project-manager"
+  PROJECT_MANAGER_GRPC_PORT: 50053
+
 includes:
   go: taskfiles/go.yml
   docker: taskfiles/docker.yml
@@ -670,6 +676,83 @@ tasks:
           SSO_REQUESTS: "{{.SSO_REQUESTS}}"
       - task: sso:down
 
+  # ==================== Project Manager ====================
+  project-manager:build:
+    desc: "Build Docker image for project-manager"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.PROJECT_MANAGER_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.PROJECT_MANAGER_IMAGE_TAG}}"
+          DOCKERFILE_PATH: project-manager/Dockerfile
+
+  project-manager:up:
+    desc: "Run project-manager container in background"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.PROJECT_MANAGER_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.PROJECT_MANAGER_IMAGE_TAG}}"
+          DOCKERFILE_PATH: project-manager/Dockerfile
+      - task: docker:up
+        vars:
+          DOCKER_IMAGE_NAME: "{{.PROJECT_MANAGER_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.PROJECT_MANAGER_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.PROJECT_MANAGER_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.PROJECT_MANAGER_GRPC_PORT}}:{{.PROJECT_MANAGER_GRPC_PORT}} -v project_data:/data/projects -e CONFIG_PATH=/app/config/docker.yaml -e JWT_SECRET=dev-jwt-secret-for-local-testing"
+
+  project-manager:down:
+    desc: "Stop and remove project-manager container"
+    cmds:
+      - task: docker:down
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.PROJECT_MANAGER_CONTAINER_NAME}}"
+
+  project-manager:logs:
+    desc: "Show project-manager container logs"
+    cmds:
+      - task: docker:logs
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.PROJECT_MANAGER_CONTAINER_NAME}}"
+
+  project-manager:restart:
+    desc: "Restart project-manager container"
+    cmds:
+      - task: docker:restart
+        vars:
+          DOCKER_IMAGE_NAME: "{{.PROJECT_MANAGER_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.PROJECT_MANAGER_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.PROJECT_MANAGER_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.PROJECT_MANAGER_GRPC_PORT}}:{{.PROJECT_MANAGER_GRPC_PORT}} -v project_data:/data/projects -e CONFIG_PATH=/app/config/docker.yaml -e JWT_SECRET=dev-jwt-secret-for-local-testing"
+
+  project-manager:shell:
+    desc: "Open shell in running project-manager container"
+    cmds:
+      - task: docker:shell
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.PROJECT_MANAGER_CONTAINER_NAME}}"
+
+  project-manager:lint:
+    desc: "Lint project-manager Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: project-manager
+
+  project-manager:test:
+    desc: "Run project-manager unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: project-manager
+
+  project-manager:test:cover:
+    desc: "Run project-manager tests and print coverage percentage"
+    cmds:
+      - task: go:test:cover
+        vars:
+          GO_DIR: project-manager
+
   # ==================== Frontend ====================
   frontend:install:
     desc: "Install frontend dependencies"
@@ -743,7 +826,13 @@ tasks:
           bash -c "echo >/dev/tcp/localhost/50051" 2>/dev/null && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost:3000 (frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC)"'
+      - |
+        echo "Ожидание Project Manager..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/50053" 2>/dev/null && break
+          sleep 1
+        done
+      - 'echo "Stack is ready: http://localhost:3000 (frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC), :50053 (Project Manager gRPC)"'
 
   stack:down:
     desc: "Stop full stack and remove containers"
@@ -764,20 +853,33 @@ tasks:
       - docker compose up -d --build --force-recreate
 
   stack:db:init:
-    desc: "Initialize orchestrator and SSO database schemas (run after stack:up)"
+    desc: "Initialize all database schemas (run after stack:up)"
     cmds:
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE chat;" 2>/dev/null || echo "Database chat already exists"
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE moderation;" 2>/dev/null || echo "Database moderation already exists"
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < orchestrator/migrations/init.sql
       - echo "✅ Orchestrator DB schema initialized"
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < sso/migrations/init.sql
       - echo "✅ SSO DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d orchestrator < project-manager/migrations/init.sql
+      - echo "✅ Project Manager DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d chat < chat/migrations/init.sql
+      - echo "✅ Chat DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d moderation < moderation/migrations/001_create_game_moderations.sql
+      - echo "✅ Moderation DB schema initialized"
 
   stack:db:reset:
-    desc: "Reset orchestrator and SSO databases (drop, recreate, init)"
+    desc: "Reset orchestrator, SSO and chat databases (drop, recreate, init)"
     cmds:
       - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
+      - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS chat;"
+      - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE chat;"
       - task: stack:db:init
 
   stack:seed:

@@ -1,5 +1,6 @@
 <template>
     <div class="app-layout">
+        <ChatWidget v-if="!isChatRoute" />
         <transition name="toast-fade">
             <div v-if="toast.show" class="toast" :class="toast.type">
                 {{ toast.message }}
@@ -30,8 +31,10 @@
 import { computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import GlobalHeader from "./components/GlobalHeader.vue";
+import ChatWidget from "./components/chat/ChatWidget.vue";
 import { toast } from "./store";
 import { useAuth } from "./store/auth";
+import { startChatNotifications, stopChatNotifications } from "./composables/useChatNotifications";
 
 const router = useRouter();
 const route = useRoute();
@@ -48,9 +51,18 @@ const userRole = computed(
     () => ROLE_MAP[authState.user?.role] || "Пользователь",
 );
 
+const isChatRoute = computed(() => {
+    return route.path.startsWith("/moderator") || route.path.startsWith("/chat/") || route.path.startsWith("/projects") || route.path === "/login";
+});
+
 onMounted(() => {
     loadUser();
 });
+
+watch(() => authState.accessToken, (token) => {
+    if (token) startChatNotifications();
+    else stopChatNotifications();
+}, { immediate: true });
 
 watch(userRole, (newRole) => {
     if (newRole === "Разработчик") {

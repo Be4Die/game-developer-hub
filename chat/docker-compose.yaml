@@ -1,0 +1,35 @@
+services:
+  chat:
+    build:
+      context: ..
+      dockerfile: chat/Dockerfile
+    container_name: gdh-chat
+    environment:
+      CONFIG_PATH: /app/config/local.yaml
+      CHAT_API_KEY: test-api-key
+    ports:
+      - "50053:50053"
+    depends_on:
+      chat-postgres:
+        condition: service_healthy
+    networks:
+      - sso_default
+
+  chat-postgres:
+    image: postgres:17-alpine
+    container_name: gdh-chat-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chat
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sso_default
+
+networks:
+  sso_default:
+    external: true
