@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+hide empty description
+
+state "STARTING" as STARTING
+STARTING : Ожидание подтверждения
+STARTING : от game-server-node
+
+state "RUNNING" as RUNNING
+RUNNING : Инстанс активен
+RUNNING : и принимает подключения
+
+state "STOPPING" as STOPPING
+STOPPING : Graceful shutdown
+STOPPING : контейнера (SIGTERM)
+
+state "STOPPED" as STOPPED
+STOPPED : Контейнер остановлен,
+STOPPED : но не удалён из Docker
+
+state "CRASHED" as CRASHED <<error>>
+CRASHED : Контейнер упал
+CRASHED : или нода недоступна
+
+[*] -down-> STARTING : StartInstance
+
+STARTING -down-> RUNNING : Контейнер запущен
+STARTING -right-> CRASHED : Ошибка запуска
+
+RUNNING -down-> STOPPING : StopInstance
+RUNNING -left-> RUNNING : RestartInstance
+RUNNING -right-> CRASHED : Нода offline / краш
+
+STOPPING -down-> STOPPED : Успешная остановка
+STOPPING -right-> CRASHED : Ошибка остановки
+
+STOPPED -left-> RUNNING : ResumeInstance
+STOPPED -down-> CRASHED : Ошибка resume
+
+CRASHED -up-> RUNNING : Auto-restart
+CRASHED -left-> STOPPED : StopInstance
+
+RUNNING -right-> [*] : DeleteInstance
+STOPPED -down-> [*] : DeleteInstance
+CRASHED -right-> [*] : DeleteInstance
+
+@enduml

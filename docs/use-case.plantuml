@@ -54,7 +54,6 @@ usecase "Просмотреть очередь\nтикетов" as QUEUE <<mod>>
 usecase "Провести модерацию" as MODERATE <<mod>>
 usecase "Тестировать игру\nв dev-окружении" as TEST <<mod>>
 usecase "Вынести вердикт" as VERDICT <<mod>>
-usecase "Одобрить игру" as APPROVE <<mod>>
 usecase "Указать замечания" as REMARKS <<mod>>
 usecase "Обмениваться сообщениями\nво встроенном чате" as CHAT <<mod>>
 
@@ -131,7 +130,6 @@ MODERATE ..> VERDICT : <<include>>
 '  EXTEND
 ' ═══════════════════════════════
 
-APPROVE ..> VERDICT : <<extend>>
 REMARKS ..> VERDICT : <<extend>>
 
 ' ═══════════════════════════════

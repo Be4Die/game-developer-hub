@@ -1,0 +1,20 @@
+erDiagram
+    Developer ||--o{ ComputeNode : "владеет"
+    Developer ||--o{ ServerBuild : "загружает"
+    Developer ||--o{ GameProject : "разрабатывает"
+    Developer ||--o{ GameInstance : "владеет"
+    Developer ||--o{ OrchestrationPolicy : "конфигурирует"
+
+    GameProject ||--o{ ServerBuild : "имеет версии"
+    GameProject ||--|| OrchestrationPolicy : "управляется через"
+    GameProject ||--o{ GameInstance : "порождает инстансы"
+
+    ComputeNode ||--o{ GameInstance : "размещает"
+    ServerBuild ||--o{ GameInstance : "основывает"
+
+    OrchestrationPolicy ||--o{ GameInstance : "управляет жизненным циклом"
+    OrchestrationPolicy ||--o{ PlayerQueue : "определяет правила"
+
+    GameInstance ||--o{ Player : "обслуживает"
+    Player ||--o{ PlayerQueue : "ожидает в"
+    GameInstance ||--o{ PlayerQueue : "резервирует места"

@@ -1,0 +1,57 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+
+' ═══════════════════════════════
+'  АКТЁРЫ
+' ═══════════════════════════════
+
+actor "Разработчик" as Dev
+actor "Клиент игры" as GameClient
+
+' ═══════════════════════════════
+'  ОРКЕСТРАЦИЯ СЕРВЕРОВ
+' ═══════════════════════════════
+
+usecase "Загрузить билд сервера" as UPLOAD_SRV
+usecase "Настроить политику\nоркестрации" as POLICY
+usecase "Запустить экземпляр\nсервера" as START
+usecase "Остановить экземпляр\nсервера" as STOP
+usecase "Просмотреть логи сервера" as LOGS
+usecase "Обнаружить сервер\nдля подключения" as DISCOVER
+usecase "Подключить собственный\nвычислительный узел" as NODE
+
+' ─── Детализация политики ───
+usecase "Выбрать режим\nоркестрации" as SELECT_MODE
+usecase "Задать лимиты инстансов\nи игроков" as SET_LIMITS
+usecase "Выбрать версию билда\nпо умолчанию" as SET_BUILD
+usecase "Настроить автоматический\nперезапуск" as CONFIG_RESTART
+usecase "Задать таймаут\nмасштабирования до нуля" as CONFIG_TIMEOUT
+
+' ═══════════════════════════════
+'  СВЯЗИ ДЕТАЛИЗАЦИИ
+' ═══════════════════════════════
+
+' Обязательные параметры политики (include)
+POLICY ..> SELECT_MODE : <<include>>
+POLICY ..> SET_LIMITS : <<include>>
+POLICY ..> SET_BUILD : <<include>>
+
+' Условные параметры (extend)
+CONFIG_RESTART ..> POLICY : <<extend>>
+CONFIG_TIMEOUT ..> POLICY : <<extend>>
+
+' ═══════════════════════════════
+'  СВЯЗИ АКТЁРОВ
+' ═══════════════════════════════
+
+Dev -- UPLOAD_SRV
+Dev -- POLICY
+Dev -- START
+Dev -- STOP
+Dev -- LOGS
+Dev -- NODE
+
+GameClient -- DISCOVER
+
+@enduml
