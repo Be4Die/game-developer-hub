@@ -23,7 +23,7 @@ skinparam usecase {
 '  АКТЁРЫ
 ' ═══════════════════════════════
 
-actor "Разработчик" as Dev
+actor "Разработчик игры" as Dev
 actor "Администратор" as Admin
 actor "Модератор" as Mod
 actor "Клиент игры" as GameClient
@@ -34,6 +34,7 @@ actor "Клиент игры" as GameClient
 
 usecase "Зарегистрироваться" as REG <<auth>>
 usecase "Авторизоваться" as AUTH <<auth>>
+usecase "Восстановить пароль" as RECOVER <<auth>>
 usecase "Создать учётную запись\nмодератора" as CREATE_MOD <<auth>>
 
 ' ═══════════════════════════════
@@ -41,9 +42,9 @@ usecase "Создать учётную запись\nмодератора" as CR
 ' ═══════════════════════════════
 
 usecase "Просмотреть список проектов" as LIST <<proj>>
-usecase "Создать черновик игры" as CREATE <<proj>>
-usecase "Загрузить билд\nклиентской части" as UPLOAD <<proj>>
-usecase "Заполнить метаданные игры" as META <<proj>>
+usecase "Подготовить тестовое окружение\n(создать черновик)" as CREATE <<proj>>
+usecase "Загрузить сборку веб-игры" as UPLOAD <<proj>>
+usecase "Предоставить метаданные игры\nи промо материалы" as META <<proj>>
 
 ' ═══════════════════════════════
 '  МОДЕРАЦИЯ И ПУБЛИКАЦИЯ
@@ -51,37 +52,37 @@ usecase "Заполнить метаданные игры" as META <<proj>>
 
 usecase "Отправить на модерацию" as SEND <<mod>>
 usecase "Просмотреть очередь\nтикетов" as QUEUE <<mod>>
-usecase "Провести модерацию" as MODERATE <<mod>>
-usecase "Тестировать игру\nв dev-окружении" as TEST <<mod>>
-usecase "Вынести вердикт" as VERDICT <<mod>>
-usecase "Указать замечания" as REMARKS <<mod>>
+usecase "Модерировать игровой проект" as MODERATE <<mod>>
+usecase "Проверить развернутую\nтестовую версию игры" as TEST <<mod>>
+usecase "Вынести вердикт модерации" as VERDICT <<mod>>
+usecase "Указать замечания\nпо результатам проверки" as REMARKS <<mod>>
 usecase "Обмениваться сообщениями\nво встроенном чате" as CHAT <<mod>>
 
 ' ═══════════════════════════════
 '  ОРКЕСТРАЦИЯ СЕРВЕРОВ
 ' ═══════════════════════════════
 
-usecase "Загрузить билд сервера" as UPLOAD_SRV <<srv>>
-usecase "Выбрать режим\nработы сервера" as MODE <<srv>>
-usecase "Запустить экземпляр\nсервера" as START <<srv>>
-usecase "Остановить экземпляр\nсервера" as STOP <<srv>>
-usecase "Просмотреть логи сервера" as LOGS <<srv>>
-usecase "Обнаружить сервер\nдля подключения" as DISCOVER <<srv>>
+usecase "Загрузить сборку\nигрового сервера" as UPLOAD_SRV <<srv>>
+usecase "Настроить политики работы\nигровых серверов" as POLICY <<srv>>
+usecase "Отправить команды управления\nигровым сервером" as CMD <<srv>>
+usecase "Просмотреть журнал\nигрового сервера" as LOGS <<srv>>
+usecase "Получить доступный\nигровой сервер" as DISCOVER <<srv>>
 usecase "Подключить собственный\nвычислительный узел" as NODE <<srv>>
 
 ' ═══════════════════════════════
 '  АНАЛИТИКА И ОТЧЁТНОСТЬ
 ' ═══════════════════════════════
 
-usecase "Просмотреть статистику" as STATS <<stat>>
-usecase "Скачать отчёт за период" as REPORT <<stat>>
+usecase "Узнать статус страницы игры" as STATUS <<stat>>
+usecase "Получить месячный\nаналитический отчет" as REPORT <<stat>>
 
 ' ═══════════════════════════════
-'  СВЯЗИ: Разработчик
+'  СВЯЗИ: Разработчик игры
 ' ═══════════════════════════════
 
 Dev -- REG
 Dev -- AUTH
+Dev -- RECOVER
 Dev -- LIST
 Dev -- CREATE
 Dev -- UPLOAD
@@ -89,12 +90,11 @@ Dev -- META
 Dev -- SEND
 Dev -- CHAT
 Dev -- UPLOAD_SRV
-Dev -- MODE
-Dev -- START
-Dev -- STOP
+Dev -- POLICY
+Dev -- CMD
 Dev -- LOGS
 Dev -- NODE
-Dev -- STATS
+Dev -- STATUS
 Dev -- REPORT
 
 ' ═══════════════════════════════

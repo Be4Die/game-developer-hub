@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN"
+"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+<!ATTLIST svg xmlns:xlink CDATA #FIXED "http://www.w3.org/1999/xlink">
+]>
+<svg xmlns='http://www.w3.org/2000/svg'
+xmlns:xlink='http://www.w3.org/1999/xlink'
+width='1064pt' height='680pt'
+viewBox='0.0 0.0 1064.0 680.0'
+>
+<style type='text/css'>
+  svg {
+    background-color: white;
+  }
+  text {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+  }
+</style>
+<g>
+  <line x1='20' y1='380' x2='370' y2='380' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='370,380 364,383 364,377 370,380' />
+<text text-anchor='start' x='25' y='375.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Сборка веб-игры</text>
+<text text-anchor='start' x='25' y='375.0'>Сборка веб-игры</text>
+
+<line x1='20' y1='360' x2='370' y2='360' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='370,360 364,363 364,357 370,360' />
+<text text-anchor='start' x='25' y='355.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Метаданные игры и промо-материалы</text>
+<text text-anchor='start' x='25' y='355.0'>Метаданные игры и промо-материалы</text>
+
+<line x1='20' y1='400' x2='370' y2='400' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='370,400 364,403 364,397 370,400' />
+<text text-anchor='start' x='25' y='395.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Сборка игрового сервера</text>
+<text text-anchor='start' x='25' y='395.0'>Сборка игрового сервера</text>
+
+<line x1='20' y1='340' x2='370' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='370,340 364,343 364,337 370,340' />
+<text text-anchor='start' x='25' y='335.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Команды управления игровым сервером</text>
+<text text-anchor='start' x='25' y='335.0'>Команды управления игровым сервером</text>
+
+<line x1='750' y1='400' x2='1044' y2='400' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1044,400 1038,403 1038,397 1044,400' />
+<text text-anchor='end' x='1039' y='395.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Статус страницы игры</text>
+<text text-anchor='end' x='1039' y='395.0'>Статус страницы игры</text>
+
+<line x1='750' y1='380' x2='1044' y2='380' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1044,380 1038,383 1038,377 1044,380' />
+<text text-anchor='end' x='1039' y='375.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Месячный аналитический отчет</text>
+<text text-anchor='end' x='1039' y='375.0'>Месячный аналитический отчет</text>
+
+<line x1='750' y1='360' x2='1044' y2='360' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1044,360 1038,363 1038,357 1044,360' />
+<text text-anchor='end' x='1039' y='355.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Журнал игрового сервера</text>
+<text text-anchor='end' x='1039' y='355.0'>Журнал игрового сервера</text>
+
+<line x1='750' y1='340' x2='1044' y2='340' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='1044,340 1038,343 1038,337 1044,340' />
+<text text-anchor='end' x='1039' y='335.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Доступный игровой сервер</text>
+<text text-anchor='end' x='1039' y='335.0'>Доступный игровой сервер</text>
+
+<line x1='620' y1='200' x2='620' y2='320' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='620,320 617,314 623,314 620,320' />
+<text text-anchor='middle' x='620' y='188.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='620' dy='0'>Требования к</tspan>
+<tspan x='620' dy='14'>играм</tspan>
+</text>
+<text text-anchor='middle' x='620' y='188.0'>
+<tspan x='620' dy='0'>Требования к</tspan>
+<tspan x='620' dy='14'>играм</tspan>
+</text>
+
+<line x1='560' y1='280' x2='560' y2='320' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='560,320 557,314 563,314 560,320' />
+<text text-anchor='middle' x='560' y='268.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='560' dy='0'>Руководство</tspan>
+<tspan x='560' dy='14'>разработчика</tspan>
+</text>
+<text text-anchor='middle' x='560' y='268.0'>
+<tspan x='560' dy='0'>Руководство</tspan>
+<tspan x='560' dy='14'>разработчика</tspan>
+</text>
+
+<line x1='500' y1='40' x2='500' y2='320' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='500,320 497,314 503,314 500,320' />
+<text text-anchor='middle' x='500' y='14.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='500' dy='0'>Непрерывная</tspan>
+<tspan x='500' dy='14'>интеграция и</tspan>
+<tspan x='500' dy='14'>непрерывная</tspan>
+<tspan x='500' dy='14'>доставка</tspan>
+</text>
+<text text-anchor='middle' x='500' y='14.0'>
+<tspan x='500' dy='0'>Непрерывная</tspan>
+<tspan x='500' dy='14'>интеграция и</tspan>
+<tspan x='500' dy='14'>непрерывная</tspan>
+<tspan x='500' dy='14'>доставка</tspan>
+</text>
+
+<line x1='410' y1='600' x2='410' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='410,420 407,426 413,426 410,420' />
+<text text-anchor='middle' x='410' y='608.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='410' dy='0'>Инженер по</tspan>
+<tspan x='410' dy='14'>эксплуатации</tspan>
+</text>
+<text text-anchor='middle' x='410' y='608.0'>
+<tspan x='410' dy='0'>Инженер по</tspan>
+<tspan x='410' dy='14'>эксплуатации</tspan>
+</text>
+
+<line x1='710' y1='460' x2='710' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='710,420 707,426 713,426 710,420' />
+<text text-anchor='middle' x='710' y='468.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='710' dy='0'>Разработчик</tspan>
+<tspan x='710' dy='14'>игры</tspan>
+</text>
+<text text-anchor='middle' x='710' y='468.0'>
+<tspan x='710' dy='0'>Разработчик</tspan>
+<tspan x='710' dy='14'>игры</tspan>
+</text>
+
+<line x1='590' y1='560' x2='590' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='590,420 587,426 593,426 590,420' />
+<text text-anchor='middle' x='590' y='575.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Модератор</text>
+<text text-anchor='middle' x='590' y='575.0'>Модератор</text>
+
+<line x1='470' y1='540' x2='470' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='470,420 467,426 473,426 470,420' />
+<text text-anchor='middle' x='470' y='555.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>Менеджер</text>
+<text text-anchor='middle' x='470' y='555.0'>Менеджер</text>
+
+<line x1='530' y1='640' x2='530' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='530,420 527,426 533,426 530,420' />
+<text text-anchor='middle' x='530' y='648.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='530' dy='0'>Мессенджер</tspan>
+<tspan x='530' dy='14'>Telegram</tspan>
+</text>
+<text text-anchor='middle' x='530' y='648.0'>
+<tspan x='530' dy='0'>Мессенджер</tspan>
+<tspan x='530' dy='14'>Telegram</tspan>
+</text>
+
+<line x1='650' y1='640' x2='650' y2='420' stroke='black' stroke-dasharray='5,5' />
+<polygon fill='black' stroke='black' points='650,420 647,426 653,426 650,420' />
+<text text-anchor='middle' x='650' y='641.0' stroke='white' stroke-width='4' stroke-linejoin='round' fill='white'>
+<tspan x='650' dy='0'>Программа для</tspan>
+<tspan x='650' dy='14'>формирования</tspan>
+<tspan x='650' dy='14'>отчетов</tspan>
+</text>
+<text text-anchor='middle' x='650' y='641.0'>
+<tspan x='650' dy='0'>Программа для</tspan>
+<tspan x='650' dy='14'>формирования</tspan>
+<tspan x='650' dy='14'>отчетов</tspan>
+</text>
+
+  <rect x='370' y='320' width='380' height='100' fill='white' stroke='black' />
+<text text-anchor='middle' x='560' y='362.0'>
+<tspan x='560' dy='0'>Публикация и управление</tspan>
+<tspan x='560' dy='16'>веб-играми</tspan>
+</text>
+
+</g>
+</svg>
