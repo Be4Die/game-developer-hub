@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <paragraph index="7" node_type="writer">Кафедра АСОИУ 09.03.04                                                                                      Производственная практика-20232331</paragraph>
+ <object alt="" name="Изображение1" object_type="graphic"/>
+ <object alt="" name="Изображение4" object_type="graphic"/>
+ <object alt="" name="Изображение5" object_type="graphic"/>
+ <object alt="" name="Изображение6" object_type="graphic"/>
+ <object alt="" name="Изображение2" object_type="graphic"/>
+ <object alt="" name="Изображение3" object_type="graphic"/>
+ <object index="32" name="Таблица1" object_type="table"/>
+ <paragraph index="37" node_type="writer" parent_index="32">Федеральное агентство по рыболовству</paragraph>
+ <paragraph index="38" node_type="writer" parent_index="32">Федеральное государственное бюджетное образовательное</paragraph>
+ <paragraph index="39" node_type="writer" parent_index="32">учреждение высшего образования</paragraph>
+ <paragraph index="40" node_type="writer" parent_index="32">«Астраханский государственный технический университет»</paragraph>
+ <paragraph index="41" node_type="writer" parent_index="32">Система менеджмента качества в области образования, воспитания, науки и инноваций сертифицирована</paragraph>
+ <paragraph index="42" node_type="writer" parent_index="32">ООО «ДКС РУС» по ISO 9001 / ГОСТ Р ИСО 9001</paragraph>
+ <object index="47" name="Таблица2" object_type="table"/>
+ <paragraph index="49" node_type="writer" parent_index="47">Институт	 Информационных технологий и коммуникаций</paragraph>
+ <paragraph index="50" node_type="writer" parent_index="47">Направление 09.03.04 Программная инженерия</paragraph>
+ <paragraph index="51" node_type="writer" parent_index="47">Профиль      Разработка программно-информационных систем </paragraph>
+ <paragraph index="52" node_type="writer" parent_index="47">Кафедра	Автоматизированные системы обработки информации и управления</paragraph>
+ <paragraph index="53" node_type="writer" parent_index="47">от ____.____________2026 № ______</paragraph>
+ <paragraph index="54" node_type="writer" parent_index="47">ОТЧЕТ ПО ПРАКТИКЕ</paragraph>
+ <paragraph index="55" node_type="writer" parent_index="47">Вид практики: производственная</paragraph>
+ <paragraph index="56" node_type="writer" parent_index="47">Место прохождения практики:
+Астраханский государственный технический университет, 
+кафедра «Автоматизированные системы обработки информации и управления»</paragraph>
+ <paragraph index="62" node_type="writer" parent_index="47">Отчет выполнил:</paragraph>
+ <paragraph index="63" node_type="writer" parent_index="47">обучающийся группы ДИПРБ-31</paragraph>
+ <paragraph index="64" node_type="writer" parent_index="47">____________Наследсков Михаил Викторович</paragraph>
+ <paragraph index="71" node_type="writer" parent_index="47">Руководитель практики от Университета 
+к.т.н., доцент</paragraph>
+ <paragraph index="72" node_type="writer" parent_index="47">____________ Евсина Елена Михайловна </paragraph>
+ <paragraph index="73" node_type="writer" parent_index="47">Результаты защиты отчета </paragraph>
+ <paragraph index="74" node_type="writer" parent_index="47">Оценка, полученная на защите </paragraph>
+ <paragraph index="75" node_type="writer" parent_index="47">«________________» </paragraph>
+ <paragraph index="76" node_type="writer" parent_index="47">Члены комиссии: </paragraph>
+ <paragraph index="77" node_type="writer" parent_index="47">_________________   </paragraph>
+ <paragraph index="78" node_type="writer" parent_index="47">_________________   </paragraph>
+ <paragraph index="79" node_type="writer" parent_index="47">«____» _____________ 2026 г.</paragraph>
+ <paragraph index="85" node_type="writer" parent_index="47">Астрахань 2026</paragraph>
+ <paragraph index="88" node_type="writer">ИНДИВИДУАЛЬНЫЙ ПЛАН/ЗАДАНИЕ</paragraph>
+ <paragraph index="89" node_type="writer">Вид практики: учебная / производственная / преддипломная</paragraph>
+ <paragraph index="90" node_type="writer">Тип практики:  эксплуатационная</paragraph>
+ <paragraph index="91" node_type="writer">Способ проведения практики: выездная / стационарная</paragraph>
+ <paragraph index="92" node_type="writer">Обучающийся       Наследсков Михаил Викторович,</paragraph>
+ <paragraph index="93" node_type="writer">Курс   3    группа  ДИПРб-31</paragraph>
+ <paragraph index="94" node_type="writer"> </paragraph>
+ <paragraph index="95" node_type="writer">Направление  09.03.04 Программная инженерия</paragraph>
+ <paragraph index="96" node_type="writer">Профиль         Разработка программно-информационных систем
+Место проведения практики Астраханский государственный технический университет, 
+кафедра «Автоматизированные системы обработки информации и управления»
+</paragraph>
+ <paragraph index="97" node_type="writer">Общее задание:</paragraph>
+ <paragraph index="98" node_type="writer">Выполнение индивидуального задания: </paragraph>
+ <paragraph index="99" node_type="writer">Анализ предметной области по теме «Автоматизированная система управления процессом публикации и сопровождения веб-игр»</paragraph>
+ <paragraph index="116" node_type="writer">Объем и краткое содержание (виды работ) практики</paragraph>
+ <object index="117" name="Таблица3" object_type="table"/>
+ <paragraph index="119" node_type="writer" parent_index="117">№</paragraph>
+ <paragraph index="120" node_type="writer" parent_index="117">п/п</paragraph>
+ <paragraph index="123" node_type="writer" parent_index="117">Раздел практики</paragraph>
+ <paragraph index="126" node_type="writer" parent_index="117">Формы текущего контроля успеваемости</paragraph>
+ <paragraph index="129" node_type="writer" parent_index="117">1</paragraph>
+ <paragraph index="132" node_type="writer" parent_index="117">1 этап (подготовительный)</paragraph>
+ <paragraph index="133" node_type="writer" parent_index="117">1. Получение индивидуального задания на практику.</paragraph>
+ <paragraph index="134" node_type="writer" parent_index="117">2. Инструктаж по технике безопасности при работе на персональном компьютере и в компьютерном классе </paragraph>
+ <paragraph index="137" node_type="writer" parent_index="117">Регистрация в журнале по технике безопасности, собеседование </paragraph>
+ <paragraph index="140" node_type="writer" parent_index="117">2</paragraph>
+ <paragraph index="143" node_type="writer" parent_index="117">2 этап (теоретический )</paragraph>
+ <paragraph index="144" node_type="writer" parent_index="117">Выполнение индивидуального задания: анализ предметной области</paragraph>
+ <paragraph index="145" node_type="writer" parent_index="117">1. Проведение анализа предметной области в соответствии с утвержденным планом;</paragraph>
+ <paragraph index="146" node_type="writer" parent_index="117">2. Поиск и анализ информации по индивидуальному заданию; сбор данных, необходимых для решения поставленных задач.</paragraph>
+ <paragraph index="149" node_type="writer" parent_index="117">Анализ предметной области, сбор информации, необходимой для разработки технического проекта </paragraph>
+ <paragraph index="152" node_type="writer" parent_index="117">3</paragraph>
+ <paragraph index="155" node_type="writer" parent_index="117">3 этап: подготовка отчета по практике</paragraph>
+ <paragraph index="156" node_type="writer" parent_index="117">Подготовка отчета, в котором должны быть отражены результаты работы.</paragraph>
+ <paragraph index="157" node_type="writer" parent_index="117">Составление пояснительной записки в виде файла и твердой копии.</paragraph>
+ <paragraph index="158" node_type="writer" parent_index="117">Подготовка презентации для выступления на защите в комиссии кафедры</paragraph>
+ <paragraph index="161" node_type="writer" parent_index="117">Материал по результатам работы: письмен­ный отчет, электрон­ная презентация</paragraph>
+ <paragraph index="164" node_type="writer" parent_index="117">4</paragraph>
+ <paragraph index="167" node_type="writer" parent_index="117">Заключительный этап:</paragraph>
+ <paragraph index="168" node_type="writer" parent_index="117">Защита отчета по практике на кафедре </paragraph>
+ <paragraph index="171" node_type="writer" parent_index="117">Отчет по результатам практики</paragraph>
+ <paragraph index="177" node_type="writer" parent_index="117">Форма отчетности по практике </paragraph>
+ <paragraph index="180" node_type="writer" parent_index="117">Зачет с оценкой </paragraph>
+ <paragraph index="187" node_type="writer">Руководитель практики от Университета: к.т.н., доцент Евсина Елена Михайловна                 </paragraph>
+ <paragraph index="188" node_type="writer">«  » июль 2026 г. __________</paragraph>
+ <paragraph index="189" node_type="writer">подпись</paragraph>
+ <paragraph index="190" node_type="writer">Задание выдал: к.т.н., доцент Евсина Елена Михайловна                       </paragraph>
+ <paragraph index="191" node_type="writer"> </paragraph>
+ <paragraph index="192" node_type="writer">«  » июль 2026 г. __________</paragraph>
+ <paragraph index="193" node_type="writer">подпись</paragraph>
+ <paragraph index="194" node_type="writer">Задание получил: Наследсков Михаил Викторович </paragraph>
+ <paragraph index="195" node_type="writer">«  » июль 2026 г. __________</paragraph>
+ <paragraph index="196" node_type="writer">подпись</paragraph>
+ <paragraph index="198" node_type="writer">РАБОЧИЙ ГРАФИК (ПЛАН) ПРОВЕДЕНИЯ ПРАКТИКИ</paragraph>
+ <paragraph index="199" node_type="writer">2025/2026 учебный год</paragraph>
+ <paragraph index="200" node_type="writer">Направление  09.03.04 Программная инженерия</paragraph>
+ <paragraph index="201" node_type="writer">Профиль         Разработка программно-информационных систем
+Курс                3,  группа  ДИПРб-31
+Место прохождения практики Астраханский государственный технический университет, 
+кафедра «Автоматизированные системы обработки информации и управления»
+Руководитель практики от Университета    к.т.н., доцент Евсина Елена Михайловна                      </paragraph>
+ <paragraph index="202" node_type="writer">Вид практики: учебная / производственная / преддипломная</paragraph>
+ <paragraph index="203" node_type="writer">Тип практики:  проектно-технологическая</paragraph>
+ <paragraph index="204" node_type="writer">Способ проведения практики: выездная/стационарная</paragraph>
+ <paragraph index="205" node_type="writer">Срок прохождения практики: с 06.07.2026 по 18.07.2026.</paragraph>
+ <object index="206" name="Таблица4" object_type="table"/>
+ <paragraph index="208" node_type="writer" parent_index="206">Дата (сроки)</paragraph>
+ <paragraph index="211" node_type="writer" parent_index="206">Планируемые формы работы (раздел практики)</paragraph>
+ <paragraph index="214" node_type="writer" parent_index="206">06.07.2026</paragraph>
+ <paragraph index="217" node_type="writer" parent_index="206">Цели и задачи практики, техника безопасности в компьютерном классе, постановка задачи</paragraph>
+ <paragraph index="220" node_type="writer" parent_index="206">07.07.2026</paragraph>
+ <paragraph index="223" node_type="writer" parent_index="206">Изучение организационной структуры и бизнес-модели предприятия</paragraph>
+ <paragraph index="226" node_type="writer" parent_index="206">08.07.2026</paragraph>
+ <paragraph index="229" node_type="writer" parent_index="206">Обзор и сравнительный анализ аналогичных решений</paragraph>
+ <paragraph index="232" node_type="writer" parent_index="206">09.07.2026</paragraph>
+ <paragraph index="235" node_type="writer" parent_index="206">Описание бизнес-процессов «AS-IS»</paragraph>
+ <paragraph index="238" node_type="writer" parent_index="206">10.07.2026</paragraph>
+ <paragraph index="241" node_type="writer" parent_index="206">Описание бизнес-процессов «TO-BE»</paragraph>
+ <paragraph index="244" node_type="writer" parent_index="206">11.07.2026</paragraph>
+ <paragraph index="247" node_type="writer" parent_index="206">Разработка диаграммы вариантов использования</paragraph>
+ <paragraph index="250" node_type="writer" parent_index="206">12.07.2026</paragraph>
+ <paragraph index="253" node_type="writer" parent_index="206">Выходной день</paragraph>
+ <paragraph index="256" node_type="writer" parent_index="206">13.07.2026</paragraph>
+ <paragraph index="259" node_type="writer" parent_index="206">Формулирование цели и задач разработки системы</paragraph>
+ <paragraph index="262" node_type="writer" parent_index="206">14.07.2026</paragraph>
+ <paragraph index="265" node_type="writer" parent_index="206">Систематизация материалов анализа предметной области</paragraph>
+ <paragraph index="268" node_type="writer" parent_index="206">15.07.2026</paragraph>
+ <paragraph index="271" node_type="writer" parent_index="206">Оформление раздела «Анализ предметной области» отчета</paragraph>
+ <paragraph index="274" node_type="writer" parent_index="206">16.07.2026</paragraph>
+ <paragraph index="277" node_type="writer" parent_index="206">Подготовка отчета по практике</paragraph>
+ <paragraph index="280" node_type="writer" parent_index="206">17.07.2026</paragraph>
+ <paragraph index="283" node_type="writer" parent_index="206">Защита отчета по практике</paragraph>
+ <paragraph index="286" node_type="writer" parent_index="206">18.07.2026</paragraph>
+ <paragraph index="289" node_type="writer" parent_index="206">Оформление документации</paragraph>
+ <paragraph index="293" node_type="writer">Руководитель практики от университета к.т.н., доцент Евсина Елена Михайловна</paragraph>
+ <paragraph index="294" node_type="writer">«  » июль 2026 г. __________</paragraph>
+ <paragraph index="295" node_type="writer">                                               подпись</paragraph>
+ <paragraph index="297" node_type="writer">Обучающийся Наследсков Михаил Викторович</paragraph>
+ <paragraph index="300" node_type="writer">«  » июль 2026 г. __________ </paragraph>
+ <paragraph index="301" node_type="writer">ДНЕВНИК ПРАКТИКИ</paragraph>
+ <paragraph index="302" node_type="writer">Вид практики: учебная / производственная/ преддипломная</paragraph>
+ <paragraph index="303" node_type="writer">Способ проведения практики: выездная/стационарная</paragraph>
+ <paragraph index="304" node_type="writer">Обучающийся Наследсков Михаил Викторович, группа ДИПРБ-11</paragraph>
+ <paragraph index="305" node_type="writer">Направление  09.03.04 Программная инженерия
+Профиль         Разработка программно-информационных систем</paragraph>
+ <paragraph index="306" node_type="writer">Место проведения практики Астраханский государственный технический университет, 
+кафедра «Автоматизированные системы обработки информации и управления»
+</paragraph>
+ <paragraph index="307" node_type="writer">Дата начала практики     «06» июля 2026 г.</paragraph>
+ <paragraph index="308" node_type="writer">Дата окончания практики «18» июля 2026 г.</paragraph>
+ <object index="309" name="Таблица5" object_type="table"/>
+ <paragraph index="311" node_type="writer" parent_index="309">Дата</paragraph>
+ <paragraph index="314" node_type="writer" parent_index="309">Наименование 
+и ход работ, </paragraph>
+ <paragraph index="317" node_type="writer" parent_index="309">Краткое описание работы</paragraph>
+ <paragraph index="320" node_type="writer" parent_index="309">06.07.2026</paragraph>
+ <paragraph index="323" node_type="writer" parent_index="309">Цели и задачи практики, техника безопасности в компьютерном классе, постановка задачи</paragraph>
+ <paragraph index="326" node_type="writer" parent_index="309">Изучена инструкция по технике безопасности в компьютерном классе. Получено индивидуальное задание на практику.</paragraph>
+ <paragraph index="329" node_type="writer" parent_index="309">07.07.2026</paragraph>
+ <paragraph index="332" node_type="writer" parent_index="309">Изучение структуры и бизнес-модели предприятия</paragraph>
+ <paragraph index="335" node_type="writer" parent_index="309">Собрана информация об истории компании, структуре, модели монетизации платформы.</paragraph>
+ <paragraph index="338" node_type="writer" parent_index="309">08.07.2026</paragraph>
+ <paragraph index="341" node_type="writer" parent_index="309">Обзор и сравнительный анализ аналогичных решений</paragraph>
+ <paragraph index="344" node_type="writer" parent_index="309">Проведен анализ функционала платформ-аналогов, составлена сравнительная таблица..</paragraph>
+ <paragraph index="347" node_type="writer" parent_index="309">09.07.2026</paragraph>
+ <paragraph index="350" node_type="writer" parent_index="309">Описание бизнес-процессов «AS-IS»</paragraph>
+ <paragraph index="353" node_type="writer" parent_index="309">Проведено моделирование текущих процессов публикации и управления веб-играми, построена диаграмма модели «AS-IS», выявлены проблемные зоны процесса.</paragraph>
+ <paragraph index="356" node_type="writer" parent_index="309">10.07.2026</paragraph>
+ <paragraph index="359" node_type="writer" parent_index="309">Описание бизнес-процессов «TO-BE»</paragraph>
+ <paragraph index="362" node_type="writer" parent_index="309">Спроектирована целевая модель бизнес-процессов с учетом внедрения автоматизированной системы, построена диаграмма «TO-BE».</paragraph>
+ <paragraph index="365" node_type="writer" parent_index="309">11.07.2026</paragraph>
+ <paragraph index="368" node_type="writer" parent_index="309">Разработка диаграммы вариантов использования</paragraph>
+ <paragraph index="371" node_type="writer" parent_index="309">Определены роли пользователей системы, построена диаграмма вариантов использования.</paragraph>
+ <paragraph index="374" node_type="writer" parent_index="309">13.07.2026</paragraph>
+ <paragraph index="377" node_type="writer" parent_index="309">Формулирование цели и задач разработки системы</paragraph>
+ <paragraph index="380" node_type="writer" parent_index="309">Сформулированы цель проекта, ключевые показатели эффективности и перечень задач.</paragraph>
+ <paragraph index="383" node_type="writer" parent_index="309">14.07.2026</paragraph>
+ <paragraph index="386" node_type="writer" parent_index="309">Систематизация материалов </paragraph>
+ <paragraph index="389" node_type="writer" parent_index="309">Систематизация полученных материалов. Написание введения.</paragraph>
+ <paragraph index="392" node_type="writer" parent_index="309">15.07.2026</paragraph>
+ <paragraph index="395" node_type="writer" parent_index="309">Оформление раздела «Анализ предметной области» отчета</paragraph>
+ <paragraph index="398" node_type="writer" parent_index="309">Оформлен раздел отчета «Технический проект».</paragraph>
+ <paragraph index="401" node_type="writer" parent_index="309">16.07.2026</paragraph>
+ <paragraph index="404" node_type="writer" parent_index="309">Подготовка отчета по практике</paragraph>
+ <paragraph index="407" node_type="writer" parent_index="309">Систематизация полученных материалов. Написание заключения.</paragraph>
+ <paragraph index="410" node_type="writer" parent_index="309">17.07.2026</paragraph>
+ <paragraph index="413" node_type="writer" parent_index="309">Защита отчета по практике</paragraph>
+ <paragraph index="416" node_type="writer" parent_index="309">Подготовка презентационных материалов. Защита результатов прохождения практики.</paragraph>
+ <paragraph index="419" node_type="writer" parent_index="309">18.07.2026</paragraph>
+ <paragraph index="422" node_type="writer" parent_index="309">Оформление документации</paragraph>
+ <paragraph index="425" node_type="writer" parent_index="309">Подписание докумментов практики.</paragraph>
+ <paragraph index="429" node_type="writer">Руководитель практики от университета к.т.н., доцент Евсина Елена Михайловна</paragraph>
+ <paragraph index="430" node_type="writer">«18» июля 2026 г. __________</paragraph>
+ <paragraph index="431" node_type="writer">                                                       подпись</paragraph>
+ <paragraph index="432" node_type="writer">Обучающийся Наследсков Михаил Викторович</paragraph>
+ <paragraph index="433" node_type="writer">«18» июля 2026 г. __________</paragraph>
+ <paragraph index="434" node_type="writer">                                                       подпись</paragraph>
+ <paragraph index="435" node_type="writer">СОДЕРЖАНИЕ</paragraph>
+ <object index="436" name="Оглавление1" object_type="section"/>
+ <paragraph index="437" node_type="writer" parent_index="436"> Введение	7</paragraph>
+ <paragraph index="438" node_type="writer" parent_index="436">1 Технический проект	8</paragraph>
+ <paragraph index="439" node_type="writer" parent_index="436">1.1. Анализ предметной области	8</paragraph>
+ <paragraph index="440" node_type="writer" parent_index="436">1.1.1. Общая информация и организационная структура предприятия	8</paragraph>
+ <paragraph index="441" node_type="writer" parent_index="436">1.1.2. Бизнес-процессы проблемной зоны предприятия	11</paragraph>
+ <paragraph index="442" node_type="writer" parent_index="436">1.2. Обзор аналогичных решений	13</paragraph>
+ <paragraph index="443" node_type="writer" parent_index="436">1.3. Цель и задачи	15</paragraph>
+ <paragraph index="444" node_type="writer" parent_index="436"> Заключение	17</paragraph>
+ <paragraph index="445" node_type="writer" parent_index="436"> Список спользованных источников	18</paragraph>
+ <paragraph index="446" node_type="writer" parent_index="436"> Приложение 1. Модель AS-IS	19</paragraph>
+ <paragraph index="447" node_type="writer" parent_index="436"> Приложение 2. Модель TO-BE	20</paragraph>
+ <paragraph index="448" node_type="writer" parent_index="436"> Приложение 3. Диаграмма вариантов исппользования	21</paragraph>
+ <paragraph index="449" node_type="writer" parent_index="436"> Приложение 4. Инфологическая модель	22</paragraph>
+ <paragraph index="452" node_type="writer">ВВЕДЕНИЕ</paragraph>
+ <paragraph index="453" node_type="writer">Динамичное развитие рынка веб-игр требует от игровых платформ эффективных и быстрых инструментов для авторов контента. Платформа Welwise Games представляет собой площадку для размещения проектов разработчиков . В условиях роста числа проектов текущий ручной подход к управлению публикациями потерял масштабируемость. Это вызвало  потребность в создании автоматизированной системы, которая позволит авторам управлять своими проектами без постоянного участия специалистов платформы.</paragraph>
+ <paragraph index="454" node_type="writer">Объектом автоматизации в рамках данной работы является инфраструктура и организационная среда игровой платформы Welwise Games. Предметом автоматизации выступают процессы публикации, модерации и инфраструктурного сопровождения веб-игр на данной площадке.</paragraph>
+ <paragraph index="455" node_type="writer">Текущие процессы платформы имеют ряд существенных недостатков:</paragraph>
+ <paragraph index="456" node_type="writer">Зависимость от инженера: Настройка конвейера развертывания для каждой новой игры требует ручного копирования и адаптации скриптов инженером по эксплуатации, из-за чего разработчик не может самостоятельно устранять сбои.</paragraph>
+ <paragraph index="457" node_type="writer">Непрозрачная модерация: Взаимодействие между авторами контента и платформой ведется через внешние мессенджеры, что приводит к потере контекста и отсутствию единой ленты запросов.</paragraph>
+ <paragraph index="458" node_type="writer">Ограничение доступа: Разработчики не имеют прямого доступа к управлению игровыми серверами.</paragraph>
+ <paragraph index="459" node_type="writer">Задержки отчетности: Аналитическая отчетность по играм формируется менеджером вручную и отправляется авторам только раз в месяц.</paragraph>
+ <paragraph index="460" node_type="writer">Использование слабо связанных инструментов, таких как сторонние мессенджеры, ручные конфигурации CI/CD и настольное ПО для аналитики, было оправдано только на ранних этапах развития площадки. Отказ от них обусловлен невозможностью масштабирования процессов, отсутствием единого рабочего пространства и нерациональными затратами времени инженеров на рутинные операции.</paragraph>
+ <paragraph index="461" node_type="writer">Целью проекта является разработка автоматизированной системы, повышающей эффективность процессов публикации и сопровождения веб-игр. Успешность внедрения системы оценивается по следующим измеримым показателям:</paragraph>
+ <paragraph index="462" node_type="writer">Сокращение времени подготовки черновика игры с 9 дней до 1–2 часов.</paragraph>
+ <paragraph index="463" node_type="writer">Уменьшение сроков модерации с 5 до 1–2 дней благодаря внедрению сквозного чата.</paragraph>
+ <paragraph index="464" node_type="writer">Обеспечение разработчиков посуточной аналитикой вместо ежемесячной.</paragraph>
+ <paragraph index="465" node_type="writer">Сведение к нулю обращений к инженерам для управления игровыми серверами.</paragraph>
+ <paragraph index="467" node_type="writer">Технический проект</paragraph>
+ <paragraph index="468" node_type="writer">Анализ предметной области </paragraph>
+ <paragraph index="469" node_type="writer"> Общая информация и организационная структура предприятия</paragraph>
+ <paragraph index="470" node_type="writer">Предприятие, юридически представленное индивидуальным предпринимателем Тепловым Савелием Дмитриевичем, ведет свою историю с 2021 года. На начальном этапе команда функционировала под брендом Welwise Studio и специализировалась исключительно на самостоятельной разработке игровых проектов. Первоначальные попытки создания масштабных высокобюджетных игр сменились стратегическим переходом к разработке более востребованных на рынке веб-игр. После выхода на отечественные площадки дистрибуции и выпуска десятков коммерчески успешных продуктов, предприятие значительно расширило направления деятельности. Был осуществлен переход к созданию кроссплатформенных проектов для мобильных и персональных устройств, начата активная публикация на зарубежных ресурсах, а также реализован отдельный проект для крупнейшей цифровой витрины Steam. Параллельно команда освоила корпоративный сектор, реализуя B2B-проекты по геймификации, включая разработку интерактивных программ лояльности для сетей общественного питания. Накопленная за эти годы техническая и управленческая экспертиза отчетливо выявила ключевую проблему индустрии: независимые авторы регулярно сталкиваются с серьезными барьерами при запуске и оперировании онлайн-проектов. Ответом на этот вызов рынка стала трансформация бизнес-модели и запуск в 2025 году собственной издательской платформы Welwise Games. Глобальная миссия предприятия заключается в предоставлении инди-разработчикам инфраструктуры, которая позволит им создавать не просто отдельные игры, а целые метавселенные, объединенные общим пользовательским прогрессом и единой виртуальной экономикой.</paragraph>
+ <paragraph index="471" node_type="writer">Долгосрочная стратегия развития платформы направлена на формирование комплексной, полностью автономной экосистемы для создателей игрового контента. В рамках этой стратегии приоритетными задачами являются масштабирование серверной инфраструктуры для поддержки высоконагруженных многопользовательских проектов, расширение географии присутствия за счет локализации платформы для иностранных рынков, а также привлечение новых студий-партнеров. Особое внимание уделяется автоматизации рутинных процессов взаимодействия с авторами, что должно существенно снизить операционные издержки предприятия и ускорить вывод новых игровых продуктов на рынок. В перспективе планируется интеграция расширенных аналитических инструментов и создание единого социального пространства для игроков.</paragraph>
+ <paragraph index="472" node_type="writer">Юридической и правовой основой функционирования предприятия является статус индивидуального предпринимателя, официально зарегистрированного 30 августа 2024 года с присвоением ОГРНИП 324595800107064. Основным видом экономической деятельности предприятия официально закреплена разработка компьютерного программного обеспечения. Для обеспечения полного правового покрытия всех аспектов издательского бизнеса и монетизации в качестве дополнительных видов деятельности зарегистрированы издание компьютерных игр, издание прочих программных продуктов, а также деятельность рекламных агентств. Данная правовая конфигурация позволяет платформе легитимно выступать в роли издателя, оперировать интеллектуальной собственностью партнеров и осуществлять коммерческую деятельность в сфере цифровой рекламы.</paragraph>
+ <paragraph index="473" node_type="writer">Взаимодействие с независимыми разработчиками выстраивается на базе договора публичной оферты и соглашения о сотрудничестве. В рамках данных соглашений авторы передают издателю простую неисключительную лицензию на публикацию, продвижение и любое иное использование игры для широкой аудитории. Со своей стороны, разработчики обязуются предоставлять полностью работоспособные копии проектов, обеспечивать наличие обязательной возрастной маркировки и гарантировать юридическую чистоту авторских прав, строго соблюдая запрет на публикацию вредоносного или законодательно недопустимого контента. При этом исключительное право на саму игру неотчуждаемо и остается за разработчиком, который сохраняет за собой полную свободу продвигать продукт под собственным брендом на других ресурсах. Взаимодействие с конечными потребителями (игроками) на самой площадке дополнительно регламентируется пользовательским соглашением и политикой конфиденциальности.</paragraph>
+ <paragraph index="474" node_type="writer">Бизнес-модель предприятия базируется на принципах разделения доходов от различных каналов монетизации. Основной доход формируется за счет интеграции внутриигровых покупок (микротранзакций), а также показов нескольких форматов рекламы: классической баннерной, полноэкранной межстраничной и рекламы с вознаграждением за просмотр. Все входящие финансовые потоки от рекламных сетей и платежных агрегаторов изначально аккумулируются на расчетном счете предприятия. В соответствии с установленными условиями сотрудничества, платформа берет на себя формирование ежемесячной аналитической и финансовой статистики. Выплата причитающейся доли разработчикам осуществляется в течение 45 дней по завершении отчетного периода при условии достижения минимального порога вывода в 5000 рублей. Издатель не берет на себя функции налогового агента, поэтому разработчики самостоятельно несут ответственность за декларирование доходов и уплату соответствующих налогов и сборов.</paragraph>
+ <paragraph index="475" node_type="writer">Организационно-управленческая структура предприятия построена по линейно-функциональному принципу, что обеспечивает гибкость и высокую скорость принятия решений. Как наглядно представлено на рисунке 1, во главе структуры находится основатель (индивидуальный предприниматель), который определяет стратегический вектор развития и принимает ключевые управленческие решения. Оперативное управление повседневной деятельностью предприятия делегировано соучредителю, выступающему в роли ведущего менеджера. В его прямом функциональном подчинении находятся три профильных подразделения: технический отдел, отдел модерации и студия внутренней разработки игр. Технический отдел несет комплексную ответственность за программную и аппаратную инфраструктуру платформы; в его состав входят разработчик серверной части, разработчик клиентской части и инженер по эксплуатации. За первичную проверку поступающих на публикацию игр, их тестирование на соответствие техническим регламентам и правовым нормам отвечает выделенный специалист по модерации. Студия внутренней разработки функционирует по проектной модели, привлекая разработчиков на движке Unity и цифровых художников для создания эксклюзивных проектов, призванных расширять собственную линейку продуктов игровой площадки.</paragraph>
+ <paragraph index="477" node_type="writer">Рисунок 1.1 Организационная структура ИП. Теплов С.Д</paragraph>
+ <paragraph index="479" node_type="writer">Бизнес-процессы проблемной зоны предприятия</paragraph>
+ <paragraph index="480" node_type="writer">В Функционирование платформы Welwise Games связано с процессом публикации и последующего сопровождения веб-игр. Данный процесс охватывает весь жизненный цикл проекта на площадке: от предоставления первых сборок до получения разработчиком аналитики по работающей игре.</paragraph>
+ <paragraph index="481" node_type="writer">В настоящее время бизнес-процесс «Публикация и управление веб-играми», модель «AS-IS», представлена в Приложении 1, характеризуется высокой степенью ручного труда и зависимостью от профильных специалистов платформы. Процесс инициируется при получении входных данных: сборки веб-игры, сборки игрового сервера, метаданных и промо-материалов, а также команд управления сервером. Выполнение регламентируется требованиями к играм, руководством разработчика и правилами непрерывной интеграции и непрерывной доставки.</paragraph>
+ <paragraph index="482" node_type="writer">Декомпозиция текущего бизнес-процесса включает пять основных этапов:</paragraph>
+ <paragraph index="483" node_type="writer">Настроить процессы непрерывной интеграции. Выполняется инженером по эксплуатации, который вручную конфигурирует сценарии сборки для каждой новой игры.</paragraph>
+ <paragraph index="484" node_type="writer">Развернуть предварительные сборки. Осуществляется разработчиком игры с использованием подготовленных инженером сценариев для получения предварительных версий веб-игры и сервера.</paragraph>
+ <paragraph index="485" node_type="writer">Выполнить проверку и модерацию. Осуществляется модератором, а все взаимодействие с разработчиком ведется через мессенджер Telegram.</paragraph>
+ <paragraph index="486" node_type="writer">Перевести в промышленную эксплуатацию. Перенос одобренной игры и запуск игровых серверов вновь требует привлечения инженера по эксплуатации, который принимает команды управления через мессенджер.</paragraph>
+ <paragraph index="487" node_type="writer">Подготовить аналитическую отчетность. Осуществляется менеджером платформы с помощью разрозненной программы для формирования отчетов, после чего сформированный месячный аналитический отчет передается автору игры.</paragraph>
+ <paragraph index="488" node_type="writer">Основной проблемной зоной текущей модели является использование неспециализированных инструментов коммуникации (Telegram), внешних программ генерации отчетов и нерациональное расходование человеческих ресурсов. Роли инженера по эксплуатации и менеджера выступают «узким горлышком» системы. Необходимость их постоянного участия блокирует самостоятельность разработчиков и ограничивает пропускную способность платформы при масштабировании.</paragraph>
+ <paragraph index="489" node_type="writer">Текущий уровень зрелости ИТ-процессов в анализируемой проблемной зоне можно охарактеризовать как низкий. Информационное пространство предприятия сильно фрагментировано и состоит из разрозненных программных продуктов:</paragraph>
+ <paragraph index="490" node_type="writer">Мессенджер Telegram. Используется как основная система коммуникации. Через него разработчики передают модераторам ссылки на игры, получают замечания и отправляют инженерам команды на запуск игровых серверов.</paragraph>
+ <paragraph index="491" node_type="writer">GitHHub и скрипты CI/CD. Применяются инженером по эксплуатации для ручного конфигурирования пайплайнов сборки под каждую новую веб-игру.</paragraph>
+ <paragraph index="492" node_type="writer">Desktop-программа формирования отчетов. Изолированное настольное программное обеспечение, используемое менеджером для ежемесячной ручной выгрузки статистики из базы данных и отправки ее разработчикам.</paragraph>
+ <paragraph index="493" node_type="writer">Docker и Nginx. Используются для хостинга серверных экземпляров игр и раздачи статического контента игр.</paragraph>
+ <paragraph index="494" node_type="writer">Для устранения выявленных недостатков спроектирована целевая модель бизнес-процесса, модель «TO-BE»,  представлена в приложении 2, в которой центральным механизмом исполнения наряду с модератором и разработчиком становится разрабатываемая автоматизированная платформа.</paragraph>
+ <paragraph index="495" node_type="writer">Целевой процесс оптимизирован и сокращен до четырех этапов, исключающих ручное вмешательство в рутинные операции:</paragraph>
+ <paragraph index="496" node_type="writer">Подготовка тестового окружения. Разработчик самостоятельно загружает артефакты, а разрабатываемая платформа автоматически разворачивает тестовые версии веб-игры и сервера без участия инженера.</paragraph>
+ <paragraph index="497" node_type="writer">Модерировать игровой проект. Модератор выносит вердикт непосредственно в интерфейсе платформы, опираясь на развернутую тестовую версию.</paragraph>
+ <paragraph index="498" node_type="writer">Управлять промышленной эксплуатацией. Разработчик получает возможность напрямую передавать команды управления сервером через платформу, автоматически переводя проект в статус доступного игрового сервера.</paragraph>
+ <paragraph index="499" node_type="writer">Мониторинг и генерация отчетности. Платформа в автоматическом режиме собирает статусы проектов и журналы серверов, генерируя аналитическую отчетность для разработчика.</paragraph>
+ <paragraph index="500" node_type="writer">Таким образом, внедрение автоматизированной системы позволяет исключить из бизнес-процесса мессенджеры, стороннее ПО, а также роли инженера по эксплуатации и менеджера. Их функции полностью делегируются программным алгоритмам разрабатываемой платформы, что устраняет выявленные проблемные зоны.</paragraph>
+ <paragraph index="501" node_type="writer">Для формализации функционального контекста системы разработана диаграмма вариантов использования, представленная в приложении 3. Модель определяет роли пользователей и их права доступа к подсистемам:</paragraph>
+ <paragraph index="502" node_type="writer">Разработчик игры — основной пользователь, имеющий доступ к управлению проектами, взаимодействию во встроенномчате, настройке политик оркестрации и получению аналитики.</paragraph>
+ <paragraph index="503" node_type="writer">Администратор — управляет созданием учетных записей модераторов.</paragraph>
+ <paragraph index="504" node_type="writer">Модератор — сотрудник платформы, работающий с очередью запросов. Выполняет проверку развернутых тестовых версий, выносит вердикты в встроенном чате.</paragraph>
+ <paragraph index="505" node_type="writer">Клиент игры — внешняя сущность, взаимодействующая с системой исключительно для получения адреса доступного игрового сервера.</paragraph>
+ <paragraph index="506" node_type="writer">Для формализации структуры хранимых данных и связей между ними разработана инфологическая модель предметной области, представленная в приложении 4. Модель охватывает ключевые сущности платформы: учетные записи и сессии пользователей, игровые проекты и их метаданные, клиентские и серверные сборки, политики оркестрации, вычислительные узлы и разворачиваемые на них экземпляры серверов, а также сущности сквозной коммуникации (чаты и сообщения) и ежедневную статистику проектов.</paragraph>
+ <paragraph index="507" node_type="writer">Ключевые связи модели отражают жизненный цикл игрового проекта: каждый проект однозначно связан с единственным набором метаданных, политикой оркестрации и сквозным чатом, при этом может иметь несколько версий клиентских и серверных сборок, а каждый развернутый на узле экземпляр сервера соответствует конкретной серверной сборке. Такая структура данных обеспечивает поддержку процессов модерации, автоматизированного развертывания и сбора аналитики по каждому проекту.</paragraph>
+ <paragraph index="508" node_type="writer">Обзор аналогичных решений</paragraph>
+ <paragraph index="509" node_type="writer">Для обоснования необходимости разработки собственной автоматизированной системы был проведен анализ существующего рынка платформ дистрибуции веб-игр и порталов для разработчиков (Developer Consoles). Рынок предлагает различные подходы к организации рабочего пространства авторов, однако функциональность существующих систем имеет ряд ограничений в контексте решаемых задач.</paragraph>
+ <paragraph index="510" node_type="writer">Ближайшим функциональным аналогом разрабатываемой системы является CrazyGames Developer Portal. Это платформа, позволяющая авторам публиковать и монетизировать HTML5-игры по модели самообслуживания [1]. Ключевые особенности системы:</paragraph>
+ <paragraph index="511" node_type="writer">двухэтапная стратегия развертывания (тестовый запуск на ограниченную аудиторию и полноценный релиз);</paragraph>
+ <paragraph index="512" node_type="writer">расширенная панель аналитики с отслеживанием времени сессий и конверсии;</paragraph>
+ <paragraph index="513" node_type="writer">единый SDK для интеграции внутриигровой рекламы и мультиплеера.</paragraph>
+ <paragraph index="514" node_type="writer">Несмотря на широкие возможности, процесс публикации имеет недостатки: коммуникация с модераторами ведется через внешние каналы связи (отсутствует встроенный чат), а также не предусмотрены инструменты для загрузки и оркестрации серверной части многопользовательских игр.</paragraph>
+ <paragraph index="515" node_type="writer">Платформа GameDistribution представляет собой крупную B2B-сеть дистрибуции веб-игр. Процесс работы выстроен вокруг однократной загрузки игры для последующего распространения по партнерским сайтам [2]. Ключевые особенности системы:</paragraph>
+ <paragraph index="516" node_type="writer">отлаженный механизм загрузки ZIP-архивов;</paragraph>
+ <paragraph index="517" node_type="writer">готовая модель монетизации с поддержкой различных рекламных форматов;</paragraph>
+ <paragraph index="518" node_type="writer">формализованный процесс проверки качества (QA) командой портала.</paragraph>
+ <paragraph index="519" node_type="writer">Главным недостатком является полная закрытость инфраструктуры. Кроме того, обратная связь по результатам модерации предоставляется исключительно по электронной почте, а хостинг собственных игровых серверов не поддерживается.</paragraph>
+ <paragraph index="520" node_type="writer">Платформа Poki for Developers выделяется глубоким подходом к аналитике и тестированию игр [3]. Ключевые особенности системы:</paragraph>
+ <paragraph index="521" node_type="writer">мощная аналитическая панель, отображающая ежедневную активную аудиторию (DAU), удержание и финансовые показатели;</paragraph>
+ <paragraph index="522" node_type="writer">предоставление бесплатных инструментов разработчика, включая библиотеки для сетевого взаимодействия;</paragraph>
+ <paragraph index="523" node_type="writer">экспертная поддержка на этапе тестирования.</paragraph>
+ <paragraph index="524" node_type="writer"> Однако платформа функционирует по закрытой модели: доступ предоставляется только по предварительно одобренным заявкам. Система требует эксклюзивности размещения, что делает ее неприменимой в качестве массового открытого инструмента. Коммуникация с командой также вынесена за пределы портала.</paragraph>
+ <paragraph index="525" node_type="writer">В сегменте инди-публикации стандартом является платформа itch.io. Ключевые особенности системы:</paragraph>
+ <paragraph index="526" node_type="writer">полная свобода управления страницами проектов и загружаемыми файлами;</paragraph>
+ <paragraph index="527" node_type="writer">возможность частичного доступа к исходному коду пользовательских интерфейсов;</paragraph>
+ <paragraph index="528" node_type="writer">отсутствие строгих барьеров для входа начинающих разработчиков.</paragraph>
+ <paragraph index="529" node_type="writer">Основной проблемой платформы является отсутствие B2B-модерации с утверждением вердиктов администрацией. Встроенная аналитика ограничивается базовыми просмотрами и скачиваниями, игнорируя метрики вовлеченности и рекламной монетизации. Поддержка управления серверными экземплярами полностью отсутствует [4].</paragraph>
+ <paragraph index="530" node_type="writer">В качестве альтернативного подхода была рассмотрена система CloudArcade — специализированная система управления контентом (CMS) для создания игровых порталов. Ключевые особенности системы:</paragraph>
+ <paragraph index="531" node_type="writer">полностью открытый исходный код, допускающий глубокую кастомизацию;</paragraph>
+ <paragraph index="532" node_type="writer">возможность развертывания на собственных серверах предприятия;</paragraph>
+ <paragraph index="533" node_type="writer">легкая расширяемая архитектура на базе плагинов.</paragraph>
+ <paragraph index="534" node_type="writer"> Существенным ограничением является целевая аудитория системы: она спроектирована для администраторов порталов, а не для предоставления консоли внешним разработчикам. Процесс публикации осуществляется администратором вручную, встроенный чат и расширенная статистика отсутствуют [5].</paragraph>
+ <paragraph index="535" node_type="writer">Для наглядности результаты исследования ключевых функций сведены в таблицу 1.</paragraph>
+ <paragraph index="536" node_type="writer">Таблица 1.1. Сравнение функциональных возможностей аналогичных решений</paragraph>
+ <object index="537" name="Таблица6" object_type="table"/>
+ <paragraph index="539" node_type="writer" parent_index="537">№</paragraph>
+ <paragraph index="542" node_type="writer" parent_index="537">Функция</paragraph>
+ <paragraph index="545" node_type="writer" parent_index="537">Game Distribution</paragraph>
+ <paragraph index="548" node_type="writer" parent_index="537">Crazy Games</paragraph>
+ <paragraph index="551" node_type="writer" parent_index="537">Poki for Devs</paragraph>
+ <paragraph index="554" node_type="writer" parent_index="537">itch.io</paragraph>
+ <paragraph index="557" node_type="writer" parent_index="537">Cloud Arcade</paragraph>
+ <paragraph index="560" node_type="writer" parent_index="537">1</paragraph>
+ <paragraph index="563" node_type="writer" parent_index="537">Самостоятельная публикация</paragraph>
+ <paragraph index="566" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="569" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="572" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="575" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="578" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="581" node_type="writer" parent_index="537">2</paragraph>
+ <paragraph index="584" node_type="writer" parent_index="537">Многоэтапная модерация проектов</paragraph>
+ <paragraph index="587" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="590" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="593" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="596" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="599" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="602" node_type="writer" parent_index="537">3</paragraph>
+ <paragraph index="605" node_type="writer" parent_index="537">Встроенный сквозной чат с модератором </paragraph>
+ <paragraph index="608" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="611" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="614" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="617" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="620" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="623" node_type="writer" parent_index="537">4</paragraph>
+ <paragraph index="626" node_type="writer" parent_index="537">Сбор показателей монетезации</paragraph>
+ <paragraph index="629" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="632" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="635" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="638" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="641" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="644" node_type="writer" parent_index="537">5</paragraph>
+ <paragraph index="647" node_type="writer" parent_index="537">Отслеживание игровых метрик</paragraph>
+ <paragraph index="650" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="653" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="656" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="659" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="662" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="665" node_type="writer" parent_index="537">6</paragraph>
+ <paragraph index="668" node_type="writer" parent_index="537">Управление игровыми серверами </paragraph>
+ <paragraph index="671" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="674" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="677" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="680" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="683" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="686" node_type="writer" parent_index="537">7</paragraph>
+ <paragraph index="689" node_type="writer" parent_index="537">Развертывание на собственной инфраструктуре</paragraph>
+ <paragraph index="692" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="695" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="698" node_type="writer" parent_index="537">-</paragraph>
+ <paragraph index="701" node_type="writer" parent_index="537">+/-</paragraph>
+ <paragraph index="704" node_type="writer" parent_index="537">+</paragraph>
+ <paragraph index="707" node_type="writer">Проведенный анализ показывает, что ни одно из существующих на рынке решений не удовлетворяет заявленным требованиям в полной мере. Основным уникальным преимуществом разрабатываемой системы является, прозрачной модерации и технической оркестрации инфраструктуры игровых серверов в рамках единого рабочего пространства. Это обосновывает необходимость отказа от использования готовых продуктов и перехода к проектированию собственной платформы.</paragraph>
+ <paragraph index="708" node_type="writer">Цель и задачи</paragraph>
+ <paragraph index="709" node_type="writer">Цель разработки и внедрения автоматизированной системы «Центр разработчиков» — повышение эффективности процесса публикации и сопровождения веб-игр на игровой платформе Welwise Games за счет автоматизации рутинных операций и создания единого рабочего пространства для разработчиков.</paragraph>
+ <paragraph index="710" node_type="writer">Достижение общей цели обеспечивается положительной динамикой следующих ключевых показателей:</paragraph>
+ <paragraph index="711" node_type="writer">Производственно-экономические: сокращение трудозатрат и времени на выполнение операций по публикации игр, а также уменьшение затрат на административно-управленческий и инженерный аппарат за счет исключения ручного обслуживания каждого проекта.</paragraph>
+ <paragraph index="712" node_type="writer">Технологические: оптимизация схем бизнес-процессов, внедрение новых технологий автоматизированного развертывания (CI/CD) и самостоятельной оркестрации серверной инфраструктуры многопользовательских игр.</paragraph>
+ <paragraph index="713" node_type="writer">Организационные и другие: повышение качества и оперативности предоставления аналитической информации, улучшение уровня обслуживания клиентов (разработчиков) платформы, а также повышение прозрачности процессов за счет централизованной коммуникации.</paragraph>
+ <paragraph index="714" node_type="writer">Критериями оценки успешности достижения целей выступают следующие измеримые показатели:</paragraph>
+ <paragraph index="715" node_type="writer">Сокращение времени подготовки черновика и развертывания игры в dev-окружении с текущих 9 дней до 1–2 часов.</paragraph>
+ <paragraph index="716" node_type="writer">Уменьшение длительности этапа тестирования и модерации с 5 дней до 1–2 дней благодаря внедрению сквозного чата.</paragraph>
+ <paragraph index="717" node_type="writer">Снижение до нуля количества ручных обращений разработчиков к инженерам по эксплуатации для выполнения базовых задач управления серверами.</paragraph>
+ <paragraph index="718" node_type="writer">Обеспечение посуточного доступа к аналитической отчетности взамен ручного формирования отчетов менеджером один раз в месяц.</paragraph>
+ <paragraph index="719" node_type="writer">Для достижения поставленной цели в рамках работы необходимо решить следующие задачи:</paragraph>
+ <paragraph index="720" node_type="writer">Провести анализ предметной области и обследование существующих бизнес-процессов платформы Welwise Games.</paragraph>
+ <paragraph index="721" node_type="writer">Осуществить постановку технического задания на разработку автоматизированной системы.</paragraph>
+ <paragraph index="722" node_type="writer">Создать проектную документацию, включая проектирование программной архитектуры и разработку схемы базы данных.</paragraph>
+ <paragraph index="723" node_type="writer">Выполнить разработку программного продукта, включая подсистемы управления проектами, развертывания, модерации, оркестрации серверов и аналитики.</paragraph>
+ <paragraph index="724" node_type="writer">Провести предварительные испытания, тестирование и отладку конечного продукта.</paragraph>
+ <paragraph index="725" node_type="writer">Выполнить развертывание автоматизированной системы на серверах заказчика и провести опытную эксплуатацию.</paragraph>
+ <paragraph index="726" node_type="writer">ЗАКЛЮЧЕНИЕ</paragraph>
+ <paragraph index="727" node_type="writer">В ходе выполнения работы был проведен комплексный анализ деятельности игровой платформы Welwise Games и исследованы существующие бизнес-процессы публикации веб-игр. Выявлено, что применяемая ручная модель управления проектами обладает низкой масштабируемостью и требует постоянного участия инженеров по эксплуатации, что сдерживает развитие площадки и увеличивает время вывода новых продуктов на рынок.  </paragraph>
+ <paragraph index="728" node_type="writer">Для решения выявленных проблем было разработано техническое задание на создание автоматизированной системы «Центр разработчиков» и спроектирована целевая модель бизнес-процессов. Внедрение спроектированного программного комплекса позволит радикально сократить время развертывания новых игр с 9 дней до 1–2 часов, оптимизировать модерацию за счет встроенного сквозного чата и предоставить авторам автономный инструмент для самостоятельного управления серверной инфраструктурой. </paragraph>
+ <paragraph index="730" node_type="writer">СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ</paragraph>
+ <paragraph index="731" node_type="writer">CrazyGames Developer Portal – [Электронный ресурс] режим доступа: https://developer.crazygames.com/ (09.07.2026). </paragraph>
+ <paragraph index="732" node_type="writer">GameDistribution – [Электронный ресурс] режим доступа: https://gamedistribution.com/ (09.07.2026). </paragraph>
+ <paragraph index="733" node_type="writer">Poki for Developers – [Электронный ресурс] режим доступа: https://developers.poki.com/ (09.07.2026). </paragraph>
+ <paragraph index="734" node_type="writer">itch.io – [Электронный ресурс] режим доступа: https://itch.io/developers (09.07.2026). </paragraph>
+ <paragraph index="735" node_type="writer">CloudArcade – HTML5 / Web Game Portal CMS – [Электронный ресурс] режим доступа: https://cloudarcade.net/ (09.07.2026). </paragraph>
+ <paragraph index="736" node_type="writer">Отчет The 2026 State Of Web Gaming зафиксировал рост популярности браузерных игр | Playground.ru – [Электронный ресурс] режим доступа: https://www.playground.ru/misc/news/otchet_the_2026_state_of_web_gaming_zafiksiroval_rost_populyarnosti_brauzernyh_igr-1855060 (09.07.2026).</paragraph>
+ <paragraph index="738" node_type="writer">Приложение 1</paragraph>
+ <paragraph index="739" node_type="writer">Модель AS-IS</paragraph>
+ <paragraph index="741" node_type="writer">Рисунок П.1. Диаграмма декомпозиции IDEF0 </paragraph>
+ <paragraph index="742" node_type="writer">Приложение 2</paragraph>
+ <paragraph index="743" node_type="writer">Диаграмма TO-BE</paragraph>
+ <paragraph index="745" node_type="writer">Рисунок П.2 Диаграмма декомпозиции IDEF0 </paragraph>
+ <paragraph index="746" node_type="writer">Приложение 3</paragraph>
+ <paragraph index="747" node_type="writer">Диаграмма вариантов использования</paragraph>
+ <paragraph index="748" node_type="writer">Рисунок П.3 Диаграмма вариантов использования UML</paragraph>
+ <paragraph index="750" node_type="writer">Приложение 4</paragraph>
+ <paragraph index="751" node_type="writer">Инфологическая модель</paragraph>
+ <paragraph index="752" node_type="writer">Рисунок П.4. Диаграмма сущность-связь UML</paragraph>
+</indexing>
