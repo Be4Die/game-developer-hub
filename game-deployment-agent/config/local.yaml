@@ -1,0 +1,9 @@
+server:
+  port: 50055
+  api_key: "dev-deployment-agent-key"
+
+deployment:
+  games_base_path: "./data/games"
+  url_prefix: "/games"
+  max_unpacked_size_mb: 500
+  max_files_count: 50000
