@@ -95,6 +95,28 @@ func InitSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			deployed_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 		);
 		CREATE INDEX IF NOT EXISTS idx_deployments_project ON deployments(project_id, deployed_at DESC);
+
+		-- ─── Автоматические миграции для существующих таблиц ──────────
+		ALTER TABLE project_builds ADD COLUMN IF NOT EXISTS is_unpacked BOOLEAN NOT NULL DEFAULT FALSE;
+		ALTER TABLE project_builds ADD COLUMN IF NOT EXISTS unpacked_path TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_builds ADD COLUMN IF NOT EXISTS file_size BIGINT NOT NULL DEFAULT 0;
+
+		ALTER TABLE project_drafts ADD COLUMN IF NOT EXISTS active_build_version TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_drafts ADD COLUMN IF NOT EXISTS dev_url TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_drafts ADD COLUMN IF NOT EXISTS icon_path TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_drafts ADD COLUMN IF NOT EXISTS cover_path TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_drafts ADD COLUMN IF NOT EXISTS video_path TEXT NOT NULL DEFAULT '';
+
+		ALTER TABLE moderation_tickets ADD COLUMN IF NOT EXISTS active_build_version TEXT NOT NULL DEFAULT '';
+		ALTER TABLE moderation_tickets ADD COLUMN IF NOT EXISTS dev_url TEXT NOT NULL DEFAULT '';
+		ALTER TABLE moderation_tickets ADD COLUMN IF NOT EXISTS game_title TEXT NOT NULL DEFAULT '';
+		ALTER TABLE moderation_tickets ADD COLUMN IF NOT EXISTS game_description TEXT NOT NULL DEFAULT '';
+		ALTER TABLE moderation_tickets ADD COLUMN IF NOT EXISTS snapshot_meta JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+		ALTER TABLE project_releases ADD COLUMN IF NOT EXISTS prod_url TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_releases ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+		ALTER TABLE project_releases ADD COLUMN IF NOT EXISTS published_by TEXT NOT NULL DEFAULT '';
+		ALTER TABLE project_releases ADD COLUMN IF NOT EXISTS unpublish_at TIMESTAMP WITH TIME ZONE;
 	`
 	_, err := pool.Exec(ctx, schema)
 	return err
