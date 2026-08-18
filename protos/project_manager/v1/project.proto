@@ -5,7 +5,7 @@ option go_package = "github.com/Be4Die/game-developer-hub/protos/project_manager
 
 import "google/api/annotations.proto";
 
-// Project статус проекта.
+// ProjectStatus статус жизненного цикла проекта.
 enum ProjectStatus {
   PROJECT_STATUS_UNSPECIFIED = 0;
   PROJECT_STATUS_DRAFT = 1;
@@ -14,7 +14,32 @@ enum ProjectStatus {
   PROJECT_STATUS_REJECTED = 4;
 }
 
-// Project сообщение проекта.
+// ModerationStatus статус тикета модерации.
+enum ModerationStatus {
+  MODERATION_STATUS_UNSPECIFIED = 0;
+  MODERATION_STATUS_PENDING = 1;
+  MODERATION_STATUS_APPROVED = 2;
+  MODERATION_STATUS_REJECTED = 3;
+}
+
+// DeploymentEnvironment целевое окружение развёртывания.
+enum DeploymentEnvironment {
+  DEPLOYMENT_ENV_UNSPECIFIED = 0;
+  DEPLOYMENT_ENV_DEV = 1;
+  DEPLOYMENT_ENV_PROD = 2;
+}
+
+// DeploymentStatus статус выполнения развёртывания.
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_PENDING = 1;
+  DEPLOYMENT_STATUS_SUCCESS = 2;
+  DEPLOYMENT_STATUS_FAILED = 3;
+}
+
+// ─── Доменные сообщения ───────────────────────────────────────
+
+// Project сущность игрового проекта.
 message Project {
   int64 id = 1;
   string owner_id = 2;
@@ -28,18 +53,83 @@ message Project {
   string cover_path = 10;
   string video_path = 11;
   string active_build_version = 12;
-  string created_at = 13;
-  string updated_at = 14;
+  string dev_url = 13;
+  string prod_url = 14;
+  string created_at = 15;
+  string updated_at = 16;
+  ProjectDraft draft = 17;
+  ProjectRelease release = 18;
 }
 
-// ProjectBuild сообщение билда.
+// ProjectDraft рабочее состояние черновика проекта.
+message ProjectDraft {
+  int64 project_id = 1;
+  string title_ru = 2;
+  string title_en = 3;
+  string seo_ru = 4;
+  string seo_en = 5;
+  string about = 6;
+  string icon_path = 7;
+  string cover_path = 8;
+  string video_path = 9;
+  string active_build_version = 10;
+  string dev_url = 11;
+  string updated_at = 12;
+}
+
+// ProjectRelease зафиксированный опубликованный релиз.
+message ProjectRelease {
+  int64 id = 1;
+  int64 project_id = 2;
+  string version = 3;
+  string title_ru = 4;
+  string title_en = 5;
+  string seo_ru = 6;
+  string seo_en = 7;
+  string about = 8;
+  string icon_path = 9;
+  string cover_path = 10;
+  string video_path = 11;
+  string prod_url = 12;
+  string published_at = 13;
+}
+
+// ProjectBuild клиентский билд веб-игры.
 message ProjectBuild {
   int64 id = 1;
   int64 project_id = 2;
   string version = 3;
   string file_path = 4;
   int64 file_size = 5;
-  string created_at = 6;
+  bool is_unpacked = 6;
+  string created_at = 7;
+}
+
+// ModerationTicket тикет заявки на проверку модератором.
+message ModerationTicket {
+  int64 id = 1;
+  int64 project_id = 2;
+  string owner_id = 3;
+  string game_title = 4;
+  string game_description = 5;
+  ModerationStatus status = 6;
+  string rejection_reason = 7;
+  string moderator_id = 8;
+  string dev_url = 9;
+  string active_build_version = 10;
+  string submitted_at = 11;
+  string resolved_at = 12;
+}
+
+// DeploymentRecord запись аудита развертывания.
+message DeploymentRecord {
+  int64 id = 1;
+  int64 project_id = 2;
+  DeploymentEnvironment environment = 3;
+  string version = 4;
+  DeploymentStatus status = 5;
+  string error_message = 6;
+  string deployed_at = 7;
 }
 
 // ─── Create ───────────────────────────────────────────
@@ -95,15 +185,29 @@ message ProjectDeleteResponse {
   bool success = 1;
 }
 
-// ─── Upload Build ─────────────────────────────────────
+// ─── Upload Build (Unary Fallback & Streaming) ────────
 message ProjectUploadBuildRequest {
   int64 project_id = 1;
   string version = 2;
   bytes data = 3;
 }
 
+message ProjectUploadBuildStreamRequest {
+  oneof payload {
+    BuildUploadStreamMetadata metadata = 1;
+    bytes chunk = 2; // Рекомендуемый размер чанка: 64 КБ
+  }
+}
+
+message BuildUploadStreamMetadata {
+  int64 project_id = 1;
+  string version = 2;
+}
+
 message ProjectUploadBuildResponse {
   bool success = 1;
+  ProjectBuild build = 2;
+  string dev_url = 3;
 }
 
 // ─── List Builds ──────────────────────────────────────
@@ -132,11 +236,95 @@ message ProjectUploadMediaRequest {
   bytes data = 3;
 }
 
+message ProjectUploadMediaStreamRequest {
+  oneof payload {
+    MediaUploadStreamMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+message MediaUploadStreamMetadata {
+  int64 project_id = 1;
+  string media_type = 2;
+}
+
 message ProjectUploadMediaResponse {
+  bool success = 1;
+  string file_path = 2;
+}
+
+// ─── Moderation & Release Requests ────────────────────
+
+message SubmitForModerationRequest {
+  int64 project_id = 1;
+}
+
+message SubmitForModerationResponse {
+  bool success = 1;
+  ModerationTicket ticket = 2;
+}
+
+message ListModerationTicketsRequest {
+  ModerationStatus status = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListModerationTicketsResponse {
+  repeated ModerationTicket tickets = 1;
+}
+
+message GetModerationTicketRequest {
+  int64 ticket_id = 1;
+}
+
+message GetModerationTicketByProjectRequest {
+  int64 project_id = 1;
+}
+
+message GetModerationTicketResponse {
+  ModerationTicket ticket = 1;
+  Project project = 2;
+}
+
+message ApproveModerationRequest {
+  int64 project_id = 1;
+  string comment = 2;
+}
+
+message ApproveModerationResponse {
+  bool success = 1;
+  ProjectRelease release = 2;
+}
+
+message RejectModerationRequest {
+  int64 project_id = 1;
+  string reason = 2;
+}
+
+message RejectModerationResponse {
+  bool success = 1;
+  ModerationTicket ticket = 2;
+}
+
+message ProjectGetPublishedRequest {
+  int64 id = 1;
+}
+
+message ProjectGetPublishedResponse {
+  ProjectRelease release = 1;
+}
+
+message ProjectUnpublishRequest {
+  int64 id = 1;
+}
+
+message ProjectUnpublishResponse {
   bool success = 1;
 }
 
-// ─── Service ──────────────────────────────────────────
+// ─── Services ─────────────────────────────────────────
+
 service ProjectService {
   rpc Create(ProjectCreateRequest) returns (ProjectCreateResponse) {
     option (google.api.http) = { post: "/api/v1/projects", body: "*" };
@@ -154,7 +342,10 @@ service ProjectService {
     option (google.api.http) = { delete: "/api/v1/projects/{id}" };
   }
 
+  // Загрузка сборок
   rpc UploadBuild(ProjectUploadBuildRequest) returns (ProjectUploadBuildResponse);
+  rpc UploadBuildStream(stream ProjectUploadBuildStreamRequest) returns (ProjectUploadBuildResponse);
+
   rpc ListBuilds(ProjectListBuildsRequest) returns (ProjectListBuildsResponse) {
     option (google.api.http) = { get: "/api/v1/projects/{project_id}/builds" };
   }
@@ -162,5 +353,36 @@ service ProjectService {
     option (google.api.http) = { delete: "/api/v1/projects/{project_id}/builds/{version}" };
   }
 
+  // Загрузка медиа
   rpc UploadMedia(ProjectUploadMediaRequest) returns (ProjectUploadMediaResponse);
+  rpc UploadMediaStream(stream ProjectUploadMediaStreamRequest) returns (ProjectUploadMediaResponse);
+
+  // Модерация и публикация
+  rpc SubmitForModeration(SubmitForModerationRequest) returns (SubmitForModerationResponse) {
+    option (google.api.http) = { post: "/api/v1/projects/{project_id}/moderation/submit", body: "*" };
+  }
+  rpc GetPublished(ProjectGetPublishedRequest) returns (ProjectGetPublishedResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{id}/published" };
+  }
+  rpc Unpublish(ProjectUnpublishRequest) returns (ProjectUnpublishResponse) {
+    option (google.api.http) = { post: "/api/v1/projects/{id}/unpublish", body: "*" };
+  }
+}
+
+service ModerationService {
+  rpc ListTickets(ListModerationTicketsRequest) returns (ListModerationTicketsResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/tickets" };
+  }
+  rpc GetTicket(GetModerationTicketRequest) returns (GetModerationTicketResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/tickets/{ticket_id}" };
+  }
+  rpc GetTicketByProject(GetModerationTicketByProjectRequest) returns (GetModerationTicketResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/projects/{project_id}" };
+  }
+  rpc Approve(ApproveModerationRequest) returns (ApproveModerationResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/approve", body: "*" };
+  }
+  rpc Reject(RejectModerationRequest) returns (RejectModerationResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/reject", body: "*" };
+  }
 }

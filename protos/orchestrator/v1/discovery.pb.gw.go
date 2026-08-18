@@ -43,9 +43,6 @@ func request_DiscoveryService_DiscoveryServiceDiscover_0(ctx context.Context, ma
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["game_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "game_id")
@@ -59,6 +56,9 @@ func request_DiscoveryService_DiscoveryServiceDiscover_0(ctx context.Context, ma
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DiscoveryService_DiscoveryServiceDiscover_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.DiscoveryServiceDiscover(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err

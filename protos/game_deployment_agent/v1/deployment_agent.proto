@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package game_deployment_agent.v1;
+
+// WebGameDeploymentService предоставляет API удалённого развертывания веб-сборок игр на целевом узле с Nginx.
+service WebGameDeploymentService {
+  // DeployDevStream принимает потоковый архив, валидирует, распаковывает в versions/{version} и переключает dev symlink.
+  rpc DeployDevStream(stream DeployDevStreamRequest) returns (DeployResponse);
+
+  // DeployProd переключает боевой symlink prod на указанную версию.
+  rpc DeployProd(DeployProdRequest) returns (DeployResponse);
+
+  // UndeployProd снимает игру с публикации, удаляя symlink prod.
+  rpc UndeployProd(UndeployProdRequest) returns (UndeployResponse);
+
+  // DeleteVersion удаляет распакованную версию сборки (Garbage Collection).
+  rpc DeleteVersion(DeleteVersionRequest) returns (DeleteVersionResponse);
+
+  // DeleteProject удаляет все развернутые версии и симлинки проекта.
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+
+  // Health проверяет состояние здоровья агента и доступное дисковое пространство.
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+// DeployDevStreamRequest содержит либо метаданные деплоя первым сообщением, либо чанки архива (64 КБ).
+message DeployDevStreamRequest {
+  oneof payload {
+    DeployMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+// DeployMetadata содержит идентификаторы проекта и версии для развертывания.
+message DeployMetadata {
+  int64 project_id = 1;
+  string version = 2;
+}
+
+// DeployResponse возвращает результат развертывания со ссылкой на доступ к игре.
+message DeployResponse {
+  bool success = 1;
+  string url = 2;
+  string unpacked_path = 3;
+}
+
+// DeployProdRequest запрос на публикацию конкретной версии в прод-окружение.
+message DeployProdRequest {
+  int64 project_id = 1;
+  string version = 2;
+}
+
+// UndeployProdRequest запрос на снятие с публикации.
+message UndeployProdRequest {
+  int64 project_id = 1;
+}
+
+// UndeployResponse результат снятия с публикации.
+message UndeployResponse {
+  bool success = 1;
+}
+
+// DeleteVersionRequest запрос на удаление распакованной версии.
+message DeleteVersionRequest {
+  int64 project_id = 1;
+  string version = 2;
+}
+
+// DeleteVersionResponse результат удаления версии.
+message DeleteVersionResponse {
+  bool success = 1;
+}
+
+// DeleteProjectRequest запрос на удаление всех файлов проекта.
+message DeleteProjectRequest {
+  int64 project_id = 1;
+}
+
+// DeleteProjectResponse результат удаления проекта.
+message DeleteProjectResponse {
+  bool success = 1;
+}
+
+// HealthRequest запрос проверки состояния агента.
+message HealthRequest {}
+
+// HealthResponse ответ о состоянии здоровья агента.
+message HealthResponse {
+  bool healthy = 1;
+  string version = 2;
+  uint64 free_disk_bytes = 3;
+}
