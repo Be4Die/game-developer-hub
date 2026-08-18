@@ -3,8 +3,18 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
+)
+
+const (
+	// EnvLocal — локальная разработка.
+	EnvLocal = "local"
+	// EnvDev — staging/development окружение.
+	EnvDev = "dev"
+	// EnvProd — production окружение.
+	EnvProd = "prod"
 )
 
 // Config структура всей конфигурации сервиса.
@@ -69,8 +79,12 @@ type JWTConfig struct {
 	Issuer string `yaml:"issuer" env:"JWT_ISSUER" env-default:"gdh-sso"`
 }
 
-// MustLoad загружает конфигурацию из файла, указанного в CONFIG_PATH.
-func MustLoad(path string) *Config {
+// MustLoad загружает конфигурацию из файла (путь из CONFIG_PATH или config/local.yaml).
+func MustLoad() *Config {
+	path := os.Getenv("CONFIG_PATH")
+	if path == "" {
+		path = "config/local.yaml"
+	}
 	var cfg Config
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("failed to load config: " + err.Error())

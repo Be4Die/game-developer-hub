@@ -1,3 +1,4 @@
+// Package config предоставляет конфигурацию сервиса агента развертывания.
 package config
 
 import (
@@ -7,8 +8,18 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+const (
+	// EnvLocal — локальная разработка.
+	EnvLocal = "local"
+	// EnvDev — staging/development окружение.
+	EnvDev = "dev"
+	// EnvProd — production окружение.
+	EnvProd = "prod"
+)
+
 // Config описывает полную конфигурацию сервиса агента развертывания веб-игр.
 type Config struct {
+	Env        string           `yaml:"env" env:"ENV" env-default:"local"`
 	Server     ServerConfig     `yaml:"server"`
 	Deployment DeploymentConfig `yaml:"deployment"`
 }
@@ -27,21 +38,21 @@ type DeploymentConfig struct {
 	MaxFilesCount     int    `yaml:"max_files_count" env:"MAX_FILES_COUNT" env-default:"50000"`
 }
 
-// Load загружает конфигурацию из YAML файла по указанному пути или переменной CONFIG_PATH.
-func Load() (*Config, error) {
+// MustLoad загружает конфигурацию из файла или CONFIG_PATH.
+func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		configPath = "config/local.yaml"
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("config file does not exist: %s", configPath)
+		panic(fmt.Sprintf("config file does not exist: %s", configPath))
 	}
 
 	var cfg Config
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		return nil, fmt.Errorf("read config %s: %w", configPath, err)
+		panic(fmt.Sprintf("read config %s: %v", configPath, err))
 	}
 
-	return &cfg, nil
+	return &cfg
 }

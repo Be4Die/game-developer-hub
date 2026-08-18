@@ -1,13 +1,11 @@
+// Package app координирует инициализацию всех компонентов сервиса game-deployment-agent.
 package app
 
 import (
-	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 
 	"github.com/Be4Die/game-developer-hub/game-deployment-agent/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-deployment-agent/internal/service"
@@ -18,12 +16,14 @@ import (
 
 // App представляет запущенный микросервис game-deployment-agent.
 type App struct {
+	log        *slog.Logger
 	cfg        *config.Config
 	grpcServer *grpc.Server
+	once       sync.Once
 }
 
 // New инициализирует сервисы и gRPC сервер агента развертывания.
-func New(cfg *config.Config) (*App, error) {
+func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	deploySvc := service.NewDeploymentService(
 		cfg.Deployment.GamesBasePath,
 		cfg.Deployment.URLPrefix,
@@ -41,41 +41,40 @@ func New(cfg *config.Config) (*App, error) {
 	handler := transGrpc.NewDeploymentHandler(deploySvc, "1.0.0")
 	pb.RegisterWebGameDeploymentServiceServer(grpcServer, handler)
 
+	log.Info("all components initialized")
+
 	return &App{
+		log:        log,
 		cfg:        cfg,
 		grpcServer: grpcServer,
 	}, nil
 }
 
-// Run запускает gRPC сервер агента и слушает системные сигналы для graceful shutdown.
-func (a *App) Run(ctx context.Context) error {
+// MustRun запускает gRPC сервер агента. Блокирует вызов.
+func (a *App) MustRun() {
 	addr := fmt.Sprintf(":%d", a.cfg.Server.Port)
+	a.log.Info("gRPC server listening",
+		slog.String("addr", addr),
+		slog.String("games_base_path", a.cfg.Deployment.GamesBasePath),
+	)
+
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		return fmt.Errorf("listen %s: %w", addr, err)
+		a.log.Error("failed to listen", slog.String("error", err.Error()))
+		panic(err)
 	}
 
-	errChan := make(chan error, 1)
-	go func() {
-		log.Printf("[game-deployment-agent] gRPC server listening on %s (base path: %s)", addr, a.cfg.Deployment.GamesBasePath)
-		if err := a.grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
-			errChan <- fmt.Errorf("grpc serve: %w", err)
-		}
-	}()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	select {
-	case <-ctx.Done():
-		log.Println("[game-deployment-agent] context cancelled, shutting down...")
-	case sig := <-sigChan:
-		log.Printf("[game-deployment-agent] received signal %v, shutting down...", sig)
-	case err := <-errChan:
-		return err
+	if err := a.grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+		a.log.Error("gRPC server failed", slog.String("error", err.Error()))
+		panic(err)
 	}
+}
 
-	a.grpcServer.GracefulStop()
-	log.Println("[game-deployment-agent] stopped gracefully")
-	return nil
+// MustStop выполняет graceful shutdown.
+func (a *App) MustStop() {
+	a.once.Do(func() {
+		a.log.Info("shutting down gRPC server")
+		a.grpcServer.GracefulStop()
+		a.log.Info("application stopped")
+	})
 }

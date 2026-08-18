@@ -1,3 +1,4 @@
+// Package main запускает сервис project-manager.
 package main
 
 import (
@@ -6,32 +7,49 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "google.golang.org/grpc/encoding/gzip" // register gzip decompressor
+
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/app"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/config"
 )
 
 func main() {
-	cfgPath := os.Getenv("CONFIG_PATH")
-	if cfgPath == "" {
-		cfgPath = "config/local.yaml"
-	}
-
-	cfg := config.MustLoad(cfgPath)
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	cfg := config.MustLoad()
+	log := setupLogger(cfg.Env)
 
 	application, err := app.New(log, cfg)
 	if err != nil {
-		log.Error("failed to initialize app", slog.String("error", err.Error()))
+		log.Error("failed to initialize application", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	// Graceful shutdown.
+	log.Info("application started")
+
 	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-		<-sigCh
-		application.MustStop()
+		application.MustRun()
 	}()
 
-	application.MustRun()
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	application.MustStop()
+
+	log.Info("application gracefully stopped")
+}
+
+// setupLogger настраивает логгер в зависимости от окружения.
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
+	switch env {
+	case config.EnvLocal:
+		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	case config.EnvDev:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	case config.EnvProd:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	default:
+		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	}
+	return log
 }

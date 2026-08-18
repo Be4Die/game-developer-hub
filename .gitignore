@@ -24,6 +24,7 @@ game-server-node/cmd/server/server
 *.dll
 *.so
 *.dylib
+*.test
 
 # ==================== Frontend ====================
 # Logs

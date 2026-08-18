@@ -1,26 +1,55 @@
+// Package main запускает сервис агента развертывания веб-игр.
 package main
 
 import (
-	"context"
-	"log"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+
+	_ "google.golang.org/grpc/encoding/gzip" // register gzip decompressor
 
 	"github.com/Be4Die/game-developer-hub/game-deployment-agent/internal/app"
 	"github.com/Be4Die/game-developer-hub/game-deployment-agent/internal/infrastructure/config"
 )
 
 func main() {
-	cfg, err := config.Load()
+	cfg := config.MustLoad()
+	log := setupLogger(cfg.Env)
+
+	application, err := app.New(log, cfg)
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		log.Error("failed to initialize application", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
-	application, err := app.New(cfg)
-	if err != nil {
-		log.Fatalf("failed to initialize app: %v", err)
-	}
+	log.Info("application started")
 
-	ctx := context.Background()
-	if err := application.Run(ctx); err != nil {
-		log.Fatalf("server terminated with error: %v", err)
+	go func() {
+		application.MustRun()
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	<-stop
+
+	application.MustStop()
+
+	log.Info("application gracefully stopped")
+}
+
+// setupLogger настраивает логгер в зависимости от окружения.
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
+	switch env {
+	case config.EnvLocal:
+		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	case config.EnvDev:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	case config.EnvProd:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	default:
+		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	}
+	return log
 }
