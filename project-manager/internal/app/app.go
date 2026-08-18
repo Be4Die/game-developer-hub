@@ -43,10 +43,6 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}
 	log.Info("connected to postgres", slog.String("host", cfg.DB.Host))
 
-	if err := postgres.InitSchema(context.Background(), pool); err != nil {
-		return nil, fmt.Errorf("init schema: %w", err)
-	}
-
 	// ─── Valkey Locker ──────────────────────────────────────────
 	var locker domain.Locker
 	if cfg.Valkey.Addr != "" {
