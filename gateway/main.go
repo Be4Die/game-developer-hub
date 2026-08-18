@@ -24,8 +24,6 @@ import (
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	projpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
-	chatpb "github.com/Be4Die/game-developer-hub/protos/chat/v1"
-	modpb "github.com/Be4Die/game-developer-hub/protos/moderation/v1"
 )
 
 func main() {
@@ -95,9 +93,7 @@ func run() error {
 	// Адреса gRPC-сервисов из переменных окружения.
 	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
-	chatAddr := envOr("CHAT_GRPC_ADDR", "chat:9090")
 	projectManagerAddr := envOr("PROJECT_MANAGER_GRPC_ADDR", "project-manager:50053")
-	moderationAddr := envOr("MODERATION_GRPC_ADDR", "moderation:50053")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 
 	// Создаём mux с настройками JSON.
@@ -171,20 +167,6 @@ func run() error {
 	}
 	defer func() { _ = ssoConn.Close() }()
 
-	// Подключаемся к Chat.
-	chatConn, err := grpc.NewClient(chatAddr, dialOpts...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = chatConn.Close() }()
-
-	// Подключаемся к Moderation.
-	modConn, err := grpc.NewClient(moderationAddr, dialOpts...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = modConn.Close() }()
-
 	// Регистрируем Orchestrator handlers.
 	if err := gwpb.RegisterBuildServiceHandler(ctx, mux, orchConn); err != nil {
 		return err
@@ -213,11 +195,6 @@ func run() error {
 		return err
 	}
 
-	// Регистрируем Chat handlers.
-	if err := chatpb.RegisterChatServiceHandler(ctx, mux, chatConn); err != nil {
-		return err
-	}
-
 	// Подключаемся к Project Manager.
 	projConn, err := grpc.NewClient(projectManagerAddr, dialOpts...)
 	if err != nil {
@@ -227,11 +204,6 @@ func run() error {
 
 	// Регистрируем Project Manager handlers.
 	if err := projpb.RegisterProjectServiceHandler(ctx, mux, projConn); err != nil {
-		return err
-	}
-
-	// Регистрируем Moderation handlers.
-	if err := modpb.RegisterModerationServiceHandler(ctx, mux, modConn); err != nil {
 		return err
 	}
 
@@ -268,9 +240,7 @@ func run() error {
 	log.Printf("HTTP gateway listening on %s", httpAddr)
 	log.Printf("  Orchestrator gRPC: %s", orchestratorAddr)
 	log.Printf("  SSO gRPC: %s", ssoAddr)
-	log.Printf("  Chat gRPC: %s", chatAddr)
 	log.Printf("  Project Manager gRPC: %s", projectManagerAddr)
-	log.Printf("  Moderation gRPC: %s", moderationAddr)
 
 	return srv.ListenAndServe()
 }

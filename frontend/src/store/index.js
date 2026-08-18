@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { moderationApi, moderationToTicket } from '../api/moderation.js'
 
 // --- USER & TOAST ---
 export const user = reactive({
@@ -37,7 +38,6 @@ export const draftProject = reactive({
 export const tickets = reactive([])
 
 export async function loadTickets() {
-  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
   try {
     const data = await moderationApi.listPending()
     const items = (data.moderations || []).map(moderationToTicket)
@@ -57,7 +57,6 @@ function upsertTicket(updated) {
 }
 
 export async function approveTicket(gameId) {
-  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
   const data = await moderationApi.approve(gameId)
   const updated = moderationToTicket(data.moderation)
   upsertTicket(updated)
@@ -66,7 +65,6 @@ export async function approveTicket(gameId) {
 }
 
 export async function rejectTicket(gameId, reason) {
-  const { moderationApi, moderationToTicket } = await import('../api/moderation.js')
   const data = await moderationApi.reject(gameId, reason)
   const updated = moderationToTicket(data.moderation)
   upsertTicket(updated)
