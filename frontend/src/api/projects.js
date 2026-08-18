@@ -45,3 +45,16 @@ export const uploadMedia = (id, mediaType, file) => {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((r) => r.data);
 };
+
+// Отправка проекта на модерацию
+export const submitForModeration = (id) =>
+  http.post(`/projects/${id}/moderation`).then((r) => r.data.ticket);
+
+// Получение опубликованного релиза
+export const getPublished = (id) =>
+  http.get(`/projects/${id}/published`).then((r) => r.data.release);
+
+// Снятие проекта с публикации
+export const unpublish = (id) =>
+  http.post(`/projects/${id}/unpublish`).then((r) => r.data);
+

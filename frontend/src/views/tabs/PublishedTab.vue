@@ -8,9 +8,9 @@
           <span class="status-badge bg-green">Доступна игрокам</span>
         </div>
         <div class="actions">
-          <button class="btn-prod-link" @click="showToast('Открытие Prod-среды...', 'info')">Перейти к игре (Prod)</button>
+          <button class="btn-prod-link" @click="openProdGame">Перейти к игре (Prod)</button>
           <button class="btn-outline" @click="loadProject">Обновить</button>
-          <button class="btn btn-danger" @click="unpublish">Снять с публикации</button>
+          <button class="btn btn-danger" @click="unpublishGame">Снять с публикации</button>
         </div>
       </div>
 
@@ -133,7 +133,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { CheckCircle, Image as ImageIcon, Film, AlertCircle } from 'lucide-vue-next'
 import { showToast } from '../../store'
-import { getProject, listBuilds } from '../../api/projects'
+import { getProject, listBuilds, unpublish } from '../../api/projects'
 
 const route = useRoute()
 const projectId = computed(() => route.params.id)
@@ -148,7 +148,21 @@ async function loadProject() {
     showToast('Не удалось загрузить данные проекта', 'danger')
   }
 }
-const unpublish = () => showToast('Игра снята с публикации', 'info')
+
+function openProdGame() {
+  const url = project.value?.release?.prod_url || project.value?.prod_url || `/games/${projectId.value}/prod/index.html`
+  window.open(url, '_blank')
+}
+
+async function unpublishGame() {
+  try {
+    await unpublish(projectId.value)
+    showToast('Игра снята с публикации', 'info')
+    await loadProject()
+  } catch (err) {
+    showToast('Ошибка при снятии с публикации', 'danger')
+  }
+}
 
 onMounted(loadProject)
 </script>

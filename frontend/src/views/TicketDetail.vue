@@ -37,6 +37,9 @@
         </div>
 
         <div class="ticket-actions" v-if="ticket.status === 'pending'">
+          <button class="btn-action btn-outline" @click="openDevPreview" style="margin-bottom: 8px;">
+            🎮 Тестировать сборку (Dev)
+          </button>
           <button class="btn-action btn-success" @click="handleApprove" :disabled="actionLoading">
             ✓ Одобрить игру
           </button>
@@ -158,6 +161,11 @@ useConversationPolling(
     scrollToBottom()
   }
 )
+
+function openDevPreview() {
+  const url = ticket.value?.devUrl || `/games/${ticket.value?.id}/dev/index.html`
+  window.open(url, '_blank')
+}
 
 async function loadTicket() {
   const local = tickets.find(t => t.id === ticketId)

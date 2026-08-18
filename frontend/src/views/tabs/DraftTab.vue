@@ -11,7 +11,7 @@
           <span class="status-badge bg-red" v-else-if="moderationStatus === 'rejected'">Отклонено</span>
         </div>
         <div class="actions">
-          <button class="btn-dev-link" @click="showToast('Открытие Dev-среды...', 'info')">Перейти к игре (Dev)</button>
+          <button class="btn-dev-link" @click="openDevGame">Перейти к игре (Dev)</button>
           <button class="btn-outline" @click="saveMeta">Сохранить</button>
           <button class="btn-primary" @click="submitForModeration" :disabled="submitting || moderationStatus === 'pending' || moderationStatus === 'approved'">
             {{ submitting ? 'Отправка...' : 'На модерацию' }}
@@ -176,9 +176,15 @@ const buildStatus = ref('idle')
 const buildProgress = ref(0)
 const uploadedVersion = ref('')
 const recentBuilds = ref([])
+const projectData = ref(null)
 
 let autoSaveTimeout = null
 let skipAutoSave = false
+
+function openDevGame() {
+  const url = projectData.value?.draft?.dev_url || projectData.value?.dev_url || `/games/${projectId.value}/dev/index.html`
+  window.open(url, '_blank')
+}
 
 async function loadModerationStatus() {
   const gameId = parseInt(projectId.value, 10)
@@ -198,17 +204,18 @@ async function loadProject() {
   skipAutoSave = true
   try {
     const project = await getProject(projectId.value)
+    projectData.value = project
     meta.value = {
-      title_ru: project.title_ru || '',
-      title_en: project.title_en || '',
-      seo_ru: project.seo_ru || '',
-      seo_en: project.seo_en || '',
-      about: project.about || ''
+      title_ru: project.draft?.title_ru || project.title_ru || '',
+      title_en: project.draft?.title_en || project.title_en || '',
+      seo_ru: project.draft?.seo_ru || project.seo_ru || '',
+      seo_en: project.draft?.seo_en || project.seo_en || '',
+      about: project.draft?.about || project.about || ''
     }
-    media.value.icon = !!project.icon_path
-    media.value.cover = !!project.cover_path
-    media.value.video = !!project.video_path
-    activeBuildVersion.value = project.active_build_version || ''
+    media.value.icon = !!(project.draft?.icon_path || project.icon_path)
+    media.value.cover = !!(project.draft?.cover_path || project.cover_path)
+    media.value.video = !!(project.draft?.video_path || project.video_path)
+    activeBuildVersion.value = project.draft?.active_build_version || project.active_build_version || ''
 
     const builds = await listBuilds(projectId.value)
     recentBuilds.value = builds

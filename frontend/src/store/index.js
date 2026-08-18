@@ -56,18 +56,14 @@ function upsertTicket(updated) {
   }
 }
 
-export async function approveTicket(gameId) {
-  const data = await moderationApi.approve(gameId)
-  const updated = moderationToTicket(data.moderation)
-  upsertTicket(updated)
-  showToast('Игра одобрена', 'success')
-  return updated
+export async function approveTicket(gameId, comment = 'Одобрено') {
+  await moderationApi.approve(gameId, comment)
+  await loadTickets()
+  showToast('Игра одобрена и опубликована в Prod!', 'success')
 }
 
 export async function rejectTicket(gameId, reason) {
-  const data = await moderationApi.reject(gameId, reason)
-  const updated = moderationToTicket(data.moderation)
-  upsertTicket(updated)
+  await moderationApi.reject(gameId, reason)
+  await loadTickets()
   showToast('Игра отклонена', 'info')
-  return updated
 }
