@@ -1,21 +1,32 @@
-# Конфигурация для Docker-окружения
-
+# Конфигурация для запуска в Docker Compose
 env: "docker"
 
 grpc:
   port: 50053
 
 db:
-  host: "gdh-postgres"
+  host: "postgres"
   port: 5432
   user: "postgres"
   password: "postgres"
   database: "orchestrator"
   ssl_mode: "disable"
 
+valkey:
+  addr: "valkey:6379"
+  password: ""
+  db: 2
+
 storage:
   projects_path: "/data/projects"
   max_build_versions: 5
+
+deployment:
+  mode: "local"
+  games_base_path: "/data/games"
+  url_prefix: "/games"
+  agent_endpoint: "game-deployment-agent:50055"
+  agent_api_key: "dev-deployment-agent-key"
 
 jwt:
   secret: "dev-jwt-secret-for-local-testing"

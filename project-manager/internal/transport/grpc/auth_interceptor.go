@@ -1,4 +1,3 @@
-// Package grpc содержит gRPC-хендлеры и middleware.
 package grpc
 
 import (
@@ -32,7 +31,6 @@ func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		userID, err := a.extractUserID(ctx)
 		if err != nil {
-			// Публичные методы можно добавить сюда при необходимости
 			return nil, status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
 		}
 		ctx = withUserID(ctx, userID)
@@ -58,9 +56,16 @@ func (a *JWTAuth) extractUserID(ctx context.Context) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("missing metadata")
 	}
+
+	// 1. Проверяем явный заголовок x-user-id (проброшенный шлюзом)
+	if vals := md.Get("x-user-id"); len(vals) > 0 && vals[0] != "" {
+		return vals[0], nil
+	}
+
+	// 2. Проверяем заголовок Authorization: Bearer <token>
 	vals := md.Get("authorization")
 	if len(vals) == 0 {
-		return "", fmt.Errorf("missing authorization header")
+		return "", fmt.Errorf("missing authorization header or x-user-id")
 	}
 	tokenStr := strings.TrimPrefix(vals[0], "Bearer ")
 	if tokenStr == vals[0] {
@@ -92,17 +97,24 @@ func (a *JWTAuth) extractUserID(ctx context.Context) (string, error) {
 }
 
 func withUserID(ctx context.Context, userID string) context.Context {
-	return metadata.NewIncomingContext(ctx, metadata.MD{"x-user-id": {userID}})
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		md = metadata.New(nil)
+	} else {
+		md = md.Copy()
+	}
+	md.Set("x-user-id", userID)
+	return metadata.NewIncomingContext(ctx, md)
 }
 
-// UserIDFromContext извлекает user_id из контекста.
+// UserIDFromContext извлекает user_id из контекста gRPC запроса.
 func UserIDFromContext(ctx context.Context) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return "", false
 	}
 	vals := md.Get("x-user-id")
-	if len(vals) == 0 {
+	if len(vals) == 0 || vals[0] == "" {
 		return "", false
 	}
 	return vals[0], true

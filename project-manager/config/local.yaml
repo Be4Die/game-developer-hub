@@ -1,5 +1,4 @@
 # Конфигурация для локальной разработки
-
 env: "local"
 
 grpc:
@@ -13,9 +12,21 @@ db:
   database: "orchestrator"
   ssl_mode: "disable"
 
+valkey:
+  addr: "localhost:6379"
+  password: ""
+  db: 2
+
 storage:
   projects_path: "./data/projects"
   max_build_versions: 5
+
+deployment:
+  mode: "local" # "local" или "agent"
+  games_base_path: "./data/games"
+  url_prefix: "/games"
+  agent_endpoint: "localhost:50055"
+  agent_api_key: "dev-deployment-agent-key"
 
 jwt:
   secret: "dev-jwt-secret-for-local-testing"

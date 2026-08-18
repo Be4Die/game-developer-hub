@@ -1,4 +1,4 @@
-// Package app координирует инициализацию всех компонентов.
+// Package app координирует инициализацию всех компонентов сервиса project-manager.
 package app
 
 import (
@@ -10,8 +10,11 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/config"
+	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/valkey"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
+	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/deployment"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/postgres"
 	grpctransport "github.com/Be4Die/game-developer-hub/project-manager/internal/transport/grpc"
@@ -28,7 +31,7 @@ type App struct {
 	once       sync.Once
 }
 
-// New создаёт и инициализирует все компоненты.
+// New создаёт и инициализирует все компоненты сервиса.
 func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// ─── PostgreSQL ─────────────────────────────────────────────
 	pool, err := pgxpool.New(context.Background(), cfg.DB.DSN())
@@ -44,18 +47,81 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("init schema: %w", err)
 	}
 
-	// ─── Хранилища ──────────────────────────────────────────────
+	// ─── Valkey Locker ──────────────────────────────────────────
+	var locker domain.Locker
+	if cfg.Valkey.Addr != "" {
+		valkeyLocker, err := valkey.NewLocker(cfg.Valkey.Addr, cfg.Valkey.Password, cfg.Valkey.DB)
+		if err != nil {
+			log.Warn("failed to connect to valkey, falling back to no-op locker", slog.String("error", err.Error()))
+			locker = valkey.NewNoOpLocker()
+		} else {
+			locker = valkeyLocker
+			log.Info("connected to valkey for distributed locks", slog.String("addr", cfg.Valkey.Addr))
+		}
+	} else {
+		locker = valkey.NewNoOpLocker()
+	}
+
+	// ─── Репозитории ────────────────────────────────────────────
 	projectRepo := postgres.NewProjectRepo(pool)
-	buildRepo := postgres.NewProjectBuildRepo(pool)
-	mediaStorage := filesystem.NewProjectStorage(cfg.Storage.ProjectsPath)
+	draftRepo := postgres.NewDraftRepo(pool)
+	buildRepo := postgres.NewBuildRepo(pool)
+	moderationRepo := postgres.NewModerationRepo(pool)
+	releaseRepo := postgres.NewReleaseRepo(pool)
+	deploymentRepo := postgres.NewDeploymentRepo(pool)
+
+	// ─── Хранилища и Драйверы развертывания ─────────────────────
+	buildStorage := filesystem.NewBuildStorage(cfg.Storage.ProjectsPath)
+	mediaStorage := filesystem.NewMediaStorage(cfg.Storage.ProjectsPath)
+
+	var deployer domain.Deployer
+	if cfg.Deployment.Mode == "agent" {
+		agentDeployer, err := deployment.NewAgentDeployer(
+			cfg.Deployment.AgentEndpoint,
+			cfg.Deployment.AgentAPIKey,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create agent deployer: %w", err)
+		}
+		deployer = agentDeployer
+		log.Info("using remote agent deployer", slog.String("endpoint", cfg.Deployment.AgentEndpoint))
+	} else {
+		deployer = deployment.NewLocalDeployer(
+			cfg.Deployment.GamesBasePath,
+			cfg.Deployment.URLPrefix,
+		)
+		log.Info("using local deployer", slog.String("games_path", cfg.Deployment.GamesBasePath))
+	}
 
 	// ─── Сервисы ────────────────────────────────────────────────
 	projectService := service.NewProjectService(
-		projectRepo, buildRepo, mediaStorage, cfg.Storage.MaxBuildVersions,
+		projectRepo,
+		draftRepo,
+		buildRepo,
+		moderationRepo,
+		releaseRepo,
+		deploymentRepo,
+		buildStorage,
+		mediaStorage,
+		deployer,
+		locker,
+		cfg.Storage.MaxBuildVersions,
+	)
+
+	moderationService := service.NewModerationService(
+		projectRepo,
+		draftRepo,
+		buildRepo,
+		moderationRepo,
+		releaseRepo,
+		deploymentRepo,
+		buildStorage,
+		deployer,
 	)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)
+	moderationHandler := grpctransport.NewModerationHandler(moderationService, projectService)
 
 	// ─── Аутентификация ─────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
@@ -64,15 +130,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}
 
 	// ─── Создание gRPC-сервера ──────────────────────────────────
-	const maxMsgSize = 128 * 1024 * 1024 // 128MB для загрузки билдов
 	gRPCServer := grpc.NewServer(
 		grpc.UnaryInterceptor(authInterceptor.Unary()),
 		grpc.StreamInterceptor(authInterceptor.Stream()),
-		grpc.MaxRecvMsgSize(maxMsgSize),
-		grpc.MaxSendMsgSize(maxMsgSize),
 	)
 
 	pb.RegisterProjectServiceServer(gRPCServer, projectHandler)
+	pb.RegisterModerationServiceServer(gRPCServer, moderationHandler)
 
 	log.Info("all components initialized")
 
