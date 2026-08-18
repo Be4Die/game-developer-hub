@@ -141,6 +141,7 @@ services:
       - "50053:50053"
     volumes:
       - project_data:/data/projects
+      - games_data:/data/games
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 50053 || exit 1"]
       interval: 10s
@@ -167,6 +168,20 @@ services:
       - node_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 
+  game-deployment-agent:
+    build:
+      context: ..
+      dockerfile: game-deployment-agent/Dockerfile
+    container_name: gdh-deployment-agent
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      AGENT_API_KEY: dev-deployment-agent-key
+    ports:
+      - "50055:50055"
+    volumes:
+      - games_data:/data/games
+
   nginx:
     build:
       context: ../frontend
@@ -179,6 +194,8 @@ services:
     depends_on:
       gateway:
         condition: service_started
+    volumes:
+      - games_data:/data/games:ro
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:80/ || exit 1"]
       interval: 10s
@@ -191,3 +208,4 @@ volumes:
   builds:
   node_data:
   project_data:
+  games_data:

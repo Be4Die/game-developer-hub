@@ -27,6 +27,13 @@ vars:
   PROJECT_MANAGER_CONTAINER_NAME: "project-manager"
   PROJECT_MANAGER_GRPC_PORT: 50053
 
+  # Game Deployment Agent
+  AGENT_IMAGE_NAME: "game-deployment-agent"
+  AGENT_IMAGE_TAG: "latest"
+  AGENT_CONTAINER_NAME: "game-deployment-agent"
+  AGENT_GRPC_PORT: 50055
+  AGENT_API_KEY: "dev-deployment-agent-key"
+
 includes:
   go: taskfiles/go.yml
   docker: taskfiles/docker.yml
@@ -752,6 +759,52 @@ tasks:
       - task: go:test:cover
         vars:
           GO_DIR: project-manager
+
+  # ==================== Game Deployment Agent ====================
+  agent:build:
+    desc: "Build Docker image for game-deployment-agent"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.AGENT_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.AGENT_IMAGE_TAG}}"
+          DOCKERFILE_PATH: game-deployment-agent/Dockerfile
+
+  agent:up:
+    desc: "Run game-deployment-agent container in background"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.AGENT_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.AGENT_IMAGE_TAG}}"
+          DOCKERFILE_PATH: game-deployment-agent/Dockerfile
+      - task: docker:up
+        vars:
+          DOCKER_IMAGE_NAME: "{{.AGENT_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.AGENT_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.AGENT_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.AGENT_GRPC_PORT}}:{{.AGENT_GRPC_PORT}} -v games_data:/data/games -e CONFIG_PATH=/app/config/docker.yaml -e AGENT_API_KEY={{.AGENT_API_KEY}}"
+
+  agent:down:
+    desc: "Stop and remove game-deployment-agent container"
+    cmds:
+      - task: docker:down
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.AGENT_CONTAINER_NAME}}"
+
+  agent:logs:
+    desc: "Show game-deployment-agent container logs"
+    cmds:
+      - task: docker:logs
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.AGENT_CONTAINER_NAME}}"
+
+  agent:test:
+    desc: "Run game-deployment-agent unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: game-deployment-agent
 
   # ==================== Frontend ====================
   frontend:install:
