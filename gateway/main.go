@@ -206,6 +206,9 @@ func run() error {
 	if err := projpb.RegisterProjectServiceHandler(ctx, mux, projConn); err != nil {
 		return err
 	}
+	if err := projpb.RegisterModerationServiceHandler(ctx, mux, projConn); err != nil {
+		return err
+	}
 
 	// Custom handler для multipart upload — intercepts build upload.
 	buildUploadHandler := newBuildUploadHandler(orchConn)
@@ -675,7 +678,7 @@ func formatLogEvent(entry *gwpb.LogEntry) string {
 
 // ─── Project Manager Custom Handlers ──────────────────────────────
 
-// projectBuildUploadHandler принимает multipart/form-data и отправляет билд в project-manager.
+// projectBuildUploadHandler принимает multipart/form-data и потоково отправляет билд в project-manager (чанками по 64 КБ).
 type projectBuildUploadHandler struct {
 	client projpb.ProjectServiceClient
 }
@@ -690,7 +693,7 @@ func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := r.ParseMultipartForm(128 << 20); err != nil { // 128MB
+	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB буфер в памяти
 		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -707,31 +710,70 @@ func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "missing 'file' field", http.StatusBadRequest)
 		return
 	}
 	defer func() { _ = file.Close() }()
 
-	data, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("read file: %v", err), http.StatusInternalServerError)
-		return
-	}
+	log.Printf("upload project build: project=%d version=%s file=%s size=%d", projectID, version, header.Filename, header.Size)
 
 	ctx := r.Context()
 	if token := r.Header.Get("Authorization"); token != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	}
+	if userID := r.Header.Get("x-user-id"); userID != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "x-user-id", userID)
+	}
 
-	resp, err := h.client.UploadBuild(ctx, &projpb.ProjectUploadBuildRequest{
-		ProjectId: projectID,
-		Version:   version,
-		Data:      data,
-	})
+	stream, err := h.client.UploadBuildStream(ctx)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("upload build: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Отправляем метаданные первым сообщением
+	if err := stream.Send(&projpb.ProjectUploadBuildStreamRequest{
+		Payload: &projpb.ProjectUploadBuildStreamRequest_Metadata{
+			Metadata: &projpb.BuildUploadStreamMetadata{
+				ProjectId: projectID,
+				Version:   version,
+			},
+		},
+	}); err != nil {
+		http.Error(w, fmt.Sprintf("send metadata: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Стримим файл чанками по 64 КБ
+	buf := make([]byte, 64*1024)
+	for {
+		n, readErr := file.Read(buf)
+		if n > 0 {
+			chunk := make([]byte, n)
+			copy(chunk, buf[:n])
+			if sendErr := stream.Send(&projpb.ProjectUploadBuildStreamRequest{
+				Payload: &projpb.ProjectUploadBuildStreamRequest_Chunk{
+					Chunk: chunk,
+				},
+			}); sendErr != nil {
+				http.Error(w, fmt.Sprintf("send chunk: %v", sendErr), http.StatusInternalServerError)
+				return
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			http.Error(w, fmt.Sprintf("read file: %v", readErr), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("upload build stream error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -744,7 +786,7 @@ func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	_, _ = w.Write(jsonBytes)
 }
 
-// projectMediaUploadHandler принимает multipart/form-data и отправляет медиа в project-manager.
+// projectMediaUploadHandler принимает multipart/form-data и потоково отправляет медиа в project-manager (чанками по 64 КБ).
 type projectMediaUploadHandler struct {
 	client projpb.ProjectServiceClient
 }
@@ -783,24 +825,59 @@ func (h *projectMediaUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	}
 	defer func() { _ = file.Close() }()
 
-	data, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("read file: %v", err), http.StatusInternalServerError)
-		return
-	}
-
 	ctx := r.Context()
 	if token := r.Header.Get("Authorization"); token != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	}
+	if userID := r.Header.Get("x-user-id"); userID != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "x-user-id", userID)
+	}
 
-	resp, err := h.client.UploadMedia(ctx, &projpb.ProjectUploadMediaRequest{
-		ProjectId: projectID,
-		MediaType: mediaType,
-		Data:      data,
-	})
+	stream, err := h.client.UploadMediaStream(ctx)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("upload media: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := stream.Send(&projpb.ProjectUploadMediaStreamRequest{
+		Payload: &projpb.ProjectUploadMediaStreamRequest_Metadata{
+			Metadata: &projpb.MediaUploadStreamMetadata{
+				ProjectId: projectID,
+				MediaType: mediaType,
+			},
+		},
+	}); err != nil {
+		http.Error(w, fmt.Sprintf("send metadata: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	buf := make([]byte, 64*1024)
+	for {
+		n, readErr := file.Read(buf)
+		if n > 0 {
+			chunk := make([]byte, n)
+			copy(chunk, buf[:n])
+			if sendErr := stream.Send(&projpb.ProjectUploadMediaStreamRequest{
+				Payload: &projpb.ProjectUploadMediaStreamRequest_Chunk{
+					Chunk: chunk,
+				},
+			}); sendErr != nil {
+				http.Error(w, fmt.Sprintf("send chunk: %v", sendErr), http.StatusInternalServerError)
+				return
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			http.Error(w, fmt.Sprintf("read file: %v", readErr), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("upload media stream error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
