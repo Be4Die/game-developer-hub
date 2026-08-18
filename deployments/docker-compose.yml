@@ -12,7 +12,7 @@
 #    project-manager  — gRPC API управления проектами
 #    gateway          — gRPC-gateway (HTTP/REST → gRPC)
 #    game-server-node — gRPC-агент ноды (Docker-in-Docker)
-#    frontend         — Vue SPA с nginx
+#    nginx            — Nginx веб-сервер и обратный прокси (хостинг Vue SPA + SSL + API proxy)
 #
 #  Использование:
 #    docker compose up -d              # запустить всё
@@ -123,7 +123,7 @@ services:
       sso:
         condition: service_healthy
       project-manager:
-        condition: service_started
+        condition: service_healthy
 
   project-manager:
     build:
@@ -167,16 +167,24 @@ services:
       - node_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 
-  frontend:
+  nginx:
     build:
-      context: ..
-      dockerfile: frontend/Dockerfile
-    container_name: gdh-frontend
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: gdh-nginx
+    restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
     depends_on:
       gateway:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   pgdata:

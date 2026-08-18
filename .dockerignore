@@ -1,0 +1,14 @@
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+**/node_modules
+**/dist
+**/tmp
+**/*.test
+**/*.exe
+**/bin
+docs/
+*.md
+LICENSE
+Taskfile.yml

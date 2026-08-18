@@ -798,7 +798,7 @@ tasks:
 
   # ==================== Stack (deployments/) ====================
   stack:up:
-    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Gateway, Node, Frontend)"
+    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Gateway, Node, Nginx)"
     dir: deployments
     cmds:
       - docker compose up -d --build
@@ -832,7 +832,7 @@ tasks:
           bash -c "echo >/dev/tcp/localhost/50053" 2>/dev/null && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost:3000 (frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC), :50053 (Project Manager gRPC)"'
+      - 'echo "Stack is ready: http://localhost (Nginx/Frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC), :50053 (Project Manager gRPC)"'
 
   stack:down:
     desc: "Stop full stack and remove containers"
