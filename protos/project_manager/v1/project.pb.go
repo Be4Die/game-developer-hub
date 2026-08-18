@@ -1250,6 +1250,7 @@ func (x *ProjectListRequest) GetOffset() int32 {
 type ProjectListResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1289,6 +1290,13 @@ func (x *ProjectListResponse) GetProjects() []*Project {
 		return x.Projects
 	}
 	return nil
+}
+
+func (x *ProjectListResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 // ─── Update ───────────────────────────────────────────
@@ -3043,9 +3051,10 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\aproject\x18\x01 \x01(\v2\x1b.project_manager.v1.ProjectR\aproject\"B\n" +
 	"\x12ProjectListRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset\"N\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"d\n" +
 	"\x13ProjectListResponse\x127\n" +
-	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\"\xd2\x01\n" +
+	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xd2\x01\n" +
 	"\x14ProjectUpdateRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\btitle_ru\x18\x02 \x01(\tR\atitleRu\x12\x19\n" +

@@ -56,6 +56,18 @@ func (m *mockProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit
 	return res, nil
 }
 
+func (m *mockProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, p := range m.projects {
+		if p.OwnerID == ownerID {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (m *mockProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.ProjectStatus) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -7,6 +7,7 @@ type ProjectRepo interface {
 	Create(ctx context.Context, p *Project) (int64, error)
 	Get(ctx context.Context, id int64) (*Project, error)
 	ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*Project, error)
+	CountByOwner(ctx context.Context, ownerID string) (int, error)
 	UpdateStatus(ctx context.Context, id int64, status ProjectStatus) error
 	Delete(ctx context.Context, id int64) error
 }

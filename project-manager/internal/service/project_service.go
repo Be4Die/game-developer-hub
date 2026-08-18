@@ -110,11 +110,16 @@ func (s *ProjectService) GetProject(ctx context.Context, projectID int64) (*doma
 	return p, nil
 }
 
-// ListProjects возвращает постраничный список проектов указанного владельца.
-func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
+// ListProjects возвращает постраничный список проектов указанного владельца и общее количество.
+func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, int, error) {
 	projects, err := s.projectRepo.ListByOwner(ctx, ownerID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("ProjectService.ListProjects: %w", err)
+		return nil, 0, fmt.Errorf("ProjectService.ListProjects: %w", err)
+	}
+
+	total, err := s.projectRepo.CountByOwner(ctx, ownerID)
+	if err != nil {
+		total = len(projects)
 	}
 
 	for _, p := range projects {
@@ -126,7 +131,7 @@ func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit
 		}
 	}
 
-	return projects, nil
+	return projects, total, nil
 }
 
 // UpdateDraft обновляет метаданные черновика проекта.

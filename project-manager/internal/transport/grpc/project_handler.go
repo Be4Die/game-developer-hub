@@ -58,11 +58,14 @@ func (h *ProjectHandler) List(ctx context.Context, req *pb.ProjectListRequest) (
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
-	projects, err := h.svc.ListProjects(ctx, ownerID, int(req.GetLimit()), int(req.GetOffset()))
+	projects, total, err := h.svc.ListProjects(ctx, ownerID, int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
 		return nil, domainError(err, "list projects")
 	}
-	resp := &pb.ProjectListResponse{Projects: make([]*pb.Project, len(projects))}
+	resp := &pb.ProjectListResponse{
+		Projects: make([]*pb.Project, len(projects)),
+		Total:    int32(total),
+	}
 	for i, p := range projects {
 		resp.Projects[i] = projectToProto(p)
 	}

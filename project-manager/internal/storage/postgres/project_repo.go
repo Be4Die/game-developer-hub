@@ -189,6 +189,17 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 	return projects, nil
 }
 
+// CountByOwner возвращает общее количество проектов пользователя.
+func (r *ProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int, error) {
+	const query = `SELECT COUNT(*) FROM projects WHERE owner_id = $1`
+	var count int
+	err := r.pool.QueryRow(ctx, query, ownerID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("postgres.ProjectRepo.CountByOwner: %w", err)
+	}
+	return count, nil
+}
+
 // UpdateStatus обновляет статус жизненного цикла проекта.
 func (r *ProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.ProjectStatus) error {
 	const query = `UPDATE projects SET status = $1 WHERE id = $2`

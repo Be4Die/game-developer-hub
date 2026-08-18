@@ -159,6 +159,7 @@ message ProjectListRequest {
 
 message ProjectListResponse {
   repeated Project projects = 1;
+  int32 total = 2;
 }
 
 // ─── Update ───────────────────────────────────────────
