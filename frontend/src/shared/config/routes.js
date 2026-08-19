@@ -1,0 +1,23 @@
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  PROJECTS: '/projects',
+  PROJECT_DETAIL: (id = ':id') => `/projects/${id}`,
+  PROJECT_DRAFT: (id = ':id') => `/projects/${id}/draft`,
+  PROJECT_STATS: (id = ':id') => `/projects/${id}/stats`,
+  PROJECT_PUBLISHED: (id = ':id') => `/projects/${id}/published`,
+  PROJECT_SERVERS: (id = ':id') => `/projects/${id}/servers`,
+  PROJECT_SERVER_BUILDS: (id = ':id') => `/projects/${id}/servers/builds`,
+  PROJECT_SERVER_INSTANCES: (id = ':id') => `/projects/${id}/servers/instances`,
+  PROJECT_INSTANCE_DETAIL: (gameId = ':id', instanceId = ':instanceId') =>
+    `/projects/${gameId}/servers/instances/${instanceId}`,
+  NODES: '/nodes',
+  NODE_DETAIL: (nodeId = ':nodeId') => `/nodes/${nodeId}`,
+  MODERATOR: '/moderator',
+  MODERATOR_TICKETS: '/moderator/tickets',
+  MODERATOR_TICKET_DETAIL: (id = ':id') => `/moderator/tickets/${id}`,
+  MODERATOR_HISTORY: '/moderator/history',
+  CHAT_DETAIL: (id = ':id') => `/chat/${id}`,
+  SETTINGS: '/settings',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+};
