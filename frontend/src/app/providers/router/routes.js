@@ -13,9 +13,8 @@ import { InstanceDetailPage } from '@/pages/instance-detail';
 import { NodesListPage } from '@/pages/nodes-list';
 import { NodeDetailPage } from '@/pages/node-detail';
 import { ModeratorDashboardPage } from '@/pages/moderator-dashboard';
-import { ModeratorTicketsPage } from '@/pages/moderator-tickets';
-import { TicketDetailPage } from '@/pages/ticket-detail';
-import { TicketHistoryPage } from '@/pages/ticket-history';
+import { ModerationQueuePage } from '@/pages/moderation-queue';
+import { ModerationProjectPage } from '@/pages/moderation-project';
 import { ChatViewPage } from '@/pages/chat-view';
 import { SettingsPage } from '@/pages/settings';
 import { AdminDashboardPage } from '@/pages/admin-dashboard';
@@ -109,21 +108,15 @@ export const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/moderator/tickets',
-    name: 'moderator-tickets',
-    component: ModeratorTicketsPage,
+    path: '/moderator/queue',
+    name: 'moderation-queue',
+    component: ModerationQueuePage,
     meta: { requiresAuth: true },
   },
   {
-    path: '/moderator/tickets/:id',
-    name: 'ticket-detail',
-    component: TicketDetailPage,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/moderator/history',
-    name: 'ticket-history',
-    component: TicketHistoryPage,
+    path: '/moderator/projects/:projectId',
+    name: 'moderation-project',
+    component: ModerationProjectPage,
     meta: { requiresAuth: true },
   },
   {

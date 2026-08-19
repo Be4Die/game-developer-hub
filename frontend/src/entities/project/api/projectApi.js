@@ -35,7 +35,7 @@ export const uploadMedia = (id, mediaType, file) => {
 };
 
 export const submitForModeration = (id) =>
-  http.post(`/projects/${id}/moderation`).then((r) => r.data.ticket);
+  http.post(`/projects/${id}/moderation/submit`).then((r) => r.data);
 
 export const getPublished = (id) =>
   http.get(`/projects/${id}/published`).then((r) => r.data.release);

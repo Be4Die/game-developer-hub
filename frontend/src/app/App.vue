@@ -11,15 +11,13 @@
       <div
         v-if="
           userRole === 'Модератор' &&
-          $route.path.includes('/projects') &&
-          !$route.path.includes('/nodes')
+          $route.path.startsWith('/projects')
         "
         class="moderator-stub"
       >
         <h2>Режим модератора</h2>
         <p>
-          Перейдите во вкладку "Очередь тикетов". Просмотр проектов
-          недоступен.
+          Прямой просмотр проектов недоступен. Перейдите во вкладку "Очередь модерации".
         </p>
       </div>
       <router-view v-else />
@@ -76,11 +74,8 @@ watch(userRole, (newRole) => {
       router.push('/projects');
     }
   } else if (newRole === 'Модератор') {
-    if (
-      route.path.includes('/projects') ||
-      route.path === '/moderator/roles'
-    ) {
-      router.push('/moderator/tickets');
+    if (route.path.startsWith('/projects')) {
+      router.push('/moderator/queue');
     }
   } else if (newRole === 'Администратор') {
     if (!route.path.startsWith('/admin/dashboard')) {

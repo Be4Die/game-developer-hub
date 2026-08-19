@@ -1,16 +1,23 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('cancel')">
     <div class="modal-card">
-      <h3>Отклонить игру</h3>
+      <div class="modal-header">
+        <AlertTriangle class="icon-md text-danger" />
+        <h3>Отклонить проект</h3>
+      </div>
       <p class="modal-hint">
-        Укажите причину отказа — разработчик увидит её в карточке заявки.
+        Укажите обязательную причину отказа. Разработчик получит уведомление и увидит причину в карточке черновика для устранения замечаний.
       </p>
-      <textarea
-        v-model="reason"
-        placeholder="Например: не загружена иконка, описание слишком короткое..."
-        rows="4"
-        autofocus
-      ></textarea>
+      <div class="input-group">
+        <label class="input-label">Причина отказа <span class="req">*</span></label>
+        <textarea
+          v-model="reason"
+          class="input-control"
+          placeholder="Например: Некорректное описание, не работает управление на пробел, отсутствуют иконки..."
+          rows="4"
+          autofocus
+        ></textarea>
+      </div>
       <div class="modal-actions">
         <button class="btn-cancel" @click="$emit('cancel')">Отмена</button>
         <button
@@ -18,7 +25,7 @@
           @click="onConfirm"
           :disabled="!reason.trim() || loading"
         >
-          {{ loading ? 'Отклонение...' : 'Отклонить' }}
+          {{ loading ? 'Отклонение...' : '✕ Отклонить проект' }}
         </button>
       </div>
     </div>
@@ -27,6 +34,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { AlertTriangle } from 'lucide-vue-next';
 
 defineProps({
   loading: { type: Boolean, default: false },
@@ -46,38 +54,66 @@ function onConfirm() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(2px);
 }
 
 .modal-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: 28px;
+  border: 1px solid var(--border);
+  padding: 24px;
   width: 100%;
   max-width: 480px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   margin: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
-.modal-card h3 {
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-header h3 {
   margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.text-danger {
+  color: var(--danger, #ef4444);
 }
 
 .modal-hint {
   margin: 0;
   font-size: 0.88rem;
   color: var(--text-muted);
+  line-height: 1.4;
 }
 
-.modal-card textarea {
+.input-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.req {
+  color: var(--danger, #ef4444);
+}
+
+.input-control {
   width: 100%;
-  padding: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   font-family: inherit;
@@ -87,10 +123,16 @@ function onConfirm() {
   resize: vertical;
 }
 
+.input-control:focus {
+  outline: none;
+  border-color: var(--danger, #ef4444);
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .btn-cancel {

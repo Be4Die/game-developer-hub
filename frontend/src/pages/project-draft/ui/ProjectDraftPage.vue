@@ -7,24 +7,9 @@
           <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">
             Настройка черновика
           </h1>
-          <span class="status-badge bg-yellow" v-if="!moderationStatus"
-            >Заполнение данных</span
-          >
-          <span
-            class="status-badge bg-yellow"
-            v-else-if="moderationStatus === 'pending'"
-            >На модерации</span
-          >
-          <span
-            class="status-badge bg-green"
-            v-else-if="moderationStatus === 'approved'"
-            >Одобрено</span
-          >
-          <span
-            class="status-badge bg-red"
-            v-else-if="moderationStatus === 'rejected'"
-            >Отклонено</span
-          >
+          <span class="status-badge" :class="statusBadgeClass">
+            {{ statusLabel }}
+          </span>
         </div>
         <div class="actions">
           <button class="btn-dev-link" @click="openDevGame">
@@ -36,8 +21,8 @@
             @click="submitForModeration"
             :disabled="
               submitting ||
-              moderationStatus === 'pending' ||
-              moderationStatus === 'approved'
+              isUnderReview ||
+              isApproved
             "
           >
             {{ submitting ? 'Отправка...' : 'На модерацию' }}
@@ -46,16 +31,22 @@
       </div>
 
       <div
-        v-if="moderationStatus === 'rejected' && rejectionReason"
+        v-if="isRejected && rejectionReason"
         class="card rejection-notice"
       >
-        <strong>Причина отказа:</strong> {{ rejectionReason }}
+        <strong>Замечания модератора:</strong> {{ rejectionReason }}
       </div>
       <div
-        v-else-if="moderationStatus === 'approved'"
+        v-else-if="isApproved"
         class="card approval-notice"
       >
-        Игра одобрена модератором. Можно переходить к публикации.
+        ✓ Игра одобрена модератором и опубликована в Production.
+      </div>
+      <div
+        v-else-if="isUnderReview"
+        class="card review-notice"
+      >
+        ⏳ Проект находится на проверке у модератора.
       </div>
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -221,6 +212,17 @@
           </div>
         </div>
       </div>
+
+      <!-- БЛОК: ОБСУЖДЕНИЕ С МОДЕРАТОРОМ -->
+      <div class="card form-section chat-section">
+        <div class="section-head">
+          <h3>Чат модерации</h3>
+          <p class="section-desc">
+            Прямая связь с модератором и история системных событий по проекту
+          </p>
+        </div>
+        <ProjectChat :projectId="projectId" />
+      </div>
     </div>
   </div>
 </template>
@@ -233,9 +235,16 @@ import {
   getProject,
   updateProject,
   uploadMedia,
+  submitForModeration as submitProjectForModeration,
 } from '@/entities/project';
 import { listClientBuilds } from '@/entities/build';
-import { moderationApi, moderationToTicket } from '@/entities/ticket';
+import {
+  moderationApi,
+  getStatusText,
+  getStatusBadgeClass,
+  REQUEST_STATUS,
+  ProjectChat,
+} from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
 
@@ -253,6 +262,7 @@ const media = ref({ icon: false, cover: false, video: false });
 const activeBuildVersion = ref('');
 
 const submitting = ref(false);
+const moderationRequest = ref(null);
 const moderationStatus = ref(null);
 const rejectionReason = ref('');
 const recentBuilds = ref([]);
@@ -260,6 +270,46 @@ const projectData = ref(null);
 
 let autoSaveTimeout = null;
 let skipAutoSave = false;
+
+const isUnderReview = computed(() => {
+  const st = moderationStatus.value;
+  return (
+    st === REQUEST_STATUS.PENDING ||
+    st === REQUEST_STATUS.IN_REVIEW ||
+    st === 'REQUEST_STATUS_PENDING' ||
+    st === 'REQUEST_STATUS_IN_REVIEW' ||
+    st === 'pending' ||
+    st === 'in_review'
+  );
+});
+
+const isApproved = computed(() => {
+  const st = moderationStatus.value;
+  return (
+    st === REQUEST_STATUS.APPROVED ||
+    st === 'REQUEST_STATUS_APPROVED' ||
+    st === 'approved'
+  );
+});
+
+const isRejected = computed(() => {
+  const st = moderationStatus.value;
+  return (
+    st === REQUEST_STATUS.REJECTED ||
+    st === 'REQUEST_STATUS_REJECTED' ||
+    st === 'rejected'
+  );
+});
+
+const statusLabel = computed(() => {
+  if (!moderationStatus.value) return 'Черновик (Заполнение данных)';
+  return getStatusText(moderationStatus.value);
+});
+
+const statusBadgeClass = computed(() => {
+  if (!moderationStatus.value) return 'badge-neutral';
+  return getStatusBadgeClass(moderationStatus.value);
+});
 
 function openDevGame() {
   const url =
@@ -270,16 +320,22 @@ function openDevGame() {
 }
 
 async function loadModerationStatus() {
-  const gameId = parseInt(projectId.value, 10);
-  if (!gameId) return;
+  const pId = parseInt(projectId.value, 10);
+  if (!pId) return;
   try {
-    const data = await moderationApi.getStatus(gameId);
-    if (!data) return;
-    const ticket = moderationToTicket(data.moderation);
-    moderationStatus.value = ticket.status;
-    rejectionReason.value = ticket.rejectionReason;
-  } catch {
-    // moderation service unavailable
+    const data = await moderationApi.getLatestByProject(pId);
+    if (data && data.request) {
+      moderationRequest.value = data.request;
+      moderationStatus.value = data.request.status;
+      rejectionReason.value =
+        data.request.rejection_reason || data.request.rejectionReason || '';
+    } else {
+      moderationRequest.value = null;
+      moderationStatus.value = null;
+      rejectionReason.value = '';
+    }
+  } catch (err) {
+    // moderation service may not have a request yet
   }
 }
 
@@ -320,24 +376,26 @@ async function loadProject() {
 onMounted(loadProject);
 
 async function submitForModeration() {
-  const gameId = parseInt(projectId.value, 10);
-  if (!gameId) {
+  const pId = parseInt(projectId.value, 10);
+  if (!pId) {
     showToast('Не удалось определить ID игры', 'danger');
     return;
   }
   if (!meta.value.title_ru.trim()) {
-    showToast('Укажите название игры', 'danger');
+    showToast('Укажите название игры на русском', 'danger');
     return;
   }
   submitting.value = true;
   try {
     await saveMeta(true);
-    await moderationApi.submitForReview(gameId);
-    moderationStatus.value = 'pending';
-    rejectionReason.value = '';
-    showToast('Отправлено модератору!', 'success');
+    await submitProjectForModeration(pId);
+    await loadModerationStatus();
+    showToast('Заявка на модерацию успешно отправлена!', 'success');
   } catch (e) {
-    showToast(e.message || 'Ошибка отправки на модерацию', 'danger');
+    showToast(
+      e.response?.data?.message || e.message || 'Ошибка отправки на модерацию',
+      'danger'
+    );
   } finally {
     submitting.value = false;
   }
@@ -642,13 +700,40 @@ function setActiveBuild(version) {
   align-items: center;
   gap: 8px;
 }
-.build-date {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+.review-notice {
+  background: var(--bg-secondary);
+  border-left: 4px solid var(--info, #3b82f6);
+  padding: 12px 16px;
+  color: var(--text-main);
+  font-size: 0.9rem;
 }
-.active-label {
-  color: var(--success);
-  font-size: 0.8rem;
-  font-weight: 600;
+
+.chat-section {
+  grid-column: 1 / -1;
+}
+
+.badge-warning {
+  background: var(--warning, #f59e0b);
+  color: white;
+}
+
+.badge-info {
+  background: var(--info, #3b82f6);
+  color: white;
+}
+
+.badge-success {
+  background: var(--success, #10b981);
+  color: white;
+}
+
+.badge-danger {
+  background: var(--danger, #ef4444);
+  color: white;
+}
+
+.badge-neutral {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
 }
 </style>
