@@ -25,7 +25,13 @@ type Config struct {
 	Valkey     ValkeyConfig
 	Storage    StorageConfig
 	Deployment DeploymentConfig
+	Moderation ModerationConfig
 	JWT        JWTConfig
+}
+
+// ModerationConfig настройки подключения к сервису модерации.
+type ModerationConfig struct {
+	Addr string `yaml:"addr" env:"MODERATION_GRPC_ADDR" env-default:""`
 }
 
 // ValkeyConfig настройки подключения к Valkey/Redis для распределенных блокировок.

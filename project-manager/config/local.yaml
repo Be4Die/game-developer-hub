@@ -28,6 +28,9 @@ deployment:
   agent_endpoint: "localhost:50055"
   agent_api_key: "dev-deployment-agent-key"
 
+moderation:
+  addr: "" # при пустом адресе используется in-memory StubModerationClient
+
 jwt:
   secret: "dev-jwt-secret-for-local-testing"
   issuer: "sso"

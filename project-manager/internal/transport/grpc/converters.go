@@ -104,26 +104,3 @@ func releaseToProto(r *domain.Release) *pb.ProjectRelease {
 		PublishedAt: formatTime(r.PublishedAt),
 	}
 }
-
-func ticketToProto(t *domain.ModerationTicket) *pb.ModerationTicket {
-	if t == nil {
-		return nil
-	}
-	res := &pb.ModerationTicket{
-		Id:                 t.ID,
-		ProjectId:          t.ProjectID,
-		OwnerId:            t.OwnerID,
-		GameTitle:          t.GameTitle,
-		GameDescription:    t.GameDescription,
-		Status:             pb.ModerationStatus(t.Status),
-		RejectionReason:    t.RejectionReason,
-		ModeratorId:        t.ModeratorID,
-		DevUrl:             t.DevURL,
-		ActiveBuildVersion: t.ActiveBuildVersion,
-		SubmittedAt:        formatTime(t.SubmittedAt),
-	}
-	if t.ResolvedAt != nil {
-		res.ResolvedAt = formatTime(*t.ResolvedAt)
-	}
-	return res
-}

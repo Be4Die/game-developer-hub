@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
+	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/client"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/valkey"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
@@ -62,7 +63,6 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	projectRepo := postgres.NewProjectRepo(pool)
 	draftRepo := postgres.NewDraftRepo(pool)
 	buildRepo := postgres.NewBuildRepo(pool)
-	moderationRepo := postgres.NewModerationRepo(pool)
 	releaseRepo := postgres.NewReleaseRepo(pool)
 	deploymentRepo := postgres.NewDeploymentRepo(pool)
 
@@ -89,14 +89,30 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log.Info("using local deployer", slog.String("games_path", cfg.Deployment.GamesBasePath))
 	}
 
+	// ─── Клиент сервиса модерации (gRPC или Stub) ────────────────
+	var moderationClient domain.ModerationClient
+	if cfg.Moderation.Addr != "" {
+		grpcModClient, err := client.NewGRPCModerationClient(cfg.Moderation.Addr)
+		if err != nil {
+			log.Warn("failed to connect to moderation service, using stub", slog.String("error", err.Error()))
+			moderationClient = client.NewStubModerationClient()
+		} else {
+			moderationClient = grpcModClient
+			log.Info("connected to moderation service", slog.String("addr", cfg.Moderation.Addr))
+		}
+	} else {
+		moderationClient = client.NewStubModerationClient()
+		log.Info("using in-memory stub moderation client")
+	}
+
 	// ─── Сервисы ────────────────────────────────────────────────
 	projectService := service.NewProjectService(
 		projectRepo,
 		draftRepo,
 		buildRepo,
-		moderationRepo,
 		releaseRepo,
 		deploymentRepo,
+		moderationClient,
 		buildStorage,
 		mediaStorage,
 		deployer,
@@ -104,20 +120,8 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		cfg.Storage.MaxBuildVersions,
 	)
 
-	moderationService := service.NewModerationService(
-		projectRepo,
-		draftRepo,
-		buildRepo,
-		moderationRepo,
-		releaseRepo,
-		deploymentRepo,
-		buildStorage,
-		deployer,
-	)
-
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)
-	moderationHandler := grpctransport.NewModerationHandler(moderationService, projectService)
 
 	// ─── Аутентификация ─────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
@@ -132,7 +136,6 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	)
 
 	pb.RegisterProjectServiceServer(gRPCServer, projectHandler)
-	pb.RegisterModerationServiceServer(gRPCServer, moderationHandler)
 
 	log.Info("all components initialized")
 

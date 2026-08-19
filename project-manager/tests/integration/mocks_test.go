@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
@@ -209,81 +210,38 @@ func (m *mockBuildRepo) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-type mockModerationRepo struct {
-	mu      sync.Mutex
-	tickets map[int64]*domain.ModerationTicket
-	nextID  int64
+type mockModerationClient struct {
+	mu       sync.RWMutex
+	requests map[int64]*domain.ModerationRequestInfo
+	nextID   int64
 }
 
-func newMockModerationRepo() *mockModerationRepo {
-	return &mockModerationRepo{
-		tickets: make(map[int64]*domain.ModerationTicket),
-		nextID:  1,
+func newMockModerationClient() *mockModerationClient {
+	return &mockModerationClient{
+		requests: make(map[int64]*domain.ModerationRequestInfo),
 	}
 }
 
-func (m *mockModerationRepo) CreateTicket(ctx context.Context, t *domain.ModerationTicket) (int64, error) {
+func (m *mockModerationClient) SubmitDraft(ctx context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	t.ID = m.nextID
-	t.SubmittedAt = time.Now()
-	m.tickets[t.ID] = t
-	m.nextID++
-	return t.ID, nil
+	id := atomic.AddInt64(&m.nextID, 1)
+	m.requests[snapshot.ProjectID] = &domain.ModerationRequestInfo{
+		RequestID: id,
+		ProjectID: snapshot.ProjectID,
+		Status:    1,
+	}
+	return id, nil
 }
 
-func (m *mockModerationRepo) GetTicket(ctx context.Context, id int64) (*domain.ModerationTicket, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	t, ok := m.tickets[id]
+func (m *mockModerationClient) GetLatestRequest(ctx context.Context, projectID int64) (*domain.ModerationRequestInfo, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	req, ok := m.requests[projectID]
 	if !ok {
 		return nil, domain.ErrNotFound
 	}
-	return t, nil
-}
-
-func (m *mockModerationRepo) GetLatestTicketByProject(ctx context.Context, projectID int64) (*domain.ModerationTicket, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	var latest *domain.ModerationTicket
-	for _, t := range m.tickets {
-		if t.ProjectID == projectID {
-			if latest == nil || t.SubmittedAt.After(latest.SubmittedAt) {
-				latest = t
-			}
-		}
-	}
-	if latest == nil {
-		return nil, domain.ErrNotFound
-	}
-	return latest, nil
-}
-
-func (m *mockModerationRepo) ListTickets(ctx context.Context, status *domain.ModerationStatus, limit, offset int) ([]*domain.ModerationTicket, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	var res []*domain.ModerationTicket
-	for _, t := range m.tickets {
-		if status == nil || t.Status == *status {
-			res = append(res, t)
-		}
-	}
-	return res, nil
-}
-
-func (m *mockModerationRepo) ResolveTicket(ctx context.Context, id int64, status domain.ModerationStatus, rejectionReason, moderatorID string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	t, ok := m.tickets[id]
-	if !ok {
-		return domain.ErrNotFound
-	}
-	t.Status = status
-	t.RejectionReason = rejectionReason
-	t.ModeratorID = moderatorID
-	now := time.Now()
-	t.ResolvedAt = &now
-	return nil
+	return req, nil
 }
 
 type mockReleaseRepo struct {

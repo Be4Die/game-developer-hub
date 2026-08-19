@@ -308,14 +308,34 @@ func (h *ProjectHandler) SubmitForModeration(ctx context.Context, req *pb.Submit
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
-	ticket, err := h.svc.SubmitForModeration(ctx, req.GetProjectId(), ownerID)
+	requestID, err := h.svc.SubmitForModeration(ctx, req.GetProjectId(), ownerID)
 	if err != nil {
 		return nil, domainError(err, "submit for moderation")
 	}
 	return &pb.SubmitForModerationResponse{
-		Success: true,
-		Ticket:  ticketToProto(ticket),
+		Success:   true,
+		RequestId: requestID,
 	}, nil
+}
+
+// PublishRelease публикует одобренную версию игры в продуктивное окружение.
+func (h *ProjectHandler) PublishRelease(ctx context.Context, req *pb.ProjectPublishReleaseRequest) (*pb.ProjectPublishReleaseResponse, error) {
+	rel, err := h.svc.PublishRelease(ctx, req.GetProjectId(), req.GetVersion(), req.GetPublishedBy())
+	if err != nil {
+		return nil, domainError(err, "publish release")
+	}
+	return &pb.ProjectPublishReleaseResponse{
+		Success: true,
+		Release: releaseToProto(rel),
+	}, nil
+}
+
+// RejectDraft возвращает черновик на доработку при отклонении модератором.
+func (h *ProjectHandler) RejectDraft(ctx context.Context, req *pb.ProjectRejectDraftRequest) (*pb.ProjectRejectDraftResponse, error) {
+	if err := h.svc.RejectDraft(ctx, req.GetProjectId()); err != nil {
+		return nil, domainError(err, "reject draft")
+	}
+	return &pb.ProjectRejectDraftResponse{Success: true}, nil
 }
 
 // GetPublished возвращает опубликованную версию игры.

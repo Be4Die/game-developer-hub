@@ -13,17 +13,17 @@ import (
 
 // ProjectService реализует бизнес-логику управления проектами, черновиками и сборками.
 type ProjectService struct {
-	projectRepo    domain.ProjectRepo
-	draftRepo      domain.DraftRepo
-	buildRepo      domain.BuildRepo
-	moderationRepo domain.ModerationRepo
-	releaseRepo    domain.ReleaseRepo
-	deploymentRepo domain.DeploymentRepo
-	buildStorage   domain.BuildStorage
-	mediaStorage   domain.MediaStorage
-	deployer       domain.Deployer
-	locker         domain.Locker
-	maxVersions    int
+	projectRepo      domain.ProjectRepo
+	draftRepo        domain.DraftRepo
+	buildRepo        domain.BuildRepo
+	releaseRepo      domain.ReleaseRepo
+	deploymentRepo   domain.DeploymentRepo
+	moderationClient domain.ModerationClient
+	buildStorage     domain.BuildStorage
+	mediaStorage     domain.MediaStorage
+	deployer         domain.Deployer
+	locker           domain.Locker
+	maxVersions      int
 }
 
 // NewProjectService создаёт экземпляр ProjectService.
@@ -31,9 +31,9 @@ func NewProjectService(
 	projectRepo domain.ProjectRepo,
 	draftRepo domain.DraftRepo,
 	buildRepo domain.BuildRepo,
-	moderationRepo domain.ModerationRepo,
 	releaseRepo domain.ReleaseRepo,
 	deploymentRepo domain.DeploymentRepo,
+	moderationClient domain.ModerationClient,
 	buildStorage domain.BuildStorage,
 	mediaStorage domain.MediaStorage,
 	deployer domain.Deployer,
@@ -47,17 +47,17 @@ func NewProjectService(
 		locker = valkey.NewNoOpLocker()
 	}
 	return &ProjectService{
-		projectRepo:    projectRepo,
-		draftRepo:      draftRepo,
-		buildRepo:      buildRepo,
-		moderationRepo: moderationRepo,
-		releaseRepo:    releaseRepo,
-		deploymentRepo: deploymentRepo,
-		buildStorage:   buildStorage,
-		mediaStorage:   mediaStorage,
-		deployer:       deployer,
-		locker:         locker,
-		maxVersions:    maxVersions,
+		projectRepo:      projectRepo,
+		draftRepo:        draftRepo,
+		buildRepo:        buildRepo,
+		releaseRepo:      releaseRepo,
+		deploymentRepo:   deploymentRepo,
+		moderationClient: moderationClient,
+		buildStorage:     buildStorage,
+		mediaStorage:     mediaStorage,
+		deployer:         deployer,
+		locker:           locker,
+		maxVersions:      maxVersions,
 	}
 }
 
@@ -361,76 +361,77 @@ func (s *ProjectService) UploadMedia(ctx context.Context, projectID int64, owner
 	return s.UploadMediaStream(ctx, projectID, ownerID, mediaType, bytes.NewReader(data))
 }
 
-// SubmitForModeration проверяет готовность черновика и создает заявку на модерацию.
-func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int64, ownerID string) (*domain.ModerationTicket, error) {
+// SubmitForModeration проверяет готовность черновика и отправляет снимок в подсистему модерации.
+func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int64, ownerID string) (int64, error) {
 	unlock, err := s.locker.Acquire(ctx, fmt.Sprintf("project:%d", projectID), 1*time.Minute)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	defer unlock()
 
 	p, err := s.projectRepo.Get(ctx, projectID)
 	if err != nil {
-		return nil, fmt.Errorf("ProjectService.SubmitForModeration: %w", err)
+		return 0, fmt.Errorf("ProjectService.SubmitForModeration: %w", err)
 	}
 	if p.OwnerID != ownerID {
-		return nil, domain.ErrForbidden
+		return 0, domain.ErrForbidden
 	}
 	if p.Status == domain.ProjectStatusPending {
-		return nil, domain.ErrAlreadyInModeration
+		return 0, domain.ErrAlreadyInModeration
 	}
 
 	draft, err := s.draftRepo.Get(ctx, projectID)
 	if err != nil {
-		return nil, domain.ErrDraftNotReady
+		return 0, domain.ErrDraftNotReady
 	}
 	p.Draft = draft
 
 	if err := draft.IsReadyForModeration(); err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	ticket := &domain.ModerationTicket{
+	snapshot := &domain.ProjectSnapshot{
 		ProjectID:          projectID,
 		OwnerID:            ownerID,
-		GameTitle:          draft.TitleRu,
-		GameDescription:    draft.About,
-		Status:             domain.ModerationStatusPending,
-		DevURL:             draft.DevURL,
+		TitleRu:            draft.TitleRu,
+		TitleEn:            draft.TitleEn,
+		About:              draft.About,
+		SeoRu:              draft.SeoRu,
+		SeoEn:              draft.SeoEn,
+		IconPath:           draft.IconPath,
+		CoverPath:          draft.CoverPath,
+		VideoPath:          draft.VideoPath,
 		ActiveBuildVersion: draft.ActiveBuildVersion,
-	}
-	if ticket.GameTitle == "" {
-		ticket.GameTitle = draft.TitleEn
+		DevURL:             draft.DevURL,
 	}
 
-	ticketID, err := s.moderationRepo.CreateTicket(ctx, ticket)
+	requestID, err := s.moderationClient.SubmitDraft(ctx, snapshot)
 	if err != nil {
-		return nil, fmt.Errorf("ProjectService.SubmitForModeration create ticket: %w", err)
+		return 0, fmt.Errorf("ProjectService.SubmitForModeration submit draft: %w", err)
 	}
-	ticket.ID = ticketID
 
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPending)
 
-	return ticket, nil
+	return requestID, nil
 }
 
 // PublishRelease публикует одобренную версию игры в продуктивное окружение.
-func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, version, approvedBy string) error {
+func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, version, approvedBy string) (*domain.Release, error) {
 	unlock, err := s.locker.Acquire(ctx, fmt.Sprintf("project:%d", projectID), 2*time.Minute)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer unlock()
 
 	archivePath := s.buildStorage.GetArchivePath(projectID, version)
 	deployRes, err := s.deployer.DeployProd(ctx, projectID, version, archivePath)
 	if err != nil {
-		return fmt.Errorf("ProjectService.PublishRelease deploy prod: %w", err)
+		return nil, fmt.Errorf("ProjectService.PublishRelease deploy prod: %w", err)
 	}
 
 	draft, err := s.draftRepo.Get(ctx, projectID)
 	if err != nil {
-		return fmt.Errorf("ProjectService.PublishRelease get draft: %w", err)
+		return nil, fmt.Errorf("ProjectService.PublishRelease get draft: %w", err)
 	}
 
 	_ = s.releaseRepo.Deactivate(ctx, projectID)
@@ -449,9 +450,11 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		PublishedBy: approvedBy,
 	}
 
-	if _, err := s.releaseRepo.Create(ctx, release); err != nil {
-		return fmt.Errorf("ProjectService.PublishRelease create release: %w", err)
+	relID, err := s.releaseRepo.Create(ctx, release)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.PublishRelease create release: %w", err)
 	}
+	release.ID = relID
 
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
@@ -461,10 +464,10 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		Status:      domain.DeploymentStatusSuccess,
 	})
 
-	return nil
+	return release, nil
 }
 
-// RejectDraft возвращает проект в статус черновика при отклонении.
+// RejectDraft возвращает проект в статус черновика при отклонении модератором.
 func (s *ProjectService) RejectDraft(ctx context.Context, projectID int64) error {
 	unlock, err := s.locker.Acquire(ctx, fmt.Sprintf("project:%d", projectID), 1*time.Minute)
 	if err != nil {

@@ -4,7 +4,6 @@ package orchestrator.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "orchestrator/v1/common.proto";
 
 // Режим оркестрации серверов проекта.
 enum OrchestrationMode {

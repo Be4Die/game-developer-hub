@@ -28,6 +28,9 @@ deployment:
   agent_endpoint: "game-deployment-agent:50055"
   agent_api_key: "dev-deployment-agent-key"
 
+moderation:
+  addr: "gdh-moderation:50054"
+
 jwt:
   secret: "dev-jwt-secret-for-local-testing"
   issuer: "sso"

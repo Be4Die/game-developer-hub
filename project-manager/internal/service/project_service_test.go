@@ -10,12 +10,12 @@ import (
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 )
 
-func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *mockDraftRepo, *mockBuildRepo, *mockModerationRepo, *mockReleaseRepo) {
+func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *mockDraftRepo, *mockBuildRepo, *mockModerationClient, *mockReleaseRepo) {
 	t.Helper()
 	pRepo := newMockProjectRepo()
 	dRepo := newMockDraftRepo()
 	bRepo := newMockBuildRepo()
-	mRepo := newMockModerationRepo()
+	mClient := newMockModerationClient()
 	rRepo := newMockReleaseRepo()
 	depRepo := newMockDeploymentRepo()
 	bStorage := &mockBuildStorage{}
@@ -23,11 +23,11 @@ func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *
 	deployer := &mockDeployer{}
 
 	svc := NewProjectService(
-		pRepo, dRepo, bRepo, mRepo, rRepo, depRepo,
+		pRepo, dRepo, bRepo, rRepo, depRepo, mClient,
 		bStorage, mStorage, deployer, nil, 5,
 	)
 
-	return svc, pRepo, dRepo, bRepo, mRepo, rRepo
+	return svc, pRepo, dRepo, bRepo, mClient, rRepo
 }
 
 func TestUnit_ProjectService_CreateProject(t *testing.T) {
@@ -123,7 +123,7 @@ func TestUnit_ProjectService_SubmitForModeration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, _, _, _, _, _ := setupTestProjectService(t)
+	svc, pRepo, _, _, _, _ := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 
@@ -141,17 +141,82 @@ func TestUnit_ProjectService_SubmitForModeration(t *testing.T) {
 	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("zip")))
 
 	// 3. Отправляем на модерацию
-	ticket, err := svc.SubmitForModeration(ctx, p.ID, "user-123")
+	reqID, err := svc.SubmitForModeration(ctx, p.ID, "user-123")
 	if err != nil {
 		t.Fatalf("expected successful submit, got: %v", err)
 	}
-	if ticket.Status != domain.ModerationStatusPending {
-		t.Errorf("expected ticket status Pending, got: %v", ticket.Status)
+	if reqID == 0 {
+		t.Errorf("expected non-zero request id, got: %d", reqID)
+	}
+
+	// Проверяем статус проекта
+	updatedProj, _ := pRepo.Get(ctx, p.ID)
+	if updatedProj.Status != domain.ProjectStatusPending {
+		t.Errorf("expected project status Pending, got: %v", updatedProj.Status)
 	}
 
 	// 4. Повторная отправка должна вернуть ErrAlreadyInModeration
 	_, err = svc.SubmitForModeration(ctx, p.ID, "user-123")
 	if !errors.Is(err, domain.ErrAlreadyInModeration) {
 		t.Errorf("expected ErrAlreadyInModeration, got: %v", err)
+	}
+}
+
+func TestUnit_ProjectService_PublishRelease(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, pRepo, _, _, _, rRepo := setupTestProjectService(t)
+
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
+		TitleRu: "Игра",
+		About:   "Описание игры",
+	})
+	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("zip")))
+
+	rel, err := svc.PublishRelease(ctx, p.ID, "1.0.0", "mod-999")
+	if err != nil {
+		t.Fatalf("expected publish release success, got error: %v", err)
+	}
+	if rel.Version != "1.0.0" {
+		t.Errorf("expected version 1.0.0, got: %s", rel.Version)
+	}
+	if rel.PublishedBy != "mod-999" {
+		t.Errorf("expected published by mod-999, got: %s", rel.PublishedBy)
+	}
+
+	// Проверяем статус проекта
+	updatedProj, _ := pRepo.Get(ctx, p.ID)
+	if updatedProj.Status != domain.ProjectStatusPublished {
+		t.Errorf("expected project status Published, got: %v", updatedProj.Status)
+	}
+
+	// Проверяем активный релиз
+	activeRel, err := rRepo.GetActive(ctx, p.ID)
+	if err != nil || !activeRel.IsActive {
+		t.Errorf("expected active release in repo: %v", err)
+	}
+}
+
+func TestUnit_ProjectService_RejectDraft(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, pRepo, _, _, _, _ := setupTestProjectService(t)
+
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	_ = pRepo.UpdateStatus(ctx, p.ID, domain.ProjectStatusPending)
+
+	err := svc.RejectDraft(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("expected reject success, got: %v", err)
+	}
+
+	updatedProj, _ := pRepo.Get(ctx, p.ID)
+	if updatedProj.Status != domain.ProjectStatusDraft {
+		t.Errorf("expected project status Draft after reject, got: %v", updatedProj.Status)
 	}
 }

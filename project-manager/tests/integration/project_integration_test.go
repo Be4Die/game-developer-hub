@@ -22,7 +22,7 @@ import (
 
 const bufSize = 1024 * 1024
 
-func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, pb.ModerationServiceClient, func()) {
+func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, func()) {
 	t.Helper()
 
 	lis := bufconn.Listen(bufSize)
@@ -31,7 +31,7 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, pb.Moderatio
 	pRepo := newMockProjectRepo()
 	dRepo := newMockDraftRepo()
 	bRepo := newMockBuildRepo()
-	mRepo := newMockModerationRepo()
+	mClient := newMockModerationClient()
 	rRepo := newMockReleaseRepo()
 	depRepo := newMockDeploymentRepo()
 
@@ -40,21 +40,14 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, pb.Moderatio
 	deployer := deployment.NewLocalDeployer(filepath.Join(tmpDir, "games"), "/games")
 
 	projSvc := service.NewProjectService(
-		pRepo, dRepo, bRepo, mRepo, rRepo, depRepo,
+		pRepo, dRepo, bRepo, rRepo, depRepo, mClient,
 		bStorage, mStorage, deployer, nil, 5,
 	)
 
-	modSvc := service.NewModerationService(
-		pRepo, dRepo, bRepo, mRepo, rRepo, depRepo,
-		bStorage, deployer,
-	)
-
 	projHandler := grpctransport.NewProjectHandler(projSvc)
-	modHandler := grpctransport.NewModerationHandler(modSvc, projSvc)
 
 	s := grpc.NewServer()
 	pb.RegisterProjectServiceServer(s, projHandler)
-	pb.RegisterModerationServiceServer(s, modHandler)
 
 	go func() {
 		if err := s.Serve(lis); err != nil {
@@ -79,7 +72,7 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, pb.Moderatio
 		_ = lis.Close()
 	}
 
-	return pb.NewProjectServiceClient(conn), pb.NewModerationServiceClient(conn), cleanup
+	return pb.NewProjectServiceClient(conn), cleanup
 }
 
 func createTestGameZip(t *testing.T) []byte {
@@ -99,26 +92,20 @@ func createTestGameZip(t *testing.T) []byte {
 	}
 	_, _ = asset.Write([]byte("console.log('game loaded');"))
 
-	_ = zw.Close()
+	if err := zw.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
 	return buf.Bytes()
 }
 
-func withAuth(userID string) context.Context {
-	md := metadata.Pairs("x-user-id", userID)
-	return metadata.NewOutgoingContext(context.Background(), md)
-}
-
-func TestIntegration_FullPublishingLifecycle(t *testing.T) {
-	t.Parallel()
-
-	projClient, modClient, cleanup := setupIntegrationServer(t)
+func TestIntegration_FullProjectLifecycle(t *testing.T) {
+	projClient, cleanup := setupIntegrationServer(t)
 	defer cleanup()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	userCtx := withAuth("dev-user-007")
-	modCtx := withAuth("mod-user-999")
+	userCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs("x-user-id", "dev-user-42", "x-user-role", "developer"))
 
 	// 1. Создание проекта
 	createResp, err := projClient.Create(userCtx, &pb.ProjectCreateRequest{
@@ -126,7 +113,7 @@ func TestIntegration_FullPublishingLifecycle(t *testing.T) {
 		TitleEn: "Space Shooter",
 	})
 	if err != nil {
-		t.Fatalf("CreateProject failed: %v", err)
+		t.Fatalf("Create failed: %v", err)
 	}
 	projectID := createResp.GetProject().GetId()
 	if projectID == 0 {
@@ -134,59 +121,59 @@ func TestIntegration_FullPublishingLifecycle(t *testing.T) {
 	}
 
 	// 2. Обновление метаданных черновика
-	updateResp, err := projClient.Update(userCtx, &pb.ProjectUpdateRequest{
-		Id:      projectID,
-		TitleRu: "Космический Шутер HD",
-		TitleEn: "Space Shooter HD",
-		About:   "Увлекательная аркадная игра в браузере",
-		SeoRu:   "космос, аркада, игра",
-		SeoEn:   "space, arcade, game",
+	_, err = projClient.Update(userCtx, &pb.ProjectUpdateRequest{
+		Id:                 projectID,
+		TitleRu:            "Космический Шутер Ремастер",
+		TitleEn:            "Space Shooter Remastered",
+		About:              "Захватывающая игра про космос с новейшей графикой.",
+		SeoRu:              "космос, игра, шутер",
+		SeoEn:              "space, game, shooter",
+		ActiveBuildVersion: "1.0.0",
 	})
 	if err != nil {
-		t.Fatalf("Update draft failed: %v", err)
-	}
-	if updateResp.GetProject().GetDraft().GetTitleRu() != "Космический Шутер HD" {
-		t.Errorf("expected TitleRu 'Космический Шутер HD', got: %s", updateResp.GetProject().GetDraft().GetTitleRu())
+		t.Fatalf("Update failed: %v", err)
 	}
 
-	// 3. Потоковая загрузка клиентской веб-сборки (64 КБ чанками)
+	// 3. Потоковая загрузка клиентской веб-сборки (64 КБ чанки)
 	zipData := createTestGameZip(t)
 	stream, err := projClient.UploadBuildStream(userCtx)
 	if err != nil {
-		t.Fatalf("UploadBuildStream client init failed: %v", err)
+		t.Fatalf("open upload build stream: %v", err)
 	}
 
-	// 3.1 Метаданные
-	if err := stream.Send(&pb.ProjectUploadBuildStreamRequest{
+	// Первое сообщение: метаданные
+	err = stream.Send(&pb.ProjectUploadBuildStreamRequest{
 		Payload: &pb.ProjectUploadBuildStreamRequest_Metadata{
 			Metadata: &pb.BuildUploadStreamMetadata{
 				ProjectId: projectID,
 				Version:   "1.0.0",
 			},
 		},
-	}); err != nil {
-		t.Fatalf("Send metadata failed: %v", err)
+	})
+	if err != nil {
+		t.Fatalf("send metadata: %v", err)
 	}
 
-	// 3.2 Чанки
-	chunkSize := 64 * 1024
+	// Отправка чанков
+	chunkSize := 32
 	for i := 0; i < len(zipData); i += chunkSize {
 		end := i + chunkSize
 		if end > len(zipData) {
 			end = len(zipData)
 		}
-		if err := stream.Send(&pb.ProjectUploadBuildStreamRequest{
+		err = stream.Send(&pb.ProjectUploadBuildStreamRequest{
 			Payload: &pb.ProjectUploadBuildStreamRequest_Chunk{
 				Chunk: zipData[i:end],
 			},
-		}); err != nil {
-			t.Fatalf("Send chunk failed: %v", err)
+		})
+		if err != nil {
+			t.Fatalf("send chunk: %v", err)
 		}
 	}
 
 	uploadResp, err := stream.CloseAndRecv()
 	if err != nil {
-		t.Fatalf("UploadBuildStream failed: %v", err)
+		t.Fatalf("upload stream close and recv: %v", err)
 	}
 	if !uploadResp.GetSuccess() {
 		t.Fatalf("expected success upload")
@@ -195,44 +182,32 @@ func TestIntegration_FullPublishingLifecycle(t *testing.T) {
 		t.Errorf("expected dev_url to be returned")
 	}
 
-	// 4. Отправка на модерацию
+	// 4. Отправка на модерацию (через Stub Moderation Client)
 	submitResp, err := projClient.SubmitForModeration(userCtx, &pb.SubmitForModerationRequest{
 		ProjectId: projectID,
 	})
 	if err != nil {
 		t.Fatalf("SubmitForModeration failed: %v", err)
 	}
-	if submitResp.GetTicket().GetStatus() != pb.ModerationStatus_MODERATION_STATUS_PENDING {
-		t.Errorf("expected ticket status PENDING, got: %v", submitResp.GetTicket().GetStatus())
+	if !submitResp.GetSuccess() || submitResp.GetRequestId() == 0 {
+		t.Errorf("expected success and non-zero request_id, got: %+v", submitResp)
 	}
 
-	// 5. Проверка модератором списка тикетов
-	listTicketsResp, err := modClient.ListTickets(modCtx, &pb.ListModerationTicketsRequest{
-		Status: pb.ModerationStatus_MODERATION_STATUS_PENDING,
+	// 5. Публикация релиза (вызов от имени модератора/сервиса модерации)
+	publishResp, err := projClient.PublishRelease(ctx, &pb.ProjectPublishReleaseRequest{
+		ProjectId:   projectID,
+		Version:     "1.0.0",
+		PublishedBy: "mod-999",
+		Comment:     "Проверено, игра отличная",
 	})
 	if err != nil {
-		t.Fatalf("ListTickets failed: %v", err)
+		t.Fatalf("PublishRelease failed: %v", err)
 	}
-	if len(listTicketsResp.GetTickets()) == 0 {
-		t.Fatalf("expected at least 1 ticket in moderation queue")
-	}
-
-	// 6. Модератор утверждает проект (Approve)
-	approveResp, err := modClient.Approve(modCtx, &pb.ApproveModerationRequest{
-		ProjectId: projectID,
-		Comment:   "Игра протестирована, всё отлично!",
-	})
-	if err != nil {
-		t.Fatalf("Approve failed: %v", err)
-	}
-	if !approveResp.GetSuccess() {
-		t.Fatalf("expected approve success")
-	}
-	if approveResp.GetRelease().GetProdUrl() == "" {
-		t.Errorf("expected release prod_url to be set")
+	if !publishResp.GetSuccess() || publishResp.GetRelease().GetProdUrl() == "" {
+		t.Errorf("expected release with prod_url, got: %+v", publishResp)
 	}
 
-	// 7. Получение опубликованного релиза
+	// 6. Получение опубликованного релиза
 	pubResp, err := projClient.GetPublished(userCtx, &pb.ProjectGetPublishedRequest{
 		Id: projectID,
 	})
@@ -243,7 +218,7 @@ func TestIntegration_FullPublishingLifecycle(t *testing.T) {
 		t.Errorf("expected release version 1.0.0, got: %s", pubResp.GetRelease().GetVersion())
 	}
 
-	// 8. Снятие с публикации
+	// 7. Снятие с публикации
 	unpubResp, err := projClient.Unpublish(userCtx, &pb.ProjectUnpublishRequest{
 		Id: projectID,
 	})
@@ -253,6 +228,4 @@ func TestIntegration_FullPublishingLifecycle(t *testing.T) {
 	if !unpubResp.GetSuccess() {
 		t.Errorf("expected unpublish success")
 	}
-
-	_ = ctx
 }

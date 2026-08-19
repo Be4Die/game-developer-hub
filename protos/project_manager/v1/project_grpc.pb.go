@@ -31,6 +31,8 @@ const (
 	ProjectService_UploadMedia_FullMethodName         = "/project_manager.v1.ProjectService/UploadMedia"
 	ProjectService_UploadMediaStream_FullMethodName   = "/project_manager.v1.ProjectService/UploadMediaStream"
 	ProjectService_SubmitForModeration_FullMethodName = "/project_manager.v1.ProjectService/SubmitForModeration"
+	ProjectService_PublishRelease_FullMethodName      = "/project_manager.v1.ProjectService/PublishRelease"
+	ProjectService_RejectDraft_FullMethodName         = "/project_manager.v1.ProjectService/RejectDraft"
 	ProjectService_GetPublished_FullMethodName        = "/project_manager.v1.ProjectService/GetPublished"
 	ProjectService_Unpublish_FullMethodName           = "/project_manager.v1.ProjectService/Unpublish"
 )
@@ -54,6 +56,8 @@ type ProjectServiceClient interface {
 	UploadMediaStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[ProjectUploadMediaStreamRequest, ProjectUploadMediaResponse], error)
 	// Модерация и публикация
 	SubmitForModeration(ctx context.Context, in *SubmitForModerationRequest, opts ...grpc.CallOption) (*SubmitForModerationResponse, error)
+	PublishRelease(ctx context.Context, in *ProjectPublishReleaseRequest, opts ...grpc.CallOption) (*ProjectPublishReleaseResponse, error)
+	RejectDraft(ctx context.Context, in *ProjectRejectDraftRequest, opts ...grpc.CallOption) (*ProjectRejectDraftResponse, error)
 	GetPublished(ctx context.Context, in *ProjectGetPublishedRequest, opts ...grpc.CallOption) (*ProjectGetPublishedResponse, error)
 	Unpublish(ctx context.Context, in *ProjectUnpublishRequest, opts ...grpc.CallOption) (*ProjectUnpublishResponse, error)
 }
@@ -192,6 +196,26 @@ func (c *projectServiceClient) SubmitForModeration(ctx context.Context, in *Subm
 	return out, nil
 }
 
+func (c *projectServiceClient) PublishRelease(ctx context.Context, in *ProjectPublishReleaseRequest, opts ...grpc.CallOption) (*ProjectPublishReleaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectPublishReleaseResponse)
+	err := c.cc.Invoke(ctx, ProjectService_PublishRelease_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) RejectDraft(ctx context.Context, in *ProjectRejectDraftRequest, opts ...grpc.CallOption) (*ProjectRejectDraftResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectRejectDraftResponse)
+	err := c.cc.Invoke(ctx, ProjectService_RejectDraft_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *projectServiceClient) GetPublished(ctx context.Context, in *ProjectGetPublishedRequest, opts ...grpc.CallOption) (*ProjectGetPublishedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProjectGetPublishedResponse)
@@ -231,6 +255,8 @@ type ProjectServiceServer interface {
 	UploadMediaStream(grpc.ClientStreamingServer[ProjectUploadMediaStreamRequest, ProjectUploadMediaResponse]) error
 	// Модерация и публикация
 	SubmitForModeration(context.Context, *SubmitForModerationRequest) (*SubmitForModerationResponse, error)
+	PublishRelease(context.Context, *ProjectPublishReleaseRequest) (*ProjectPublishReleaseResponse, error)
+	RejectDraft(context.Context, *ProjectRejectDraftRequest) (*ProjectRejectDraftResponse, error)
 	GetPublished(context.Context, *ProjectGetPublishedRequest) (*ProjectGetPublishedResponse, error)
 	Unpublish(context.Context, *ProjectUnpublishRequest) (*ProjectUnpublishResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
@@ -278,6 +304,12 @@ func (UnimplementedProjectServiceServer) UploadMediaStream(grpc.ClientStreamingS
 }
 func (UnimplementedProjectServiceServer) SubmitForModeration(context.Context, *SubmitForModerationRequest) (*SubmitForModerationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitForModeration not implemented")
+}
+func (UnimplementedProjectServiceServer) PublishRelease(context.Context, *ProjectPublishReleaseRequest) (*ProjectPublishReleaseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PublishRelease not implemented")
+}
+func (UnimplementedProjectServiceServer) RejectDraft(context.Context, *ProjectRejectDraftRequest) (*ProjectRejectDraftResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectDraft not implemented")
 }
 func (UnimplementedProjectServiceServer) GetPublished(context.Context, *ProjectGetPublishedRequest) (*ProjectGetPublishedResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPublished not implemented")
@@ -500,6 +532,42 @@ func _ProjectService_SubmitForModeration_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_PublishRelease_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectPublishReleaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).PublishRelease(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_PublishRelease_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).PublishRelease(ctx, req.(*ProjectPublishReleaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_RejectDraft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectRejectDraftRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).RejectDraft(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_RejectDraft_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).RejectDraft(ctx, req.(*ProjectRejectDraftRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProjectService_GetPublished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProjectGetPublishedRequest)
 	if err := dec(in); err != nil {
@@ -584,6 +652,14 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProjectService_SubmitForModeration_Handler,
 		},
 		{
+			MethodName: "PublishRelease",
+			Handler:    _ProjectService_PublishRelease_Handler,
+		},
+		{
+			MethodName: "RejectDraft",
+			Handler:    _ProjectService_RejectDraft_Handler,
+		},
+		{
 			MethodName: "GetPublished",
 			Handler:    _ProjectService_GetPublished_Handler,
 		},
@@ -604,259 +680,5 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "project_manager/v1/project.proto",
-}
-
-const (
-	ModerationService_ListTickets_FullMethodName        = "/project_manager.v1.ModerationService/ListTickets"
-	ModerationService_GetTicket_FullMethodName          = "/project_manager.v1.ModerationService/GetTicket"
-	ModerationService_GetTicketByProject_FullMethodName = "/project_manager.v1.ModerationService/GetTicketByProject"
-	ModerationService_Approve_FullMethodName            = "/project_manager.v1.ModerationService/Approve"
-	ModerationService_Reject_FullMethodName             = "/project_manager.v1.ModerationService/Reject"
-)
-
-// ModerationServiceClient is the client API for ModerationService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ModerationServiceClient interface {
-	ListTickets(ctx context.Context, in *ListModerationTicketsRequest, opts ...grpc.CallOption) (*ListModerationTicketsResponse, error)
-	GetTicket(ctx context.Context, in *GetModerationTicketRequest, opts ...grpc.CallOption) (*GetModerationTicketResponse, error)
-	GetTicketByProject(ctx context.Context, in *GetModerationTicketByProjectRequest, opts ...grpc.CallOption) (*GetModerationTicketResponse, error)
-	Approve(ctx context.Context, in *ApproveModerationRequest, opts ...grpc.CallOption) (*ApproveModerationResponse, error)
-	Reject(ctx context.Context, in *RejectModerationRequest, opts ...grpc.CallOption) (*RejectModerationResponse, error)
-}
-
-type moderationServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewModerationServiceClient(cc grpc.ClientConnInterface) ModerationServiceClient {
-	return &moderationServiceClient{cc}
-}
-
-func (c *moderationServiceClient) ListTickets(ctx context.Context, in *ListModerationTicketsRequest, opts ...grpc.CallOption) (*ListModerationTicketsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListModerationTicketsResponse)
-	err := c.cc.Invoke(ctx, ModerationService_ListTickets_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *moderationServiceClient) GetTicket(ctx context.Context, in *GetModerationTicketRequest, opts ...grpc.CallOption) (*GetModerationTicketResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetModerationTicketResponse)
-	err := c.cc.Invoke(ctx, ModerationService_GetTicket_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *moderationServiceClient) GetTicketByProject(ctx context.Context, in *GetModerationTicketByProjectRequest, opts ...grpc.CallOption) (*GetModerationTicketResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetModerationTicketResponse)
-	err := c.cc.Invoke(ctx, ModerationService_GetTicketByProject_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *moderationServiceClient) Approve(ctx context.Context, in *ApproveModerationRequest, opts ...grpc.CallOption) (*ApproveModerationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ApproveModerationResponse)
-	err := c.cc.Invoke(ctx, ModerationService_Approve_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *moderationServiceClient) Reject(ctx context.Context, in *RejectModerationRequest, opts ...grpc.CallOption) (*RejectModerationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RejectModerationResponse)
-	err := c.cc.Invoke(ctx, ModerationService_Reject_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// ModerationServiceServer is the server API for ModerationService service.
-// All implementations must embed UnimplementedModerationServiceServer
-// for forward compatibility.
-type ModerationServiceServer interface {
-	ListTickets(context.Context, *ListModerationTicketsRequest) (*ListModerationTicketsResponse, error)
-	GetTicket(context.Context, *GetModerationTicketRequest) (*GetModerationTicketResponse, error)
-	GetTicketByProject(context.Context, *GetModerationTicketByProjectRequest) (*GetModerationTicketResponse, error)
-	Approve(context.Context, *ApproveModerationRequest) (*ApproveModerationResponse, error)
-	Reject(context.Context, *RejectModerationRequest) (*RejectModerationResponse, error)
-	mustEmbedUnimplementedModerationServiceServer()
-}
-
-// UnimplementedModerationServiceServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedModerationServiceServer struct{}
-
-func (UnimplementedModerationServiceServer) ListTickets(context.Context, *ListModerationTicketsRequest) (*ListModerationTicketsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTickets not implemented")
-}
-func (UnimplementedModerationServiceServer) GetTicket(context.Context, *GetModerationTicketRequest) (*GetModerationTicketResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetTicket not implemented")
-}
-func (UnimplementedModerationServiceServer) GetTicketByProject(context.Context, *GetModerationTicketByProjectRequest) (*GetModerationTicketResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetTicketByProject not implemented")
-}
-func (UnimplementedModerationServiceServer) Approve(context.Context, *ApproveModerationRequest) (*ApproveModerationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Approve not implemented")
-}
-func (UnimplementedModerationServiceServer) Reject(context.Context, *RejectModerationRequest) (*RejectModerationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Reject not implemented")
-}
-func (UnimplementedModerationServiceServer) mustEmbedUnimplementedModerationServiceServer() {}
-func (UnimplementedModerationServiceServer) testEmbeddedByValue()                           {}
-
-// UnsafeModerationServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ModerationServiceServer will
-// result in compilation errors.
-type UnsafeModerationServiceServer interface {
-	mustEmbedUnimplementedModerationServiceServer()
-}
-
-func RegisterModerationServiceServer(s grpc.ServiceRegistrar, srv ModerationServiceServer) {
-	// If the following call panics, it indicates UnimplementedModerationServiceServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&ModerationService_ServiceDesc, srv)
-}
-
-func _ModerationService_ListTickets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListModerationTicketsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ModerationServiceServer).ListTickets(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ModerationService_ListTickets_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModerationServiceServer).ListTickets(ctx, req.(*ListModerationTicketsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ModerationService_GetTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModerationTicketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ModerationServiceServer).GetTicket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ModerationService_GetTicket_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModerationServiceServer).GetTicket(ctx, req.(*GetModerationTicketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ModerationService_GetTicketByProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModerationTicketByProjectRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ModerationServiceServer).GetTicketByProject(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ModerationService_GetTicketByProject_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModerationServiceServer).GetTicketByProject(ctx, req.(*GetModerationTicketByProjectRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ModerationService_Approve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ApproveModerationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ModerationServiceServer).Approve(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ModerationService_Approve_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModerationServiceServer).Approve(ctx, req.(*ApproveModerationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ModerationService_Reject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RejectModerationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ModerationServiceServer).Reject(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ModerationService_Reject_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModerationServiceServer).Reject(ctx, req.(*RejectModerationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// ModerationService_ServiceDesc is the grpc.ServiceDesc for ModerationService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var ModerationService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "project_manager.v1.ModerationService",
-	HandlerType: (*ModerationServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "ListTickets",
-			Handler:    _ModerationService_ListTickets_Handler,
-		},
-		{
-			MethodName: "GetTicket",
-			Handler:    _ModerationService_GetTicket_Handler,
-		},
-		{
-			MethodName: "GetTicketByProject",
-			Handler:    _ModerationService_GetTicketByProject_Handler,
-		},
-		{
-			MethodName: "Approve",
-			Handler:    _ModerationService_Approve_Handler,
-		},
-		{
-			MethodName: "Reject",
-			Handler:    _ModerationService_Reject_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "project_manager/v1/project.proto",
 }

@@ -30,15 +30,6 @@ type BuildRepo interface {
 	Delete(ctx context.Context, id int64) error
 }
 
-// ModerationRepo определяет контракт репозитория тикетов модерации.
-type ModerationRepo interface {
-	CreateTicket(ctx context.Context, t *ModerationTicket) (int64, error)
-	GetTicket(ctx context.Context, id int64) (*ModerationTicket, error)
-	GetLatestTicketByProject(ctx context.Context, projectID int64) (*ModerationTicket, error)
-	ListTickets(ctx context.Context, status *ModerationStatus, limit, offset int) ([]*ModerationTicket, error)
-	ResolveTicket(ctx context.Context, id int64, status ModerationStatus, rejectionReason, moderatorID string) error
-}
-
 // ReleaseRepo определяет контракт репозитория опубликованных релизов.
 type ReleaseRepo interface {
 	Create(ctx context.Context, r *Release) (int64, error)

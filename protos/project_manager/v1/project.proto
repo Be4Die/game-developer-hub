@@ -14,14 +14,6 @@ enum ProjectStatus {
   PROJECT_STATUS_REJECTED = 4;
 }
 
-// ModerationStatus статус тикета модерации.
-enum ModerationStatus {
-  MODERATION_STATUS_UNSPECIFIED = 0;
-  MODERATION_STATUS_PENDING = 1;
-  MODERATION_STATUS_APPROVED = 2;
-  MODERATION_STATUS_REJECTED = 3;
-}
-
 // DeploymentEnvironment целевое окружение развёртывания.
 enum DeploymentEnvironment {
   DEPLOYMENT_ENV_UNSPECIFIED = 0;
@@ -103,22 +95,6 @@ message ProjectBuild {
   int64 file_size = 5;
   bool is_unpacked = 6;
   string created_at = 7;
-}
-
-// ModerationTicket тикет заявки на проверку модератором.
-message ModerationTicket {
-  int64 id = 1;
-  int64 project_id = 2;
-  string owner_id = 3;
-  string game_title = 4;
-  string game_description = 5;
-  ModerationStatus status = 6;
-  string rejection_reason = 7;
-  string moderator_id = 8;
-  string dev_url = 9;
-  string active_build_version = 10;
-  string submitted_at = 11;
-  string resolved_at = 12;
 }
 
 // DeploymentRecord запись аудита развертывания.
@@ -254,7 +230,7 @@ message ProjectUploadMediaResponse {
   string file_path = 2;
 }
 
-// ─── Moderation & Release Requests ────────────────────
+// ─── Moderation & Release ─────────────────────────────
 
 message SubmitForModerationRequest {
   int64 project_id = 1;
@@ -262,50 +238,28 @@ message SubmitForModerationRequest {
 
 message SubmitForModerationResponse {
   bool success = 1;
-  ModerationTicket ticket = 2;
+  int64 request_id = 2;
 }
 
-message ListModerationTicketsRequest {
-  ModerationStatus status = 1;
-  int32 limit = 2;
-  int32 offset = 3;
-}
-
-message ListModerationTicketsResponse {
-  repeated ModerationTicket tickets = 1;
-}
-
-message GetModerationTicketRequest {
-  int64 ticket_id = 1;
-}
-
-message GetModerationTicketByProjectRequest {
+message ProjectPublishReleaseRequest {
   int64 project_id = 1;
+  string version = 2;
+  string published_by = 3;
+  string comment = 4;
 }
 
-message GetModerationTicketResponse {
-  ModerationTicket ticket = 1;
-  Project project = 2;
-}
-
-message ApproveModerationRequest {
-  int64 project_id = 1;
-  string comment = 2;
-}
-
-message ApproveModerationResponse {
+message ProjectPublishReleaseResponse {
   bool success = 1;
   ProjectRelease release = 2;
 }
 
-message RejectModerationRequest {
+message ProjectRejectDraftRequest {
   int64 project_id = 1;
   string reason = 2;
 }
 
-message RejectModerationResponse {
+message ProjectRejectDraftResponse {
   bool success = 1;
-  ModerationTicket ticket = 2;
 }
 
 message ProjectGetPublishedRequest {
@@ -324,7 +278,7 @@ message ProjectUnpublishResponse {
   bool success = 1;
 }
 
-// ─── Services ─────────────────────────────────────────
+// ─── Service ──────────────────────────────────────────
 
 service ProjectService {
   rpc Create(ProjectCreateRequest) returns (ProjectCreateResponse) {
@@ -362,28 +316,13 @@ service ProjectService {
   rpc SubmitForModeration(SubmitForModerationRequest) returns (SubmitForModerationResponse) {
     option (google.api.http) = { post: "/api/v1/projects/{project_id}/moderation/submit", body: "*" };
   }
+  rpc PublishRelease(ProjectPublishReleaseRequest) returns (ProjectPublishReleaseResponse);
+  rpc RejectDraft(ProjectRejectDraftRequest) returns (ProjectRejectDraftResponse);
+
   rpc GetPublished(ProjectGetPublishedRequest) returns (ProjectGetPublishedResponse) {
     option (google.api.http) = { get: "/api/v1/projects/{id}/published" };
   }
   rpc Unpublish(ProjectUnpublishRequest) returns (ProjectUnpublishResponse) {
     option (google.api.http) = { post: "/api/v1/projects/{id}/unpublish", body: "*" };
-  }
-}
-
-service ModerationService {
-  rpc ListTickets(ListModerationTicketsRequest) returns (ListModerationTicketsResponse) {
-    option (google.api.http) = { get: "/api/v1/moderation/tickets" };
-  }
-  rpc GetTicket(GetModerationTicketRequest) returns (GetModerationTicketResponse) {
-    option (google.api.http) = { get: "/api/v1/moderation/tickets/{ticket_id}" };
-  }
-  rpc GetTicketByProject(GetModerationTicketByProjectRequest) returns (GetModerationTicketResponse) {
-    option (google.api.http) = { get: "/api/v1/moderation/projects/{project_id}" };
-  }
-  rpc Approve(ApproveModerationRequest) returns (ApproveModerationResponse) {
-    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/approve", body: "*" };
-  }
-  rpc Reject(RejectModerationRequest) returns (RejectModerationResponse) {
-    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/reject", body: "*" };
   }
 }

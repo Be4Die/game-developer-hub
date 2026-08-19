@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+package moderation.v1;
+option go_package = "github.com/Be4Die/game-developer-hub/protos/moderation/v1";
+
+import "google/api/annotations.proto";
+
+// RequestStatus статус рассмотрения заявки модератором.
+enum RequestStatus {
+  REQUEST_STATUS_UNSPECIFIED = 0;
+  REQUEST_STATUS_PENDING = 1;
+  REQUEST_STATUS_IN_REVIEW = 2;
+  REQUEST_STATUS_APPROVED = 3;
+  REQUEST_STATUS_REJECTED = 4;
+  REQUEST_STATUS_CANCELLED = 5;
+}
+
+// SenderRole роль отправителя сообщения в чате проекта.
+enum SenderRole {
+  SENDER_ROLE_UNSPECIFIED = 0;
+  SENDER_ROLE_DEVELOPER = 1;
+  SENDER_ROLE_MODERATOR = 2;
+  SENDER_ROLE_SYSTEM = 3;
+}
+
+// MessageType тип сообщения в чате проекта.
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  MESSAGE_TYPE_TEXT = 1;
+  MESSAGE_TYPE_SUBMITTED = 2;
+  MESSAGE_TYPE_STATUS_CHANGED = 3;
+  MESSAGE_TYPE_APPROVED = 4;
+  MESSAGE_TYPE_REJECTED = 5;
+}
+
+// ProjectSnapshot снимок состояния черновика на момент отправки на модерацию.
+message ProjectSnapshot {
+  int64 project_id = 1;
+  string title_ru = 2;
+  string title_en = 3;
+  string seo_ru = 4;
+  string seo_en = 5;
+  string about = 6;
+  string icon_path = 7;
+  string cover_path = 8;
+  string video_path = 9;
+  string active_build_version = 10;
+  string dev_url = 11;
+}
+
+// ModerationRequest сущность запроса на модерацию проекта.
+message ModerationRequest {
+  int64 id = 1;
+  int64 project_id = 2;
+  string owner_id = 3;
+  string moderator_id = 4;
+  RequestStatus status = 5;
+  ProjectSnapshot snapshot = 6;
+  string rejection_reason = 7;
+  string submitted_at = 8;
+  string started_review_at = 9;
+  string resolved_at = 10;
+}
+
+// ChatMessage сообщение или системное событие в чате проекта.
+message ChatMessage {
+  int64 id = 1;
+  int64 project_id = 2;
+  int64 request_id = 3;
+  string sender_id = 4;
+  SenderRole sender_role = 5;
+  MessageType message_type = 6;
+  string content = 7;
+  string created_at = 8;
+}
+
+// ─── Запросы и Ответы ─────────────────────────────────────────
+
+message SubmitDraftRequest {
+  int64 project_id = 1;
+  string owner_id = 2;
+  ProjectSnapshot snapshot = 3;
+}
+
+message SubmitDraftResponse {
+  bool success = 1;
+  ModerationRequest request = 2;
+}
+
+message ListModerationRequestsRequest {
+  RequestStatus status = 1;
+  string moderator_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListModerationRequestsResponse {
+  repeated ModerationRequest requests = 1;
+  int32 total = 2;
+}
+
+message GetModerationRequestRequest {
+  int64 request_id = 1;
+}
+
+message GetModerationRequestResponse {
+  ModerationRequest request = 1;
+}
+
+message GetLatestRequestByProjectRequest {
+  int64 project_id = 1;
+}
+
+message ClaimModerationRequestRequest {
+  int64 request_id = 1;
+}
+
+message ClaimModerationRequestResponse {
+  ModerationRequest request = 1;
+}
+
+message ApproveModerationRequest {
+  int64 project_id = 1;
+  string comment = 2;
+}
+
+message ApproveModerationResponse {
+  bool success = 1;
+  ModerationRequest request = 2;
+  string prod_url = 3;
+}
+
+message RejectModerationRequest {
+  int64 project_id = 1;
+  string reason = 2;
+}
+
+message RejectModerationResponse {
+  bool success = 1;
+  ModerationRequest request = 2;
+}
+
+message SendChatMessageRequest {
+  int64 project_id = 1;
+  string content = 2;
+}
+
+message SendChatMessageResponse {
+  ChatMessage message = 1;
+}
+
+message ListChatMessagesRequest {
+  int64 project_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListChatMessagesResponse {
+  repeated ChatMessage messages = 1;
+  int32 total = 2;
+}
+
+// ─── Сервис ───────────────────────────────────────────────────
+
+service ModerationService {
+  rpc SubmitDraft(SubmitDraftRequest) returns (SubmitDraftResponse);
+
+  rpc ListRequests(ListModerationRequestsRequest) returns (ListModerationRequestsResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/requests" };
+  }
+
+  rpc GetRequest(GetModerationRequestRequest) returns (GetModerationRequestResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/requests/{request_id}" };
+  }
+
+  rpc GetLatestRequestByProject(GetLatestRequestByProjectRequest) returns (GetModerationRequestResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/projects/{project_id}/latest" };
+  }
+
+  rpc ClaimRequest(ClaimModerationRequestRequest) returns (ClaimModerationRequestResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/requests/{request_id}/claim", body: "*" };
+  }
+
+  rpc Approve(ApproveModerationRequest) returns (ApproveModerationResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/approve", body: "*" };
+  }
+
+  rpc Reject(RejectModerationRequest) returns (RejectModerationResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/reject", body: "*" };
+  }
+
+  rpc SendMessage(SendChatMessageRequest) returns (SendChatMessageResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/messages", body: "*" };
+  }
+
+  rpc ListMessages(ListChatMessagesRequest) returns (ListChatMessagesResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/projects/{project_id}/messages" };
+  }
+}

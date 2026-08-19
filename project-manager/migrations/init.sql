@@ -60,32 +60,6 @@ COMMENT ON TABLE project_builds IS 'Клиентские билды проект
 CREATE INDEX IF NOT EXISTS idx_project_builds_project ON project_builds(project_id, created_at DESC);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Таблица moderation_tickets — история и очередь заявок на модерацию
--- ─────────────────────────────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS moderation_tickets (
-    id                    BIGSERIAL PRIMARY KEY,
-    project_id            BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    owner_id              TEXT NOT NULL,
-    game_title            TEXT NOT NULL DEFAULT '',
-    game_description      TEXT NOT NULL DEFAULT '',
-    status                SMALLINT NOT NULL DEFAULT 1,  -- 1=pending, 2=approved, 3=rejected
-    snapshot_meta         JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rejection_reason      TEXT NOT NULL DEFAULT '',
-    moderator_id          TEXT NOT NULL DEFAULT '',
-    dev_url               TEXT NOT NULL DEFAULT '',
-    active_build_version  TEXT NOT NULL DEFAULT '',
-    submitted_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    resolved_at           TIMESTAMP WITH TIME ZONE
-);
-
-COMMENT ON TABLE moderation_tickets IS 'Тикеты модерации игровых проектов';
-COMMENT ON COLUMN moderation_tickets.status IS '1=pending, 2=approved, 3=rejected';
-
-CREATE INDEX IF NOT EXISTS idx_moderation_tickets_status ON moderation_tickets(status, submitted_at DESC);
-CREATE INDEX IF NOT EXISTS idx_moderation_tickets_project ON moderation_tickets(project_id);
-
--- ─────────────────────────────────────────────────────────────────────────────
 -- Таблица project_releases — опубликованные версии игр (для игроков)
 -- ─────────────────────────────────────────────────────────────────────────────
 

@@ -34,6 +34,12 @@ vars:
   AGENT_GRPC_PORT: 50055
   AGENT_API_KEY: "dev-deployment-agent-key"
 
+  # Moderation
+  MODERATION_IMAGE_NAME: "moderation"
+  MODERATION_IMAGE_TAG: "latest"
+  MODERATION_CONTAINER_NAME: "moderation"
+  MODERATION_GRPC_PORT: 50054
+
 includes:
   go: taskfiles/go.yml
   docker: taskfiles/docker.yml
@@ -760,6 +766,83 @@ tasks:
         vars:
           GO_DIR: project-manager
 
+  # ==================== Moderation ====================
+  moderation:build:
+    desc: "Build Docker image for moderation"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.MODERATION_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.MODERATION_IMAGE_TAG}}"
+          DOCKERFILE_PATH: moderation/Dockerfile
+
+  moderation:up:
+    desc: "Run moderation container in background"
+    cmds:
+      - task: docker:build
+        vars:
+          DOCKER_IMAGE_NAME: "{{.MODERATION_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.MODERATION_IMAGE_TAG}}"
+          DOCKERFILE_PATH: moderation/Dockerfile
+      - task: docker:up
+        vars:
+          DOCKER_IMAGE_NAME: "{{.MODERATION_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.MODERATION_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.MODERATION_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.MODERATION_GRPC_PORT}}:{{.MODERATION_GRPC_PORT}} -e CONFIG_PATH=/app/config/docker.yaml -e JWT_SECRET=dev-jwt-secret-for-local-testing"
+
+  moderation:down:
+    desc: "Stop and remove moderation container"
+    cmds:
+      - task: docker:down
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.MODERATION_CONTAINER_NAME}}"
+
+  moderation:logs:
+    desc: "Show moderation container logs"
+    cmds:
+      - task: docker:logs
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.MODERATION_CONTAINER_NAME}}"
+
+  moderation:restart:
+    desc: "Restart moderation container"
+    cmds:
+      - task: docker:restart
+        vars:
+          DOCKER_IMAGE_NAME: "{{.MODERATION_IMAGE_NAME}}"
+          DOCKER_IMAGE_TAG: "{{.MODERATION_IMAGE_TAG}}"
+          DOCKER_CONTAINER_NAME: "{{.MODERATION_CONTAINER_NAME}}"
+          DOCKER_RUN_ARGS: "-p {{.MODERATION_GRPC_PORT}}:{{.MODERATION_GRPC_PORT}} -e CONFIG_PATH=/app/config/docker.yaml -e JWT_SECRET=dev-jwt-secret-for-local-testing"
+
+  moderation:shell:
+    desc: "Open shell in running moderation container"
+    cmds:
+      - task: docker:shell
+        vars:
+          DOCKER_CONTAINER_NAME: "{{.MODERATION_CONTAINER_NAME}}"
+
+  moderation:lint:
+    desc: "Lint moderation Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: moderation
+
+  moderation:test:
+    desc: "Run moderation unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: moderation
+
+  moderation:test:cover:
+    desc: "Run moderation tests and print coverage percentage"
+    cmds:
+      - task: go:test:cover
+        vars:
+          GO_DIR: moderation
+
   # ==================== Game Deployment Agent ====================
   agent:build:
     desc: "Build Docker image for game-deployment-agent"
@@ -917,6 +1000,9 @@ tasks:
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < project-manager/migrations/init.sql
       - echo "✅ Project Manager DB schema initialized"
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d orchestrator < moderation/migrations/init.sql
+      - echo "✅ Moderation DB schema initialized"
 
   stack:db:reset:
     desc: "Reset orchestrator and SSO databases (drop, recreate, init)"
@@ -980,10 +1066,13 @@ tasks:
       - task: orchestrator:logs
 
   all:test:
-    desc: "Run all tests"
+    desc: "Run all tests across all services"
     cmds:
       - task: node:test
       - task: orchestrator:test
+      - task: sso:test
+      - task: project-manager:test
+      - task: moderation:test
 
   all:lint:
     desc: "Lint all code"
@@ -991,6 +1080,8 @@ tasks:
       - task: node:lint
       - task: orchestrator:lint
       - task: sso:lint
+      - task: project-manager:lint
+      - task: moderation:lint
       - task: proto:lint
 
   all:cloc:

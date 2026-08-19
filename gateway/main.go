@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	modpb "github.com/Be4Die/game-developer-hub/protos/moderation/v1"
 	projpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 )
@@ -94,6 +95,7 @@ func run() error {
 	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
 	projectManagerAddr := envOr("PROJECT_MANAGER_GRPC_ADDR", "project-manager:50053")
+	moderationAddr := envOr("MODERATION_GRPC_ADDR", "moderation:50054")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 
 	// Создаём mux с настройками JSON.
@@ -206,7 +208,16 @@ func run() error {
 	if err := projpb.RegisterProjectServiceHandler(ctx, mux, projConn); err != nil {
 		return err
 	}
-	if err := projpb.RegisterModerationServiceHandler(ctx, mux, projConn); err != nil {
+
+	// Подключаемся к Moderation.
+	modConn, err := grpc.NewClient(moderationAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = modConn.Close() }()
+
+	// Регистрируем Moderation handlers.
+	if err := modpb.RegisterModerationServiceHandler(ctx, mux, modConn); err != nil {
 		return err
 	}
 

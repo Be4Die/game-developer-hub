@@ -78,59 +78,6 @@ func (ProjectStatus) EnumDescriptor() ([]byte, []int) {
 	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{0}
 }
 
-// ModerationStatus статус тикета модерации.
-type ModerationStatus int32
-
-const (
-	ModerationStatus_MODERATION_STATUS_UNSPECIFIED ModerationStatus = 0
-	ModerationStatus_MODERATION_STATUS_PENDING     ModerationStatus = 1
-	ModerationStatus_MODERATION_STATUS_APPROVED    ModerationStatus = 2
-	ModerationStatus_MODERATION_STATUS_REJECTED    ModerationStatus = 3
-)
-
-// Enum value maps for ModerationStatus.
-var (
-	ModerationStatus_name = map[int32]string{
-		0: "MODERATION_STATUS_UNSPECIFIED",
-		1: "MODERATION_STATUS_PENDING",
-		2: "MODERATION_STATUS_APPROVED",
-		3: "MODERATION_STATUS_REJECTED",
-	}
-	ModerationStatus_value = map[string]int32{
-		"MODERATION_STATUS_UNSPECIFIED": 0,
-		"MODERATION_STATUS_PENDING":     1,
-		"MODERATION_STATUS_APPROVED":    2,
-		"MODERATION_STATUS_REJECTED":    3,
-	}
-)
-
-func (x ModerationStatus) Enum() *ModerationStatus {
-	p := new(ModerationStatus)
-	*p = x
-	return p
-}
-
-func (x ModerationStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ModerationStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_project_manager_v1_project_proto_enumTypes[1].Descriptor()
-}
-
-func (ModerationStatus) Type() protoreflect.EnumType {
-	return &file_project_manager_v1_project_proto_enumTypes[1]
-}
-
-func (x ModerationStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ModerationStatus.Descriptor instead.
-func (ModerationStatus) EnumDescriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{1}
-}
-
 // DeploymentEnvironment целевое окружение развёртывания.
 type DeploymentEnvironment int32
 
@@ -165,11 +112,11 @@ func (x DeploymentEnvironment) String() string {
 }
 
 func (DeploymentEnvironment) Descriptor() protoreflect.EnumDescriptor {
-	return file_project_manager_v1_project_proto_enumTypes[2].Descriptor()
+	return file_project_manager_v1_project_proto_enumTypes[1].Descriptor()
 }
 
 func (DeploymentEnvironment) Type() protoreflect.EnumType {
-	return &file_project_manager_v1_project_proto_enumTypes[2]
+	return &file_project_manager_v1_project_proto_enumTypes[1]
 }
 
 func (x DeploymentEnvironment) Number() protoreflect.EnumNumber {
@@ -178,7 +125,7 @@ func (x DeploymentEnvironment) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DeploymentEnvironment.Descriptor instead.
 func (DeploymentEnvironment) EnumDescriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{2}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{1}
 }
 
 // DeploymentStatus статус выполнения развёртывания.
@@ -218,11 +165,11 @@ func (x DeploymentStatus) String() string {
 }
 
 func (DeploymentStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_project_manager_v1_project_proto_enumTypes[3].Descriptor()
+	return file_project_manager_v1_project_proto_enumTypes[2].Descriptor()
 }
 
 func (DeploymentStatus) Type() protoreflect.EnumType {
-	return &file_project_manager_v1_project_proto_enumTypes[3]
+	return &file_project_manager_v1_project_proto_enumTypes[2]
 }
 
 func (x DeploymentStatus) Number() protoreflect.EnumNumber {
@@ -231,7 +178,7 @@ func (x DeploymentStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DeploymentStatus.Descriptor instead.
 func (DeploymentStatus) EnumDescriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{3}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{2}
 }
 
 // Project сущность игрового проекта.
@@ -782,139 +729,6 @@ func (x *ProjectBuild) GetCreatedAt() string {
 	return ""
 }
 
-// ModerationTicket тикет заявки на проверку модератором.
-type ModerationTicket struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	ProjectId          int64                  `protobuf:"varint,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	OwnerId            string                 `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	GameTitle          string                 `protobuf:"bytes,4,opt,name=game_title,json=gameTitle,proto3" json:"game_title,omitempty"`
-	GameDescription    string                 `protobuf:"bytes,5,opt,name=game_description,json=gameDescription,proto3" json:"game_description,omitempty"`
-	Status             ModerationStatus       `protobuf:"varint,6,opt,name=status,proto3,enum=project_manager.v1.ModerationStatus" json:"status,omitempty"`
-	RejectionReason    string                 `protobuf:"bytes,7,opt,name=rejection_reason,json=rejectionReason,proto3" json:"rejection_reason,omitempty"`
-	ModeratorId        string                 `protobuf:"bytes,8,opt,name=moderator_id,json=moderatorId,proto3" json:"moderator_id,omitempty"`
-	DevUrl             string                 `protobuf:"bytes,9,opt,name=dev_url,json=devUrl,proto3" json:"dev_url,omitempty"`
-	ActiveBuildVersion string                 `protobuf:"bytes,10,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
-	SubmittedAt        string                 `protobuf:"bytes,11,opt,name=submitted_at,json=submittedAt,proto3" json:"submitted_at,omitempty"`
-	ResolvedAt         string                 `protobuf:"bytes,12,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *ModerationTicket) Reset() {
-	*x = ModerationTicket{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ModerationTicket) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ModerationTicket) ProtoMessage() {}
-
-func (x *ModerationTicket) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ModerationTicket.ProtoReflect.Descriptor instead.
-func (*ModerationTicket) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *ModerationTicket) GetId() int64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *ModerationTicket) GetProjectId() int64 {
-	if x != nil {
-		return x.ProjectId
-	}
-	return 0
-}
-
-func (x *ModerationTicket) GetOwnerId() string {
-	if x != nil {
-		return x.OwnerId
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetGameTitle() string {
-	if x != nil {
-		return x.GameTitle
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetGameDescription() string {
-	if x != nil {
-		return x.GameDescription
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetStatus() ModerationStatus {
-	if x != nil {
-		return x.Status
-	}
-	return ModerationStatus_MODERATION_STATUS_UNSPECIFIED
-}
-
-func (x *ModerationTicket) GetRejectionReason() string {
-	if x != nil {
-		return x.RejectionReason
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetModeratorId() string {
-	if x != nil {
-		return x.ModeratorId
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetDevUrl() string {
-	if x != nil {
-		return x.DevUrl
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetActiveBuildVersion() string {
-	if x != nil {
-		return x.ActiveBuildVersion
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetSubmittedAt() string {
-	if x != nil {
-		return x.SubmittedAt
-	}
-	return ""
-}
-
-func (x *ModerationTicket) GetResolvedAt() string {
-	if x != nil {
-		return x.ResolvedAt
-	}
-	return ""
-}
-
 // DeploymentRecord запись аудита развертывания.
 type DeploymentRecord struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -931,7 +745,7 @@ type DeploymentRecord struct {
 
 func (x *DeploymentRecord) Reset() {
 	*x = DeploymentRecord{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[5]
+	mi := &file_project_manager_v1_project_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +757,7 @@ func (x *DeploymentRecord) String() string {
 func (*DeploymentRecord) ProtoMessage() {}
 
 func (x *DeploymentRecord) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[5]
+	mi := &file_project_manager_v1_project_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -956,7 +770,7 @@ func (x *DeploymentRecord) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeploymentRecord.ProtoReflect.Descriptor instead.
 func (*DeploymentRecord) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{5}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeploymentRecord) GetId() int64 {
@@ -1019,7 +833,7 @@ type ProjectCreateRequest struct {
 
 func (x *ProjectCreateRequest) Reset() {
 	*x = ProjectCreateRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[6]
+	mi := &file_project_manager_v1_project_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1031,7 +845,7 @@ func (x *ProjectCreateRequest) String() string {
 func (*ProjectCreateRequest) ProtoMessage() {}
 
 func (x *ProjectCreateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[6]
+	mi := &file_project_manager_v1_project_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1044,7 +858,7 @@ func (x *ProjectCreateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectCreateRequest.ProtoReflect.Descriptor instead.
 func (*ProjectCreateRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{6}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ProjectCreateRequest) GetTitleRu() string {
@@ -1070,7 +884,7 @@ type ProjectCreateResponse struct {
 
 func (x *ProjectCreateResponse) Reset() {
 	*x = ProjectCreateResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[7]
+	mi := &file_project_manager_v1_project_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1082,7 +896,7 @@ func (x *ProjectCreateResponse) String() string {
 func (*ProjectCreateResponse) ProtoMessage() {}
 
 func (x *ProjectCreateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[7]
+	mi := &file_project_manager_v1_project_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1095,7 +909,7 @@ func (x *ProjectCreateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectCreateResponse.ProtoReflect.Descriptor instead.
 func (*ProjectCreateResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{7}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProjectCreateResponse) GetProject() *Project {
@@ -1115,7 +929,7 @@ type ProjectGetRequest struct {
 
 func (x *ProjectGetRequest) Reset() {
 	*x = ProjectGetRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[8]
+	mi := &file_project_manager_v1_project_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1127,7 +941,7 @@ func (x *ProjectGetRequest) String() string {
 func (*ProjectGetRequest) ProtoMessage() {}
 
 func (x *ProjectGetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[8]
+	mi := &file_project_manager_v1_project_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1140,7 +954,7 @@ func (x *ProjectGetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetRequest.ProtoReflect.Descriptor instead.
 func (*ProjectGetRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{8}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ProjectGetRequest) GetId() int64 {
@@ -1159,7 +973,7 @@ type ProjectGetResponse struct {
 
 func (x *ProjectGetResponse) Reset() {
 	*x = ProjectGetResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[9]
+	mi := &file_project_manager_v1_project_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1171,7 +985,7 @@ func (x *ProjectGetResponse) String() string {
 func (*ProjectGetResponse) ProtoMessage() {}
 
 func (x *ProjectGetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[9]
+	mi := &file_project_manager_v1_project_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1184,7 +998,7 @@ func (x *ProjectGetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetResponse.ProtoReflect.Descriptor instead.
 func (*ProjectGetResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{9}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ProjectGetResponse) GetProject() *Project {
@@ -1205,7 +1019,7 @@ type ProjectListRequest struct {
 
 func (x *ProjectListRequest) Reset() {
 	*x = ProjectListRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[10]
+	mi := &file_project_manager_v1_project_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1031,7 @@ func (x *ProjectListRequest) String() string {
 func (*ProjectListRequest) ProtoMessage() {}
 
 func (x *ProjectListRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[10]
+	mi := &file_project_manager_v1_project_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1044,7 @@ func (x *ProjectListRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{10}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ProjectListRequest) GetLimit() int32 {
@@ -1257,7 +1071,7 @@ type ProjectListResponse struct {
 
 func (x *ProjectListResponse) Reset() {
 	*x = ProjectListResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	mi := &file_project_manager_v1_project_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1269,7 +1083,7 @@ func (x *ProjectListResponse) String() string {
 func (*ProjectListResponse) ProtoMessage() {}
 
 func (x *ProjectListResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	mi := &file_project_manager_v1_project_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1282,7 +1096,7 @@ func (x *ProjectListResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{11}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ProjectListResponse) GetProjects() []*Project {
@@ -1315,7 +1129,7 @@ type ProjectUpdateRequest struct {
 
 func (x *ProjectUpdateRequest) Reset() {
 	*x = ProjectUpdateRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	mi := &file_project_manager_v1_project_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1327,7 +1141,7 @@ func (x *ProjectUpdateRequest) String() string {
 func (*ProjectUpdateRequest) ProtoMessage() {}
 
 func (x *ProjectUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	mi := &file_project_manager_v1_project_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1340,7 +1154,7 @@ func (x *ProjectUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUpdateRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{12}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ProjectUpdateRequest) GetId() int64 {
@@ -1401,7 +1215,7 @@ type ProjectUpdateResponse struct {
 
 func (x *ProjectUpdateResponse) Reset() {
 	*x = ProjectUpdateResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[13]
+	mi := &file_project_manager_v1_project_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1413,7 +1227,7 @@ func (x *ProjectUpdateResponse) String() string {
 func (*ProjectUpdateResponse) ProtoMessage() {}
 
 func (x *ProjectUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[13]
+	mi := &file_project_manager_v1_project_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1426,7 +1240,7 @@ func (x *ProjectUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUpdateResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{13}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ProjectUpdateResponse) GetProject() *Project {
@@ -1446,7 +1260,7 @@ type ProjectDeleteRequest struct {
 
 func (x *ProjectDeleteRequest) Reset() {
 	*x = ProjectDeleteRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[14]
+	mi := &file_project_manager_v1_project_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1458,7 +1272,7 @@ func (x *ProjectDeleteRequest) String() string {
 func (*ProjectDeleteRequest) ProtoMessage() {}
 
 func (x *ProjectDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[14]
+	mi := &file_project_manager_v1_project_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1471,7 +1285,7 @@ func (x *ProjectDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteRequest.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{14}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ProjectDeleteRequest) GetId() int64 {
@@ -1490,7 +1304,7 @@ type ProjectDeleteResponse struct {
 
 func (x *ProjectDeleteResponse) Reset() {
 	*x = ProjectDeleteResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[15]
+	mi := &file_project_manager_v1_project_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1502,7 +1316,7 @@ func (x *ProjectDeleteResponse) String() string {
 func (*ProjectDeleteResponse) ProtoMessage() {}
 
 func (x *ProjectDeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[15]
+	mi := &file_project_manager_v1_project_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1515,7 +1329,7 @@ func (x *ProjectDeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteResponse.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{15}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ProjectDeleteResponse) GetSuccess() bool {
@@ -1537,7 +1351,7 @@ type ProjectUploadBuildRequest struct {
 
 func (x *ProjectUploadBuildRequest) Reset() {
 	*x = ProjectUploadBuildRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[16]
+	mi := &file_project_manager_v1_project_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1549,7 +1363,7 @@ func (x *ProjectUploadBuildRequest) String() string {
 func (*ProjectUploadBuildRequest) ProtoMessage() {}
 
 func (x *ProjectUploadBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[16]
+	mi := &file_project_manager_v1_project_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1562,7 +1376,7 @@ func (x *ProjectUploadBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{16}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ProjectUploadBuildRequest) GetProjectId() int64 {
@@ -1599,7 +1413,7 @@ type ProjectUploadBuildStreamRequest struct {
 
 func (x *ProjectUploadBuildStreamRequest) Reset() {
 	*x = ProjectUploadBuildStreamRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[17]
+	mi := &file_project_manager_v1_project_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1611,7 +1425,7 @@ func (x *ProjectUploadBuildStreamRequest) String() string {
 func (*ProjectUploadBuildStreamRequest) ProtoMessage() {}
 
 func (x *ProjectUploadBuildStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[17]
+	mi := &file_project_manager_v1_project_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1624,7 +1438,7 @@ func (x *ProjectUploadBuildStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildStreamRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildStreamRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{17}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ProjectUploadBuildStreamRequest) GetPayload() isProjectUploadBuildStreamRequest_Payload {
@@ -1678,7 +1492,7 @@ type BuildUploadStreamMetadata struct {
 
 func (x *BuildUploadStreamMetadata) Reset() {
 	*x = BuildUploadStreamMetadata{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[18]
+	mi := &file_project_manager_v1_project_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1690,7 +1504,7 @@ func (x *BuildUploadStreamMetadata) String() string {
 func (*BuildUploadStreamMetadata) ProtoMessage() {}
 
 func (x *BuildUploadStreamMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[18]
+	mi := &file_project_manager_v1_project_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1703,7 +1517,7 @@ func (x *BuildUploadStreamMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildUploadStreamMetadata.ProtoReflect.Descriptor instead.
 func (*BuildUploadStreamMetadata) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{18}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *BuildUploadStreamMetadata) GetProjectId() int64 {
@@ -1731,7 +1545,7 @@ type ProjectUploadBuildResponse struct {
 
 func (x *ProjectUploadBuildResponse) Reset() {
 	*x = ProjectUploadBuildResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[19]
+	mi := &file_project_manager_v1_project_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1743,7 +1557,7 @@ func (x *ProjectUploadBuildResponse) String() string {
 func (*ProjectUploadBuildResponse) ProtoMessage() {}
 
 func (x *ProjectUploadBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[19]
+	mi := &file_project_manager_v1_project_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1756,7 +1570,7 @@ func (x *ProjectUploadBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{19}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ProjectUploadBuildResponse) GetSuccess() bool {
@@ -1790,7 +1604,7 @@ type ProjectListBuildsRequest struct {
 
 func (x *ProjectListBuildsRequest) Reset() {
 	*x = ProjectListBuildsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[20]
+	mi := &file_project_manager_v1_project_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1802,7 +1616,7 @@ func (x *ProjectListBuildsRequest) String() string {
 func (*ProjectListBuildsRequest) ProtoMessage() {}
 
 func (x *ProjectListBuildsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[20]
+	mi := &file_project_manager_v1_project_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1815,7 +1629,7 @@ func (x *ProjectListBuildsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBuildsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListBuildsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{20}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ProjectListBuildsRequest) GetProjectId() int64 {
@@ -1834,7 +1648,7 @@ type ProjectListBuildsResponse struct {
 
 func (x *ProjectListBuildsResponse) Reset() {
 	*x = ProjectListBuildsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[21]
+	mi := &file_project_manager_v1_project_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1846,7 +1660,7 @@ func (x *ProjectListBuildsResponse) String() string {
 func (*ProjectListBuildsResponse) ProtoMessage() {}
 
 func (x *ProjectListBuildsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[21]
+	mi := &file_project_manager_v1_project_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1859,7 +1673,7 @@ func (x *ProjectListBuildsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBuildsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListBuildsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{21}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ProjectListBuildsResponse) GetBuilds() []*ProjectBuild {
@@ -1880,7 +1694,7 @@ type ProjectDeleteBuildRequest struct {
 
 func (x *ProjectDeleteBuildRequest) Reset() {
 	*x = ProjectDeleteBuildRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[22]
+	mi := &file_project_manager_v1_project_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1892,7 +1706,7 @@ func (x *ProjectDeleteBuildRequest) String() string {
 func (*ProjectDeleteBuildRequest) ProtoMessage() {}
 
 func (x *ProjectDeleteBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[22]
+	mi := &file_project_manager_v1_project_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1905,7 +1719,7 @@ func (x *ProjectDeleteBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteBuildRequest.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteBuildRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{22}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ProjectDeleteBuildRequest) GetProjectId() int64 {
@@ -1931,7 +1745,7 @@ type ProjectDeleteBuildResponse struct {
 
 func (x *ProjectDeleteBuildResponse) Reset() {
 	*x = ProjectDeleteBuildResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[23]
+	mi := &file_project_manager_v1_project_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1943,7 +1757,7 @@ func (x *ProjectDeleteBuildResponse) String() string {
 func (*ProjectDeleteBuildResponse) ProtoMessage() {}
 
 func (x *ProjectDeleteBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[23]
+	mi := &file_project_manager_v1_project_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1956,7 +1770,7 @@ func (x *ProjectDeleteBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteBuildResponse.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteBuildResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{23}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ProjectDeleteBuildResponse) GetSuccess() bool {
@@ -1978,7 +1792,7 @@ type ProjectUploadMediaRequest struct {
 
 func (x *ProjectUploadMediaRequest) Reset() {
 	*x = ProjectUploadMediaRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[24]
+	mi := &file_project_manager_v1_project_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1990,7 +1804,7 @@ func (x *ProjectUploadMediaRequest) String() string {
 func (*ProjectUploadMediaRequest) ProtoMessage() {}
 
 func (x *ProjectUploadMediaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[24]
+	mi := &file_project_manager_v1_project_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2003,7 +1817,7 @@ func (x *ProjectUploadMediaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{24}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ProjectUploadMediaRequest) GetProjectId() int64 {
@@ -2040,7 +1854,7 @@ type ProjectUploadMediaStreamRequest struct {
 
 func (x *ProjectUploadMediaStreamRequest) Reset() {
 	*x = ProjectUploadMediaStreamRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[25]
+	mi := &file_project_manager_v1_project_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2052,7 +1866,7 @@ func (x *ProjectUploadMediaStreamRequest) String() string {
 func (*ProjectUploadMediaStreamRequest) ProtoMessage() {}
 
 func (x *ProjectUploadMediaStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[25]
+	mi := &file_project_manager_v1_project_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2065,7 +1879,7 @@ func (x *ProjectUploadMediaStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaStreamRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaStreamRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{25}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ProjectUploadMediaStreamRequest) GetPayload() isProjectUploadMediaStreamRequest_Payload {
@@ -2119,7 +1933,7 @@ type MediaUploadStreamMetadata struct {
 
 func (x *MediaUploadStreamMetadata) Reset() {
 	*x = MediaUploadStreamMetadata{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[26]
+	mi := &file_project_manager_v1_project_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2131,7 +1945,7 @@ func (x *MediaUploadStreamMetadata) String() string {
 func (*MediaUploadStreamMetadata) ProtoMessage() {}
 
 func (x *MediaUploadStreamMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[26]
+	mi := &file_project_manager_v1_project_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2144,7 +1958,7 @@ func (x *MediaUploadStreamMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MediaUploadStreamMetadata.ProtoReflect.Descriptor instead.
 func (*MediaUploadStreamMetadata) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{26}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *MediaUploadStreamMetadata) GetProjectId() int64 {
@@ -2171,7 +1985,7 @@ type ProjectUploadMediaResponse struct {
 
 func (x *ProjectUploadMediaResponse) Reset() {
 	*x = ProjectUploadMediaResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[27]
+	mi := &file_project_manager_v1_project_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2183,7 +1997,7 @@ func (x *ProjectUploadMediaResponse) String() string {
 func (*ProjectUploadMediaResponse) ProtoMessage() {}
 
 func (x *ProjectUploadMediaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[27]
+	mi := &file_project_manager_v1_project_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2196,7 +2010,7 @@ func (x *ProjectUploadMediaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{27}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ProjectUploadMediaResponse) GetSuccess() bool {
@@ -2222,7 +2036,7 @@ type SubmitForModerationRequest struct {
 
 func (x *SubmitForModerationRequest) Reset() {
 	*x = SubmitForModerationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[28]
+	mi := &file_project_manager_v1_project_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2234,7 +2048,7 @@ func (x *SubmitForModerationRequest) String() string {
 func (*SubmitForModerationRequest) ProtoMessage() {}
 
 func (x *SubmitForModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[28]
+	mi := &file_project_manager_v1_project_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2247,7 +2061,7 @@ func (x *SubmitForModerationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitForModerationRequest.ProtoReflect.Descriptor instead.
 func (*SubmitForModerationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{28}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *SubmitForModerationRequest) GetProjectId() int64 {
@@ -2260,14 +2074,14 @@ func (x *SubmitForModerationRequest) GetProjectId() int64 {
 type SubmitForModerationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Ticket        *ModerationTicket      `protobuf:"bytes,2,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	RequestId     int64                  `protobuf:"varint,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitForModerationResponse) Reset() {
 	*x = SubmitForModerationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[29]
+	mi := &file_project_manager_v1_project_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2279,7 +2093,7 @@ func (x *SubmitForModerationResponse) String() string {
 func (*SubmitForModerationResponse) ProtoMessage() {}
 
 func (x *SubmitForModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[29]
+	mi := &file_project_manager_v1_project_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2292,7 +2106,7 @@ func (x *SubmitForModerationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitForModerationResponse.ProtoReflect.Descriptor instead.
 func (*SubmitForModerationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{29}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *SubmitForModerationResponse) GetSuccess() bool {
@@ -2302,183 +2116,38 @@ func (x *SubmitForModerationResponse) GetSuccess() bool {
 	return false
 }
 
-func (x *SubmitForModerationResponse) GetTicket() *ModerationTicket {
+func (x *SubmitForModerationResponse) GetRequestId() int64 {
 	if x != nil {
-		return x.Ticket
-	}
-	return nil
-}
-
-type ListModerationTicketsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        ModerationStatus       `protobuf:"varint,1,opt,name=status,proto3,enum=project_manager.v1.ModerationStatus" json:"status,omitempty"`
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListModerationTicketsRequest) Reset() {
-	*x = ListModerationTicketsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[30]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListModerationTicketsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListModerationTicketsRequest) ProtoMessage() {}
-
-func (x *ListModerationTicketsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[30]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListModerationTicketsRequest.ProtoReflect.Descriptor instead.
-func (*ListModerationTicketsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{30}
-}
-
-func (x *ListModerationTicketsRequest) GetStatus() ModerationStatus {
-	if x != nil {
-		return x.Status
-	}
-	return ModerationStatus_MODERATION_STATUS_UNSPECIFIED
-}
-
-func (x *ListModerationTicketsRequest) GetLimit() int32 {
-	if x != nil {
-		return x.Limit
+		return x.RequestId
 	}
 	return 0
 }
 
-func (x *ListModerationTicketsRequest) GetOffset() int32 {
-	if x != nil {
-		return x.Offset
-	}
-	return 0
-}
-
-type ListModerationTicketsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Tickets       []*ModerationTicket    `protobuf:"bytes,1,rep,name=tickets,proto3" json:"tickets,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListModerationTicketsResponse) Reset() {
-	*x = ListModerationTicketsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[31]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListModerationTicketsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListModerationTicketsResponse) ProtoMessage() {}
-
-func (x *ListModerationTicketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[31]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListModerationTicketsResponse.ProtoReflect.Descriptor instead.
-func (*ListModerationTicketsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{31}
-}
-
-func (x *ListModerationTicketsResponse) GetTickets() []*ModerationTicket {
-	if x != nil {
-		return x.Tickets
-	}
-	return nil
-}
-
-type GetModerationTicketRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TicketId      int64                  `protobuf:"varint,1,opt,name=ticket_id,json=ticketId,proto3" json:"ticket_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetModerationTicketRequest) Reset() {
-	*x = GetModerationTicketRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[32]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetModerationTicketRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetModerationTicketRequest) ProtoMessage() {}
-
-func (x *GetModerationTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[32]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetModerationTicketRequest.ProtoReflect.Descriptor instead.
-func (*GetModerationTicketRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{32}
-}
-
-func (x *GetModerationTicketRequest) GetTicketId() int64 {
-	if x != nil {
-		return x.TicketId
-	}
-	return 0
-}
-
-type GetModerationTicketByProjectRequest struct {
+type ProjectPublishReleaseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	PublishedBy   string                 `protobuf:"bytes,3,opt,name=published_by,json=publishedBy,proto3" json:"published_by,omitempty"`
+	Comment       string                 `protobuf:"bytes,4,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetModerationTicketByProjectRequest) Reset() {
-	*x = GetModerationTicketByProjectRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[33]
+func (x *ProjectPublishReleaseRequest) Reset() {
+	*x = ProjectPublishReleaseRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetModerationTicketByProjectRequest) String() string {
+func (x *ProjectPublishReleaseRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetModerationTicketByProjectRequest) ProtoMessage() {}
+func (*ProjectPublishReleaseRequest) ProtoMessage() {}
 
-func (x *GetModerationTicketByProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[33]
+func (x *ProjectPublishReleaseRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2489,123 +2158,40 @@ func (x *GetModerationTicketByProjectRequest) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetModerationTicketByProjectRequest.ProtoReflect.Descriptor instead.
-func (*GetModerationTicketByProjectRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{33}
+// Deprecated: Use ProjectPublishReleaseRequest.ProtoReflect.Descriptor instead.
+func (*ProjectPublishReleaseRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{29}
 }
 
-func (x *GetModerationTicketByProjectRequest) GetProjectId() int64 {
+func (x *ProjectPublishReleaseRequest) GetProjectId() int64 {
 	if x != nil {
 		return x.ProjectId
 	}
 	return 0
 }
 
-type GetModerationTicketResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ticket        *ModerationTicket      `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
-	Project       *Project               `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetModerationTicketResponse) Reset() {
-	*x = GetModerationTicketResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[34]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetModerationTicketResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetModerationTicketResponse) ProtoMessage() {}
-
-func (x *GetModerationTicketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[34]
+func (x *ProjectPublishReleaseRequest) GetVersion() string {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.Version
 	}
-	return mi.MessageOf(x)
+	return ""
 }
 
-// Deprecated: Use GetModerationTicketResponse.ProtoReflect.Descriptor instead.
-func (*GetModerationTicketResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{34}
-}
-
-func (x *GetModerationTicketResponse) GetTicket() *ModerationTicket {
+func (x *ProjectPublishReleaseRequest) GetPublishedBy() string {
 	if x != nil {
-		return x.Ticket
+		return x.PublishedBy
 	}
-	return nil
+	return ""
 }
 
-func (x *GetModerationTicketResponse) GetProject() *Project {
-	if x != nil {
-		return x.Project
-	}
-	return nil
-}
-
-type ApproveModerationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ApproveModerationRequest) Reset() {
-	*x = ApproveModerationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[35]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ApproveModerationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ApproveModerationRequest) ProtoMessage() {}
-
-func (x *ApproveModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[35]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ApproveModerationRequest.ProtoReflect.Descriptor instead.
-func (*ApproveModerationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{35}
-}
-
-func (x *ApproveModerationRequest) GetProjectId() int64 {
-	if x != nil {
-		return x.ProjectId
-	}
-	return 0
-}
-
-func (x *ApproveModerationRequest) GetComment() string {
+func (x *ProjectPublishReleaseRequest) GetComment() string {
 	if x != nil {
 		return x.Comment
 	}
 	return ""
 }
 
-type ApproveModerationResponse struct {
+type ProjectPublishReleaseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Release       *ProjectRelease        `protobuf:"bytes,2,opt,name=release,proto3" json:"release,omitempty"`
@@ -2613,21 +2199,21 @@ type ApproveModerationResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ApproveModerationResponse) Reset() {
-	*x = ApproveModerationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[36]
+func (x *ProjectPublishReleaseResponse) Reset() {
+	*x = ProjectPublishReleaseResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ApproveModerationResponse) String() string {
+func (x *ProjectPublishReleaseResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ApproveModerationResponse) ProtoMessage() {}
+func (*ProjectPublishReleaseResponse) ProtoMessage() {}
 
-func (x *ApproveModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[36]
+func (x *ProjectPublishReleaseResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2638,26 +2224,26 @@ func (x *ApproveModerationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ApproveModerationResponse.ProtoReflect.Descriptor instead.
-func (*ApproveModerationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{36}
+// Deprecated: Use ProjectPublishReleaseResponse.ProtoReflect.Descriptor instead.
+func (*ProjectPublishReleaseResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *ApproveModerationResponse) GetSuccess() bool {
+func (x *ProjectPublishReleaseResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-func (x *ApproveModerationResponse) GetRelease() *ProjectRelease {
+func (x *ProjectPublishReleaseResponse) GetRelease() *ProjectRelease {
 	if x != nil {
 		return x.Release
 	}
 	return nil
 }
 
-type RejectModerationRequest struct {
+type ProjectRejectDraftRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
@@ -2665,21 +2251,21 @@ type RejectModerationRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RejectModerationRequest) Reset() {
-	*x = RejectModerationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[37]
+func (x *ProjectRejectDraftRequest) Reset() {
+	*x = ProjectRejectDraftRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RejectModerationRequest) String() string {
+func (x *ProjectRejectDraftRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RejectModerationRequest) ProtoMessage() {}
+func (*ProjectRejectDraftRequest) ProtoMessage() {}
 
-func (x *RejectModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[37]
+func (x *ProjectRejectDraftRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2690,48 +2276,47 @@ func (x *RejectModerationRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RejectModerationRequest.ProtoReflect.Descriptor instead.
-func (*RejectModerationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{37}
+// Deprecated: Use ProjectRejectDraftRequest.ProtoReflect.Descriptor instead.
+func (*ProjectRejectDraftRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{31}
 }
 
-func (x *RejectModerationRequest) GetProjectId() int64 {
+func (x *ProjectRejectDraftRequest) GetProjectId() int64 {
 	if x != nil {
 		return x.ProjectId
 	}
 	return 0
 }
 
-func (x *RejectModerationRequest) GetReason() string {
+func (x *ProjectRejectDraftRequest) GetReason() string {
 	if x != nil {
 		return x.Reason
 	}
 	return ""
 }
 
-type RejectModerationResponse struct {
+type ProjectRejectDraftResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Ticket        *ModerationTicket      `protobuf:"bytes,2,opt,name=ticket,proto3" json:"ticket,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RejectModerationResponse) Reset() {
-	*x = RejectModerationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[38]
+func (x *ProjectRejectDraftResponse) Reset() {
+	*x = ProjectRejectDraftResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RejectModerationResponse) String() string {
+func (x *ProjectRejectDraftResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RejectModerationResponse) ProtoMessage() {}
+func (*ProjectRejectDraftResponse) ProtoMessage() {}
 
-func (x *RejectModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[38]
+func (x *ProjectRejectDraftResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2742,23 +2327,16 @@ func (x *RejectModerationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RejectModerationResponse.ProtoReflect.Descriptor instead.
-func (*RejectModerationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{38}
+// Deprecated: Use ProjectRejectDraftResponse.ProtoReflect.Descriptor instead.
+func (*ProjectRejectDraftResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *RejectModerationResponse) GetSuccess() bool {
+func (x *ProjectRejectDraftResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
-}
-
-func (x *RejectModerationResponse) GetTicket() *ModerationTicket {
-	if x != nil {
-		return x.Ticket
-	}
-	return nil
 }
 
 type ProjectGetPublishedRequest struct {
@@ -2770,7 +2348,7 @@ type ProjectGetPublishedRequest struct {
 
 func (x *ProjectGetPublishedRequest) Reset() {
 	*x = ProjectGetPublishedRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[39]
+	mi := &file_project_manager_v1_project_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2782,7 +2360,7 @@ func (x *ProjectGetPublishedRequest) String() string {
 func (*ProjectGetPublishedRequest) ProtoMessage() {}
 
 func (x *ProjectGetPublishedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[39]
+	mi := &file_project_manager_v1_project_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2795,7 +2373,7 @@ func (x *ProjectGetPublishedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetPublishedRequest.ProtoReflect.Descriptor instead.
 func (*ProjectGetPublishedRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{39}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ProjectGetPublishedRequest) GetId() int64 {
@@ -2814,7 +2392,7 @@ type ProjectGetPublishedResponse struct {
 
 func (x *ProjectGetPublishedResponse) Reset() {
 	*x = ProjectGetPublishedResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[40]
+	mi := &file_project_manager_v1_project_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2826,7 +2404,7 @@ func (x *ProjectGetPublishedResponse) String() string {
 func (*ProjectGetPublishedResponse) ProtoMessage() {}
 
 func (x *ProjectGetPublishedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[40]
+	mi := &file_project_manager_v1_project_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2839,7 +2417,7 @@ func (x *ProjectGetPublishedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetPublishedResponse.ProtoReflect.Descriptor instead.
 func (*ProjectGetPublishedResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{40}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ProjectGetPublishedResponse) GetRelease() *ProjectRelease {
@@ -2858,7 +2436,7 @@ type ProjectUnpublishRequest struct {
 
 func (x *ProjectUnpublishRequest) Reset() {
 	*x = ProjectUnpublishRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[41]
+	mi := &file_project_manager_v1_project_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2870,7 +2448,7 @@ func (x *ProjectUnpublishRequest) String() string {
 func (*ProjectUnpublishRequest) ProtoMessage() {}
 
 func (x *ProjectUnpublishRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[41]
+	mi := &file_project_manager_v1_project_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2883,7 +2461,7 @@ func (x *ProjectUnpublishRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnpublishRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUnpublishRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{41}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ProjectUnpublishRequest) GetId() int64 {
@@ -2902,7 +2480,7 @@ type ProjectUnpublishResponse struct {
 
 func (x *ProjectUnpublishResponse) Reset() {
 	*x = ProjectUnpublishResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[42]
+	mi := &file_project_manager_v1_project_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2914,7 +2492,7 @@ func (x *ProjectUnpublishResponse) String() string {
 func (*ProjectUnpublishResponse) ProtoMessage() {}
 
 func (x *ProjectUnpublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[42]
+	mi := &file_project_manager_v1_project_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2927,7 +2505,7 @@ func (x *ProjectUnpublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnpublishResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUnpublishResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{42}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ProjectUnpublishResponse) GetSuccess() bool {
@@ -3012,24 +2590,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\vis_unpacked\x18\x06 \x01(\bR\n" +
 	"isUnpacked\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAt\"\xc1\x03\n" +
-	"\x10ModerationTicket\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
-	"\n" +
-	"project_id\x18\x02 \x01(\x03R\tprojectId\x12\x19\n" +
-	"\bowner_id\x18\x03 \x01(\tR\aownerId\x12\x1d\n" +
-	"\n" +
-	"game_title\x18\x04 \x01(\tR\tgameTitle\x12)\n" +
-	"\x10game_description\x18\x05 \x01(\tR\x0fgameDescription\x12<\n" +
-	"\x06status\x18\x06 \x01(\x0e2$.project_manager.v1.ModerationStatusR\x06status\x12)\n" +
-	"\x10rejection_reason\x18\a \x01(\tR\x0frejectionReason\x12!\n" +
-	"\fmoderator_id\x18\b \x01(\tR\vmoderatorId\x12\x17\n" +
-	"\adev_url\x18\t \x01(\tR\x06devUrl\x120\n" +
-	"\x14active_build_version\x18\n" +
-	" \x01(\tR\x12activeBuildVersion\x12!\n" +
-	"\fsubmitted_at\x18\v \x01(\tR\vsubmittedAt\x12\x1f\n" +
-	"\vresolved_at\x18\f \x01(\tR\n" +
-	"resolvedAt\"\xac\x02\n" +
+	"created_at\x18\a \x01(\tR\tcreatedAt\"\xac\x02\n" +
 	"\x10DeploymentRecord\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -3117,38 +2678,26 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\tfile_path\x18\x02 \x01(\tR\bfilePath\";\n" +
 	"\x1aSubmitForModerationRequest\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\x03R\tprojectId\"u\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\"V\n" +
 	"\x1bSubmitForModerationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12<\n" +
-	"\x06ticket\x18\x02 \x01(\v2$.project_manager.v1.ModerationTicketR\x06ticket\"\x8a\x01\n" +
-	"\x1cListModerationTicketsRequest\x12<\n" +
-	"\x06status\x18\x01 \x01(\x0e2$.project_manager.v1.ModerationStatusR\x06status\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x03 \x01(\x05R\x06offset\"_\n" +
-	"\x1dListModerationTicketsResponse\x12>\n" +
-	"\atickets\x18\x01 \x03(\v2$.project_manager.v1.ModerationTicketR\atickets\"9\n" +
-	"\x1aGetModerationTicketRequest\x12\x1b\n" +
-	"\tticket_id\x18\x01 \x01(\x03R\bticketId\"D\n" +
-	"#GetModerationTicketByProjectRequest\x12\x1d\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\x03R\tprojectId\"\x92\x01\n" +
-	"\x1bGetModerationTicketResponse\x12<\n" +
-	"\x06ticket\x18\x01 \x01(\v2$.project_manager.v1.ModerationTicketR\x06ticket\x125\n" +
-	"\aproject\x18\x02 \x01(\v2\x1b.project_manager.v1.ProjectR\aproject\"S\n" +
-	"\x18ApproveModerationRequest\x12\x1d\n" +
+	"request_id\x18\x02 \x01(\x03R\trequestId\"\x94\x01\n" +
+	"\x1cProjectPublishReleaseRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x18\n" +
-	"\acomment\x18\x02 \x01(\tR\acomment\"s\n" +
-	"\x19ApproveModerationResponse\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12!\n" +
+	"\fpublished_by\x18\x03 \x01(\tR\vpublishedBy\x12\x18\n" +
+	"\acomment\x18\x04 \x01(\tR\acomment\"w\n" +
+	"\x1dProjectPublishReleaseResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12<\n" +
-	"\arelease\x18\x02 \x01(\v2\".project_manager.v1.ProjectReleaseR\arelease\"P\n" +
-	"\x17RejectModerationRequest\x12\x1d\n" +
+	"\arelease\x18\x02 \x01(\v2\".project_manager.v1.ProjectReleaseR\arelease\"R\n" +
+	"\x19ProjectRejectDraftRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"r\n" +
-	"\x18RejectModerationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12<\n" +
-	"\x06ticket\x18\x02 \x01(\v2$.project_manager.v1.ModerationTicketR\x06ticket\",\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"6\n" +
+	"\x1aProjectRejectDraftResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\",\n" +
 	"\x1aProjectGetPublishedRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\"[\n" +
 	"\x1bProjectGetPublishedResponse\x12<\n" +
@@ -3162,12 +2711,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x14PROJECT_STATUS_DRAFT\x10\x01\x12\x1a\n" +
 	"\x16PROJECT_STATUS_PENDING\x10\x02\x12\x1c\n" +
 	"\x18PROJECT_STATUS_PUBLISHED\x10\x03\x12\x1b\n" +
-	"\x17PROJECT_STATUS_REJECTED\x10\x04*\x94\x01\n" +
-	"\x10ModerationStatus\x12!\n" +
-	"\x1dMODERATION_STATUS_UNSPECIFIED\x10\x00\x12\x1d\n" +
-	"\x19MODERATION_STATUS_PENDING\x10\x01\x12\x1e\n" +
-	"\x1aMODERATION_STATUS_APPROVED\x10\x02\x12\x1e\n" +
-	"\x1aMODERATION_STATUS_REJECTED\x10\x03*h\n" +
+	"\x17PROJECT_STATUS_REJECTED\x10\x04*h\n" +
 	"\x15DeploymentEnvironment\x12\x1e\n" +
 	"\x1aDEPLOYMENT_ENV_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12DEPLOYMENT_ENV_DEV\x10\x01\x12\x17\n" +
@@ -3176,7 +2720,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x1dDEPLOYMENT_STATUS_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19DEPLOYMENT_STATUS_PENDING\x10\x01\x12\x1d\n" +
 	"\x19DEPLOYMENT_STATUS_SUCCESS\x10\x02\x12\x1c\n" +
-	"\x18DEPLOYMENT_STATUS_FAILED\x10\x032\xed\x0e\n" +
+	"\x18DEPLOYMENT_STATUS_FAILED\x10\x032\xd2\x10\n" +
 	"\x0eProjectService\x12z\n" +
 	"\x06Create\x12(.project_manager.v1.ProjectCreateRequest\x1a).project_manager.v1.ProjectCreateResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/projects\x12s\n" +
 	"\x03Get\x12%.project_manager.v1.ProjectGetRequest\x1a&.project_manager.v1.ProjectGetResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/projects/{id}\x12q\n" +
@@ -3190,15 +2734,11 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\vDeleteBuild\x12-.project_manager.v1.ProjectDeleteBuildRequest\x1a..project_manager.v1.ProjectDeleteBuildResponse\"6\x82\xd3\xe4\x93\x020*./api/v1/projects/{project_id}/builds/{version}\x12l\n" +
 	"\vUploadMedia\x12-.project_manager.v1.ProjectUploadMediaRequest\x1a..project_manager.v1.ProjectUploadMediaResponse\x12z\n" +
 	"\x11UploadMediaStream\x123.project_manager.v1.ProjectUploadMediaStreamRequest\x1a..project_manager.v1.ProjectUploadMediaResponse(\x01\x12\xb2\x01\n" +
-	"\x13SubmitForModeration\x12..project_manager.v1.SubmitForModerationRequest\x1a/.project_manager.v1.SubmitForModerationResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/projects/{project_id}/moderation/submit\x12\x98\x01\n" +
+	"\x13SubmitForModeration\x12..project_manager.v1.SubmitForModerationRequest\x1a/.project_manager.v1.SubmitForModerationResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/projects/{project_id}/moderation/submit\x12u\n" +
+	"\x0ePublishRelease\x120.project_manager.v1.ProjectPublishReleaseRequest\x1a1.project_manager.v1.ProjectPublishReleaseResponse\x12l\n" +
+	"\vRejectDraft\x12-.project_manager.v1.ProjectRejectDraftRequest\x1a..project_manager.v1.ProjectRejectDraftResponse\x12\x98\x01\n" +
 	"\fGetPublished\x12..project_manager.v1.ProjectGetPublishedRequest\x1a/.project_manager.v1.ProjectGetPublishedResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/projects/{id}/published\x12\x92\x01\n" +
-	"\tUnpublish\x12+.project_manager.v1.ProjectUnpublishRequest\x1a,.project_manager.v1.ProjectUnpublishResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/projects/{id}/unpublish2\xc6\x06\n" +
-	"\x11ModerationService\x12\x96\x01\n" +
-	"\vListTickets\x120.project_manager.v1.ListModerationTicketsRequest\x1a1.project_manager.v1.ListModerationTicketsResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/moderation/tickets\x12\x9c\x01\n" +
-	"\tGetTicket\x12..project_manager.v1.GetModerationTicketRequest\x1a/.project_manager.v1.GetModerationTicketResponse\".\x82\xd3\xe4\x93\x02(\x12&/api/v1/moderation/tickets/{ticket_id}\x12\xb0\x01\n" +
-	"\x12GetTicketByProject\x127.project_manager.v1.GetModerationTicketByProjectRequest\x1a/.project_manager.v1.GetModerationTicketResponse\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/moderation/projects/{project_id}\x12\xa3\x01\n" +
-	"\aApprove\x12,.project_manager.v1.ApproveModerationRequest\x1a-.project_manager.v1.ApproveModerationResponse\";\x82\xd3\xe4\x93\x025:\x01*\"0/api/v1/moderation/projects/{project_id}/approve\x12\x9f\x01\n" +
-	"\x06Reject\x12+.project_manager.v1.RejectModerationRequest\x1a,.project_manager.v1.RejectModerationResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/moderation/projects/{project_id}/rejectB\xdd\x01\n" +
+	"\tUnpublish\x12+.project_manager.v1.ProjectUnpublishRequest\x1a,.project_manager.v1.ProjectUnpublishResponse\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/projects/{id}/unpublishB\xdd\x01\n" +
 	"\x16com.project_manager.v1B\fProjectProtoP\x01ZPgithub.com/Be4Die/game-developer-hub/protos/project_manager/v1;project_managerv1\xa2\x02\x03PXX\xaa\x02\x11ProjectManager.V1\xca\x02\x11ProjectManager\\V1\xe2\x02\x1dProjectManager\\V1\\GPBMetadata\xea\x02\x12ProjectManager::V1b\x06proto3"
 
 var (
@@ -3213,123 +2753,103 @@ func file_project_manager_v1_project_proto_rawDescGZIP() []byte {
 	return file_project_manager_v1_project_proto_rawDescData
 }
 
-var file_project_manager_v1_project_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_project_manager_v1_project_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_project_manager_v1_project_proto_goTypes = []any{
-	(ProjectStatus)(0),                          // 0: project_manager.v1.ProjectStatus
-	(ModerationStatus)(0),                       // 1: project_manager.v1.ModerationStatus
-	(DeploymentEnvironment)(0),                  // 2: project_manager.v1.DeploymentEnvironment
-	(DeploymentStatus)(0),                       // 3: project_manager.v1.DeploymentStatus
-	(*Project)(nil),                             // 4: project_manager.v1.Project
-	(*ProjectDraft)(nil),                        // 5: project_manager.v1.ProjectDraft
-	(*ProjectRelease)(nil),                      // 6: project_manager.v1.ProjectRelease
-	(*ProjectBuild)(nil),                        // 7: project_manager.v1.ProjectBuild
-	(*ModerationTicket)(nil),                    // 8: project_manager.v1.ModerationTicket
-	(*DeploymentRecord)(nil),                    // 9: project_manager.v1.DeploymentRecord
-	(*ProjectCreateRequest)(nil),                // 10: project_manager.v1.ProjectCreateRequest
-	(*ProjectCreateResponse)(nil),               // 11: project_manager.v1.ProjectCreateResponse
-	(*ProjectGetRequest)(nil),                   // 12: project_manager.v1.ProjectGetRequest
-	(*ProjectGetResponse)(nil),                  // 13: project_manager.v1.ProjectGetResponse
-	(*ProjectListRequest)(nil),                  // 14: project_manager.v1.ProjectListRequest
-	(*ProjectListResponse)(nil),                 // 15: project_manager.v1.ProjectListResponse
-	(*ProjectUpdateRequest)(nil),                // 16: project_manager.v1.ProjectUpdateRequest
-	(*ProjectUpdateResponse)(nil),               // 17: project_manager.v1.ProjectUpdateResponse
-	(*ProjectDeleteRequest)(nil),                // 18: project_manager.v1.ProjectDeleteRequest
-	(*ProjectDeleteResponse)(nil),               // 19: project_manager.v1.ProjectDeleteResponse
-	(*ProjectUploadBuildRequest)(nil),           // 20: project_manager.v1.ProjectUploadBuildRequest
-	(*ProjectUploadBuildStreamRequest)(nil),     // 21: project_manager.v1.ProjectUploadBuildStreamRequest
-	(*BuildUploadStreamMetadata)(nil),           // 22: project_manager.v1.BuildUploadStreamMetadata
-	(*ProjectUploadBuildResponse)(nil),          // 23: project_manager.v1.ProjectUploadBuildResponse
-	(*ProjectListBuildsRequest)(nil),            // 24: project_manager.v1.ProjectListBuildsRequest
-	(*ProjectListBuildsResponse)(nil),           // 25: project_manager.v1.ProjectListBuildsResponse
-	(*ProjectDeleteBuildRequest)(nil),           // 26: project_manager.v1.ProjectDeleteBuildRequest
-	(*ProjectDeleteBuildResponse)(nil),          // 27: project_manager.v1.ProjectDeleteBuildResponse
-	(*ProjectUploadMediaRequest)(nil),           // 28: project_manager.v1.ProjectUploadMediaRequest
-	(*ProjectUploadMediaStreamRequest)(nil),     // 29: project_manager.v1.ProjectUploadMediaStreamRequest
-	(*MediaUploadStreamMetadata)(nil),           // 30: project_manager.v1.MediaUploadStreamMetadata
-	(*ProjectUploadMediaResponse)(nil),          // 31: project_manager.v1.ProjectUploadMediaResponse
-	(*SubmitForModerationRequest)(nil),          // 32: project_manager.v1.SubmitForModerationRequest
-	(*SubmitForModerationResponse)(nil),         // 33: project_manager.v1.SubmitForModerationResponse
-	(*ListModerationTicketsRequest)(nil),        // 34: project_manager.v1.ListModerationTicketsRequest
-	(*ListModerationTicketsResponse)(nil),       // 35: project_manager.v1.ListModerationTicketsResponse
-	(*GetModerationTicketRequest)(nil),          // 36: project_manager.v1.GetModerationTicketRequest
-	(*GetModerationTicketByProjectRequest)(nil), // 37: project_manager.v1.GetModerationTicketByProjectRequest
-	(*GetModerationTicketResponse)(nil),         // 38: project_manager.v1.GetModerationTicketResponse
-	(*ApproveModerationRequest)(nil),            // 39: project_manager.v1.ApproveModerationRequest
-	(*ApproveModerationResponse)(nil),           // 40: project_manager.v1.ApproveModerationResponse
-	(*RejectModerationRequest)(nil),             // 41: project_manager.v1.RejectModerationRequest
-	(*RejectModerationResponse)(nil),            // 42: project_manager.v1.RejectModerationResponse
-	(*ProjectGetPublishedRequest)(nil),          // 43: project_manager.v1.ProjectGetPublishedRequest
-	(*ProjectGetPublishedResponse)(nil),         // 44: project_manager.v1.ProjectGetPublishedResponse
-	(*ProjectUnpublishRequest)(nil),             // 45: project_manager.v1.ProjectUnpublishRequest
-	(*ProjectUnpublishResponse)(nil),            // 46: project_manager.v1.ProjectUnpublishResponse
+	(ProjectStatus)(0),                      // 0: project_manager.v1.ProjectStatus
+	(DeploymentEnvironment)(0),              // 1: project_manager.v1.DeploymentEnvironment
+	(DeploymentStatus)(0),                   // 2: project_manager.v1.DeploymentStatus
+	(*Project)(nil),                         // 3: project_manager.v1.Project
+	(*ProjectDraft)(nil),                    // 4: project_manager.v1.ProjectDraft
+	(*ProjectRelease)(nil),                  // 5: project_manager.v1.ProjectRelease
+	(*ProjectBuild)(nil),                    // 6: project_manager.v1.ProjectBuild
+	(*DeploymentRecord)(nil),                // 7: project_manager.v1.DeploymentRecord
+	(*ProjectCreateRequest)(nil),            // 8: project_manager.v1.ProjectCreateRequest
+	(*ProjectCreateResponse)(nil),           // 9: project_manager.v1.ProjectCreateResponse
+	(*ProjectGetRequest)(nil),               // 10: project_manager.v1.ProjectGetRequest
+	(*ProjectGetResponse)(nil),              // 11: project_manager.v1.ProjectGetResponse
+	(*ProjectListRequest)(nil),              // 12: project_manager.v1.ProjectListRequest
+	(*ProjectListResponse)(nil),             // 13: project_manager.v1.ProjectListResponse
+	(*ProjectUpdateRequest)(nil),            // 14: project_manager.v1.ProjectUpdateRequest
+	(*ProjectUpdateResponse)(nil),           // 15: project_manager.v1.ProjectUpdateResponse
+	(*ProjectDeleteRequest)(nil),            // 16: project_manager.v1.ProjectDeleteRequest
+	(*ProjectDeleteResponse)(nil),           // 17: project_manager.v1.ProjectDeleteResponse
+	(*ProjectUploadBuildRequest)(nil),       // 18: project_manager.v1.ProjectUploadBuildRequest
+	(*ProjectUploadBuildStreamRequest)(nil), // 19: project_manager.v1.ProjectUploadBuildStreamRequest
+	(*BuildUploadStreamMetadata)(nil),       // 20: project_manager.v1.BuildUploadStreamMetadata
+	(*ProjectUploadBuildResponse)(nil),      // 21: project_manager.v1.ProjectUploadBuildResponse
+	(*ProjectListBuildsRequest)(nil),        // 22: project_manager.v1.ProjectListBuildsRequest
+	(*ProjectListBuildsResponse)(nil),       // 23: project_manager.v1.ProjectListBuildsResponse
+	(*ProjectDeleteBuildRequest)(nil),       // 24: project_manager.v1.ProjectDeleteBuildRequest
+	(*ProjectDeleteBuildResponse)(nil),      // 25: project_manager.v1.ProjectDeleteBuildResponse
+	(*ProjectUploadMediaRequest)(nil),       // 26: project_manager.v1.ProjectUploadMediaRequest
+	(*ProjectUploadMediaStreamRequest)(nil), // 27: project_manager.v1.ProjectUploadMediaStreamRequest
+	(*MediaUploadStreamMetadata)(nil),       // 28: project_manager.v1.MediaUploadStreamMetadata
+	(*ProjectUploadMediaResponse)(nil),      // 29: project_manager.v1.ProjectUploadMediaResponse
+	(*SubmitForModerationRequest)(nil),      // 30: project_manager.v1.SubmitForModerationRequest
+	(*SubmitForModerationResponse)(nil),     // 31: project_manager.v1.SubmitForModerationResponse
+	(*ProjectPublishReleaseRequest)(nil),    // 32: project_manager.v1.ProjectPublishReleaseRequest
+	(*ProjectPublishReleaseResponse)(nil),   // 33: project_manager.v1.ProjectPublishReleaseResponse
+	(*ProjectRejectDraftRequest)(nil),       // 34: project_manager.v1.ProjectRejectDraftRequest
+	(*ProjectRejectDraftResponse)(nil),      // 35: project_manager.v1.ProjectRejectDraftResponse
+	(*ProjectGetPublishedRequest)(nil),      // 36: project_manager.v1.ProjectGetPublishedRequest
+	(*ProjectGetPublishedResponse)(nil),     // 37: project_manager.v1.ProjectGetPublishedResponse
+	(*ProjectUnpublishRequest)(nil),         // 38: project_manager.v1.ProjectUnpublishRequest
+	(*ProjectUnpublishResponse)(nil),        // 39: project_manager.v1.ProjectUnpublishResponse
 }
 var file_project_manager_v1_project_proto_depIdxs = []int32{
 	0,  // 0: project_manager.v1.Project.status:type_name -> project_manager.v1.ProjectStatus
-	5,  // 1: project_manager.v1.Project.draft:type_name -> project_manager.v1.ProjectDraft
-	6,  // 2: project_manager.v1.Project.release:type_name -> project_manager.v1.ProjectRelease
-	1,  // 3: project_manager.v1.ModerationTicket.status:type_name -> project_manager.v1.ModerationStatus
-	2,  // 4: project_manager.v1.DeploymentRecord.environment:type_name -> project_manager.v1.DeploymentEnvironment
-	3,  // 5: project_manager.v1.DeploymentRecord.status:type_name -> project_manager.v1.DeploymentStatus
-	4,  // 6: project_manager.v1.ProjectCreateResponse.project:type_name -> project_manager.v1.Project
-	4,  // 7: project_manager.v1.ProjectGetResponse.project:type_name -> project_manager.v1.Project
-	4,  // 8: project_manager.v1.ProjectListResponse.projects:type_name -> project_manager.v1.Project
-	4,  // 9: project_manager.v1.ProjectUpdateResponse.project:type_name -> project_manager.v1.Project
-	22, // 10: project_manager.v1.ProjectUploadBuildStreamRequest.metadata:type_name -> project_manager.v1.BuildUploadStreamMetadata
-	7,  // 11: project_manager.v1.ProjectUploadBuildResponse.build:type_name -> project_manager.v1.ProjectBuild
-	7,  // 12: project_manager.v1.ProjectListBuildsResponse.builds:type_name -> project_manager.v1.ProjectBuild
-	30, // 13: project_manager.v1.ProjectUploadMediaStreamRequest.metadata:type_name -> project_manager.v1.MediaUploadStreamMetadata
-	8,  // 14: project_manager.v1.SubmitForModerationResponse.ticket:type_name -> project_manager.v1.ModerationTicket
-	1,  // 15: project_manager.v1.ListModerationTicketsRequest.status:type_name -> project_manager.v1.ModerationStatus
-	8,  // 16: project_manager.v1.ListModerationTicketsResponse.tickets:type_name -> project_manager.v1.ModerationTicket
-	8,  // 17: project_manager.v1.GetModerationTicketResponse.ticket:type_name -> project_manager.v1.ModerationTicket
-	4,  // 18: project_manager.v1.GetModerationTicketResponse.project:type_name -> project_manager.v1.Project
-	6,  // 19: project_manager.v1.ApproveModerationResponse.release:type_name -> project_manager.v1.ProjectRelease
-	8,  // 20: project_manager.v1.RejectModerationResponse.ticket:type_name -> project_manager.v1.ModerationTicket
-	6,  // 21: project_manager.v1.ProjectGetPublishedResponse.release:type_name -> project_manager.v1.ProjectRelease
-	10, // 22: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
-	12, // 23: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
-	14, // 24: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
-	16, // 25: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
-	18, // 26: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
-	20, // 27: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
-	21, // 28: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
-	24, // 29: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
-	26, // 30: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
-	28, // 31: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
-	29, // 32: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
-	32, // 33: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
-	43, // 34: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
-	45, // 35: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
-	34, // 36: project_manager.v1.ModerationService.ListTickets:input_type -> project_manager.v1.ListModerationTicketsRequest
-	36, // 37: project_manager.v1.ModerationService.GetTicket:input_type -> project_manager.v1.GetModerationTicketRequest
-	37, // 38: project_manager.v1.ModerationService.GetTicketByProject:input_type -> project_manager.v1.GetModerationTicketByProjectRequest
-	39, // 39: project_manager.v1.ModerationService.Approve:input_type -> project_manager.v1.ApproveModerationRequest
-	41, // 40: project_manager.v1.ModerationService.Reject:input_type -> project_manager.v1.RejectModerationRequest
-	11, // 41: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
-	13, // 42: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
-	15, // 43: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
-	17, // 44: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
-	19, // 45: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
-	23, // 46: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	23, // 47: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	25, // 48: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
-	27, // 49: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
-	31, // 50: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	31, // 51: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	33, // 52: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
-	44, // 53: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
-	46, // 54: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
-	35, // 55: project_manager.v1.ModerationService.ListTickets:output_type -> project_manager.v1.ListModerationTicketsResponse
-	38, // 56: project_manager.v1.ModerationService.GetTicket:output_type -> project_manager.v1.GetModerationTicketResponse
-	38, // 57: project_manager.v1.ModerationService.GetTicketByProject:output_type -> project_manager.v1.GetModerationTicketResponse
-	40, // 58: project_manager.v1.ModerationService.Approve:output_type -> project_manager.v1.ApproveModerationResponse
-	42, // 59: project_manager.v1.ModerationService.Reject:output_type -> project_manager.v1.RejectModerationResponse
-	41, // [41:60] is the sub-list for method output_type
-	22, // [22:41] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	4,  // 1: project_manager.v1.Project.draft:type_name -> project_manager.v1.ProjectDraft
+	5,  // 2: project_manager.v1.Project.release:type_name -> project_manager.v1.ProjectRelease
+	1,  // 3: project_manager.v1.DeploymentRecord.environment:type_name -> project_manager.v1.DeploymentEnvironment
+	2,  // 4: project_manager.v1.DeploymentRecord.status:type_name -> project_manager.v1.DeploymentStatus
+	3,  // 5: project_manager.v1.ProjectCreateResponse.project:type_name -> project_manager.v1.Project
+	3,  // 6: project_manager.v1.ProjectGetResponse.project:type_name -> project_manager.v1.Project
+	3,  // 7: project_manager.v1.ProjectListResponse.projects:type_name -> project_manager.v1.Project
+	3,  // 8: project_manager.v1.ProjectUpdateResponse.project:type_name -> project_manager.v1.Project
+	20, // 9: project_manager.v1.ProjectUploadBuildStreamRequest.metadata:type_name -> project_manager.v1.BuildUploadStreamMetadata
+	6,  // 10: project_manager.v1.ProjectUploadBuildResponse.build:type_name -> project_manager.v1.ProjectBuild
+	6,  // 11: project_manager.v1.ProjectListBuildsResponse.builds:type_name -> project_manager.v1.ProjectBuild
+	28, // 12: project_manager.v1.ProjectUploadMediaStreamRequest.metadata:type_name -> project_manager.v1.MediaUploadStreamMetadata
+	5,  // 13: project_manager.v1.ProjectPublishReleaseResponse.release:type_name -> project_manager.v1.ProjectRelease
+	5,  // 14: project_manager.v1.ProjectGetPublishedResponse.release:type_name -> project_manager.v1.ProjectRelease
+	8,  // 15: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
+	10, // 16: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
+	12, // 17: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
+	14, // 18: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
+	16, // 19: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
+	18, // 20: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
+	19, // 21: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
+	22, // 22: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
+	24, // 23: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
+	26, // 24: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
+	27, // 25: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
+	30, // 26: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
+	32, // 27: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
+	34, // 28: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
+	36, // 29: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
+	38, // 30: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
+	9,  // 31: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
+	11, // 32: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
+	13, // 33: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
+	15, // 34: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
+	17, // 35: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
+	21, // 36: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	21, // 37: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	23, // 38: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
+	25, // 39: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
+	29, // 40: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	29, // 41: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	31, // 42: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
+	33, // 43: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
+	35, // 44: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
+	37, // 45: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
+	39, // 46: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
+	31, // [31:47] is the sub-list for method output_type
+	15, // [15:31] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_project_manager_v1_project_proto_init() }
@@ -3337,11 +2857,11 @@ func file_project_manager_v1_project_proto_init() {
 	if File_project_manager_v1_project_proto != nil {
 		return
 	}
-	file_project_manager_v1_project_proto_msgTypes[17].OneofWrappers = []any{
+	file_project_manager_v1_project_proto_msgTypes[16].OneofWrappers = []any{
 		(*ProjectUploadBuildStreamRequest_Metadata)(nil),
 		(*ProjectUploadBuildStreamRequest_Chunk)(nil),
 	}
-	file_project_manager_v1_project_proto_msgTypes[25].OneofWrappers = []any{
+	file_project_manager_v1_project_proto_msgTypes[24].OneofWrappers = []any{
 		(*ProjectUploadMediaStreamRequest_Metadata)(nil),
 		(*ProjectUploadMediaStreamRequest_Chunk)(nil),
 	}
@@ -3350,10 +2870,10 @@ func file_project_manager_v1_project_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_manager_v1_project_proto_rawDesc), len(file_project_manager_v1_project_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   43,
+			NumEnums:      3,
+			NumMessages:   37,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_project_manager_v1_project_proto_goTypes,
 		DependencyIndexes: file_project_manager_v1_project_proto_depIdxs,
