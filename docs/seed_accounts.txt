@@ -1,0 +1,13 @@
+Seed Accounts
+
+Developer:
+Email: dev@gdh.com
+Password: password123
+
+Moderator:
+Email: moderator@gdh.com
+Password: password123
+
+Admin:
+Email: admin@gdh.com
+Password: password123
