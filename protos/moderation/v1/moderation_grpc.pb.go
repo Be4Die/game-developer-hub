@@ -28,6 +28,7 @@ const (
 	ModerationService_Reject_FullMethodName                    = "/moderation.v1.ModerationService/Reject"
 	ModerationService_SendMessage_FullMethodName               = "/moderation.v1.ModerationService/SendMessage"
 	ModerationService_ListMessages_FullMethodName              = "/moderation.v1.ModerationService/ListMessages"
+	ModerationService_ListActiveChats_FullMethodName           = "/moderation.v1.ModerationService/ListActiveChats"
 )
 
 // ModerationServiceClient is the client API for ModerationService service.
@@ -43,6 +44,7 @@ type ModerationServiceClient interface {
 	Reject(ctx context.Context, in *RejectModerationRequest, opts ...grpc.CallOption) (*RejectModerationResponse, error)
 	SendMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*SendChatMessageResponse, error)
 	ListMessages(ctx context.Context, in *ListChatMessagesRequest, opts ...grpc.CallOption) (*ListChatMessagesResponse, error)
+	ListActiveChats(ctx context.Context, in *ListActiveChatsRequest, opts ...grpc.CallOption) (*ListActiveChatsResponse, error)
 }
 
 type moderationServiceClient struct {
@@ -143,6 +145,16 @@ func (c *moderationServiceClient) ListMessages(ctx context.Context, in *ListChat
 	return out, nil
 }
 
+func (c *moderationServiceClient) ListActiveChats(ctx context.Context, in *ListActiveChatsRequest, opts ...grpc.CallOption) (*ListActiveChatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListActiveChatsResponse)
+	err := c.cc.Invoke(ctx, ModerationService_ListActiveChats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModerationServiceServer is the server API for ModerationService service.
 // All implementations must embed UnimplementedModerationServiceServer
 // for forward compatibility.
@@ -156,6 +168,7 @@ type ModerationServiceServer interface {
 	Reject(context.Context, *RejectModerationRequest) (*RejectModerationResponse, error)
 	SendMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error)
 	ListMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error)
+	ListActiveChats(context.Context, *ListActiveChatsRequest) (*ListActiveChatsResponse, error)
 	mustEmbedUnimplementedModerationServiceServer()
 }
 
@@ -192,6 +205,9 @@ func (UnimplementedModerationServiceServer) SendMessage(context.Context, *SendCh
 }
 func (UnimplementedModerationServiceServer) ListMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMessages not implemented")
+}
+func (UnimplementedModerationServiceServer) ListActiveChats(context.Context, *ListActiveChatsRequest) (*ListActiveChatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListActiveChats not implemented")
 }
 func (UnimplementedModerationServiceServer) mustEmbedUnimplementedModerationServiceServer() {}
 func (UnimplementedModerationServiceServer) testEmbeddedByValue()                           {}
@@ -376,6 +392,24 @@ func _ModerationService_ListMessages_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModerationService_ListActiveChats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListActiveChatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).ListActiveChats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_ListActiveChats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).ListActiveChats(ctx, req.(*ListActiveChatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModerationService_ServiceDesc is the grpc.ServiceDesc for ModerationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -418,6 +452,10 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMessages",
 			Handler:    _ModerationService_ListMessages_Handler,
+		},
+		{
+			MethodName: "ListActiveChats",
+			Handler:    _ModerationService_ListActiveChats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

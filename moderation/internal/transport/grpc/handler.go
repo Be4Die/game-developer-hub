@@ -185,3 +185,23 @@ func (h *ModerationHandler) ListMessages(ctx context.Context, req *pb.ListChatMe
 
 	return resp, nil
 }
+
+func (h *ModerationHandler) ListActiveChats(ctx context.Context, req *pb.ListActiveChatsRequest) (*pb.ListActiveChatsResponse, error) {
+	chats, total, err := h.svc.ListActiveChats(ctx, int(req.Limit), int(req.Offset))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list active chats: %v", err)
+	}
+
+	var pbChats []*pb.ChatSummary
+	for _, c := range chats {
+		pbChats = append(pbChats, &pb.ChatSummary{
+			ProjectId:   c.ProjectID,
+			LastMessage: messageToProto(c.LastMessage),
+		})
+	}
+
+	return &pb.ListActiveChatsResponse{
+		Chats: pbChats,
+		Total: int32(total),
+	}, nil
+}

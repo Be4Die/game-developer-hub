@@ -24,4 +24,5 @@ type RequestRepo interface {
 type MessageRepo interface {
 	Create(ctx context.Context, msg *ChatMessage) (int64, error)
 	ListByProject(ctx context.Context, projectID int64, limit, offset int) ([]*ChatMessage, int, error)
+	ListActiveChats(ctx context.Context, limit, offset int) ([]*ChatSummary, int, error)
 }

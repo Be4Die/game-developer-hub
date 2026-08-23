@@ -240,3 +240,8 @@ func (s *ModerationService) SendMessage(ctx context.Context, projectID int64, se
 func (s *ModerationService) ListMessages(ctx context.Context, projectID int64, limit, offset int) ([]*domain.ChatMessage, int, error) {
 	return s.messageRepo.ListByProject(ctx, projectID, limit, offset)
 }
+
+// ListActiveChats возвращает активные чаты (последние сообщения по каждому проекту).
+func (s *ModerationService) ListActiveChats(ctx context.Context, limit, offset int) ([]*domain.ChatSummary, int, error) {
+	return s.messageRepo.ListActiveChats(ctx, limit, offset)
+}

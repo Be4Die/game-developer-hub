@@ -657,7 +657,7 @@ var File_orchestrator_v1_policy_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_policy_proto_rawDesc = "" +
 	"\n" +
-	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1corchestrator/v1/common.proto\"\xaa\a\n" +
+	"\x1corchestrator/v1/policy.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xaa\a\n" +
 	"\n" +
 	"GamePolicy\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12\x19\n" +
@@ -775,7 +775,6 @@ func file_orchestrator_v1_policy_proto_init() {
 	if File_orchestrator_v1_policy_proto != nil {
 		return
 	}
-	file_orchestrator_v1_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

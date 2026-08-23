@@ -127,3 +127,76 @@ func (r *MessageRepo) ListByProject(ctx context.Context, projectID int64, limit,
 
 	return messages, total, nil
 }
+
+// ListActiveChats возвращает список проектов, отсортированных по дате последнего сообщения.
+func (r *MessageRepo) ListActiveChats(ctx context.Context, limit, offset int) ([]*domain.ChatSummary, int, error) {
+	countQuery := `SELECT COUNT(DISTINCT project_id) FROM moderation_messages`
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("MessageRepo.ListActiveChats count: %w", err)
+	}
+
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	query := `
+		SELECT m.id, m.project_id, m.request_id, m.sender_id, m.sender_role,
+			   m.message_type, m.content, m.payload, m.created_at
+		FROM (
+			SELECT DISTINCT ON (project_id) *
+			FROM moderation_messages
+			ORDER BY project_id, created_at DESC
+		) m
+		ORDER BY m.created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.pool.Query(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("MessageRepo.ListActiveChats select: %w", err)
+	}
+	defer rows.Close()
+
+	var chats []*domain.ChatSummary
+	for rows.Next() {
+		msg := &domain.ChatMessage{}
+		var payloadRaw []byte
+		var senderRoleInt, msgTypeInt int16
+
+		err := rows.Scan(
+			&msg.ID,
+			&msg.ProjectID,
+			&msg.RequestID,
+			&msg.SenderID,
+			&senderRoleInt,
+			&msgTypeInt,
+			&msg.Content,
+			&payloadRaw,
+			&msg.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("MessageRepo.ListActiveChats scan: %w", err)
+		}
+
+		msg.SenderRole = domain.SenderRole(senderRoleInt)
+		msg.MessageType = domain.MessageType(msgTypeInt)
+		if len(payloadRaw) > 0 {
+			_ = json.Unmarshal(payloadRaw, &msg.Payload)
+		}
+
+		chats = append(chats, &domain.ChatSummary{
+			ProjectID:   msg.ProjectID,
+			LastMessage: msg,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("MessageRepo.ListActiveChats rows: %w", err)
+	}
+
+	return chats, total, nil
+}

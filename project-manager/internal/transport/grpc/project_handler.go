@@ -46,7 +46,8 @@ func (h *ProjectHandler) Get(ctx context.Context, req *pb.ProjectGetRequest) (*p
 	if err != nil {
 		return nil, domainError(err, "get project")
 	}
-	if p.OwnerID != ownerID {
+	userRole, _ := UserRoleFromContext(ctx)
+	if p.OwnerID != ownerID && userRole != 2 && userRole != 3 {
 		return nil, status.Error(codes.PermissionDenied, "access denied")
 	}
 	return &pb.ProjectGetResponse{Project: projectToProto(p)}, nil

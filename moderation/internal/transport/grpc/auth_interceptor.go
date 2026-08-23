@@ -98,9 +98,16 @@ func (a *JWTAuth) extractUserInfo(ctx context.Context) (string, string, error) {
 		return "", "", fmt.Errorf("missing sub claim")
 	}
 
-	role, _ := claims["role"].(string)
-	if role == "" {
-		role = "developer"
+	role := "developer"
+	switch v := claims["role"].(type) {
+	case string:
+		role = v
+	case float64:
+		if v == 2 {
+			role = "moderator"
+		} else if v == 3 {
+			role = "admin"
+		}
 	}
 
 	return sub, role, nil
@@ -140,6 +147,12 @@ func UserRoleFromContext(ctx context.Context) string {
 	vals := md.Get("x-user-role")
 	if len(vals) == 0 || vals[0] == "" {
 		return "developer"
+	}
+	if vals[0] == "2" {
+		return "moderator"
+	}
+	if vals[0] == "3" {
+		return "admin"
 	}
 	return vals[0]
 }
