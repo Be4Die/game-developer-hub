@@ -212,17 +212,6 @@
           </div>
         </div>
       </div>
-
-      <!-- БЛОК: ОБСУЖДЕНИЕ С МОДЕРАТОРОМ -->
-      <div class="card form-section chat-section">
-        <div class="section-head">
-          <h3>Чат модерации</h3>
-          <p class="section-desc">
-            Прямая связь с модератором и история системных событий по проекту
-          </p>
-        </div>
-        <ProjectChat :projectId="projectId" />
-      </div>
     </div>
   </div>
 </template>
@@ -243,7 +232,6 @@ import {
   getStatusText,
   getStatusBadgeClass,
   REQUEST_STATUS,
-  ProjectChat,
 } from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
@@ -708,9 +696,7 @@ function setActiveBuild(version) {
   font-size: 0.9rem;
 }
 
-.chat-section {
-  grid-column: 1 / -1;
-}
+
 
 .badge-warning {
   background: var(--warning, #f59e0b);
