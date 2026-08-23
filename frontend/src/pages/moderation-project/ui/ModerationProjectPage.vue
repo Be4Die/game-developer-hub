@@ -6,9 +6,10 @@
         <ArrowLeft class="icon-sm" /> Назад к списку проектов
       </button>
       <div class="header-badges">
-        <span class="badge" :class="getStatusBadgeClass(requestStatus)">
+        <span class="badge" v-if="activeRequest" :class="getStatusBadgeClass(requestStatus)">
           {{ getStatusText(requestStatus) }}
         </span>
+        <span class="badge badge-info" v-else>Чат (Без заявки)</span>
       </div>
     </div>
 
@@ -213,6 +214,7 @@ import {
   formatDateTime,
   ProjectChat,
 } from '@/entities/moderation';
+import { getProject } from '@/entities/project';
 import {
   ApproveRequestModal,
   RejectRequestModal,
@@ -229,6 +231,7 @@ const loading = ref(true);
 const actionLoading = ref(false);
 const showApproveModal = ref(false);
 const showRejectModal = ref(false);
+const noRequestMode = ref(false);
 
 const requestStatus = computed(() => activeRequest.value?.status);
 
@@ -274,6 +277,7 @@ const isRejected = computed(() => {
 
 async function loadProjectInfo() {
   loading.value = true;
+  noRequestMode.value = false;
   try {
     const data = await moderationApi.getLatestByProject(projectId.value);
     if (data && data.request) {
@@ -281,8 +285,25 @@ async function loadProjectInfo() {
       // Используем snapshot из заявки как источник данных для ревью
       projectData.value = data.request.snapshot || {};
     } else {
-      showToast('Нет активных заявок на модерацию для этого проекта', 'warning');
-      router.push('/moderator/queue');
+      noRequestMode.value = true;
+      activeRequest.value = null;
+      try {
+        const p = await getProject(projectId.value);
+        projectData.value = {
+          titleRu: p.title_ru,
+          titleEn: p.title_en,
+          seoRu: p.seo_ru,
+          seoEn: p.seo_en,
+          about: p.about,
+          iconPath: p.icon_path,
+          coverPath: p.cover_path,
+          videoPath: p.video_path,
+          devUrl: p.dev_url,
+        };
+      } catch (err) {
+        showToast('Проект не найден', 'warning');
+        router.push('/moderator/queue');
+      }
     }
   } catch (err) {
     console.error('Failed to load project request:', err);

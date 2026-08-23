@@ -108,4 +108,19 @@ export const moderationApi = {
       message: res.data.message,
     };
   },
+
+  /**
+   * Получить список активных чатов
+   */
+  async listActiveChats(params = {}) {
+    const query = new URLSearchParams();
+    if (params.limit !== undefined) query.append('limit', params.limit);
+    if (params.offset !== undefined) query.append('offset', params.offset);
+    const qStr = query.toString() ? `?${query.toString()}` : '';
+    const res = await http.get(`/moderation/chats${qStr}`);
+    return {
+      chats: res.data.chats ?? [],
+      total: res.data.total ?? (res.data.chats ? res.data.chats.length : 0),
+    };
+  },
 };

@@ -7,6 +7,8 @@ export const moderationStore = reactive({
   requests: [],
   total: 0,
   currentRequest: null,
+  activeChats: [],
+  totalChats: 0,
   messages: [],
   loading: false,
   messagesLoading: false,
@@ -109,6 +111,26 @@ export const moderationStore = reactive({
       console.error('Failed to send message:', err);
       showToast('Не удалось отправить сообщение', 'danger');
       throw err;
+    }
+  },
+  async loadActiveChats(params = {}) {
+    this.loading = true;
+    try {
+      const data = await moderationApi.listActiveChats(params);
+      this.activeChats = (data.chats || []).map(c => ({
+        projectId: c.project_id,
+        lastMessage: c.last_message ? {
+          id: c.last_message.id,
+          content: c.last_message.content,
+          createdAt: c.last_message.created_at,
+          senderRole: c.last_message.sender_role,
+        } : null
+      }));
+      this.totalChats = data.total || 0;
+    } catch (err) {
+      console.error('Failed to load active chats:', err);
+    } finally {
+      this.loading = false;
     }
   },
 });

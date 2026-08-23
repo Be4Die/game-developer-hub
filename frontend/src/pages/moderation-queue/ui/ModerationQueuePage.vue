@@ -44,12 +44,46 @@
       <p>Загрузка очереди проектов...</p>
     </div>
 
-    <div v-else-if="!filteredRequests.length" class="empty-state card">
+    <div v-else-if="!filteredRequests.length && !isChatTab" class="empty-state card">
       <Inbox class="icon-lg text-muted" />
       <p>Проектов не найдено</p>
       <span class="subtext">В выбранной категории сейчас нет проектов</span>
     </div>
 
+    <!-- Список чатов -->
+    <div v-if="isChatTab" class="requests-grid">
+      <div v-if="!filteredChats.length && !loading" class="empty-state card">
+        <Inbox class="icon-lg text-muted" />
+        <p>Активных обсуждений нет</p>
+      </div>
+
+      <div
+        v-for="chat in filteredChats"
+        :key="chat.projectId"
+        class="card request-card card-hover"
+        @click="openProject(chat.projectId)"
+      >
+        <div class="request-card-header">
+          <div class="id-and-status">
+            <span class="badge badge-info">Новое сообщение</span>
+          </div>
+          <span class="date-text">
+            Обновлено: {{ formatDateTime(chat.lastMessage?.createdAt) }}
+          </span>
+        </div>
+        <div class="request-body">
+          <h3 class="game-title">Проект #{{ chat.projectId }}</h3>
+          <p class="game-desc">{{ chat.lastMessage?.content || 'Без текста' }}</p>
+        </div>
+        <div class="request-card-footer">
+          <button class="btn-primary btn-sm" @click.stop="openProject(chat.projectId)">
+            Открыть чат →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Список проектов (заявок) -->
     <div v-else class="requests-grid">
       <div
         v-for="req in filteredRequests"
@@ -121,6 +155,7 @@ const currentTab = ref('pending');
 const searchQuery = ref('');
 
 const allRequests = computed(() => moderationStore.requests);
+const activeChats = computed(() => moderationStore.activeChats);
 
 const filterTabs = computed(() => {
   const pending = allRequests.value.filter((r) => isPending(r.status)).length;
@@ -134,10 +169,14 @@ const filterTabs = computed(() => {
     { label: 'Одобренные', value: 'approved', count: approved },
     { label: 'Отклоненные', value: 'rejected', count: rejected },
     { label: 'Все', value: 'all', count: allRequests.value.length },
+    { label: 'Обсуждения', value: 'chats', count: activeChats.value.length },
   ];
 });
 
+const isChatTab = computed(() => currentTab.value === 'chats');
+
 const filteredRequests = computed(() => {
+  if (isChatTab.value) return [];
   let list = allRequests.value;
 
   if (currentTab.value === 'pending') {
@@ -160,6 +199,18 @@ const filteredRequests = computed(() => {
     });
   }
 
+  return list;
+});
+
+const filteredChats = computed(() => {
+  if (!isChatTab.value) return [];
+  let list = activeChats.value;
+  const q = searchQuery.value.trim().toLowerCase();
+  if (q) {
+    list = list.filter((c) => {
+      return String(c.projectId).includes(q);
+    });
+  }
   return list;
 });
 
@@ -202,7 +253,10 @@ function isRejected(status) {
 async function loadData() {
   loading.value = true;
   try {
-    await moderationStore.loadRequests({ limit: 100 });
+    await Promise.all([
+      moderationStore.loadRequests({ limit: 100 }),
+      moderationStore.loadActiveChats({ limit: 100 })
+    ]);
   } finally {
     loading.value = false;
   }

@@ -219,9 +219,17 @@ function checkPasswordStrength() {
 
 async function handleLogin() {
   try {
-    await login({ email: form.email, password: form.password });
+    const res = await login({ email: form.email, password: form.password });
     emit('success');
-    router.push('/projects');
+    
+    const role = res.user?.role || authState.user?.role;
+    if (role === 'USER_ROLE_ADMIN' || role === 3) {
+      router.push('/admin/dashboard');
+    } else if (role === 'USER_ROLE_MODERATOR' || role === 2) {
+      router.push('/moderator/queue');
+    } else {
+      router.push('/projects');
+    }
   } catch (err) {
     // handled in state.error
   }

@@ -15,7 +15,6 @@ import { NodeDetailPage } from '@/pages/node-detail';
 import { ModeratorDashboardPage } from '@/pages/moderator-dashboard';
 import { ModerationQueuePage } from '@/pages/moderation-queue';
 import { ModerationProjectPage } from '@/pages/moderation-project';
-import { ChatViewPage } from '@/pages/chat-view';
 import { SettingsPage } from '@/pages/settings';
 import { AdminDashboardPage } from '@/pages/admin-dashboard';
 
@@ -25,8 +24,8 @@ export const routes = [
     redirect: () => {
       if (!isAuthenticated()) return '/login';
       const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
-      if (user?.role === 'USER_ROLE_ADMIN') return '/admin/dashboard';
-      if (user?.role === 'USER_ROLE_MODERATOR') return '/moderator';
+      if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/admin/dashboard';
+      if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return '/moderator';
       return '/projects';
     },
   },
@@ -117,12 +116,6 @@ export const routes = [
     path: '/moderator/projects/:projectId',
     name: 'moderation-project',
     component: ModerationProjectPage,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/chat/:id',
-    name: 'chat-view',
-    component: ChatViewPage,
     meta: { requiresAuth: true },
   },
   {

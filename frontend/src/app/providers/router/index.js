@@ -13,11 +13,14 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } };
   }
   if (to.meta.guest && authed) {
+    const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
+    if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return { path: '/admin/dashboard' };
+    if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return { path: '/moderator/queue' };
     return { path: '/projects' };
   }
   if (to.meta.requiresAdmin) {
     const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
-    if (user?.role !== 'USER_ROLE_ADMIN') {
+    if (user?.role !== 'USER_ROLE_ADMIN' && user?.role !== 3) {
       return { path: '/projects' };
     }
   }
