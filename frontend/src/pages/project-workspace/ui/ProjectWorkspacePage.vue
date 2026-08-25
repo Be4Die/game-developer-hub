@@ -3,11 +3,6 @@
     <!-- ЛЕВОЕ МЕНЮ ИГРЫ -->
     <aside class="game-sidebar">
       <div class="game-header">
-        <button class="back-btn" @click="$router.push('/projects')">
-          <ArrowLeft class="icon-sm" />
-          <span>{{ t('common.back') }}</span>
-        </button>
-
         <div class="game-identity-row">
           <div class="game-icon-box">
             <img
@@ -29,7 +24,7 @@
 
         <button class="btn-dev-link" @click="openDevGame">
           <ExternalLink class="icon-xs" />
-          <span>{{ t('projectDraft.openTest') }} (Dev)</span>
+          <span>{{ t('projectDraft.openGameDev') }}</span>
         </button>
       </div>
 
@@ -110,7 +105,6 @@ import { ref, computed, watch, provide, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  ArrowLeft,
   BarChart2,
   PenTool,
   CheckCircle,
@@ -232,29 +226,11 @@ const currentUserId = computed(() => authState.user?.id);
 }
 
 .game-header {
-  padding: 16px 18px;
+  padding: 16px 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  padding: 0;
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.back-btn:hover {
-  color: var(--text-main);
+  gap: 12px;
 }
 
 .game-identity-row {

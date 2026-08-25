@@ -169,6 +169,7 @@ export default {
     devEnvironment: 'Рабочее dev-окружение',
     devUrl: 'Ссылка на тестовое окружение:',
     openTest: 'Открыть для тестирования',
+    openGameDev: 'Открыть игру (dev)',
     seoAndMedia: 'Медиа-материалы и SEO',
     icon: 'Иконка игры (512x512 PNG)',
     cover: 'Обложка игры (1920x1080 PNG/JPG)',
