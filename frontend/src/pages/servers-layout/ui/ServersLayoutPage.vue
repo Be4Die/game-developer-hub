@@ -6,21 +6,21 @@
         class="subnav-btn"
         exact-active-class="active"
       >
-        <LayoutDashboard class="icon-sm" /> Обзор
+        <LayoutDashboard class="icon-sm" /> {{ t('servers.tabs.overview') }}
       </router-link>
       <router-link
         :to="`/projects/${gameId}/servers/builds`"
         class="subnav-btn"
         active-class="active"
       >
-        <Package class="icon-sm" /> Билды
+        <Package class="icon-sm" /> {{ t('servers.tabs.builds') }}
       </router-link>
       <router-link
         :to="`/projects/${gameId}/servers/instances`"
         class="subnav-btn"
         active-class="active"
       >
-        <Play class="icon-sm" /> Инстансы
+        <Play class="icon-sm" /> {{ t('servers.tabs.instances') }}
       </router-link>
     </div>
     <div class="servers-content">
@@ -30,12 +30,16 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { LayoutDashboard, Package, Play } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 defineProps({
   gameId: { type: [String, Number], required: true },
 });
 </script>
+
 
 <style scoped>
 .servers-layout {

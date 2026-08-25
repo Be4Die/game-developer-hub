@@ -5,46 +5,44 @@
         <LogoIcon :size="28" :textSize="16" :showSub="false" :noHover="true" />
       </router-link>
       <nav class="main-nav">
-        <template v-if="userRole === 'Разработчик'">
+        <template v-if="isDeveloper">
           <router-link
             to="/projects"
             class="nav-item"
             active-class="active"
           >
-            <FolderGit2 class="icon-sm" /> Проекты
+            <FolderGit2 class="icon-sm" /> {{ t('header.projects') }}
           </router-link>
           <router-link
             to="/nodes"
             class="nav-item"
             active-class="active"
           >
-            <Server class="icon-sm" /> Игровые серверы
+            <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
         </template>
-        <template v-if="userRole === 'Модератор'">
+        <template v-if="isModerator">
           <router-link
             to="/moderator"
             class="nav-item"
             active-class="active"
           >
-            <Inbox class="icon-sm" /> Панель модератора
+            <Inbox class="icon-sm" /> {{ t('header.moderatorPanel') }}
           </router-link>
         </template>
-        <template v-if="userRole === 'Администратор'">
+        <template v-if="isAdmin">
           <router-link
             to="/admin/dashboard"
             class="nav-item"
             active-class="active"
           >
-            <Users class="icon-sm" /> Администрирование
+            <Users class="icon-sm" /> {{ t('header.adminPanel') }}
           </router-link>
         </template>
       </nav>
     </div>
 
     <div class="header-right">
-      <ThemeToggle />
-
       <div v-if="isAuthed" class="profile-wrap relative">
         <button class="profile-btn" @click="menuOpen = !menuOpen">
           <User class="icon-sm" />
@@ -65,14 +63,14 @@
             </div>
             <div class="dropdown-body">
               <router-link
-                to="/settings"
+                to="/profile"
                 class="dropdown-item"
                 @click="menuOpen = false"
               >
-                <Settings class="icon-sm" /> Настройки
+                <User class="icon-sm" /> {{ t('header.profile') }}
               </router-link>
               <button class="dropdown-item text-danger" @click="handleLogout">
-                <LogOut class="icon-sm" /> Выйти
+                <LogOut class="icon-sm" /> {{ t('header.logout') }}
               </button>
             </div>
           </div>
@@ -85,33 +83,46 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/entities/user';
-import { ROLE_MAP } from '@/shared/config';
 import { LogoIcon } from '@/shared/ui';
-import { ThemeToggle } from '@/features/theme-switcher';
 import {
   FolderGit2,
   Server,
   User,
   Inbox,
-  Settings,
   LogOut,
   Users,
   ChevronDown,
 } from 'lucide-vue-next';
 
+
+const { t } = useI18n();
 const router = useRouter();
 const { state: authState, logout } = useAuth();
 const menuOpen = ref(false);
 
 const isAuthed = computed(() => !!authState.user);
 const displayName = computed(
-  () => authState.user?.display_name || 'Пользователь'
+  () => authState.user?.display_name || authState.user?.email?.split('@')[0] || t('roles.user')
 );
 const userEmail = computed(() => authState.user?.email || '');
-const userRole = computed(
-  () => ROLE_MAP[authState.user?.role] || 'Пользователь'
-);
+
+const userRole = computed(() => authState.user?.role);
+
+const isAdmin = computed(() => {
+  const r = userRole.value;
+  return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
+});
+
+const isModerator = computed(() => {
+  const r = userRole.value;
+  return r === 'USER_ROLE_MODERATOR' || r === 'moderator' || r === 2;
+});
+
+const isDeveloper = computed(() => {
+  return !isAdmin.value && !isModerator.value;
+});
 
 async function handleLogout() {
   try {
@@ -124,6 +135,7 @@ async function handleLogout() {
   }
 }
 </script>
+
 
 <style scoped>
 .top-header {

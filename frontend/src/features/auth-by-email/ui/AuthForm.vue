@@ -13,26 +13,26 @@
       @submit.prevent="handleLogin"
       class="auth-form"
     >
-      <h2>Вход в систему</h2>
+      <h2>{{ t('auth.loginTitle') }}</h2>
       <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">{{ t('auth.email') }}</label>
         <input
           id="email"
           v-model="form.email"
           type="email"
-          placeholder="you@example.com"
+          :placeholder="t('auth.emailPlaceholder')"
           required
           @input="validateEmail"
         />
         <span v-if="emailError" class="field-error">{{ emailError }}</span>
       </div>
       <div class="form-group">
-        <label for="password">Пароль</label>
+        <label for="password">{{ t('auth.password') }}</label>
         <input
           id="password"
           v-model="form.password"
           type="password"
-          placeholder="Введите пароль"
+          :placeholder="t('auth.passwordPlaceholder')"
           required
         />
       </div>
@@ -41,11 +41,11 @@
         class="btn btn-primary btn-full"
         :disabled="authState.loading"
       >
-        {{ authState.loading ? 'Вход...' : 'Войти' }}
+        {{ authState.loading ? t('common.loading') : t('auth.signIn') }}
       </button>
       <p class="auth-switch">
-        Нет аккаунта?
-        <a href="#" @click.prevent="mode = 'register'">Зарегистрироваться</a>
+        {{ t('auth.noAccount') }}
+        <a href="#" @click.prevent="mode = 'register'">{{ t('auth.signUp') }}</a>
       </p>
     </form>
 
@@ -55,36 +55,36 @@
       @submit.prevent="handleRegister"
       class="auth-form"
     >
-      <h2>Регистрация</h2>
+      <h2>{{ t('auth.registerTitle') }}</h2>
       <div class="form-group">
-        <label for="reg-name">Имя</label>
+        <label for="reg-name">{{ t('auth.displayName') }}</label>
         <input
           id="reg-name"
           v-model="form.display_name"
           type="text"
-          placeholder="Как вас зовут?"
+          :placeholder="t('auth.displayNamePlaceholder')"
           required
         />
       </div>
       <div class="form-group">
-        <label for="reg-email">Email</label>
+        <label for="reg-email">{{ t('auth.email') }}</label>
         <input
           id="reg-email"
           v-model="form.email"
           type="email"
-          placeholder="you@example.com"
+          :placeholder="t('auth.emailPlaceholder')"
           required
           @input="validateEmail"
         />
         <span v-if="emailError" class="field-error">{{ emailError }}</span>
       </div>
       <div class="form-group">
-        <label for="reg-password">Пароль</label>
+        <label for="reg-password">{{ t('auth.password') }}</label>
         <input
           id="reg-password"
           v-model="form.password"
           type="password"
-          placeholder="Минимум 6 символов"
+          :placeholder="t('auth.passwordPlaceholder')"
           required
           minlength="6"
           @input="checkPasswordStrength"
@@ -107,11 +107,11 @@
         class="btn btn-primary btn-full"
         :disabled="authState.loading"
       >
-        {{ authState.loading ? 'Регистрация...' : 'Зарегистрироваться' }}
+        {{ authState.loading ? t('common.loading') : t('auth.signUp') }}
       </button>
       <p class="auth-switch">
-        Уже есть аккаунт?
-        <a href="#" @click.prevent="mode = 'login'">Войти</a>
+        {{ t('auth.haveAccount') }}
+        <a href="#" @click.prevent="mode = 'login'">{{ t('auth.signIn') }}</a>
       </p>
     </form>
 
@@ -143,14 +143,14 @@
         class="btn btn-primary btn-full"
         :disabled="authState.loading"
       >
-        {{ authState.loading ? 'Проверка...' : 'Подтвердить' }}
+        {{ authState.loading ? t('common.loading') : t('common.confirm') }}
       </button>
       <p class="auth-switch">
         Не получили код?
         <a href="#" @click.prevent="resendCode">Отправить повторно</a>
       </p>
       <p class="auth-switch">
-        <a href="#" @click.prevent="mode = 'login'">← Назад к входу</a>
+        <a href="#" @click.prevent="mode = 'login'">← {{ t('auth.backToLogin') }}</a>
       </p>
     </form>
   </div>
@@ -159,10 +159,12 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuth, verifyEmail, resendVerificationEmail } from '@/entities/user';
 
 const emit = defineEmits(['success']);
 
+const { t } = useI18n();
 const router = useRouter();
 const { state: authState, login, register } = useAuth();
 
@@ -185,7 +187,7 @@ function validateEmail() {
     return;
   }
   if (!EMAIL_REGEX.test(form.email)) {
-    emailError.value = 'Введите корректный email адрес';
+    emailError.value = t('auth.errorInvalidCredentials');
   } else {
     emailError.value = '';
   }
@@ -204,16 +206,12 @@ function checkPasswordStrength() {
   if (/\d/.test(pwd)) score++;
   if (/[^a-zA-Z0-9]/.test(pwd)) score++;
 
-  if (score <= 1) {
-    passwordStrength.value = { percent: 20, text: 'Слабый', class: 'weak' };
-  } else if (score <= 2) {
-    passwordStrength.value = { percent: 40, text: 'Слабый', class: 'weak' };
+  if (score <= 2) {
+    passwordStrength.value = { percent: 35, text: '•••', class: 'weak' };
   } else if (score === 3) {
-    passwordStrength.value = { percent: 60, text: 'Средний', class: 'medium' };
-  } else if (score === 4) {
-    passwordStrength.value = { percent: 80, text: 'Хороший', class: 'strong' };
+    passwordStrength.value = { percent: 65, text: '••••', class: 'medium' };
   } else {
-    passwordStrength.value = { percent: 100, text: 'Отличный', class: 'strong' };
+    passwordStrength.value = { percent: 100, text: '•••••', class: 'strong' };
   }
 }
 
@@ -242,7 +240,7 @@ async function handleRegister() {
       password: form.password,
       display_name: form.display_name,
     });
-    successMessage.value = 'Регистрация успешна! Подтвердите email.';
+    successMessage.value = t('auth.registerSuccess');
     mode.value = 'verify';
   } catch (err) {
     // handled in state.error
@@ -252,23 +250,24 @@ async function handleRegister() {
 async function handleVerify() {
   try {
     await verifyEmail(form.verification_code);
-    successMessage.value = 'Email подтвержден! Теперь войдите в систему.';
+    successMessage.value = t('auth.loginSuccess');
     mode.value = 'login';
     form.password = '';
   } catch (err) {
-    authState.error = err.response?.data?.message || 'Неверный код подтверждения';
+    authState.error = err.response?.data?.message || t('common.error');
   }
 }
 
 async function resendCode() {
   try {
     await resendVerificationEmail(form.email);
-    successMessage.value = 'Код отправлен повторно!';
+    successMessage.value = t('auth.resetSuccess');
   } catch (err) {
-    authState.error = 'Не удалось отправить код';
+    authState.error = t('common.error');
   }
 }
 </script>
+
 
 <style scoped>
 .auth-card {

@@ -1,12 +1,12 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('cancel')">
     <div class="modal card">
-      <h3>Запустить инстанс</h3>
+      <h3>{{ t('servers.startInstance') }}</h3>
       <div class="form-grid">
         <div class="form-group">
-          <label>Версия билда *</label>
+          <label>{{ t('common.version') }} *</label>
           <select v-model="startForm.build_version" class="form-input">
-            <option value="" disabled>Выберите билд</option>
+            <option value="" disabled>Select build</option>
             <option
               v-for="b in availableBuilds"
               :key="b.build_version"
@@ -17,7 +17,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Имя (опционально)</label>
+          <label>{{ t('common.name') }}</label>
           <input
             type="text"
             v-model="startForm.name"
@@ -27,21 +27,21 @@
           />
         </div>
         <div class="form-group">
-          <label>Макс. игроков</label>
+          <label>Max Players</label>
           <input
             type="number"
             v-model.number="startForm.max_players"
             class="form-input"
             min="1"
-            placeholder="Из билда"
+            placeholder="Default"
           />
         </div>
         <div class="form-group form-group-wide">
-          <label>Переменные окружения</label>
+          <label>Environment Variables</label>
           <KeyValueEditor v-model="startForm.env_vars" />
         </div>
         <div class="form-group form-group-wide">
-          <label>Аргументы командной строки</label>
+          <label>Arguments</label>
           <div class="args-list">
             <div
               v-for="(arg, i) in startForm.args"
@@ -65,7 +65,7 @@
               class="arg-add"
               @click="startForm.args.push('')"
             >
-              + Добавить аргумент
+              + Add argument
             </button>
           </div>
         </div>
@@ -77,9 +77,9 @@
           @click="submitStart"
           :disabled="!startForm.build_version || starting"
         >
-          {{ starting ? 'Запуск...' : 'Запустить' }}
+          {{ starting ? t('common.loading') : t('servers.startInstance') }}
         </button>
-        <button class="btn-outline" @click="$emit('cancel')">Отмена</button>
+        <button class="btn-outline" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
       </div>
     </div>
   </div>
@@ -87,11 +87,15 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { KeyValueEditor } from '@/shared/ui';
 import { startInstance } from '@/entities/instance';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
+
   gameId: { type: [String, Number], required: true },
   availableBuilds: { type: Array, default: () => [] },
 });

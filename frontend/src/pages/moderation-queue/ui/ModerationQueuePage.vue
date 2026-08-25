@@ -2,12 +2,12 @@
   <div class="page-container">
     <div class="header-row">
       <div>
-        <div class="page-subtitle">Модерация</div>
-        <h1>Очередь проектов</h1>
+        <div class="page-subtitle">{{ t('header.moderation') }}</div>
+        <h1>{{ t('moderation.queueTitle') }}</h1>
       </div>
       <div class="header-actions">
         <button class="btn-outline" @click="loadData">
-          <RefreshCw class="icon-sm" :class="{ spinning: loading }" /> Обновить
+          <RefreshCw class="icon-sm" :class="{ spinning: loading }" /> {{ t('common.refresh') }}
         </button>
       </div>
     </div>
@@ -32,11 +32,12 @@
         <input
           type="text"
           v-model="searchQuery"
-          placeholder="Поиск по названию игры или ID проекта..."
+          :placeholder="t('projects.searchPlaceholder')"
           class="search-input"
         />
       </div>
     </div>
+
 
     <!-- Список проектов -->
     <div v-if="loading && !filteredRequests.length" class="loading-state card">
@@ -140,6 +141,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { RefreshCw, Search, Inbox } from 'lucide-vue-next';
 import {
   moderationStore,
@@ -149,6 +151,7 @@ import {
   formatDateTime,
 } from '@/entities/moderation';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
 const currentTab = ref('pending');
@@ -164,14 +167,15 @@ const filterTabs = computed(() => {
   const rejected = allRequests.value.filter((r) => isRejected(r.status)).length;
 
   return [
-    { label: 'Новые', value: 'pending', count: pending },
-    { label: 'В проверке', value: 'in_review', count: inReview },
-    { label: 'Одобренные', value: 'approved', count: approved },
-    { label: 'Отклоненные', value: 'rejected', count: rejected },
-    { label: 'Все', value: 'all', count: allRequests.value.length },
-    { label: 'Обсуждения', value: 'chats', count: activeChats.value.length },
+    { label: t('projects.draft'), value: 'pending', count: pending },
+    { label: t('projects.moderation'), value: 'in_review', count: inReview },
+    { label: t('projects.approved'), value: 'approved', count: approved },
+    { label: t('projects.rejected'), value: 'rejected', count: rejected },
+    { label: t('projects.allStatuses'), value: 'all', count: allRequests.value.length },
+    { label: t('moderation.chatTitle'), value: 'chats', count: activeChats.value.length },
   ];
 });
+
 
 const isChatTab = computed(() => currentTab.value === 'chats');
 

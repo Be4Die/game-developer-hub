@@ -7,15 +7,16 @@
             <AlertTriangle v-if="type === 'warning'" class="dialog-icon warning" />
             <AlertCircle v-else-if="type === 'danger'" class="dialog-icon danger" />
             <HelpCircle v-else class="dialog-icon info" />
-            <h3>{{ title }}</h3>
+            <h3>{{ dialogTitle }}</h3>
           </div>
           <div class="dialog-body">
             <p>{{ message }}</p>
           </div>
           <div class="dialog-footer">
-            <button class="btn-outline" @click="onCancel">{{ cancelText }}</button>
-            <button :class="confirmClass" @click="onConfirm">{{ confirmText }}</button>
+            <button class="btn-outline" @click="onCancel">{{ dialogCancelText }}</button>
+            <button :class="confirmClass" @click="onConfirm">{{ dialogConfirmText }}</button>
           </div>
+
         </div>
       </div>
     </Transition>
@@ -23,17 +24,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { AlertTriangle, AlertCircle, HelpCircle } from 'lucide-vue-next'
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { AlertTriangle, AlertCircle, HelpCircle } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  title: { type: String, default: 'Подтвердите действие' },
-  message: { type: String, default: 'Вы уверены?' },
-  confirmText: { type: String, default: 'Подтвердить' },
-  cancelText: { type: String, default: 'Отмена' },
+  title: { type: String, default: '' },
+  message: { type: String, default: '' },
+  confirmText: { type: String, default: '' },
+  cancelText: { type: String, default: '' },
   type: { type: String, default: 'warning' }, // warning | danger | info
-})
+});
+
+const dialogTitle = computed(() => props.title || t('common.confirm'));
+const dialogConfirmText = computed(() => props.confirmText || t('common.confirm'));
+const dialogCancelText = computed(() => props.cancelText || t('common.cancel'));
+
 
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
 

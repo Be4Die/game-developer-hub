@@ -1,15 +1,18 @@
 <template>
-  <button class="theme-toggle" @click="toggleTheme" title="Переключить тему">
+  <button class="theme-toggle" @click="toggleTheme" :title="t('header.toggleTheme')">
     <Sun v-if="isDark" class="icon-sm" />
     <Moon v-else class="icon-sm" />
   </button>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { Sun, Moon } from 'lucide-vue-next';
 import { useTheme } from '@/shared/lib';
 
+const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
+
 </script>
 
 <style scoped>

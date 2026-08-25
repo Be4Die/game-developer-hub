@@ -125,6 +125,15 @@ export async function loadUser() {
   }
 }
 
+export function updateCurrentUser(updatedUser) {
+  if (!updatedUser) return;
+  state.user = {
+    ...state.user,
+    ...updatedUser,
+  };
+  localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(state.user));
+}
+
 export function isAuthenticated() {
   return !!state.accessToken;
 }
@@ -137,6 +146,8 @@ export function useAuth() {
     logout,
     refreshSession,
     loadUser,
+    updateCurrentUser,
     isAuthenticated,
   };
 }
+

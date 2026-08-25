@@ -1,9 +1,9 @@
 <template>
   <div class="upload-form card">
-    <h3>Новый серверный билд</h3>
+    <h3>{{ t('servers.uploadBuild') }}</h3>
     <div class="form-grid">
       <div class="form-group form-group-wide">
-        <label>Файл образа (TAR, до 2 ГБ)</label>
+        <label>Image file (TAR, max 2GB)</label>
         <div class="file-drop" @dragover.prevent @drop.prevent="onDrop">
           <input
             type="file"
@@ -13,15 +13,15 @@
             hidden
           />
           <button class="btn-outline" @click="$refs.fileInput.click()">
-            Выбрать файл
+            {{ t('common.upload') }}
           </button>
           <span class="file-name">{{
-            uploadForm.file?.name ?? 'или перетащите сюда'
+            uploadForm.file?.name ?? 'or drag and drop here'
           }}</span>
         </div>
       </div>
       <div class="form-group">
-        <label>Версия билда *</label>
+        <label>{{ t('common.version') }} *</label>
         <input
           type="text"
           v-model="uploadForm.build_version"
@@ -30,7 +30,7 @@
         />
       </div>
       <div class="form-group">
-        <label>Протокол</label>
+        <label>Protocol</label>
         <select v-model="uploadForm.protocol" class="form-input">
           <option value="tcp">TCP</option>
           <option value="udp">UDP</option>
@@ -39,7 +39,7 @@
         </select>
       </div>
       <div class="form-group">
-        <label>Внутренний порт</label>
+        <label>Internal Port</label>
         <input
           type="number"
           v-model.number="uploadForm.internal_port"
@@ -49,7 +49,7 @@
         />
       </div>
       <div class="form-group">
-        <label>Макс. игроков</label>
+        <label>Max Players</label>
         <input
           type="number"
           v-model.number="uploadForm.max_players"
@@ -66,13 +66,13 @@
           !uploadForm.build_version || !uploadForm.file || uploading
         "
       >
-        Загрузить
+        {{ t('common.upload') }}
       </button>
-      <button class="btn-outline" @click="$emit('cancel')">Отмена</button>
+      <button class="btn-outline" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
     </div>
     <div v-if="uploading" class="upload-progress">
       <div class="progress-info">
-        <span>Загрузка билда...</span>
+        <span>{{ t('common.loading') }}</span>
         <span>{{ uploadProgress }}%</span>
       </div>
       <div class="progress-bar-bg">
@@ -87,10 +87,14 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { uploadServerBuild } from '@/entities/build';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
+
   gameId: { type: [String, Number], required: true },
 });
 

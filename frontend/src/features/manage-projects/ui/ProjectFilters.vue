@@ -6,7 +6,7 @@
         type="text"
         :value="searchQuery"
         @input="$emit('update:searchQuery', $event.target.value)"
-        placeholder="Поиск по названию или ID..."
+        :placeholder="t('projects.searchPlaceholder')"
         class="search-input"
       />
       <button
@@ -20,30 +20,30 @@
 
     <div class="filters-group">
       <div class="filter-item">
-        <label class="filter-label">Статус:</label>
+        <label class="filter-label">{{ t('common.status') }}:</label>
         <select
           :value="statusFilter"
           @change="$emit('update:statusFilter', $event.target.value)"
           class="filter-select"
         >
-          <option value="all">Все статусы</option>
-          <option value="draft">Черновик</option>
-          <option value="pending">На модерации</option>
-          <option value="published">Опубликована</option>
-          <option value="rejected">Отклонена</option>
+          <option value="all">{{ t('projects.allStatuses') }}</option>
+          <option value="draft">{{ t('projects.draft') }}</option>
+          <option value="pending">{{ t('projects.moderation') }}</option>
+          <option value="published">{{ t('projects.approved') }}</option>
+          <option value="rejected">{{ t('projects.rejected') }}</option>
         </select>
       </div>
 
       <div class="filter-item">
-        <label class="filter-label">Сортировка:</label>
+        <label class="filter-label">{{ t('common.actions') }}:</label>
         <select
           :value="sortBy"
           @change="$emit('update:sortBy', $event.target.value)"
           class="filter-select"
         >
-          <option value="newest">Сначала новые</option>
-          <option value="oldest">Сначала старые</option>
-          <option value="title">По названию (А–Я)</option>
+          <option value="newest">{{ t('stats.today') }} / {{ t('common.created') }}</option>
+          <option value="oldest">{{ t('common.created') }} ↑</option>
+          <option value="title">{{ t('common.name') }} (A–Z)</option>
         </select>
       </div>
 
@@ -51,7 +51,7 @@
         <button
           class="toggle-btn"
           :class="{ active: viewMode === 'table' }"
-          title="Табличный вид"
+          :title="t('servers.tabs.overview')"
           @click="$emit('update:viewMode', 'table')"
         >
           <List class="icon-sm" />
@@ -59,7 +59,7 @@
         <button
           class="toggle-btn"
           :class="{ active: viewMode === 'grid' }"
-          title="Вид карточек"
+          :title="t('projects.title')"
           @click="$emit('update:viewMode', 'grid')"
         >
           <LayoutGrid class="icon-sm" />
@@ -70,7 +70,10 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { Search, X, List, LayoutGrid } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 defineProps({
   searchQuery: { type: String, default: '' },
@@ -86,6 +89,7 @@ defineEmits([
   'update:viewMode',
 ]);
 </script>
+
 
 <style scoped>
 .toolbar-card {

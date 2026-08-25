@@ -56,17 +56,25 @@ export function getCurrentUser() {
   return http.get('/user/profile').then((r) => r.data);
 }
 
-export function updateUser(userId, { display_name, avatar_url } = {}) {
+export function updateProfile({ display_name } = {}) {
   return http
-    .patch(`/users/${userId}`, { display_name, avatar_url })
+    .patch('/user/profile', { display_name })
     .then((r) => r.data);
 }
 
-export function changePassword({ old_password, new_password }) {
+export function updateUser(userId, { display_name, avatar_url } = {}) {
   return http
-    .post('/users/change-password', { old_password, new_password })
+    .patch('/user/profile', { display_name, avatar_url })
     .then((r) => r.data);
 }
+
+export function changePassword({ current_password, new_password, old_password }) {
+  const current = current_password || old_password;
+  return http
+    .post('/user/profile:change-password', { current_password: current, new_password })
+    .then((r) => r.data);
+}
+
 
 // ─── Tokens ────────────────────────────────────────────
 

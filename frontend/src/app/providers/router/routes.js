@@ -15,8 +15,9 @@ import { NodeDetailPage } from '@/pages/node-detail';
 import { ModeratorDashboardPage } from '@/pages/moderator-dashboard';
 import { ModerationQueuePage } from '@/pages/moderation-queue';
 import { ModerationProjectPage } from '@/pages/moderation-project';
-import { SettingsPage } from '@/pages/settings';
+import { ProfilePage } from '@/pages/profile';
 import { AdminDashboardPage } from '@/pages/admin-dashboard';
+
 
 export const routes = [
   {
@@ -119,10 +120,14 @@ export const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/settings',
-    name: 'settings',
-    component: SettingsPage,
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/settings',
+    redirect: '/profile',
   },
   {
     path: '/admin/dashboard',
@@ -131,3 +136,4 @@ export const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];
+

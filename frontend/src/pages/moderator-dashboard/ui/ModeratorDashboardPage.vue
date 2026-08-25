@@ -2,15 +2,15 @@
   <div class="page-container">
     <div class="header-row">
       <div>
-        <div class="page-subtitle">Модерация</div>
-        <h1>Панель модератора</h1>
+        <div class="page-subtitle">{{ t('header.moderation') }}</div>
+        <h1>{{ t('header.moderation') }}</h1>
       </div>
       <div class="header-actions">
         <button class="btn-outline" @click="loadData">
-          <RefreshCw class="icon-sm" :class="{ spinning: loading }" /> Обновить
+          <RefreshCw class="icon-sm" :class="{ spinning: loading }" /> {{ t('common.refresh') }}
         </button>
         <button class="btn-primary" @click="$router.push('/moderator/queue')">
-          <ListOrdered class="icon-sm" /> Очередь проектов
+          <ListOrdered class="icon-sm" /> {{ t('moderation.queueTitle') }}
         </button>
       </div>
     </div>
@@ -23,7 +23,7 @@
         </div>
         <div class="metric-content">
           <div class="metric-value">{{ pendingRequests.length }}</div>
-          <div class="metric-label">Новые проекты</div>
+          <div class="metric-label">{{ t('moderation.queueTitle') }}</div>
         </div>
       </div>
 
@@ -33,7 +33,7 @@
         </div>
         <div class="metric-content">
           <div class="metric-value">{{ inReviewRequests.length }}</div>
-          <div class="metric-label">В проверке</div>
+          <div class="metric-label">{{ t('projects.moderation') }}</div>
         </div>
       </div>
 
@@ -43,10 +43,11 @@
         </div>
         <div class="metric-content">
           <div class="metric-value">{{ approvedCount }}</div>
-          <div class="metric-label">Одобрено</div>
+          <div class="metric-label">{{ t('projects.approved') }}</div>
         </div>
       </div>
     </div>
+
 
     <!-- Секции дашборда -->
     <div class="dashboard-grid">
@@ -159,6 +160,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   Inbox,
   Clock,
@@ -176,8 +178,10 @@ import {
   formatDateTime,
 } from '@/entities/moderation';
 
+const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
+
 
 const pendingRequests = computed(() =>
   moderationStore.requests.filter(

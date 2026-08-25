@@ -1,43 +1,44 @@
 <template>
   <div class="tab-content tab-fade-in">
-    <h1 class="page-title">Статистика</h1>
+    <h1 class="page-title">{{ t('stats.title') }}</h1>
 
     <!-- Карточки метрик -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-header">
-          <span class="label">Игроков за сутки</span>
+          <span class="label">{{ t('stats.players') }}</span>
           <Users class="icon-sm stat-icon" />
         </div>
         <span class="value">9,341</span>
-        <span class="trend up">+12.5% за неделю</span>
+        <span class="trend up">+12.5%</span>
       </div>
       <div class="stat-card">
         <div class="stat-header">
-          <span class="label">Среднее время</span>
+          <span class="label">{{ t('stats.avgTime') }}</span>
           <Clock class="icon-sm stat-icon" />
         </div>
         <span class="value">13m</span>
-        <span class="trend down">-2.1% за неделю</span>
+        <span class="trend down">-2.1%</span>
       </div>
       <div class="stat-card">
         <div class="stat-header">
-          <span class="label">Примерный доход</span>
+          <span class="label">{{ t('stats.revenue') }}</span>
           <Wallet class="icon-sm stat-icon" />
         </div>
         <span class="value">₽ 34 500</span>
-        <span class="trend up">+8.3% за неделю</span>
+        <span class="trend up">+8.3%</span>
       </div>
     </div>
 
     <!-- График: Активность игроков -->
     <div class="chart-card">
       <div class="chart-header">
-        <h3>Активность игроков (7 дней)</h3>
+        <h3>{{ t('stats.chartTitle') }}</h3>
         <div class="chart-legend">
-          <span class="legend-dot blue"></span> Игроки
+          <span class="legend-dot blue"></span> {{ t('stats.players') }}
         </div>
       </div>
+
       <div class="chart-container">
         <svg viewBox="0 0 700 250" class="line-chart">
           <!-- Сетка -->
@@ -499,6 +500,7 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import {
   Users,
   Clock,
@@ -507,7 +509,10 @@ import {
   Smartphone,
   Tablet,
 } from 'lucide-vue-next';
+
+const { t } = useI18n();
 </script>
+
 
 <style scoped>
 .tab-fade-in {

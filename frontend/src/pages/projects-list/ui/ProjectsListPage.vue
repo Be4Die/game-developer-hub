@@ -3,9 +3,9 @@
     <!-- Шапка страницы -->
     <div class="header-row">
       <div>
-        <div class="page-subtitle">Консоль разработчика</div>
+        <div class="page-subtitle">{{ t('projects.subtitle') }}</div>
         <div class="title-with-count">
-          <h1>Мои игры</h1>
+          <h1>{{ t('projects.title') }}</h1>
           <span v-if="!loading" class="count-badge">{{ totalProjects }}</span>
         </div>
       </div>
@@ -17,7 +17,7 @@
         >
           <Plus v-if="!creating" class="icon-sm" />
           <span v-else class="spinner-sm"></span>
-          {{ creating ? 'Создание...' : 'Добавить игру' }}
+          {{ creating ? t('common.saving') : t('projects.createBtn') }}
         </button>
       </div>
     </div>
@@ -33,7 +33,7 @@
     <!-- Загрузка -->
     <div v-if="loading" class="state-container">
       <div class="spinner-md"></div>
-      <p>Загрузка списка игр...</p>
+      <p>{{ t('common.loading') }}</p>
     </div>
 
     <!-- Пустой список без проектов -->
@@ -46,10 +46,9 @@
       <div class="empty-icon-wrap">
         <Gamepad2 class="icon-lg" />
       </div>
-      <h3>У вас пока нет проектов</h3>
+      <h3>{{ t('projects.noProjects') }}</h3>
       <p>
-        Нажмите «Добавить игру», чтобы мгновенно создать новый черновик и
-        загрузить веб-сборку.
+        {{ t('projects.noProjectsDesc') }}
       </p>
       <button
         class="btn btn-primary"
@@ -58,7 +57,7 @@
       >
         <Plus v-if="!creating" class="icon-sm" />
         <span v-else class="spinner-sm"></span>
-        {{ creating ? 'Создание...' : 'Создать первую игру' }}
+        {{ creating ? t('common.saving') : t('projects.createBtn') }}
       </button>
     </div>
 
@@ -68,10 +67,10 @@
       class="state-container empty-card"
     >
       <Search class="icon-md text-muted" />
-      <h3>Ничего не найдено</h3>
-      <p>Попробуйте изменить поисковый запрос или сбросить фильтры.</p>
+      <h3>{{ t('common.empty') }}</h3>
+      <p>{{ t('stats.noData') }}</p>
       <button class="btn btn-secondary btn-sm" @click="resetFilters">
-        Сбросить фильтры
+        {{ t('common.reset') }}
       </button>
     </div>
 
@@ -80,12 +79,12 @@
       <table class="games-table">
         <thead>
           <tr>
-            <th class="col-game">Игра</th>
-            <th class="col-status">Статус</th>
-            <th class="col-version">Версия</th>
-            <th class="col-date">Дата обновления</th>
-            <th class="col-links">Окружение</th>
-            <th class="col-actions">Действия</th>
+            <th class="col-game">{{ t('projects.projectNameLabel') }}</th>
+            <th class="col-status">{{ t('common.status') }}</th>
+            <th class="col-version">{{ t('common.version') }}</th>
+            <th class="col-date">{{ t('common.updated') }}</th>
+            <th class="col-links">Env</th>
+            <th class="col-actions">{{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -98,6 +97,7 @@
             <!-- Колонка: Иконка + Название + ID -->
             <td class="col-game">
               <div class="game-cell">
+
                 <div class="game-avatar">
                   <img
                     v-if="game.icon_path"
@@ -378,6 +378,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   Plus,
   Gamepad2,
@@ -405,6 +406,7 @@ import {
 import { ProjectFilters } from '@/features/manage-projects';
 import { formatDate, showToast } from '@/shared/lib';
 
+const { t } = useI18n();
 const router = useRouter();
 const games = ref([]);
 const totalProjects = ref(0);
@@ -426,7 +428,7 @@ async function loadProjects() {
     games.value = res.projects || [];
     totalProjects.value = res.total || games.value.length;
   } catch (err) {
-    showToast('Не удалось загрузить проекты', 'danger');
+    showToast(t('common.error'), 'danger');
   } finally {
     loading.value = false;
   }
@@ -440,14 +442,15 @@ const createNewGame = async () => {
       title_en: 'New Project',
     });
     resetDraftState();
-    showToast(`Создан черновик #${project.id}`, 'success');
+    showToast(t('projects.createModalTitle') + ` #${project.id}`, 'success');
     router.push(`/projects/${project.id}/draft`);
   } catch (err) {
-    showToast('Не удалось создать проект', 'danger');
+    showToast(t('common.error'), 'danger');
   } finally {
     creating.value = false;
   }
 };
+
 
 const openProject = (id) => {
   router.push(`/projects/${id}/draft`);

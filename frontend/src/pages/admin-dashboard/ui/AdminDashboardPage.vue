@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="header-row">
-      <h1>Администрирование</h1>
+      <h1>{{ t('admin.title') }}</h1>
     </div>
 
     <!-- Tabs -->
@@ -11,14 +11,14 @@
         :class="{ active: activeTab === 'users' }"
         @click="activeTab = 'users'"
       >
-        Пользователи
+        {{ t('admin.usersTab') }}
       </button>
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'moderators' }"
         @click="activeTab = 'moderators'"
       >
-        Модераторы
+        {{ t('admin.moderatorsTab') }}
       </button>
     </div>
 
@@ -26,28 +26,28 @@
     <div v-if="activeTab === 'users'" class="tab-content">
       <div class="card">
         <div class="card-header">
-          <h2>Все пользователи</h2>
+          <h2>{{ t('admin.usersTab') }}</h2>
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск по имени или email..."
+            :placeholder="t('projects.searchPlaceholder')"
             class="search-input"
             @input="debouncedSearch"
           />
         </div>
-        <div v-if="loading" class="empty-state">Загрузка...</div>
+        <div v-if="loading" class="empty-state">{{ t('common.loading') }}</div>
         <div v-else-if="users.length === 0" class="empty-state">
-          Пользователи не найдены
+          {{ t('common.empty') }}
         </div>
         <div v-else class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Имя</th>
-                <th>Email</th>
-                <th>Роль</th>
-                <th>Статус</th>
-                <th>Дата регистрации</th>
+                <th>{{ t('common.name') }}</th>
+                <th>{{ t('auth.email') }}</th>
+                <th>{{ t('profile.role') }}</th>
+                <th>{{ t('common.status') }}</th>
+                <th>{{ t('common.created') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -77,6 +77,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- Moderators Tab -->
     <div v-if="activeTab === 'moderators'" class="tab-content">
@@ -144,12 +145,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { searchUsers, deleteUser } from '@/entities/user';
 import {
   CreateModeratorForm,
   DeleteModeratorModal,
 } from '@/features/manage-moderators';
 import { formatDate, showToast } from '@/shared/lib';
+
+const { t } = useI18n();
 
 const activeTab = ref('users');
 const loading = ref(false);
@@ -209,14 +213,17 @@ function roleLabel(role) {
   switch (role) {
     case 'USER_ROLE_ADMIN':
     case 'admin':
-      return 'Администратор';
+    case 3:
+      return t('profile.adminRole');
     case 'USER_ROLE_MODERATOR':
     case 'moderator':
-      return 'Модератор';
+    case 2:
+      return t('profile.moderatorRole');
     default:
-      return 'Разработчик';
+      return t('profile.developerRole');
   }
 }
+
 
 function statusBadgeClass(status) {
   switch (status) {

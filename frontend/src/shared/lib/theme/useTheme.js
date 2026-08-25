@@ -1,24 +1,40 @@
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 
-const isDark = ref(false);
+function getInitialTheme() {
+  if (typeof window === 'undefined') return false;
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') return true;
+  if (saved === 'light') return false;
+  return Boolean(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+const isDark = ref(getInitialTheme());
+
+function applyTheme() {
+  if (typeof document === 'undefined') return;
+  if (isDark.value) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+}
+
+// Immediately apply initial theme
+if (typeof window !== 'undefined') {
+  applyTheme();
+
+  // Listen to OS system theme changes if user hasn't explicitly chosen a theme
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        isDark.value = e.matches;
+        applyTheme();
+      }
+    });
+  }
+}
 
 export function useTheme() {
-  onMounted(() => {
-    const saved = localStorage.getItem('theme');
-    isDark.value =
-      saved === 'dark' ||
-      (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    applyTheme();
-  });
-
-  function applyTheme() {
-    if (isDark.value) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  }
-
   function toggleTheme() {
     isDark.value = !isDark.value;
     localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
@@ -33,3 +49,4 @@ export function useTheme() {
 
   return { isDark, toggleTheme, setTheme };
 }
+

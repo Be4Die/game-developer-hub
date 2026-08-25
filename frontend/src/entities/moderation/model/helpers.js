@@ -1,3 +1,4 @@
+import { i18n } from '@/shared/lib';
 import {
   REQUEST_STATUS,
   REQUEST_STATUS_LABELS,
@@ -5,10 +6,24 @@ import {
 } from './constants';
 
 export function getStatusText(status) {
-  return REQUEST_STATUS_LABELS[status] || 'Неизвестно';
+  const t = i18n.global.t;
+  if (status === REQUEST_STATUS.PENDING || status === 'REQUEST_STATUS_PENDING' || status === 'pending') {
+    return t('projects.moderation');
+  }
+  if (status === REQUEST_STATUS.IN_REVIEW || status === 'REQUEST_STATUS_IN_REVIEW' || status === 'in_review') {
+    return t('projects.moderation');
+  }
+  if (status === REQUEST_STATUS.APPROVED || status === 'REQUEST_STATUS_APPROVED' || status === 'approved') {
+    return t('projects.approved');
+  }
+  if (status === REQUEST_STATUS.REJECTED || status === 'REQUEST_STATUS_REJECTED' || status === 'rejected') {
+    return t('projects.rejected');
+  }
+  return REQUEST_STATUS_LABELS[status] || t('common.unknown');
 }
 
 export function getStatusBadgeClass(status) {
+
   return REQUEST_STATUS_BADGES[status] || 'badge-neutral';
 }
 

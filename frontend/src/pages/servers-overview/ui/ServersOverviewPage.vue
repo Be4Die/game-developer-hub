@@ -1,46 +1,46 @@
 <template>
   <div class="overview tab-fade-in">
     <div class="overview-header">
-      <h1>Игровые сервера</h1>
+      <h1>{{ t('servers.overviewTitle') }}</h1>
     </div>
 
     <!-- Ошибка загрузки -->
     <div v-if="error" class="error-banner">
-      <AlertCircle class="icon-sm" /> Не удалось загрузить данные:
+      <AlertCircle class="icon-sm" /> {{ t('common.error') }}:
       {{ error }}
-      <button class="btn-outline btn-sm" @click="fetchAll">Повторить</button>
+      <button class="btn-outline btn-sm" @click="fetchAll">{{ t('common.refresh') }}</button>
     </div>
 
     <!-- Карточки-сводки -->
     <div class="summary-grid">
       <div class="summary-card">
-        <span class="summary-label">Билды</span>
+        <span class="summary-label">{{ t('servers.tabs.builds') }}</span>
         <span class="summary-value">{{
           loading ? '...' : builds.length
         }}</span>
       </div>
       <div class="summary-card">
-        <span class="summary-label">Работающие</span>
+        <span class="summary-label">{{ t('servers.runningInstances') }}</span>
         <span class="summary-value"
           >{{ loading ? '...' : runningCount
           }}<span class="summary-sub"> / {{ instances.length }}</span></span
         >
       </div>
       <div class="summary-card">
-        <span class="summary-label">Игроков онлайн</span>
+        <span class="summary-label">{{ t('servers.onlinePlayers') }}</span>
         <span class="summary-value">{{
           loading ? '...' : totalPlayers
         }}</span>
       </div>
       <div class="summary-card">
-        <span class="summary-label">Ноды</span>
+        <span class="summary-label">{{ t('servers.tabs.nodes') }}</span>
         <span class="summary-value"
           >{{ loading ? '...' : onlineNodes
           }}<span class="summary-sub"> / {{ nodes.length }}</span></span
         >
       </div>
       <div class="summary-card">
-        <span class="summary-label">В очереди</span>
+        <span class="summary-label">{{ t('servers.inQueue') }}</span>
         <span class="summary-value">{{ loading ? '...' : queueCount }}</span>
       </div>
     </div>
@@ -60,8 +60,8 @@
       >
         <Upload class="action-icon" />
         <div>
-          <strong>Загрузить билд</strong>
-          <p>Загрузить новую версию серверного билда</p>
+          <strong>{{ t('servers.uploadBuild') }}</strong>
+          <p>{{ t('servers.uploadBuildDesc') }}</p>
         </div>
       </router-link>
       <router-link
@@ -70,8 +70,8 @@
       >
         <Play class="action-icon" />
         <div>
-          <strong>Запустить инстанс</strong>
-          <p>Развернуть новый экземпляр сервера</p>
+          <strong>{{ t('servers.startInstance') }}</strong>
+          <p>{{ t('servers.startInstanceDesc') }}</p>
         </div>
       </router-link>
     </div>
@@ -79,22 +79,22 @@
     <!-- Последние инстансы -->
     <div class="recent-section">
       <div class="section-header">
-        <h2>Последние инстансы</h2>
+        <h2>{{ t('servers.recentInstances') }}</h2>
         <router-link
           :to="`/projects/${gameId}/servers/instances`"
           class="link"
-          >Все инстансы →</router-link
+          >{{ t('servers.allInstances') }} →</router-link
         >
       </div>
       <div class="recent-table-wrap">
         <table class="recent-table" v-if="instances.length">
           <thead>
             <tr>
-              <th>Имя</th>
-              <th>Версия</th>
-              <th>Статус</th>
-              <th>Игроки</th>
-              <th>Запущен</th>
+              <th>{{ t('common.name') }}</th>
+              <th>{{ t('common.version') }}</th>
+              <th>{{ t('common.status') }}</th>
+              <th>{{ t('servers.onlinePlayers') }}</th>
+              <th>{{ t('common.created') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +109,7 @@
               class="clickable-row"
             >
               <td class="cell-name">
-                {{ inst.name || `Инстанс #${inst.id}` }}
+                {{ inst.name || `Instance #${inst.id}` }}
               </td>
               <td>
                 <code>{{ inst.build_version }}</code>
@@ -125,7 +125,7 @@
           </tbody>
         </table>
         <div v-else-if="!loading" class="empty-state">
-          Нет запущенных инстансов
+          {{ t('servers.noInstances') }}
         </div>
       </div>
     </div>
@@ -134,6 +134,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Upload, Play, AlertCircle } from 'lucide-vue-next';
 import { StatusBadge } from '@/shared/ui';
 import { OrchestrationPolicyEditor } from '@/features/edit-orchestration-policy';
@@ -143,9 +144,12 @@ import { listNodes } from '@/entities/node';
 import { getQueueCount } from '@/entities/policy';
 import { formatDate } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
   gameId: { type: [String, Number], required: true },
 });
+
 
 const builds = ref([]);
 const instances = ref([]);

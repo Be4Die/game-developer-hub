@@ -14,9 +14,9 @@
         "
         class="moderator-stub"
       >
-        <h2>Режим модератора</h2>
+        <h2>{{ t('roles.moderator') }}</h2>
         <p>
-          Прямой просмотр проектов недоступен. Перейдите во вкладку "Очередь модерации".
+          {{ t('moderation.queueTitle') }}
         </p>
       </div>
       <router-view v-else />
@@ -27,11 +27,13 @@
 <script setup>
 import { computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { GlobalHeader } from '@/widgets/global-header';
 import { toast } from '@/shared/lib';
 import { useAuth } from '@/entities/user';
 import { ROLE_MAP } from '@/shared/config';
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { state: authState, loadUser } = useAuth();
@@ -46,20 +48,21 @@ onMounted(() => {
 
 watch(userRole, (newRole) => {
   if (newRole === 'Разработчик') {
-    if (route.path.startsWith('/moderator')) {
+    if (route.path.startsWith('/moderator') || route.path.startsWith('/admin')) {
       router.push('/projects');
     }
   } else if (newRole === 'Модератор') {
-    if (route.path.startsWith('/projects')) {
+    if (route.path.startsWith('/projects') || route.path.startsWith('/admin')) {
       router.push('/moderator/queue');
     }
   } else if (newRole === 'Администратор') {
-    if (!route.path.startsWith('/admin/dashboard')) {
+    if (!route.path.startsWith('/admin') && route.path !== '/profile') {
       router.push('/admin/dashboard');
     }
   }
 });
 </script>
+
 
 <style>
 .app-layout {

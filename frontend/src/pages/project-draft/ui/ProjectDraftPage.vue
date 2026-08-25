@@ -5,7 +5,7 @@
       <div class="form-toolbar">
         <div class="title-block">
           <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">
-            Настройка черновика
+            {{ t('projectDraft.title') }}
           </h1>
           <span class="status-badge" :class="statusBadgeClass">
             {{ statusLabel }}
@@ -13,9 +13,9 @@
         </div>
         <div class="actions">
           <button class="btn-dev-link" @click="openDevGame">
-            Перейти к игре (Dev)
+            {{ t('projectDraft.openTest') }} (Dev)
           </button>
-          <button class="btn-outline" @click="saveMeta">Сохранить</button>
+          <button class="btn-outline" @click="saveMeta">{{ t('common.save') }}</button>
           <button
             class="btn-primary"
             @click="submitForModeration"
@@ -25,7 +25,7 @@
               isApproved
             "
           >
-            {{ submitting ? 'Отправка...' : 'На модерацию' }}
+            {{ submitting ? t('projectDraft.sending') : t('projectDraft.sendToModeration') }}
           </button>
         </div>
       </div>
@@ -34,27 +34,27 @@
         v-if="isRejected && rejectionReason"
         class="card rejection-notice"
       >
-        <strong>Замечания модератора:</strong> {{ rejectionReason }}
+        <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
       </div>
       <div
         v-else-if="isApproved"
         class="card approval-notice"
       >
-        ✓ Игра одобрена модератором и опубликована в Production.
+        ✓ {{ t('moderation.verdictApproved') }}
       </div>
       <div
         v-else-if="isUnderReview"
         class="card review-notice"
       >
-        ⏳ Проект находится на проверке у модератора.
+        ⏳ {{ t('projects.moderation') }}
       </div>
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
-        <div class="section-head"><h3>Основная информация</h3></div>
+        <div class="section-head"><h3>{{ t('projectDraft.basicInfo') }}</h3></div>
         <div class="input-row">
           <div class="input-group">
-            <label>Название игры на русском <span class="req">*</span></label>
+            <label>{{ t('projectDraft.gameTitle') }} (RU) <span class="req">*</span></label>
             <input
               type="text"
               class="input-control"
@@ -62,7 +62,7 @@
             />
           </div>
           <div class="input-group">
-            <label>Название игры на английском <span class="req">*</span></label>
+            <label>{{ t('projectDraft.gameTitle') }} (EN) <span class="req">*</span></label>
             <input
               type="text"
               class="input-control"
@@ -73,7 +73,7 @@
         <div class="input-row">
           <div class="input-group">
             <label
-              >SEO Описание (RU) <span class="req">*</span>
+              >SEO (RU) <span class="req">*</span>
               <span class="char-count">{{ meta.seo_ru.length }}/180</span></label
             >
             <textarea
@@ -85,7 +85,7 @@
           </div>
           <div class="input-group">
             <label
-              >SEO Описание (EN) <span class="req">*</span>
+              >SEO (EN) <span class="req">*</span>
               <span class="char-count">{{ meta.seo_en.length }}/180</span></label
             >
             <textarea
@@ -98,7 +98,7 @@
         </div>
         <div class="input-group" style="margin-top: 16px;">
           <label
-            >Описание "Об Игре" <span class="req">*</span>
+            >{{ t('projectDraft.gameDescription') }} <span class="req">*</span>
             <span class="char-count">{{ meta.about.length }}/800</span></label
           >
           <textarea
@@ -135,7 +135,7 @@
 
       <!-- БЛОК 2: ПРОМО -->
       <div class="card form-section">
-        <div class="section-head"><h3>Промо-материалы</h3></div>
+        <div class="section-head"><h3>{{ t('projectDraft.seoAndMedia') }}</h3></div>
         <div class="media-list">
           <!-- Иконка -->
           <div
@@ -146,7 +146,7 @@
             <CheckCircle v-if="media.icon" class="icon-md text-green" />
             <ImageIcon v-else class="icon-md" />
             <span class="m-title">{{
-              media.icon ? 'Загружено' : 'Иконка'
+              media.icon ? t('common.saved') : 'Icon'
             }}</span>
             <span class="m-req">512 x 512, png</span>
           </div>
@@ -159,7 +159,7 @@
             <CheckCircle v-if="media.cover" class="icon-md text-green" />
             <ImageIcon v-else class="icon-md" />
             <span class="m-title">{{
-              media.cover ? 'Загружено' : 'Обложка'
+              media.cover ? t('common.saved') : 'Cover'
             }}</span>
             <span class="m-req">800 x 470, png</span>
           </div>
@@ -172,16 +172,16 @@
             <CheckCircle v-if="media.video" class="icon-md text-green" />
             <Film v-else class="icon-md" />
             <span class="m-title">{{
-              media.video ? 'Загружено' : 'Видео'
+              media.video ? t('common.saved') : 'Video'
             }}</span>
-            <span class="m-req">До 12 МБ</span>
+            <span class="m-req">≤ 12 MB</span>
           </div>
         </div>
       </div>
 
       <!-- БЛОК 3: БИЛД -->
       <div class="card form-section">
-        <div class="section-head"><h3>Билд</h3></div>
+        <div class="section-head"><h3>{{ t('projectDraft.clientBuildSection') }}</h3></div>
 
         <ClientBuildUploader
           :project-id="projectId"
@@ -190,7 +190,7 @@
 
         <!-- Список версий -->
         <div v-if="recentBuilds.length" class="build-versions">
-          <h4 class="versions-title">Версии (последние 5)</h4>
+          <h4 class="versions-title">{{ t('servers.buildsList') }}</h4>
           <div
             v-for="b in recentBuilds"
             :key="b.version"
@@ -206,9 +206,9 @@
               class="btn-text"
               @click="setActiveBuild(b.version)"
             >
-              Сделать активной
+              {{ t('common.apply') }}
             </button>
-            <span v-else class="active-label">Активная</span>
+            <span v-else class="active-label">{{ t('common.active') }}</span>
           </div>
         </div>
       </div>
@@ -219,6 +219,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { CheckCircle, Image as ImageIcon, Film } from 'lucide-vue-next';
 import {
   getProject,
@@ -236,8 +237,10 @@ import {
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
 const route = useRoute();
 const projectId = computed(() => route.params.id);
+
 
 const meta = ref({
   title_ru: '',

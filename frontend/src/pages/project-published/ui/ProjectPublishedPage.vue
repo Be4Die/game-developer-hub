@@ -5,17 +5,17 @@
       <div class="form-toolbar">
         <div class="title-block">
           <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">
-            Опубликованная версия
+            {{ t('projectWorkspace.publishedTab') }}
           </h1>
-          <span class="status-badge bg-green">Доступна игрокам</span>
+          <span class="status-badge bg-green">{{ t('projects.published') }}</span>
         </div>
         <div class="actions">
           <button class="btn-prod-link" @click="openProdGame">
-            Перейти к игре (Prod)
+            {{ t('projectDraft.openTest') }} (Prod)
           </button>
-          <button class="btn-outline" @click="loadProject">Обновить</button>
+          <button class="btn-outline" @click="loadProject">{{ t('common.refresh') }}</button>
           <button class="btn btn-danger" @click="unpublishGame">
-            Снять с публикации
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -23,34 +23,34 @@
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
         <div class="section-head">
-          <h3>Основная информация</h3>
-          <p class="version-info">Версия: {{ activeBuildDisplay }}</p>
+          <h3>{{ t('projectDraft.basicInfo') }}</h3>
+          <p class="version-info">{{ t('common.version') }}: {{ activeBuildDisplay }}</p>
         </div>
 
         <div class="input-row">
           <div class="input-group">
-            <label>Название игры на русском</label>
+            <label>{{ t('projectDraft.gameTitle') }} (RU)</label>
             <div class="readonly-field">{{ project?.title_ru || '—' }}</div>
           </div>
           <div class="input-group">
-            <label>Название игры на английском</label>
+            <label>{{ t('projectDraft.gameTitle') }} (EN)</label>
             <div class="readonly-field">{{ project?.title_en || '—' }}</div>
           </div>
         </div>
 
         <div class="input-row">
           <div class="input-group">
-            <label>SEO Описание (RU)</label>
+            <label>SEO (RU)</label>
             <div class="readonly-field">{{ project?.seo_ru || '—' }}</div>
           </div>
           <div class="input-group">
-            <label>SEO Описание (EN)</label>
+            <label>SEO (EN)</label>
             <div class="readonly-field">{{ project?.seo_en || '—' }}</div>
           </div>
         </div>
 
         <div class="input-group" style="margin-top: 16px;">
-          <label>Описание "Об Игре"</label>
+          <label>{{ t('projectDraft.gameDescription') }}</label>
           <div class="readonly-field multiline">
             {{ project?.about || '—' }}
           </div>
@@ -59,7 +59,7 @@
 
       <!-- БЛОК 2: ПРОМО -->
       <div class="card form-section">
-        <div class="section-head"><h3>Промо-материалы</h3></div>
+        <div class="section-head"><h3>{{ t('projectDraft.seoAndMedia') }}</h3></div>
 
         <div class="media-list">
           <div
@@ -71,15 +71,15 @@
           >
             <template v-if="project?.icon_path">
               <CheckCircle class="icon-md text-green" />
-              <span class="m-title">Загружено</span>
+              <span class="m-title">{{ t('common.saved') }}</span>
               <span class="m-req">512 x 512, png</span>
-              <span class="upload-label">Иконка</span>
+              <span class="upload-label">Icon</span>
             </template>
             <template v-else>
               <ImageIcon class="icon-md" />
-              <span class="m-title">Не загружено</span>
+              <span class="m-title">{{ t('common.empty') }}</span>
               <span class="m-req">512 x 512, png</span>
-              <span class="upload-label">Иконка</span>
+              <span class="upload-label">Icon</span>
             </template>
           </div>
 
@@ -92,15 +92,15 @@
           >
             <template v-if="project?.cover_path">
               <CheckCircle class="icon-md text-green" />
-              <span class="m-title">Загружено</span>
+              <span class="m-title">{{ t('common.saved') }}</span>
               <span class="m-req">800 x 470, png</span>
-              <span class="upload-label">Обложка</span>
+              <span class="upload-label">Cover</span>
             </template>
             <template v-else>
               <ImageIcon class="icon-md" />
-              <span class="m-title">Не загружено</span>
+              <span class="m-title">{{ t('common.empty') }}</span>
               <span class="m-req">800 x 470, png</span>
-              <span class="upload-label">Обложка</span>
+              <span class="upload-label">Cover</span>
             </template>
           </div>
 
@@ -113,15 +113,15 @@
           >
             <template v-if="project?.video_path">
               <CheckCircle class="icon-md text-green" />
-              <span class="m-title">Загружено</span>
-              <span class="m-req">До 12 МБ</span>
-              <span class="upload-label">Видео</span>
+              <span class="m-title">{{ t('common.saved') }}</span>
+              <span class="m-req">≤ 12 MB</span>
+              <span class="upload-label">Video</span>
             </template>
             <template v-else>
               <Film class="icon-md" />
-              <span class="m-title">Не загружено</span>
-              <span class="m-req">До 12 МБ</span>
-              <span class="upload-label">Видео</span>
+              <span class="m-title">{{ t('common.empty') }}</span>
+              <span class="m-req">≤ 12 MB</span>
+              <span class="upload-label">Video</span>
             </template>
           </div>
         </div>
@@ -129,14 +129,14 @@
 
       <!-- БЛОК 3: БИЛД -->
       <div class="card form-section">
-        <div class="section-head"><h3>Билд</h3></div>
+        <div class="section-head"><h3>{{ t('projectDraft.clientBuildSection') }}</h3></div>
 
-        <div v-if="activeBuildDisplay !== 'не выбрана'" class="build-info">
+        <div v-if="activeBuildDisplay !== '—'" class="build-info">
           <div class="build-success-box">
             <CheckCircle class="icon-md text-green" />
             <div>
               <span style="display: block; font-weight: 600;">
-                Билд {{ activeBuildDisplay }} активен
+                {{ t('common.version') }} {{ activeBuildDisplay }} {{ t('common.active') }}
               </span>
               <span
                 style="
@@ -145,7 +145,7 @@
                   color: var(--success);
                 "
               >
-                Версия прошла модерацию и доступна игрокам.
+                {{ t('moderation.verdictApproved') }}
               </span>
             </div>
           </div>
@@ -155,17 +155,7 @@
             <AlertCircle class="icon-md" style="color: var(--warning);" />
             <div>
               <span style="display: block; font-weight: 600;">
-                Активный билд не выбран
-              </span>
-              <span
-                style="
-                  display: block;
-                  font-size: 0.85rem;
-                  color: var(--text-muted);
-                "
-              >
-                Загрузите билд во вкладке "Черновик" и выберите активную
-                версию.
+                {{ t('servers.noBuilds') }}
               </span>
             </div>
           </div>
@@ -178,6 +168,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   CheckCircle,
   Image as ImageIcon,
@@ -188,6 +179,7 @@ import { getProject, unpublish } from '@/entities/project';
 import { listClientBuilds } from '@/entities/build';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
 const route = useRoute();
 const projectId = computed(() => route.params.id);
 const project = ref(null);
@@ -197,7 +189,7 @@ const activeBuildDisplay = computed(() => {
   return (
     project.value?.release?.build_version ||
     project.value?.active_build_version ||
-    'не выбрана'
+    '—'
   );
 });
 
@@ -206,7 +198,7 @@ async function loadProject() {
     project.value = await getProject(projectId.value);
     builds.value = await listClientBuilds(projectId.value);
   } catch (err) {
-    showToast('Не удалось загрузить данные проекта', 'danger');
+    showToast(t('common.error'), 'danger');
   }
 }
 
@@ -221,15 +213,16 @@ function openProdGame() {
 async function unpublishGame() {
   try {
     await unpublish(projectId.value);
-    showToast('Игра снята с публикации', 'info');
+    showToast(t('common.success'), 'info');
     await loadProject();
   } catch (err) {
-    showToast('Ошибка при снятии с публикации', 'danger');
+    showToast(t('common.error'), 'danger');
   }
 }
 
 onMounted(loadProject);
 </script>
+
 
 <style scoped>
 .tab-fade-in {

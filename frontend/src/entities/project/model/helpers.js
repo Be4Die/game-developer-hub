@@ -1,3 +1,5 @@
+import { i18n } from '@/shared/lib';
+
 export function statusClass(status) {
   if (status === 3) return 'status-published';
   if (status === 2) return 'status-pending';
@@ -6,14 +8,16 @@ export function statusClass(status) {
 }
 
 export function statusLabel(status) {
+  const t = i18n.global.t;
   const map = {
-    1: 'Черновик',
-    2: 'На модерации',
-    3: 'Опубликована',
-    4: 'Отклонена',
+    1: t('projects.draft'),
+    2: t('projects.moderation'),
+    3: t('projects.published'),
+    4: t('projects.rejected'),
   };
-  return map[status] || 'Черновик';
+  return map[status] || t('projects.draft');
 }
+
 
 export function getMediaUrl(path) {
   if (!path) return '';

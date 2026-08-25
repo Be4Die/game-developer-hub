@@ -15,7 +15,7 @@
       </div>
       <div class="theme-info">
         <Sun class="icon-md theme-icon" />
-        <span>Светлая</span>
+        <span>{{ t('profile.themeLight') }}</span>
       </div>
     </div>
     <div
@@ -33,17 +33,20 @@
       </div>
       <div class="theme-info">
         <Moon class="icon-md theme-icon" />
-        <span>Тёмная</span>
+        <span>{{ t('profile.themeDark') }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import { Sun, Moon } from 'lucide-vue-next';
 import { useTheme } from '@/shared/lib';
 
+const { t } = useI18n();
 const { isDark, setTheme } = useTheme();
+
 
 function selectTheme(value) {
   setTheme(value);

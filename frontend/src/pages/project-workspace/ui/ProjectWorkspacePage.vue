@@ -4,7 +4,7 @@
     <aside class="game-sidebar">
       <div class="game-header">
         <button class="back-btn" @click="$router.push('/projects')">
-          <ArrowLeft class="icon-sm" /> К списку
+          <ArrowLeft class="icon-sm" /> {{ t('common.back') }}
         </button>
         <h2 class="game-title-short">{{ projectTitle }}</h2>
       </div>
@@ -14,14 +14,14 @@
           class="nav-btn"
           active-class="active"
         >
-          <BarChart2 class="icon-sm" /> Статистика
+          <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
         </router-link>
         <router-link
           :to="`/projects/${id}/draft`"
           class="nav-btn"
           active-class="active"
         >
-          <PenTool class="icon-sm" /> Черновик
+          <PenTool class="icon-sm" /> {{ t('projectWorkspace.draftTab') }}
         </router-link>
         <router-link
           v-if="isPublished"
@@ -29,14 +29,14 @@
           class="nav-btn"
           active-class="active"
         >
-          <CheckCircle class="icon-sm" /> Опубликовано
+          <CheckCircle class="icon-sm" /> {{ t('projectWorkspace.publishedTab') }}
         </router-link>
         <router-link
           :to="`/projects/${id}/servers`"
           class="nav-btn"
           active-class="active"
         >
-          <Server class="icon-sm" /> Сервера
+          <Server class="icon-sm" /> {{ t('projectWorkspace.serversTab') }}
         </router-link>
       </nav>
     </aside>
@@ -50,7 +50,7 @@
     <aside class="chat-sidebar">
       <div class="chat-sidebar-header">
         <MessageSquare class="icon-sm" />
-        <h3>Связь с модератором</h3>
+        <h3>{{ t('moderation.chatTitle') }}</h3>
       </div>
       <ProjectChat :projectId="id" class="workspace-chat" />
     </aside>
@@ -60,6 +60,7 @@
 <script setup>
 import { ref, onMounted, computed, watch, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   ArrowLeft,
   BarChart2,
@@ -73,6 +74,7 @@ import { ProjectChat } from '@/entities/moderation';
 import { useAuth } from '@/entities/user';
 import { showToast, formatTime } from '@/shared/lib';
 
+const { t } = useI18n();
 const props = defineProps(['id']);
 const route = useRoute();
 const router = useRouter();
@@ -95,9 +97,10 @@ const projectTitle = computed(() => {
   return (
     project.value?.title_ru ||
     project.value?.title_en ||
-    `Проект #${props.id}`
+    `${t('projects.projectNameLabel')} #${props.id}`
   );
 });
+
 
 const isPublished = computed(() => project.value?.status === 3);
 

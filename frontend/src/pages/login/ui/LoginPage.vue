@@ -1,6 +1,7 @@
 <template>
   <div class="auth-page">
-    <div class="theme-toggle-wrap">
+    <div class="top-controls">
+      <LocaleSwitcher />
       <ThemeToggle />
     </div>
     <div class="auth-brand">
@@ -14,6 +15,7 @@
 <script setup>
 import { LogoIcon } from '@/shared/ui';
 import { ThemeToggle } from '@/features/theme-switcher';
+import { LocaleSwitcher } from '@/features/locale-switcher';
 import { AuthForm } from '@/features/auth-by-email';
 </script>
 
@@ -30,10 +32,14 @@ import { AuthForm } from '@/features/auth-by-email';
   position: relative;
 }
 
-.theme-toggle-wrap {
+.top-controls {
   position: absolute;
   top: 20px;
   right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
 }
 
 .auth-brand {
@@ -43,3 +49,4 @@ import { AuthForm } from '@/features/auth-by-email';
   gap: 8px;
 }
 </style>
+

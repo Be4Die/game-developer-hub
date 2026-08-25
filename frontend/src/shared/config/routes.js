@@ -17,6 +17,8 @@ export const ROUTES = {
   MODERATOR: '/moderator',
   MODERATOR_QUEUE: '/moderator/queue',
   MODERATION_PROJECT: (projectId = ':projectId') => `/moderator/projects/${projectId}`,
+  PROFILE: '/profile',
   SETTINGS: '/settings',
   ADMIN_DASHBOARD: '/admin/dashboard',
 };
+

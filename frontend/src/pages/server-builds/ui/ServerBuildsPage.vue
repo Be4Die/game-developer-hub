@@ -1,9 +1,9 @@
 <template>
   <div class="builds-page tab-fade-in">
     <div class="page-header">
-      <h1>Серверные билды</h1>
+      <h1>{{ t('servers.buildsTitle') }}</h1>
       <button class="btn-primary" @click="showUploadForm = !showUploadForm">
-        <Upload class="icon-sm" /> Загрузить билд
+        <Upload class="icon-sm" /> {{ t('servers.uploadBuild') }}
       </button>
     </div>
 
@@ -11,7 +11,7 @@
     <div v-if="error" class="error-banner">
       <AlertCircle class="icon-sm" /> {{ error }}
       <button class="btn-outline btn-sm" @click="fetchBuilds">
-        Повторить
+        {{ t('common.refresh') }}
       </button>
     </div>
 
@@ -24,19 +24,19 @@
     />
 
     <!-- Таблица билдов -->
-    <div v-if="loading" class="loading-state">Загрузка...</div>
+    <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="empty-state"></div>
     <div class="table-wrap" v-else-if="builds.length">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Версия</th>
-            <th>Образ</th>
-            <th>Протокол</th>
-            <th>Порт</th>
-            <th>Макс. игроков</th>
-            <th>Размер</th>
-            <th>Дата</th>
+            <th>{{ t('common.version') }}</th>
+            <th>Image</th>
+            <th>Protocol</th>
+            <th>Port</th>
+            <th>Max Players</th>
+            <th>Size</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -55,7 +55,7 @@
               <button
                 class="btn-icon"
                 @click="confirmDelete(b)"
-                title="Удалить"
+                :title="t('common.delete')"
                 :disabled="deleting"
               >
                 <Trash2 class="icon-sm" />
@@ -65,7 +65,7 @@
         </tbody>
       </table>
     </div>
-    <div v-else class="empty-state">Нет загруженных билдов</div>
+    <div v-else class="empty-state">{{ t('servers.noBuilds') }}</div>
 
     <!-- Диалог подтверждения удаления -->
     <div
@@ -74,14 +74,12 @@
       @click.self="deleteTarget = null"
     >
       <div class="modal card">
-        <h3>Удалить билд?</h3>
+        <h3>{{ t('common.delete') }}?</h3>
         <p>
-          Билд <code>{{ deleteTarget.build_version }}</code> будет удалён из
-          хранилища и со всех нод.
+          <code>{{ deleteTarget.build_version }}</code>
         </p>
         <p v-if="deleteTarget._inUse" class="text-danger">
-          Этот билд используется работающими инстансами и не может быть
-          удалён.
+          In use
         </p>
         <div class="modal-actions">
           <button
@@ -89,10 +87,10 @@
             @click="doDelete"
             :disabled="deleteTarget._inUse || deleting"
           >
-            Удалить
+            {{ t('common.delete') }}
           </button>
           <button class="btn-outline" @click="deleteTarget = null">
-            Отмена
+            {{ t('common.cancel') }}
           </button>
         </div>
       </div>
@@ -102,13 +100,17 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Upload, Trash2, AlertCircle } from 'lucide-vue-next';
 import { listServerBuilds, deleteServerBuild } from '@/entities/build';
 import { listInstances } from '@/entities/instance';
 import { ServerBuildUploadModal } from '@/features/upload-server-build';
 import { formatBytes, formatDate, showToast } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
+
   gameId: { type: [String, Number], required: true },
 });
 

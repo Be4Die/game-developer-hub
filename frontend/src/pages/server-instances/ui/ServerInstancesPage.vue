@@ -2,7 +2,7 @@
   <div class="instances-page tab-fade-in">
     <div class="page-header">
       <h1>
-        Инстансы <span class="counter">{{ instances.length }}/4</span>
+        {{ t('servers.tabs.instances') }} <span class="counter">{{ instances.length }}/4</span>
       </h1>
       <div class="header-actions">
         <select
@@ -10,15 +10,15 @@
           class="filter-select"
           @change="fetchInstances"
         >
-          <option value="all">Все статусы</option>
-          <option value="starting">Запускается</option>
-          <option value="running">Работает</option>
-          <option value="stopping">Останавливается</option>
-          <option value="stopped">Остановлен</option>
-          <option value="crashed">Авария</option>
+          <option value="all">{{ t('projects.allStatuses') }}</option>
+          <option value="starting">Starting</option>
+          <option value="running">Running</option>
+          <option value="stopping">Stopping</option>
+          <option value="stopped">Stopped</option>
+          <option value="crashed">Crashed</option>
         </select>
         <button class="btn-primary" @click="showStartForm = true">
-          <Play class="icon-sm" /> Запустить инстанс
+          <Play class="icon-sm" /> {{ t('servers.startInstance') }}
         </button>
       </div>
     </div>
@@ -27,23 +27,23 @@
     <div v-if="error" class="error-banner">
       <AlertCircle class="icon-sm" /> {{ error }}
       <button class="btn-outline btn-sm" @click="fetchInstances">
-        Повторить
+        {{ t('common.refresh') }}
       </button>
     </div>
 
     <!-- Таблица инстансов -->
-    <div v-if="loading" class="loading-state">Загрузка...</div>
+    <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <div class="table-wrap" v-else-if="filteredInstances.length">
       <table class="data-table">
         <thead>
           <tr>
-            <th>Имя</th>
-            <th>Версия</th>
-            <th>Статус</th>
-            <th>Нода</th>
-            <th>Игроки</th>
-            <th>Адрес</th>
-            <th>Запущен</th>
+            <th>{{ t('common.name') }}</th>
+            <th>{{ t('common.version') }}</th>
+            <th>{{ t('common.status') }}</th>
+            <th>Node</th>
+            <th>{{ t('stats.players') }}</th>
+            <th>Address</th>
+            <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -59,7 +59,7 @@
             class="clickable-row"
           >
             <td class="cell-name">
-              {{ inst.name || `Инстанс #${inst.id}` }}
+              {{ inst.name || `Instance #${inst.id}` }}
             </td>
             <td>
               <code>{{ inst.build_version }}</code>
@@ -79,7 +79,7 @@
                 class="btn-stop"
                 @click="handleStop(inst)"
                 :disabled="stoppingId === inst.id"
-                title="Остановить"
+                title="Stop"
               >
                 <Square class="icon-sm" />
               </button>
@@ -90,7 +90,7 @@
                 class="btn-resume"
                 @click="handleResume(inst)"
                 :disabled="resumingId === inst.id"
-                title="Запустить"
+                title="Start"
               >
                 <Play class="icon-sm" />
               </button>
@@ -100,9 +100,7 @@
       </table>
     </div>
     <div v-else class="empty-state">
-      Нет инстансов{{
-        statusFilter !== 'all' ? ' с выбранным статусом' : ''
-      }}
+      {{ t('servers.noInstances') }}
     </div>
 
     <!-- Модал запуска нового инстанса -->
@@ -118,6 +116,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { Play, Square, AlertCircle } from 'lucide-vue-next';
 import { StatusBadge } from '@/shared/ui';
 import {
@@ -129,7 +128,10 @@ import { listServerBuilds } from '@/entities/build';
 import { StartInstanceModal } from '@/features/manage-instances';
 import { formatDate, showToast } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
+
   gameId: { type: [String, Number], required: true },
 });
 

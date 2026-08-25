@@ -1,7 +1,7 @@
 <template>
   <div class="client-build-uploader">
     <div class="input-group" style="margin-bottom: 16px;">
-      <label>Версия билда <span class="req">*</span></label>
+      <label>{{ t('common.version') }} <span class="req">*</span></label>
       <input
         type="text"
         v-model="newBuildVersion"
@@ -21,7 +21,10 @@
         style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"
       />
       <span style="display: block; font-weight: 600;">
-        Нажмите для загрузки .zip или .tar.gz архива
+        {{ t('projectDraft.uploadPrompt') }}
+      </span>
+      <span style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+        {{ t('projectDraft.uploadFormats') }}
       </span>
     </div>
 
@@ -29,7 +32,7 @@
     <div v-if="buildStatus === 'uploading'" class="upload-progress-box">
       <div class="prog-info">
         <span style="font-weight: 600; color: var(--text-main);">
-          Загрузка и распаковка архива...
+          {{ t('common.loading') }}
         </span>
         <span style="font-weight: 600; color: var(--primary);">
           {{ buildProgress }}%
@@ -48,10 +51,10 @@
       <CheckCircle class="icon-md text-green" />
       <div>
         <span style="display: block; font-weight: 600;">
-          Билд v{{ uploadedVersion }} успешно загружен!
+          {{ t('common.version') }} v{{ uploadedVersion }} {{ t('common.saved') }}!
         </span>
         <button class="btn-text mt-8" @click="resetBuildUpload">
-          Загрузить новую версию
+          {{ t('common.upload') }}
         </button>
       </div>
     </div>
@@ -67,15 +70,20 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { UploadCloud, CheckCircle } from 'lucide-vue-next';
 import JSZip from 'jszip';
 import pako from 'pako';
 import { uploadClientBuild } from '@/entities/build';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
+
 const props = defineProps({
+
   projectId: { type: [String, Number], required: true },
 });
 
