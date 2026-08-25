@@ -4,10 +4,35 @@
     <aside class="game-sidebar">
       <div class="game-header">
         <button class="back-btn" @click="$router.push('/projects')">
-          <ArrowLeft class="icon-sm" /> {{ t('common.back') }}
+          <ArrowLeft class="icon-sm" />
+          <span>{{ t('common.back') }}</span>
         </button>
-        <h2 class="game-title-short">{{ projectTitle }}</h2>
+
+        <div class="game-identity-row">
+          <div class="game-icon-box">
+            <img
+              v-if="projectIconUrl"
+              :src="projectIconUrl"
+              alt="Icon"
+              class="game-icon-img"
+            />
+            <div v-else class="game-icon-mock">
+              <span>Draft</span>
+            </div>
+          </div>
+          <div class="game-title-wrap">
+            <h2 class="game-title-short" :title="projectTitle">
+              {{ projectTitle }}
+            </h2>
+          </div>
+        </div>
+
+        <button class="btn-dev-link" @click="openDevGame">
+          <ExternalLink class="icon-xs" />
+          <span>{{ t('projectDraft.openTest') }} (Dev)</span>
+        </button>
       </div>
+
       <nav class="game-nav">
         <router-link
           :to="`/projects/${id}/stats`"
@@ -39,6 +64,33 @@
           <Server class="icon-sm" /> {{ t('projectWorkspace.serversTab') }}
         </router-link>
       </nav>
+
+      <!-- Футер сайдбара: Сохранить и Отправить на модерацию -->
+      <div class="sidebar-footer">
+        <button
+          class="btn-sidebar-save"
+          @click="handleSidebarSave"
+          :disabled="draftActions.isSaving || draftActions.isSubmitting"
+        >
+          <Loader2 class="icon-xs spin" v-if="draftActions.isSaving" />
+          <Save class="icon-xs" v-else />
+          <span>{{ draftActions.isSaving ? t('common.saving') : t('common.save') }}</span>
+        </button>
+
+        <button
+          class="btn-sidebar-submit"
+          @click="handleSidebarSubmit"
+          :disabled="
+            draftActions.isSubmitting ||
+            draftActions.isUnderReview ||
+            draftActions.isApproved
+          "
+        >
+          <Loader2 class="icon-xs spin" v-if="draftActions.isSubmitting" />
+          <Send class="icon-xs" v-else />
+          <span>{{ draftActions.isSubmitting ? t('projectDraft.sending') : t('projectDraft.sendToModeration') }}</span>
+        </button>
+      </div>
     </aside>
 
     <!-- ЦЕНТР (Подгружает табы) -->
@@ -46,19 +98,15 @@
       <router-view />
     </main>
 
-    <!-- ПРАВЫЙ САЙДБАР: Чат -->
+    <!-- ПРАВЫЙ САЙДБАР: Чат проекта -->
     <aside class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <MessageSquare class="icon-sm" />
-        <h3>{{ t('moderation.chatTitle') }}</h3>
-      </div>
       <ProjectChat :projectId="id" class="workspace-chat" />
     </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, provide } from 'vue';
+import { ref, computed, watch, provide, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -67,12 +115,15 @@ import {
   PenTool,
   CheckCircle,
   Server,
-  MessageSquare,
+  ExternalLink,
+  Save,
+  Send,
+  Loader2,
 } from 'lucide-vue-next';
-import { getProject } from '@/entities/project';
+import { getProject, getMediaUrl } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
 import { useAuth } from '@/entities/user';
-import { showToast, formatTime } from '@/shared/lib';
+import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const props = defineProps(['id']);
@@ -82,6 +133,16 @@ const router = useRouter();
 // ─── Project data (shared with child tabs) ───────────────────
 const project = ref(null);
 provide('project', project);
+
+const draftActions = ref({
+  save: null,
+  submit: null,
+  isSaving: false,
+  isSubmitting: false,
+  isUnderReview: false,
+  isApproved: false,
+});
+provide('draftActions', draftActions);
 
 async function loadProject() {
   try {
@@ -101,6 +162,11 @@ const projectTitle = computed(() => {
   );
 });
 
+const projectIconUrl = computed(() => {
+  const path = project.value?.icon_path || project.value?.draft?.icon_path;
+  if (!path) return null;
+  return getMediaUrl(path);
+});
 
 const isPublished = computed(() => project.value?.status === 3);
 
@@ -115,60 +181,167 @@ watch(
   { immediate: true }
 );
 
+function openDevGame() {
+  const url =
+    project.value?.draft?.dev_url ||
+    project.value?.dev_url ||
+    `/games/${props.id}/dev/index.html`;
+  window.open(url, '_blank');
+}
+
+async function handleSidebarSave() {
+  if (draftActions.value.save) {
+    draftActions.value.isSaving = true;
+    try {
+      await draftActions.value.save();
+    } finally {
+      draftActions.value.isSaving = false;
+    }
+  }
+}
+
+async function handleSidebarSubmit() {
+  if (draftActions.value.submit) {
+    await draftActions.value.submit();
+  }
+}
+
 const { state: authState } = useAuth();
 const currentUserId = computed(() => authState.user?.id);
-
 </script>
 
 <style scoped>
 .game-workspace {
   display: flex;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
+  max-height: calc(100vh - 60px);
+  overflow: hidden;
   background: var(--bg-app);
-}
-.scrollable {
-  overflow-y: auto;
 }
 
 /* Левый сайдбар */
 .game-sidebar {
-  width: 260px;
+  width: 280px;
+  height: 100%;
   background: var(--bg-card);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
+
 .game-header {
-  padding: 20px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
+
 .back-btn {
   background: none;
   border: none;
   color: var(--text-muted);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   padding: 0;
   font-size: 0.85rem;
-  margin-bottom: 12px;
+  font-weight: 500;
+  transition: color 0.15s ease;
 }
+
+.back-btn:hover {
+  color: var(--text-main);
+}
+
+.game-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.game-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-icon-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.game-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
 .game-title-short {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.btn-dev-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.btn-dev-link:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-card);
+}
+
 .game-nav {
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  overflow-y: auto;
 }
+
 .nav-btn {
   display: flex;
   align-items: center;
@@ -177,56 +350,124 @@ const currentUserId = computed(() => authState.user?.id);
   padding: 10px 12px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm, 6px);
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
   text-decoration: none;
+  transition: all 0.15s ease;
 }
+
 .nav-btn:hover {
-  background: var(--bg-app);
+  background: var(--bg-hover);
   color: var(--text-main);
 }
+
 .nav-btn.active {
   background: var(--primary-light);
   color: var(--primary);
+  font-weight: 600;
 }
 
+/* Футер сайдбара */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.btn-sidebar-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sidebar-save:hover:not(:disabled) {
+  border-color: var(--border-secondary);
+  background: var(--bg-hover);
+}
+
+.btn-sidebar-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  background: var(--primary);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-sidebar-submit:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.btn-sidebar-submit:disabled,
+.btn-sidebar-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Центральная область */
 .content-area {
   flex: 1;
-  padding: 32px 40px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 28px 40px;
+  box-sizing: border-box;
 }
 
 /* Правый сайдбар с чатом */
 .chat-sidebar {
-  width: 340px;
+  width: 400px;
+  height: 100%;
   background: var(--bg-card);
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-}
-
-.chat-sidebar-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.chat-sidebar-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-main);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .workspace-chat {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   height: 100%;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

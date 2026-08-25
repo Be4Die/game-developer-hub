@@ -1,35 +1,7 @@
 <template>
   <div class="tab-fade-in">
     <div class="form-grid">
-      <!-- ЗАГОЛОВОК + КНОПКИ -->
-      <div class="form-toolbar">
-        <div class="title-block">
-          <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">
-            {{ t('projectDraft.title') }}
-          </h1>
-          <span class="status-badge" :class="statusBadgeClass">
-            {{ statusLabel }}
-          </span>
-        </div>
-        <div class="actions">
-          <button class="btn-dev-link" @click="openDevGame">
-            {{ t('projectDraft.openTest') }} (Dev)
-          </button>
-          <button class="btn-outline" @click="saveMeta">{{ t('common.save') }}</button>
-          <button
-            class="btn-primary"
-            @click="submitForModeration"
-            :disabled="
-              submitting ||
-              isUnderReview ||
-              isApproved
-            "
-          >
-            {{ submitting ? t('projectDraft.sending') : t('projectDraft.sendToModeration') }}
-          </button>
-        </div>
-      </div>
-
+      <!-- Уведомления статуса модерации (если есть) -->
       <div
         v-if="isRejected && rejectionReason"
         class="card rejection-notice"
@@ -217,7 +189,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { CheckCircle, Image as ImageIcon, Film } from 'lucide-vue-next';
@@ -241,6 +213,8 @@ const { t } = useI18n();
 const route = useRoute();
 const projectId = computed(() => route.params.id);
 
+const sharedProject = inject('project', null);
+const draftActions = inject('draftActions', null);
 
 const meta = ref({
   title_ru: '',
@@ -292,22 +266,12 @@ const isRejected = computed(() => {
   );
 });
 
-const statusLabel = computed(() => {
-  if (!moderationStatus.value) return 'Черновик (Заполнение данных)';
-  return getStatusText(moderationStatus.value);
-});
-
-const statusBadgeClass = computed(() => {
-  if (!moderationStatus.value) return 'badge-neutral';
-  return getStatusBadgeClass(moderationStatus.value);
-});
-
-function openDevGame() {
-  const url =
-    projectData.value?.draft?.dev_url ||
-    projectData.value?.dev_url ||
-    `/games/${projectId.value}/dev/index.html`;
-  window.open(url, '_blank');
+if (draftActions) {
+  draftActions.value.save = () => saveMeta(false);
+  draftActions.value.submit = () => submitForModeration();
+  watch(submitting, (v) => { if (draftActions.value) draftActions.value.isSubmitting = v; }, { immediate: true });
+  watch(isUnderReview, (v) => { if (draftActions.value) draftActions.value.isUnderReview = v; }, { immediate: true });
+  watch(isApproved, (v) => { if (draftActions.value) draftActions.value.isApproved = v; }, { immediate: true });
 }
 
 async function loadModerationStatus() {
@@ -335,6 +299,9 @@ async function loadProject() {
   try {
     const project = await getProject(projectId.value);
     projectData.value = project;
+    if (sharedProject) {
+      sharedProject.value = project;
+    }
     meta.value = {
       title_ru: project.draft?.title_ru || project.title_ru || '',
       title_en: project.draft?.title_en || project.title_en || '',
@@ -399,6 +366,13 @@ async function saveMeta(silent = false) {
       active_build_version: activeBuildVersion.value,
     };
     await updateProject(projectId.value, payload);
+    if (sharedProject && sharedProject.value) {
+      sharedProject.value = {
+        ...sharedProject.value,
+        title_ru: meta.value.title_ru,
+        title_en: meta.value.title_en,
+      };
+    }
     if (!silent) showToast('Сохранено!', 'success');
   } catch (err) {
     if (!silent) showToast('Ошибка сохранения', 'danger');
@@ -449,6 +423,7 @@ const handleFile = async (type, event) => {
     }
     await uploadMedia(projectId.value, type, file);
     media.value[type] = true;
+    await loadProject();
     showToast('Медиафайл успешно сохранен', 'success');
   } catch (err) {
     showToast(err.message || 'Ошибка загрузки', 'danger');
@@ -487,56 +462,10 @@ function setActiveBuild(version) {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 800px;
+  max-width: 900px;
   padding-bottom: 60px;
 }
-.form-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-.actions {
-  display: flex;
-  gap: 12px;
-}
-.btn-dev-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: 1px solid var(--text-muted);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.btn-dev-link:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--bg-hover);
-}
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: inline-block;
-}
-.bg-yellow {
-  background: var(--warning-light);
-  color: var(--warning);
-}
-.bg-green {
-  background: var(--success-light);
-  color: var(--success);
-}
-.bg-red {
-  background: #fee2e2;
-  color: #dc2626;
-}
+
 .rejection-notice {
   padding: 16px;
   background: #fef2f2;
@@ -544,14 +473,27 @@ function setActiveBuild(version) {
   color: #b91c1c;
   font-size: 0.9rem;
   line-height: 1.5;
+  border-radius: var(--radius-md, 8px);
 }
+
 .approval-notice {
   padding: 16px;
   background: var(--success-light);
   border: 1px solid var(--success);
   color: var(--success);
   font-size: 0.9rem;
+  border-radius: var(--radius-md, 8px);
 }
+
+.review-notice {
+  background: var(--bg-secondary);
+  border-left: 4px solid var(--info, #3b82f6);
+  padding: 12px 16px;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  border-radius: var(--radius-md, 8px);
+}
+
 .section-head {
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
@@ -569,7 +511,6 @@ function setActiveBuild(version) {
   margin-bottom: 16px;
 }
 .input-group label {
-  display: block;
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 8px;
@@ -690,39 +631,5 @@ function setActiveBuild(version) {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.review-notice {
-  background: var(--bg-secondary);
-  border-left: 4px solid var(--info, #3b82f6);
-  padding: 12px 16px;
-  color: var(--text-main);
-  font-size: 0.9rem;
-}
-
-
-
-.badge-warning {
-  background: var(--warning, #f59e0b);
-  color: white;
-}
-
-.badge-info {
-  background: var(--info, #3b82f6);
-  color: white;
-}
-
-.badge-success {
-  background: var(--success, #10b981);
-  color: white;
-}
-
-.badge-danger {
-  background: var(--danger, #ef4444);
-  color: white;
-}
-
-.badge-neutral {
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
 }
 </style>

@@ -3,7 +3,7 @@
     <div class="chat-header">
       <div class="chat-title-group">
         <MessageSquare class="icon-sm text-primary" />
-        <h3 class="chat-title">Чат проекта #{{ projectId }}</h3>
+        <h3 class="chat-title">{{ t('moderation.projectChatTitle') }}</h3>
       </div>
       <span class="messages-counter" v-if="messages.length">
         {{ messages.length }} сообщ.
@@ -78,10 +78,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { MessageSquare, MessageSquareDashed, Info, Send } from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import { formatDateTime } from '../model/helpers';
 import { useAuth } from '@/entities/user';
+
+const { t } = useI18n();
 
 const props = defineProps({
   projectId: {
@@ -198,19 +201,22 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: none;
+  border-radius: 0;
   overflow: hidden;
-  height: 480px;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chat-header {
-  padding: 12px 16px;
-  background: var(--bg-secondary);
+  padding: 14px 18px;
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .chat-title-group {

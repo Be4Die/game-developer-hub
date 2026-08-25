@@ -200,6 +200,7 @@ export default {
     verdictApproved: 'Проект одобрен и опубликован',
     verdictRejected: 'Заявка отклонена. Замечания отправлены в чат.',
     chatTitle: 'Сквозной чат модерации',
+    projectChatTitle: 'Чат проекта',
     chatPlaceholder: 'Напишите сообщение разработчику...',
     sendMessage: 'Отправить',
     systemMessage: 'Системное уведомление',

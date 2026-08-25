@@ -200,6 +200,7 @@ export default {
     verdictApproved: 'Project approved and published',
     verdictRejected: 'Submission rejected. Remarks sent to project chat.',
     chatTitle: 'Moderation Chat',
+    projectChatTitle: 'Project Chat',
     chatPlaceholder: 'Write a message to developer...',
     sendMessage: 'Send',
     systemMessage: 'System Notification',
