@@ -735,8 +735,8 @@ onMounted(loadProjects);
 }
 
 .page-num-btn.active {
-  background: #2b313a;
-  border-color: #484f58;
+  background: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
   color: #ffffff;
   font-weight: 600;
 }

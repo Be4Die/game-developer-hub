@@ -186,7 +186,7 @@ async function handleLogout() {
 .user-name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-tertiary, #8b949e);
+  color: var(--text-main, #f0f6fc);
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;

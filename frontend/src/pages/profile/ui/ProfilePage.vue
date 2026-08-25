@@ -2,10 +2,6 @@
   <div class="profile-page">
     <div class="profile-container">
       <div class="profile-header">
-        <button class="back-btn" @click="$router.back()">
-          <ArrowLeft class="icon-sm" />
-          {{ t('common.back') }}
-        </button>
         <div class="header-titles">
           <h1>{{ t('profile.title') }}</h1>
           <p class="subtitle">{{ t('profile.subtitle') }}</p>
@@ -226,7 +222,6 @@
 import { ref, computed, watch, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  ArrowLeft,
   Mail,
   Calendar,
   Lock,
@@ -396,24 +391,6 @@ function selectLanguage(lang) {
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 8px;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 4px 0;
-  transition: color 0.2s;
-}
-
-.back-btn:hover {
-  color: var(--primary);
 }
 
 .header-titles h1 {
