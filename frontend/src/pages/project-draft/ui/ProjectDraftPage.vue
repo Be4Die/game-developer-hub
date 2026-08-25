@@ -129,18 +129,14 @@
               @drop.prevent="onDrop('icon', $event)"
               :class="{ 'is-dragging': dragStates.icon }"
             >
-              <img :src="mediaUrls.icon" alt="Icon preview" class="media-preview-image icon-fit" />
+              <img
+                :src="mediaUrls.icon"
+                alt="Icon preview"
+                class="media-preview-image icon-fit"
+                @error="handleMediaError('icon')"
+              />
               
               <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-replace"
-                  @click="triggerFileInput('icon')"
-                  :title="t('projectDraft.replaceFile')"
-                >
-                  <RefreshCw class="icon-xs" />
-                  <span>{{ t('projectDraft.replaceFile') }}</span>
-                </button>
                 <button
                   type="button"
                   class="media-action-btn btn-delete"
@@ -150,17 +146,12 @@
                   <Trash2 class="icon-xs" />
                 </button>
               </div>
-
-              <div class="media-status-pill">
-                <CheckCircle class="icon-xs text-success" />
-                <span>{{ t('projectDraft.uploadedSuccess') }}</span>
-              </div>
             </div>
 
             <!-- Интерактивный Dropzone -->
             <div
               v-else
-              class="media-dropzone icon-ratio"
+              class="media-dropzone"
               :class="{ 'is-dragging': dragStates.icon, 'is-loading': uploading.icon }"
               @dragover.prevent="onDragOver('icon', $event)"
               @dragleave.prevent="onDragLeave('icon', $event)"
@@ -202,18 +193,14 @@
               @drop.prevent="onDrop('cover', $event)"
               :class="{ 'is-dragging': dragStates.cover }"
             >
-              <img :src="mediaUrls.cover" alt="Cover preview" class="media-preview-image cover-fit" />
+              <img
+                :src="mediaUrls.cover"
+                alt="Cover preview"
+                class="media-preview-image cover-fit"
+                @error="handleMediaError('cover')"
+              />
               
               <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-replace"
-                  @click="triggerFileInput('cover')"
-                  :title="t('projectDraft.replaceFile')"
-                >
-                  <RefreshCw class="icon-xs" />
-                  <span>{{ t('projectDraft.replaceFile') }}</span>
-                </button>
                 <button
                   type="button"
                   class="media-action-btn btn-delete"
@@ -223,17 +210,12 @@
                   <Trash2 class="icon-xs" />
                 </button>
               </div>
-
-              <div class="media-status-pill">
-                <CheckCircle class="icon-xs text-success" />
-                <span>{{ t('projectDraft.uploadedSuccess') }}</span>
-              </div>
             </div>
 
             <!-- Интерактивный Dropzone -->
             <div
               v-else
-              class="media-dropzone cover-ratio"
+              class="media-dropzone"
               :class="{ 'is-dragging': dragStates.cover, 'is-loading': uploading.cover }"
               @dragover.prevent="onDragOver('cover', $event)"
               @dragleave.prevent="onDragLeave('cover', $event)"
@@ -266,7 +248,7 @@
               <span class="media-req-badge">{{ t('projectDraft.videoReq') }}</span>
             </div>
 
-            <!-- Загруженное видео (автопроигрывание без звука по кругу) -->
+            <!-- Загруженное видео -->
             <div
               v-if="media.video && mediaUrls.video"
               class="media-preview-container video-ratio"
@@ -282,18 +264,10 @@
                 muted
                 playsinline
                 class="media-preview-video"
+                @error="handleMediaError('video')"
               ></video>
               
               <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-replace"
-                  @click="triggerFileInput('video')"
-                  :title="t('projectDraft.replaceFile')"
-                >
-                  <RefreshCw class="icon-xs" />
-                  <span>{{ t('projectDraft.replaceFile') }}</span>
-                </button>
                 <button
                   type="button"
                   class="media-action-btn btn-delete"
@@ -303,17 +277,12 @@
                   <Trash2 class="icon-xs" />
                 </button>
               </div>
-
-              <div class="media-status-pill">
-                <CheckCircle class="icon-xs text-success" />
-                <span>{{ t('projectDraft.uploadedSuccess') }}</span>
-              </div>
             </div>
 
             <!-- Интерактивный Dropzone -->
             <div
               v-else
-              class="media-dropzone video-ratio"
+              class="media-dropzone"
               :class="{ 'is-dragging': dragStates.video, 'is-loading': uploading.video }"
               @dragover.prevent="onDragOver('video', $event)"
               @dragleave.prevent="onDragLeave('video', $event)"
@@ -384,7 +353,6 @@ import {
   Image as ImageIcon,
   Film,
   Upload,
-  RefreshCw,
   Trash2,
   Loader2,
 } from 'lucide-vue-next';
@@ -506,7 +474,15 @@ function onDrop(type, e) {
 function removeMedia(type) {
   media.value[type] = false;
   mediaUrls.value[type] = '';
+  if (fileIcon.value && type === 'icon') fileIcon.value.value = '';
+  if (fileCoverMain.value && type === 'cover') fileCoverMain.value.value = '';
+  if (fileVideo.value && type === 'video') fileVideo.value.value = '';
   showToast(t('projectDraft.removeFile') + ': ' + t(`projectDraft.${type}Title`), 'info');
+}
+
+function handleMediaError(type) {
+  // If the server URL fails, fallback gracefully
+  console.warn(`Media failed to load for ${type}: ${mediaUrls.value[type]}`);
 }
 
 async function loadModerationStatus() {
@@ -553,9 +529,15 @@ async function loadProject() {
     media.value.cover = !!coverPath;
     media.value.video = !!videoPath;
 
-    mediaUrls.value.icon = iconPath ? getMediaUrl(iconPath) : '';
-    mediaUrls.value.cover = coverPath ? getMediaUrl(coverPath) : '';
-    mediaUrls.value.video = videoPath ? getMediaUrl(videoPath) : '';
+    if (iconPath && (!mediaUrls.value.icon || !mediaUrls.value.icon.startsWith('blob:'))) {
+      mediaUrls.value.icon = getMediaUrl(iconPath);
+    }
+    if (coverPath && (!mediaUrls.value.cover || !mediaUrls.value.cover.startsWith('blob:'))) {
+      mediaUrls.value.cover = getMediaUrl(coverPath);
+    }
+    if (videoPath && (!mediaUrls.value.video || !mediaUrls.value.video.startsWith('blob:'))) {
+      mediaUrls.value.video = getMediaUrl(videoPath);
+    }
 
     activeBuildVersion.value =
       project.draft?.active_build_version ||
@@ -683,14 +665,13 @@ async function processUpload(type, file) {
     mediaUrls.value[type] = localUrl;
     media.value[type] = true;
 
-    const res = await uploadMedia(projectId.value, type, file);
-    if (res?.file_path || res?.filePath) {
-      mediaUrls.value[type] = getMediaUrl(res.file_path || res.filePath);
-    }
+    await uploadMedia(projectId.value, type, file);
     await loadProject();
     showToast('Медиафайл успешно сохранен', 'success');
   } catch (err) {
-    media.value[type] = !!mediaUrls.value[type];
+    if (!mediaUrls.value[type]) {
+      media.value[type] = false;
+    }
     showToast(err.message || 'Ошибка загрузки', 'danger');
   } finally {
     uploading[type] = false;
@@ -820,10 +801,12 @@ function setActiveBuild(version) {
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 14px;
 }
 
 .media-card-header {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -854,6 +837,7 @@ function setActiveBuild(version) {
 
 /* Dropzone (Empty State) */
 .media-dropzone {
+  width: 100%;
   border: 2px dashed var(--border);
   border-radius: var(--radius-md, 8px);
   background: var(--bg-card);
@@ -937,27 +921,28 @@ function setActiveBuild(version) {
   border-radius: var(--radius-md, 8px);
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #000;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .media-preview-container.icon-ratio {
-  width: 140px;
-  height: 140px;
+  width: 160px;
+  height: 160px;
 }
 
 .media-preview-container.cover-ratio {
   width: 100%;
-  max-width: 480px;
+  max-width: 540px;
   aspect-ratio: 800 / 470;
 }
 
 .media-preview-container.video-ratio {
   width: 100%;
-  max-width: 480px;
+  max-width: 540px;
   aspect-ratio: 16 / 9;
 }
 
@@ -965,83 +950,49 @@ function setActiveBuild(version) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .media-preview-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .media-overlay-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
   opacity: 0;
   transition: opacity 0.2s ease;
+  z-index: 10;
 }
 
 .media-preview-container:hover .media-overlay-actions {
   opacity: 1;
 }
 
-.media-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+.btn-delete {
+  background: rgba(220, 38, 38, 0.85);
+  color: #fff;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 6px 8px;
   border-radius: var(--radius-sm, 6px);
-  font-size: 0.78rem;
-  font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
   backdrop-filter: blur(8px);
 }
 
-.btn-replace {
-  background: rgba(22, 27, 34, 0.85);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-replace:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.btn-delete {
-  background: rgba(220, 38, 38, 0.85);
-  color: #fff;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  padding: 6px 8px;
-}
-
 .btn-delete:hover {
   background: #dc2626;
-}
-
-.media-status-pill {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #10b981;
-  backdrop-filter: blur(6px);
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.text-success {
-  color: #10b981;
+  transform: scale(1.05);
 }
 
 .btn-text {

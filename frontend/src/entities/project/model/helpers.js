@@ -24,9 +24,16 @@ export function getMediaUrl(path) {
   if (
     path.startsWith('http://') ||
     path.startsWith('https://') ||
-    path.startsWith('/api/')
+    path.startsWith('blob:') ||
+    path.startsWith('data:')
   ) {
     return path;
   }
-  return `/api/v1/media/${path}`;
+  if (path.startsWith('/api/')) {
+    return path;
+  }
+  const clean = path
+    .replace(/^(\.\/|\/)?(data\/projects\/|projects\/)?/, '')
+    .replace(/^media\//, '');
+  return `/api/v1/media/${clean}`;
 }

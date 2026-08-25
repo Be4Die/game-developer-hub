@@ -167,6 +167,7 @@ services:
       PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
       MODERATION_GRPC_ADDR: gdh-moderation:50054
       HTTP_ADDR: :8080
+      PROJECTS_DATA_PATH: /data/projects
     ports:
       - "8080:8080"
     depends_on:
@@ -178,6 +179,8 @@ services:
         condition: service_healthy
       moderation:
         condition: service_healthy
+    volumes:
+      - project_data:/data/projects:ro
 
   game-server-node:
     build:
@@ -226,6 +229,7 @@ services:
         condition: service_started
     volumes:
       - games_data:/data/games:ro
+      - project_data:/data/projects:ro
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:80/ || exit 1"]
       interval: 10s

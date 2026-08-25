@@ -118,6 +118,8 @@ func (s *MediaStorage) SaveMediaStream(ctx context.Context, projectID int64, med
 		return "", fmt.Errorf("rename: %w", err)
 	}
 
+	_ = os.Chmod(targetPath, 0o644)
+
 	return targetPath, nil
 }
 

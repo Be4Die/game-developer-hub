@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -227,12 +228,14 @@ func run() error {
 	// Custom handler для logs streaming — SSE over HTTP.
 	logsStreamHandler := newLogsStreamHandler(orchConn)
 
-	// Custom handlers для project-manager multipart uploads.
+	// Custom handlers для project-manager multipart uploads and media serving.
+	projectsBasePath := envOr("PROJECTS_DATA_PATH", "/data/projects")
 	projectBuildUploadHandler := newProjectBuildUploadHandler(projConn)
 	projectMediaUploadHandler := newProjectMediaUploadHandler(projConn)
+	projectMediaServeHandler := newProjectMediaServeHandler(projectsBasePath)
 
 	// HTTP-сервер с CORS и custom routing.
-	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectMediaUploadHandler))
+	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectMediaUploadHandler, projectMediaServeHandler))
 
 	srv := &http.Server{
 		Addr:         httpAddr,
@@ -393,15 +396,25 @@ func (h *buildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// customRouter маршрутизирует upload и logs запросы к custom handler, остальные — к grpc-gateway.
+// customRouter маршрутизирует upload, media serving и logs запросы к custom handler, остальные — к grpc-gateway.
 func customRouter(
 	gw http.Handler,
 	buildUploadHandler, logsHandler http.Handler,
-	projectBuildUploadHandler, projectMediaUploadHandler http.Handler,
+	projectBuildUploadHandler, projectMediaUploadHandler, projectMediaServeHandler http.Handler,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
 		isMultipart := len(ct) >= 19 && ct[:19] == "multipart/form-data"
+
+		// Check for media serving: GET /api/v1/projects/{id}/media/{type} or GET /api/v1/media/... or GET /media/...
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			if (strings.HasPrefix(r.URL.Path, "/api/v1/projects/") && strings.Contains(r.URL.Path, "/media/")) ||
+				strings.HasPrefix(r.URL.Path, "/api/v1/media/") ||
+				strings.HasPrefix(r.URL.Path, "/media/") {
+				projectMediaServeHandler.ServeHTTP(w, r)
+				return
+			}
+		}
 
 		// Check for logs streaming endpoint: GET /api/v1/games/{id}/instances/{instance_id}/logs
 		prefix := "/api/v1/games/"
@@ -918,4 +931,90 @@ func extractProjectID(path, suffix string) (int64, error) {
 		return 0, fmt.Errorf("invalid project_id: %s", idStr)
 	}
 	return id, nil
+}
+
+// projectMediaServeHandler отдаёт статические файлы промо-материалов проектов (иконки, обложки, видео).
+type projectMediaServeHandler struct {
+	basePath string
+}
+
+func newProjectMediaServeHandler(basePath string) *projectMediaServeHandler {
+	return &projectMediaServeHandler{basePath: basePath}
+}
+
+func (h *projectMediaServeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var filePath string
+	if strings.HasPrefix(r.URL.Path, "/api/v1/projects/") && strings.Contains(r.URL.Path, "/media/") {
+		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/projects/"), "/media/")
+		if len(parts) == 2 {
+			projID := parts[0]
+			mediaType := parts[1]
+			var fileName string
+			switch mediaType {
+			case "icon", "icon.png":
+				fileName = "icon.png"
+			case "cover", "cover.png":
+				fileName = "cover.png"
+			case "video", "video.mp4":
+				fileName = "video.mp4"
+			default:
+				fileName = mediaType
+			}
+			filePath = filepath.Join(h.basePath, "media", projID, fileName)
+		}
+	} else if strings.HasPrefix(r.URL.Path, "/api/v1/media/") {
+		rel := strings.TrimPrefix(r.URL.Path, "/api/v1/media/")
+		rel = strings.TrimPrefix(rel, "data/projects/")
+		rel = strings.TrimPrefix(rel, "projects/")
+		rel = strings.TrimPrefix(rel, "media/")
+		filePath = filepath.Join(h.basePath, "media", rel)
+	} else if strings.HasPrefix(r.URL.Path, "/media/") {
+		rel := strings.TrimPrefix(r.URL.Path, "/media/")
+		filePath = filepath.Join(h.basePath, "media", rel)
+	}
+
+	if filePath == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	// If the file doesn't exist at primary path, try relative fallback paths for local development
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		altPaths := []string{
+			filepath.Join("./data/projects", strings.TrimPrefix(filePath, h.basePath)),
+			filepath.Join("../project-manager/data/projects", strings.TrimPrefix(filePath, h.basePath)),
+		}
+		found := false
+		for _, alt := range altPaths {
+			if _, err := os.Stat(alt); err == nil {
+				filePath = alt
+				found = true
+				break
+			}
+		}
+		if !found {
+			http.NotFound(w, r)
+			return
+		}
+	}
+
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".png":
+		w.Header().Set("Content-Type", "image/png")
+	case ".jpg", ".jpeg":
+		w.Header().Set("Content-Type", "image/jpeg")
+	case ".webp":
+		w.Header().Set("Content-Type", "image/webp")
+	case ".mp4":
+		w.Header().Set("Content-Type", "video/mp4")
+	}
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+
+	http.ServeFile(w, r, filePath)
 }
