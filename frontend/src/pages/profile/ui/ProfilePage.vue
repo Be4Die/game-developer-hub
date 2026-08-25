@@ -123,38 +123,36 @@
               />
             </div>
 
-            <div class="form-row-2">
-              <div class="form-group">
-                <label class="form-label" for="newPasswordInput">
-                  {{ t('auth.newPassword') }}
-                </label>
-                <input
-                  id="newPasswordInput"
-                  type="password"
-                  v-model="passwordForm.newPassword"
-                  class="form-input"
-                  :placeholder="t('auth.passwordPlaceholder')"
-                  :disabled="passwordSaving"
-                  minlength="6"
-                  required
-                />
-              </div>
+            <div class="form-group">
+              <label class="form-label" for="newPasswordInput">
+                {{ t('auth.newPassword') }}
+              </label>
+              <input
+                id="newPasswordInput"
+                type="password"
+                v-model="passwordForm.newPassword"
+                class="form-input"
+                :placeholder="t('auth.passwordPlaceholder')"
+                :disabled="passwordSaving"
+                minlength="6"
+                required
+              />
+            </div>
 
-              <div class="form-group">
-                <label class="form-label" for="confirmPasswordInput">
-                  {{ t('auth.confirmPassword') }}
-                </label>
-                <input
-                  id="confirmPasswordInput"
-                  type="password"
-                  v-model="passwordForm.confirmPassword"
-                  class="form-input"
-                  :placeholder="t('auth.passwordPlaceholder')"
-                  :disabled="passwordSaving"
-                  minlength="6"
-                  required
-                />
-              </div>
+            <div class="form-group">
+              <label class="form-label" for="confirmPasswordInput">
+                {{ t('auth.confirmPassword') }}
+              </label>
+              <input
+                id="confirmPasswordInput"
+                type="password"
+                v-model="passwordForm.confirmPassword"
+                class="form-input"
+                :placeholder="t('auth.passwordPlaceholder')"
+                :disabled="passwordSaving"
+                minlength="6"
+                required
+              />
             </div>
 
             <div class="form-actions-full">
