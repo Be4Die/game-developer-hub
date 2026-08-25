@@ -1,219 +1,192 @@
 <template>
   <div class="profile-page">
     <div class="profile-container">
-      <div class="profile-header">
-        <div class="header-titles">
-          <h1>{{ t('profile.title') }}</h1>
-          <p class="subtitle">{{ t('profile.subtitle') }}</p>
+      <!-- Карточка информации об аккаунте (без псевдо-аватара) -->
+      <section class="user-info-card">
+        <div class="user-main-info">
+          <span class="user-title">{{ userDisplayName }}</span>
+          <span class="role-badge" :class="roleBadgeClass">
+            <Shield class="icon-xs" v-if="isModeratorOrAdmin" />
+            <Code2 class="icon-xs" v-else />
+            {{ localizedRoleName }}
+          </span>
         </div>
-      </div>
-
-      <!-- Карточка информации об аккаунте -->
-      <section class="profile-section user-card-section">
-        <div class="user-avatar-wrap">
-          <div class="user-avatar">
-            {{ userInitials }}
+        <div class="user-meta-details">
+          <div class="detail-item">
+            <Mail class="icon-xs text-muted" />
+            <span>{{ userEmail }}</span>
           </div>
-        </div>
-        <div class="user-meta-info">
-          <div class="meta-row">
-            <span class="user-title">{{ userDisplayName }}</span>
-            <span class="role-badge" :class="roleBadgeClass">
-              <Shield class="icon-xs" v-if="isModeratorOrAdmin" />
-              <Code2 class="icon-xs" v-else />
-              {{ localizedRoleName }}
-            </span>
-          </div>
-          <div class="meta-details">
-            <div class="detail-item">
-              <Mail class="icon-xs text-muted" />
-              <span>{{ userEmail }}</span>
-            </div>
-            <div class="detail-item" v-if="registeredDate">
-              <Calendar class="icon-xs text-muted" />
-              <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
-            </div>
+          <div class="detail-item" v-if="registeredDate">
+            <Calendar class="icon-xs text-muted" />
+            <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
           </div>
         </div>
       </section>
 
-      <!-- СЕКЦИЯ: Изменение отображаемого имени (Только для разработчиков) -->
-      <section class="profile-section" v-if="!isModeratorOrAdmin">
-        <div class="section-header-block">
-          <h2 class="section-title">
-            <UserCheck class="icon-sm text-primary" />
-            {{ t('profile.editProfile') }}
-          </h2>
-          <p class="section-desc">{{ t('profile.editProfileDesc') }}</p>
-        </div>
+      <!-- 2-колоночная адаптивная сетка для эффективного использования горизонтали -->
+      <div class="profile-grid">
+        <!-- Левая колонка: Настройки профиля и безопасность -->
+        <div class="profile-column">
+          <!-- Изменение отображаемого имени (в одну строку) -->
+          <section class="profile-card" v-if="!isModeratorOrAdmin">
+            <h2 class="card-title">
+              <UserCheck class="icon-sm text-primary" />
+              {{ t('profile.editProfile') }}
+            </h2>
 
-        <form @submit.prevent="handleUpdateDisplayName" class="form-grid">
-          <div class="form-group">
-            <label class="form-label" for="displayNameInput">
-              {{ t('profile.studioOrName') }}
-            </label>
-            <div class="input-wrap">
+            <form @submit.prevent="handleUpdateDisplayName" class="inline-name-form">
               <input
                 id="displayNameInput"
                 type="text"
                 v-model="displayNameForm"
-                class="form-input"
+                class="form-input field-name-input"
                 :placeholder="t('auth.displayNamePlaceholder')"
                 :disabled="nameSaving"
                 required
               />
+              <button
+                type="submit"
+                class="btn-primary btn-save-name"
+                :disabled="nameSaving || !isNameChanged"
+              >
+                <Loader2 class="icon-sm spin" v-if="nameSaving" />
+                <Check class="icon-sm" v-else />
+                <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
+              </button>
+            </form>
+          </section>
+
+          <!-- Смена пароля -->
+          <section class="profile-card" v-if="!isModeratorOrAdmin">
+            <h2 class="card-title">
+              <Lock class="icon-sm text-primary" />
+              {{ t('profile.security') }}
+            </h2>
+
+            <form @submit.prevent="handleChangePassword" class="password-form">
+              <div class="form-group">
+                <label class="form-label" for="currentPasswordInput">
+                  {{ t('auth.currentPassword') }}
+                </label>
+                <input
+                  id="currentPasswordInput"
+                  type="password"
+                  v-model="passwordForm.currentPassword"
+                  class="form-input"
+                  :placeholder="t('auth.passwordPlaceholder')"
+                  :disabled="passwordSaving"
+                  required
+                />
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="newPasswordInput">
+                    {{ t('auth.newPassword') }}
+                  </label>
+                  <input
+                    id="newPasswordInput"
+                    type="password"
+                    v-model="passwordForm.newPassword"
+                    class="form-input"
+                    :placeholder="t('auth.passwordPlaceholder')"
+                    :disabled="passwordSaving"
+                    minlength="6"
+                    required
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="confirmPasswordInput">
+                    {{ t('auth.confirmPassword') }}
+                  </label>
+                  <input
+                    id="confirmPasswordInput"
+                    type="password"
+                    v-model="passwordForm.confirmPassword"
+                    class="form-input"
+                    :placeholder="t('auth.passwordPlaceholder')"
+                    :disabled="passwordSaving"
+                    minlength="6"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  class="btn-primary"
+                  :disabled="passwordSaving || !isPasswordFormFilled"
+                >
+                  <Loader2 class="icon-sm spin" v-if="passwordSaving" />
+                  <Key class="icon-sm" v-else />
+                  <span>{{ passwordSaving ? t('common.saving') : t('profile.changePasswordBtn') }}</span>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Уведомление для модераторов/администраторов -->
+          <div class="info-alert" v-if="isModeratorOrAdmin">
+            <Info class="icon-sm alert-icon" />
+            <div class="alert-text">
+              {{ t('profile.readonlyNotice') }}
             </div>
           </div>
-
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn-primary"
-              :disabled="nameSaving || !isNameChanged"
-            >
-              <Loader2 class="icon-sm spin" v-if="nameSaving" />
-              <Check class="icon-sm" v-else />
-              {{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- СЕКЦИЯ: Смена пароля (Только для разработчиков) -->
-      <section class="profile-section" v-if="!isModeratorOrAdmin">
-        <div class="section-header-block">
-          <h2 class="section-title">
-            <Lock class="icon-sm text-primary" />
-            {{ t('profile.security') }}
-          </h2>
-          <p class="section-desc">{{ t('profile.securityDesc') }}</p>
         </div>
 
-        <form @submit.prevent="handleChangePassword" class="form-grid">
-          <div class="form-group">
-            <label class="form-label" for="currentPasswordInput">
-              {{ t('auth.currentPassword') }}
-            </label>
-            <input
-              id="currentPasswordInput"
-              type="password"
-              v-model="passwordForm.currentPassword"
-              class="form-input"
-              :placeholder="t('auth.passwordPlaceholder')"
-              :disabled="passwordSaving"
-              required
-            />
-          </div>
+        <!-- Правая колонка: Язык и Тема оформления -->
+        <div class="profile-column">
+          <!-- Язык интерфейса -->
+          <section class="profile-card">
+            <h2 class="card-title">
+              <Languages class="icon-sm text-primary" />
+              {{ t('profile.interfaceLanguage') }}
+            </h2>
 
-          <div class="form-row-2">
-            <div class="form-group">
-              <label class="form-label" for="newPasswordInput">
-                {{ t('auth.newPassword') }}
-              </label>
-              <input
-                id="newPasswordInput"
-                type="password"
-                v-model="passwordForm.newPassword"
-                class="form-input"
-                :placeholder="t('auth.passwordPlaceholder')"
-                :disabled="passwordSaving"
-                minlength="6"
-                required
-              />
+            <div class="languages-grid">
+              <button
+                type="button"
+                class="lang-card"
+                :class="{ active: currentLocale === 'ru' }"
+                @click="selectLanguage('ru')"
+              >
+                <span class="lang-flag">🇷🇺</span>
+                <div class="lang-text">
+                  <span class="lang-name">Русский</span>
+                  <span class="lang-sub">Russian</span>
+                </div>
+                <Check class="icon-sm lang-check" v-if="currentLocale === 'ru'" />
+              </button>
+
+              <button
+                type="button"
+                class="lang-card"
+                :class="{ active: currentLocale === 'en' }"
+                @click="selectLanguage('en')"
+              >
+                <span class="lang-flag">🇬🇧</span>
+                <div class="lang-text">
+                  <span class="lang-name">English</span>
+                  <span class="lang-sub">Английский</span>
+                </div>
+                <Check class="icon-sm lang-check" v-if="currentLocale === 'en'" />
+              </button>
             </div>
+          </section>
 
-            <div class="form-group">
-              <label class="form-label" for="confirmPasswordInput">
-                {{ t('auth.confirmPassword') }}
-              </label>
-              <input
-                id="confirmPasswordInput"
-                type="password"
-                v-model="passwordForm.confirmPassword"
-                class="form-input"
-                :placeholder="t('auth.passwordPlaceholder')"
-                :disabled="passwordSaving"
-                minlength="6"
-                required
-              />
-            </div>
-          </div>
+          <!-- Тема оформления -->
+          <section class="profile-card">
+            <h2 class="card-title">
+              <Palette class="icon-sm text-primary" />
+              {{ t('profile.theme') }}
+            </h2>
 
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn-primary"
-              :disabled="passwordSaving || !isPasswordFormFilled"
-            >
-              <Loader2 class="icon-sm spin" v-if="passwordSaving" />
-              <Key class="icon-sm" v-else />
-              {{ passwordSaving ? t('common.saving') : t('profile.changePasswordBtn') }}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Уведомление для модераторов/администраторов -->
-      <div class="info-alert" v-if="isModeratorOrAdmin">
-        <Info class="icon-sm alert-icon" />
-        <div class="alert-text">
-          {{ t('profile.readonlyNotice') }}
+            <ThemeCardSelector />
+          </section>
         </div>
       </div>
-
-      <!-- СЕКЦИЯ: Язык интерфейса (Доступно всем ролям) -->
-      <section class="profile-section">
-        <div class="section-header-block">
-          <h2 class="section-title">
-            <Languages class="icon-sm text-primary" />
-            {{ t('profile.interfaceLanguage') }}
-          </h2>
-          <p class="section-desc">{{ t('profile.interfaceLanguageDesc') }}</p>
-        </div>
-
-        <div class="languages-grid">
-          <button
-            type="button"
-            class="lang-card"
-            :class="{ active: currentLocale === 'ru' }"
-            @click="selectLanguage('ru')"
-          >
-            <span class="lang-flag">🇷🇺</span>
-            <div class="lang-text">
-              <span class="lang-name">Русский</span>
-              <span class="lang-sub">Russian</span>
-            </div>
-            <Check class="icon-sm lang-check" v-if="currentLocale === 'ru'" />
-          </button>
-
-          <button
-            type="button"
-            class="lang-card"
-            :class="{ active: currentLocale === 'en' }"
-            @click="selectLanguage('en')"
-          >
-            <span class="lang-flag">🇬🇧</span>
-            <div class="lang-text">
-              <span class="lang-name">English</span>
-              <span class="lang-sub">Английский</span>
-            </div>
-            <Check class="icon-sm lang-check" v-if="currentLocale === 'en'" />
-          </button>
-        </div>
-      </section>
-
-      <!-- СЕКЦИЯ: Тема оформления (Доступно всем ролям) -->
-      <section class="profile-section">
-        <div class="section-header-block">
-          <h2 class="section-title">
-            <Palette class="icon-sm text-primary" />
-            {{ t('profile.theme') }}
-          </h2>
-          <p class="section-desc">{{ t('profile.themeDesc') }}</p>
-        </div>
-
-        <ThemeCardSelector />
-      </section>
     </div>
   </div>
 </template>
@@ -249,11 +222,6 @@ const userDisplayName = computed(
   () => user.value.display_name || user.value.email?.split('@')[0] || t('roles.user')
 );
 const userEmail = computed(() => user.value.email || '');
-
-const userInitials = computed(() => {
-  const name = userDisplayName.value || 'U';
-  return name.slice(0, 2).toUpperCase();
-});
 
 const isModeratorOrAdmin = computed(() => {
   const role = user.value.role;
@@ -364,7 +332,6 @@ async function handleChangePassword() {
   }
 }
 
-
 function selectLanguage(lang) {
   setLocale(lang);
 }
@@ -372,83 +339,33 @@ function selectLanguage(lang) {
 
 <style scoped>
 .profile-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
   background: var(--bg-app);
-  padding: 32px 24px 64px;
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
 }
 
 .profile-container {
-  max-width: 760px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-.profile-header {
+.user-info-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.header-titles h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-main);
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  margin: 6px 0 0;
-}
-
-.profile-section {
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md, 8px);
+  padding: 16px 24px;
+  flex-wrap: wrap;
 }
 
-.user-card-section {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background: linear-gradient(to right, var(--bg-card), var(--bg-secondary));
-}
-
-.user-avatar-wrap {
-  flex-shrink: 0;
-}
-
-.user-avatar {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb, 59, 130, 246), 0.3);
-}
-
-.user-meta-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.meta-row {
+.user-main-info {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -456,7 +373,7 @@ function selectLanguage(lang) {
 }
 
 .user-title {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -486,7 +403,7 @@ function selectLanguage(lang) {
   color: var(--danger, #dc2626);
 }
 
-.meta-details {
+.user-meta-details {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -501,36 +418,64 @@ function selectLanguage(lang) {
   gap: 6px;
 }
 
-.section-header-block {
-  margin-bottom: 20px;
+/* 2-колоночная сетка */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.section-title {
+.profile-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  padding: 20px 24px;
+}
+
+.card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-main);
-  margin: 0 0 6px;
+  margin: 0 0 16px 0;
 }
 
-.section-desc {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin: 0;
+/* Однострочная форма изменения имени */
+.inline-name-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
-.form-grid {
+.field-name-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-save-name {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.password-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-group {
@@ -540,54 +485,55 @@ function selectLanguage(lang) {
 }
 
 .form-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
-  color: var(--text-main);
+  color: var(--text-muted);
 }
 
 .form-input {
   width: 100%;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-main);
-  font-size: 0.95rem;
-  transition: all 0.2s;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
   box-sizing: border-box;
+  outline: none;
 }
 
 .form-input:focus {
-  outline: none;
   border-color: var(--primary);
   background: var(--bg-card);
-  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 59, 130, 246), 0.15);
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: var(--radius-md);
-  padding: 10px 20px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm, 6px);
+  padding: 0 18px;
+  height: 38px;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
   opacity: 0.92;
-  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
@@ -601,7 +547,7 @@ function selectLanguage(lang) {
   gap: 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   padding: 14px 16px;
   color: var(--text-muted);
   font-size: 0.875rem;
@@ -618,35 +564,33 @@ function selectLanguage(lang) {
 .languages-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .lang-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 12px 16px;
   background: var(--bg-secondary);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
   text-align: left;
 }
 
 .lang-card:hover {
   border-color: var(--border-secondary);
-  background: var(--bg-hover);
 }
 
 .lang-card.active {
   border-color: var(--primary);
   background: var(--bg-card);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .lang-flag {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
 }
 
 .lang-text {
@@ -656,13 +600,13 @@ function selectLanguage(lang) {
 }
 
 .lang-name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .lang-sub {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -684,23 +628,30 @@ function selectLanguage(lang) {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .profile-page {
-    padding: 20px 16px;
+    padding: 16px;
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+  .user-info-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 540px) {
+  .inline-name-form {
+    flex-direction: column;
+    align-items: stretch;
   }
   .form-row-2 {
     grid-template-columns: 1fr;
   }
   .languages-grid {
     grid-template-columns: 1fr;
-  }
-  .user-card-section {
-    flex-direction: column;
-    text-align: center;
-  }
-  .meta-row,
-  .meta-details {
-    justify-content: center;
   }
 }
 </style>
