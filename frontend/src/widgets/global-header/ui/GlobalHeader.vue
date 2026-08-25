@@ -39,49 +39,37 @@
             <Users class="icon-sm" /> {{ t('header.adminPanel') }}
           </router-link>
         </template>
+        <!-- Переход в профиль в общей панели навигации -->
+        <router-link
+          v-if="isAuthed"
+          to="/profile"
+          class="nav-item"
+          active-class="active"
+        >
+          <User class="icon-sm" /> {{ t('header.profile') }}
+        </router-link>
       </nav>
     </div>
 
+    <!-- Правая панель: отображение пользователя и кнопка выхода -->
     <div class="header-right">
-      <div v-if="isAuthed" class="profile-wrap relative">
-        <button class="profile-btn" @click="menuOpen = !menuOpen">
-          <User class="icon-sm" />
-          <span class="profile-name">{{ displayName }}</span>
-          <ChevronDown class="icon-sm" :class="{ rotate: menuOpen }" />
+      <div v-if="isAuthed" class="header-user-section">
+        <span class="user-name" :title="userEmail">{{ displayName }}</span>
+        <button
+          class="btn-logout"
+          @click="handleLogout"
+          :title="t('header.logout')"
+        >
+          <LogOut class="icon-sm" />
+          <span>{{ t('header.logout') }}</span>
         </button>
-
-        <div
-          v-if="menuOpen"
-          class="dropdown-overlay"
-          @click="menuOpen = false"
-        ></div>
-        <transition name="dropdown">
-          <div v-if="menuOpen" class="dropdown">
-            <div class="dropdown-header">
-              <div class="dropdown-name">{{ displayName }}</div>
-              <div class="dropdown-email">{{ userEmail }}</div>
-            </div>
-            <div class="dropdown-body">
-              <router-link
-                to="/profile"
-                class="dropdown-item"
-                @click="menuOpen = false"
-              >
-                <User class="icon-sm" /> {{ t('header.profile') }}
-              </router-link>
-              <button class="dropdown-item text-danger" @click="handleLogout">
-                <LogOut class="icon-sm" /> {{ t('header.logout') }}
-              </button>
-            </div>
-          </div>
-        </transition>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/entities/user';
@@ -93,14 +81,11 @@ import {
   Inbox,
   LogOut,
   Users,
-  ChevronDown,
 } from 'lucide-vue-next';
-
 
 const { t } = useI18n();
 const router = useRouter();
 const { state: authState, logout } = useAuth();
-const menuOpen = ref(false);
 
 const isAuthed = computed(() => !!authState.user);
 const displayName = computed(
@@ -130,18 +115,16 @@ async function handleLogout() {
   } catch {
     /* ignore api error on logout */
   } finally {
-    menuOpen.value = false;
     router.push('/login');
   }
 }
 </script>
 
-
 <style scoped>
 .top-header {
   height: 60px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-card, #161b22);
+  border-bottom: 1px solid var(--border, #30363d);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -156,7 +139,7 @@ async function handleLogout() {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 24px;
 }
 
 .logo-link {
@@ -167,7 +150,7 @@ async function handleLogout() {
 
 .main-nav {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .nav-item {
@@ -175,156 +158,70 @@ async function handleLogout() {
   align-items: center;
   gap: 6px;
   font-weight: 500;
-  font-size: 14px;
-  color: var(--text-muted);
+  font-size: 13px;
+  color: var(--text-muted, #b0b8c4);
   padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm, 6px);
   border: 1px solid transparent;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
 }
 
 .nav-item:hover {
-  color: var(--text-main);
-  background: var(--bg-secondary);
+  color: var(--text-main, #f0f6fc);
+  background: var(--bg-secondary, #21262d);
 }
 
 .nav-item.active {
-  color: var(--primary);
-  background: var(--primary-light);
-  border-color: var(--primary-light);
+  color: var(--primary, #58a6ff);
+  background: var(--primary-light, rgba(88, 166, 255, 0.1));
+  border-color: transparent;
 }
 
-.profile-wrap {
-  position: relative;
-}
-
-.profile-btn {
+.header-user-section {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: 1px solid var(--border);
-  padding: 6px 12px 6px 10px;
-  border-radius: 20px;
+  gap: 16px;
+}
+
+.user-name {
+  font-size: 13px;
   font-weight: 500;
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--text-main);
-  transition: all 0.2s;
-}
-
-.profile-btn:hover {
-  background: var(--bg-secondary);
-  border-color: var(--border-secondary);
-}
-
-.profile-name {
-  max-width: 120px;
+  color: var(--text-tertiary, #8b949e);
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profile-btn .rotate {
-  transform: rotate(180deg);
-  transition: transform 0.2s;
-}
-
-.relative {
-  position: relative;
-}
-
-.dropdown-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-}
-
-.dropdown {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: 240px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: dropdownIn 0.2s ease-out;
-}
-
-@keyframes dropdownIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dropdown-header {
-  padding: 12px 16px;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-}
-
-.dropdown-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.dropdown-email {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.dropdown-body {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-}
-
-.dropdown-item {
-  display: flex;
+.btn-logout {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: none;
-  background: none;
-  text-align: left;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border, #30363d);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
   font-weight: 500;
-  font-size: 14px;
-  color: var(--text-main);
-  text-decoration: none;
-  transition: background 0.15s;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-muted, #b0b8c4);
+  transition: all 0.15s ease;
 }
 
-.dropdown-item:hover {
-  background: var(--bg-secondary);
-}
-
-.text-danger {
-  color: var(--danger);
-}
-
-.text-danger:hover {
-  background: var(--danger-light);
+.btn-logout:hover {
+  color: var(--danger, #f85149);
+  background: var(--danger-light, rgba(248, 81, 73, 0.1));
+  border-color: rgba(248, 81, 73, 0.3);
 }
 
 @media (max-width: 768px) {
   .main-nav {
+    gap: 2px;
+  }
+  .user-name {
     display: none;
   }
-  .profile-name {
+  .nav-item span {
     display: none;
   }
 }
