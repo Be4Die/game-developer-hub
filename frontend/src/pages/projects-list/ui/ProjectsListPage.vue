@@ -1,322 +1,164 @@
 <template>
-  <div class="page-container">
-    <!-- Шапка страницы -->
-    <div class="header-row">
-      <div>
-        <div class="page-subtitle">{{ t('projects.subtitle') }}</div>
-        <div class="title-with-count">
-          <h1>{{ t('projects.title') }}</h1>
-          <span v-if="!loading" class="count-badge">{{ totalProjects }}</span>
-        </div>
+  <div class="projects-page-container">
+    <div class="main-content-wrap">
+      <!-- Панель фильтров и поиска в стиле Яндекс.Консоли -->
+      <ProjectFilters
+        v-model:searchQuery="searchQuery"
+        v-model:statusFilter="statusFilter"
+        v-model:sortBy="sortBy"
+        :creating="creating"
+        @reset="resetFilters"
+        @create="createNewGame"
+      />
+
+      <!-- Загрузка -->
+      <div v-if="loading" class="state-container">
+        <div class="spinner-md"></div>
+        <p>{{ t('common.loading') }}</p>
       </div>
-      <div class="header-actions">
+
+      <!-- Пустой список без проектов -->
+      <div
+        v-else-if="
+          games.length === 0 && !searchQuery && statusFilter === 'all'
+        "
+        class="state-container empty-card"
+      >
+        <div class="empty-icon-wrap">
+          <Gamepad2 class="icon-lg" />
+        </div>
+        <h3>{{ t('projects.noProjects') }}</h3>
+        <p>
+          {{ t('projects.noProjectsDesc') }}
+        </p>
         <button
-          class="btn btn-primary"
+          class="btn-add-game-primary"
           :disabled="creating"
           @click="createNewGame"
         >
-          <Plus v-if="!creating" class="icon-sm" />
-          <span v-else class="spinner-sm"></span>
+          <span v-if="creating" class="spinner-sm"></span>
+          <Plus v-else class="icon-sm" />
           {{ creating ? t('common.saving') : t('projects.createBtn') }}
         </button>
       </div>
-    </div>
 
-    <!-- Панель фильтров и поиска -->
-    <ProjectFilters
-      v-model:searchQuery="searchQuery"
-      v-model:statusFilter="statusFilter"
-      v-model:sortBy="sortBy"
-      v-model:viewMode="viewMode"
-    />
-
-    <!-- Загрузка -->
-    <div v-if="loading" class="state-container">
-      <div class="spinner-md"></div>
-      <p>{{ t('common.loading') }}</p>
-    </div>
-
-    <!-- Пустой список без проектов -->
-    <div
-      v-else-if="
-        games.length === 0 && !searchQuery && statusFilter === 'all'
-      "
-      class="state-container empty-card"
-    >
-      <div class="empty-icon-wrap">
-        <Gamepad2 class="icon-lg" />
-      </div>
-      <h3>{{ t('projects.noProjects') }}</h3>
-      <p>
-        {{ t('projects.noProjectsDesc') }}
-      </p>
-      <button
-        class="btn btn-primary"
-        :disabled="creating"
-        @click="createNewGame"
-      >
-        <Plus v-if="!creating" class="icon-sm" />
-        <span v-else class="spinner-sm"></span>
-        {{ creating ? t('common.saving') : t('projects.createBtn') }}
-      </button>
-    </div>
-
-    <!-- Пустой список по результатам поиска -->
-    <div
-      v-else-if="filteredGames.length === 0"
-      class="state-container empty-card"
-    >
-      <Search class="icon-md text-muted" />
-      <h3>{{ t('common.empty') }}</h3>
-      <p>{{ t('stats.noData') }}</p>
-      <button class="btn btn-secondary btn-sm" @click="resetFilters">
-        {{ t('common.reset') }}
-      </button>
-    </div>
-
-    <!-- Основной табличный вид -->
-    <div v-else-if="viewMode === 'table'" class="table-container">
-      <table class="games-table">
-        <thead>
-          <tr>
-            <th class="col-game">{{ t('projects.projectNameLabel') }}</th>
-            <th class="col-status">{{ t('common.status') }}</th>
-            <th class="col-version">{{ t('common.version') }}</th>
-            <th class="col-date">{{ t('common.updated') }}</th>
-            <th class="col-links">Env</th>
-            <th class="col-actions">{{ t('common.actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="game in paginatedGames"
-            :key="game.id"
-            class="table-row"
-            @click="openProject(game.id)"
-          >
-            <!-- Колонка: Иконка + Название + ID -->
-            <td class="col-game">
-              <div class="game-cell">
-
-                <div class="game-avatar">
-                  <img
-                    v-if="game.icon_path"
-                    :src="getMediaUrl(game.icon_path)"
-                    alt="Icon"
-                    class="avatar-img"
-                  />
-                  <Gamepad2 v-else class="icon-sm avatar-fallback" />
-                </div>
-                <div class="game-info">
-                  <div class="game-title">
-                    {{ game.title_ru || game.title_en || 'Без названия' }}
-                  </div>
-                  <div class="game-meta">
-                    <span class="id-tag">ID: {{ game.id }}</span>
-                    <span
-                      v-if="game.title_en && game.title_ru"
-                      class="meta-sep"
-                      >•</span
-                    >
-                    <span
-                      v-if="game.title_en && game.title_ru"
-                      class="en-tag"
-                      >{{ game.title_en }}</span
-                    >
-                  </div>
-                </div>
-              </div>
-            </td>
-
-            <!-- Колонка: Статус -->
-            <td class="col-status">
-              <span
-                class="status-pill"
-                :class="statusClass(game.status)"
-              >
-                <span class="status-dot"></span>
-                {{ statusLabel(game.status) }}
-              </span>
-            </td>
-
-            <!-- Колонка: Версия сборки -->
-            <td class="col-version">
-              <span
-                v-if="game.active_build_version"
-                class="version-badge"
-              >
-                {{ game.active_build_version }}
-              </span>
-              <span v-else class="text-dim">—</span>
-            </td>
-
-            <!-- Колонка: Дата обновления -->
-            <td class="col-date">
-              <div class="date-cell">
-                <Clock class="icon-xs text-muted" />
-                <span>{{
-                  formatDate(game.updated_at || game.created_at)
-                }}</span>
-              </div>
-            </td>
-
-            <!-- Колонка: Быстрые ссылки Dev / Prod -->
-            <td class="col-links" @click.stop>
-              <div class="env-buttons">
-                <a
-                  v-if="game.dev_url"
-                  :href="game.dev_url"
-                  target="_blank"
-                  class="env-link env-dev"
-                  title="Запустить Dev-сборку в новой вкладке"
-                >
-                  <Play class="icon-xs" />
-                  Dev
-                  <ExternalLink class="icon-xxs" />
-                </a>
-                <span
-                  v-else
-                  class="env-placeholder"
-                  title="Сборка не загружена"
-                  >Dev —</span
-                >
-
-                <a
-                  v-if="game.prod_url && game.status === 3"
-                  :href="game.prod_url"
-                  target="_blank"
-                  class="env-link env-prod"
-                  title="Открыть опубликованную игру"
-                >
-                  <CheckCircle2 class="icon-xs" />
-                  Prod
-                  <ExternalLink class="icon-xxs" />
-                </a>
-              </div>
-            </td>
-
-            <!-- Колонка: Действия -->
-            <td class="col-actions" @click.stop>
-              <div class="action-buttons">
-                <button
-                  class="btn-icon"
-                  title="Редактировать проект"
-                  @click="openProject(game.id)"
-                >
-                  <Edit3 class="icon-xs" />
-                </button>
-                <button
-                  class="btn-icon text-danger-hover"
-                  title="Удалить проект"
-                  @click="confirmDeleteProject(game)"
-                >
-                  <Trash2 class="icon-xs" />
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Вид сетки -->
-    <div v-else class="projects-grid">
+      <!-- Пустой список по результатам поиска -->
       <div
-        v-for="game in paginatedGames"
-        :key="game.id"
-        class="card project-card card-hover"
-        @click="openProject(game.id)"
+        v-else-if="filteredGames.length === 0"
+        class="state-container empty-card"
       >
-        <div class="project-card-header">
-          <div class="game-avatar-card">
-            <img
-              v-if="game.icon_path"
-              :src="getMediaUrl(game.icon_path)"
-              alt="Icon"
-              class="avatar-img"
-            />
-            <Gamepad2 v-else class="icon-md avatar-fallback" />
-          </div>
-          <span class="status-pill" :class="statusClass(game.status)">
-            <span class="status-dot"></span>
-            {{ statusLabel(game.status) }}
-          </span>
-        </div>
+        <Search class="icon-md text-muted" />
+        <h3>{{ t('common.empty') }}</h3>
+        <p>{{ t('stats.noData') }}</p>
+        <button class="btn-reset" @click="resetFilters">
+          {{ t('common.reset') }}
+        </button>
+      </div>
 
-        <div class="project-card-body">
-          <h3 class="project-title">
-            {{ game.title_ru || game.title_en || 'Без названия' }}
-          </h3>
-          <p class="project-id-text">ID: {{ game.id }}</p>
-          <div class="project-meta-row">
-            <span
-              v-if="game.active_build_version"
-              class="version-badge"
-            >
-              {{ game.active_build_version }}
-            </span>
-            <span class="date-text">{{
-              formatDate(game.updated_at || game.created_at)
-            }}</span>
-          </div>
-        </div>
-
-        <div class="project-card-footer" @click.stop>
-          <div class="env-buttons">
-            <a
-              v-if="game.dev_url"
-              :href="game.dev_url"
-              target="_blank"
-              class="env-link env-dev"
-            >
-              <Play class="icon-xs" />
-              Dev
-            </a>
-            <a
-              v-if="game.prod_url && game.status === 3"
-              :href="game.prod_url"
-              target="_blank"
-              class="env-link env-prod"
-            >
-              <CheckCircle2 class="icon-xs" />
-              Prod
-            </a>
-          </div>
-          <div class="action-buttons">
-            <button
-              class="btn-icon"
-              title="Редактировать"
+      <!-- Основной табличный вид -->
+      <div v-else class="table-wrapper">
+        <table class="yandex-games-table">
+          <thead>
+            <tr>
+              <th class="col-game">{{ t('projects.projectNameLabel') }}</th>
+              <th class="col-date">{{ t('common.updated') }}</th>
+              <th class="col-status">{{ t('common.status') }}</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="game in paginatedGames"
+              :key="game.id"
+              class="table-row"
               @click="openProject(game.id)"
             >
-              <Edit3 class="icon-xs" />
-            </button>
-            <button
-              class="btn-icon text-danger-hover"
-              title="Удалить"
-              @click="confirmDeleteProject(game)"
-            >
-              <Trash2 class="icon-xs" />
-            </button>
-          </div>
-        </div>
+              <!-- 1 колонка: Игра (Иконка / Mock Draft + 2 строки: статус и название) -->
+              <td class="col-game">
+                <div class="game-cell">
+                  <div class="game-icon-box">
+                    <img
+                      v-if="game.icon_path"
+                      :src="getMediaUrl(game.icon_path)"
+                      alt="Icon"
+                      class="game-icon-img"
+                    />
+                    <div v-else class="game-icon-mock">
+                      <span>Draft</span>
+                    </div>
+                  </div>
+                  <div class="game-text">
+                    <div class="game-type-label">
+                      {{ getGameTypeLabel(game) }}
+                    </div>
+                    <div class="game-title">
+                      {{ game.title_ru || game.title_en || '—' }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- 2 колонка: Дата обновления -->
+              <td class="col-date">
+                <span class="date-text">
+                  {{ formatProjectDate(game.updated_at || game.created_at) }}
+                </span>
+              </td>
+
+              <!-- 3 колонка: Статус -->
+              <td class="col-status">
+                <span
+                  class="status-pill"
+                  :class="statusClass(game.status)"
+                >
+                  {{ statusLabel(game.status) }}
+                </span>
+              </td>
+
+              <!-- Быстрые действия / Ссылки -->
+              <td class="col-actions" @click.stop>
+                <div class="row-actions">
+                  <a
+                    v-if="game.dev_url"
+                    :href="game.dev_url"
+                    target="_blank"
+                    class="action-link"
+                    title="Dev-версия"
+                  >
+                    <Play class="icon-xs" />
+                  </a>
+                  <a
+                    v-if="game.prod_url && game.status === 3"
+                    :href="game.prod_url"
+                    target="_blank"
+                    class="action-link"
+                    title="Prod-версия"
+                  >
+                    <ExternalLink class="icon-xs" />
+                  </a>
+                  <button
+                    class="btn-icon text-danger-hover"
+                    title="Удалить проект"
+                    @click="confirmDeleteProject(game)"
+                  >
+                    <Trash2 class="icon-xs" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Пагинация -->
+    <!-- Пагинация прикреплена к низу страницы по центру в стиле Яндекс.Консоли -->
     <div
-      v-if="totalPages > 1 || filteredGames.length > pageSize"
-      class="pagination-bar"
+      v-if="filteredGames.length > 0"
+      class="pagination-container"
     >
-      <div class="pagination-info">
-        Показано {{ pageStart + 1 }}–{{
-          Math.min(pageStart + pageSize, filteredGames.length)
-        }}
-        из {{ filteredGames.length }}
-      </div>
-
-      <div class="pagination-controls">
+      <div class="pagination-center">
         <button
-          class="page-btn"
+          class="page-nav-btn"
           :disabled="currentPage === 1"
           title="Первая страница"
           @click="currentPage = 1"
@@ -324,7 +166,7 @@
           <ChevronsLeft class="icon-sm" />
         </button>
         <button
-          class="page-btn"
+          class="page-nav-btn"
           :disabled="currentPage === 1"
           title="Предыдущая"
           @click="currentPage--"
@@ -332,22 +174,24 @@
           <ChevronLeft class="icon-sm" />
         </button>
 
-        <button
-          v-for="page in visiblePages"
-          :key="page"
-          class="page-btn"
-          :class="{
-            active: currentPage === page,
-            ellipsis: page === '...',
-          }"
-          :disabled="page === '...'"
-          @click="typeof page === 'number' && (currentPage = page)"
-        >
-          {{ page }}
-        </button>
+        <div class="page-numbers">
+          <button
+            v-for="page in visiblePages"
+            :key="page"
+            class="page-num-btn"
+            :class="{
+              active: currentPage === page,
+              ellipsis: page === '...',
+            }"
+            :disabled="page === '...'"
+            @click="typeof page === 'number' && (currentPage = page)"
+          >
+            {{ page }}
+          </button>
+        </div>
 
         <button
-          class="page-btn"
+          class="page-nav-btn"
           :disabled="currentPage === totalPages"
           title="Следующая"
           @click="currentPage++"
@@ -355,21 +199,22 @@
           <ChevronRight class="icon-sm" />
         </button>
         <button
-          class="page-btn"
+          class="page-nav-btn"
           :disabled="currentPage === totalPages"
           title="Последняя страница"
           @click="currentPage = totalPages"
         >
           <ChevronsRight class="icon-sm" />
         </button>
-      </div>
 
-      <div class="page-size-selector">
-        <select v-model="pageSize" class="size-select">
-          <option :value="10">10 на стр.</option>
-          <option :value="25">25 на стр.</option>
-          <option :value="50">50 на стр.</option>
-        </select>
+        <div class="page-size-wrap">
+          <select v-model="pageSize" class="page-size-select">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+          <ChevronDown class="icon-xs select-caret" />
+        </div>
       </div>
     </div>
   </div>
@@ -383,16 +228,14 @@ import {
   Plus,
   Gamepad2,
   Search,
-  Clock,
   Play,
-  CheckCircle2,
-  Edit3,
   Trash2,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ChevronDown,
 } from 'lucide-vue-next';
 import {
   listProjects,
@@ -404,7 +247,7 @@ import {
   getMediaUrl,
 } from '@/entities/project';
 import { ProjectFilters } from '@/features/manage-projects';
-import { formatDate, showToast } from '@/shared/lib';
+import { formatProjectDate, showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -416,10 +259,16 @@ const creating = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('all');
 const sortBy = ref('newest');
-const viewMode = ref('table');
 
 const currentPage = ref(1);
 const pageSize = ref(10);
+
+function getGameTypeLabel(game) {
+  if (game.status === 3) return t('projects.published');
+  if (game.status === 2) return t('projects.moderation');
+  if (game.status === 4) return t('projects.rejected');
+  return t('projects.draft');
+}
 
 async function loadProjects() {
   loading.value = true;
@@ -450,7 +299,6 @@ const createNewGame = async () => {
     creating.value = false;
   }
 };
-
 
 const openProject = (id) => {
   router.push(`/projects/${id}/draft`);
@@ -551,142 +399,141 @@ onMounted(loadProjects);
 </script>
 
 <style scoped>
-.page-container {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 32px 24px 64px;
-}
-
-.header-row {
+.projects-page-container {
+  width: 100%;
+  max-width: 100%;
+  min-height: calc(100vh - 60px);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
-  margin-bottom: 24px;
+  padding: 24px 32px;
+  box-sizing: border-box;
 }
 
-.page-subtitle {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-tertiary);
-  margin-bottom: 4px;
-}
-
-.title-with-count {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.title-with-count h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin: 0;
-  color: var(--text-main);
-}
-
-.count-badge {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 12px;
-}
-
-.spinner-sm {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-
-.spinner-md {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-color);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.main-content-wrap {
+  width: 100%;
 }
 
 .state-container {
   padding: 60px 20px;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-tertiary, #8b949e);
 }
 
 .empty-card {
-  background: var(--bg-card);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
+  background: var(--bg-card, #161b22);
+  border: 1px dashed var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  padding: 48px 24px;
 }
 
 .empty-icon-wrap {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary, #21262d);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary);
-  margin-bottom: 8px;
+  color: var(--primary, #58a6ff);
+  margin-bottom: 6px;
 }
 
-.table-container {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+.btn-add-game-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-add-game-primary:hover {
+  background: var(--primary-hover, #79c0ff);
+}
+
+.btn-reset {
+  padding: 6px 14px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.table-wrapper {
+  width: 100%;
   overflow-x: auto;
-  box-shadow: var(--shadow-sm);
 }
 
-.games-table {
+.yandex-games-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
 
-.games-table th {
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--border-color);
+.yandex-games-table th {
+  color: var(--text-tertiary, #8b949e);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #30363d);
+  background: transparent;
+  white-space: nowrap;
 }
 
-.games-table td {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
+.yandex-games-table th.col-game {
+  width: 48%;
+  padding-left: 8px;
+}
+
+.yandex-games-table th.col-date {
+  width: 26%;
+}
+
+.yandex-games-table th.col-status {
+  width: 16%;
+}
+
+.yandex-games-table th.col-actions {
+  width: 10%;
+  text-align: right;
+  padding-right: 12px;
 }
 
 .table-row {
   cursor: pointer;
+  border-bottom: 1px solid var(--border, #21262d);
   transition: background-color 0.15s ease;
 }
 
 .table-row:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary, #161b22);
+}
+
+.table-row td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.table-row td.col-game {
+  padding-left: 8px;
+}
+
+.table-row td.col-actions {
+  padding-right: 12px;
+  text-align: right;
 }
 
 .game-cell {
@@ -695,12 +542,12 @@ onMounted(loadProjects);
   gap: 14px;
 }
 
-.game-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+.game-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -708,275 +555,262 @@ onMounted(loadProjects);
   flex-shrink: 0;
 }
 
-.avatar-img {
+.game-icon-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.avatar-fallback {
-  color: var(--text-muted);
+.game-icon-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-tertiary, #8b949e);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.game-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-type-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-tertiary, #8b949e);
+  line-height: 1.3;
 }
 
 .game-title {
+  font-size: 14px;
   font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text-main);
-  margin-bottom: 3px;
+  color: var(--text-main, #f0f6fc);
+  line-height: 1.3;
 }
 
-.game-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
+.date-text {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted, #b0b8c4);
 }
 
 .status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
+  justify-content: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-muted, #b0b8c4);
+  white-space: nowrap;
 }
 
 .status-draft {
-  background: var(--bg-tertiary);
-  color: var(--text-muted);
+  background: var(--bg-tertiary, #21262d);
+  border-color: var(--border, #30363d);
+  color: var(--text-muted, #b0b8c4);
 }
 
 .status-pending {
-  background: var(--warning-light);
-  color: var(--warning);
+  background: rgba(245, 176, 39, 0.12);
+  border-color: rgba(245, 176, 39, 0.35);
+  color: #f5b027;
 }
 
 .status-published {
-  background: var(--success-light);
-  color: var(--success);
+  background: rgba(46, 204, 113, 0.12);
+  border-color: rgba(46, 204, 113, 0.35);
+  color: #2ecc71;
 }
 
 .status-rejected {
-  background: var(--danger-light);
-  color: var(--danger);
+  background: rgba(248, 81, 73, 0.12);
+  border-color: rgba(248, 81, 73, 0.35);
+  color: #f85149;
 }
 
-.version-badge {
-  font-family: monospace;
-  font-size: 0.8rem;
-  background: var(--bg-card);
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-}
-
-.date-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.env-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.env-link {
+.row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
-
-.env-link:hover {
-  opacity: 0.8;
-}
-
-.env-dev {
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.env-prod {
-  background: var(--success-light);
-  color: var(--success);
-}
-
-.env-placeholder {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-}
-
-.action-buttons {
-  display: flex;
   gap: 8px;
+}
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-tertiary, #8b949e);
+  transition: all 0.15s;
+}
+
+.action-link:hover {
+  background: var(--bg-secondary, #161b22);
+  color: var(--text-main, #f0f6fc);
+  border-color: var(--border-secondary, #484f58);
 }
 
 .btn-icon {
   background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: none;
   padding: 6px;
   cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
+  color: var(--text-tertiary, #8b949e);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
   transition: all 0.15s;
 }
 
 .btn-icon:hover {
-  color: var(--text-main);
-  background: var(--bg-card);
+  color: var(--text-main, #f0f6fc);
+  background: var(--bg-tertiary, #21262d);
 }
 
 .text-danger-hover:hover {
-  color: var(--danger);
-  border-color: var(--danger);
+  color: var(--danger, #f85149) !important;
 }
 
-/* Grid mode */
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.project-card {
-  cursor: pointer;
-  padding: 20px;
+/* Пагинация прикреплена к низу */
+.pagination-container {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.project-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.game-avatar-card {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  overflow: hidden;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 32px;
+  padding-bottom: 8px;
+  width: 100%;
 }
 
-.project-title {
-  margin: 0 0 4px 0;
-  font-size: 1.05rem;
-}
-
-.project-id-text {
-  font-size: 0.8rem;
-  color: var(--text-tertiary);
-  margin: 0 0 8px 0;
-}
-
-.project-meta-row {
+.pagination-center {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
-.date-text {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.project-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-/* Pagination */
-.pagination-bar {
+.page-numbers {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.pagination-info {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.pagination-controls {
-  display: flex;
   gap: 4px;
 }
 
-.page-btn {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-  color: var(--text-main);
-  cursor: pointer;
-  font-size: 0.85rem;
-  display: flex;
+.page-nav-btn,
+.page-num-btn {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 4px;
+  color: var(--text-muted, #8b949e);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: all 0.15s;
 }
 
-.page-btn:hover:not(:disabled) {
-  background: var(--bg-secondary);
-  border-color: var(--primary);
+.page-nav-btn:hover:not(:disabled),
+.page-num-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary, #21262d);
+  border-color: var(--border-secondary, #484f58);
+  color: var(--text-main, #f0f6fc);
 }
 
-.page-btn.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+.page-num-btn.active {
+  background: #2b313a;
+  border-color: #484f58;
+  color: #ffffff;
+  font-weight: 600;
 }
 
-.page-btn:disabled {
-  opacity: 0.4;
+.page-nav-btn:disabled {
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
-.page-btn.ellipsis {
+.page-num-btn.ellipsis {
   border: none;
   background: none;
+  cursor: default;
+  color: var(--text-tertiary, #6e7681);
 }
 
-.size-select {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 0.85rem;
+.page-size-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.page-size-select {
+  height: 32px;
+  min-width: 62px;
+  padding: 0 26px 0 12px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 4px;
+  color: var(--text-muted, #8b949e);
+  font-size: 13px;
   outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s;
+}
+
+.page-size-select:focus {
+  border-color: var(--primary, #58a6ff);
+}
+
+.select-caret {
+  position: absolute;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-top-color: #000000;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+.spinner-md {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #30363d);
+  border-top-color: #f5b027;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

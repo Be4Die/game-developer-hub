@@ -10,12 +10,12 @@ export function statusClass(status) {
 export function statusLabel(status) {
   const t = i18n.global.t;
   const map = {
-    1: t('projects.draft'),
+    1: t('projects.created'),
     2: t('projects.moderation'),
     3: t('projects.published'),
     4: t('projects.rejected'),
   };
-  return map[status] || t('projects.draft');
+  return map[status] || t('projects.created');
 }
 
 

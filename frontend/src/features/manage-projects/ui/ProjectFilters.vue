@@ -1,41 +1,50 @@
 <template>
-  <div class="toolbar-card">
-    <div class="search-box">
-      <Search class="icon-sm search-icon" />
-      <input
-        type="text"
-        :value="searchQuery"
-        @input="$emit('update:searchQuery', $event.target.value)"
-        :placeholder="t('projects.searchPlaceholder')"
-        class="search-input"
-      />
-      <button
-        v-if="searchQuery"
-        class="clear-btn"
-        @click="$emit('update:searchQuery', '')"
-      >
-        <X class="icon-xs" />
-      </button>
+  <div class="filters-toolbar">
+    <!-- Поле фильтрации по названию (растягивается на всё доступное пространство) -->
+    <div class="filter-field field-name">
+      <label class="field-label">{{ t('common.name') }}</label>
+      <div class="input-wrapper">
+        <input
+          type="text"
+          :value="searchQuery"
+          @input="$emit('update:searchQuery', $event.target.value)"
+          :placeholder="t('common.name')"
+          class="filter-input"
+        />
+        <button
+          v-if="searchQuery"
+          class="clear-input-btn"
+          title="Очистить"
+          @click="$emit('update:searchQuery', '')"
+        >
+          <X class="icon-xs" />
+        </button>
+      </div>
     </div>
 
-    <div class="filters-group">
-      <div class="filter-item">
-        <label class="filter-label">{{ t('common.status') }}:</label>
+    <!-- Селектор статуса -->
+    <div class="filter-field field-status">
+      <label class="field-label">{{ t('common.status') }}</label>
+      <div class="select-wrapper">
         <select
           :value="statusFilter"
           @change="$emit('update:statusFilter', $event.target.value)"
           class="filter-select"
         >
-          <option value="all">{{ t('projects.allStatuses') }}</option>
+          <option value="all">—</option>
           <option value="draft">{{ t('projects.draft') }}</option>
           <option value="pending">{{ t('projects.moderation') }}</option>
-          <option value="published">{{ t('projects.approved') }}</option>
+          <option value="published">{{ t('projects.published') }}</option>
           <option value="rejected">{{ t('projects.rejected') }}</option>
         </select>
+        <ChevronDown class="icon-xs select-arrow" />
       </div>
+    </div>
 
-      <div class="filter-item">
-        <label class="filter-label">{{ t('common.actions') }}:</label>
+    <!-- Селектор сортировки -->
+    <div class="filter-field field-sort">
+      <label class="field-label">{{ t('common.actions') }}</label>
+      <div class="select-wrapper">
         <select
           :value="sortBy"
           @change="$emit('update:sortBy', $event.target.value)"
@@ -45,33 +54,36 @@
           <option value="oldest">{{ t('common.created') }} ↑</option>
           <option value="title">{{ t('common.name') }} (A–Z)</option>
         </select>
-      </div>
-
-      <div class="view-toggle">
-        <button
-          class="toggle-btn"
-          :class="{ active: viewMode === 'table' }"
-          :title="t('servers.tabs.overview')"
-          @click="$emit('update:viewMode', 'table')"
-        >
-          <List class="icon-sm" />
-        </button>
-        <button
-          class="toggle-btn"
-          :class="{ active: viewMode === 'grid' }"
-          :title="t('projects.title')"
-          @click="$emit('update:viewMode', 'grid')"
-        >
-          <LayoutGrid class="icon-sm" />
-        </button>
+        <ChevronDown class="icon-xs select-arrow" />
       </div>
     </div>
+
+    <!-- Кнопка сброса фильтров -->
+    <button
+      v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
+      class="btn-reset-filters"
+      @click="$emit('reset')"
+      title="Сбросить фильтры"
+    >
+      <RotateCcw class="icon-xs" />
+      <span>{{ t('common.reset') }}</span>
+    </button>
+
+    <!-- Кнопка создания игры -->
+    <button
+      class="btn-add-game"
+      :disabled="creating"
+      @click="$emit('create')"
+    >
+      <span v-if="creating" class="spinner-btn"></span>
+      <span>{{ creating ? t('common.saving') : t('projects.createBtn') }}</span>
+    </button>
   </div>
 </template>
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import { Search, X, List, LayoutGrid } from 'lucide-vue-next';
+import { X, ChevronDown, RotateCcw } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
@@ -79,125 +91,201 @@ defineProps({
   searchQuery: { type: String, default: '' },
   statusFilter: { type: String, default: 'all' },
   sortBy: { type: String, default: 'newest' },
-  viewMode: { type: String, default: 'table' },
+  creating: { type: Boolean, default: false },
 });
 
 defineEmits([
   'update:searchQuery',
   'update:statusFilter',
   'update:sortBy',
-  'update:viewMode',
+  'reset',
+  'create',
 ]);
 </script>
 
-
 <style scoped>
-.toolbar-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 14px 18px;
+.filters-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: flex-end;
   gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
-.search-box {
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-name {
+  flex: 1;
+  min-width: 220px;
+}
+
+.field-status {
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.field-sort {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
+  letter-spacing: 0.1px;
+}
+
+.input-wrapper,
+.select-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  flex: 1;
-  min-width: 260px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  color: var(--text-tertiary);
-}
-
-.search-input {
   width: 100%;
-  padding: 8px 32px 8px 36px;
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  font-size: 0.9rem;
+}
+
+.filter-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 12px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
 }
 
-.search-input:focus {
-  border-color: var(--primary);
+.filter-input:focus {
+  border-color: var(--primary, #58a6ff);
 }
 
-.clear-btn {
+.filter-input::placeholder {
+  color: var(--text-tertiary, #6e7681);
+}
+
+.clear-input-btn {
   position: absolute;
-  right: 10px;
+  right: 8px;
   background: transparent;
   border: none;
-  color: var(--text-tertiary);
+  color: var(--text-tertiary, #8b949e);
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-.filters-group {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.filter-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-label {
-  font-size: 0.85rem;
-  color: var(--text-tertiary);
-  font-weight: 500;
+.clear-input-btn:hover {
+  color: var(--text-main, #f0f6fc);
 }
 
 .filter-select {
-  padding: 7px 12px;
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  font-size: 0.85rem;
+  width: 100%;
+  height: 36px;
+  padding: 0 30px 0 12px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
   outline: none;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s;
 }
 
-.view-toggle {
-  display: flex;
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+.filter-select:focus {
+  border-color: var(--primary, #58a6ff);
 }
 
-.toggle-btn {
-  background: transparent;
-  border: none;
-  padding: 6px 10px;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: flex;
+.select-arrow {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.btn-reset-filters {
+  display: inline-flex;
   align-items: center;
-  transition: all 0.2s;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #b0b8c4);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
 }
 
-.toggle-btn.active {
-  background: var(--bg-tertiary);
-  color: var(--text-main);
+.btn-reset-filters:hover {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-main, #f0f6fc);
+  border-color: var(--border-secondary, #484f58);
+}
+
+.btn-add-game {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 18px;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.btn-add-game:hover {
+  background: var(--primary-hover, #79c0ff);
+}
+
+.btn-add-game:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-btn {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 800px) {
+  .filters-toolbar {
+    flex-wrap: wrap;
+  }
+  .field-name {
+    width: 100%;
+    min-width: 100%;
+  }
 }
 </style>

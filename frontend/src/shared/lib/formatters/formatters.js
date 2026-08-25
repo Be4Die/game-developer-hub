@@ -15,6 +15,23 @@ export function formatDate(dateStr) {
   }
 }
 
+export function formatProjectDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year}, в ${hours}:${minutes}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 export function formatDateTime(dateStr) {
   if (!dateStr) return '—';
   try {
