@@ -23,169 +23,166 @@
         </div>
       </section>
 
-      <!-- 2-колоночная адаптивная сетка для эффективного использования горизонтали -->
+      <!-- 2-колоночная адаптивная сетка: строка 1 (Имя + Язык), строка 2 (Пароль + Тема) -->
       <div class="profile-grid">
-        <!-- Левая колонка: Настройки профиля и безопасность -->
-        <div class="profile-column">
-          <!-- Изменение отображаемого имени (в одну строку) -->
-          <section class="profile-card" v-if="!isModeratorOrAdmin">
-            <h2 class="card-title">
-              <UserCheck class="icon-sm text-primary" />
-              {{ t('profile.editProfile') }}
-            </h2>
+        <!-- РЯД 1 / КОЛОНКА 1: Изменение отображаемого имени -->
+        <section class="profile-card card-name" v-if="!isModeratorOrAdmin">
+          <h2 class="card-title">
+            <UserCheck class="icon-sm text-primary" />
+            {{ t('profile.editProfile') }}
+          </h2>
 
-            <form @submit.prevent="handleUpdateDisplayName" class="inline-name-form">
+          <form @submit.prevent="handleUpdateDisplayName" class="inline-name-form">
+            <input
+              id="displayNameInput"
+              type="text"
+              v-model="displayNameForm"
+              class="form-input field-name-input"
+              :placeholder="t('auth.displayNamePlaceholder')"
+              :disabled="nameSaving"
+              required
+            />
+            <button
+              type="submit"
+              class="btn-primary btn-save-name"
+              :disabled="nameSaving || !isNameChanged"
+            >
+              <Loader2 class="icon-sm spin" v-if="nameSaving" />
+              <Check class="icon-sm" v-else />
+              <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
+            </button>
+          </form>
+        </section>
+
+        <!-- Для модераторов/администраторов вместо имени (РЯД 1 / КОЛОНКА 1) -->
+        <div class="info-alert card-name" v-else>
+          <Info class="icon-sm alert-icon" />
+          <div class="alert-text">
+            {{ t('profile.readonlyNotice') }}
+          </div>
+        </div>
+
+        <!-- РЯД 1 / КОЛОНКА 2: Язык интерфейса -->
+        <section class="profile-card card-lang">
+          <h2 class="card-title">
+            <Languages class="icon-sm text-primary" />
+            {{ t('profile.interfaceLanguage') }}
+          </h2>
+
+          <div class="languages-grid">
+            <button
+              type="button"
+              class="lang-card"
+              :class="{ active: currentLocale === 'ru' }"
+              @click="selectLanguage('ru')"
+            >
+              <span class="lang-flag">🇷🇺</span>
+              <div class="lang-text">
+                <span class="lang-name">Русский</span>
+                <span class="lang-sub">Russian</span>
+              </div>
+              <Check class="icon-sm lang-check" v-if="currentLocale === 'ru'" />
+            </button>
+
+            <button
+              type="button"
+              class="lang-card"
+              :class="{ active: currentLocale === 'en' }"
+              @click="selectLanguage('en')"
+            >
+              <span class="lang-flag">🇬🇧</span>
+              <div class="lang-text">
+                <span class="lang-name">English</span>
+                <span class="lang-sub">Английский</span>
+              </div>
+              <Check class="icon-sm lang-check" v-if="currentLocale === 'en'" />
+            </button>
+          </div>
+        </section>
+
+        <!-- РЯД 2 / КОЛОНКА 1: Смена пароля -->
+        <section class="profile-card card-password" v-if="!isModeratorOrAdmin">
+          <h2 class="card-title">
+            <Lock class="icon-sm text-primary" />
+            {{ t('profile.security') }}
+          </h2>
+
+          <form @submit.prevent="handleChangePassword" class="password-form">
+            <div class="form-group">
+              <label class="form-label" for="currentPasswordInput">
+                {{ t('auth.currentPassword') }}
+              </label>
               <input
-                id="displayNameInput"
-                type="text"
-                v-model="displayNameForm"
-                class="form-input field-name-input"
-                :placeholder="t('auth.displayNamePlaceholder')"
-                :disabled="nameSaving"
+                id="currentPasswordInput"
+                type="password"
+                v-model="passwordForm.currentPassword"
+                class="form-input"
+                :placeholder="t('auth.passwordPlaceholder')"
+                :disabled="passwordSaving"
                 required
               />
-              <button
-                type="submit"
-                class="btn-primary btn-save-name"
-                :disabled="nameSaving || !isNameChanged"
-              >
-                <Loader2 class="icon-sm spin" v-if="nameSaving" />
-                <Check class="icon-sm" v-else />
-                <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
-              </button>
-            </form>
-          </section>
+            </div>
 
-          <!-- Смена пароля -->
-          <section class="profile-card" v-if="!isModeratorOrAdmin">
-            <h2 class="card-title">
-              <Lock class="icon-sm text-primary" />
-              {{ t('profile.security') }}
-            </h2>
-
-            <form @submit.prevent="handleChangePassword" class="password-form">
+            <div class="form-row-2">
               <div class="form-group">
-                <label class="form-label" for="currentPasswordInput">
-                  {{ t('auth.currentPassword') }}
+                <label class="form-label" for="newPasswordInput">
+                  {{ t('auth.newPassword') }}
                 </label>
                 <input
-                  id="currentPasswordInput"
+                  id="newPasswordInput"
                   type="password"
-                  v-model="passwordForm.currentPassword"
+                  v-model="passwordForm.newPassword"
                   class="form-input"
                   :placeholder="t('auth.passwordPlaceholder')"
                   :disabled="passwordSaving"
+                  minlength="6"
                   required
                 />
               </div>
 
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label class="form-label" for="newPasswordInput">
-                    {{ t('auth.newPassword') }}
-                  </label>
-                  <input
-                    id="newPasswordInput"
-                    type="password"
-                    v-model="passwordForm.newPassword"
-                    class="form-input"
-                    :placeholder="t('auth.passwordPlaceholder')"
-                    :disabled="passwordSaving"
-                    minlength="6"
-                    required
-                  />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label" for="confirmPasswordInput">
-                    {{ t('auth.confirmPassword') }}
-                  </label>
-                  <input
-                    id="confirmPasswordInput"
-                    type="password"
-                    v-model="passwordForm.confirmPassword"
-                    class="form-input"
-                    :placeholder="t('auth.passwordPlaceholder')"
-                    :disabled="passwordSaving"
-                    minlength="6"
-                    required
-                  />
-                </div>
+              <div class="form-group">
+                <label class="form-label" for="confirmPasswordInput">
+                  {{ t('auth.confirmPassword') }}
+                </label>
+                <input
+                  id="confirmPasswordInput"
+                  type="password"
+                  v-model="passwordForm.confirmPassword"
+                  class="form-input"
+                  :placeholder="t('auth.passwordPlaceholder')"
+                  :disabled="passwordSaving"
+                  minlength="6"
+                  required
+                />
               </div>
-
-              <div class="form-actions-full">
-                <button
-                  type="submit"
-                  class="btn-primary btn-password-submit"
-                  :disabled="passwordSaving || !isPasswordFormFilled"
-                >
-                  <Loader2 class="icon-sm spin" v-if="passwordSaving" />
-                  <Key class="icon-sm" v-else />
-                  <span>{{ passwordSaving ? t('common.saving') : t('profile.changePasswordBtn') }}</span>
-                </button>
-              </div>
-            </form>
-          </section>
-
-          <!-- Уведомление для модераторов/администраторов -->
-          <div class="info-alert" v-if="isModeratorOrAdmin">
-            <Info class="icon-sm alert-icon" />
-            <div class="alert-text">
-              {{ t('profile.readonlyNotice') }}
             </div>
-          </div>
-        </div>
 
-        <!-- Правая колонка: Язык и Тема оформления -->
-        <div class="profile-column">
-          <!-- Язык интерфейса -->
-          <section class="profile-card">
-            <h2 class="card-title">
-              <Languages class="icon-sm text-primary" />
-              {{ t('profile.interfaceLanguage') }}
-            </h2>
-
-            <div class="languages-grid">
+            <div class="form-actions-full">
               <button
-                type="button"
-                class="lang-card"
-                :class="{ active: currentLocale === 'ru' }"
-                @click="selectLanguage('ru')"
+                type="submit"
+                class="btn-primary btn-password-submit"
+                :disabled="passwordSaving || !isPasswordFormFilled"
               >
-                <span class="lang-flag">🇷🇺</span>
-                <div class="lang-text">
-                  <span class="lang-name">Русский</span>
-                  <span class="lang-sub">Russian</span>
-                </div>
-                <Check class="icon-sm lang-check" v-if="currentLocale === 'ru'" />
-              </button>
-
-              <button
-                type="button"
-                class="lang-card"
-                :class="{ active: currentLocale === 'en' }"
-                @click="selectLanguage('en')"
-              >
-                <span class="lang-flag">🇬🇧</span>
-                <div class="lang-text">
-                  <span class="lang-name">English</span>
-                  <span class="lang-sub">Английский</span>
-                </div>
-                <Check class="icon-sm lang-check" v-if="currentLocale === 'en'" />
+                <Loader2 class="icon-sm spin" v-if="passwordSaving" />
+                <Key class="icon-sm" v-else />
+                <span>{{ passwordSaving ? t('common.saving') : t('profile.changePasswordBtn') }}</span>
               </button>
             </div>
-          </section>
+          </form>
+        </section>
 
-          <!-- Тема оформления -->
-          <section class="profile-card">
-            <h2 class="card-title">
-              <Palette class="icon-sm text-primary" />
-              {{ t('profile.theme') }}
-            </h2>
+        <!-- Пустой заполнитель для модераторов/админов если нужно -->
+        <div v-else></div>
 
-            <ThemeCardSelector />
-          </section>
-        </div>
+        <!-- РЯД 2 / КОЛОНКА 2: Тема оформления -->
+        <section class="profile-card card-theme">
+          <h2 class="card-title">
+            <Palette class="icon-sm text-primary" />
+            {{ t('profile.theme') }}
+          </h2>
+
+          <ThemeCardSelector class="theme-selector-wrap" />
+        </section>
       </div>
     </div>
   </div>
@@ -422,19 +419,12 @@ function selectLanguage(lang) {
   gap: 8px;
 }
 
-/* 2-колоночная сетка на всю ширину страницы */
+/* 2-колоночная сетка: равная высота элементов по строкам */
 .profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  align-items: start;
   width: 100%;
-}
-
-.profile-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 
 .profile-card {
@@ -443,6 +433,8 @@ function selectLanguage(lang) {
   border-radius: var(--radius-md, 8px);
   padding: 24px 28px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-title {
@@ -453,6 +445,58 @@ function selectLanguage(lang) {
   font-weight: 600;
   color: var(--text-main);
   margin: 0 0 20px 0;
+}
+
+/* Строка 1: Карточка имени и Карточка языка */
+.card-name {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-name .inline-name-form {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.card-lang {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-lang .languages-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+/* Строка 2: Карточка пароля и Карточка темы */
+.card-password {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-password .password-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-theme {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-theme .theme-selector-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Однострочная форма изменения имени */

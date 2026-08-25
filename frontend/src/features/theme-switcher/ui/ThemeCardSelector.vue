@@ -58,28 +58,36 @@ function selectTheme(value) {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  height: 100%;
+  flex: 1;
 }
 
 .theme-card {
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   transition: all 0.2s;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
 }
 
 .theme-card:hover {
-  border-color: var(--primary);
+  border-color: var(--border-secondary);
 }
 
 .theme-card.active {
   border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary);
+  background: var(--bg-card);
 }
 
 .theme-preview {
-  height: 140px;
-  padding: 10px;
+  flex: 1;
+  min-height: 140px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -90,7 +98,7 @@ function selectTheme(value) {
 }
 
 .theme-preview-light .preview-header {
-  height: 16px;
+  height: 18px;
   background: #FFFFFF;
   border-radius: 4px;
   border: 1px solid #E5E7EB;
@@ -101,14 +109,14 @@ function selectTheme(value) {
   background: #FFFFFF;
   border-radius: 4px;
   border: 1px solid #E5E7EB;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .theme-preview-light .preview-card {
-  height: 16px;
+  height: 20px;
   background: #F3F4F6;
   border-radius: 3px;
 }
@@ -124,36 +132,36 @@ function selectTheme(value) {
 }
 
 .theme-preview-dark {
-  background: #1F2937;
+  background: #181b20;
 }
 
 .theme-preview-dark .preview-header {
-  height: 16px;
-  background: #111827;
+  height: 18px;
+  background: #21262d;
   border-radius: 4px;
-  border: 1px solid #374151;
+  border: 1px solid #30363d;
 }
 
 .theme-preview-dark .preview-body {
   flex: 1;
-  background: #111827;
+  background: #21262d;
   border-radius: 4px;
-  border: 1px solid #374151;
-  padding: 6px;
+  border: 1px solid #30363d;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .theme-preview-dark .preview-card {
-  height: 16px;
-  background: #1F2937;
+  height: 20px;
+  background: #161b22;
   border-radius: 3px;
 }
 
 .theme-preview-dark .preview-line {
   height: 6px;
-  background: #374151;
+  background: #30363d;
   border-radius: 3px;
 }
 
@@ -165,10 +173,12 @@ function selectTheme(value) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--bg-secondary);
   font-weight: 500;
+  font-size: 0.92rem;
   color: var(--text-main);
+  border-top: 1px solid var(--border);
 }
 
 .theme-icon {

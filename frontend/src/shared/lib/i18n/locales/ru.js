@@ -97,7 +97,7 @@ export default {
     studioOrName: 'Название студии или имя разработчика',
     updateProfileBtn: 'Сохранить имя',
     profileUpdated: 'Профиль успешно обновлен',
-    security: 'Безопасность и пароль',
+    security: 'Смена пароля',
     securityDesc: 'Рекомендуется использовать надежный пароль длиной не менее 8 символов.',
     changePasswordBtn: 'Обновить пароль',
     passwordChanged: 'Пароль успешно изменен',

@@ -97,7 +97,7 @@ export default {
     studioOrName: 'Studio or Developer Name',
     updateProfileBtn: 'Save Name',
     profileUpdated: 'Profile updated successfully',
-    security: 'Security & Password',
+    security: 'Change Password',
     securityDesc: 'We recommend using a strong password with at least 8 characters.',
     changePasswordBtn: 'Update Password',
     passwordChanged: 'Password changed successfully',
