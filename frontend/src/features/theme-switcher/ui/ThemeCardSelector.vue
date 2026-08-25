@@ -78,11 +78,11 @@ function selectTheme(value) {
 }
 
 .theme-preview {
-  height: 120px;
-  padding: 8px;
+  height: 140px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .theme-preview-light {

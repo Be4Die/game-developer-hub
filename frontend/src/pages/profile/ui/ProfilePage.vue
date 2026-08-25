@@ -113,10 +113,10 @@
                 </div>
               </div>
 
-              <div class="form-actions">
+              <div class="form-actions-full">
                 <button
                   type="submit"
-                  class="btn-primary"
+                  class="btn-primary btn-password-submit"
                   :disabled="passwordSaving || !isPasswordFormFilled"
                 >
                   <Loader2 class="icon-sm spin" v-if="passwordSaving" />
@@ -339,6 +339,7 @@ function selectLanguage(lang) {
 
 <style scoped>
 .profile-page {
+  width: 100%;
   min-height: calc(100vh - 60px);
   background: var(--bg-app);
   padding: 24px 32px 48px;
@@ -346,14 +347,16 @@ function selectLanguage(lang) {
 }
 
 .profile-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .user-info-card {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -361,8 +364,9 @@ function selectLanguage(lang) {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 8px);
-  padding: 16px 24px;
+  padding: 20px 28px;
   flex-wrap: wrap;
+  box-sizing: border-box;
 }
 
 .user-main-info {
@@ -373,7 +377,7 @@ function selectLanguage(lang) {
 }
 
 .user-title {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-main);
 }
@@ -382,9 +386,9 @@ function selectLanguage(lang) {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -406,47 +410,49 @@ function selectLanguage(lang) {
 .user-meta-details {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
 }
 
 .detail-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* 2-колоночная сетка */
+/* 2-колоночная сетка на всю ширину страницы */
 .profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px;
   align-items: start;
+  width: 100%;
 }
 
 .profile-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .profile-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 8px);
-  padding: 20px 24px;
+  padding: 24px 28px;
+  box-sizing: border-box;
 }
 
 .card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-main);
-  margin: 0 0 16px 0;
+  margin: 0 0 20px 0;
 }
 
 /* Однострочная форма изменения имени */
@@ -469,13 +475,13 @@ function selectLanguage(lang) {
 .password-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-group {
@@ -485,20 +491,20 @@ function selectLanguage(lang) {
 }
 
 .form-label {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
 }
 
 .form-input {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
+  height: 40px;
+  padding: 0 14px;
   border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-main);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   transition: all 0.15s ease;
   box-sizing: border-box;
   outline: none;
@@ -509,24 +515,28 @@ function selectLanguage(lang) {
   background: var(--bg-card);
 }
 
-.form-actions {
+.form-actions-full {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 4px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.btn-password-submit {
+  width: 100%;
 }
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--primary);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm, 6px);
-  padding: 0 18px;
-  height: 38px;
-  font-size: 0.88rem;
+  padding: 0 20px;
+  height: 40px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -548,9 +558,9 @@ function selectLanguage(lang) {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 8px);
-  padding: 14px 16px;
+  padding: 16px 20px;
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: 0.88rem;
   line-height: 1.4;
 }
 
@@ -564,14 +574,14 @@ function selectLanguage(lang) {
 .languages-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 .lang-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 14px;
+  padding: 16px 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
@@ -590,7 +600,7 @@ function selectLanguage(lang) {
 }
 
 .lang-flag {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
 }
 
 .lang-text {
@@ -600,13 +610,13 @@ function selectLanguage(lang) {
 }
 
 .lang-name {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .lang-sub {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -628,7 +638,7 @@ function selectLanguage(lang) {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .profile-page {
     padding: 16px;
   }
