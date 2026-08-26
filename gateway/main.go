@@ -113,33 +113,8 @@ func run() error {
 		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
 			md := metadata.MD{}
 			
-			// Прокидываем x-user-id и x-user-name из HTTP заголовков в gRPC контекст
-			if userID := req.Header.Get("x-user-id"); userID != "" {
-				md["x-user-id"] = []string{userID}
-			}
-			if userName := req.Header.Get("x-user-name"); userName != "" {
-				md["x-user-name"] = []string{userName}
-			}
-			if userRole := req.Header.Get("x-user-role"); userRole != "" {
-				md["x-user-role"] = []string{userRole}
-			}
-			
-			// Если заголовки не установлены, пытаемся извлечь информацию из JWT токена
-			if md["x-user-id"] == nil {
-				if claims := parseJWTClaims(req); claims != nil {
-					log.Printf("[JWT] Parsed claims: userID=%s, userName=%s, userRole=%s", claims.UserID, claims.UserName, claims.UserRole)
-					if claims.UserID != "" {
-						md["x-user-id"] = []string{claims.UserID}
-					}
-					if claims.UserName != "" {
-						md["x-user-name"] = []string{claims.UserName}
-					}
-					if claims.UserRole != "" {
-						md["x-user-role"] = []string{claims.UserRole}
-					}
-				}
-			}
-			
+			// Headers x-user-id are insecure to forward directly from HTTP.
+			// Let the downstream microservices parse the Authorization header.
 			return md
 		}),
 	)
@@ -747,9 +722,6 @@ func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	if token := r.Header.Get("Authorization"); token != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	}
-	if userID := r.Header.Get("x-user-id"); userID != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "x-user-id", userID)
-	}
 
 	stream, err := h.client.UploadBuildStream(ctx)
 	if err != nil {
@@ -852,9 +824,6 @@ func (h *projectMediaUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 	if token := r.Header.Get("Authorization"); token != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	}
-	if userID := r.Header.Get("x-user-id"); userID != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "x-user-id", userID)
 	}
 
 	stream, err := h.client.UploadMediaStream(ctx)

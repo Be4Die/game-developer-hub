@@ -16,7 +16,8 @@ type ProjectSnapshot struct {
 	OwnerID            string
 	TitleRu            string
 	TitleEn            string
-	About              string
+	AboutRu            string
+	AboutEn            string
 	SeoRu              string
 	SeoEn              string
 	IconPath           string

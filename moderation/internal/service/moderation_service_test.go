@@ -30,7 +30,8 @@ func TestUnit_ModerationService_SubmitDraft(t *testing.T) {
 		ProjectID:          100,
 		TitleRu:            "Супер Игра",
 		TitleEn:            "Super Game",
-		About:              "Описание игры",
+		AboutRu:            "Описание игры",
+		AboutEn:            "Game description",
 		ActiveBuildVersion: "1.0.0",
 		DevURL:             "/games/100/dev/index.html",
 	}

@@ -1,13 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "game_deployment_agent/v1/deployment_agent.proto",
+    "title": "game_server_node/v1/common.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "WebGameDeploymentService",
-      "description": "WebGameDeploymentService предоставляет API удалённого развертывания веб-сборок игр на целевом узле с Nginx."
+      "name": "DeploymentService",
+      "description": "Предоставляет оркестратору возможность загружать Docker-образы\nи управлять экземплярами игровых серверов на ноде."
+    },
+    {
+      "name": "DiscoveryService",
+      "description": "Предоставляет оркестратору информацию о состоянии ноды\nи запущенных на ней экземплярах игровых серверов."
     }
   ],
   "consumes": [

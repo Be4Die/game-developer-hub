@@ -12,7 +12,8 @@ type Release struct {
 	TitleEn     string
 	SeoRu       string
 	SeoEn       string
-	About       string
+	AboutRu     string
+	AboutEn     string
 	IconPath    string
 	CoverPath   string
 	VideoPath   string

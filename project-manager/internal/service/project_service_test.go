@@ -65,7 +65,8 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 	meta := domain.DraftMeta{
 		TitleRu: "Обновленная игра",
 		TitleEn: "Updated Game",
-		About:   "Описание игры",
+		AboutRu: "Описание игры",
+		AboutEn: "Game description",
 		SeoRu:   "seo ru",
 	}
 
@@ -78,7 +79,7 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get project error: %v", err)
 	}
-	if updated.Draft.TitleRu != "Обновленная игра" || updated.Draft.About != "Описание игры" {
+	if updated.Draft.TitleRu != "Обновленная игра" || updated.Draft.AboutRu != "Описание игры" || updated.Draft.AboutEn != "Game description" {
 		t.Errorf("draft not updated properly: %+v", updated.Draft)
 	}
 
@@ -86,6 +87,13 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 	err = svc.UpdateDraft(ctx, p.ID, "another-user", meta)
 	if !errors.Is(err, domain.ErrForbidden) {
 		t.Errorf("expected ErrForbidden for another user, got: %v", err)
+	}
+
+	// Проверка валидации лимита длины (название > 50)
+	invalidMeta := meta
+	invalidMeta.TitleRu = "123456789012345678901234567890123456789012345678901" // 51 chars
+	if err := svc.UpdateDraft(ctx, p.ID, "user-123", invalidMeta); !errors.Is(err, domain.ErrInvalidInput) {
+		t.Errorf("expected ErrInvalidInput for TitleRu > 50 chars, got: %v", err)
 	}
 }
 
@@ -136,7 +144,8 @@ func TestUnit_ProjectService_SubmitForModeration(t *testing.T) {
 	// 2. Заполняем черновик и загружаем билд
 	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
 		TitleRu: "Игра",
-		About:   "Описание игры",
+		AboutRu: "Описание игры",
+		AboutEn: "Game description",
 	})
 	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("zip")))
 
@@ -172,7 +181,8 @@ func TestUnit_ProjectService_PublishRelease(t *testing.T) {
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
 		TitleRu: "Игра",
-		About:   "Описание игры",
+		AboutRu: "Описание игры",
+		AboutEn: "Game description",
 	})
 	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("zip")))
 

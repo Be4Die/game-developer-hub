@@ -82,7 +82,7 @@
             <h3 class="request-title">
               {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
             </h3>
-            <p class="request-desc">{{ req.snapshot.about || 'Описание не указано' }}</p>
+            <p class="request-desc">{{ req.snapshot.aboutRu || req.snapshot.aboutEn || req.snapshot.about || 'Описание не указано' }}</p>
 
             <div class="request-meta-row">
               <span class="meta-tag">Проект: #{{ req.projectId }}</span>
@@ -135,7 +135,7 @@
             <h3 class="request-title">
               {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
             </h3>
-            <p class="request-desc">{{ req.snapshot.about || 'Описание не указано' }}</p>
+            <p class="request-desc">{{ req.snapshot.aboutRu || req.snapshot.aboutEn || req.snapshot.about || 'Описание не указано' }}</p>
 
             <div class="request-meta-row">
               <span class="meta-tag">Проект: #{{ req.projectId }}</span>

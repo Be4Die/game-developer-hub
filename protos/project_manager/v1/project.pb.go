@@ -190,7 +190,7 @@ type Project struct {
 	TitleEn            string                 `protobuf:"bytes,4,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
 	SeoRu              string                 `protobuf:"bytes,5,opt,name=seo_ru,json=seoRu,proto3" json:"seo_ru,omitempty"`
 	SeoEn              string                 `protobuf:"bytes,6,opt,name=seo_en,json=seoEn,proto3" json:"seo_en,omitempty"`
-	About              string                 `protobuf:"bytes,7,opt,name=about,proto3" json:"about,omitempty"`
+	AboutRu            string                 `protobuf:"bytes,7,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	Status             ProjectStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=project_manager.v1.ProjectStatus" json:"status,omitempty"`
 	IconPath           string                 `protobuf:"bytes,9,opt,name=icon_path,json=iconPath,proto3" json:"icon_path,omitempty"`
 	CoverPath          string                 `protobuf:"bytes,10,opt,name=cover_path,json=coverPath,proto3" json:"cover_path,omitempty"`
@@ -202,6 +202,7 @@ type Project struct {
 	UpdatedAt          string                 `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Draft              *ProjectDraft          `protobuf:"bytes,17,opt,name=draft,proto3" json:"draft,omitempty"`
 	Release            *ProjectRelease        `protobuf:"bytes,18,opt,name=release,proto3" json:"release,omitempty"`
+	AboutEn            string                 `protobuf:"bytes,19,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -278,9 +279,9 @@ func (x *Project) GetSeoEn() string {
 	return ""
 }
 
-func (x *Project) GetAbout() string {
+func (x *Project) GetAboutRu() string {
 	if x != nil {
-		return x.About
+		return x.AboutRu
 	}
 	return ""
 }
@@ -362,6 +363,13 @@ func (x *Project) GetRelease() *ProjectRelease {
 	return nil
 }
 
+func (x *Project) GetAboutEn() string {
+	if x != nil {
+		return x.AboutEn
+	}
+	return ""
+}
+
 // ProjectDraft рабочее состояние черновика проекта.
 type ProjectDraft struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -370,13 +378,14 @@ type ProjectDraft struct {
 	TitleEn            string                 `protobuf:"bytes,3,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
 	SeoRu              string                 `protobuf:"bytes,4,opt,name=seo_ru,json=seoRu,proto3" json:"seo_ru,omitempty"`
 	SeoEn              string                 `protobuf:"bytes,5,opt,name=seo_en,json=seoEn,proto3" json:"seo_en,omitempty"`
-	About              string                 `protobuf:"bytes,6,opt,name=about,proto3" json:"about,omitempty"`
+	AboutRu            string                 `protobuf:"bytes,6,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	IconPath           string                 `protobuf:"bytes,7,opt,name=icon_path,json=iconPath,proto3" json:"icon_path,omitempty"`
 	CoverPath          string                 `protobuf:"bytes,8,opt,name=cover_path,json=coverPath,proto3" json:"cover_path,omitempty"`
 	VideoPath          string                 `protobuf:"bytes,9,opt,name=video_path,json=videoPath,proto3" json:"video_path,omitempty"`
 	ActiveBuildVersion string                 `protobuf:"bytes,10,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
 	DevUrl             string                 `protobuf:"bytes,11,opt,name=dev_url,json=devUrl,proto3" json:"dev_url,omitempty"`
 	UpdatedAt          string                 `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	AboutEn            string                 `protobuf:"bytes,13,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -446,9 +455,9 @@ func (x *ProjectDraft) GetSeoEn() string {
 	return ""
 }
 
-func (x *ProjectDraft) GetAbout() string {
+func (x *ProjectDraft) GetAboutRu() string {
 	if x != nil {
-		return x.About
+		return x.AboutRu
 	}
 	return ""
 }
@@ -495,6 +504,13 @@ func (x *ProjectDraft) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *ProjectDraft) GetAboutEn() string {
+	if x != nil {
+		return x.AboutEn
+	}
+	return ""
+}
+
 // ProjectRelease зафиксированный опубликованный релиз.
 type ProjectRelease struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -505,12 +521,13 @@ type ProjectRelease struct {
 	TitleEn       string                 `protobuf:"bytes,5,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
 	SeoRu         string                 `protobuf:"bytes,6,opt,name=seo_ru,json=seoRu,proto3" json:"seo_ru,omitempty"`
 	SeoEn         string                 `protobuf:"bytes,7,opt,name=seo_en,json=seoEn,proto3" json:"seo_en,omitempty"`
-	About         string                 `protobuf:"bytes,8,opt,name=about,proto3" json:"about,omitempty"`
+	AboutRu       string                 `protobuf:"bytes,8,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	IconPath      string                 `protobuf:"bytes,9,opt,name=icon_path,json=iconPath,proto3" json:"icon_path,omitempty"`
 	CoverPath     string                 `protobuf:"bytes,10,opt,name=cover_path,json=coverPath,proto3" json:"cover_path,omitempty"`
 	VideoPath     string                 `protobuf:"bytes,11,opt,name=video_path,json=videoPath,proto3" json:"video_path,omitempty"`
 	ProdUrl       string                 `protobuf:"bytes,12,opt,name=prod_url,json=prodUrl,proto3" json:"prod_url,omitempty"`
 	PublishedAt   string                 `protobuf:"bytes,13,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
+	AboutEn       string                 `protobuf:"bytes,14,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -594,9 +611,9 @@ func (x *ProjectRelease) GetSeoEn() string {
 	return ""
 }
 
-func (x *ProjectRelease) GetAbout() string {
+func (x *ProjectRelease) GetAboutRu() string {
 	if x != nil {
-		return x.About
+		return x.AboutRu
 	}
 	return ""
 }
@@ -632,6 +649,13 @@ func (x *ProjectRelease) GetProdUrl() string {
 func (x *ProjectRelease) GetPublishedAt() string {
 	if x != nil {
 		return x.PublishedAt
+	}
+	return ""
+}
+
+func (x *ProjectRelease) GetAboutEn() string {
+	if x != nil {
+		return x.AboutEn
 	}
 	return ""
 }
@@ -1121,8 +1145,9 @@ type ProjectUpdateRequest struct {
 	TitleEn            string                 `protobuf:"bytes,3,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
 	SeoRu              string                 `protobuf:"bytes,4,opt,name=seo_ru,json=seoRu,proto3" json:"seo_ru,omitempty"`
 	SeoEn              string                 `protobuf:"bytes,5,opt,name=seo_en,json=seoEn,proto3" json:"seo_en,omitempty"`
-	About              string                 `protobuf:"bytes,6,opt,name=about,proto3" json:"about,omitempty"`
+	AboutRu            string                 `protobuf:"bytes,6,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	ActiveBuildVersion string                 `protobuf:"bytes,7,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
+	AboutEn            string                 `protobuf:"bytes,8,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1192,9 +1217,9 @@ func (x *ProjectUpdateRequest) GetSeoEn() string {
 	return ""
 }
 
-func (x *ProjectUpdateRequest) GetAbout() string {
+func (x *ProjectUpdateRequest) GetAboutRu() string {
 	if x != nil {
-		return x.About
+		return x.AboutRu
 	}
 	return ""
 }
@@ -1202,6 +1227,13 @@ func (x *ProjectUpdateRequest) GetAbout() string {
 func (x *ProjectUpdateRequest) GetActiveBuildVersion() string {
 	if x != nil {
 		return x.ActiveBuildVersion
+	}
+	return ""
+}
+
+func (x *ProjectUpdateRequest) GetAboutEn() string {
+	if x != nil {
+		return x.AboutEn
 	}
 	return ""
 }
@@ -2519,15 +2551,15 @@ var File_project_manager_v1_project_proto protoreflect.FileDescriptor
 
 const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\n" +
-	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\xde\x04\n" +
+	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\xfe\x04\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x19\n" +
 	"\btitle_ru\x18\x03 \x01(\tR\atitleRu\x12\x19\n" +
 	"\btitle_en\x18\x04 \x01(\tR\atitleEn\x12\x15\n" +
 	"\x06seo_ru\x18\x05 \x01(\tR\x05seoRu\x12\x15\n" +
-	"\x06seo_en\x18\x06 \x01(\tR\x05seoEn\x12\x14\n" +
-	"\x05about\x18\a \x01(\tR\x05about\x129\n" +
+	"\x06seo_en\x18\x06 \x01(\tR\x05seoEn\x12\x19\n" +
+	"\babout_ru\x18\a \x01(\tR\aaboutRu\x129\n" +
 	"\x06status\x18\b \x01(\x0e2!.project_manager.v1.ProjectStatusR\x06status\x12\x1b\n" +
 	"\ticon_path\x18\t \x01(\tR\biconPath\x12\x1d\n" +
 	"\n" +
@@ -2543,15 +2575,16 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x10 \x01(\tR\tupdatedAt\x126\n" +
 	"\x05draft\x18\x11 \x01(\v2 .project_manager.v1.ProjectDraftR\x05draft\x12<\n" +
-	"\arelease\x18\x12 \x01(\v2\".project_manager.v1.ProjectReleaseR\arelease\"\xec\x02\n" +
+	"\arelease\x18\x12 \x01(\v2\".project_manager.v1.ProjectReleaseR\arelease\x12\x19\n" +
+	"\babout_en\x18\x13 \x01(\tR\aaboutEn\"\x8c\x03\n" +
 	"\fProjectDraft\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +
 	"\btitle_ru\x18\x02 \x01(\tR\atitleRu\x12\x19\n" +
 	"\btitle_en\x18\x03 \x01(\tR\atitleEn\x12\x15\n" +
 	"\x06seo_ru\x18\x04 \x01(\tR\x05seoRu\x12\x15\n" +
-	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x14\n" +
-	"\x05about\x18\x06 \x01(\tR\x05about\x12\x1b\n" +
+	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x19\n" +
+	"\babout_ru\x18\x06 \x01(\tR\aaboutRu\x12\x1b\n" +
 	"\ticon_path\x18\a \x01(\tR\biconPath\x12\x1d\n" +
 	"\n" +
 	"cover_path\x18\b \x01(\tR\tcoverPath\x12\x1d\n" +
@@ -2561,7 +2594,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	" \x01(\tR\x12activeBuildVersion\x12\x17\n" +
 	"\adev_url\x18\v \x01(\tR\x06devUrl\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\tR\tupdatedAt\"\xec\x02\n" +
+	"updated_at\x18\f \x01(\tR\tupdatedAt\x12\x19\n" +
+	"\babout_en\x18\r \x01(\tR\aaboutEn\"\x8c\x03\n" +
 	"\x0eProjectRelease\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -2570,8 +2604,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\btitle_ru\x18\x04 \x01(\tR\atitleRu\x12\x19\n" +
 	"\btitle_en\x18\x05 \x01(\tR\atitleEn\x12\x15\n" +
 	"\x06seo_ru\x18\x06 \x01(\tR\x05seoRu\x12\x15\n" +
-	"\x06seo_en\x18\a \x01(\tR\x05seoEn\x12\x14\n" +
-	"\x05about\x18\b \x01(\tR\x05about\x12\x1b\n" +
+	"\x06seo_en\x18\a \x01(\tR\x05seoEn\x12\x19\n" +
+	"\babout_ru\x18\b \x01(\tR\aaboutRu\x12\x1b\n" +
 	"\ticon_path\x18\t \x01(\tR\biconPath\x12\x1d\n" +
 	"\n" +
 	"cover_path\x18\n" +
@@ -2579,7 +2613,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\n" +
 	"video_path\x18\v \x01(\tR\tvideoPath\x12\x19\n" +
 	"\bprod_url\x18\f \x01(\tR\aprodUrl\x12!\n" +
-	"\fpublished_at\x18\r \x01(\tR\vpublishedAt\"\xd1\x01\n" +
+	"\fpublished_at\x18\r \x01(\tR\vpublishedAt\x12\x19\n" +
+	"\babout_en\x18\x0e \x01(\tR\aaboutEn\"\xd1\x01\n" +
 	"\fProjectBuild\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -2615,15 +2650,16 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"d\n" +
 	"\x13ProjectListResponse\x127\n" +
 	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xd2\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xf2\x01\n" +
 	"\x14ProjectUpdateRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\btitle_ru\x18\x02 \x01(\tR\atitleRu\x12\x19\n" +
 	"\btitle_en\x18\x03 \x01(\tR\atitleEn\x12\x15\n" +
 	"\x06seo_ru\x18\x04 \x01(\tR\x05seoRu\x12\x15\n" +
-	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x14\n" +
-	"\x05about\x18\x06 \x01(\tR\x05about\x120\n" +
-	"\x14active_build_version\x18\a \x01(\tR\x12activeBuildVersion\"N\n" +
+	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x19\n" +
+	"\babout_ru\x18\x06 \x01(\tR\aaboutRu\x120\n" +
+	"\x14active_build_version\x18\a \x01(\tR\x12activeBuildVersion\x12\x19\n" +
+	"\babout_en\x18\b \x01(\tR\aaboutEn\"N\n" +
 	"\x15ProjectUpdateResponse\x125\n" +
 	"\aproject\x18\x01 \x01(\v2\x1b.project_manager.v1.ProjectR\aproject\"&\n" +
 	"\x14ProjectDeleteRequest\x12\x0e\n" +

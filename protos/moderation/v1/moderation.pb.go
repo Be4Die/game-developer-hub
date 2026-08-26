@@ -201,12 +201,13 @@ type ProjectSnapshot struct {
 	TitleEn            string                 `protobuf:"bytes,3,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
 	SeoRu              string                 `protobuf:"bytes,4,opt,name=seo_ru,json=seoRu,proto3" json:"seo_ru,omitempty"`
 	SeoEn              string                 `protobuf:"bytes,5,opt,name=seo_en,json=seoEn,proto3" json:"seo_en,omitempty"`
-	About              string                 `protobuf:"bytes,6,opt,name=about,proto3" json:"about,omitempty"`
+	AboutRu            string                 `protobuf:"bytes,6,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	IconPath           string                 `protobuf:"bytes,7,opt,name=icon_path,json=iconPath,proto3" json:"icon_path,omitempty"`
 	CoverPath          string                 `protobuf:"bytes,8,opt,name=cover_path,json=coverPath,proto3" json:"cover_path,omitempty"`
 	VideoPath          string                 `protobuf:"bytes,9,opt,name=video_path,json=videoPath,proto3" json:"video_path,omitempty"`
 	ActiveBuildVersion string                 `protobuf:"bytes,10,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
 	DevUrl             string                 `protobuf:"bytes,11,opt,name=dev_url,json=devUrl,proto3" json:"dev_url,omitempty"`
+	AboutEn            string                 `protobuf:"bytes,12,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -276,9 +277,9 @@ func (x *ProjectSnapshot) GetSeoEn() string {
 	return ""
 }
 
-func (x *ProjectSnapshot) GetAbout() string {
+func (x *ProjectSnapshot) GetAboutRu() string {
 	if x != nil {
-		return x.About
+		return x.AboutRu
 	}
 	return ""
 }
@@ -314,6 +315,13 @@ func (x *ProjectSnapshot) GetActiveBuildVersion() string {
 func (x *ProjectSnapshot) GetDevUrl() string {
 	if x != nil {
 		return x.DevUrl
+	}
+	return ""
+}
+
+func (x *ProjectSnapshot) GetAboutEn() string {
+	if x != nil {
+		return x.AboutEn
 	}
 	return ""
 }
@@ -1572,15 +1580,15 @@ var File_moderation_v1_moderation_proto protoreflect.FileDescriptor
 
 const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\n" +
-	"\x1emoderation/v1/moderation.proto\x12\rmoderation.v1\x1a\x1cgoogle/api/annotations.proto\"\xd0\x02\n" +
+	"\x1emoderation/v1/moderation.proto\x12\rmoderation.v1\x1a\x1cgoogle/api/annotations.proto\"\xf0\x02\n" +
 	"\x0fProjectSnapshot\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +
 	"\btitle_ru\x18\x02 \x01(\tR\atitleRu\x12\x19\n" +
 	"\btitle_en\x18\x03 \x01(\tR\atitleEn\x12\x15\n" +
 	"\x06seo_ru\x18\x04 \x01(\tR\x05seoRu\x12\x15\n" +
-	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x14\n" +
-	"\x05about\x18\x06 \x01(\tR\x05about\x12\x1b\n" +
+	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x19\n" +
+	"\babout_ru\x18\x06 \x01(\tR\aaboutRu\x12\x1b\n" +
 	"\ticon_path\x18\a \x01(\tR\biconPath\x12\x1d\n" +
 	"\n" +
 	"cover_path\x18\b \x01(\tR\tcoverPath\x12\x1d\n" +
@@ -1588,7 +1596,8 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"video_path\x18\t \x01(\tR\tvideoPath\x120\n" +
 	"\x14active_build_version\x18\n" +
 	" \x01(\tR\x12activeBuildVersion\x12\x17\n" +
-	"\adev_url\x18\v \x01(\tR\x06devUrl\"\x8d\x03\n" +
+	"\adev_url\x18\v \x01(\tR\x06devUrl\x12\x19\n" +
+	"\babout_en\x18\f \x01(\tR\aaboutEn\"\x8d\x03\n" +
 	"\x11ModerationRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +

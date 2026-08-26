@@ -40,12 +40,13 @@ message ProjectSnapshot {
   string title_en = 3;
   string seo_ru = 4;
   string seo_en = 5;
-  string about = 6;
+  string about_ru = 6;
   string icon_path = 7;
   string cover_path = 8;
   string video_path = 9;
   string active_build_version = 10;
   string dev_url = 11;
+  string about_en = 12;
 }
 
 // ModerationRequest сущность запроса на модерацию проекта.

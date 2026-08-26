@@ -173,6 +173,12 @@ func (m *inMemoryMessageRepo) ListByProject(ctx context.Context, projectID int64
 	return all, total, nil
 }
 
+func (m *inMemoryMessageRepo) ListActiveChats(ctx context.Context, limit, offset int) ([]*domain.ChatSummary, int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return nil, 0, nil
+}
+
 type inMemoryProjectClient struct {
 	mu       sync.RWMutex
 	releases map[int64]string
@@ -258,7 +264,8 @@ func TestIntegration_ModerationFullWorkflow(t *testing.T) {
 			ProjectId:          projectID,
 			TitleRu:            "Киберпанк 2099",
 			TitleEn:            "Cyberpunk 2099",
-			About:              "Крутая игра в браузере",
+			AboutRu:            "Крутая игра в браузере",
+			AboutEn:            "Cool browser game",
 			ActiveBuildVersion: "1.0.0",
 			DevUrl:             "/games/42/dev/index.html",
 		},

@@ -10,7 +10,8 @@ type Draft struct {
 	TitleEn            string
 	SeoRu              string
 	SeoEn              string
-	About              string
+	AboutRu            string
+	AboutEn            string
 	IconPath           string
 	CoverPath          string
 	VideoPath          string
@@ -25,7 +26,8 @@ type DraftMeta struct {
 	TitleEn            string
 	SeoRu              string
 	SeoEn              string
-	About              string
+	AboutRu            string
+	AboutEn            string
 	ActiveBuildVersion string
 }
 
@@ -35,7 +37,7 @@ func (d *Draft) IsReadyForModeration() error {
 	if d.TitleRu == "" && d.TitleEn == "" {
 		return ErrDraftNotReady
 	}
-	if d.About == "" {
+	if d.AboutRu == "" && d.AboutEn == "" {
 		return ErrDraftNotReady
 	}
 	if d.ActiveBuildVersion == "" {

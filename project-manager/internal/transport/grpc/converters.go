@@ -33,7 +33,8 @@ func projectToProto(p *domain.Project) *pb.Project {
 		proto.TitleEn = p.Draft.TitleEn
 		proto.SeoRu = p.Draft.SeoRu
 		proto.SeoEn = p.Draft.SeoEn
-		proto.About = p.Draft.About
+		proto.AboutRu = p.Draft.AboutRu
+		proto.AboutEn = p.Draft.AboutEn
 		proto.IconPath = p.Draft.IconPath
 		proto.CoverPath = p.Draft.CoverPath
 		proto.VideoPath = p.Draft.VideoPath
@@ -59,7 +60,8 @@ func draftToProto(d *domain.Draft) *pb.ProjectDraft {
 		TitleEn:            d.TitleEn,
 		SeoRu:              d.SeoRu,
 		SeoEn:              d.SeoEn,
-		About:              d.About,
+		AboutRu:            d.AboutRu,
+		AboutEn:            d.AboutEn,
 		IconPath:           d.IconPath,
 		CoverPath:          d.CoverPath,
 		VideoPath:          d.VideoPath,
@@ -96,7 +98,8 @@ func releaseToProto(r *domain.Release) *pb.ProjectRelease {
 		TitleEn:     r.TitleEn,
 		SeoRu:       r.SeoRu,
 		SeoEn:       r.SeoEn,
-		About:       r.About,
+		AboutRu:     r.AboutRu,
+		AboutEn:     r.AboutEn,
 		IconPath:    r.IconPath,
 		CoverPath:   r.CoverPath,
 		VideoPath:   r.VideoPath,

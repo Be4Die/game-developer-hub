@@ -27,21 +27,25 @@
         <div class="input-row">
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameTitle') }} (RU) <span class="req">*</span></label>
+              <label class="input-label">{{ t('projectDraft.gameTitleRu') }} <span class="req">*</span></label>
+              <span class="char-count">{{ meta.title_ru.length }}/50</span>
             </div>
             <input
               type="text"
               class="input-control"
+              maxlength="50"
               v-model="meta.title_ru"
             />
           </div>
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameTitle') }} (EN) <span class="req">*</span></label>
+              <label class="input-label">{{ t('projectDraft.gameTitleEn') }} <span class="req">*</span></label>
+              <span class="char-count">{{ meta.title_en.length }}/50</span>
             </div>
             <input
               type="text"
               class="input-control"
+              maxlength="50"
               v-model="meta.title_en"
             />
           </div>
@@ -72,17 +76,31 @@
             ></textarea>
           </div>
         </div>
-        <div class="input-group" style="margin-top: 16px;">
-          <div class="input-header">
-            <label class="input-label">{{ t('projectDraft.gameDescription') }} <span class="req">*</span></label>
-            <span class="char-count">{{ meta.about.length }}/800</span>
+        <div class="input-row">
+          <div class="input-group">
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameDescriptionRu') }} <span class="req">*</span></label>
+              <span class="char-count">{{ meta.about_ru.length }}/800</span>
+            </div>
+            <textarea
+              class="input-control"
+              rows="4"
+              maxlength="800"
+              v-model="meta.about_ru"
+            ></textarea>
           </div>
-          <textarea
-            class="input-control"
-            rows="4"
-            maxlength="800"
-            v-model="meta.about"
-          ></textarea>
+          <div class="input-group">
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameDescriptionEn') }} <span class="req">*</span></label>
+              <span class="char-count">{{ meta.about_en.length }}/800</span>
+            </div>
+            <textarea
+              class="input-control"
+              rows="4"
+              maxlength="800"
+              v-model="meta.about_en"
+            ></textarea>
+          </div>
         </div>
       </div>
 
@@ -373,7 +391,8 @@ const meta = ref({
   title_en: '',
   seo_ru: '',
   seo_en: '',
-  about: '',
+  about_ru: '',
+  about_en: '',
 });
 
 const media = ref({ icon: false, cover: false, video: false });
@@ -505,7 +524,8 @@ async function loadProject() {
       title_en: project.draft?.title_en || project.title_en || '',
       seo_ru: project.draft?.seo_ru || project.seo_ru || '',
       seo_en: project.draft?.seo_en || project.seo_en || '',
-      about: project.draft?.about || project.about || '',
+      about_ru: project.draft?.about_ru || project.about_ru || project.draft?.about || project.about || '',
+      about_en: project.draft?.about_en || project.about_en || '',
     };
 
     const iconPath = project.draft?.icon_path || project.icon_path;
@@ -553,8 +573,12 @@ async function submitForModeration() {
     showToast('Не удалось определить ID игры', 'danger');
     return;
   }
-  if (!meta.value.title_ru.trim()) {
-    showToast('Укажите название игры на русском', 'danger');
+  if (!meta.value.title_ru.trim() && !meta.value.title_en.trim()) {
+    showToast('Укажите название игры', 'danger');
+    return;
+  }
+  if (!meta.value.about_ru.trim() && !meta.value.about_en.trim()) {
+    showToast('Заполните описание игры', 'danger');
     return;
   }
   submitting.value = true;

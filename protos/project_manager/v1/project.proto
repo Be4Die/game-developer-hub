@@ -39,7 +39,7 @@ message Project {
   string title_en = 4;
   string seo_ru = 5;
   string seo_en = 6;
-  string about = 7;
+  string about_ru = 7;
   ProjectStatus status = 8;
   string icon_path = 9;
   string cover_path = 10;
@@ -51,6 +51,7 @@ message Project {
   string updated_at = 16;
   ProjectDraft draft = 17;
   ProjectRelease release = 18;
+  string about_en = 19;
 }
 
 // ProjectDraft рабочее состояние черновика проекта.
@@ -60,13 +61,14 @@ message ProjectDraft {
   string title_en = 3;
   string seo_ru = 4;
   string seo_en = 5;
-  string about = 6;
+  string about_ru = 6;
   string icon_path = 7;
   string cover_path = 8;
   string video_path = 9;
   string active_build_version = 10;
   string dev_url = 11;
   string updated_at = 12;
+  string about_en = 13;
 }
 
 // ProjectRelease зафиксированный опубликованный релиз.
@@ -78,12 +80,13 @@ message ProjectRelease {
   string title_en = 5;
   string seo_ru = 6;
   string seo_en = 7;
-  string about = 8;
+  string about_ru = 8;
   string icon_path = 9;
   string cover_path = 10;
   string video_path = 11;
   string prod_url = 12;
   string published_at = 13;
+  string about_en = 14;
 }
 
 // ProjectBuild клиентский билд веб-игры.
@@ -145,8 +148,9 @@ message ProjectUpdateRequest {
   string title_en = 3;
   string seo_ru = 4;
   string seo_en = 5;
-  string about = 6;
+  string about_ru = 6;
   string active_build_version = 7;
+  string about_en = 8;
 }
 
 message ProjectUpdateResponse {

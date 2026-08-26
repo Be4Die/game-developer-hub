@@ -110,7 +110,7 @@
               {{ req.snapshot.titleEn }}
             </div>
           </div>
-          <p class="game-desc">{{ req.snapshot.about || 'Описание не заполнено' }}</p>
+          <p class="game-desc">{{ req.snapshot.aboutRu || req.snapshot.aboutEn || req.snapshot.about || 'Описание не заполнено' }}</p>
         </div>
 
         <div class="request-card-footer">

@@ -84,7 +84,8 @@ func (h *ProjectHandler) Update(ctx context.Context, req *pb.ProjectUpdateReques
 		TitleEn:            req.GetTitleEn(),
 		SeoRu:              req.GetSeoRu(),
 		SeoEn:              req.GetSeoEn(),
-		About:              req.GetAbout(),
+		AboutRu:            req.GetAboutRu(),
+		AboutEn:            req.GetAboutEn(),
 		ActiveBuildVersion: req.GetActiveBuildVersion(),
 	}
 	if err := h.svc.UpdateDraft(ctx, req.GetId(), ownerID, meta); err != nil {

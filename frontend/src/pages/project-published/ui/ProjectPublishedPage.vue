@@ -49,10 +49,18 @@
           </div>
         </div>
 
-        <div class="input-group" style="margin-top: 16px;">
-          <label>{{ t('projectDraft.gameDescription') }}</label>
-          <div class="readonly-field multiline">
-            {{ project?.about || '—' }}
+        <div class="input-row">
+          <div class="input-group">
+            <label>{{ t('projectDraft.gameDescriptionRu') }}</label>
+            <div class="readonly-field multiline">
+              {{ project?.about_ru || project?.about || '—' }}
+            </div>
+          </div>
+          <div class="input-group">
+            <label>{{ t('projectDraft.gameDescriptionEn') }}</label>
+            <div class="readonly-field multiline">
+              {{ project?.about_en || '—' }}
+            </div>
           </div>
         </div>
       </div>

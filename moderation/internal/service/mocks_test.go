@@ -182,6 +182,34 @@ func (m *mockMessageRepo) ListByProject(ctx context.Context, projectID int64, li
 	return all[offset:end], total, nil
 }
 
+func (m *mockMessageRepo) ListActiveChats(ctx context.Context, limit, offset int) ([]*domain.ChatSummary, int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var summaries []*domain.ChatSummary
+	for pid, msgs := range m.messages {
+		if len(msgs) == 0 {
+			continue
+		}
+		last := msgs[len(msgs)-1]
+		summaries = append(summaries, &domain.ChatSummary{
+			ProjectID:   pid,
+			LastMessage: last,
+		})
+	}
+
+	total := len(summaries)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if limit <= 0 || end > total {
+		end = total
+	}
+
+	return summaries[offset:end], total, nil
+}
+
 type mockProjectClient struct {
 	mu           sync.RWMutex
 	deployFails  bool

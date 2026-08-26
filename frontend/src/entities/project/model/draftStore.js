@@ -6,7 +6,8 @@ export const draftProject = reactive({
     titleEn: '',
     seoRu: '',
     seoEn: '',
-    about: '',
+    aboutRu: '',
+    aboutEn: '',
   },
   media: {
     icon: null, // { file, preview }
@@ -22,7 +23,8 @@ export function resetDraftState() {
   draftProject.meta.titleEn = '';
   draftProject.meta.seoRu = '';
   draftProject.meta.seoEn = '';
-  draftProject.meta.about = '';
+  draftProject.meta.aboutRu = '';
+  draftProject.meta.aboutEn = '';
   draftProject.media.icon = null;
   draftProject.media.coverMain = null;
   draftProject.media.video = null;

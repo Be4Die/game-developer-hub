@@ -152,7 +152,11 @@ export default {
     moderationSent: 'Проект успешно отправлен на модерацию!',
     basicInfo: 'Основная информация',
     gameTitle: 'Название игры',
+    gameTitleRu: 'Название игры (RU)',
+    gameTitleEn: 'Название игры (EN)',
     gameDescription: 'Описание игры',
+    gameDescriptionRu: 'Описание игры (RU)',
+    gameDescriptionEn: 'Описание игры (EN)',
     category: 'Категория',
     selectCategory: 'Выберите категорию',
     categories: {

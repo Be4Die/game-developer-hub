@@ -38,7 +38,7 @@ func (r *ProjectRepo) Create(ctx context.Context, p *domain.Project) (int64, err
 func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error) {
 	const query = `
 		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
-		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about,
+		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
 		       d.dev_url, d.updated_at
 		FROM projects p
@@ -46,21 +46,22 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		WHERE p.id = $1
 	`
 	var (
-		p                   domain.Project
-		draft               domain.Draft
-		titleRu, titleEn    *string
-		seoRu, seoEn, about *string
-		iconPath, coverPath *string
-		videoPath, activeVer *string
-		devURL              *string
-		draftUpdatedAt      *context.Context // placeholder
+		p                     domain.Project
+		draft                 domain.Draft
+		titleRu, titleEn      *string
+		seoRu, seoEn          *string
+		aboutRu, aboutEn      *string
+		iconPath, coverPath   *string
+		videoPath, activeVer   *string
+		devURL                *string
+		draftUpdatedAt        *context.Context // placeholder
 	)
 	_ = draftUpdatedAt
 
 	row := r.pool.QueryRow(ctx, query, id)
 	err := row.Scan(
 		&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
-		&titleRu, &titleEn, &seoRu, &seoEn, &about,
+		&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 		&iconPath, &coverPath, &videoPath, &activeVer,
 		&devURL, &draft.UpdatedAt,
 	)
@@ -84,8 +85,11 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 	if seoEn != nil {
 		draft.SeoEn = *seoEn
 	}
-	if about != nil {
-		draft.About = *about
+	if aboutRu != nil {
+		draft.AboutRu = *aboutRu
+	}
+	if aboutEn != nil {
+		draft.AboutEn = *aboutEn
 	}
 	if iconPath != nil {
 		draft.IconPath = *iconPath
@@ -111,7 +115,7 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
 	const query = `
 		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
-		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about,
+		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
 		       d.dev_url, d.updated_at
 		FROM projects p
@@ -129,17 +133,18 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 	var projects []*domain.Project
 	for rows.Next() {
 		var (
-			p                   domain.Project
-			draft               domain.Draft
-			titleRu, titleEn    *string
-			seoRu, seoEn, about *string
-			iconPath, coverPath *string
-			videoPath, activeVer *string
-			devURL              *string
+			p                     domain.Project
+			draft                 domain.Draft
+			titleRu, titleEn      *string
+			seoRu, seoEn          *string
+			aboutRu, aboutEn      *string
+			iconPath, coverPath   *string
+			videoPath, activeVer   *string
+			devURL                *string
 		)
 		if err := rows.Scan(
 			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
-			&titleRu, &titleEn, &seoRu, &seoEn, &about,
+			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
 			&devURL, &draft.UpdatedAt,
 		); err != nil {
@@ -159,8 +164,11 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 		if seoEn != nil {
 			draft.SeoEn = *seoEn
 		}
-		if about != nil {
-			draft.About = *about
+		if aboutRu != nil {
+			draft.AboutRu = *aboutRu
+		}
+		if aboutEn != nil {
+			draft.AboutEn = *aboutEn
 		}
 		if iconPath != nil {
 			draft.IconPath = *iconPath

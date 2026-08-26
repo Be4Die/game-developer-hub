@@ -22,7 +22,8 @@ type ProjectSnapshot struct {
 	TitleEn            string `json:"title_en"`
 	SeoRu              string `json:"seo_ru"`
 	SeoEn              string `json:"seo_en"`
-	About              string `json:"about"`
+	AboutRu            string `json:"about_ru"`
+	AboutEn            string `json:"about_en"`
 	IconPath           string `json:"icon_path"`
 	CoverPath          string `json:"cover_path"`
 	VideoPath          string `json:"video_path"`

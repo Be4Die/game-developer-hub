@@ -55,10 +55,16 @@
             </div>
           </div>
 
-          <!-- Описание -->
-          <div class="content-block">
-            <label class="block-label">Описание игры</label>
-            <p class="block-text">{{ projectData.about || 'Описание не заполнено.' }}</p>
+          <!-- Описание RU / EN -->
+          <div class="seo-grid">
+            <div class="content-block">
+              <label class="block-label">Описание игры (RU)</label>
+              <p class="block-text">{{ projectData.aboutRu || projectData.about || 'Описание не заполнено.' }}</p>
+            </div>
+            <div class="content-block">
+              <label class="block-label">Описание игры (EN)</label>
+              <p class="block-text">{{ projectData.aboutEn || 'Описание не заполнено.' }}</p>
+            </div>
           </div>
 
           <!-- SEO описания -->
@@ -294,7 +300,9 @@ async function loadProjectInfo() {
           titleEn: p.title_en,
           seoRu: p.seo_ru,
           seoEn: p.seo_en,
-          about: p.about,
+          aboutRu: p.about_ru || p.about,
+          aboutEn: p.about_en,
+          about: p.about_ru || p.about,
           iconPath: p.icon_path,
           coverPath: p.cover_path,
           videoPath: p.video_path,

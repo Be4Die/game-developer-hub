@@ -66,6 +66,9 @@ func (s *ProjectService) CreateProject(ctx context.Context, ownerID, titleRu, ti
 	if ownerID == "" {
 		return nil, domain.ErrForbidden
 	}
+	if len([]rune(titleRu)) > 50 || len([]rune(titleEn)) > 50 {
+		return nil, domain.ErrInvalidInput
+	}
 
 	p := &domain.Project{
 		OwnerID: ownerID,
@@ -136,6 +139,16 @@ func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit
 
 // UpdateDraft обновляет метаданные черновика проекта.
 func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, ownerID string, meta domain.DraftMeta) error {
+	if len([]rune(meta.TitleRu)) > 50 || len([]rune(meta.TitleEn)) > 50 {
+		return domain.ErrInvalidInput
+	}
+	if len([]rune(meta.SeoRu)) > 180 || len([]rune(meta.SeoEn)) > 180 {
+		return domain.ErrInvalidInput
+	}
+	if len([]rune(meta.AboutRu)) > 800 || len([]rune(meta.AboutEn)) > 800 {
+		return domain.ErrInvalidInput
+	}
+
 	unlock, err := s.locker.Acquire(ctx, fmt.Sprintf("project:%d", projectID), 1*time.Minute)
 	if err != nil {
 		return err
@@ -167,8 +180,11 @@ func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, owner
 	if meta.SeoEn != "" {
 		draft.SeoEn = meta.SeoEn
 	}
-	if meta.About != "" {
-		draft.About = meta.About
+	if meta.AboutRu != "" {
+		draft.AboutRu = meta.AboutRu
+	}
+	if meta.AboutEn != "" {
+		draft.AboutEn = meta.AboutEn
 	}
 	if meta.ActiveBuildVersion != "" {
 		draft.ActiveBuildVersion = meta.ActiveBuildVersion
@@ -395,7 +411,8 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 		OwnerID:            ownerID,
 		TitleRu:            draft.TitleRu,
 		TitleEn:            draft.TitleEn,
-		About:              draft.About,
+		AboutRu:            draft.AboutRu,
+		AboutEn:            draft.AboutEn,
 		SeoRu:              draft.SeoRu,
 		SeoEn:              draft.SeoEn,
 		IconPath:           draft.IconPath,
@@ -441,7 +458,10 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		Version:     version,
 		TitleRu:     draft.TitleRu,
 		TitleEn:     draft.TitleEn,
-		About:       draft.About,
+		AboutRu:     draft.AboutRu,
+		AboutEn:     draft.AboutEn,
+		SeoRu:       draft.SeoRu,
+		SeoEn:       draft.SeoEn,
 		IconPath:    draft.IconPath,
 		CoverPath:   draft.CoverPath,
 		VideoPath:   draft.VideoPath,
