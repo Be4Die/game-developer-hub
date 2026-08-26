@@ -1,7 +1,9 @@
 <template>
   <div class="client-build-uploader">
-    <div class="input-group" style="margin-bottom: 16px;">
-      <label>{{ t('common.version') }} <span class="req">*</span></label>
+    <div class="input-group">
+      <div class="input-header">
+        <label class="input-label">{{ t('common.version') }} <span class="req">*</span></label>
+      </div>
       <input
         type="text"
         v-model="newBuildVersion"
@@ -11,21 +13,34 @@
       />
     </div>
 
-    <!-- Ожидание загрузки -->
+    <!-- Ожидание загрузки (Dropzone) -->
     <div
       v-if="buildStatus === 'idle'"
       class="dropzone"
+      :class="{ 'is-dragging': isDragging }"
+      @dragover.prevent="onDragOver"
+      @dragleave.prevent="onDragLeave"
+      @drop.prevent="onDrop"
       @click="$refs.fileZip.click()"
     >
-      <UploadCloud
-        style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 8px;"
-      />
-      <span style="display: block; font-weight: 600;">
-        {{ t('projectDraft.uploadPrompt') }}
-      </span>
-      <span style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-        {{ t('projectDraft.uploadFormats') }}
-      </span>
+      <div class="upload-prompt-content">
+        <div class="upload-icon-circle">
+          <UploadCloud class="icon-md" />
+        </div>
+        <p class="upload-prompt-text">
+          {{ t('projectDraft.dropOrClick') }}
+        </p>
+        <span class="upload-prompt-sub">
+          {{ t('projectDraft.uploadFormats') }}
+        </span>
+        <button
+          type="button"
+          class="btn-select-file"
+          @click.stop="$refs.fileZip.click()"
+        >
+          {{ t('projectDraft.selectFile') }}
+        </button>
+      </div>
     </div>
 
     <!-- Идет загрузка -->
@@ -70,7 +85,6 @@
   </div>
 </template>
 
-
 <script setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -83,7 +97,6 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 
 const props = defineProps({
-
   projectId: { type: [String, Number], required: true },
 });
 
@@ -94,6 +107,23 @@ const newBuildVersion = ref('');
 const buildStatus = ref('idle');
 const buildProgress = ref(0);
 const uploadedVersion = ref('');
+const isDragging = ref(false);
+
+function onDragOver(e) {
+  isDragging.value = true;
+}
+
+function onDragLeave(e) {
+  isDragging.value = false;
+}
+
+function onDrop(e) {
+  isDragging.value = false;
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    processFile(files[0]);
+  }
+}
 
 async function checkZipForIndexHtml(arrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
@@ -122,14 +152,13 @@ function checkTarGzForIndexHtml(arrayBuffer) {
   throw new Error('В корне архива отсутствует index.html');
 }
 
-async function handleZipUpload(event) {
-  const file = event.target.files[0];
+async function processFile(file) {
   if (!file) return;
 
   const version = newBuildVersion.value.trim();
   if (!version) {
     showToast('Укажите версию билда перед загрузкой', 'danger');
-    event.target.value = '';
+    if (fileZip.value) fileZip.value.value = '';
     return;
   }
 
@@ -139,7 +168,7 @@ async function handleZipUpload(event) {
 
   if (!isZip && !isTarGz) {
     showToast('Допустимые форматы: .zip и .tar.gz', 'danger');
-    event.target.value = '';
+    if (fileZip.value) fileZip.value.value = '';
     return;
   }
 
@@ -152,7 +181,7 @@ async function handleZipUpload(event) {
     }
   } catch (err) {
     showToast(err.message, 'danger');
-    event.target.value = '';
+    if (fileZip.value) fileZip.value.value = '';
     return;
   }
 
@@ -171,6 +200,15 @@ async function handleZipUpload(event) {
   } catch (err) {
     buildStatus.value = 'idle';
     showToast('Ошибка загрузки билда', 'danger');
+  } finally {
+    if (fileZip.value) fileZip.value.value = '';
+  }
+}
+
+async function handleZipUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    await processFile(file);
   }
 }
 
@@ -182,48 +220,132 @@ function resetBuildUpload() {
 </script>
 
 <style scoped>
-.input-group label {
-  display: block;
+.client-build-uploader {
+  margin-bottom: 20px;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.input-label {
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .req {
   color: var(--danger);
+  font-weight: 700;
 }
 
 .input-control {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-app);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-input);
+  font-family: inherit;
+  box-sizing: border-box;
   color: var(--text-main);
   outline: none;
-  box-sizing: border-box;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.input-control:focus {
+  border-color: var(--primary);
+  background: var(--bg-card);
 }
 
 .dropzone {
   border: 2px dashed var(--border);
-  border-radius: var(--radius-md);
-  padding: 32px;
-  text-align: center;
+  border-radius: var(--radius-md, 8px);
+  padding: 24px 20px;
+  background: var(--bg-card);
   cursor: pointer;
-  background: var(--bg-app);
-  transition: 0.2s;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .dropzone:hover {
   border-color: var(--primary);
-  background: var(--primary-light);
+  background: var(--bg-hover);
+}
+
+.dropzone.is-dragging {
+  border-color: var(--primary) !important;
+  background: var(--primary-light, rgba(88, 166, 255, 0.08)) !important;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.upload-prompt-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.upload-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-md {
+  width: 20px;
+  height: 20px;
+}
+
+.upload-prompt-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.upload-prompt-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-select-file {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-select-file:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-card);
 }
 
 .upload-progress-box {
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-app);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-secondary);
 }
 
 .prog-info {
@@ -250,7 +372,7 @@ function resetBuildUpload() {
 .upload-success-box {
   padding: 20px;
   border: 1px solid var(--success);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   background: var(--success-light);
   display: flex;
   align-items: center;
