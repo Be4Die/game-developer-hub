@@ -21,4 +21,6 @@ var (
 	ErrCannotDeleteAdmin = errors.New("cannot delete admin user")
 	// ErrNotInternalUser возвращается при попытке создать внутреннего пользователя с внешним email.
 	ErrNotInternalUser = errors.New("only internal users can be created with welwise.com domain")
+	// ErrModeratorManagedByAdmin возвращается при попытке модератора изменить свои данные или пароль.
+	ErrModeratorManagedByAdmin = errors.New("moderator profile is managed by administrator")
 )

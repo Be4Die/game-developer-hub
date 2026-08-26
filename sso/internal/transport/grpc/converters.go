@@ -94,7 +94,7 @@ func domainErrToStatus(err error) error {
 		return status.Errorf(codes.Unauthenticated, "%v", err)
 	case errors.Is(err, domain.ErrEmailNotVerified):
 		return status.Errorf(codes.FailedPrecondition, "%v", err)
-	case errors.Is(err, domain.ErrUserSuspended):
+	case errors.Is(err, domain.ErrUserSuspended), errors.Is(err, domain.ErrModeratorManagedByAdmin):
 		return status.Errorf(codes.PermissionDenied, "%v", err)
 	default:
 		return status.Errorf(codes.Internal, "%v", err)

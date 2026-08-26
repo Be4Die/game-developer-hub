@@ -23,10 +23,10 @@
         </div>
       </section>
 
-      <!-- 2-колоночная адаптивная сетка: строка 1 (Имя + Язык), строка 2 (Пароль + Тема) -->
+      <!-- 2-колоночная адаптивная сетка -->
       <div class="profile-grid">
-        <!-- РЯД 1 / КОЛОНКА 1: Изменение отображаемого имени -->
-        <section class="profile-card card-name">
+        <!-- Изменение отображаемого имени (только для разработчиков) -->
+        <section class="profile-card card-name" v-if="!isModerator">
           <h2 class="card-title">
             <UserCheck class="icon-sm text-primary" />
             {{ t('profile.editProfile') }}
@@ -54,7 +54,7 @@
           </form>
         </section>
 
-        <!-- РЯД 1 / КОЛОНКА 2: Язык интерфейса -->
+        <!-- Язык интерфейса -->
         <section class="profile-card card-lang">
           <h2 class="card-title">
             <Languages class="icon-sm text-primary" />
@@ -92,8 +92,8 @@
           </div>
         </section>
 
-        <!-- РЯД 2 / КОЛОНКА 1: Смена пароля -->
-        <section class="profile-card card-password">
+        <!-- Смена пароля (только для разработчиков) -->
+        <section class="profile-card card-password" v-if="!isModerator">
           <h2 class="card-title">
             <Lock class="icon-sm text-primary" />
             {{ t('profile.security') }}
@@ -161,7 +161,7 @@
           </form>
         </section>
 
-        <!-- РЯД 2 / КОЛОНКА 2: Тема оформления -->
+        <!-- Тема оформления -->
         <section class="profile-card card-theme">
           <h2 class="card-title">
             <Palette class="icon-sm text-primary" />
@@ -205,6 +205,15 @@ const userDisplayName = computed(
   () => user.value.display_name || user.value.email?.split('@')[0] || t('roles.user')
 );
 const userEmail = computed(() => user.value.email || '');
+
+const isModerator = computed(() => {
+  const role = user.value.role;
+  return (
+    role === 'USER_ROLE_MODERATOR' ||
+    role === 'moderator' ||
+    role === 2
+  );
+});
 
 const isModeratorOrAdmin = computed(() => {
   const role = user.value.role;

@@ -46,6 +46,10 @@ func (s *UserService) UpdateProfile(ctx context.Context, req domain.UpdateProfil
 		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	if user.Role == domain.RoleModerator {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrModeratorManagedByAdmin)
+	}
+
 	if req.DisplayName != nil {
 		user.DisplayName = *req.DisplayName
 	}
@@ -69,6 +73,10 @@ func (s *UserService) ChangePassword(ctx context.Context, req domain.ChangePassw
 	user, err := s.userRepo.GetByID(ctx, req.UserID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if user.Role == domain.RoleModerator {
+		return fmt.Errorf("%s: %w", op, domain.ErrModeratorManagedByAdmin)
 	}
 
 	// Проверяем текущий пароль.
