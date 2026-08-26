@@ -24,14 +24,15 @@
           </div>
         </div>
 
-        <!-- Фильтр по статусу ответа -->
+        <!-- Фильтр по статусу диалога -->
         <div class="filter-field field-status">
           <label class="field-label">{{ t('moderation.replyStatus') }}</label>
           <div class="select-wrapper">
             <select v-model="statusFilter" class="filter-select">
               <option value="all">{{ t('moderation.allChats') }}</option>
               <option value="unanswered">{{ t('moderation.unanswered') }}</option>
-              <option value="answered">{{ t('moderation.answered') }}</option>
+              <option value="in_dialog">{{ t('moderation.inDialog') }}</option>
+              <option value="resolved">{{ t('moderation.resolvedDialog') }}</option>
             </select>
             <ChevronDown class="icon-xs select-arrow" />
           </div>
@@ -117,14 +118,13 @@
               <th class="col-last-msg">{{ t('moderation.lastMessage') }}</th>
               <th class="col-reply-status">{{ t('moderation.replyStatus') }}</th>
               <th class="col-date">{{ t('common.date') }}</th>
-              <th class="col-actions"></th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="item in paginatedChats"
               :key="item.projectId"
-              class="table-row"
+              class="table-row clickable-row"
               @click="openChat(item.projectId)"
             >
               <!-- 1 колонка: Игра / Проект -->
@@ -156,8 +156,8 @@
               <td class="col-last-msg">
                 <div class="msg-preview-cell">
                   <div class="msg-meta-row">
-                    <span class="sender-role-pill" :class="senderRoleClass(item.lastMessage?.sender_role || item.lastMessage?.senderRole)">
-                      {{ senderRoleLabel(item.lastMessage?.sender_role || item.lastMessage?.senderRole) }}
+                    <span class="sender-role-pill" :class="senderRoleClass(item)">
+                      {{ senderRoleLabel(item) }}
                     </span>
                     <span class="sender-id" v-if="item.lastMessage?.sender_id && item.lastMessage?.sender_id !== 'system'">
                       {{ item.lastMessage?.sender_id }}
@@ -169,13 +169,13 @@
                 </div>
               </td>
 
-              <!-- 3 колонка: Статус ответа -->
+              <!-- 3 колонка: Статус ответа / диалога -->
               <td class="col-reply-status">
                 <span
                   class="status-pill"
-                  :class="item.isUnanswered ? 'status-unanswered' : 'status-answered'"
+                  :class="dialogStatusClass(item.dialogState)"
                 >
-                  {{ item.isUnanswered ? t('moderation.unanswered') : t('moderation.answered') }}
+                  {{ dialogStatusLabel(item.dialogState) }}
                 </span>
               </td>
 
@@ -184,20 +184,6 @@
                 <span class="date-text">
                   {{ formatDateTime(item.lastMessage?.created_at || item.lastMessage?.createdAt) }}
                 </span>
-              </td>
-
-              <!-- 5 колонка: Действия -->
-              <td class="col-actions" @click.stop>
-                <div class="row-actions">
-                  <button
-                    class="btn-open-chat"
-                    @click="openChat(item.projectId)"
-                    :title="t('moderation.openChat')"
-                  >
-                    <MessageSquare class="icon-xs" />
-                    <span>{{ t('moderation.openChat') }}</span>
-                  </button>
-                </div>
               </td>
             </tr>
           </tbody>
@@ -294,6 +280,38 @@ const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
+function determineDialogState(lastMsg) {
+  if (!lastMsg) return 'resolved';
+  const role = Number(lastMsg.sender_role || lastMsg.senderRole || 1);
+  const msgType = Number(lastMsg.message_type || lastMsg.messageType || 1);
+  const content = (lastMsg.content || '').toLowerCase();
+
+  // Если закрыт диалог или вынесен вердикт (одобрен/отклонен)
+  if (
+    msgType === 3 || // status_changed
+    msgType === 4 || // approved
+    msgType === 5 || // rejected
+    content.includes('закрыл диалог') ||
+    content.includes('вопрос решён') ||
+    content.includes('одобрен') ||
+    content.includes('отклонен')
+  ) {
+    return 'resolved';
+  }
+
+  // Если последнее сообщение от разработчика
+  if (role === 1) {
+    return 'unanswered';
+  }
+
+  // Если последнее сообщение от модератора
+  if (role === 2) {
+    return 'in_dialog';
+  }
+
+  return 'resolved';
+}
+
 async function loadChats() {
   loading.value = true;
   try {
@@ -315,14 +333,12 @@ async function loadChats() {
       const pId = Number(c.project_id || c.projectId);
       const req = reqsMap.get(pId);
       const lastMsg = c.last_message || c.lastMessage || {};
-      const role = Number(lastMsg.sender_role || lastMsg.senderRole || 1);
-      // Если последнее сообщение от разработчика (роль 1), значит чат ждёт ответа
-      const isUnanswered = role === 1;
+      const dialogState = determineDialogState(lastMsg);
 
       return {
         projectId: pId,
         lastMessage: lastMsg,
-        isUnanswered,
+        dialogState,
         titleRu: req?.snapshot?.titleRu || '',
         titleEn: req?.snapshot?.titleEn || '',
         iconPath: req?.snapshot?.iconPath || '',
@@ -348,11 +364,9 @@ function resetFilters() {
 const filteredChats = computed(() => {
   let list = [...chats.value];
 
-  // Фильтр по статусу ответа
-  if (statusFilter.value === 'unanswered') {
-    list = list.filter((c) => c.isUnanswered);
-  } else if (statusFilter.value === 'answered') {
-    list = list.filter((c) => !c.isUnanswered);
+  // Фильтр по статусу диалога
+  if (statusFilter.value !== 'all') {
+    list = list.filter((c) => c.dialogState === statusFilter.value);
   }
 
   // Поиск
@@ -407,20 +421,39 @@ const paginatedChats = computed(() => {
   return filteredChats.value.slice(start, start + pageSize.value);
 });
 
-function senderRoleLabel(role) {
-  const r = Number(role);
+function senderRoleLabel(item) {
+  const msgType = Number(item.lastMessage?.message_type || item.lastMessage?.messageType || 1);
+  if (msgType > 1) return t('moderation.systemRole');
+
+  const r = Number(item.lastMessage?.sender_role || item.lastMessage?.senderRole || 1);
   if (r === 1) return t('moderation.developerRole');
   if (r === 2) return t('moderation.moderatorRole');
   if (r === 3) return t('moderation.systemRole');
   return '—';
 }
 
-function senderRoleClass(role) {
-  const r = Number(role);
+function senderRoleClass(item) {
+  const msgType = Number(item.lastMessage?.message_type || item.lastMessage?.messageType || 1);
+  if (msgType > 1) return 'role-sys';
+
+  const r = Number(item.lastMessage?.sender_role || item.lastMessage?.senderRole || 1);
   if (r === 1) return 'role-dev';
   if (r === 2) return 'role-mod';
-  if (r === 3) return 'role-sys';
   return 'role-sys';
+}
+
+function dialogStatusLabel(state) {
+  if (state === 'unanswered') return t('moderation.unanswered');
+  if (state === 'in_dialog') return t('moderation.inDialog');
+  if (state === 'resolved') return t('moderation.resolvedDialog');
+  return t('common.unknown');
+}
+
+function dialogStatusClass(state) {
+  if (state === 'unanswered') return 'status-unanswered';
+  if (state === 'in_dialog') return 'status-in-dialog';
+  if (state === 'resolved') return 'status-resolved';
+  return 'status-neutral';
 }
 
 function openChat(projectId) {
@@ -635,11 +668,11 @@ function openChat(projectId) {
 }
 
 .col-game {
-  width: 28%;
+  width: 32%;
 }
 
 .col-last-msg {
-  width: 38%;
+  width: 42%;
 }
 
 .col-reply-status {
@@ -648,12 +681,8 @@ function openChat(projectId) {
 
 .col-date {
   width: 12%;
-}
-
-.col-actions {
-  width: 8%;
   text-align: right;
-  padding-right: 16px;
+  padding-right: 20px;
 }
 
 .table-row {
@@ -671,9 +700,9 @@ function openChat(projectId) {
   vertical-align: middle;
 }
 
-.table-row td.col-actions {
+.table-row td.col-date {
   text-align: right;
-  padding-right: 16px;
+  padding-right: 20px;
 }
 
 .game-cell {
@@ -735,7 +764,7 @@ function openChat(projectId) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 480px;
+  max-width: 520px;
 }
 
 .msg-meta-row {
@@ -807,7 +836,19 @@ function openChat(projectId) {
   color: #f5b027;
 }
 
-.status-answered {
+.status-in-dialog {
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.35);
+  color: #58a6ff;
+}
+
+.status-resolved {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.35);
+  color: #2ecc71;
+}
+
+.status-neutral {
   background: var(--bg-tertiary, #21262d);
   border: 1px solid var(--border, #30363d);
   color: var(--text-muted, #b0b8c4);
@@ -816,34 +857,6 @@ function openChat(projectId) {
 .date-text {
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
-}
-
-.row-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-open-chat {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  background: var(--bg-secondary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btn-open-chat:hover {
-  border-color: var(--primary, #58a6ff);
-  color: var(--primary, #58a6ff);
 }
 
 /* Пустые состояния */

@@ -112,9 +112,17 @@ func run() error {
 		}),
 		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
 			md := metadata.MD{}
-			
-			// Headers x-user-id are insecure to forward directly from HTTP.
-			// Let the downstream microservices parse the Authorization header.
+			if auth := req.Header.Get("Authorization"); auth != "" {
+				md.Set("authorization", auth)
+			}
+			if claims := parseJWTClaims(req); claims != nil {
+				if claims.UserID != "" {
+					md.Set("x-user-id", claims.UserID)
+				}
+				if claims.UserRole != "" {
+					md.Set("x-user-role", claims.UserRole)
+				}
+			}
 			return md
 		}),
 	)

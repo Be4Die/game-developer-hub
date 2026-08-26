@@ -176,6 +176,16 @@ message ListActiveChatsResponse {
   int32 total = 2;
 }
 
+message CloseDialogRequest {
+  int64 project_id = 1;
+  string comment = 2;
+}
+
+message CloseDialogResponse {
+  bool success = 1;
+  ChatMessage message = 2;
+}
+
 // ─── Сервис ───────────────────────────────────────────────────
 
 service ModerationService {
@@ -215,5 +225,9 @@ service ModerationService {
 
   rpc ListActiveChats(ListActiveChatsRequest) returns (ListActiveChatsResponse) {
     option (google.api.http) = { get: "/api/v1/moderation/chats" };
+  }
+
+  rpc CloseDialog(CloseDialogRequest) returns (CloseDialogResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/close-dialog", body: "*" };
   }
 }

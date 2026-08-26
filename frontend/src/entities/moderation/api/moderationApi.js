@@ -123,4 +123,17 @@ export const moderationApi = {
       total: res.data.total ?? (res.data.chats ? res.data.chats.length : 0),
     };
   },
+
+  /**
+   * Закрыть диалог модерации по проекту (Вопрос решён)
+   */
+  async closeDialog(projectId, comment = '') {
+    const res = await http.post(`/moderation/projects/${projectId}/close-dialog`, {
+      comment,
+    });
+    return {
+      success: res.data.success,
+      message: res.data.message,
+    };
+  },
 };

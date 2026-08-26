@@ -205,3 +205,26 @@ func (h *ModerationHandler) ListActiveChats(ctx context.Context, req *pb.ListAct
 		Total: int32(total),
 	}, nil
 }
+
+// CloseDialog закрывает диалог модерации по проекту.
+func (h *ModerationHandler) CloseDialog(ctx context.Context, req *pb.CloseDialogRequest) (*pb.CloseDialogResponse, error) {
+	moderatorID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	userRole := UserRoleFromContext(ctx)
+	if userRole != "moderator" && userRole != "admin" {
+		return nil, status.Error(codes.PermissionDenied, "only moderators can close dialogs")
+	}
+
+	msg, err := h.svc.CloseDialog(ctx, req.GetProjectId(), moderatorID, req.GetComment())
+	if err != nil {
+		return nil, domainError(err, "close dialog")
+	}
+
+	return &pb.CloseDialogResponse{
+		Success: true,
+		Message: messageToProto(msg),
+	}, nil
+}

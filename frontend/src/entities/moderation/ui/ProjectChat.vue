@@ -1,25 +1,41 @@
 <template>
   <div class="project-chat-container">
+    <!-- Шапка чата: Заголовок, статус диалога и кнопка закрытия вопроса -->
     <div class="chat-header">
-      <div class="chat-title-group">
+      <div class="chat-header-left">
         <MessageSquare class="icon-sm text-primary" />
         <h3 class="chat-title">{{ t('moderation.projectChatTitle') }}</h3>
+        <!-- Статус диалога -->
+        <span class="status-pill-sm" :class="dialogStatusClass">
+          {{ dialogStatusLabel }}
+        </span>
       </div>
-      <span class="messages-counter" v-if="messages.length">
-        {{ messages.length }} сообщ.
-      </span>
+
+      <div class="chat-header-right">
+        <!-- Кнопка закрытия вопроса модератором -->
+        <button
+          v-if="isModeratorOrAdmin && dialogState !== 'resolved'"
+          class="btn-close-dialog"
+          :disabled="closingDialog"
+          @click="handleCloseDialog"
+          :title="t('moderation.closeDialogBtn')"
+        >
+          <CheckCircle2 class="icon-xs text-success" />
+          <span>{{ t('moderation.closeDialogBtn') }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Область сообщений -->
     <div class="chat-messages-scroll" ref="messagesContainer">
       <div v-if="loading && !messages.length" class="chat-state-box">
         <span class="loader-spinner"></span>
-        <p>Загрузка сообщений...</p>
+        <p>{{ t('common.loading') }}</p>
       </div>
 
       <div v-else-if="!messages.length" class="chat-state-box empty">
         <MessageSquareDashed class="icon-lg text-muted" />
-        <p>История сообщений пуста</p>
+        <p>{{ t('moderation.noChats') }}</p>
         <span class="subtext">Здесь фиксируются системные события и ведется диалог между разработчиком и модератором</span>
       </div>
 
@@ -29,17 +45,17 @@
           :key="msg.id"
           class="message-row"
           :class="{
-            'is-system': msg.is_system,
-            'is-own': !msg.is_system && isOwn(msg),
-            'is-other': !msg.is_system && !isOwn(msg),
+            'is-system': isSystemMessage(msg),
+            'is-own': !isSystemMessage(msg) && isOwn(msg),
+            'is-other': !isSystemMessage(msg) && !isOwn(msg),
           }"
         >
           <!-- Системное событие -->
-          <div v-if="msg.is_system" class="system-event-card">
+          <div v-if="isSystemMessage(msg)" class="system-event-card">
             <Info class="icon-xs system-icon" />
             <div class="system-content">
               <span class="system-text">{{ msg.content }}</span>
-              <span class="system-time">{{ formatTime(msg.created_at) }}</span>
+              <span class="system-time">{{ formatTime(msg.created_at || msg.createdAt) }}</span>
             </div>
           </div>
 
@@ -47,7 +63,7 @@
           <div v-else class="chat-bubble">
             <div class="bubble-header">
               <span class="author-name">{{ formatSenderRole(msg) }}</span>
-              <span class="bubble-time">{{ formatTime(msg.created_at) }}</span>
+              <span class="bubble-time">{{ formatTime(msg.created_at || msg.createdAt) }}</span>
             </div>
             <div class="bubble-body">{{ msg.content }}</div>
           </div>
@@ -60,7 +76,7 @@
       <textarea
         v-model="inputContent"
         class="chat-textarea"
-        placeholder="Напишите сообщение... (Enter для отправки)"
+        :placeholder="t('moderation.chatPlaceholder')"
         rows="2"
         :disabled="sending"
         @keydown.enter.exact.prevent="handleSend"
@@ -69,6 +85,7 @@
         class="btn-send"
         :disabled="!inputContent.trim() || sending"
         @click="handleSend"
+        :title="t('moderation.sendMessage')"
       >
         <Send class="icon-sm" />
       </button>
@@ -77,12 +94,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MessageSquare, MessageSquareDashed, Info, Send } from 'lucide-vue-next';
+import {
+  MessageSquare,
+  MessageSquareDashed,
+  Info,
+  Send,
+  CheckCircle2,
+} from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import { formatDateTime } from '../model/helpers';
 import { useAuth } from '@/entities/user';
+import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 
@@ -93,35 +117,96 @@ const props = defineProps({
   },
   autoPollInterval: {
     type: Number,
-    default: 5000,
+    default: 4000,
   },
 });
 
+const emit = defineEmits(['dialogStatusChanged']);
+
 const { state: authState } = useAuth();
-const currentUserId = authState.user?.id;
+const currentUserId = computed(() => authState.user?.id || '');
+const currentUserRole = computed(() => authState.user?.role || '');
+
+const isModeratorOrAdmin = computed(() => {
+  const r = currentUserRole.value;
+  return (
+    r === 'USER_ROLE_MODERATOR' ||
+    r === 'USER_ROLE_ADMIN' ||
+    r === 'moderator' ||
+    r === 'admin' ||
+    r === 2 ||
+    r === 3
+  );
+});
 
 const messages = ref([]);
 const loading = ref(false);
 const sending = ref(false);
+const closingDialog = ref(false);
 const inputContent = ref('');
 const messagesContainer = ref(null);
 
 let pollTimer = null;
 
+const dialogState = computed(() => {
+  if (!messages.value.length) return 'resolved';
+  const last = messages.value[messages.value.length - 1];
+  const role = Number(last.sender_role || last.senderRole || 1);
+  const msgType = Number(last.message_type || last.messageType || 1);
+  const content = (last.content || '').toLowerCase();
+
+  if (
+    msgType === 3 || // status_changed
+    msgType === 4 || // approved
+    msgType === 5 || // rejected
+    content.includes('закрыл диалог') ||
+    content.includes('вопрос решён') ||
+    content.includes('одобрен') ||
+    content.includes('отклонен')
+  ) {
+    return 'resolved';
+  }
+
+  if (role === 1) {
+    return 'unanswered';
+  }
+  if (role === 2) {
+    return 'in_dialog';
+  }
+  return 'resolved';
+});
+
+const dialogStatusLabel = computed(() => {
+  if (dialogState.value === 'unanswered') return t('moderation.unanswered');
+  if (dialogState.value === 'in_dialog') return t('moderation.inDialog');
+  if (dialogState.value === 'resolved') return t('moderation.resolvedDialog');
+  return t('common.unknown');
+});
+
+const dialogStatusClass = computed(() => {
+  if (dialogState.value === 'unanswered') return 'status-pill-unanswered';
+  if (dialogState.value === 'in_dialog') return 'status-pill-in-dialog';
+  if (dialogState.value === 'resolved') return 'status-pill-resolved';
+  return 'status-pill-neutral';
+});
+
+function isSystemMessage(msg) {
+  const msgType = Number(msg.message_type || msg.messageType || 1);
+  const senderRole = Number(msg.sender_role || msg.senderRole || 1);
+  return msg.is_system || msgType > 1 || senderRole === 3 || msg.sender_id === 'system';
+}
+
 function isOwn(msg) {
-  if (!currentUserId) return false;
-  return String(msg.sender_id) === String(currentUserId);
+  if (!currentUserId.value) return false;
+  return String(msg.sender_id) === String(currentUserId.value);
 }
 
 function formatSenderRole(msg) {
   if (isOwn(msg)) return 'Вы';
-  if (msg.sender_role === 'moderator' || msg.sender_role === 'USER_ROLE_MODERATOR') {
-    return 'Модератор';
-  }
-  if (msg.sender_role === 'developer' || msg.sender_role === 'USER_ROLE_USER') {
-    return 'Разработчик';
-  }
-  return msg.sender_id || 'Пользователь';
+  const r = Number(msg.sender_role || msg.senderRole || 1);
+  if (r === 2) return t('moderation.moderatorRole');
+  if (r === 1) return t('moderation.developerRole');
+  return 'Пользователь';
 }
 
 function formatTime(isoStr) {
@@ -145,6 +230,7 @@ async function fetchMessages(silent = false) {
     messages.value = newMessages;
     if (hadChanges) {
       scrollToBottom();
+      emit('dialogStatusChanged', dialogState.value);
     }
   } catch (err) {
     console.error('Failed to fetch project messages:', err);
@@ -164,9 +250,23 @@ async function handleSend() {
     await fetchMessages(true);
     scrollToBottom();
   } catch (err) {
-    console.error('Failed to send message:', err);
+    showToast(t('common.error'), 'danger');
   } finally {
     sending.value = false;
+  }
+}
+
+async function handleCloseDialog() {
+  closingDialog.value = true;
+  try {
+    await moderationApi.closeDialog(props.projectId);
+    showToast(t('moderation.closeDialogSuccess'), 'success');
+    await fetchMessages(true);
+    scrollToBottom();
+  } catch (err) {
+    showToast(err.response?.data?.message || t('common.error'), 'danger');
+  } finally {
+    closingDialog.value = false;
   }
 }
 
@@ -200,9 +300,9 @@ onUnmounted(() => {
 .project-chat-container {
   display: flex;
   flex-direction: column;
-  background: var(--bg-card);
-  border: none;
-  border-radius: 0;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
   overflow: hidden;
   height: 100%;
   width: 100%;
@@ -210,32 +310,91 @@ onUnmounted(() => {
 }
 
 .chat-header {
-  padding: 14px 18px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  background: var(--bg-card, #161b22);
+  border-bottom: 1px solid var(--border, #30363d);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
 }
 
-.chat-title-group {
+.chat-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .chat-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--text-main, #f0f6fc);
 }
 
-.messages-counter {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
+.status-pill-sm {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.status-pill-unanswered {
+  background: rgba(245, 176, 39, 0.12);
+  border: 1px solid rgba(245, 176, 39, 0.35);
+  color: #f5b027;
+}
+
+.status-pill-in-dialog {
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.35);
+  color: #58a6ff;
+}
+
+.status-pill-resolved {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.35);
+  color: #2ecc71;
+}
+
+.status-pill-neutral {
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-muted, #b0b8c4);
+}
+
+.chat-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.btn-close-dialog {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--bg-secondary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 12px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-close-dialog:hover:not(:disabled) {
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+.btn-close-dialog:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .chat-messages-scroll {
@@ -245,7 +404,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: var(--bg-app);
+  background: var(--bg-app, #0d1117);
 }
 
 .chat-state-box {
@@ -257,12 +416,13 @@ onUnmounted(() => {
   gap: 8px;
   padding: 24px;
   text-align: center;
-  color: var(--text-tertiary);
+  color: var(--text-tertiary, #8b949e);
 }
 
 .chat-state-box.empty .subtext {
-  font-size: 0.8rem;
+  font-size: 12px;
   max-width: 280px;
+  line-height: 1.4;
 }
 
 .messages-stack {
@@ -293,17 +453,17 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
   padding: 6px 12px;
   max-width: 85%;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: var(--text-muted, #b0b8c4);
 }
 
 .system-icon {
-  color: var(--primary);
+  color: var(--primary, #58a6ff);
   flex-shrink: 0;
 }
 
@@ -319,30 +479,30 @@ onUnmounted(() => {
 }
 
 .system-time {
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
+  font-size: 11px;
+  color: var(--text-tertiary, #6e7681);
 }
 
 /* Пузыри сообщений */
 .chat-bubble {
   max-width: 75%;
   padding: 10px 14px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md, 8px);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .message-row.is-own .chat-bubble {
-  background: var(--primary);
-  color: white;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
   border-bottom-right-radius: 2px;
 }
 
 .message-row.is-other .chat-bubble {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-main);
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
   border-bottom-left-radius: 2px;
 }
 
@@ -351,7 +511,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  font-size: 0.75rem;
+  font-size: 11px;
 }
 
 .message-row.is-own .author-name {
@@ -365,15 +525,15 @@ onUnmounted(() => {
 
 .message-row.is-other .author-name {
   font-weight: 600;
-  color: var(--primary);
+  color: var(--primary, #58a6ff);
 }
 
 .message-row.is-other .bubble-time {
-  color: var(--text-tertiary);
+  color: var(--text-tertiary, #8b949e);
 }
 
 .bubble-body {
-  font-size: 0.88rem;
+  font-size: 13px;
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-word;
@@ -385,45 +545,66 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background: var(--bg-card);
-  border-top: 1px solid var(--border);
+  background: var(--bg-card, #161b22);
+  border-top: 1px solid var(--border, #30363d);
 }
 
 .chat-textarea {
   flex: 1;
-  border: 1px solid var(--border);
-  background: var(--bg-app);
-  color: var(--text-main);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border, #30363d);
+  background: var(--bg-secondary, #0d1117);
+  color: var(--text-main, #f0f6fc);
+  border-radius: var(--radius-sm, 6px);
   padding: 8px 12px;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 13px;
   resize: none;
   box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
 }
 
 .chat-textarea:focus {
-  outline: none;
-  border-color: var(--primary);
+  border-color: var(--primary, #58a6ff);
 }
 
 .btn-send {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--primary);
-  color: white;
+  width: 36px;
+  height: 36px;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: background-color 0.15s, opacity 0.15s;
   flex-shrink: 0;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: var(--primary-hover, #79c0ff);
 }
 
 .btn-send:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.loader-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

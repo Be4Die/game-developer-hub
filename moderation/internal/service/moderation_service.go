@@ -245,3 +245,37 @@ func (s *ModerationService) ListMessages(ctx context.Context, projectID int64, l
 func (s *ModerationService) ListActiveChats(ctx context.Context, limit, offset int) ([]*domain.ChatSummary, int, error) {
 	return s.messageRepo.ListActiveChats(ctx, limit, offset)
 }
+
+// CloseDialog закрывает диалог по проекту и отправляет системное сообщение о решении вопроса.
+func (s *ModerationService) CloseDialog(ctx context.Context, projectID int64, moderatorID, comment string) (*domain.ChatMessage, error) {
+	var reqID *int64
+	if latestReq, err := s.requestRepo.GetLatestByProject(ctx, projectID); err == nil {
+		reqID = &latestReq.ID
+	}
+
+	content := "Модератор закрыл диалог. Все вопросы решены."
+	if strings.TrimSpace(comment) != "" {
+		content = fmt.Sprintf("Диалог закрыт: %s", strings.TrimSpace(comment))
+	}
+
+	sysMsg := &domain.ChatMessage{
+		ProjectID:   projectID,
+		RequestID:   reqID,
+		SenderID:    moderatorID,
+		SenderRole:  domain.SenderRoleSystem,
+		MessageType: domain.MessageTypeStatusChanged,
+		Content:     content,
+		Payload: map[string]any{
+			"dialog_status": "closed",
+			"closed_by":     moderatorID,
+		},
+	}
+
+	id, err := s.messageRepo.Create(ctx, sysMsg)
+	if err != nil {
+		return nil, fmt.Errorf("ModerationService.CloseDialog create: %w", err)
+	}
+	sysMsg.ID = id
+
+	return sysMsg, nil
+}

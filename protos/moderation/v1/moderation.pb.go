@@ -1576,6 +1576,110 @@ func (x *ListActiveChatsResponse) GetTotal() int32 {
 	return 0
 }
 
+type CloseDialogRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CloseDialogRequest) Reset() {
+	*x = CloseDialogRequest{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseDialogRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseDialogRequest) ProtoMessage() {}
+
+func (x *CloseDialogRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CloseDialogRequest.ProtoReflect.Descriptor instead.
+func (*CloseDialogRequest) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *CloseDialogRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *CloseDialogRequest) GetComment() string {
+	if x != nil {
+		return x.Comment
+	}
+	return ""
+}
+
+type CloseDialogResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       *ChatMessage           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CloseDialogResponse) Reset() {
+	*x = CloseDialogResponse{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CloseDialogResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CloseDialogResponse) ProtoMessage() {}
+
+func (x *CloseDialogResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CloseDialogResponse.ProtoReflect.Descriptor instead.
+func (*CloseDialogResponse) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *CloseDialogResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CloseDialogResponse) GetMessage() *ChatMessage {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
 var File_moderation_v1_moderation_proto protoreflect.FileDescriptor
 
 const file_moderation_v1_moderation_proto_rawDesc = "" +
@@ -1692,7 +1796,14 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"a\n" +
 	"\x17ListActiveChatsResponse\x120\n" +
 	"\x05chats\x18\x01 \x03(\v2\x1a.moderation.v1.ChatSummaryR\x05chats\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total*\xc1\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"M\n" +
+	"\x12CloseDialogRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x18\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\"e\n" +
+	"\x13CloseDialogResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x124\n" +
+	"\amessage\x18\x02 \x01(\v2\x1a.moderation.v1.ChatMessageR\amessage*\xc1\x01\n" +
 	"\rRequestStatus\x12\x1e\n" +
 	"\x1aREQUEST_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16REQUEST_STATUS_PENDING\x10\x01\x12\x1c\n" +
@@ -1712,7 +1823,7 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x16MESSAGE_TYPE_SUBMITTED\x10\x02\x12\x1f\n" +
 	"\x1bMESSAGE_TYPE_STATUS_CHANGED\x10\x03\x12\x19\n" +
 	"\x15MESSAGE_TYPE_APPROVED\x10\x04\x12\x19\n" +
-	"\x15MESSAGE_TYPE_REJECTED\x10\x052\xe7\v\n" +
+	"\x15MESSAGE_TYPE_REJECTED\x10\x052\x80\r\n" +
 	"\x11ModerationService\x12T\n" +
 	"\vSubmitDraft\x12!.moderation.v1.SubmitDraftRequest\x1a\".moderation.v1.SubmitDraftResponse\x12\x90\x01\n" +
 	"\fListRequests\x12,.moderation.v1.ListModerationRequestsRequest\x1a-.moderation.v1.ListModerationRequestsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/moderation/requests\x12\x97\x01\n" +
@@ -1724,7 +1835,8 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x06Reject\x12&.moderation.v1.RejectModerationRequest\x1a'.moderation.v1.RejectModerationResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/moderation/projects/{project_id}/reject\x12\x9a\x01\n" +
 	"\vSendMessage\x12%.moderation.v1.SendChatMessageRequest\x1a&.moderation.v1.SendChatMessageResponse\"<\x82\xd3\xe4\x93\x026:\x01*\"1/api/v1/moderation/projects/{project_id}/messages\x12\x9a\x01\n" +
 	"\fListMessages\x12&.moderation.v1.ListChatMessagesRequest\x1a'.moderation.v1.ListChatMessagesResponse\"9\x82\xd3\xe4\x93\x023\x121/api/v1/moderation/projects/{project_id}/messages\x12\x82\x01\n" +
-	"\x0fListActiveChats\x12%.moderation.v1.ListActiveChatsRequest\x1a&.moderation.v1.ListActiveChatsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/moderation/chatsB\xc1\x01\n" +
+	"\x0fListActiveChats\x12%.moderation.v1.ListActiveChatsRequest\x1a&.moderation.v1.ListActiveChatsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/moderation/chats\x12\x96\x01\n" +
+	"\vCloseDialog\x12!.moderation.v1.CloseDialogRequest\x1a\".moderation.v1.CloseDialogResponse\"@\x82\xd3\xe4\x93\x02::\x01*\"5/api/v1/moderation/projects/{project_id}/close-dialogB\xc1\x01\n" +
 	"\x11com.moderation.v1B\x0fModerationProtoP\x01ZFgithub.com/Be4Die/game-developer-hub/protos/moderation/v1;moderationv1\xa2\x02\x03MXX\xaa\x02\rModeration.V1\xca\x02\rModeration\\V1\xe2\x02\x19Moderation\\V1\\GPBMetadata\xea\x02\x0eModeration::V1b\x06proto3"
 
 var (
@@ -1740,7 +1852,7 @@ func file_moderation_v1_moderation_proto_rawDescGZIP() []byte {
 }
 
 var file_moderation_v1_moderation_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_moderation_v1_moderation_proto_goTypes = []any{
 	(RequestStatus)(0),                       // 0: moderation.v1.RequestStatus
 	(SenderRole)(0),                          // 1: moderation.v1.SenderRole
@@ -1768,6 +1880,8 @@ var file_moderation_v1_moderation_proto_goTypes = []any{
 	(*ChatSummary)(nil),                      // 23: moderation.v1.ChatSummary
 	(*ListActiveChatsRequest)(nil),           // 24: moderation.v1.ListActiveChatsRequest
 	(*ListActiveChatsResponse)(nil),          // 25: moderation.v1.ListActiveChatsResponse
+	(*CloseDialogRequest)(nil),               // 26: moderation.v1.CloseDialogRequest
+	(*CloseDialogResponse)(nil),              // 27: moderation.v1.CloseDialogResponse
 }
 var file_moderation_v1_moderation_proto_depIdxs = []int32{
 	0,  // 0: moderation.v1.ModerationRequest.status:type_name -> moderation.v1.RequestStatus
@@ -1786,31 +1900,34 @@ var file_moderation_v1_moderation_proto_depIdxs = []int32{
 	5,  // 13: moderation.v1.ListChatMessagesResponse.messages:type_name -> moderation.v1.ChatMessage
 	5,  // 14: moderation.v1.ChatSummary.last_message:type_name -> moderation.v1.ChatMessage
 	23, // 15: moderation.v1.ListActiveChatsResponse.chats:type_name -> moderation.v1.ChatSummary
-	6,  // 16: moderation.v1.ModerationService.SubmitDraft:input_type -> moderation.v1.SubmitDraftRequest
-	8,  // 17: moderation.v1.ModerationService.ListRequests:input_type -> moderation.v1.ListModerationRequestsRequest
-	10, // 18: moderation.v1.ModerationService.GetRequest:input_type -> moderation.v1.GetModerationRequestRequest
-	12, // 19: moderation.v1.ModerationService.GetLatestRequestByProject:input_type -> moderation.v1.GetLatestRequestByProjectRequest
-	13, // 20: moderation.v1.ModerationService.ClaimRequest:input_type -> moderation.v1.ClaimModerationRequestRequest
-	15, // 21: moderation.v1.ModerationService.Approve:input_type -> moderation.v1.ApproveModerationRequest
-	17, // 22: moderation.v1.ModerationService.Reject:input_type -> moderation.v1.RejectModerationRequest
-	19, // 23: moderation.v1.ModerationService.SendMessage:input_type -> moderation.v1.SendChatMessageRequest
-	21, // 24: moderation.v1.ModerationService.ListMessages:input_type -> moderation.v1.ListChatMessagesRequest
-	24, // 25: moderation.v1.ModerationService.ListActiveChats:input_type -> moderation.v1.ListActiveChatsRequest
-	7,  // 26: moderation.v1.ModerationService.SubmitDraft:output_type -> moderation.v1.SubmitDraftResponse
-	9,  // 27: moderation.v1.ModerationService.ListRequests:output_type -> moderation.v1.ListModerationRequestsResponse
-	11, // 28: moderation.v1.ModerationService.GetRequest:output_type -> moderation.v1.GetModerationRequestResponse
-	11, // 29: moderation.v1.ModerationService.GetLatestRequestByProject:output_type -> moderation.v1.GetModerationRequestResponse
-	14, // 30: moderation.v1.ModerationService.ClaimRequest:output_type -> moderation.v1.ClaimModerationRequestResponse
-	16, // 31: moderation.v1.ModerationService.Approve:output_type -> moderation.v1.ApproveModerationResponse
-	18, // 32: moderation.v1.ModerationService.Reject:output_type -> moderation.v1.RejectModerationResponse
-	20, // 33: moderation.v1.ModerationService.SendMessage:output_type -> moderation.v1.SendChatMessageResponse
-	22, // 34: moderation.v1.ModerationService.ListMessages:output_type -> moderation.v1.ListChatMessagesResponse
-	25, // 35: moderation.v1.ModerationService.ListActiveChats:output_type -> moderation.v1.ListActiveChatsResponse
-	26, // [26:36] is the sub-list for method output_type
-	16, // [16:26] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	5,  // 16: moderation.v1.CloseDialogResponse.message:type_name -> moderation.v1.ChatMessage
+	6,  // 17: moderation.v1.ModerationService.SubmitDraft:input_type -> moderation.v1.SubmitDraftRequest
+	8,  // 18: moderation.v1.ModerationService.ListRequests:input_type -> moderation.v1.ListModerationRequestsRequest
+	10, // 19: moderation.v1.ModerationService.GetRequest:input_type -> moderation.v1.GetModerationRequestRequest
+	12, // 20: moderation.v1.ModerationService.GetLatestRequestByProject:input_type -> moderation.v1.GetLatestRequestByProjectRequest
+	13, // 21: moderation.v1.ModerationService.ClaimRequest:input_type -> moderation.v1.ClaimModerationRequestRequest
+	15, // 22: moderation.v1.ModerationService.Approve:input_type -> moderation.v1.ApproveModerationRequest
+	17, // 23: moderation.v1.ModerationService.Reject:input_type -> moderation.v1.RejectModerationRequest
+	19, // 24: moderation.v1.ModerationService.SendMessage:input_type -> moderation.v1.SendChatMessageRequest
+	21, // 25: moderation.v1.ModerationService.ListMessages:input_type -> moderation.v1.ListChatMessagesRequest
+	24, // 26: moderation.v1.ModerationService.ListActiveChats:input_type -> moderation.v1.ListActiveChatsRequest
+	26, // 27: moderation.v1.ModerationService.CloseDialog:input_type -> moderation.v1.CloseDialogRequest
+	7,  // 28: moderation.v1.ModerationService.SubmitDraft:output_type -> moderation.v1.SubmitDraftResponse
+	9,  // 29: moderation.v1.ModerationService.ListRequests:output_type -> moderation.v1.ListModerationRequestsResponse
+	11, // 30: moderation.v1.ModerationService.GetRequest:output_type -> moderation.v1.GetModerationRequestResponse
+	11, // 31: moderation.v1.ModerationService.GetLatestRequestByProject:output_type -> moderation.v1.GetModerationRequestResponse
+	14, // 32: moderation.v1.ModerationService.ClaimRequest:output_type -> moderation.v1.ClaimModerationRequestResponse
+	16, // 33: moderation.v1.ModerationService.Approve:output_type -> moderation.v1.ApproveModerationResponse
+	18, // 34: moderation.v1.ModerationService.Reject:output_type -> moderation.v1.RejectModerationResponse
+	20, // 35: moderation.v1.ModerationService.SendMessage:output_type -> moderation.v1.SendChatMessageResponse
+	22, // 36: moderation.v1.ModerationService.ListMessages:output_type -> moderation.v1.ListChatMessagesResponse
+	25, // 37: moderation.v1.ModerationService.ListActiveChats:output_type -> moderation.v1.ListActiveChatsResponse
+	27, // 38: moderation.v1.ModerationService.CloseDialog:output_type -> moderation.v1.CloseDialogResponse
+	28, // [28:39] is the sub-list for method output_type
+	17, // [17:28] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_moderation_v1_moderation_proto_init() }
@@ -1824,7 +1941,7 @@ func file_moderation_v1_moderation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moderation_v1_moderation_proto_rawDesc), len(file_moderation_v1_moderation_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   23,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

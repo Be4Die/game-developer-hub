@@ -149,9 +149,9 @@ func (r *MessageRepo) ListActiveChats(ctx context.Context, limit, offset int) ([
 		FROM (
 			SELECT DISTINCT ON (project_id) *
 			FROM moderation_messages
-			ORDER BY project_id, created_at DESC
+			ORDER BY project_id, created_at DESC, id DESC
 		) m
-		ORDER BY m.created_at DESC
+		ORDER BY m.created_at DESC, m.id DESC
 		LIMIT $1 OFFSET $2
 	`
 

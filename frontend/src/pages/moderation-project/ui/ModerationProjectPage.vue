@@ -1,173 +1,249 @@
 <template>
-  <div class="project-detail-page" v-if="projectData">
-    <!-- Верхняя панель навигации -->
-    <div class="top-nav-bar">
-      <button class="back-btn" @click="$router.push('/moderator/queue')">
-        <ArrowLeft class="icon-sm" /> Назад к списку проектов
-      </button>
-      <div class="header-badges">
-        <span class="badge" v-if="activeRequest" :class="getStatusBadgeClass(requestStatus)">
-          {{ getStatusText(requestStatus) }}
-        </span>
-        <span class="badge badge-info" v-else>Чат (Без заявки)</span>
-      </div>
-    </div>
+  <div class="moderator-workspace" v-if="projectData">
+    <!-- ЛЕВАЯ КОЛОНКА: ИНСПЕКТОР ЧЕРНОВИКА И ДЕЙСТВИЯ -->
+    <main class="review-inspector">
+      <div class="inspector-scroll">
+        <!-- Шапка проекта (Карточка идентификации) -->
+        <div class="card project-identity-card">
+          <div class="identity-header">
+            <div class="identity-icon-box">
+              <img
+                v-if="projectIconUrl"
+                :src="projectIconUrl"
+                alt="Icon"
+                class="identity-icon-img"
+              />
+              <div v-else class="identity-icon-mock">
+                <span>Draft</span>
+              </div>
+            </div>
 
-    <!-- Основной лейаут: Карточка игры слева, Чат справа -->
-    <div class="project-layout">
-      <!-- Левая колонка: Проверка черновика игры -->
-      <div class="inspection-column">
-        <!-- Карточка игры -->
-        <div class="card game-card">
-          <div class="game-header">
-            <div>
-              <h2 class="game-title">
+            <div class="identity-text-box">
+              <div class="identity-top-row">
+                <span class="project-id-tag">Проект #{{ projectId }}</span>
+                <span
+                  class="status-badge"
+                  v-if="activeRequest"
+                  :class="getStatusBadgeClass(requestStatus)"
+                >
+                  {{ getStatusText(requestStatus) }}
+                </span>
+                <span class="version-tag" v-if="projectData.activeBuildVersion">
+                  v{{ projectData.activeBuildVersion }}
+                </span>
+              </div>
+              <h1 class="project-main-title">
                 {{ projectData.titleRu || projectData.titleEn || `Проект #${projectId}` }}
-              </h2>
-              <div class="game-title-en" v-if="projectData.titleEn && projectData.titleRu">
+              </h1>
+              <div class="project-sub-title" v-if="projectData.titleEn && projectData.titleRu">
                 {{ projectData.titleEn }}
               </div>
             </div>
-            <div class="game-version-badge" v-if="projectData.activeBuildVersion">
-              v{{ projectData.activeBuildVersion }}
-            </div>
           </div>
 
-          <!-- Метаданные -->
-          <div class="meta-grid">
-            <div class="meta-field">
-              <span class="meta-label">ID Проекта</span>
-              <span class="meta-value">#{{ projectId }}</span>
-            </div>
-            <div class="meta-field">
-              <span class="meta-label">Разработчик</span>
+          <!-- Метаданные проверки -->
+          <div class="identity-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">{{ t('moderation.developerColumn') }}</span>
               <span class="meta-value">{{ activeRequest?.ownerId || '—' }}</span>
             </div>
-            <div class="meta-field">
-              <span class="meta-label">Отправлено на проверку</span>
+            <div class="meta-item">
+              <span class="meta-label">{{ t('moderation.submittedColumn') }}</span>
               <span class="meta-value">
-                {{ activeRequest ? formatDateTime(activeRequest.submittedAt) : 'Нет активной заявки' }}
+                {{ activeRequest ? formatDateTime(activeRequest.submittedAt) : '—' }}
               </span>
             </div>
-            <div class="meta-field">
-              <span class="meta-label">Модератор</span>
-              <span class="meta-value">{{ activeRequest?.moderatorId || 'Не назначен' }}</span>
+            <div class="meta-item">
+              <span class="meta-label">{{ t('moderation.moderator') }}</span>
+              <span class="meta-value">
+                {{ activeRequest?.moderatorId || t('moderation.notAssigned') }}
+              </span>
             </div>
           </div>
+        </div>
 
-          <!-- Описание RU / EN -->
-          <div class="seo-grid">
-            <div class="content-block">
-              <label class="block-label">Описание игры (RU)</label>
-              <p class="block-text">{{ projectData.aboutRu || projectData.about || 'Описание не заполнено.' }}</p>
+        <!-- КАРТОЧКА 1: ОСНОВНАЯ ИНФОРМАЦИЯ -->
+        <div class="card section-card">
+          <div class="section-head">
+            <h3>{{ t('moderation.basicInfo') }}</h3>
+          </div>
+
+          <!-- Названия -->
+          <div class="data-row">
+            <div class="data-group">
+              <label class="data-label">{{ t('projectDraft.gameTitleRu') }}</label>
+              <div class="data-box">{{ projectData.titleRu || '—' }}</div>
             </div>
-            <div class="content-block">
-              <label class="block-label">Описание игры (EN)</label>
-              <p class="block-text">{{ projectData.aboutEn || 'Описание не заполнено.' }}</p>
+            <div class="data-group">
+              <label class="data-label">{{ t('projectDraft.gameTitleEn') }}</label>
+              <div class="data-box">{{ projectData.titleEn || '—' }}</div>
             </div>
           </div>
 
           <!-- SEO описания -->
-          <div class="seo-grid">
-            <div class="content-block" v-if="projectData.seoRu">
-              <label class="block-label">SEO (RU)</label>
-              <p class="block-text">{{ projectData.seoRu }}</p>
+          <div class="data-row">
+            <div class="data-group">
+              <label class="data-label">SEO (RU)</label>
+              <div class="data-box multiline">{{ projectData.seoRu || '—' }}</div>
             </div>
-            <div class="content-block" v-if="projectData.seoEn">
-              <label class="block-label">SEO (EN)</label>
-              <p class="block-text">{{ projectData.seoEn }}</p>
-            </div>
-          </div>
-
-          <!-- Медиафайлы (Иконка, Обложка) -->
-          <div class="media-section">
-            <label class="block-label">Медиаресурсы</label>
-            <div class="media-preview-grid">
-              <div class="media-preview-card" v-if="projectData.iconPath">
-                <span class="media-tag">Иконка (512x512)</span>
-                <img :src="projectData.iconPath" alt="Icon" class="media-img icon-img" />
-              </div>
-              <div class="media-preview-card" v-if="projectData.coverPath">
-                <span class="media-tag">Обложка (800x470)</span>
-                <img :src="projectData.coverPath" alt="Cover" class="media-img cover-img" />
-              </div>
-              <div class="no-media-text" v-if="!projectData.iconPath && !projectData.coverPath">
-                Медиафайлы еще не загружены
-              </div>
+            <div class="data-group">
+              <label class="data-label">SEO (EN)</label>
+              <div class="data-box multiline">{{ projectData.seoEn || '—' }}</div>
             </div>
           </div>
 
-          <!-- Кнопка тестирования игры в Dev окружении -->
-          <div class="test-game-block">
-            <button class="btn-play-dev" @click="openDevPreview">
-              <Gamepad2 class="icon-sm" /> Запустить тестовую сборку (Dev)
+          <!-- Описание игры -->
+          <div class="data-row">
+            <div class="data-group">
+              <label class="data-label">{{ t('projectDraft.gameDescriptionRu') }}</label>
+              <div class="data-box multiline-lg">
+                {{ projectData.aboutRu || projectData.about || t('moderation.noDescription') }}
+              </div>
+            </div>
+            <div class="data-group">
+              <label class="data-label">{{ t('projectDraft.gameDescriptionEn') }}</label>
+              <div class="data-box multiline-lg">
+                {{ projectData.aboutEn || t('moderation.noDescription') }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- КАРТОЧКА 2: МЕДИА-МАТЕРИАЛЫ -->
+        <div class="card section-card">
+          <div class="section-head">
+            <h3>{{ t('moderation.mediaMaterials') }}</h3>
+          </div>
+
+          <div class="media-inspection-grid">
+            <!-- ИКОНКА ИГРЫ (512x512) -->
+            <div class="media-box-slot">
+              <div class="slot-title-row">
+                <span class="slot-label">{{ t('projectDraft.gameIcon') }}</span>
+                <span class="slot-spec">512×512 PNG</span>
+              </div>
+              <div class="media-view-panel">
+                <div v-if="projectIconUrl" class="img-preview-wrap icon-aspect">
+                  <img :src="projectIconUrl" alt="Icon" class="preview-img" />
+                </div>
+                <div v-else class="media-empty-placeholder">
+                  <Image class="icon-md text-muted" />
+                  <span>{{ t('moderation.noMedia') }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ОБЛОЖКА ИГРЫ (800x470) -->
+            <div class="media-box-slot">
+              <div class="slot-title-row">
+                <span class="slot-label">{{ t('projectDraft.coverMain') }}</span>
+                <span class="slot-spec">800×470 PNG</span>
+              </div>
+              <div class="media-view-panel">
+                <div v-if="projectCoverUrl" class="img-preview-wrap cover-aspect">
+                  <img :src="projectCoverUrl" alt="Cover" class="preview-img" />
+                </div>
+                <div v-else class="media-empty-placeholder">
+                  <Image class="icon-md text-muted" />
+                  <span>{{ t('moderation.noMedia') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- КАРТОЧКА 3: СБОРКА И ТЕСТИРОВАНИЕ -->
+        <div class="card section-card">
+          <div class="section-head">
+            <h3>{{ t('moderation.buildTesting') }}</h3>
+          </div>
+
+          <div class="build-test-row">
+            <div class="build-info-block">
+              <span class="build-version-tag">
+                Версия сборки: <strong>v{{ projectData.activeBuildVersion || '1.0.0' }}</strong>
+              </span>
+              <p class="build-desc">
+                Проверьте работоспособность игры, управление, отсутствие критических ошибок и соответствие контента правилам платформы.
+              </p>
+            </div>
+
+            <button class="btn-play-dev-lg" @click="openDevPreview">
+              <Gamepad2 class="icon-sm" />
+              <span>{{ t('moderation.runDevBuild') }}</span>
+              <ExternalLink class="icon-xs" />
             </button>
           </div>
         </div>
 
-        <!-- Баннеры вердиктов -->
-        <div v-if="isRejected" class="card result-banner rejected">
-          <AlertTriangle class="icon-md text-danger" />
-          <div>
-            <strong>Проект отклонен.</strong>
-            <p class="rejection-reason" v-if="activeRequest?.rejectionReason">
-              Причина: {{ activeRequest.rejectionReason }}
-            </p>
-          </div>
-        </div>
-
-        <div v-else-if="isApproved" class="card result-banner approved">
-          <CheckCircle2 class="icon-md text-success" />
-          <div>
-            <strong>Проект одобрен и опубликован!</strong>
-            <p class="subtext">Вы можете продолжать общаться с разработчиком в чате проекта.</p>
-          </div>
-        </div>
-
-        <!-- Панель действий модератора -->
-        <div class="card actions-card" v-if="!isApproved && !isRejected && activeRequest">
-          <div class="actions-header">
-            <h4>Действия модератора</h4>
+        <!-- КАРТОЧКА 4: ВЕРДИКТ И ПАНЕЛЬ ДЕЙСТВИЙ -->
+        <div class="card verdict-card">
+          <div class="section-head">
+            <h3>{{ t('moderation.verdictSection') }}</h3>
           </div>
 
-          <div class="action-buttons-stack">
-            <!-- Кнопка "Взять в работу" -->
+          <!-- Баннер вердикта: Отклонен -->
+          <div v-if="isRejected" class="result-box box-rejected">
+            <AlertTriangle class="icon-md text-danger" />
+            <div class="result-text">
+              <strong>{{ t('moderation.rejected') }}</strong>
+              <p v-if="activeRequest?.rejectionReason">
+                {{ t('moderation.rejectionReason') }}: {{ activeRequest.rejectionReason }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Баннер вердикта: Одобрен -->
+          <div v-else-if="isApproved" class="result-box box-approved">
+            <CheckCircle2 class="icon-md text-success" />
+            <div class="result-text">
+              <strong>{{ t('moderation.approved') }}</strong>
+              <p>Проект одобрен и опубликован в основном каталоге платформы.</p>
+            </div>
+          </div>
+
+          <!-- Панель действий: когда заявка активна -->
+          <div v-else-if="activeRequest" class="verdict-actions-row">
+            <!-- Кнопка "Взять в работу" (Pending) -->
             <button
               v-if="isPending"
-              class="btn-action btn-claim"
+              class="btn-verdict btn-claim-ticket"
               @click="handleClaim"
               :disabled="actionLoading"
             >
-              <Eye class="icon-sm" /> Приступить к проверке
+              <Eye class="icon-sm" />
+              <span>{{ t('moderation.claimBtn') }}</span>
             </button>
 
-            <!-- Кнопки решения (когда в проверке) -->
+            <!-- Кнопки решения (In Review) -->
             <template v-else-if="isInReview">
               <button
-                class="btn-action btn-success"
+                class="btn-verdict btn-approve-ticket"
                 @click="showApproveModal = true"
                 :disabled="actionLoading"
               >
-                <CheckCircle2 class="icon-sm" /> Одобрить и опубликовать в Prod
+                <CheckCircle2 class="icon-sm" />
+                <span>{{ t('moderation.approve') }}</span>
               </button>
 
               <button
-                class="btn-action btn-danger"
+                class="btn-verdict btn-reject-ticket"
                 @click="showRejectModal = true"
                 :disabled="actionLoading"
               >
-                <XCircle class="icon-sm" /> Отклонить проект (вернуть на доработку)
+                <XCircle class="icon-sm" />
+                <span>{{ t('moderation.reject') }}</span>
               </button>
             </template>
           </div>
         </div>
       </div>
+    </main>
 
-      <!-- Правая колонка: Чат проекта -->
-      <div class="chat-column">
-        <ProjectChat :projectId="projectId" />
-      </div>
-    </div>
+    <!-- ПРАВАЯ КОЛОНКА: ЧАТ ПРОЕКТА -->
+    <aside class="moderator-chat-aside">
+      <ProjectChat :projectId="projectId" />
+    </aside>
 
     <!-- Модальные окна одобрения и отклонения -->
     <ApproveRequestModal
@@ -185,31 +261,30 @@
     />
   </div>
 
-  <div v-else-if="loading" class="page-state card">
-    <RefreshCw class="icon-md spinning text-primary" />
-    <p>Загрузка данных проекта...</p>
+  <!-- Состояния загрузки и ошибки -->
+  <div v-else-if="loading" class="state-loading-screen">
+    <div class="spinner-md"></div>
+    <p>{{ t('common.loading') }}</p>
   </div>
 
-  <div v-else class="page-state card">
+  <div v-else class="state-loading-screen">
     <AlertTriangle class="icon-lg text-danger" />
     <p>Проект не найден</p>
-    <button class="btn-outline" @click="$router.push('/moderator/queue')">
-      Вернуться в список
-    </button>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
-  ArrowLeft,
   Gamepad2,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Eye,
-  RefreshCw,
+  Image,
+  ExternalLink,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -220,13 +295,14 @@ import {
   formatDateTime,
   ProjectChat,
 } from '@/entities/moderation';
-import { getProject } from '@/entities/project';
+import { getProject, getMediaUrl } from '@/entities/project';
 import {
   ApproveRequestModal,
   RejectRequestModal,
 } from '@/features/review-request';
 import { showToast } from '@/shared/lib';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const projectId = computed(() => route.params.projectId);
@@ -281,6 +357,16 @@ const isRejected = computed(() => {
   );
 });
 
+const projectIconUrl = computed(() => {
+  if (!projectData.value?.iconPath) return '';
+  return getMediaUrl(projectData.value.iconPath);
+});
+
+const projectCoverUrl = computed(() => {
+  if (!projectData.value?.coverPath) return '';
+  return getMediaUrl(projectData.value.coverPath);
+});
+
 async function loadProjectInfo() {
   loading.value = true;
   noRequestMode.value = false;
@@ -288,7 +374,6 @@ async function loadProjectInfo() {
     const data = await moderationApi.getLatestByProject(projectId.value);
     if (data && data.request) {
       activeRequest.value = data.request;
-      // Используем snapshot из заявки как источник данных для ревью
       projectData.value = data.request.snapshot || {};
     } else {
       noRequestMode.value = true;
@@ -307,6 +392,7 @@ async function loadProjectInfo() {
           coverPath: p.cover_path,
           videoPath: p.video_path,
           devUrl: p.dev_url,
+          activeBuildVersion: p.active_build_version || '1.0.0',
         };
       } catch (err) {
         showToast('Проект не найден', 'warning');
@@ -376,314 +462,455 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.project-detail-page {
+.moderator-workspace {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 60px);
+  background: var(--bg-app, #0d1117);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ЛЕВАЯ КОЛОНКА: ИНСПЕКТОР */
+.review-inspector {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 32px 48px;
+  box-sizing: border-box;
+}
+
+.inspector-scroll {
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.top-nav-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* ПРАВАЯ КОЛОНКА: ЧАТ */
+.moderator-chat-aside {
+  width: 440px;
+  flex-shrink: 0;
+  height: 100%;
+  border-left: 1px solid var(--border, #30363d);
+  background: var(--bg-card, #161b22);
 }
 
-.back-btn {
+/* КАРТОЧКИ */
+.card {
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Шапка проекта */
+.project-identity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.identity-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.identity-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.identity-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity-icon-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary, #8b949e);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.identity-text-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.identity-top-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+}
+
+.project-id-tag {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.version-tag {
+  font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  padding: 6px 0;
-  transition: color 0.15s;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-secondary, #21262d);
+  color: var(--text-muted, #b0b8c4);
+  border: 1px solid var(--border, #30363d);
 }
 
-.back-btn:hover {
-  color: var(--primary);
-}
-
-.header-badges {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.project-layout {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 24px;
-}
-
-.inspection-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.chat-column {
-  display: flex;
-  flex-direction: column;
-}
-
-.game-card {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.game-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-}
-
-.game-title {
+.project-main-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 18px;
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--text-main, #f0f6fc);
 }
 
-.game-title-en {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-top: 4px;
+.project-sub-title {
+  font-size: 13px;
+  color: var(--text-tertiary, #8b949e);
 }
 
-.game-version-badge {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  font-weight: 600;
-  font-size: 0.82rem;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  color: var(--primary);
-}
-
-.meta-grid {
+.identity-meta-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  background: var(--bg-secondary);
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
+  padding-top: 14px;
+  border-top: 1px solid var(--border, #21262d);
 }
 
-.meta-field {
+.meta-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
 .meta-label {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
+  font-size: 11px;
   font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
 }
 
 .meta-value {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.block-label {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+/* Секционные карточки */
+.section-head {
+  margin-bottom: 16px;
 }
 
-.block-text {
+.section-head h3 {
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-main);
-  line-height: 1.5;
-  white-space: pre-wrap;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  letter-spacing: 0.1px;
 }
 
-.seo-grid {
+.data-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  margin-bottom: 14px;
 }
 
-.media-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.data-row:last-child {
+  margin-bottom: 0;
 }
 
-.media-preview-grid {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.media-preview-card {
+.data-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.media-tag {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.data-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
 }
 
-.media-img {
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  object-fit: cover;
-  background: var(--bg-secondary);
-}
-
-.icon-img {
-  width: 72px;
-  height: 72px;
-}
-
-.cover-img {
-  width: 140px;
-  height: 82px;
-}
-
-.no-media-text {
-  font-size: 0.85rem;
-  color: var(--text-tertiary);
-  font-style: italic;
-}
-
-.test-game-block {
-  padding-top: 10px;
-  border-top: 1px solid var(--border);
-}
-
-.btn-play-dev {
+.data-box {
+  padding: 8px 12px;
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
+  min-height: 34px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  box-sizing: border-box;
+}
+
+.data-box.multiline {
+  min-height: 52px;
+  align-items: flex-start;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.data-box.multiline-lg {
+  min-height: 90px;
+  align-items: flex-start;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* Медиа превью */
+.media-inspection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.media-box-slot {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  width: 100%;
+}
+
+.slot-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.slot-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #f0f6fc);
+}
+
+.slot-spec {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.media-view-panel {
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
   padding: 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--primary);
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.btn-play-dev:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary);
-}
-
-.result-banner {
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.result-banner.approved {
-  border-left: 4px solid var(--success);
-  background: rgba(16, 185, 129, 0.08);
-}
-
-.result-banner.rejected {
-  border-left: 4px solid var(--danger, #ef4444);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.rejection-reason {
-  margin: 4px 0 0;
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-}
-
-.actions-card {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.actions-header h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.action-buttons-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-action {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: 0.92rem;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.15s;
+  min-height: 140px;
 }
 
-.btn-action:disabled {
+.img-preview-wrap {
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  border: 1px solid var(--border, #30363d);
+  background: var(--bg-tertiary, #21262d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-aspect {
+  width: 100px;
+  height: 100px;
+}
+
+.cover-aspect {
+  width: 200px;
+  height: 118px;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary, #8b949e);
+  font-size: 12px;
+}
+
+/* Сборка и тестирование */
+.build-test-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.build-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.build-version-tag {
+  font-size: 13px;
+  color: var(--text-main, #f0f6fc);
+}
+
+.build-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary, #8b949e);
+  max-width: 500px;
+  line-height: 1.4;
+}
+
+.btn-play-dev-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  background: var(--bg-secondary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--primary, #58a6ff);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-play-dev-lg:hover {
+  background: rgba(88, 166, 255, 0.1);
+  border-color: var(--primary, #58a6ff);
+}
+
+/* Панель решений */
+.verdict-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-verdict {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+
+.btn-claim-ticket {
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
+}
+
+.btn-claim-ticket:hover:not(:disabled) {
+  background: var(--primary-hover, #79c0ff);
+}
+
+.btn-approve-ticket {
+  background: #238636;
+  color: #ffffff;
+}
+
+.btn-approve-ticket:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+.btn-reject-ticket {
+  background: #da3633;
+  color: #ffffff;
+}
+
+.btn-reject-ticket:hover:not(:disabled) {
+  background: #f85149;
+}
+
+.btn-verdict:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-claim {
-  background: var(--primary);
-  color: white;
+.result-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
 }
 
-.btn-success {
-  background: var(--success, #10b981);
-  color: white;
+.result-text strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
 }
 
-.btn-danger {
-  background: var(--danger, #ef4444);
-  color: white;
+.result-text p {
+  margin: 0;
+  color: var(--text-secondary, #b0b8c4);
 }
 
-.page-state {
-  padding: 64px 32px;
+.box-rejected {
+  background: rgba(218, 54, 51, 0.1);
+  border: 1px solid rgba(218, 54, 51, 0.3);
+  color: #f85149;
+}
+
+.box-approved {
+  background: rgba(35, 134, 54, 0.1);
+  border: 1px solid rgba(35, 134, 54, 0.3);
+  color: #2ea043;
+}
+
+.state-loading-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: calc(100vh - 60px);
   gap: 12px;
-  text-align: center;
+  color: var(--text-muted, #b0b8c4);
 }
 
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+@media (max-width: 1000px) {
+  .moderator-workspace {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
-  to {
-    transform: rotate(360deg);
+  .moderator-chat-aside {
+    width: 100%;
+    height: 500px;
   }
 }
 </style>
