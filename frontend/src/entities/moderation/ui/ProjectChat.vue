@@ -5,8 +5,12 @@
       <div class="chat-header-left">
         <MessageSquare class="icon-sm text-primary" />
         <h3 class="chat-title">{{ t('moderation.projectChatTitle') }}</h3>
-        <!-- Статус диалога -->
-        <span class="status-pill-sm" :class="dialogStatusClass">
+        <!-- Статус диалога (отображается только если есть сообщения) -->
+        <span
+          v-if="dialogState !== 'none' && dialogStatusLabel"
+          class="status-pill-sm"
+          :class="dialogStatusClass"
+        >
           {{ dialogStatusLabel }}
         </span>
       </div>
@@ -14,7 +18,7 @@
       <div class="chat-header-right">
         <!-- Кнопка закрытия вопроса модератором -->
         <button
-          v-if="isModeratorOrAdmin && dialogState !== 'resolved'"
+          v-if="showResolveButton"
           class="btn-close-dialog"
           :disabled="closingDialog"
           @click="handleCloseDialog"
@@ -104,7 +108,12 @@ import {
   CheckCircle2,
 } from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
-import { formatDateTime } from '../model/helpers';
+import {
+  formatDateTime,
+  determineDialogState,
+  parseSenderRole,
+  parseMessageType,
+} from '../model/helpers';
 import { useAuth } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
@@ -124,7 +133,7 @@ const props = defineProps({
 const emit = defineEmits(['dialogStatusChanged']);
 
 const { state: authState } = useAuth();
-const currentUserId = computed(() => authState.user?.id || '');
+const currentUserId = computed(() => authState.user?.id || authState.user?.sub || '');
 const currentUserRole = computed(() => authState.user?.role || '');
 
 const isModeratorOrAdmin = computed(() => {
@@ -149,38 +158,22 @@ const messagesContainer = ref(null);
 let pollTimer = null;
 
 const dialogState = computed(() => {
-  if (!messages.value.length) return 'resolved';
-  const last = messages.value[messages.value.length - 1];
-  const role = Number(last.sender_role || last.senderRole || 1);
-  const msgType = Number(last.message_type || last.messageType || 1);
-  const content = (last.content || '').toLowerCase();
-
-  if (
-    msgType === 3 || // status_changed
-    msgType === 4 || // approved
-    msgType === 5 || // rejected
-    content.includes('закрыл диалог') ||
-    content.includes('вопрос решён') ||
-    content.includes('одобрен') ||
-    content.includes('отклонен')
-  ) {
-    return 'resolved';
-  }
-
-  if (role === 1) {
-    return 'unanswered';
-  }
-  if (role === 2) {
-    return 'in_dialog';
-  }
-  return 'resolved';
+  return determineDialogState(messages.value);
 });
 
 const dialogStatusLabel = computed(() => {
-  if (dialogState.value === 'unanswered') return t('moderation.unanswered');
-  if (dialogState.value === 'in_dialog') return t('moderation.inDialog');
-  if (dialogState.value === 'resolved') return t('moderation.resolvedDialog');
-  return t('common.unknown');
+  if (dialogState.value === 'unanswered') {
+    return isModeratorOrAdmin.value
+      ? t('moderation.unanswered')
+      : t('moderation.waitingResponse');
+  }
+  if (dialogState.value === 'in_dialog') {
+    return t('moderation.inDialog');
+  }
+  if (dialogState.value === 'resolved') {
+    return t('moderation.resolvedDialog');
+  }
+  return '';
 });
 
 const dialogStatusClass = computed(() => {
@@ -190,10 +183,22 @@ const dialogStatusClass = computed(() => {
   return 'status-pill-neutral';
 });
 
+const showResolveButton = computed(() => {
+  return (
+    isModeratorOrAdmin.value &&
+    (dialogState.value === 'unanswered' || dialogState.value === 'in_dialog')
+  );
+});
+
 function isSystemMessage(msg) {
-  const msgType = Number(msg.message_type || msg.messageType || 1);
-  const senderRole = Number(msg.sender_role || msg.senderRole || 1);
-  return msg.is_system || msgType > 1 || senderRole === 3 || msg.sender_id === 'system';
+  const msgType = parseMessageType(msg.message_type ?? msg.messageType);
+  const senderRole = parseSenderRole(msg.sender_role ?? msg.senderRole);
+  return (
+    msg.is_system ||
+    msgType > 1 ||
+    senderRole === 3 ||
+    msg.sender_id === 'system'
+  );
 }
 
 function isOwn(msg) {
@@ -203,7 +208,7 @@ function isOwn(msg) {
 
 function formatSenderRole(msg) {
   if (isOwn(msg)) return 'Вы';
-  const r = Number(msg.sender_role || msg.senderRole || 1);
+  const r = parseSenderRole(msg.sender_role ?? msg.senderRole);
   if (r === 2) return t('moderation.moderatorRole');
   if (r === 1) return t('moderation.developerRole');
   return 'Пользователь';

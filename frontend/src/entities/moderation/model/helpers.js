@@ -43,6 +43,76 @@ export function formatDateTime(isoOrTs) {
   });
 }
 
+export function parseSenderRole(role) {
+  if (role === undefined || role === null) return 1;
+  if (typeof role === 'number') return role;
+  const str = String(role).toUpperCase();
+  if (str === 'SENDER_ROLE_DEVELOPER' || str === 'DEVELOPER' || str === 'USER_ROLE_USER' || str === 'USER') return 1;
+  if (str === 'SENDER_ROLE_MODERATOR' || str === 'MODERATOR' || str === 'USER_ROLE_MODERATOR') return 2;
+  if (str === 'SENDER_ROLE_SYSTEM' || str === 'SYSTEM') return 3;
+  const num = parseInt(role, 10);
+  return isNaN(num) ? 1 : num;
+}
+
+export function parseMessageType(type) {
+  if (type === undefined || type === null) return 1;
+  if (typeof type === 'number') return type;
+  const str = String(type).toUpperCase();
+  if (str === 'MESSAGE_TYPE_TEXT' || str === 'TEXT') return 1;
+  if (str === 'MESSAGE_TYPE_SUBMITTED' || str === 'SUBMITTED') return 2;
+  if (str === 'MESSAGE_TYPE_STATUS_CHANGED' || str === 'STATUS_CHANGED') return 3;
+  if (str === 'MESSAGE_TYPE_APPROVED' || str === 'APPROVED') return 4;
+  if (str === 'MESSAGE_TYPE_REJECTED' || str === 'REJECTED') return 5;
+  const num = parseInt(type, 10);
+  return isNaN(num) ? 1 : num;
+}
+
+export function determineDialogState(messagesOrLastMsg) {
+  let lastMsg = null;
+  if (Array.isArray(messagesOrLastMsg)) {
+    if (messagesOrLastMsg.length === 0) {
+      return 'none';
+    }
+    lastMsg = messagesOrLastMsg[messagesOrLastMsg.length - 1];
+  } else {
+    lastMsg = messagesOrLastMsg;
+  }
+
+  if (!lastMsg || (!lastMsg.content && !lastMsg.id)) {
+    return 'none';
+  }
+
+  const role = parseSenderRole(lastMsg.sender_role ?? lastMsg.senderRole);
+  const msgType = parseMessageType(lastMsg.message_type ?? lastMsg.messageType);
+  const content = (lastMsg.content || '').toLowerCase();
+
+  // Если вынесено решение или диалог явно закрыт
+  if (
+    msgType === 3 || // status_changed
+    msgType === 4 || // approved
+    msgType === 5 || // rejected
+    content.includes('закрыл диалог') ||
+    content.includes('вопрос решён') ||
+    content.includes('все вопросы решены') ||
+    content.includes('одобрен') ||
+    content.includes('отклонен')
+  ) {
+    return 'resolved';
+  }
+
+  // Если последнее сообщение от разработчика -> ожидает ответа
+  if (role === 1) {
+    return 'unanswered';
+  }
+
+  // Если последнее сообщение от модератора -> в диалоге
+  if (role === 2) {
+    return 'in_dialog';
+  }
+
+  return 'resolved';
+}
+
 export function normalizeRequest(req) {
   if (!req) return null;
   const snapshot = req.snapshot || {};

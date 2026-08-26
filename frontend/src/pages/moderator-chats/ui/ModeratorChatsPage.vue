@@ -264,6 +264,9 @@ import {
   moderationApi,
   normalizeRequest,
   formatDateTime,
+  determineDialogState,
+  parseSenderRole,
+  parseMessageType,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { showToast } from '@/shared/lib';
@@ -279,38 +282,6 @@ const statusFilter = ref('all');
 const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
-
-function determineDialogState(lastMsg) {
-  if (!lastMsg) return 'resolved';
-  const role = Number(lastMsg.sender_role || lastMsg.senderRole || 1);
-  const msgType = Number(lastMsg.message_type || lastMsg.messageType || 1);
-  const content = (lastMsg.content || '').toLowerCase();
-
-  // Если закрыт диалог или вынесен вердикт (одобрен/отклонен)
-  if (
-    msgType === 3 || // status_changed
-    msgType === 4 || // approved
-    msgType === 5 || // rejected
-    content.includes('закрыл диалог') ||
-    content.includes('вопрос решён') ||
-    content.includes('одобрен') ||
-    content.includes('отклонен')
-  ) {
-    return 'resolved';
-  }
-
-  // Если последнее сообщение от разработчика
-  if (role === 1) {
-    return 'unanswered';
-  }
-
-  // Если последнее сообщение от модератора
-  if (role === 2) {
-    return 'in_dialog';
-  }
-
-  return 'resolved';
-}
 
 async function loadChats() {
   loading.value = true;
@@ -422,10 +393,10 @@ const paginatedChats = computed(() => {
 });
 
 function senderRoleLabel(item) {
-  const msgType = Number(item.lastMessage?.message_type || item.lastMessage?.messageType || 1);
+  const msgType = parseMessageType(item.lastMessage?.message_type ?? item.lastMessage?.messageType);
   if (msgType > 1) return t('moderation.systemRole');
 
-  const r = Number(item.lastMessage?.sender_role || item.lastMessage?.senderRole || 1);
+  const r = parseSenderRole(item.lastMessage?.sender_role ?? item.lastMessage?.senderRole);
   if (r === 1) return t('moderation.developerRole');
   if (r === 2) return t('moderation.moderatorRole');
   if (r === 3) return t('moderation.systemRole');
@@ -433,10 +404,10 @@ function senderRoleLabel(item) {
 }
 
 function senderRoleClass(item) {
-  const msgType = Number(item.lastMessage?.message_type || item.lastMessage?.messageType || 1);
+  const msgType = parseMessageType(item.lastMessage?.message_type ?? item.lastMessage?.messageType);
   if (msgType > 1) return 'role-sys';
 
-  const r = Number(item.lastMessage?.sender_role || item.lastMessage?.senderRole || 1);
+  const r = parseSenderRole(item.lastMessage?.sender_role ?? item.lastMessage?.senderRole);
   if (r === 1) return 'role-dev';
   if (r === 2) return 'role-mod';
   return 'role-sys';
