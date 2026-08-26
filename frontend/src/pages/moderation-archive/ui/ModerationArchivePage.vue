@@ -3,14 +3,14 @@
     <div class="main-content-wrap">
       <!-- Панель фильтрации и поиска (компактный стиль консоли) -->
       <div class="filters-toolbar">
-        <!-- Поиск по названию, ID, разработчику -->
+        <!-- Поиск по названию, ID, разработчику, причине -->
         <div class="filter-field field-search">
           <label class="field-label">{{ t('common.search') }}</label>
           <div class="input-wrapper">
             <input
               type="text"
               v-model="searchQuery"
-              :placeholder="t('moderation.searchPlaceholder')"
+              :placeholder="t('moderation.searchArchivePlaceholder')"
               class="filter-input"
             />
             <button
@@ -24,15 +24,15 @@
           </div>
         </div>
 
-        <!-- Фильтр по статусу -->
+        <!-- Фильтр по вердикту / результату -->
         <div class="filter-field field-status">
-          <label class="field-label">{{ t('common.status') }}</label>
+          <label class="field-label">{{ t('moderation.verdict') }}</label>
           <div class="select-wrapper">
             <select v-model="statusFilter" class="filter-select">
-              <option value="all">{{ t('moderation.allActive') }}</option>
-              <option value="pending">{{ t('moderation.pending') }}</option>
-              <option value="in_review">{{ t('moderation.inReview') }}</option>
-              <option value="my">{{ t('moderation.assignedToMe') }}</option>
+              <option value="all">{{ t('moderation.allResolved') }}</option>
+              <option value="approved">{{ t('moderation.approved') }}</option>
+              <option value="rejected">{{ t('moderation.rejected') }}</option>
+              <option value="cancelled">{{ t('moderation.cancelled') }}</option>
             </select>
             <ChevronDown class="icon-xs select-arrow" />
           </div>
@@ -66,7 +66,7 @@
         <button
           class="btn-refresh"
           :disabled="loading"
-          @click="loadQueue"
+          @click="loadArchive"
           title="Обновить"
         >
           <RefreshCw class="icon-xs" :class="{ spin: loading }" />
@@ -80,17 +80,17 @@
         <p>{{ t('common.loading') }}</p>
       </div>
 
-      <!-- Пустой список заявок -->
+      <!-- Пустой архив -->
       <div
         v-else-if="requests.length === 0 && !searchQuery && statusFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
-          <CheckCircle2 class="icon-lg text-success" />
+          <Archive class="icon-lg text-muted" />
         </div>
-        <h3>{{ t('moderation.noActiveRequests') }}</h3>
-        <p>{{ t('moderation.emptyQueue') }}</p>
-        <button class="btn-primary-sm" @click="loadQueue">
+        <h3>{{ t('moderation.noArchive') }}</h3>
+        <p>Здесь сохраняется журнал всех проверенных и вынесенных модераторами решений.</p>
+        <button class="btn-primary-sm" @click="loadArchive">
           <RefreshCw class="icon-xs" />
           <span>{{ t('common.refresh') }}</span>
         </button>
@@ -109,7 +109,7 @@
         </button>
       </div>
 
-      <!-- Таблица активных заявок на модерацию -->
+      <!-- Таблица архива решений -->
       <div v-else class="table-wrapper">
         <table class="moderation-table">
           <thead>
@@ -117,9 +117,10 @@
               <th class="col-game">{{ t('moderation.projectColumn') }}</th>
               <th class="col-version">{{ t('common.version') }}</th>
               <th class="col-dev">{{ t('moderation.developerColumn') }}</th>
-              <th class="col-date">{{ t('moderation.submittedColumn') }}</th>
-              <th class="col-status">{{ t('common.status') }}</th>
+              <th class="col-verdict">{{ t('moderation.verdict') }}</th>
               <th class="col-mod">{{ t('moderation.moderator') }}</th>
+              <th class="col-reason">{{ t('moderation.rejectionReason') }} / Комментарий</th>
+              <th class="col-date">{{ t('common.date') }}</th>
               <th class="col-actions"></th>
             </tr>
           </thead>
@@ -146,7 +147,7 @@
                   </div>
                   <div class="game-text">
                     <div class="game-type-label">
-                      Проект #{{ req.projectId }}
+                      Заявка #{{ req.id }} • Проект #{{ req.projectId }}
                     </div>
                     <div class="game-title">
                       {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
@@ -171,24 +172,17 @@
                 </div>
               </td>
 
-              <!-- 4 колонка: Дата подачи -->
-              <td class="col-date">
-                <span class="date-text">
-                  {{ formatDateTime(req.submittedAt) }}
-                </span>
-              </td>
-
-              <!-- 5 колонка: Статус -->
-              <td class="col-status">
+              <!-- 4 колонка: Вердикт / Статус -->
+              <td class="col-verdict">
                 <span
                   class="status-pill"
-                  :class="reqStatusClass(req.status)"
+                  :class="verdictClass(req.status)"
                 >
-                  {{ reqStatusLabel(req.status) }}
+                  {{ verdictLabel(req.status) }}
                 </span>
               </td>
 
-              <!-- 6 колонка: Модератор -->
+              <!-- 5 колонка: Модератор -->
               <td class="col-mod">
                 <span class="mod-name" v-if="req.moderatorId">
                   {{ req.moderatorId }}
@@ -198,29 +192,33 @@
                 </span>
               </td>
 
-              <!-- 7 колонка: Действия -->
+              <!-- 6 колонка: Причина / Замечания -->
+              <td class="col-reason">
+                <div class="reason-cell" :title="req.rejectionReason || 'Без замечаний'">
+                  <span v-if="req.rejectionReason" class="reason-text">
+                    {{ req.rejectionReason }}
+                  </span>
+                  <span v-else class="text-muted text-sm">—</span>
+                </div>
+              </td>
+
+              <!-- 7 колонка: Дата решения -->
+              <td class="col-date">
+                <span class="date-text">
+                  {{ formatDateTime(req.reviewedAt || req.submittedAt) }}
+                </span>
+              </td>
+
+              <!-- 8 колонка: Действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
                   <button
-                    v-if="isPending(req.status)"
-                    class="btn-claim-sm"
-                    :disabled="claimingId === req.id"
-                    @click="claimAndOpen(req)"
-                    :title="t('moderation.claimBtn')"
-                  >
-                    <Loader2 class="icon-xs spin" v-if="claimingId === req.id" />
-                    <CheckSquare class="icon-xs" v-else />
-                    <span>{{ t('moderation.claimBtn') }}</span>
-                  </button>
-
-                  <button
-                    v-else
                     class="btn-inspect-sm"
                     @click="openProject(req.projectId)"
-                    :title="t('moderation.continueBtn')"
+                    :title="t('moderation.viewDetails')"
                   >
-                    <ArrowRight class="icon-xs" />
-                    <span>{{ t('moderation.continueBtn') }}</span>
+                    <Eye class="icon-xs" />
+                    <span>{{ t('moderation.viewDetails') }}</span>
                   </button>
                 </div>
               </td>
@@ -293,11 +291,9 @@ import {
   ChevronDown,
   RotateCcw,
   RefreshCw,
-  CheckCircle2,
+  Archive,
   User,
-  CheckSquare,
-  ArrowRight,
-  Loader2,
+  Eye,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -310,20 +306,13 @@ import {
   REQUEST_STATUS,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
-import { useAuth } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const router = useRouter();
-const { state: authState } = useAuth();
-
-const currentUserId = computed(
-  () => authState.user?.id || authState.user?.email || ''
-);
 
 const requests = ref([]);
 const loading = ref(false);
-const claimingId = ref(null);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -331,26 +320,30 @@ const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-async function loadQueue() {
+async function loadArchive() {
   loading.value = true;
   try {
     const res = await moderationApi.listRequests({ limit: 100, offset: 0 });
     const raw = res.requests || [];
-    // Отбираем только активные заявки (Pending=1 или In Review=2)
-    const active = raw
+    // Отбираем только завершённые заявки (Approved=3, Rejected=4, Cancelled=5)
+    const resolved = raw
       .map(normalizeRequest)
       .filter(
         (r) =>
-          r.status === REQUEST_STATUS.PENDING ||
-          r.status === REQUEST_STATUS.IN_REVIEW ||
-          r.status === 1 ||
-          r.status === 2 ||
-          r.status === 'REQUEST_STATUS_PENDING' ||
-          r.status === 'REQUEST_STATUS_IN_REVIEW' ||
-          r.status === 'pending' ||
-          r.status === 'in_review'
+          r.status === REQUEST_STATUS.APPROVED ||
+          r.status === REQUEST_STATUS.REJECTED ||
+          r.status === REQUEST_STATUS.CANCELLED ||
+          r.status === 3 ||
+          r.status === 4 ||
+          r.status === 5 ||
+          r.status === 'REQUEST_STATUS_APPROVED' ||
+          r.status === 'REQUEST_STATUS_REJECTED' ||
+          r.status === 'REQUEST_STATUS_CANCELLED' ||
+          r.status === 'approved' ||
+          r.status === 'rejected' ||
+          r.status === 'cancelled'
       );
-    requests.value = active;
+    requests.value = resolved;
   } catch (err) {
     showToast(t('common.error'), 'danger');
   } finally {
@@ -358,7 +351,7 @@ async function loadQueue() {
   }
 }
 
-onMounted(loadQueue);
+onMounted(loadArchive);
 
 function resetFilters() {
   searchQuery.value = '';
@@ -371,18 +364,12 @@ const filteredRequests = computed(() => {
   let list = [...requests.value];
 
   // Фильтр по статусу
-  if (statusFilter.value === 'pending') {
-    list = list.filter((r) => isPending(r.status));
-  } else if (statusFilter.value === 'in_review') {
-    list = list.filter((r) => isInReview(r.status));
-  } else if (statusFilter.value === 'my') {
-    list = list.filter(
-      (r) =>
-        r.moderatorId &&
-        currentUserId.value &&
-        (r.moderatorId === currentUserId.value ||
-          r.moderatorId === authState.user?.email)
-    );
+  if (statusFilter.value === 'approved') {
+    list = list.filter((r) => isApproved(r.status));
+  } else if (statusFilter.value === 'rejected') {
+    list = list.filter((r) => isRejected(r.status));
+  } else if (statusFilter.value === 'cancelled') {
+    list = list.filter((r) => isCancelled(r.status));
   }
 
   // Поиск
@@ -392,21 +379,35 @@ const filteredRequests = computed(() => {
       const titleRu = (r.snapshot.titleRu || '').toLowerCase();
       const titleEn = (r.snapshot.titleEn || '').toLowerCase();
       const pId = String(r.projectId);
+      const reqId = String(r.id);
       const owner = (r.ownerId || '').toLowerCase();
+      const mod = (r.moderatorId || '').toLowerCase();
+      const reason = (r.rejectionReason || '').toLowerCase();
       return (
         titleRu.includes(q) ||
         titleEn.includes(q) ||
         pId.includes(q) ||
-        owner.includes(q)
+        reqId.includes(q) ||
+        owner.includes(q) ||
+        mod.includes(q) ||
+        reason.includes(q)
       );
     });
   }
 
   // Сортировка
   if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    list.sort(
+      (a, b) =>
+        new Date(b.reviewedAt || b.submittedAt) -
+        new Date(a.reviewedAt || a.submittedAt)
+    );
   } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+    list.sort(
+      (a, b) =>
+        new Date(a.reviewedAt || a.submittedAt) -
+        new Date(b.reviewedAt || b.submittedAt)
+    );
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => {
       const nameA = a.snapshot.titleRu || a.snapshot.titleEn || '';
@@ -427,51 +428,49 @@ const paginatedRequests = computed(() => {
   return filteredRequests.value.slice(start, start + pageSize.value);
 });
 
-function isPending(status) {
+function isApproved(status) {
   return (
-    status === REQUEST_STATUS.PENDING ||
-    status === 1 ||
-    status === 'REQUEST_STATUS_PENDING' ||
-    status === 'pending'
+    status === REQUEST_STATUS.APPROVED ||
+    status === 3 ||
+    status === 'REQUEST_STATUS_APPROVED' ||
+    status === 'approved'
   );
 }
 
-function isInReview(status) {
+function isRejected(status) {
   return (
-    status === REQUEST_STATUS.IN_REVIEW ||
-    status === 2 ||
-    status === 'REQUEST_STATUS_IN_REVIEW' ||
-    status === 'in_review'
+    status === REQUEST_STATUS.REJECTED ||
+    status === 4 ||
+    status === 'REQUEST_STATUS_REJECTED' ||
+    status === 'rejected'
   );
 }
 
-function reqStatusLabel(status) {
-  if (isPending(status)) return t('moderation.pending');
-  if (isInReview(status)) return t('moderation.inReview');
+function isCancelled(status) {
+  return (
+    status === REQUEST_STATUS.CANCELLED ||
+    status === 5 ||
+    status === 'REQUEST_STATUS_CANCELLED' ||
+    status === 'cancelled'
+  );
+}
+
+function verdictLabel(status) {
+  if (isApproved(status)) return t('moderation.approved');
+  if (isRejected(status)) return t('moderation.rejected');
+  if (isCancelled(status)) return t('moderation.cancelled');
   return t('common.unknown');
 }
 
-function reqStatusClass(status) {
-  if (isPending(status)) return 'status-pending';
-  if (isInReview(status)) return 'status-in-review';
+function verdictClass(status) {
+  if (isApproved(status)) return 'status-approved';
+  if (isRejected(status)) return 'status-rejected';
+  if (isCancelled(status)) return 'status-neutral';
   return 'status-neutral';
 }
 
 function openProject(projectId) {
   router.push(`/moderator/projects/${projectId}`);
-}
-
-async function claimAndOpen(req) {
-  claimingId.value = req.id;
-  try {
-    await moderationApi.claimRequest(req.id);
-    showToast(t('moderation.claimBtn') + ' — успешно', 'success');
-    openProject(req.projectId);
-  } catch (err) {
-    showToast(err.response?.data?.message || t('common.error'), 'danger');
-  } finally {
-    claimingId.value = null;
-  }
 }
 </script>
 
@@ -492,7 +491,7 @@ async function claimAndOpen(req) {
   flex-direction: column;
 }
 
-/* Панель фильтрации в стиле Яндекс.Игр / Developer Hub */
+/* Панель фильтрации */
 .filters-toolbar {
   display: flex;
   align-items: flex-end;
@@ -682,27 +681,31 @@ async function claimAndOpen(req) {
 }
 
 .col-game {
-  width: 32%;
+  width: 28%;
 }
 
 .col-version {
-  width: 10%;
+  width: 8%;
 }
 
 .col-dev {
-  width: 16%;
-}
-
-.col-date {
   width: 14%;
 }
 
-.col-status {
-  width: 12%;
+.col-verdict {
+  width: 10%;
 }
 
 .col-mod {
   width: 10%;
+}
+
+.col-reason {
+  width: 18%;
+}
+
+.col-date {
+  width: 12%;
 }
 
 .col-actions {
@@ -804,15 +807,10 @@ async function claimAndOpen(req) {
   gap: 6px;
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
-  max-width: 160px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.date-text {
-  font-size: 13px;
-  color: var(--text-muted, #b0b8c4);
 }
 
 .status-pill {
@@ -827,16 +825,16 @@ async function claimAndOpen(req) {
   white-space: nowrap;
 }
 
-.status-pending {
-  background: rgba(245, 176, 39, 0.12);
-  border: 1px solid rgba(245, 176, 39, 0.35);
-  color: #f5b027;
+.status-approved {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.35);
+  color: #2ecc71;
 }
 
-.status-in-review {
-  background: rgba(88, 166, 255, 0.12);
-  border: 1px solid rgba(88, 166, 255, 0.35);
-  color: #58a6ff;
+.status-rejected {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.35);
+  color: #f85149;
 }
 
 .status-neutral {
@@ -856,36 +854,27 @@ async function claimAndOpen(req) {
   color: var(--text-tertiary, #6e7681);
 }
 
+.reason-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reason-text {
+  font-size: 13px;
+  color: var(--text-muted, #b0b8c4);
+}
+
+.date-text {
+  font-size: 13px;
+  color: var(--text-muted, #b0b8c4);
+}
+
 .row-actions {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-
-.btn-claim-sm {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  background: var(--primary, #58a6ff);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s;
-  white-space: nowrap;
-}
-
-.btn-claim-sm:hover:not(:disabled) {
-  background: var(--primary-hover, #79c0ff);
-}
-
-.btn-claim-sm:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .btn-inspect-sm {

@@ -23,11 +23,25 @@
         </template>
         <template v-if="isModerator">
           <router-link
-            to="/moderator"
+            to="/moderator/queue"
             class="nav-item"
             active-class="active"
           >
-            <Inbox class="icon-sm" /> {{ t('header.moderatorPanel') }}
+            <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
+          </router-link>
+          <router-link
+            to="/moderator/chats"
+            class="nav-item"
+            active-class="active"
+          >
+            <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
+          </router-link>
+          <router-link
+            to="/moderator/archive"
+            class="nav-item"
+            active-class="active"
+          >
+            <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
           </router-link>
         </template>
         <template v-if="isAdmin">
@@ -37,6 +51,27 @@
             active-class="active"
           >
             <Users class="icon-sm" /> {{ t('header.adminPanel') }}
+          </router-link>
+          <router-link
+            to="/moderator/queue"
+            class="nav-item"
+            active-class="active"
+          >
+            <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
+          </router-link>
+          <router-link
+            to="/moderator/chats"
+            class="nav-item"
+            active-class="active"
+          >
+            <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
+          </router-link>
+          <router-link
+            to="/moderator/archive"
+            class="nav-item"
+            active-class="active"
+          >
+            <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
           </router-link>
         </template>
         <!-- Переход в профиль в общей панели навигации -->
@@ -78,7 +113,9 @@ import {
   FolderGit2,
   Server,
   User,
-  Inbox,
+  CheckSquare,
+  MessageSquare,
+  Archive,
   LogOut,
   Users,
 } from 'lucide-vue-next';

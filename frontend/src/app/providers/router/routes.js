@@ -12,8 +12,9 @@ import { ServerInstancesPage } from '@/pages/server-instances';
 import { InstanceDetailPage } from '@/pages/instance-detail';
 import { NodesListPage } from '@/pages/nodes-list';
 import { NodeDetailPage } from '@/pages/node-detail';
-import { ModeratorDashboardPage } from '@/pages/moderator-dashboard';
 import { ModerationQueuePage } from '@/pages/moderation-queue';
+import { ModeratorChatsPage } from '@/pages/moderator-chats';
+import { ModerationArchivePage } from '@/pages/moderation-archive';
 import { ModerationProjectPage } from '@/pages/moderation-project';
 import { ProfilePage } from '@/pages/profile';
 import { AdminDashboardPage } from '@/pages/admin-dashboard';
@@ -26,7 +27,7 @@ export const routes = [
       if (!isAuthenticated()) return '/login';
       const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
       if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/admin/dashboard';
-      if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return '/moderator';
+      if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return '/moderator/queue';
       return '/projects';
     },
   },
@@ -103,14 +104,24 @@ export const routes = [
   },
   {
     path: '/moderator',
-    name: 'moderator',
-    component: ModeratorDashboardPage,
-    meta: { requiresAuth: true },
+    redirect: '/moderator/queue',
   },
   {
     path: '/moderator/queue',
     name: 'moderation-queue',
     component: ModerationQueuePage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/moderator/chats',
+    name: 'moderator-chats',
+    component: ModeratorChatsPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/moderator/archive',
+    name: 'moderation-archive',
+    component: ModerationArchivePage,
     meta: { requiresAuth: true },
   },
   {

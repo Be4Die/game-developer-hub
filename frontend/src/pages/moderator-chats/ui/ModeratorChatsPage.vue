@@ -3,14 +3,14 @@
     <div class="main-content-wrap">
       <!-- Панель фильтрации и поиска (компактный стиль консоли) -->
       <div class="filters-toolbar">
-        <!-- Поиск по названию, ID, разработчику -->
+        <!-- Поиск по названию, ID, тексту сообщения -->
         <div class="filter-field field-search">
           <label class="field-label">{{ t('common.search') }}</label>
           <div class="input-wrapper">
             <input
               type="text"
               v-model="searchQuery"
-              :placeholder="t('moderation.searchPlaceholder')"
+              :placeholder="t('moderation.searchChatsPlaceholder')"
               class="filter-input"
             />
             <button
@@ -24,15 +24,14 @@
           </div>
         </div>
 
-        <!-- Фильтр по статусу -->
+        <!-- Фильтр по статусу ответа -->
         <div class="filter-field field-status">
-          <label class="field-label">{{ t('common.status') }}</label>
+          <label class="field-label">{{ t('moderation.replyStatus') }}</label>
           <div class="select-wrapper">
             <select v-model="statusFilter" class="filter-select">
-              <option value="all">{{ t('moderation.allActive') }}</option>
-              <option value="pending">{{ t('moderation.pending') }}</option>
-              <option value="in_review">{{ t('moderation.inReview') }}</option>
-              <option value="my">{{ t('moderation.assignedToMe') }}</option>
+              <option value="all">{{ t('moderation.allChats') }}</option>
+              <option value="unanswered">{{ t('moderation.unanswered') }}</option>
+              <option value="answered">{{ t('moderation.answered') }}</option>
             </select>
             <ChevronDown class="icon-xs select-arrow" />
           </div>
@@ -66,7 +65,7 @@
         <button
           class="btn-refresh"
           :disabled="loading"
-          @click="loadQueue"
+          @click="loadChats"
           title="Обновить"
         >
           <RefreshCw class="icon-xs" :class="{ spin: loading }" />
@@ -80,17 +79,17 @@
         <p>{{ t('common.loading') }}</p>
       </div>
 
-      <!-- Пустой список заявок -->
+      <!-- Пустой список чатов -->
       <div
-        v-else-if="requests.length === 0 && !searchQuery && statusFilter === 'all'"
+        v-else-if="chats.length === 0 && !searchQuery && statusFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
-          <CheckCircle2 class="icon-lg text-success" />
+          <MessageSquare class="icon-lg text-muted" />
         </div>
-        <h3>{{ t('moderation.noActiveRequests') }}</h3>
-        <p>{{ t('moderation.emptyQueue') }}</p>
-        <button class="btn-primary-sm" @click="loadQueue">
+        <h3>{{ t('moderation.noChats') }}</h3>
+        <p>Когда разработчики или модераторы отправят сообщения, они появятся в этом списке.</p>
+        <button class="btn-primary-sm" @click="loadChats">
           <RefreshCw class="icon-xs" />
           <span>{{ t('common.refresh') }}</span>
         </button>
@@ -98,7 +97,7 @@
 
       <!-- Пустой список по результатам поиска/фильтров -->
       <div
-        v-else-if="filteredRequests.length === 0"
+        v-else-if="filteredChats.length === 0"
         class="state-container empty-card"
       >
         <Search class="icon-md text-muted" />
@@ -109,34 +108,32 @@
         </button>
       </div>
 
-      <!-- Таблица активных заявок на модерацию -->
+      <!-- Таблица чатов проектов -->
       <div v-else class="table-wrapper">
         <table class="moderation-table">
           <thead>
             <tr>
               <th class="col-game">{{ t('moderation.projectColumn') }}</th>
-              <th class="col-version">{{ t('common.version') }}</th>
-              <th class="col-dev">{{ t('moderation.developerColumn') }}</th>
-              <th class="col-date">{{ t('moderation.submittedColumn') }}</th>
-              <th class="col-status">{{ t('common.status') }}</th>
-              <th class="col-mod">{{ t('moderation.moderator') }}</th>
+              <th class="col-last-msg">{{ t('moderation.lastMessage') }}</th>
+              <th class="col-reply-status">{{ t('moderation.replyStatus') }}</th>
+              <th class="col-date">{{ t('common.date') }}</th>
               <th class="col-actions"></th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="req in paginatedRequests"
-              :key="req.id"
+              v-for="item in paginatedChats"
+              :key="item.projectId"
               class="table-row"
-              @click="openProject(req.projectId)"
+              @click="openChat(item.projectId)"
             >
               <!-- 1 колонка: Игра / Проект -->
               <td class="col-game">
                 <div class="game-cell">
                   <div class="game-icon-box">
                     <img
-                      v-if="req.snapshot.iconPath"
-                      :src="getMediaUrl(req.snapshot.iconPath)"
+                      v-if="item.iconPath"
+                      :src="getMediaUrl(item.iconPath)"
                       alt="Icon"
                       class="game-icon-img"
                     />
@@ -146,81 +143,59 @@
                   </div>
                   <div class="game-text">
                     <div class="game-type-label">
-                      Проект #{{ req.projectId }}
+                      Проект #{{ item.projectId }}
                     </div>
                     <div class="game-title">
-                      {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
+                      {{ item.titleRu || item.titleEn || `Проект #${item.projectId}` }}
                     </div>
                   </div>
                 </div>
               </td>
 
-              <!-- 2 колонка: Версия сборки -->
-              <td class="col-version">
-                <span class="version-badge" v-if="req.snapshot.activeBuildVersion">
-                  v{{ req.snapshot.activeBuildVersion }}
-                </span>
-                <span class="text-muted text-sm" v-else>—</span>
-              </td>
-
-              <!-- 3 колонка: Разработчик -->
-              <td class="col-dev">
-                <div class="dev-cell" :title="req.ownerId">
-                  <User class="icon-xs text-muted" />
-                  <span class="dev-name">{{ req.ownerId || '—' }}</span>
+              <!-- 2 колонка: Последнее сообщение -->
+              <td class="col-last-msg">
+                <div class="msg-preview-cell">
+                  <div class="msg-meta-row">
+                    <span class="sender-role-pill" :class="senderRoleClass(item.lastMessage?.sender_role || item.lastMessage?.senderRole)">
+                      {{ senderRoleLabel(item.lastMessage?.sender_role || item.lastMessage?.senderRole) }}
+                    </span>
+                    <span class="sender-id" v-if="item.lastMessage?.sender_id && item.lastMessage?.sender_id !== 'system'">
+                      {{ item.lastMessage?.sender_id }}
+                    </span>
+                  </div>
+                  <div class="msg-content-text" :title="item.lastMessage?.content">
+                    {{ item.lastMessage?.content || '—' }}
+                  </div>
                 </div>
               </td>
 
-              <!-- 4 колонка: Дата подачи -->
-              <td class="col-date">
-                <span class="date-text">
-                  {{ formatDateTime(req.submittedAt) }}
-                </span>
-              </td>
-
-              <!-- 5 колонка: Статус -->
-              <td class="col-status">
+              <!-- 3 колонка: Статус ответа -->
+              <td class="col-reply-status">
                 <span
                   class="status-pill"
-                  :class="reqStatusClass(req.status)"
+                  :class="item.isUnanswered ? 'status-unanswered' : 'status-answered'"
                 >
-                  {{ reqStatusLabel(req.status) }}
+                  {{ item.isUnanswered ? t('moderation.unanswered') : t('moderation.answered') }}
                 </span>
               </td>
 
-              <!-- 6 колонка: Модератор -->
-              <td class="col-mod">
-                <span class="mod-name" v-if="req.moderatorId">
-                  {{ req.moderatorId }}
-                </span>
-                <span class="unassigned-text" v-else>
-                  {{ t('moderation.notAssigned') }}
+              <!-- 4 колонка: Дата последнего сообщения -->
+              <td class="col-date">
+                <span class="date-text">
+                  {{ formatDateTime(item.lastMessage?.created_at || item.lastMessage?.createdAt) }}
                 </span>
               </td>
 
-              <!-- 7 колонка: Действия -->
+              <!-- 5 колонка: Действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
                   <button
-                    v-if="isPending(req.status)"
-                    class="btn-claim-sm"
-                    :disabled="claimingId === req.id"
-                    @click="claimAndOpen(req)"
-                    :title="t('moderation.claimBtn')"
+                    class="btn-open-chat"
+                    @click="openChat(item.projectId)"
+                    :title="t('moderation.openChat')"
                   >
-                    <Loader2 class="icon-xs spin" v-if="claimingId === req.id" />
-                    <CheckSquare class="icon-xs" v-else />
-                    <span>{{ t('moderation.claimBtn') }}</span>
-                  </button>
-
-                  <button
-                    v-else
-                    class="btn-inspect-sm"
-                    @click="openProject(req.projectId)"
-                    :title="t('moderation.continueBtn')"
-                  >
-                    <ArrowRight class="icon-xs" />
-                    <span>{{ t('moderation.continueBtn') }}</span>
+                    <MessageSquare class="icon-xs" />
+                    <span>{{ t('moderation.openChat') }}</span>
                   </button>
                 </div>
               </td>
@@ -233,9 +208,9 @@
       <div v-if="totalPages > 1" class="pagination-bar">
         <span class="page-info">
           {{ (currentPage - 1) * pageSize + 1 }}–{{
-            Math.min(currentPage * pageSize, filteredRequests.length)
+            Math.min(currentPage * pageSize, filteredChats.length)
           }}
-          из {{ filteredRequests.length }}
+          из {{ filteredChats.length }}
         </span>
 
         <div class="page-nav">
@@ -293,11 +268,7 @@ import {
   ChevronDown,
   RotateCcw,
   RefreshCw,
-  CheckCircle2,
-  User,
-  CheckSquare,
-  ArrowRight,
-  Loader2,
+  MessageSquare,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -307,23 +278,15 @@ import {
   moderationApi,
   normalizeRequest,
   formatDateTime,
-  REQUEST_STATUS,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
-import { useAuth } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const router = useRouter();
-const { state: authState } = useAuth();
 
-const currentUserId = computed(
-  () => authState.user?.id || authState.user?.email || ''
-);
-
-const requests = ref([]);
+const chats = ref([]);
 const loading = ref(false);
-const claimingId = ref(null);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -331,26 +294,41 @@ const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-async function loadQueue() {
+async function loadChats() {
   loading.value = true;
   try {
-    const res = await moderationApi.listRequests({ limit: 100, offset: 0 });
-    const raw = res.requests || [];
-    // Отбираем только активные заявки (Pending=1 или In Review=2)
-    const active = raw
-      .map(normalizeRequest)
-      .filter(
-        (r) =>
-          r.status === REQUEST_STATUS.PENDING ||
-          r.status === REQUEST_STATUS.IN_REVIEW ||
-          r.status === 1 ||
-          r.status === 2 ||
-          r.status === 'REQUEST_STATUS_PENDING' ||
-          r.status === 'REQUEST_STATUS_IN_REVIEW' ||
-          r.status === 'pending' ||
-          r.status === 'in_review'
-      );
-    requests.value = active;
+    const [chatsRes, reqsRes] = await Promise.all([
+      moderationApi.listActiveChats({ limit: 100 }),
+      moderationApi.listRequests({ limit: 100 }),
+    ]);
+
+    const reqsMap = new Map();
+    (reqsRes.requests || []).forEach((r) => {
+      const norm = normalizeRequest(r);
+      if (norm && !reqsMap.has(norm.projectId)) {
+        reqsMap.set(norm.projectId, norm);
+      }
+    });
+
+    const rawChats = chatsRes.chats || [];
+    chats.value = rawChats.map((c) => {
+      const pId = Number(c.project_id || c.projectId);
+      const req = reqsMap.get(pId);
+      const lastMsg = c.last_message || c.lastMessage || {};
+      const role = Number(lastMsg.sender_role || lastMsg.senderRole || 1);
+      // Если последнее сообщение от разработчика (роль 1), значит чат ждёт ответа
+      const isUnanswered = role === 1;
+
+      return {
+        projectId: pId,
+        lastMessage: lastMsg,
+        isUnanswered,
+        titleRu: req?.snapshot?.titleRu || '',
+        titleEn: req?.snapshot?.titleEn || '',
+        iconPath: req?.snapshot?.iconPath || '',
+        ownerId: req?.ownerId || '',
+      };
+    });
   } catch (err) {
     showToast(t('common.error'), 'danger');
   } finally {
@@ -358,7 +336,7 @@ async function loadQueue() {
   }
 }
 
-onMounted(loadQueue);
+onMounted(loadChats);
 
 function resetFilters() {
   searchQuery.value = '';
@@ -367,50 +345,52 @@ function resetFilters() {
   currentPage.value = 1;
 }
 
-const filteredRequests = computed(() => {
-  let list = [...requests.value];
+const filteredChats = computed(() => {
+  let list = [...chats.value];
 
-  // Фильтр по статусу
-  if (statusFilter.value === 'pending') {
-    list = list.filter((r) => isPending(r.status));
-  } else if (statusFilter.value === 'in_review') {
-    list = list.filter((r) => isInReview(r.status));
-  } else if (statusFilter.value === 'my') {
-    list = list.filter(
-      (r) =>
-        r.moderatorId &&
-        currentUserId.value &&
-        (r.moderatorId === currentUserId.value ||
-          r.moderatorId === authState.user?.email)
-    );
+  // Фильтр по статусу ответа
+  if (statusFilter.value === 'unanswered') {
+    list = list.filter((c) => c.isUnanswered);
+  } else if (statusFilter.value === 'answered') {
+    list = list.filter((c) => !c.isUnanswered);
   }
 
   // Поиск
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
-    list = list.filter((r) => {
-      const titleRu = (r.snapshot.titleRu || '').toLowerCase();
-      const titleEn = (r.snapshot.titleEn || '').toLowerCase();
-      const pId = String(r.projectId);
-      const owner = (r.ownerId || '').toLowerCase();
+    list = list.filter((c) => {
+      const titleRu = (c.titleRu || '').toLowerCase();
+      const titleEn = (c.titleEn || '').toLowerCase();
+      const pId = String(c.projectId);
+      const content = (c.lastMessage?.content || '').toLowerCase();
+      const sender = (c.lastMessage?.sender_id || '').toLowerCase();
       return (
         titleRu.includes(q) ||
         titleEn.includes(q) ||
         pId.includes(q) ||
-        owner.includes(q)
+        content.includes(q) ||
+        sender.includes(q)
       );
     });
   }
 
   // Сортировка
   if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    list.sort((a, b) => {
+      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0);
+      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0);
+      return dateB - dateA;
+    });
   } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+    list.sort((a, b) => {
+      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0);
+      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0);
+      return dateA - dateB;
+    });
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => {
-      const nameA = a.snapshot.titleRu || a.snapshot.titleEn || '';
-      const nameB = b.snapshot.titleRu || b.snapshot.titleEn || '';
+      const nameA = a.titleRu || a.titleEn || '';
+      const nameB = b.titleRu || b.titleEn || '';
       return nameA.localeCompare(nameB);
     });
   }
@@ -419,59 +399,32 @@ const filteredRequests = computed(() => {
 });
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredRequests.value.length / pageSize.value))
+  Math.max(1, Math.ceil(filteredChats.value.length / pageSize.value))
 );
 
-const paginatedRequests = computed(() => {
+const paginatedChats = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
-  return filteredRequests.value.slice(start, start + pageSize.value);
+  return filteredChats.value.slice(start, start + pageSize.value);
 });
 
-function isPending(status) {
-  return (
-    status === REQUEST_STATUS.PENDING ||
-    status === 1 ||
-    status === 'REQUEST_STATUS_PENDING' ||
-    status === 'pending'
-  );
+function senderRoleLabel(role) {
+  const r = Number(role);
+  if (r === 1) return t('moderation.developerRole');
+  if (r === 2) return t('moderation.moderatorRole');
+  if (r === 3) return t('moderation.systemRole');
+  return '—';
 }
 
-function isInReview(status) {
-  return (
-    status === REQUEST_STATUS.IN_REVIEW ||
-    status === 2 ||
-    status === 'REQUEST_STATUS_IN_REVIEW' ||
-    status === 'in_review'
-  );
+function senderRoleClass(role) {
+  const r = Number(role);
+  if (r === 1) return 'role-dev';
+  if (r === 2) return 'role-mod';
+  if (r === 3) return 'role-sys';
+  return 'role-sys';
 }
 
-function reqStatusLabel(status) {
-  if (isPending(status)) return t('moderation.pending');
-  if (isInReview(status)) return t('moderation.inReview');
-  return t('common.unknown');
-}
-
-function reqStatusClass(status) {
-  if (isPending(status)) return 'status-pending';
-  if (isInReview(status)) return 'status-in-review';
-  return 'status-neutral';
-}
-
-function openProject(projectId) {
+function openChat(projectId) {
   router.push(`/moderator/projects/${projectId}`);
-}
-
-async function claimAndOpen(req) {
-  claimingId.value = req.id;
-  try {
-    await moderationApi.claimRequest(req.id);
-    showToast(t('moderation.claimBtn') + ' — успешно', 'success');
-    openProject(req.projectId);
-  } catch (err) {
-    showToast(err.response?.data?.message || t('common.error'), 'danger');
-  } finally {
-    claimingId.value = null;
-  }
 }
 </script>
 
@@ -492,7 +445,7 @@ async function claimAndOpen(req) {
   flex-direction: column;
 }
 
-/* Панель фильтрации в стиле Яндекс.Игр / Developer Hub */
+/* Панель фильтрации */
 .filters-toolbar {
   display: flex;
   align-items: flex-end;
@@ -513,7 +466,7 @@ async function claimAndOpen(req) {
 }
 
 .field-status {
-  width: 180px;
+  width: 190px;
   flex-shrink: 0;
 }
 
@@ -682,31 +635,23 @@ async function claimAndOpen(req) {
 }
 
 .col-game {
-  width: 32%;
+  width: 28%;
 }
 
-.col-version {
-  width: 10%;
+.col-last-msg {
+  width: 38%;
 }
 
-.col-dev {
-  width: 16%;
-}
-
-.col-date {
+.col-reply-status {
   width: 14%;
 }
 
-.col-status {
+.col-date {
   width: 12%;
 }
 
-.col-mod {
-  width: 10%;
-}
-
 .col-actions {
-  width: 6%;
+  width: 8%;
   text-align: right;
   padding-right: 16px;
 }
@@ -786,33 +731,62 @@ async function claimAndOpen(req) {
   color: var(--text-main, #f0f6fc);
 }
 
-.version-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--primary, #58a6ff);
+.msg-preview-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 480px;
 }
 
-.dev-cell {
-  display: inline-flex;
+.msg-meta-row {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+}
+
+.sender-role-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.role-dev {
+  background: rgba(245, 176, 39, 0.15);
+  color: #f5b027;
+  border: 1px solid rgba(245, 176, 39, 0.3);
+}
+
+.role-mod {
+  background: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.3);
+}
+
+.role-sys {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-tertiary, #8b949e);
+  border: 1px solid var(--border, #30363d);
+}
+
+.sender-id {
+  font-size: 12px;
   color: var(--text-muted, #b0b8c4);
-  max-width: 160px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.date-text {
+.msg-content-text {
   font-size: 13px;
-  color: var(--text-muted, #b0b8c4);
+  color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .status-pill {
@@ -827,33 +801,21 @@ async function claimAndOpen(req) {
   white-space: nowrap;
 }
 
-.status-pending {
+.status-unanswered {
   background: rgba(245, 176, 39, 0.12);
   border: 1px solid rgba(245, 176, 39, 0.35);
   color: #f5b027;
 }
 
-.status-in-review {
-  background: rgba(88, 166, 255, 0.12);
-  border: 1px solid rgba(88, 166, 255, 0.35);
-  color: #58a6ff;
-}
-
-.status-neutral {
+.status-answered {
   background: var(--bg-tertiary, #21262d);
   border: 1px solid var(--border, #30363d);
   color: var(--text-muted, #b0b8c4);
 }
 
-.mod-name {
+.date-text {
   font-size: 13px;
-  color: var(--text-main, #f0f6fc);
-  font-weight: 500;
-}
-
-.unassigned-text {
-  font-size: 13px;
-  color: var(--text-tertiary, #6e7681);
+  color: var(--text-muted, #b0b8c4);
 }
 
 .row-actions {
@@ -862,33 +824,7 @@ async function claimAndOpen(req) {
   gap: 8px;
 }
 
-.btn-claim-sm {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  background: var(--primary, #58a6ff);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s;
-  white-space: nowrap;
-}
-
-.btn-claim-sm:hover:not(:disabled) {
-  background: var(--primary-hover, #79c0ff);
-}
-
-.btn-claim-sm:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-inspect-sm {
+.btn-open-chat {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -905,7 +841,7 @@ async function claimAndOpen(req) {
   white-space: nowrap;
 }
 
-.btn-inspect-sm:hover {
+.btn-open-chat:hover {
   border-color: var(--primary, #58a6ff);
   color: var(--primary, #58a6ff);
 }
