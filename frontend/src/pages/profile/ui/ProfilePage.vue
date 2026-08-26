@@ -26,7 +26,7 @@
       <!-- 2-колоночная адаптивная сетка: строка 1 (Имя + Язык), строка 2 (Пароль + Тема) -->
       <div class="profile-grid">
         <!-- РЯД 1 / КОЛОНКА 1: Изменение отображаемого имени -->
-        <section class="profile-card card-name" v-if="!isModeratorOrAdmin">
+        <section class="profile-card card-name">
           <h2 class="card-title">
             <UserCheck class="icon-sm text-primary" />
             {{ t('profile.editProfile') }}
@@ -53,14 +53,6 @@
             </button>
           </form>
         </section>
-
-        <!-- Для модераторов/администраторов вместо имени (РЯД 1 / КОЛОНКА 1) -->
-        <div class="info-alert card-name" v-else>
-          <Info class="icon-sm alert-icon" />
-          <div class="alert-text">
-            {{ t('profile.readonlyNotice') }}
-          </div>
-        </div>
 
         <!-- РЯД 1 / КОЛОНКА 2: Язык интерфейса -->
         <section class="profile-card card-lang">
@@ -101,7 +93,7 @@
         </section>
 
         <!-- РЯД 2 / КОЛОНКА 1: Смена пароля -->
-        <section class="profile-card card-password" v-if="!isModeratorOrAdmin">
+        <section class="profile-card card-password">
           <h2 class="card-title">
             <Lock class="icon-sm text-primary" />
             {{ t('profile.security') }}
@@ -169,9 +161,6 @@
           </form>
         </section>
 
-        <!-- Пустой заполнитель для модераторов/админов если нужно -->
-        <div v-else></div>
-
         <!-- РЯД 2 / КОЛОНКА 2: Тема оформления -->
         <section class="profile-card card-theme">
           <h2 class="card-title">
@@ -201,7 +190,6 @@ import {
   Code2,
   Languages,
   Palette,
-  Info,
 } from 'lucide-vue-next';
 import { useAuth, updateProfile, changePassword } from '@/entities/user';
 import { ThemeCardSelector } from '@/features/theme-switcher';
@@ -591,25 +579,6 @@ function selectLanguage(lang) {
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.info-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md, 8px);
-  padding: 16px 20px;
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
-.alert-icon {
-  color: var(--primary);
-  flex-shrink: 0;
-  margin-top: 2px;
 }
 
 /* Языковая сетка */
