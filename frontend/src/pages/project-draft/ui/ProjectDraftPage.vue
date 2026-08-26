@@ -26,7 +26,9 @@
         <div class="section-head"><h3>{{ t('projectDraft.basicInfo') }}</h3></div>
         <div class="input-row">
           <div class="input-group">
-            <label>{{ t('projectDraft.gameTitle') }} (RU) <span class="req">*</span></label>
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameTitle') }} (RU) <span class="req">*</span></label>
+            </div>
             <input
               type="text"
               class="input-control"
@@ -34,7 +36,9 @@
             />
           </div>
           <div class="input-group">
-            <label>{{ t('projectDraft.gameTitle') }} (EN) <span class="req">*</span></label>
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameTitle') }} (EN) <span class="req">*</span></label>
+            </div>
             <input
               type="text"
               class="input-control"
@@ -44,10 +48,10 @@
         </div>
         <div class="input-row">
           <div class="input-group">
-            <label
-              >SEO (RU) <span class="req">*</span>
-              <span class="char-count">{{ meta.seo_ru.length }}/180</span></label
-            >
+            <div class="input-header">
+              <label class="input-label">SEO (RU) <span class="req">*</span></label>
+              <span class="char-count">{{ meta.seo_ru.length }}/180</span>
+            </div>
             <textarea
               class="input-control"
               rows="2"
@@ -56,10 +60,10 @@
             ></textarea>
           </div>
           <div class="input-group">
-            <label
-              >SEO (EN) <span class="req">*</span>
-              <span class="char-count">{{ meta.seo_en.length }}/180</span></label
-            >
+            <div class="input-header">
+              <label class="input-label">SEO (EN) <span class="req">*</span></label>
+              <span class="char-count">{{ meta.seo_en.length }}/180</span>
+            </div>
             <textarea
               class="input-control"
               rows="2"
@@ -69,10 +73,10 @@
           </div>
         </div>
         <div class="input-group" style="margin-top: 16px;">
-          <label
-            >{{ t('projectDraft.gameDescription') }} <span class="req">*</span>
-            <span class="char-count">{{ meta.about.length }}/800</span></label
-          >
+          <div class="input-header">
+            <label class="input-label">{{ t('projectDraft.gameDescription') }} <span class="req">*</span></label>
+            <span class="char-count">{{ meta.about.length }}/800</span>
+          </div>
           <textarea
             class="input-control"
             rows="4"
@@ -111,62 +115,57 @@
         
         <div class="media-grid">
           <!-- СЛОТ 1: ИКОНКА ИГРЫ -->
-          <div class="media-card">
-            <div class="media-card-header">
-              <div class="media-card-title-group">
+          <div
+            class="media-slot"
+            :class="{
+              'is-filled': media.icon && mediaUrls.icon,
+              'is-empty': !media.icon || !mediaUrls.icon,
+              'is-dragging': dragStates.icon,
+              'is-loading': uploading.icon
+            }"
+            @dragover.prevent="onDragOver('icon', $event)"
+            @dragleave.prevent="onDragLeave('icon', $event)"
+            @drop.prevent="onDrop('icon', $event)"
+            @click="(!media.icon || !mediaUrls.icon) && triggerFileInput('icon')"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
                 <ImageIcon class="icon-sm text-primary" />
-                <span class="media-card-title">{{ t('projectDraft.iconTitle') }}</span>
+                <span class="media-slot-title">{{ t('projectDraft.iconTitle') }}</span>
+                <span class="req">*</span>
               </div>
               <span class="media-req-badge">{{ t('projectDraft.iconReq') }}</span>
             </div>
 
             <!-- Загруженное превью -->
-            <div
-              v-if="media.icon && mediaUrls.icon"
-              class="media-preview-container icon-ratio"
-              @dragover.prevent="onDragOver('icon', $event)"
-              @dragleave.prevent="onDragLeave('icon', $event)"
-              @drop.prevent="onDrop('icon', $event)"
-              :class="{ 'is-dragging': dragStates.icon }"
-            >
+            <div v-if="media.icon && mediaUrls.icon" class="media-preview-wrapper icon-size">
               <img
                 :src="mediaUrls.icon"
                 alt="Icon preview"
-                class="media-preview-image icon-fit"
+                class="media-preview-image"
                 @error="handleMediaError('icon')"
               />
-              
-              <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-delete"
-                  @click="removeMedia('icon')"
-                  :title="t('projectDraft.removeFile')"
-                >
-                  <Trash2 class="icon-xs" />
-                </button>
-              </div>
+              <button
+                type="button"
+                class="media-action-btn btn-delete"
+                @click.stop="removeMedia('icon')"
+                :title="t('projectDraft.removeFile')"
+              >
+                <Trash2 class="icon-xs" />
+              </button>
             </div>
 
-            <!-- Интерактивный Dropzone -->
-            <div
-              v-else
-              class="media-dropzone"
-              :class="{ 'is-dragging': dragStates.icon, 'is-loading': uploading.icon }"
-              @dragover.prevent="onDragOver('icon', $event)"
-              @dragleave.prevent="onDragLeave('icon', $event)"
-              @drop.prevent="onDrop('icon', $event)"
-              @click="triggerFileInput('icon')"
-            >
-              <div v-if="uploading.icon" class="dropzone-loader">
+            <!-- Пустое состояние: область загрузки -->
+            <div v-else class="media-upload-prompt">
+              <div v-if="uploading.icon" class="upload-loader">
                 <Loader2 class="icon-md spin text-primary" />
                 <span>{{ t('projectDraft.uploadingFile') }}</span>
               </div>
-              <div v-else class="dropzone-content">
-                <div class="dropzone-icon-circle">
+              <div v-else class="upload-prompt-content">
+                <div class="upload-icon-circle">
                   <Upload class="icon-md" />
                 </div>
-                <p class="dropzone-text">{{ t('projectDraft.dropOrClick') }}</p>
+                <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
                 <button type="button" class="btn-select-file" @click.stop="triggerFileInput('icon')">
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -175,62 +174,57 @@
           </div>
 
           <!-- СЛОТ 2: ОБЛОЖКА ИГРЫ -->
-          <div class="media-card">
-            <div class="media-card-header">
-              <div class="media-card-title-group">
+          <div
+            class="media-slot"
+            :class="{
+              'is-filled': media.cover && mediaUrls.cover,
+              'is-empty': !media.cover || !mediaUrls.cover,
+              'is-dragging': dragStates.cover,
+              'is-loading': uploading.cover
+            }"
+            @dragover.prevent="onDragOver('cover', $event)"
+            @dragleave.prevent="onDragLeave('cover', $event)"
+            @drop.prevent="onDrop('cover', $event)"
+            @click="(!media.cover || !mediaUrls.cover) && triggerFileInput('cover')"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
                 <ImageIcon class="icon-sm text-primary" />
-                <span class="media-card-title">{{ t('projectDraft.coverTitle') }}</span>
+                <span class="media-slot-title">{{ t('projectDraft.coverTitle') }}</span>
+                <span class="req">*</span>
               </div>
               <span class="media-req-badge">{{ t('projectDraft.coverReq') }}</span>
             </div>
 
             <!-- Загруженное превью -->
-            <div
-              v-if="media.cover && mediaUrls.cover"
-              class="media-preview-container cover-ratio"
-              @dragover.prevent="onDragOver('cover', $event)"
-              @dragleave.prevent="onDragLeave('cover', $event)"
-              @drop.prevent="onDrop('cover', $event)"
-              :class="{ 'is-dragging': dragStates.cover }"
-            >
+            <div v-if="media.cover && mediaUrls.cover" class="media-preview-wrapper cover-size">
               <img
                 :src="mediaUrls.cover"
                 alt="Cover preview"
-                class="media-preview-image cover-fit"
+                class="media-preview-image"
                 @error="handleMediaError('cover')"
               />
-              
-              <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-delete"
-                  @click="removeMedia('cover')"
-                  :title="t('projectDraft.removeFile')"
-                >
-                  <Trash2 class="icon-xs" />
-                </button>
-              </div>
+              <button
+                type="button"
+                class="media-action-btn btn-delete"
+                @click.stop="removeMedia('cover')"
+                :title="t('projectDraft.removeFile')"
+              >
+                <Trash2 class="icon-xs" />
+              </button>
             </div>
 
-            <!-- Интерактивный Dropzone -->
-            <div
-              v-else
-              class="media-dropzone"
-              :class="{ 'is-dragging': dragStates.cover, 'is-loading': uploading.cover }"
-              @dragover.prevent="onDragOver('cover', $event)"
-              @dragleave.prevent="onDragLeave('cover', $event)"
-              @drop.prevent="onDrop('cover', $event)"
-              @click="triggerFileInput('cover')"
-            >
-              <div v-if="uploading.cover" class="dropzone-loader">
+            <!-- Пустое состояние: область загрузки -->
+            <div v-else class="media-upload-prompt">
+              <div v-if="uploading.cover" class="upload-loader">
                 <Loader2 class="icon-md spin text-primary" />
                 <span>{{ t('projectDraft.uploadingFile') }}</span>
               </div>
-              <div v-else class="dropzone-content">
-                <div class="dropzone-icon-circle">
+              <div v-else class="upload-prompt-content">
+                <div class="upload-icon-circle">
                   <Upload class="icon-md" />
                 </div>
-                <p class="dropzone-text">{{ t('projectDraft.dropOrClick') }}</p>
+                <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
                 <button type="button" class="btn-select-file" @click.stop="triggerFileInput('cover')">
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -239,24 +233,29 @@
           </div>
 
           <!-- СЛОТ 3: ПРОМО-ВИДЕО -->
-          <div class="media-card">
-            <div class="media-card-header">
-              <div class="media-card-title-group">
+          <div
+            class="media-slot"
+            :class="{
+              'is-filled': media.video && mediaUrls.video,
+              'is-empty': !media.video || !mediaUrls.video,
+              'is-dragging': dragStates.video,
+              'is-loading': uploading.video
+            }"
+            @dragover.prevent="onDragOver('video', $event)"
+            @dragleave.prevent="onDragLeave('video', $event)"
+            @drop.prevent="onDrop('video', $event)"
+            @click="(!media.video || !mediaUrls.video) && triggerFileInput('video')"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
                 <Film class="icon-sm text-primary" />
-                <span class="media-card-title">{{ t('projectDraft.videoTitle') }}</span>
+                <span class="media-slot-title">{{ t('projectDraft.videoTitle') }}</span>
               </div>
               <span class="media-req-badge">{{ t('projectDraft.videoReq') }}</span>
             </div>
 
             <!-- Загруженное видео -->
-            <div
-              v-if="media.video && mediaUrls.video"
-              class="media-preview-container video-ratio"
-              @dragover.prevent="onDragOver('video', $event)"
-              @dragleave.prevent="onDragLeave('video', $event)"
-              @drop.prevent="onDrop('video', $event)"
-              :class="{ 'is-dragging': dragStates.video }"
-            >
+            <div v-if="media.video && mediaUrls.video" class="media-preview-wrapper video-size">
               <video
                 :src="mediaUrls.video"
                 autoplay
@@ -266,38 +265,27 @@
                 class="media-preview-video"
                 @error="handleMediaError('video')"
               ></video>
-              
-              <div class="media-overlay-actions">
-                <button
-                  type="button"
-                  class="media-action-btn btn-delete"
-                  @click="removeMedia('video')"
-                  :title="t('projectDraft.removeFile')"
-                >
-                  <Trash2 class="icon-xs" />
-                </button>
-              </div>
+              <button
+                type="button"
+                class="media-action-btn btn-delete"
+                @click.stop="removeMedia('video')"
+                :title="t('projectDraft.removeFile')"
+              >
+                <Trash2 class="icon-xs" />
+              </button>
             </div>
 
-            <!-- Интерактивный Dropzone -->
-            <div
-              v-else
-              class="media-dropzone"
-              :class="{ 'is-dragging': dragStates.video, 'is-loading': uploading.video }"
-              @dragover.prevent="onDragOver('video', $event)"
-              @dragleave.prevent="onDragLeave('video', $event)"
-              @drop.prevent="onDrop('video', $event)"
-              @click="triggerFileInput('video')"
-            >
-              <div v-if="uploading.video" class="dropzone-loader">
+            <!-- Пустое состояние: область загрузки -->
+            <div v-else class="media-upload-prompt">
+              <div v-if="uploading.video" class="upload-loader">
                 <Loader2 class="icon-md spin text-primary" />
                 <span>{{ t('projectDraft.uploadingFile') }}</span>
               </div>
-              <div v-else class="dropzone-content">
-                <div class="dropzone-icon-circle">
+              <div v-else class="upload-prompt-content">
+                <div class="upload-icon-circle">
                   <Upload class="icon-md" />
                 </div>
-                <p class="dropzone-text">{{ t('projectDraft.dropOrClick') }}</p>
+                <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
                 <button type="button" class="btn-select-file" @click.stop="triggerFileInput('video')">
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -481,7 +469,6 @@ function removeMedia(type) {
 }
 
 function handleMediaError(type) {
-  // If the server URL fails, fallback gracefully
   console.warn(`Media failed to load for ${type}: ${mediaUrls.value[type]}`);
 }
 
@@ -756,20 +743,34 @@ function setActiveBuild(version) {
   gap: 16px;
   margin-bottom: 16px;
 }
-.input-group label {
+
+.input-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.input-label {
   font-size: 0.85rem;
   font-weight: 600;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
+  color: var(--text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
+
 .req {
   color: var(--danger);
+  font-weight: 700;
 }
+
 .char-count {
   font-weight: 400;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
+
 .input-control {
   width: 100%;
   padding: 10px 12px;
@@ -787,25 +788,48 @@ function setActiveBuild(version) {
   background: var(--bg-card);
 }
 
-/* Сетка медиа-материалов */
+/* Сетка медиа-материалов (единый компонент карточки без лишней вложенности) */
 .media-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
 }
 
-.media-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+.media-slot {
   border-radius: var(--radius-md, 8px);
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
-.media-card-header {
+/* Пустое состояние: пунктирная граница (линии) */
+.media-slot.is-empty {
+  border: 2px dashed var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+}
+
+.media-slot.is-empty:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.media-slot.is-dragging {
+  border-color: var(--primary) !important;
+  background: var(--primary-light, rgba(88, 166, 255, 0.08)) !important;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+/* Заполненное состояние: сплошная граница */
+.media-slot.is-filled {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.media-slot-header {
   width: 100%;
   display: flex;
   align-items: center;
@@ -813,13 +837,13 @@ function setActiveBuild(version) {
   gap: 12px;
 }
 
-.media-card-title-group {
-  display: flex;
+.media-slot-title-group {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.media-card-title {
+.media-slot-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-main);
@@ -835,35 +859,15 @@ function setActiveBuild(version) {
   border: 1px solid var(--border);
 }
 
-/* Dropzone (Empty State) */
-.media-dropzone {
-  width: 100%;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-card);
+/* Область выбора/загрузки файла */
+.media-upload-prompt {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  min-height: 140px;
-  box-sizing: border-box;
+  padding: 16px 10px;
 }
 
-.media-dropzone:hover {
-  border-color: var(--primary);
-  background: var(--bg-hover);
-}
-
-.media-dropzone.is-dragging {
-  border-color: var(--primary);
-  background: var(--primary-light, rgba(88, 166, 255, 0.1));
-  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
-}
-
-.dropzone-content {
+.upload-prompt-content {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -871,7 +875,7 @@ function setActiveBuild(version) {
   text-align: center;
 }
 
-.dropzone-icon-circle {
+.upload-icon-circle {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -882,7 +886,7 @@ function setActiveBuild(version) {
   justify-content: center;
 }
 
-.dropzone-text {
+.upload-prompt-text {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -906,53 +910,44 @@ function setActiveBuild(version) {
   background: var(--bg-card);
 }
 
-.dropzone-loader {
+.upload-loader {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
   color: var(--text-muted);
+  padding: 16px;
 }
 
-/* Preview Container (Uploaded State) */
-.media-preview-container {
+/* Превью загруженного медиа (центрировано без лишних рамок) */
+.media-preview-wrapper {
   position: relative;
   border-radius: var(--radius-md, 8px);
   overflow: hidden;
+  margin: 0 auto;
   border: 1px solid var(--border);
   background: var(--bg-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  margin: 0 auto;
 }
 
-.media-preview-container.icon-ratio {
+.media-preview-wrapper.icon-size {
   width: 160px;
   height: 160px;
 }
 
-.media-preview-container.cover-ratio {
+.media-preview-wrapper.cover-size {
   width: 100%;
   max-width: 540px;
   aspect-ratio: 800 / 470;
 }
 
-.media-preview-container.video-ratio {
+.media-preview-wrapper.video-size {
   width: 100%;
   max-width: 540px;
   aspect-ratio: 16 / 9;
 }
 
-.media-preview-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
+.media-preview-image,
 .media-preview-video {
   width: 100%;
   height: 100%;
@@ -960,34 +955,31 @@ function setActiveBuild(version) {
   display: block;
 }
 
-.media-overlay-actions {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
+.media-action-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  z-index: 10;
-}
-
-.media-preview-container:hover .media-overlay-actions {
-  opacity: 1;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
 }
 
 .btn-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   background: rgba(220, 38, 38, 0.85);
   color: #fff;
   border: 1px solid rgba(239, 68, 68, 0.5);
   padding: 6px 8px;
   border-radius: var(--radius-sm, 6px);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.15s ease;
   backdrop-filter: blur(8px);
+  opacity: 0;
+  z-index: 10;
+}
+
+.media-preview-wrapper:hover .btn-delete {
+  opacity: 1;
 }
 
 .btn-delete:hover {
