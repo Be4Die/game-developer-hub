@@ -149,6 +149,23 @@
                 </div>
               </div>
             </div>
+
+            <!-- ПРОМО-ВИДЕО (≤ 12 МБ, MP4) -->
+            <div class="media-box-slot">
+              <div class="slot-title-row">
+                <span class="slot-label">{{ t('projectDraft.promoVideo') }}</span>
+                <span class="slot-spec">≤ 12 МБ, MP4</span>
+              </div>
+              <div class="media-view-panel">
+                <div v-if="projectVideoUrl" class="img-preview-wrap video-aspect">
+                  <video :src="projectVideoUrl" controls class="preview-video"></video>
+                </div>
+                <div v-else class="media-empty-placeholder">
+                  <Video class="icon-md text-muted" />
+                  <span>{{ t('moderation.noMedia') }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -284,6 +301,7 @@ import {
   AlertTriangle,
   Eye,
   Image,
+  Video,
   ExternalLink,
 } from 'lucide-vue-next';
 import {
@@ -358,13 +376,21 @@ const isRejected = computed(() => {
 });
 
 const projectIconUrl = computed(() => {
-  if (!projectData.value?.iconPath) return '';
-  return getMediaUrl(projectData.value.iconPath);
+  const path = projectData.value?.iconPath || projectData.value?.icon_path;
+  if (!path) return '';
+  return getMediaUrl(path);
 });
 
 const projectCoverUrl = computed(() => {
-  if (!projectData.value?.coverPath) return '';
-  return getMediaUrl(projectData.value.coverPath);
+  const path = projectData.value?.coverPath || projectData.value?.cover_path;
+  if (!path) return '';
+  return getMediaUrl(path);
+});
+
+const projectVideoUrl = computed(() => {
+  const path = projectData.value?.videoPath || projectData.value?.video_path;
+  if (!path) return '';
+  return getMediaUrl(path);
 });
 
 async function loadProjectInfo() {
@@ -684,7 +710,7 @@ onMounted(() => {
 /* Медиа превью */
 .media-inspection-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -738,14 +764,29 @@ onMounted(() => {
 }
 
 .cover-aspect {
-  width: 200px;
-  height: 118px;
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 800 / 470;
+}
+
+.video-aspect {
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 16 / 9;
 }
 
 .preview-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+  border-radius: 4px;
 }
 
 .media-empty-placeholder {

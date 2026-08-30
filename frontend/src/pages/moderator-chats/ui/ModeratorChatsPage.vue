@@ -154,18 +154,8 @@
 
               <!-- 2 колонка: Последнее сообщение -->
               <td class="col-last-msg">
-                <div class="msg-preview-cell">
-                  <div class="msg-meta-row">
-                    <span class="sender-role-pill" :class="senderRoleClass(item)">
-                      {{ senderRoleLabel(item) }}
-                    </span>
-                    <span class="sender-id" v-if="item.lastMessage?.sender_id && item.lastMessage?.sender_id !== 'system'">
-                      {{ item.lastMessage?.sender_id }}
-                    </span>
-                  </div>
-                  <div class="msg-content-text" :title="item.lastMessage?.content">
-                    {{ item.lastMessage?.content || '—' }}
-                  </div>
+                <div class="msg-content-text" :title="item.lastMessage?.content">
+                  {{ item.lastMessage?.content || '—' }}
                 </div>
               </td>
 

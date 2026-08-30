@@ -14,20 +14,6 @@
           {{ dialogStatusLabel }}
         </span>
       </div>
-
-      <div class="chat-header-right">
-        <!-- Кнопка закрытия вопроса модератором -->
-        <button
-          v-if="showResolveButton"
-          class="btn-close-dialog"
-          :disabled="closingDialog"
-          @click="handleCloseDialog"
-          :title="t('moderation.closeDialogBtn')"
-        >
-          <CheckCircle2 class="icon-xs text-success" />
-          <span>{{ t('moderation.closeDialogBtn') }}</span>
-        </button>
-      </div>
     </div>
 
     <!-- Область сообщений -->
@@ -92,6 +78,19 @@
         :title="t('moderation.sendMessage')"
       >
         <Send class="icon-sm" />
+      </button>
+    </div>
+
+    <!-- Нижняя панель действий чата: Кнопка закрытия вопроса модератором -->
+    <div v-if="showResolveButton" class="chat-footer-actions">
+      <button
+        class="btn-resolve-dialog"
+        :disabled="closingDialog"
+        @click="handleCloseDialog"
+        :title="t('moderation.closeDialogBtn')"
+      >
+        <CheckCircle2 class="icon-xs text-success" />
+        <span>{{ t('moderation.closeDialogBtn') }}</span>
       </button>
     </div>
   </div>
@@ -370,34 +369,36 @@ onUnmounted(() => {
   color: var(--text-muted, #b0b8c4);
 }
 
-.chat-header-right {
-  display: flex;
-  align-items: center;
+.chat-footer-actions {
+  padding: 0 12px 12px;
+  background: var(--bg-card, #161b22);
 }
 
-.btn-close-dialog {
-  display: inline-flex;
+.btn-resolve-dialog {
+  width: 100%;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 10px;
-  background: var(--bg-secondary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
+  height: 32px;
+  padding: 0 12px;
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #2ecc71;
   border-radius: var(--radius-sm, 6px);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
+  transition: all 0.15s ease;
 }
 
-.btn-close-dialog:hover:not(:disabled) {
+.btn-resolve-dialog:hover:not(:disabled) {
+  background: rgba(46, 204, 113, 0.18);
   border-color: #2ecc71;
   color: #2ecc71;
 }
 
-.btn-close-dialog:disabled {
+.btn-resolve-dialog:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
