@@ -8,6 +8,7 @@ import (
 	modpb "github.com/Be4Die/game-developer-hub/protos/moderation/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 // GRPCModerationClient реализует domain.ModerationClient поверх gRPC вызовов к сервису moderation.
@@ -38,8 +39,31 @@ func (c *GRPCModerationClient) Close() error {
 	return nil
 }
 
+func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) context.Context {
+	outgoingMD := metadata.MD{}
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		for _, key := range []string{"authorization", "x-user-id", "x-user-role", "x-user-name"} {
+			if vals := md.Get(key); len(vals) > 0 {
+				outgoingMD.Set(key, vals...)
+			}
+		}
+	}
+	if len(outgoingMD.Get("x-user-id")) == 0 && fallbackUserID != "" {
+		outgoingMD.Set("x-user-id", fallbackUserID)
+	}
+	if len(outgoingMD.Get("x-user-role")) == 0 {
+		if fallbackRole != "" {
+			outgoingMD.Set("x-user-role", fallbackRole)
+		} else {
+			outgoingMD.Set("x-user-role", "developer")
+		}
+	}
+	return metadata.NewOutgoingContext(ctx, outgoingMD)
+}
+
 // SubmitDraft отправляет снимок черновика на модерацию через gRPC RPC.
 func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
+	outCtx := forwardContext(ctx, snapshot.OwnerID, "developer")
 	req := &modpb.SubmitDraftRequest{
 		ProjectId: snapshot.ProjectID,
 		OwnerId:   snapshot.OwnerID,
@@ -59,7 +83,7 @@ func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 		},
 	}
 
-	resp, err := c.client.SubmitDraft(ctx, req)
+	resp, err := c.client.SubmitDraft(outCtx, req)
 	if err != nil {
 		return 0, fmt.Errorf("GRPCModerationClient.SubmitDraft: %w", err)
 	}
@@ -69,7 +93,8 @@ func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 
 // GetLatestRequest запрашивает статус последней заявки проекта через gRPC RPC.
 func (c *GRPCModerationClient) GetLatestRequest(ctx context.Context, projectID int64) (*domain.ModerationRequestInfo, error) {
-	resp, err := c.client.GetLatestRequestByProject(ctx, &modpb.GetLatestRequestByProjectRequest{
+	outCtx := forwardContext(ctx, "system", "moderator")
+	resp, err := c.client.GetLatestRequestByProject(outCtx, &modpb.GetLatestRequestByProjectRequest{
 		ProjectId: projectID,
 	})
 	if err != nil {

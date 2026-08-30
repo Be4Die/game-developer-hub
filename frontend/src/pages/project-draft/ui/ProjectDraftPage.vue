@@ -3,22 +3,16 @@
     <div class="form-grid">
       <!-- Уведомления статуса модерации (если есть) -->
       <div
-        v-if="isRejected && rejectionReason"
+        v-if="isUnderReview"
+        class="card review-notice"
+      >
+        ⏳ {{ t('projects.moderation') }} — Заявка проверяется модератором.
+      </div>
+      <div
+        v-else-if="isRejected && rejectionReason"
         class="card rejection-notice"
       >
         <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
-      </div>
-      <div
-        v-else-if="isApproved"
-        class="card approval-notice"
-      >
-        ✓ {{ t('moderation.verdictApproved') }}
-      </div>
-      <div
-        v-else-if="isUnderReview"
-        class="card review-notice"
-      >
-        ⏳ {{ t('projects.moderation') }}
       </div>
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -163,6 +157,7 @@
                 class="media-preview-image"
                 @error="handleMediaError('icon')"
               />
+              <span v-if="pendingFiles.icon" class="staged-pill">Локальный файл</span>
               <button
                 type="button"
                 class="media-action-btn btn-delete"
@@ -222,6 +217,7 @@
                 class="media-preview-image"
                 @error="handleMediaError('cover')"
               />
+              <span v-if="pendingFiles.cover" class="staged-pill">Локальный файл</span>
               <button
                 type="button"
                 class="media-action-btn btn-delete"
@@ -283,6 +279,7 @@
                 class="media-preview-video"
                 @error="handleMediaError('video')"
               ></video>
+              <span v-if="pendingFiles.video" class="staged-pill">Локальный файл</span>
               <button
                 type="button"
                 class="media-action-btn btn-delete"
@@ -330,19 +327,31 @@
             :key="b.version"
             class="build-row"
             :class="{ active: activeBuildVersion === b.version }"
+            @click="setActiveBuild(b.version)"
           >
             <div class="build-info">
-              <strong>{{ b.version }}</strong>
-              <span class="build-date">{{ b.created_at }}</span>
+              <div class="build-radio-indicator" :class="{ selected: activeBuildVersion === b.version }">
+                <div v-if="activeBuildVersion === b.version" class="radio-inner-dot"></div>
+              </div>
+              <div class="build-labels">
+                <strong class="build-version-name">{{ b.version }}</strong>
+                <span class="build-date">{{ b.created_at }}</span>
+              </div>
             </div>
-            <button
-              v-if="activeBuildVersion !== b.version"
-              class="btn-text"
-              @click="setActiveBuild(b.version)"
-            >
-              {{ t('common.apply') }}
-            </button>
-            <span v-else class="active-label">{{ t('common.active') }}</span>
+
+            <div class="build-actions">
+              <span v-if="activeBuildVersion === b.version" class="active-badge">
+                {{ t('common.active') }}
+              </span>
+              <button
+                type="button"
+                class="btn-icon-download"
+                @click.stop="downloadBuild(b.version)"
+                :title="t('common.download') || 'Скачать ZIP'"
+              >
+                <Download class="icon-xs" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -361,6 +370,7 @@ import {
   Upload,
   Trash2,
   Loader2,
+  Download,
 } from 'lucide-vue-next';
 import {
   getProject,
@@ -397,6 +407,7 @@ const meta = ref({
 
 const media = ref({ icon: false, cover: false, video: false });
 const mediaUrls = ref({ icon: '', cover: '', video: '' });
+const pendingFiles = reactive({ icon: null, cover: null, video: null });
 const uploading = reactive({ icon: false, cover: false, video: false });
 const dragStates = reactive({ icon: false, cover: false, video: false });
 
@@ -445,12 +456,23 @@ const isRejected = computed(() => {
   );
 });
 
+const isPublished = computed(() => {
+  return (
+    projectData.value?.status === 3 ||
+    projectData.value?.status === 'PROJECT_STATUS_PUBLISHED' ||
+    !!projectData.value?.release
+  );
+});
+
+const publishedVersion = computed(() => {
+  return projectData.value?.release?.version || '';
+});
+
 if (draftActions) {
   draftActions.value.save = () => saveMeta(false);
   draftActions.value.submit = () => submitForModeration();
   watch(submitting, (v) => { if (draftActions.value) draftActions.value.isSubmitting = v; }, { immediate: true });
   watch(isUnderReview, (v) => { if (draftActions.value) draftActions.value.isUnderReview = v; }, { immediate: true });
-  watch(isApproved, (v) => { if (draftActions.value) draftActions.value.isApproved = v; }, { immediate: true });
 }
 
 function triggerFileInput(type) {
@@ -474,11 +496,17 @@ function onDrop(type, e) {
   dragStates[type] = false;
   const file = e.dataTransfer?.files?.[0];
   if (file) {
-    processUpload(type, file);
+    stageMedia(type, file);
   }
 }
 
 function removeMedia(type) {
+  if (pendingFiles[type]) {
+    pendingFiles[type] = null;
+  }
+  if (mediaUrls.value[type] && mediaUrls.value[type].startsWith('blob:')) {
+    URL.revokeObjectURL(mediaUrls.value[type]);
+  }
   media.value[type] = false;
   mediaUrls.value[type] = '';
   if (fileIcon.value && type === 'icon') fileIcon.value.value = '';
@@ -511,8 +539,7 @@ async function loadModerationStatus() {
   }
 }
 
-async function loadProject() {
-  skipAutoSave = true;
+async function loadProject(keepStaged = false) {
   try {
     const project = await getProject(projectId.value);
     projectData.value = project;
@@ -532,18 +559,17 @@ async function loadProject() {
     const coverPath = project.draft?.cover_path || project.cover_path;
     const videoPath = project.draft?.video_path || project.video_path;
 
-    media.value.icon = !!iconPath;
-    media.value.cover = !!coverPath;
-    media.value.video = !!videoPath;
-
-    if (iconPath && (!mediaUrls.value.icon || !mediaUrls.value.icon.startsWith('blob:'))) {
-      mediaUrls.value.icon = getMediaUrl(iconPath);
+    if (!keepStaged || !pendingFiles.icon) {
+      media.value.icon = !!iconPath;
+      mediaUrls.value.icon = iconPath ? getMediaUrl(iconPath) : '';
     }
-    if (coverPath && (!mediaUrls.value.cover || !mediaUrls.value.cover.startsWith('blob:'))) {
-      mediaUrls.value.cover = getMediaUrl(coverPath);
+    if (!keepStaged || !pendingFiles.cover) {
+      media.value.cover = !!coverPath;
+      mediaUrls.value.cover = coverPath ? getMediaUrl(coverPath) : '';
     }
-    if (videoPath && (!mediaUrls.value.video || !mediaUrls.value.video.startsWith('blob:'))) {
-      mediaUrls.value.video = getMediaUrl(videoPath);
+    if (!keepStaged || !pendingFiles.video) {
+      media.value.video = !!videoPath;
+      mediaUrls.value.video = videoPath ? getMediaUrl(videoPath) : '';
     }
 
     activeBuildVersion.value =
@@ -560,12 +586,9 @@ async function loadProject() {
   } catch (err) {
     showToast('Не удалось загрузить данные проекта', 'danger');
   }
-  setTimeout(() => {
-    skipAutoSave = false;
-  }, 1600);
 }
 
-onMounted(loadProject);
+onMounted(() => loadProject(false));
 
 async function submitForModeration() {
   const pId = parseInt(projectId.value, 10);
@@ -599,6 +622,23 @@ async function submitForModeration() {
 
 async function saveMeta(silent = false) {
   try {
+    // 1. Сначала загружаем все локально прикрепленные медиафайлы
+    for (const type of ['icon', 'cover', 'video']) {
+      if (pendingFiles[type]) {
+        uploading[type] = true;
+        try {
+          await uploadMedia(projectId.value, type, pendingFiles[type]);
+          pendingFiles[type] = null;
+        } catch (uploadErr) {
+          showToast(`Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`, 'danger');
+          throw uploadErr;
+        } finally {
+          uploading[type] = false;
+        }
+      }
+    }
+
+    // 2. Обновляем текстовые метаданные черновика
     const payload = {
       ...meta.value,
       active_build_version: activeBuildVersion.value,
@@ -611,21 +651,13 @@ async function saveMeta(silent = false) {
         title_en: meta.value.title_en,
       };
     }
-    if (!silent) showToast('Сохранено!', 'success');
+    await loadProject(false);
+    if (!silent) showToast('Черновик успешно сохранён!', 'success');
   } catch (err) {
-    if (!silent) showToast('Ошибка сохранения', 'danger');
+    if (!silent) showToast('Ошибка сохранения черновика', 'danger');
+    throw err;
   }
 }
-
-watch(
-  () => ({ ...meta.value, active_build_version: activeBuildVersion.value }),
-  () => {
-    if (skipAutoSave) return;
-    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-    autoSaveTimeout = setTimeout(() => saveMeta(true), 1500);
-  },
-  { deep: true }
-);
 
 function validateImageDimensions(file, expectedWidth, expectedHeight) {
   return new Promise((resolve, reject) => {
@@ -653,13 +685,12 @@ function validateImageDimensions(file, expectedWidth, expectedHeight) {
 const handleFileInput = async (type, event) => {
   const file = event.target.files[0];
   if (!file) return;
-  await processUpload(type, file);
+  await stageMedia(type, file);
   event.target.value = '';
 };
 
-async function processUpload(type, file) {
+async function stageMedia(type, file) {
   if (!file) return;
-  uploading[type] = true;
   try {
     if (type === 'icon') {
       await validateImageDimensions(file, 512, 512);
@@ -671,32 +702,38 @@ async function processUpload(type, file) {
       }
     }
 
-    // Instant local preview
+    pendingFiles[type] = file;
+    if (mediaUrls.value[type] && mediaUrls.value[type].startsWith('blob:')) {
+      URL.revokeObjectURL(mediaUrls.value[type]);
+    }
     const localUrl = URL.createObjectURL(file);
     mediaUrls.value[type] = localUrl;
     media.value[type] = true;
 
-    await uploadMedia(projectId.value, type, file);
-    await loadProject();
-    showToast('Медиафайл успешно сохранен', 'success');
+    showToast(`Файл "${file.name}" выбран. Нажмите "Сохранить", чтобы загрузить.`, 'info');
   } catch (err) {
-    if (!mediaUrls.value[type]) {
-      media.value[type] = false;
-    }
-    showToast(err.message || 'Ошибка загрузки', 'danger');
-  } finally {
-    uploading[type] = false;
+    showToast(err.message || 'Ошибка выбора файла', 'danger');
   }
 }
 
 async function onBuildUploaded(version) {
   activeBuildVersion.value = version;
-  await loadProject();
+  await loadProject(true);
 }
 
 function setActiveBuild(version) {
   activeBuildVersion.value = version;
   showToast(`Активная версия изменена на ${version}`, 'success');
+}
+
+function downloadBuild(version) {
+  if (!version) return;
+  const link = document.createElement('a');
+  link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;
+  link.download = `project_${projectId.value}_v${version}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 </script>
 
@@ -749,6 +786,42 @@ function setActiveBuild(version) {
   color: var(--text-main);
   font-size: 0.9rem;
   border-radius: var(--radius-md, 8px);
+}
+
+.published-info-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-left: 4px solid #10b981;
+  padding: 12px 16px;
+  color: var(--text-main);
+  border-radius: var(--radius-md, 8px);
+}
+
+.notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.notice-content {
+  flex: 1;
+}
+
+.notice-sub {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .section-head {
@@ -1011,42 +1084,137 @@ function setActiveBuild(version) {
   transform: scale(1.05);
 }
 
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--primary);
+.staged-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(88, 166, 255, 0.9);
+  color: #ffffff;
+  font-size: 0.72rem;
   font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 6px);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Список билдов */
 .build-versions {
-  margin-top: 16px;
+  margin-top: 20px;
 }
+
 .versions-title {
-  margin: 16px 0 8px;
+  margin: 0 0 10px;
   font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-main);
 }
+
 .build-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-md, 8px);
   background: var(--bg-secondary);
   margin-bottom: 8px;
-  transition: 0.2s;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
 }
+
+.build-row:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.03));
+}
+
 .build-row.active {
-  border-color: var(--success);
-  background: var(--success-light);
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.08);
 }
+
 .build-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.build-radio-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-secondary, #484f58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.build-radio-indicator.selected {
+  border-color: #10b981;
+}
+
+.radio-inner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.build-labels {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.build-version-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.build-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.build-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.active-badge {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.btn-icon-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-download:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--bg-secondary);
 }
 </style>

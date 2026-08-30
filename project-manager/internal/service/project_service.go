@@ -453,6 +453,27 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 
 	_ = s.releaseRepo.Deactivate(ctx, projectID)
 
+	iconPath := draft.IconPath
+	if iconPath != "" {
+		if snapped, err := s.mediaStorage.SnapshotMediaForRelease(ctx, projectID, version, iconPath, "icon"); err == nil && snapped != "" {
+			iconPath = snapped
+		}
+	}
+
+	coverPath := draft.CoverPath
+	if coverPath != "" {
+		if snapped, err := s.mediaStorage.SnapshotMediaForRelease(ctx, projectID, version, coverPath, "cover"); err == nil && snapped != "" {
+			coverPath = snapped
+		}
+	}
+
+	videoPath := draft.VideoPath
+	if videoPath != "" {
+		if snapped, err := s.mediaStorage.SnapshotMediaForRelease(ctx, projectID, version, videoPath, "video"); err == nil && snapped != "" {
+			videoPath = snapped
+		}
+	}
+
 	release := &domain.Release{
 		ProjectID:   projectID,
 		Version:     version,
@@ -462,9 +483,9 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		AboutEn:     draft.AboutEn,
 		SeoRu:       draft.SeoRu,
 		SeoEn:       draft.SeoEn,
-		IconPath:    draft.IconPath,
-		CoverPath:   draft.CoverPath,
-		VideoPath:   draft.VideoPath,
+		IconPath:    iconPath,
+		CoverPath:   coverPath,
+		VideoPath:   videoPath,
 		ProdURL:     deployRes.URL,
 		IsActive:    true,
 		PublishedBy: approvedBy,

@@ -19,6 +19,7 @@ type MediaStorage interface {
 	SaveMediaStream(ctx context.Context, projectID int64, mediaType string, src io.Reader) (filePath string, err error)
 	SaveMedia(ctx context.Context, projectID int64, mediaType string, data []byte) (filePath string, err error)
 	DeleteMedia(projectID int64, mediaType string) error
+	SnapshotMediaForRelease(ctx context.Context, projectID int64, version string, srcPath string, mediaType string) (filePath string, err error)
 }
 
 // Deployer управляет жизненным циклом распаковки и публикации сборок веб-игр в целевые окружения.

@@ -352,6 +352,9 @@ func (s *mockMediaStorage) SaveMedia(ctx context.Context, projectID int64, media
 }
 
 func (s *mockMediaStorage) DeleteMedia(projectID int64, mediaType string) error { return nil }
+func (s *mockMediaStorage) SnapshotMediaForRelease(ctx context.Context, projectID int64, version string, srcPath string, mediaType string) (string, error) {
+	return fmt.Sprintf("/data/media/%d/releases/%s/%s.png", projectID, version, mediaType), nil
+}
 
 type mockDeployer struct{}
 

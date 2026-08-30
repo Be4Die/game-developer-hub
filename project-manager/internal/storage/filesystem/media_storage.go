@@ -140,3 +140,47 @@ func (s *MediaStorage) DeleteMedia(projectID int64, mediaType string) error {
 	}
 	return nil
 }
+
+// SnapshotMediaForRelease создает неизменяемую копию медиафайла для конкретного релиза.
+func (s *MediaStorage) SnapshotMediaForRelease(ctx context.Context, projectID int64, version string, srcPath string, mediaType string) (string, error) {
+	if srcPath == "" {
+		return "", nil
+	}
+	fileName, err := s.getFileName(mediaType)
+	if err != nil {
+		return "", err
+	}
+
+	releaseDir := filepath.Join(s.basePath, "media", strconv.FormatInt(projectID, 10), "releases", version)
+	if err := os.MkdirAll(releaseDir, 0o755); err != nil {
+		return "", fmt.Errorf("mkdir release media: %w", err)
+	}
+
+	destPath := filepath.Join(releaseDir, fileName)
+
+	// Открываем исходный файл
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		// Резервная попытка: проверить в директории проекта
+		altPath := filepath.Join(s.projectDir(projectID), fileName)
+		srcFile, err = os.Open(altPath)
+		if err != nil {
+			// Если исходного файла нет на диске, сохраняем исходный путь
+			return srcPath, nil
+		}
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(destPath)
+	if err != nil {
+		return "", fmt.Errorf("create release media file: %w", err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, srcFile); err != nil {
+		return "", fmt.Errorf("copy media to release: %w", err)
+	}
+	_ = os.Chmod(destPath, 0o644)
+
+	return destPath, nil
+}

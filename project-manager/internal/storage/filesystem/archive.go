@@ -19,55 +19,90 @@ const (
 	maxFileCount    = 50000             // макс. количество файлов в архиве
 )
 
-// allowedExtensions содержит разрешенные расширения статических файлов для веб-сборок игр (HTML5/WASM).
+// allowedExtensions содержит разрешенные расширения статических файлов для веб-сборок игр (HTML5/WASM/Unity/Godot).
 var allowedExtensions = map[string]bool{
-	".html":    true,
-	".htm":     true,
-	".js":      true,
-	".mjs":     true,
-	".css":     true,
-	".wasm":    true,
-	".png":     true,
-	".jpg":     true,
-	".jpeg":    true,
-	".webp":    true,
-	".gif":     true,
-	".svg":     true,
-	".ico":     true,
-	".mp3":     true,
-	".wav":     true,
-	".ogg":     true,
-	".json":    true,
-	".txt":     true,
-	".xml":     true,
-	".ttf":     true,
-	".woff":    true,
-	".woff2":   true,
-	".eot":     true,
-	".otf":     true,
-	".data":    true,
-	".pck":     true,
-	".bin":     true,
-	".mem":     true,
-	".symbols": true,
-	".map":     true,
-	".atlas":   true,
-	".fnt":     true,
-	".tga":     true,
-	".bmp":     true,
-	".ktx":     true,
-	".basis":   true,
-	".dds":     true,
-	".hdr":     true,
+	".html":     true,
+	".htm":      true,
+	".js":       true,
+	".mjs":      true,
+	".css":      true,
+	".wasm":     true,
+	".png":      true,
+	".jpg":      true,
+	".jpeg":     true,
+	".webp":     true,
+	".gif":      true,
+	".svg":      true,
+	".ico":      true,
+	".mp3":      true,
+	".wav":      true,
+	".ogg":      true,
+	".ogv":      true,
+	".flac":     true,
+	".aac":      true,
+	".opus":     true,
+	".mp4":      true,
+	".webm":     true,
+	".json":     true,
+	".txt":      true,
+	".xml":      true,
+	".ttf":      true,
+	".woff":     true,
+	".woff2":    true,
+	".eot":      true,
+	".otf":      true,
+	".data":     true,
+	".pck":      true,
+	".bin":      true,
+	".mem":      true,
+	".symbols":  true,
+	".map":      true,
+	".atlas":    true,
+	".fnt":      true,
+	".tga":      true,
+	".bmp":      true,
+	".ktx":      true,
+	".basis":    true,
+	".dds":      true,
+	".hdr":      true,
+	".br":       true, // Brotli compressed assets (Unity WebGL, etc.)
+	".gz":       true, // Gzip compressed assets
+	".unityweb": true, // Unity WebGL bundles
+	".unity3d":  true,
+	".bundle":   true,
+	".glb":      true, // 3D assets
+	".gltf":     true,
+	".fbx":      true,
+	".obj":      true,
+	".mtl":      true,
+	".csv":      true,
+	".tsv":      true,
+	".yaml":     true,
+	".yml":      true,
+	".plist":    true,
+	".properties": true,
+	".ini":      true,
 }
 
 func isAllowedFile(name string) bool {
-	ext := strings.ToLower(filepath.Ext(name))
+	lowerName := strings.ToLower(name)
+	ext := filepath.Ext(lowerName)
 	if ext == "" {
-		base := strings.ToLower(filepath.Base(name))
+		base := filepath.Base(lowerName)
 		return base == "license" || base == "cname" || base == "readme"
 	}
-	return allowedExtensions[ext]
+	if allowedExtensions[ext] {
+		return true
+	}
+	// Проверка составных расширений типа .wasm.br, .data.br, .js.br, .symbols.json.br
+	if ext == ".br" || ext == ".gz" {
+		trimmed := strings.TrimSuffix(lowerName, ext)
+		innerExt := filepath.Ext(trimmed)
+		if innerExt != "" && allowedExtensions[innerExt] {
+			return true
+		}
+	}
+	return false
 }
 
 // ExtractArchive распаковывает zip или tar.gz архив в указанную целевую директорию targetDir.

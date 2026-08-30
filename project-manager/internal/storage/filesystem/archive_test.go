@@ -163,3 +163,52 @@ func TestUnit_Archive_ValidTarGz(t *testing.T) {
 		t.Errorf("content mismatch: %s", string(readContent))
 	}
 }
+
+func TestUnit_Archive_UnityWebGLBrotliAssets(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	archivePath := filepath.Join(tmpDir, "unity_webgl.zip")
+	targetDir := filepath.Join(tmpDir, "unpacked")
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+
+	files := map[string][]byte{
+		"index.html":                   []byte("<html><body>Unity</body></html>"),
+		"style.css":                    []byte("body { margin: 0; }"),
+		"Build/Build.data.br":          []byte("unity-data-brotli"),
+		"Build/Build.framework.js.br": []byte("unity-framework-brotli"),
+		"Build/Build.loader.js":        []byte("unity-loader-js"),
+		"Build/Build.wasm.br":          []byte("unity-wasm-brotli"),
+	}
+
+	for name, content := range files {
+		f, err := zw.Create(name)
+		if err != nil {
+			t.Fatalf("create entry %s: %v", name, err)
+		}
+		if _, err := f.Write(content); err != nil {
+			t.Fatalf("write entry %s: %v", name, err)
+		}
+	}
+
+	if err := zw.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
+
+	if err := os.WriteFile(archivePath, buf.Bytes(), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+
+	if err := ExtractArchive(archivePath, targetDir); err != nil {
+		t.Fatalf("expected successful Unity WebGL extraction, got: %v", err)
+	}
+
+	for name := range files {
+		unpackedFile := filepath.Join(targetDir, filepath.FromSlash(name))
+		if _, err := os.Stat(unpackedFile); err != nil {
+			t.Errorf("expected %s to be extracted: %v", name, err)
+		}
+	}
+}

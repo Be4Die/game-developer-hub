@@ -8,6 +8,7 @@ import (
 	pmpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 // ProjectGRPCClient реализует domain.ProjectClient через gRPC вызовы к сервису project-manager.
@@ -37,9 +38,32 @@ func (c *ProjectGRPCClient) Close() error {
 	return nil
 }
 
+func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) context.Context {
+	outgoingMD := metadata.MD{}
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		for _, key := range []string{"authorization", "x-user-id", "x-user-role", "x-user-name"} {
+			if vals := md.Get(key); len(vals) > 0 {
+				outgoingMD.Set(key, vals...)
+			}
+		}
+	}
+	if len(outgoingMD.Get("x-user-id")) == 0 && fallbackUserID != "" {
+		outgoingMD.Set("x-user-id", fallbackUserID)
+	}
+	if len(outgoingMD.Get("x-user-role")) == 0 {
+		if fallbackRole != "" {
+			outgoingMD.Set("x-user-role", fallbackRole)
+		} else {
+			outgoingMD.Set("x-user-role", "2") // moderator role ID
+		}
+	}
+	return metadata.NewOutgoingContext(ctx, outgoingMD)
+}
+
 // PublishRelease инициирует публикацию одобренного релиза в продуктивное окружение.
 func (c *ProjectGRPCClient) PublishRelease(ctx context.Context, projectID int64, version, approvedBy, comment string) (string, error) {
-	resp, err := c.client.PublishRelease(ctx, &pmpb.ProjectPublishReleaseRequest{
+	outCtx := forwardContext(ctx, approvedBy, "2")
+	resp, err := c.client.PublishRelease(outCtx, &pmpb.ProjectPublishReleaseRequest{
 		ProjectId:   projectID,
 		Version:     version,
 		PublishedBy: approvedBy,
@@ -57,7 +81,8 @@ func (c *ProjectGRPCClient) PublishRelease(ctx context.Context, projectID int64,
 
 // RejectDraft возвращает черновик проекта на доработку.
 func (c *ProjectGRPCClient) RejectDraft(ctx context.Context, projectID int64, reason string) error {
-	_, err := c.client.RejectDraft(ctx, &pmpb.ProjectRejectDraftRequest{
+	outCtx := forwardContext(ctx, "system", "2")
+	_, err := c.client.RejectDraft(outCtx, &pmpb.ProjectRejectDraftRequest{
 		ProjectId: projectID,
 		Reason:    reason,
 	})

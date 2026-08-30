@@ -115,27 +115,9 @@
                 </span>
               </td>
 
-              <!-- Быстрые действия / Ссылки -->
+              <!-- Быстрые действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
-                  <a
-                    v-if="game.dev_url"
-                    :href="game.dev_url"
-                    target="_blank"
-                    class="action-link"
-                    title="Dev-версия"
-                  >
-                    <Play class="icon-xs" />
-                  </a>
-                  <a
-                    v-if="game.prod_url && game.status === 3"
-                    :href="game.prod_url"
-                    target="_blank"
-                    class="action-link"
-                    title="Prod-версия"
-                  >
-                    <ExternalLink class="icon-xs" />
-                  </a>
                   <button
                     class="btn-icon text-danger-hover"
                     title="Удалить проект"
@@ -228,9 +210,7 @@ import {
   Plus,
   Gamepad2,
   Search,
-  Play,
   Trash2,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -242,6 +222,7 @@ import {
   createProject,
   deleteProject,
   resetDraftState,
+  normalizeProjectStatus,
   statusClass,
   statusLabel,
   getMediaUrl,
@@ -264,10 +245,7 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 function getGameTypeLabel(game) {
-  if (game.status === 3) return t('projects.published');
-  if (game.status === 2) return t('projects.moderation');
-  if (game.status === 4) return t('projects.rejected');
-  return t('projects.draft');
+  return statusLabel(game.status);
 }
 
 async function loadProjects() {
@@ -344,9 +322,9 @@ const filteredGames = computed(() => {
   }
 
   if (statusFilter.value !== 'all') {
-    const statusMap = { draft: 1, pending: 2, published: 3, rejected: 4 };
+    const statusMap = { draft: 1, pending: 2, published: 3, approved: 4, rejected: 5 };
     const targetStatus = statusMap[statusFilter.value];
-    list = list.filter((g) => g.status === targetStatus);
+    list = list.filter((g) => normalizeProjectStatus(g.status) === targetStatus);
   }
 
   if (sortBy.value === 'newest') {
@@ -631,6 +609,12 @@ onMounted(loadProjects);
   background: rgba(46, 204, 113, 0.12);
   border-color: rgba(46, 204, 113, 0.35);
   color: #2ecc71;
+}
+
+.status-approved {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #3b82f6;
 }
 
 .status-rejected {

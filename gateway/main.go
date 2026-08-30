@@ -211,14 +211,15 @@ func run() error {
 	// Custom handler для logs streaming — SSE over HTTP.
 	logsStreamHandler := newLogsStreamHandler(orchConn)
 
-	// Custom handlers для project-manager multipart uploads and media serving.
+	// Custom handlers для project-manager multipart uploads, build downloads and media serving.
 	projectsBasePath := envOr("PROJECTS_DATA_PATH", "/data/projects")
 	projectBuildUploadHandler := newProjectBuildUploadHandler(projConn)
+	projectBuildDownloadHandler := newProjectBuildDownloadHandler(projectsBasePath)
 	projectMediaUploadHandler := newProjectMediaUploadHandler(projConn)
 	projectMediaServeHandler := newProjectMediaServeHandler(projectsBasePath)
 
 	// HTTP-сервер с CORS и custom routing.
-	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectMediaUploadHandler, projectMediaServeHandler))
+	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectBuildDownloadHandler, projectMediaUploadHandler, projectMediaServeHandler))
 
 	srv := &http.Server{
 		Addr:         httpAddr,
@@ -379,15 +380,25 @@ func (h *buildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonBytes)
 }
 
-// customRouter маршрутизирует upload, media serving и logs запросы к custom handler, остальные — к grpc-gateway.
+// customRouter маршрутизирует upload, download, media serving и logs запросы к custom handler, остальные — к grpc-gateway.
 func customRouter(
 	gw http.Handler,
 	buildUploadHandler, logsHandler http.Handler,
-	projectBuildUploadHandler, projectMediaUploadHandler, projectMediaServeHandler http.Handler,
+	projectBuildUploadHandler, projectBuildDownloadHandler, projectMediaUploadHandler, projectMediaServeHandler http.Handler,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ct := r.Header.Get("Content-Type")
 		isMultipart := len(ct) >= 19 && ct[:19] == "multipart/form-data"
+
+		// Check for build download: GET /api/v1/projects/{id}/builds/{version}/download
+		if r.Method == http.MethodGet || r.Method == http.MethodHead {
+			if strings.HasPrefix(r.URL.Path, "/api/v1/projects/") &&
+				strings.Contains(r.URL.Path, "/builds/") &&
+				strings.HasSuffix(r.URL.Path, "/download") {
+				projectBuildDownloadHandler.ServeHTTP(w, r)
+				return
+			}
+		}
 
 		// Check for media serving: GET /api/v1/projects/{id}/media/{type} or GET /api/v1/media/... or GET /media/...
 		if r.Method == http.MethodGet || r.Method == http.MethodHead {
@@ -993,5 +1004,59 @@ func (h *projectMediaServeHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 	w.Header().Set("Cache-Control", "public, max-age=3600")
 
+	http.ServeFile(w, r, filePath)
+}
+
+// projectBuildDownloadHandler отдаёт zip-архив клиентской сборки для скачивания.
+type projectBuildDownloadHandler struct {
+	basePath string
+}
+
+func newProjectBuildDownloadHandler(basePath string) *projectBuildDownloadHandler {
+	return &projectBuildDownloadHandler{basePath: basePath}
+}
+
+func (h *projectBuildDownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// URL format: /api/v1/projects/{id}/builds/{version}/download
+	trimmed := strings.TrimPrefix(r.URL.Path, "/api/v1/projects/")
+	parts := strings.Split(trimmed, "/builds/")
+	if len(parts) != 2 {
+		http.NotFound(w, r)
+		return
+	}
+	projID := parts[0]
+	verPart := strings.TrimSuffix(parts[1], "/download")
+	verPart = strings.TrimSuffix(verPart, ".zip")
+
+	filePath := filepath.Join(h.basePath, "archives", projID, verPart+".zip")
+
+	// If not found in primary path, try fallback paths
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		altPaths := []string{
+			filepath.Join("./data/projects/archives", projID, verPart+".zip"),
+			filepath.Join("../project-manager/data/projects/archives", projID, verPart+".zip"),
+		}
+		found := false
+		for _, alt := range altPaths {
+			if _, err := os.Stat(alt); err == nil {
+				filePath = alt
+				found = true
+				break
+			}
+		}
+		if !found {
+			http.NotFound(w, r)
+			return
+		}
+	}
+
+	downloadFilename := fmt.Sprintf("build_project_%s_v%s.zip", projID, verPart)
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadFilename))
 	http.ServeFile(w, r, filePath)
 }

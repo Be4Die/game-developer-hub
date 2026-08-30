@@ -63,6 +63,7 @@ func (s *BuildStorage) SaveArchiveStream(ctx context.Context, projectID int64, v
 		writeErr = err
 		return "", 0, fmt.Errorf("rename temp to target: %w", err)
 	}
+	_ = os.Chmod(targetPath, 0o644)
 
 	return targetPath, written, nil
 }

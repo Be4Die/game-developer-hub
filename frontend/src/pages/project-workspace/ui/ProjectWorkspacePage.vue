@@ -22,20 +22,19 @@
           </div>
         </div>
 
-        <button class="btn-dev-link" @click="openDevGame">
-          <ExternalLink class="icon-xs" />
-          <span>{{ t('projectDraft.openGameDev') }}</span>
-        </button>
+        <div class="game-links-row">
+          <button v-if="isPublished" class="btn-prod-link" @click="openProdGame">
+            <ExternalLink class="icon-xs" />
+            <span>Игра (Prod)</span>
+          </button>
+          <button class="btn-dev-link" @click="openDevGame">
+            <ExternalLink class="icon-xs" />
+            <span>{{ t('projectDraft.openGameDev') }}</span>
+          </button>
+        </div>
       </div>
 
       <nav class="game-nav">
-        <router-link
-          :to="`/projects/${id}/stats`"
-          class="nav-btn"
-          active-class="active"
-        >
-          <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
-        </router-link>
         <router-link
           :to="`/projects/${id}/draft`"
           class="nav-btn"
@@ -58,6 +57,13 @@
         >
           <Server class="icon-sm" /> {{ t('projectWorkspace.serversTab') }}
         </router-link>
+        <router-link
+          :to="`/projects/${id}/stats`"
+          class="nav-btn"
+          active-class="active"
+        >
+          <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
+        </router-link>
       </nav>
 
       <!-- Футер сайдбара: Сохранить и Отправить на модерацию -->
@@ -77,13 +83,22 @@
           @click="handleSidebarSubmit"
           :disabled="
             draftActions.isSubmitting ||
-            draftActions.isUnderReview ||
-            draftActions.isApproved
+            draftActions.isUnderReview
           "
         >
           <Loader2 class="icon-xs spin" v-if="draftActions.isSubmitting" />
           <Send class="icon-xs" v-else />
-          <span>{{ draftActions.isSubmitting ? t('projectDraft.sending') : t('projectDraft.sendToModeration') }}</span>
+          <span>
+            {{
+              draftActions.isSubmitting
+                ? t('projectDraft.sending')
+                : draftActions.isUnderReview
+                ? t('projects.moderation')
+                : isPublished
+                ? t('projectDraft.sendUpdateToModeration')
+                : t('projectDraft.sendToModeration')
+            }}
+          </span>
         </button>
       </div>
     </aside>
@@ -162,11 +177,17 @@ const projectIconUrl = computed(() => {
   return getMediaUrl(path);
 });
 
-const isPublished = computed(() => project.value?.status === 3);
+const isPublished = computed(() => {
+  return (
+    project.value?.status === 3 ||
+    project.value?.status === 'PROJECT_STATUS_PUBLISHED' ||
+    !!project.value?.release
+  );
+});
 
 // Редирект с "published" на "draft", если проект загружен и не опубликован
 watch(
-  () => [route.name, project.value?.status],
+  () => [route.name, project.value?.status, project.value?.release],
   ([name]) => {
     if (name === 'published' && project.value && !isPublished.value) {
       router.replace(`/projects/${props.id}/draft`);
@@ -180,6 +201,14 @@ function openDevGame() {
     project.value?.draft?.dev_url ||
     project.value?.dev_url ||
     `/games/${props.id}/dev/index.html`;
+  window.open(url, '_blank');
+}
+
+function openProdGame() {
+  const url =
+    project.value?.release?.prod_url ||
+    project.value?.prod_url ||
+    `/games/${props.id}/prod/index.html`;
   window.open(url, '_blank');
 }
 
@@ -286,16 +315,21 @@ const currentUserId = computed(() => authState.user?.id);
   text-overflow: ellipsis;
 }
 
-.btn-dev-link {
+.game-links-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-dev-link,
+.btn-prod-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
-  background: var(--bg-secondary);
-  color: var(--text-main);
   font-weight: 500;
   font-size: 0.85rem;
   cursor: pointer;
@@ -303,10 +337,27 @@ const currentUserId = computed(() => authState.user?.id);
   width: 100%;
 }
 
+.btn-dev-link {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
 .btn-dev-link:hover {
   border-color: var(--primary);
   color: var(--primary);
   background: var(--bg-card);
+}
+
+.btn-prod-link {
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.btn-prod-link:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.18);
 }
 
 .game-nav {

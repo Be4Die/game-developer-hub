@@ -1,172 +1,193 @@
 <template>
   <div class="tab-fade-in">
     <div class="form-grid">
-      <!-- ЗАГОЛОВОК + КНОПКИ -->
-      <div class="form-toolbar">
-        <div class="title-block">
-          <h1 style="margin: 0 0 8px 0; font-size: 1.5rem;">
-            {{ t('projectWorkspace.publishedTab') }}
-          </h1>
-          <span class="status-badge bg-green">{{ t('projects.published') }}</span>
-        </div>
-        <div class="actions">
-          <button class="btn-prod-link" @click="openProdGame">
-            {{ t('projectDraft.openTest') }} (Prod)
-          </button>
-          <button class="btn-outline" @click="loadProject">{{ t('common.refresh') }}</button>
-          <button class="btn btn-danger" @click="unpublishGame">
-            {{ t('common.delete') }}
-          </button>
-        </div>
-      </div>
-
-      <!-- БЛОК 1: МЕТАДАННЫЕ -->
+      <!-- БЛОК 1: ОСНОВНАЯ ИНФОРМАЦИЯ -->
       <div class="card form-section">
         <div class="section-head">
           <h3>{{ t('projectDraft.basicInfo') }}</h3>
-          <p class="version-info">{{ t('common.version') }}: {{ activeBuildDisplay }}</p>
         </div>
 
         <div class="input-row">
           <div class="input-group">
-            <label>{{ t('projectDraft.gameTitle') }} (RU)</label>
-            <div class="readonly-field">{{ project?.title_ru || '—' }}</div>
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameTitleRu') }}</label>
+            </div>
+            <input
+              type="text"
+              class="input-control readonly"
+              readonly
+              :value="releaseData?.title_ru || '—'"
+            />
           </div>
           <div class="input-group">
-            <label>{{ t('projectDraft.gameTitle') }} (EN)</label>
-            <div class="readonly-field">{{ project?.title_en || '—' }}</div>
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameTitleEn') }}</label>
+            </div>
+            <input
+              type="text"
+              class="input-control readonly"
+              readonly
+              :value="releaseData?.title_en || '—'"
+            />
           </div>
         </div>
 
         <div class="input-row">
           <div class="input-group">
-            <label>SEO (RU)</label>
-            <div class="readonly-field">{{ project?.seo_ru || '—' }}</div>
+            <div class="input-header">
+              <label class="input-label">SEO (RU)</label>
+            </div>
+            <textarea
+              class="input-control readonly"
+              rows="2"
+              readonly
+              :value="releaseData?.seo_ru || '—'"
+            ></textarea>
           </div>
           <div class="input-group">
-            <label>SEO (EN)</label>
-            <div class="readonly-field">{{ project?.seo_en || '—' }}</div>
+            <div class="input-header">
+              <label class="input-label">SEO (EN)</label>
+            </div>
+            <textarea
+              class="input-control readonly"
+              rows="2"
+              readonly
+              :value="releaseData?.seo_en || '—'"
+            ></textarea>
           </div>
         </div>
 
         <div class="input-row">
           <div class="input-group">
-            <label>{{ t('projectDraft.gameDescriptionRu') }}</label>
-            <div class="readonly-field multiline">
-              {{ project?.about_ru || project?.about || '—' }}
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameDescriptionRu') }}</label>
+            </div>
+            <textarea
+              class="input-control readonly"
+              rows="4"
+              readonly
+              :value="releaseData?.about_ru || '—'"
+            ></textarea>
+          </div>
+          <div class="input-group">
+            <div class="input-header">
+              <label class="input-label">{{ t('projectDraft.gameDescriptionEn') }}</label>
+            </div>
+            <textarea
+              class="input-control readonly"
+              rows="4"
+              readonly
+              :value="releaseData?.about_en || '—'"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- БЛОК 2: ПРОМО И МЕДИА-МАТЕРИАЛЫ -->
+      <div class="card form-section">
+        <div class="section-head">
+          <h3>{{ t('projectDraft.seoAndMedia') }}</h3>
+        </div>
+
+        <div class="media-grid">
+          <!-- СЛОТ 1: ИКОНКА ИГРЫ -->
+          <div
+            class="media-slot"
+            :class="iconUrl ? 'is-filled' : 'is-empty'"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
+                <ImageIcon class="icon-sm text-primary" />
+                <span class="media-slot-title">{{ t('projectDraft.iconTitle') }}</span>
+              </div>
+              <span class="media-req-badge">{{ t('projectDraft.iconReq') }}</span>
+            </div>
+
+            <div v-if="iconUrl" class="media-preview-wrapper icon-size">
+              <img
+                :src="iconUrl"
+                alt="Icon preview"
+                class="media-preview-image"
+              />
+            </div>
+            <div v-else class="media-empty-info">
+              <span>{{ t('projectDraft.mediaNotAttached') }}</span>
             </div>
           </div>
-          <div class="input-group">
-            <label>{{ t('projectDraft.gameDescriptionEn') }}</label>
-            <div class="readonly-field multiline">
-              {{ project?.about_en || '—' }}
+
+          <!-- СЛОТ 2: ОБЛОЖКА ИГРЫ -->
+          <div
+            class="media-slot"
+            :class="coverUrl ? 'is-filled' : 'is-empty'"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
+                <ImageIcon class="icon-sm text-primary" />
+                <span class="media-slot-title">{{ t('projectDraft.coverTitle') }}</span>
+              </div>
+              <span class="media-req-badge">{{ t('projectDraft.coverReq') }}</span>
+            </div>
+
+            <div v-if="coverUrl" class="media-preview-wrapper cover-size">
+              <img
+                :src="coverUrl"
+                alt="Cover preview"
+                class="media-preview-image"
+              />
+            </div>
+            <div v-else class="media-empty-info">
+              <span>{{ t('projectDraft.mediaNotAttached') }}</span>
+            </div>
+          </div>
+
+          <!-- СЛОТ 3: ПРОМО-ВИДЕО -->
+          <div
+            class="media-slot"
+            :class="videoUrl ? 'is-filled' : 'is-empty'"
+          >
+            <div class="media-slot-header">
+              <div class="media-slot-title-group">
+                <Film class="icon-sm text-primary" />
+                <span class="media-slot-title">{{ t('projectDraft.videoTitle') }}</span>
+              </div>
+              <span class="media-req-badge">{{ t('projectDraft.videoReq') }}</span>
+            </div>
+
+            <div v-if="videoUrl" class="media-preview-wrapper video-size">
+              <video
+                :src="videoUrl"
+                controls
+                playsinline
+                class="media-preview-video"
+              ></video>
+            </div>
+            <div v-else class="media-empty-info">
+              <span>{{ t('projectDraft.mediaNotAttached') }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- БЛОК 2: ПРОМО -->
+      <!-- БЛОК 3: СБОРКА И ОКРУЖЕНИЕ -->
       <div class="card form-section">
-        <div class="section-head"><h3>{{ t('projectDraft.seoAndMedia') }}</h3></div>
-
-        <div class="media-list">
-          <div
-            class="media-item"
-            :class="{
-              uploaded: !!project?.icon_path,
-              empty: !project?.icon_path,
-            }"
-          >
-            <template v-if="project?.icon_path">
-              <CheckCircle class="icon-md text-green" />
-              <span class="m-title">{{ t('common.saved') }}</span>
-              <span class="m-req">512 x 512, png</span>
-              <span class="upload-label">Icon</span>
-            </template>
-            <template v-else>
-              <ImageIcon class="icon-md" />
-              <span class="m-title">{{ t('common.empty') }}</span>
-              <span class="m-req">512 x 512, png</span>
-              <span class="upload-label">Icon</span>
-            </template>
-          </div>
-
-          <div
-            class="media-item"
-            :class="{
-              uploaded: !!project?.cover_path,
-              empty: !project?.cover_path,
-            }"
-          >
-            <template v-if="project?.cover_path">
-              <CheckCircle class="icon-md text-green" />
-              <span class="m-title">{{ t('common.saved') }}</span>
-              <span class="m-req">800 x 470, png</span>
-              <span class="upload-label">Cover</span>
-            </template>
-            <template v-else>
-              <ImageIcon class="icon-md" />
-              <span class="m-title">{{ t('common.empty') }}</span>
-              <span class="m-req">800 x 470, png</span>
-              <span class="upload-label">Cover</span>
-            </template>
-          </div>
-
-          <div
-            class="media-item"
-            :class="{
-              uploaded: !!project?.video_path,
-              empty: !project?.video_path,
-            }"
-          >
-            <template v-if="project?.video_path">
-              <CheckCircle class="icon-md text-green" />
-              <span class="m-title">{{ t('common.saved') }}</span>
-              <span class="m-req">≤ 12 MB</span>
-              <span class="upload-label">Video</span>
-            </template>
-            <template v-else>
-              <Film class="icon-md" />
-              <span class="m-title">{{ t('common.empty') }}</span>
-              <span class="m-req">≤ 12 MB</span>
-              <span class="upload-label">Video</span>
-            </template>
-          </div>
+        <div class="section-head">
+          <h3>{{ t('projectDraft.clientBuildSection') }}</h3>
         </div>
-      </div>
 
-      <!-- БЛОК 3: БИЛД -->
-      <div class="card form-section">
-        <div class="section-head"><h3>{{ t('projectDraft.clientBuildSection') }}</h3></div>
-
-        <div v-if="activeBuildDisplay !== '—'" class="build-info">
-          <div class="build-success-box">
-            <CheckCircle class="icon-md text-green" />
-            <div>
-              <span style="display: block; font-weight: 600;">
-                {{ t('common.version') }} {{ activeBuildDisplay }} {{ t('common.active') }}
-              </span>
-              <span
-                style="
-                  display: block;
-                  font-size: 0.85rem;
-                  color: var(--success);
-                "
-              >
-                {{ t('moderation.verdictApproved') }}
-              </span>
-            </div>
+        <div class="published-build-box">
+          <div class="build-ver-info">
+            <span class="ver-label">{{ t('common.version') }}:</span>
+            <strong class="ver-value">v{{ releaseVersion || '—' }}</strong>
           </div>
-        </div>
-        <div v-else class="build-info">
-          <div class="build-empty-box">
-            <AlertCircle class="icon-md" style="color: var(--warning);" />
-            <div>
-              <span style="display: block; font-weight: 600;">
-                {{ t('servers.noBuilds') }}
-              </span>
-            </div>
-          </div>
+          <button
+            v-if="releaseVersion"
+            type="button"
+            class="btn-download-action"
+            @click="downloadBuild(releaseVersion)"
+          >
+            <Download class="icon-xs" />
+            <span>{{ t('common.download') || 'Скачать' }} ZIP</span>
+          </button>
         </div>
       </div>
     </div>
@@ -174,63 +195,81 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  CheckCircle,
   Image as ImageIcon,
   Film,
-  AlertCircle,
+  Download,
 } from 'lucide-vue-next';
-import { getProject, unpublish } from '@/entities/project';
-import { listClientBuilds } from '@/entities/build';
-import { showToast } from '@/shared/lib';
+import { getProject, getPublished, getMediaUrl } from '@/entities/project';
 
 const { t } = useI18n();
 const route = useRoute();
 const projectId = computed(() => route.params.id);
-const project = ref(null);
-const builds = ref([]);
 
-const activeBuildDisplay = computed(() => {
+const sharedProject = inject('project', null);
+const directRelease = ref(null);
+const loading = ref(false);
+
+const releaseData = computed(() => {
+  if (directRelease.value) return directRelease.value;
+  if (sharedProject?.value?.release) return sharedProject.value.release;
+  return sharedProject?.value || null;
+});
+
+const releaseVersion = computed(() => {
   return (
-    project.value?.release?.build_version ||
-    project.value?.active_build_version ||
-    '—'
+    releaseData.value?.version ||
+    releaseData.value?.active_build_version ||
+    ''
   );
 });
 
-async function loadProject() {
+const iconUrl = computed(() => {
+  const path = releaseData.value?.icon_path;
+  return path ? getMediaUrl(path) : null;
+});
+
+const coverUrl = computed(() => {
+  const path = releaseData.value?.cover_path;
+  return path ? getMediaUrl(path) : null;
+});
+
+const videoUrl = computed(() => {
+  const path = releaseData.value?.video_path;
+  return path ? getMediaUrl(path) : null;
+});
+
+async function loadData() {
+  loading.value = true;
   try {
-    project.value = await getProject(projectId.value);
-    builds.value = await listClientBuilds(projectId.value);
+    const rel = await getPublished(projectId.value);
+    directRelease.value = rel;
+    if (sharedProject) {
+      const p = await getProject(projectId.value);
+      sharedProject.value = p;
+    }
   } catch (err) {
-    showToast(t('common.error'), 'danger');
+    // fallback to project data
+  } finally {
+    loading.value = false;
   }
 }
 
-function openProdGame() {
-  const url =
-    project.value?.release?.prod_url ||
-    project.value?.prod_url ||
-    `/games/${projectId.value}/prod/index.html`;
-  window.open(url, '_blank');
+function downloadBuild(version) {
+  if (!version) return;
+  const link = document.createElement('a');
+  link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;
+  link.download = `project_${projectId.value}_v${version}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
-async function unpublishGame() {
-  try {
-    await unpublish(projectId.value);
-    showToast(t('common.success'), 'info');
-    await loadProject();
-  } catch (err) {
-    showToast(t('common.error'), 'danger');
-  }
-}
-
-onMounted(loadProject);
+onMounted(loadData);
 </script>
-
 
 <style scoped>
 .tab-fade-in {
@@ -251,61 +290,29 @@ onMounted(loadProject);
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 800px;
+  max-width: 900px;
   padding-bottom: 60px;
 }
-.form-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-.actions {
-  display: flex;
-  gap: 12px;
-}
-.btn-prod-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: 1px solid var(--success);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--success);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.btn-prod-link:hover {
-  background: var(--success-light);
+
+/* Карточки формы */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  padding: 24px;
 }
 
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: inline-block;
-}
-.bg-green {
-  background: var(--success-light);
-  color: var(--success);
-}
 .section-head {
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 12px;
 }
+
 .section-head h3 {
   margin: 0;
   font-size: 1.1rem;
-}
-.version-info {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-  margin-bottom: 0;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .input-row {
@@ -314,96 +321,194 @@ onMounted(loadProject);
   gap: 16px;
   margin-bottom: 16px;
 }
-.input-group label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-header {
+  display: flex;
+  align-items: center;
   margin-bottom: 8px;
 }
-.readonly-field {
-  padding: 10px 12px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
+
+.input-label {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--text-main);
-  font-size: 0.9rem;
+}
+
+.input-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+  color: var(--text-main);
+}
+
+.input-control.readonly {
+  background: var(--bg-secondary);
+  cursor: default;
+  color: var(--text-main);
+}
+
+.input-control.readonly:focus {
+  outline: none;
+  border-color: var(--border);
+}
+
+/* Медиа сетка */
+.media-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.media-slot {
+  border-radius: var(--radius-md, 8px);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.media-slot.is-filled {
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.media-slot.is-empty {
+  border: 1px dashed var(--border);
+  background: var(--bg-card);
+}
+
+.media-slot-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.media-slot-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.media-slot-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.media-req-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 3px 8px;
+  border-radius: 4px;
   border: 1px solid var(--border);
 }
-.readonly-field.multiline {
-  line-height: 1.5;
+
+.media-preview-wrapper {
+  position: relative;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
 }
 
-.media-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: center;
+.media-preview-wrapper.icon-size {
+  width: 160px;
+  height: 160px;
 }
-.media-item {
-  border-radius: var(--radius-md);
+
+.media-preview-wrapper.cover-size {
+  width: 100%;
+  max-width: 540px;
+  aspect-ratio: 800 / 470;
+}
+
+.media-preview-wrapper.video-size {
+  width: 100%;
+  max-width: 540px;
+  aspect-ratio: 16 / 9;
+}
+
+.media-preview-image,
+.media-preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-empty-info {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  text-align: center;
-  padding: 14px;
-  width: 100%;
-  max-width: 510px;
-  height: 110px;
-}
-.media-item.uploaded {
-  border: 1px solid var(--success);
-  background: var(--success-light);
-  color: var(--success);
-}
-.media-item.empty {
-  border: 1px dashed var(--border);
-  background: var(--bg-secondary);
+  padding: 20px;
   color: var(--text-muted);
-}
-.media-item .icon-md {
-  width: 16px;
-  height: 16px;
-}
-.text-green {
-  color: var(--success);
-}
-.m-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.media-item.uploaded .m-title {
-  color: var(--success);
-}
-.m-req {
-  font-size: 0.65rem;
-}
-.upload-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-main);
-  margin-top: 4px;
+  font-size: 0.85rem;
 }
 
-.build-info {
-  margin-top: 24px;
-}
-.build-success-box {
-  padding: 24px;
-  border: 1px solid var(--success);
-  border-radius: var(--radius-md);
-  background: var(--success-light);
+/* Компактный блок опубликованной сборки */
+.published-build-box {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
+  padding: 14px 18px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
 }
-.build-empty-box {
-  padding: 24px;
-  border: 1px solid var(--warning);
-  border-radius: var(--radius-md);
-  background: var(--warning-light);
+
+.build-ver-info {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
+}
+
+.ver-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.ver-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.btn-download-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-download-action:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-secondary);
 }
 </style>
+

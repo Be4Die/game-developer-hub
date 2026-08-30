@@ -23,6 +23,8 @@ func domainError(err error, action string) error {
 		return status.Errorf(codes.InvalidArgument, "%s: invalid archive: %v", action, err)
 	case errors.Is(err, domain.ErrNoIndexHtml):
 		return status.Errorf(codes.InvalidArgument, "%s: index.html missing in archive", action)
+	case errors.Is(err, domain.ErrDisallowedFileType):
+		return status.Errorf(codes.InvalidArgument, "%s: disallowed file type: %v", action, err)
 	case errors.Is(err, domain.ErrDraftNotReady):
 		return status.Errorf(codes.FailedPrecondition, "%s: draft not ready", action)
 	case errors.Is(err, domain.ErrAlreadyInModeration):
