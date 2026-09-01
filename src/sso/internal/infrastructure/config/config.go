@@ -37,7 +37,7 @@ type Config struct {
 type AdminConfig struct {
 	Email       string `yaml:"email" env-default:"admin@welwise.com"`
 	Password    string `yaml:"password" env:"ADMIN_PASSWORD" env-default:""`
-	DisplayName string `yaml:"display_name" env-default:"Administrator"`
+	DisplayName string `yaml:"display_name" env-default:"Admin"`
 }
 
 const (

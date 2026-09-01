@@ -1,13 +1,13 @@
 Seed Accounts
 
 Developer:
-Email: dev@gdh.com
+Email: dev@welwise.com
 Password: password123
 
 Moderator:
-Email: moderator@gdh.com
+Email: moderator@welwise.com
 Password: password123
 
 Admin:
-Email: admin@gdh.com
+Email: admin@welwise.com
 Password: password123
