@@ -2,105 +2,77 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
-	"io"
+	"errors"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	modpb "github.com/Be4Die/game-developer-hub/protos/moderation/v1"
+	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
 	projpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	ssopb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 )
 
+const maxMsgSize = 2 * 1024 * 1024 * 1024 // 2GB
+
 func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := run(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalf("gateway error: %v", err)
 	}
 }
 
-// JWTClaims содержит извлечённые из JWT токена данные пользователя.
-type JWTClaims struct {
-	UserID   string
-	UserName string
-	UserRole string
-}
-
-// parseJWTClaims извлекает данные пользователя из JWT токена без проверки подписи.
-// Это безопасно, так как подпись проверяется в SSO сервисе, а gateway только проксирует запросы.
-func parseJWTClaims(req *http.Request) *JWTClaims {
-	authHeader := req.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil
-	}
-	
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenStr == authHeader {
-		return nil
-	}
-	
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		return nil
-	}
-	
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil
-	}
-	
-	var claims map[string]interface{}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return nil
-	}
-	
-	result := &JWTClaims{}
-	
-	if sub, ok := claims["sub"].(string); ok {
-		result.UserID = sub
-	}
-	
-	if email, ok := claims["email"].(string); ok {
-		result.UserName = email
-	}
-	
-	if role, ok := claims["role"].(float64); ok {
-		result.UserRole = fmt.Sprintf("%.0f", role)
-	} else if role, ok := claims["role"].(string); ok {
-		result.UserRole = role
-	}
-	
-	return result
-}
-
-func run() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Адреса gRPC-сервисов из переменных окружения.
-	orchestratorAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
+func run(ctx context.Context) error {
+	orchAddr := envOr("ORCHESTRATOR_GRPC_ADDR", "orchestrator:9090")
 	ssoAddr := envOr("SSO_GRPC_ADDR", "sso:9090")
-	projectManagerAddr := envOr("PROJECT_MANAGER_GRPC_ADDR", "project-manager:50053")
-	moderationAddr := envOr("MODERATION_GRPC_ADDR", "moderation:50054")
+	projAddr := envOr("PROJECT_MANAGER_GRPC_ADDR", "project-manager:50053")
+	modAddr := envOr("MODERATION_GRPC_ADDR", "moderation:50054")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
+	projectsBasePath := envOr("PROJECTS_DATA_PATH", "/data/projects")
 
-	// Создаём mux с настройками JSON.
-	mux := runtime.NewServeMux(
+	dialOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMsgSize),
+			grpc.MaxCallSendMsgSize(maxMsgSize),
+		),
+	}
+
+	orchConn, err := grpc.NewClient(orchAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = orchConn.Close() }()
+
+	ssoConn, err := grpc.NewClient(ssoAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = ssoConn.Close() }()
+
+	projConn, err := grpc.NewClient(projAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = projConn.Close() }()
+
+	modConn, err := grpc.NewClient(modAddr, dialOpts...)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = modConn.Close() }()
+
+	gwMux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				UseProtoNames:   true,
@@ -110,439 +82,74 @@ func run() error {
 				DiscardUnknown: true,
 			},
 		}),
-		runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
-			md := metadata.MD{}
-			if auth := req.Header.Get("Authorization"); auth != "" {
-				md.Set("authorization", auth)
-			}
-			if claims := parseJWTClaims(req); claims != nil {
-				if claims.UserID != "" {
-					md.Set("x-user-id", claims.UserID)
-				}
-				if claims.UserRole != "" {
-					md.Set("x-user-role", claims.UserRole)
-				}
-			}
-			return md
-		}),
+		runtime.WithMetadata(jwtMetadataAnnotator),
 	)
 
-	// Опции для gRPC-соединений.
-	// 2GB max message size for large build uploads
-	const maxMsgSize = 2 * 1024 * 1024 * 1024 // 2GB
-	
-	dialOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(maxMsgSize),
-			grpc.MaxCallSendMsgSize(maxMsgSize),
-		),
+	// Регистрация gRPC-Gateway сервисов
+	for _, reg := range []func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error{
+		gwpb.RegisterBuildServiceHandler,
+		gwpb.RegisterInstanceServiceHandler,
+		gwpb.RegisterNodeServiceHandler,
+		gwpb.RegisterHealthServiceHandler,
+		gwpb.RegisterDiscoveryServiceHandler,
+		gwpb.RegisterGamePolicyServiceHandler,
+	} {
+		if err := reg(ctx, gwMux, orchConn); err != nil {
+			return err
+		}
 	}
-
-	// Подключаемся к Orchestrator.
-	orchConn, err := grpc.NewClient(orchestratorAddr, dialOpts...)
-	if err != nil {
+	if err := ssopb.RegisterAuthServiceHandler(ctx, gwMux, ssoConn); err != nil {
 		return err
 	}
-	defer func() { _ = orchConn.Close() }()
-
-	// Подключаемся к SSO.
-	ssoConn, err := grpc.NewClient(ssoAddr, dialOpts...)
-	if err != nil {
+	if err := ssopb.RegisterUserServiceHandler(ctx, gwMux, ssoConn); err != nil {
 		return err
 	}
-	defer func() { _ = ssoConn.Close() }()
-
-	// Регистрируем Orchestrator handlers.
-	if err := gwpb.RegisterBuildServiceHandler(ctx, mux, orchConn); err != nil {
+	if err := projpb.RegisterProjectServiceHandler(ctx, gwMux, projConn); err != nil {
 		return err
 	}
-	if err := gwpb.RegisterInstanceServiceHandler(ctx, mux, orchConn); err != nil {
-		return err
-	}
-	if err := gwpb.RegisterNodeServiceHandler(ctx, mux, orchConn); err != nil {
-		return err
-	}
-	if err := gwpb.RegisterHealthServiceHandler(ctx, mux, orchConn); err != nil {
-		return err
-	}
-	if err := gwpb.RegisterDiscoveryServiceHandler(ctx, mux, orchConn); err != nil {
-		return err
-	}
-	if err := gwpb.RegisterGamePolicyServiceHandler(ctx, mux, orchConn); err != nil {
+	if err := modpb.RegisterModerationServiceHandler(ctx, gwMux, modConn); err != nil {
 		return err
 	}
 
-	// Регистрируем SSO handlers.
-	if err := ssopb.RegisterAuthServiceHandler(ctx, mux, ssoConn); err != nil {
-		return err
-	}
-	if err := ssopb.RegisterUserServiceHandler(ctx, mux, ssoConn); err != nil {
-		return err
-	}
+	// Корневой маршрутизатор
+	mux := http.NewServeMux()
 
-	// Подключаемся к Project Manager.
-	projConn, err := grpc.NewClient(projectManagerAddr, dialOpts...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = projConn.Close() }()
+	// Кастомные хэндлеры: стриминг загрузок, SSE логи, статика
+	mux.HandleFunc("POST /api/v1/games/{game_id}/builds", handleBuildUpload(gwpb.NewBuildServiceClient(orchConn), gwMux))
+	mux.HandleFunc("POST /api/v1/projects/{project_id}/builds", handleProjectBuildUpload(projpb.NewProjectServiceClient(projConn), gwMux))
+	mux.HandleFunc("POST /api/v1/projects/{project_id}/media", handleProjectMediaUpload(projpb.NewProjectServiceClient(projConn), gwMux))
+	mux.HandleFunc("GET /api/v1/games/{game_id}/instances/{instance_id}/logs", handleInstanceLogsStream(gwpb.NewInstanceServiceClient(orchConn)))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/builds/{version}/download", handleProjectBuildDownload(projectsBasePath))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/media/{type}", handleProjectMediaServe(projectsBasePath))
+	mux.HandleFunc("GET /api/v1/media/{path...}", handleProjectMediaServe(projectsBasePath))
+	mux.HandleFunc("GET /media/{path...}", handleProjectMediaServe(projectsBasePath))
 
-	// Регистрируем Project Manager handlers.
-	if err := projpb.RegisterProjectServiceHandler(ctx, mux, projConn); err != nil {
-		return err
-	}
+	// Все остальные запросы проксируются в gRPC-Gateway
+	mux.Handle("/", gwMux)
 
-	// Подключаемся к Moderation.
-	modConn, err := grpc.NewClient(moderationAddr, dialOpts...)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = modConn.Close() }()
-
-	// Регистрируем Moderation handlers.
-	if err := modpb.RegisterModerationServiceHandler(ctx, mux, modConn); err != nil {
-		return err
-	}
-
-	// Custom handler для multipart upload — intercepts build upload.
-	buildUploadHandler := newBuildUploadHandler(orchConn)
-
-	// Custom handler для logs streaming — SSE over HTTP.
-	logsStreamHandler := newLogsStreamHandler(orchConn)
-
-	// Custom handlers для project-manager multipart uploads, build downloads and media serving.
-	projectsBasePath := envOr("PROJECTS_DATA_PATH", "/data/projects")
-	projectBuildUploadHandler := newProjectBuildUploadHandler(projConn)
-	projectBuildDownloadHandler := newProjectBuildDownloadHandler(projectsBasePath)
-	projectMediaUploadHandler := newProjectMediaUploadHandler(projConn)
-	projectMediaServeHandler := newProjectMediaServeHandler(projectsBasePath)
-
-	// HTTP-сервер с CORS и custom routing.
-	handler := corsMiddleware(customRouter(mux, buildUploadHandler, logsStreamHandler, projectBuildUploadHandler, projectBuildDownloadHandler, projectMediaUploadHandler, projectMediaServeHandler))
-
-	srv := &http.Server{
+	server := &http.Server{
 		Addr:         httpAddr,
-		Handler:      handler,
+		Handler:      corsMiddleware(mux),
 		ReadTimeout:  600 * time.Second,
 		WriteTimeout: 600 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Graceful shutdown.
 	go func() {
-		<-signalChan()
+		<-ctx.Done()
 		log.Println("shutting down HTTP server...")
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer shutdownCancel()
-		_ = srv.Shutdown(shutdownCtx)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
 	}()
 
 	log.Printf("HTTP gateway listening on %s", httpAddr)
-	log.Printf("  Orchestrator gRPC: %s", orchestratorAddr)
+	log.Printf("  Orchestrator gRPC: %s", orchAddr)
 	log.Printf("  SSO gRPC: %s", ssoAddr)
-	log.Printf("  Project Manager gRPC: %s", projectManagerAddr)
+	log.Printf("  Project Manager gRPC: %s", projAddr)
+	log.Printf("  Moderation gRPC: %s", modAddr)
 
-	return srv.ListenAndServe()
-}
-
-// buildUploadHandler принимает multipart/form-data и стримит в gRPC UploadStream.
-type buildUploadHandler struct {
-	client gwpb.BuildServiceClient
-}
-
-func newBuildUploadHandler(conn *grpc.ClientConn) *buildUploadHandler {
-	return &buildUploadHandler{client: gwpb.NewBuildServiceClient(conn)}
-}
-
-// ServeHTTP обрабатывает POST /api/v1/games/{game_id}/builds с multipart/form-data.
-func (h *buildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Проверяем что это POST с multipart.
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Парсим multipart.
-	err := r.ParseMultipartForm(32 << 20) // 32MB буфер в памяти
-	if err != nil {
-		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	// Извлекаем game_id из URL path: /api/v1/games/{id}/builds
-	gameID, err := extractGameID(r.URL.Path)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Извлекаем файл.
-	file, header, err := r.FormFile("image")
-	if err != nil {
-		http.Error(w, "missing 'image' file field", http.StatusBadRequest)
-		return
-	}
-	defer func() { _ = file.Close() }()
-
-	// Извлекаем метаданные из form fields.
-	buildVersion := r.FormValue("build_version")
-	if buildVersion == "" {
-		http.Error(w, "missing 'build_version' field", http.StatusBadRequest)
-		return
-	}
-
-	protocol := parseProtocol(r.FormValue("protocol"))
-	internalPort := parseUint32(r.FormValue("internal_port"), 8080)
-	maxPlayers := parseUint32(r.FormValue("max_players"), 16)
-
-	log.Printf("upload build: game=%d version=%s file=%s size=%d", gameID, buildVersion, header.Filename, header.Size)
-
-	// Открываем gRPC UploadStream.
-	ctx := r.Context()
-	// Пробрасываем auth заголовок.
-	if token := r.Header.Get("Authorization"); token != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	}
-	if apiKey := r.Header.Get("X-Api-Key"); apiKey != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
-	}
-
-	stream, err := h.client.UploadStream(ctx)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Отправляем метаданные первым сообщением.
-	if err := stream.Send(&gwpb.BuildServiceUploadStreamRequest{
-		Payload: &gwpb.BuildServiceUploadStreamRequest_Metadata{
-			Metadata: &gwpb.BuildUploadStreamMetadata{
-				GameId:       gameID,
-				BuildVersion: buildVersion,
-				Protocol:     protocol,
-				InternalPort: internalPort,
-				MaxPlayers:   maxPlayers,
-			},
-		},
-	}); err != nil {
-		http.Error(w, fmt.Sprintf("send metadata: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Стримим файл чанками.
-	buf := make([]byte, 64*1024) // 64KB chunks
-	var totalSent int64
-	for {
-		n, readErr := file.Read(buf)
-		if n > 0 {
-			chunk := make([]byte, n)
-			copy(chunk, buf[:n])
-			if sendErr := stream.Send(&gwpb.BuildServiceUploadStreamRequest{
-				Payload: &gwpb.BuildServiceUploadStreamRequest_Chunk{
-					Chunk: chunk,
-				},
-			}); sendErr != nil {
-				http.Error(w, fmt.Sprintf("send chunk: %v", sendErr), http.StatusInternalServerError)
-				return
-			}
-			totalSent += int64(n)
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			http.Error(w, fmt.Sprintf("read file: %v", readErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	log.Printf("upload build: streamed %d bytes for game=%d", totalSent, gameID)
-
-	// Закрываем стрим и получаем ответ.
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("close stream: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Возвращаем JSON ответ.
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	marshaler := &runtime.JSONPb{
-		MarshalOptions: protojson.MarshalOptions{
-			UseProtoNames:   true,
-			EmitUnpopulated: true,
-		},
-	}
-	jsonBytes, _ := marshaler.Marshal(resp)
-	_, _ = w.Write(jsonBytes)
-}
-
-// customRouter маршрутизирует upload, download, media serving и logs запросы к custom handler, остальные — к grpc-gateway.
-func customRouter(
-	gw http.Handler,
-	buildUploadHandler, logsHandler http.Handler,
-	projectBuildUploadHandler, projectBuildDownloadHandler, projectMediaUploadHandler, projectMediaServeHandler http.Handler,
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ct := r.Header.Get("Content-Type")
-		isMultipart := len(ct) >= 19 && ct[:19] == "multipart/form-data"
-
-		// Check for build download: GET /api/v1/projects/{id}/builds/{version}/download
-		if r.Method == http.MethodGet || r.Method == http.MethodHead {
-			if strings.HasPrefix(r.URL.Path, "/api/v1/projects/") &&
-				strings.Contains(r.URL.Path, "/builds/") &&
-				strings.HasSuffix(r.URL.Path, "/download") {
-				projectBuildDownloadHandler.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		// Check for media serving: GET /api/v1/projects/{id}/media/{type} or GET /api/v1/media/... or GET /media/...
-		if r.Method == http.MethodGet || r.Method == http.MethodHead {
-			if (strings.HasPrefix(r.URL.Path, "/api/v1/projects/") && strings.Contains(r.URL.Path, "/media/")) ||
-				strings.HasPrefix(r.URL.Path, "/api/v1/media/") ||
-				strings.HasPrefix(r.URL.Path, "/media/") {
-				projectMediaServeHandler.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		// Check for logs streaming endpoint: GET /api/v1/games/{id}/instances/{instance_id}/logs
-		prefix := "/api/v1/games/"
-		suffix := "/instances/"
-		logsSuffix := "/logs"
-		pathOK := len(r.URL.Path) >= len(prefix)+len(suffix)+len(logsSuffix)+2 &&
-			r.URL.Path[:len(prefix)] == prefix &&
-			r.URL.Path[len(r.URL.Path)-len(logsSuffix):] == logsSuffix &&
-			containsSubstring(r.URL.Path, suffix)
-
-		// Intercept GET /api/v1/games/{id}/instances/{instance_id}/logs for logs streaming.
-		if r.Method == http.MethodGet && pathOK {
-			logsHandler.ServeHTTP(w, r)
-			return
-		}
-
-		// Intercept POST /api/v1/games/{id}/builds with multipart/form-data.
-		buildSuffix := "/builds"
-		buildPathOK := len(r.URL.Path) >= 22 &&
-			r.URL.Path[:len(prefix)] == prefix &&
-			r.URL.Path[len(r.URL.Path)-len(buildSuffix):] == buildSuffix
-		if r.Method == http.MethodPost && isMultipart && buildPathOK {
-			buildUploadHandler.ServeHTTP(w, r)
-			return
-		}
-
-		// Intercept POST /api/v1/projects/{id}/builds with multipart/form-data.
-		projectPrefix := "/api/v1/projects/"
-		projectBuildSuffix := "/builds"
-		projectBuildPathOK := len(r.URL.Path) >= len(projectPrefix)+len(projectBuildSuffix)+1 &&
-			r.URL.Path[:len(projectPrefix)] == projectPrefix &&
-			r.URL.Path[len(r.URL.Path)-len(projectBuildSuffix):] == projectBuildSuffix
-		if r.Method == http.MethodPost && isMultipart && projectBuildPathOK {
-			projectBuildUploadHandler.ServeHTTP(w, r)
-			return
-		}
-
-		// Intercept POST /api/v1/projects/{id}/media with multipart/form-data.
-		projectMediaSuffix := "/media"
-		projectMediaPathOK := len(r.URL.Path) >= len(projectPrefix)+len(projectMediaSuffix)+1 &&
-			r.URL.Path[:len(projectPrefix)] == projectPrefix &&
-			r.URL.Path[len(r.URL.Path)-len(projectMediaSuffix):] == projectMediaSuffix
-		if r.Method == http.MethodPost && isMultipart && projectMediaPathOK {
-			projectMediaUploadHandler.ServeHTTP(w, r)
-			return
-		}
-
-		gw.ServeHTTP(w, r)
-	})
-}
-
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-func extractGameID(path string) (int64, error) {
-	// /api/v1/games/{id}/builds
-	const prefix = "/api/v1/games/"
-	const suffix = "/builds"
-
-	if len(path) < len(prefix)+len(suffix)+1 {
-		return 0, fmt.Errorf("invalid upload path")
-	}
-
-	start := len(prefix)
-	end := len(path) - len(suffix)
-	idStr := path[start:end]
-
-	gameID, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid game_id: %s", idStr)
-	}
-	return gameID, nil
-}
-
-func parseProtocol(s string) gwpb.Protocol {
-	switch s {
-	case "tcp":
-		return gwpb.Protocol_PROTOCOL_TCP
-	case "udp":
-		return gwpb.Protocol_PROTOCOL_UDP
-	case "websocket":
-		return gwpb.Protocol_PROTOCOL_WEBSOCKET
-	case "webrtc":
-		return gwpb.Protocol_PROTOCOL_WEBRTC
-	default:
-		return gwpb.Protocol_PROTOCOL_WEBSOCKET
-	}
-}
-
-func parseUint32(s string, fallback uint32) uint32 {
-	if s == "" {
-		return fallback
-	}
-	v, err := strconv.ParseUint(s, 10, 32)
-	if err != nil {
-		return fallback
-	}
-	return uint32(v)
-}
-
-func signalChan() <-chan struct{} {
-	ch := make(chan struct{})
-	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-		<-sigCh
-		close(ch)
-	}()
-	return ch
-}
-
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization,x-api-key")
-			w.Header().Set("Access-Control-Max-Age", "86400")
-		}
-
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+	return server.ListenAndServe()
 }
 
 func envOr(key, fallback string) string {
@@ -550,513 +157,4 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
-}
-
-// logsStreamHandler handles SSE streaming for instance logs.
-type logsStreamHandler struct {
-	client gwpb.InstanceServiceClient
-}
-
-func newLogsStreamHandler(conn *grpc.ClientConn) *logsStreamHandler {
-	return &logsStreamHandler{client: gwpb.NewInstanceServiceClient(conn)}
-}
-
-func (h *logsStreamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Extract game_id and instance_id from path: /api/v1/games/{game_id}/instances/{instance_id}/logs
-	gameID, instanceID, err := parseInstanceLogPath(r.URL.Path)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Parse query parameters
-	follow := r.URL.Query().Get("follow") == "true"
-	tailStr := r.URL.Query().Get("tail")
-	tail := int32(100)
-	if tailStr != "" {
-		if t, err := strconv.ParseInt(tailStr, 10, 32); err == nil && t > 0 {
-			tail = int32(t)
-		}
-	}
-
-	// Set SSE headers
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
-	// Create context with auth if present
-	ctx := r.Context()
-	token := r.Header.Get("Authorization")
-	if token == "" {
-		token = r.URL.Query().Get("token")
-	}
-	if token != "" {
-		if !strings.HasPrefix(token, "Bearer ") {
-			token = "Bearer " + token
-		}
-		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	}
-	if apiKey := r.Header.Get("X-Api-Key"); apiKey != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "x-api-key", apiKey)
-	}
-
-	// Open gRPC stream
-	stream, err := h.client.StreamLogs(ctx, &gwpb.InstanceServiceStreamLogsRequest{
-		GameId:    gameID,
-		InstanceId: instanceID,
-		Follow:    follow,
-		Tail:      tail,
-	})
-	if err != nil {
-		http.Error(w, fmt.Sprintf("create logs stream: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Stream log entries as SSE
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
-		return
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		resp, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			log.Printf("logs stream error: %v", err)
-			return
-		}
-
-		// Format as SSE
-		fmt.Fprintf(w, "event: log\ndata: %s\n\n", formatLogEvent(resp.Entry))
-		flusher.Flush()
-	}
-}
-
-func parseInstanceLogPath(path string) (gameID, instanceID int64, err error) {
-	// /api/v1/games/{game_id}/instances/{instance_id}/logs
-	// Expected format: /api/v1/games/1/instances/1/logs
-
-	// Find positions of segments
-	prefix := "/api/v1/games/"
-	suffix := "/instances/"
-	logsSuffix := "/logs"
-
-	// Check prefix
-	if !strings.HasPrefix(path, prefix) {
-		return 0, 0, fmt.Errorf("path must start with %s", prefix)
-	}
-	remaining := path[len(prefix):]
-
-	// Find instances/ segment
-	instIdx := strings.Index(remaining, suffix)
-	if instIdx == -1 {
-		return 0, 0, fmt.Errorf("could not find '%s' in path", suffix)
-	}
-	gamePart := remaining[:instIdx]
-
-	remaining = remaining[instIdx+len(suffix):]
-
-	// Find logs suffix
-	logsIdx := strings.Index(remaining, logsSuffix)
-	if logsIdx == -1 {
-		return 0, 0, fmt.Errorf("could not find '%s' in path", logsSuffix)
-	}
-	instPart := remaining[:logsIdx]
-
-	gameID, err = strconv.ParseInt(gamePart, 10, 64)
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid game_id: %s", gamePart)
-	}
-	instanceID, err = strconv.ParseInt(instPart, 10, 64)
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid instance_id: %s", instPart)
-	}
-
-	return gameID, instanceID, nil
-}
-
-func formatLogEvent(entry *gwpb.LogEntry) string {
-	// Simple JSON format for log entry
-	return fmt.Sprintf(`{"timestamp":"%s","source":"%s","message":%s}`,
-		entry.Timestamp.AsTime().Format(time.RFC3339),
-		entry.Source.String(),
-		strconv.Quote(entry.Message),
-	)
-}
-
-// ─── Project Manager Custom Handlers ──────────────────────────────
-
-// projectBuildUploadHandler принимает multipart/form-data и потоково отправляет билд в project-manager (чанками по 64 КБ).
-type projectBuildUploadHandler struct {
-	client projpb.ProjectServiceClient
-}
-
-func newProjectBuildUploadHandler(conn *grpc.ClientConn) *projectBuildUploadHandler {
-	return &projectBuildUploadHandler{client: projpb.NewProjectServiceClient(conn)}
-}
-
-func (h *projectBuildUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB буфер в памяти
-		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	projectID, err := extractProjectID(r.URL.Path, "/builds")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	version := r.FormValue("version")
-	if version == "" {
-		http.Error(w, "missing 'version' field", http.StatusBadRequest)
-		return
-	}
-
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "missing 'file' field", http.StatusBadRequest)
-		return
-	}
-	defer func() { _ = file.Close() }()
-
-	log.Printf("upload project build: project=%d version=%s file=%s size=%d", projectID, version, header.Filename, header.Size)
-
-	ctx := r.Context()
-	if token := r.Header.Get("Authorization"); token != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	}
-
-	stream, err := h.client.UploadBuildStream(ctx)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Отправляем метаданные первым сообщением
-	if err := stream.Send(&projpb.ProjectUploadBuildStreamRequest{
-		Payload: &projpb.ProjectUploadBuildStreamRequest_Metadata{
-			Metadata: &projpb.BuildUploadStreamMetadata{
-				ProjectId: projectID,
-				Version:   version,
-			},
-		},
-	}); err != nil {
-		http.Error(w, fmt.Sprintf("send metadata: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	// Стримим файл чанками по 64 КБ
-	buf := make([]byte, 64*1024)
-	for {
-		n, readErr := file.Read(buf)
-		if n > 0 {
-			chunk := make([]byte, n)
-			copy(chunk, buf[:n])
-			if sendErr := stream.Send(&projpb.ProjectUploadBuildStreamRequest{
-				Payload: &projpb.ProjectUploadBuildStreamRequest_Chunk{
-					Chunk: chunk,
-				},
-			}); sendErr != nil {
-				http.Error(w, fmt.Sprintf("send chunk: %v", sendErr), http.StatusInternalServerError)
-				return
-			}
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			http.Error(w, fmt.Sprintf("read file: %v", readErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("upload build stream error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	marshaler := &runtime.JSONPb{
-		MarshalOptions: protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true},
-	}
-	jsonBytes, _ := marshaler.Marshal(resp)
-	_, _ = w.Write(jsonBytes)
-}
-
-// projectMediaUploadHandler принимает multipart/form-data и потоково отправляет медиа в project-manager (чанками по 64 КБ).
-type projectMediaUploadHandler struct {
-	client projpb.ProjectServiceClient
-}
-
-func newProjectMediaUploadHandler(conn *grpc.ClientConn) *projectMediaUploadHandler {
-	return &projectMediaUploadHandler{client: projpb.NewProjectServiceClient(conn)}
-}
-
-func (h *projectMediaUploadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	if err := r.ParseMultipartForm(32 << 20); err != nil { // 32MB
-		http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	projectID, err := extractProjectID(r.URL.Path, "/media")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	mediaType := r.FormValue("media_type")
-	if mediaType == "" {
-		http.Error(w, "missing 'media_type' field", http.StatusBadRequest)
-		return
-	}
-
-	file, _, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "missing 'file' field", http.StatusBadRequest)
-		return
-	}
-	defer func() { _ = file.Close() }()
-
-	ctx := r.Context()
-	if token := r.Header.Get("Authorization"); token != "" {
-		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
-	}
-
-	stream, err := h.client.UploadMediaStream(ctx)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	if err := stream.Send(&projpb.ProjectUploadMediaStreamRequest{
-		Payload: &projpb.ProjectUploadMediaStreamRequest_Metadata{
-			Metadata: &projpb.MediaUploadStreamMetadata{
-				ProjectId: projectID,
-				MediaType: mediaType,
-			},
-		},
-	}); err != nil {
-		http.Error(w, fmt.Sprintf("send metadata: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	buf := make([]byte, 64*1024)
-	for {
-		n, readErr := file.Read(buf)
-		if n > 0 {
-			chunk := make([]byte, n)
-			copy(chunk, buf[:n])
-			if sendErr := stream.Send(&projpb.ProjectUploadMediaStreamRequest{
-				Payload: &projpb.ProjectUploadMediaStreamRequest_Chunk{
-					Chunk: chunk,
-				},
-			}); sendErr != nil {
-				http.Error(w, fmt.Sprintf("send chunk: %v", sendErr), http.StatusInternalServerError)
-				return
-			}
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			http.Error(w, fmt.Sprintf("read file: %v", readErr), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("upload media stream error: %v", err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	marshaler := &runtime.JSONPb{
-		MarshalOptions: protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true},
-	}
-	jsonBytes, _ := marshaler.Marshal(resp)
-	_, _ = w.Write(jsonBytes)
-}
-
-func extractProjectID(path, suffix string) (int64, error) {
-	prefix := "/api/v1/projects/"
-	if len(path) < len(prefix)+len(suffix)+1 {
-		return 0, fmt.Errorf("invalid project path")
-	}
-	if !strings.HasPrefix(path, prefix) {
-		return 0, fmt.Errorf("invalid project path prefix")
-	}
-	if !strings.HasSuffix(path, suffix) {
-		return 0, fmt.Errorf("invalid project path suffix")
-	}
-	idStr := path[len(prefix) : len(path)-len(suffix)]
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid project_id: %s", idStr)
-	}
-	return id, nil
-}
-
-// projectMediaServeHandler отдаёт статические файлы промо-материалов проектов (иконки, обложки, видео).
-type projectMediaServeHandler struct {
-	basePath string
-}
-
-func newProjectMediaServeHandler(basePath string) *projectMediaServeHandler {
-	return &projectMediaServeHandler{basePath: basePath}
-}
-
-func (h *projectMediaServeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var filePath string
-	if strings.HasPrefix(r.URL.Path, "/api/v1/projects/") && strings.Contains(r.URL.Path, "/media/") {
-		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/v1/projects/"), "/media/")
-		if len(parts) == 2 {
-			projID := parts[0]
-			mediaType := parts[1]
-			var fileName string
-			switch mediaType {
-			case "icon", "icon.png":
-				fileName = "icon.png"
-			case "cover", "cover.png":
-				fileName = "cover.png"
-			case "video", "video.mp4":
-				fileName = "video.mp4"
-			default:
-				fileName = mediaType
-			}
-			filePath = filepath.Join(h.basePath, "media", projID, fileName)
-		}
-	} else if strings.HasPrefix(r.URL.Path, "/api/v1/media/") {
-		rel := strings.TrimPrefix(r.URL.Path, "/api/v1/media/")
-		rel = strings.TrimPrefix(rel, "data/projects/")
-		rel = strings.TrimPrefix(rel, "projects/")
-		rel = strings.TrimPrefix(rel, "media/")
-		filePath = filepath.Join(h.basePath, "media", rel)
-	} else if strings.HasPrefix(r.URL.Path, "/media/") {
-		rel := strings.TrimPrefix(r.URL.Path, "/media/")
-		filePath = filepath.Join(h.basePath, "media", rel)
-	}
-
-	if filePath == "" {
-		http.NotFound(w, r)
-		return
-	}
-
-	// If the file doesn't exist at primary path, try relative fallback paths for local development
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		altPaths := []string{
-			filepath.Join("./data/projects", strings.TrimPrefix(filePath, h.basePath)),
-			filepath.Join("../project-manager/data/projects", strings.TrimPrefix(filePath, h.basePath)),
-		}
-		found := false
-		for _, alt := range altPaths {
-			if _, err := os.Stat(alt); err == nil {
-				filePath = alt
-				found = true
-				break
-			}
-		}
-		if !found {
-			http.NotFound(w, r)
-			return
-		}
-	}
-
-	ext := strings.ToLower(filepath.Ext(filePath))
-	switch ext {
-	case ".png":
-		w.Header().Set("Content-Type", "image/png")
-	case ".jpg", ".jpeg":
-		w.Header().Set("Content-Type", "image/jpeg")
-	case ".webp":
-		w.Header().Set("Content-Type", "image/webp")
-	case ".mp4":
-		w.Header().Set("Content-Type", "video/mp4")
-	}
-	w.Header().Set("Cache-Control", "public, max-age=3600")
-
-	http.ServeFile(w, r, filePath)
-}
-
-// projectBuildDownloadHandler отдаёт zip-архив клиентской сборки для скачивания.
-type projectBuildDownloadHandler struct {
-	basePath string
-}
-
-func newProjectBuildDownloadHandler(basePath string) *projectBuildDownloadHandler {
-	return &projectBuildDownloadHandler{basePath: basePath}
-}
-
-func (h *projectBuildDownloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// URL format: /api/v1/projects/{id}/builds/{version}/download
-	trimmed := strings.TrimPrefix(r.URL.Path, "/api/v1/projects/")
-	parts := strings.Split(trimmed, "/builds/")
-	if len(parts) != 2 {
-		http.NotFound(w, r)
-		return
-	}
-	projID := parts[0]
-	verPart := strings.TrimSuffix(parts[1], "/download")
-	verPart = strings.TrimSuffix(verPart, ".zip")
-
-	filePath := filepath.Join(h.basePath, "archives", projID, verPart+".zip")
-
-	// If not found in primary path, try fallback paths
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		altPaths := []string{
-			filepath.Join("./data/projects/archives", projID, verPart+".zip"),
-			filepath.Join("../project-manager/data/projects/archives", projID, verPart+".zip"),
-		}
-		found := false
-		for _, alt := range altPaths {
-			if _, err := os.Stat(alt); err == nil {
-				filePath = alt
-				found = true
-				break
-			}
-		}
-		if !found {
-			http.NotFound(w, r)
-			return
-		}
-	}
-
-	downloadFilename := fmt.Sprintf("build_project_%s_v%s.zip", projID, verPart)
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadFilename))
-	http.ServeFile(w, r, filePath)
 }
