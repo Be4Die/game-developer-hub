@@ -982,12 +982,12 @@ tasks:
         vars:
           FRONTEND_DIR: src/frontend
 
-  # ==================== Stack (deployments/) ====================
-  stack:up:
-    desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Gateway, Node, Nginx)"
+  # ==================== Backend Stack (deployments/docker-compose.backend.yml) ====================
+  backend:up:
+    desc: "Start backend stack (Postgres, Valkey, Orchestrator, SSO, Project Manager, Moderation, Gateway, Nginx)"
     dir: deployments
     cmds:
-      - docker compose up -d --build
+      - docker compose -f docker-compose.backend.yml up -d --build
       - |
         echo "Ожидание PostgreSQL..."
         for i in $(seq 1 20); do
@@ -1018,28 +1018,118 @@ tasks:
           bash -c "echo >/dev/tcp/localhost/50053" 2>/dev/null && break
           sleep 1
         done
-      - 'echo "Stack is ready: http://localhost (Nginx/Frontend), :8080 (gateway), :50052 (Orchestrator gRPC), :50051 (SSO gRPC), :50053 (Project Manager gRPC)"'
+      - |
+        echo "Ожидание Moderation..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/50054" 2>/dev/null && break
+          sleep 1
+        done
+      - 'echo "Backend stack is ready: http://localhost (Nginx/Frontend), :8080 (Gateway), :50052 (Orchestrator), :50051 (SSO), :50053 (Project Manager), :50054 (Moderation)"'
+
+  backend:down:
+    desc: "Stop backend stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.backend.yml down --remove-orphans
+
+  backend:logs:
+    desc: "Follow logs for backend stack services"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.backend.yml logs -f {{.SERVICE | default ""}}
+
+  backend:restart:
+    desc: "Rebuild and restart backend stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.backend.yml up -d --build --force-recreate
+
+  backend:rebuild:
+    desc: "Build images for backend stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.backend.yml build
+
+  # ==================== Agents Stack (deployments/docker-compose.agents.yml) ====================
+  agents:up:
+    desc: "Start agents stack (game-server-node, game-deployment-agent)"
+    dir: deployments
+    vars:
+      ORCHESTRATOR_ADDRESS: '{{.ORCHESTRATOR_ADDRESS | default "host.docker.internal:50052"}}'
+      NODE_API_KEY: '{{.NODE_API_KEY | default "dev-api-key-for-local-testing"}}'
+      AGENT_API_KEY: '{{.AGENT_API_KEY | default "dev-deployment-agent-key"}}'
+    env:
+      ORCHESTRATOR_ADDRESS: "{{.ORCHESTRATOR_ADDRESS}}"
+      NODE_API_KEY: "{{.NODE_API_KEY}}"
+      AGENT_API_KEY: "{{.AGENT_API_KEY}}"
+    cmds:
+      - docker compose -f docker-compose.agents.yml up -d --build
+      - |
+        echo "Ожидание Game Server Node (:44044)..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/44044" 2>/dev/null && break
+          sleep 1
+        done
+      - |
+        echo "Ожидание Game Deployment Agent (:50055)..."
+        for i in $(seq 1 30); do
+          bash -c "echo >/dev/tcp/localhost/50055" 2>/dev/null && break
+          sleep 1
+        done
+      - 'echo "Agents stack is ready: :44044 (Node gRPC), :44045 (Node Reports), :50055 (Deployment Agent gRPC)"'
+
+  agents:down:
+    desc: "Stop agents stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.agents.yml down --remove-orphans
+
+  agents:logs:
+    desc: "Follow logs for agents stack services"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.agents.yml logs -f {{.SERVICE | default ""}}
+
+  agents:restart:
+    desc: "Rebuild and restart agents stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.agents.yml up -d --build --force-recreate
+
+  agents:rebuild:
+    desc: "Build images for agents stack"
+    dir: deployments
+    cmds:
+      - docker compose -f docker-compose.agents.yml build
+
+  # ==================== Full Stack (Backend + Agents) ====================
+  stack:up:
+    desc: "Start full stack (Backend + Agents)"
+    cmds:
+      - task: backend:up
+      - task: agents:up
 
   stack:down:
     desc: "Stop full stack and remove containers"
-    dir: deployments
     cmds:
-      - docker compose down --remove-orphans
+      - task: agents:down
+      - task: backend:down
 
   stack:logs:
     desc: "Follow logs for all stack services"
     dir: deployments
     cmds:
-      - docker compose logs -f
+      - echo "Use 'task backend:logs' or 'task agents:logs' for specific stack logs"
+      - docker compose -f docker-compose.backend.yml logs -f
 
   stack:rebuild:
     desc: "Rebuild and restart all stack services"
-    dir: deployments
     cmds:
-      - docker compose up -d --build --force-recreate
+      - task: backend:restart
+      - task: agents:restart
 
   stack:db:init:
-    desc: "Initialize all database schemas (run after stack:up)"
+    desc: "Initialize all database schemas (run after backend:up)"
     cmds:
       - |
         docker exec -i gdh-postgres psql -U postgres -d orchestrator < src/orchestrator/migrations/init.sql
@@ -1062,7 +1152,7 @@ tasks:
       - task: stack:db:init
 
   stack:seed:
-    desc: "Seed orchestrator with test data (requires running stack)"
+    desc: "Seed orchestrator with test data (requires running backend stack)"
     dir: src/orchestrator
     vars:
       SEED_NODES: "{{.SEED_NODES | default 2}}"
@@ -1079,16 +1169,17 @@ tasks:
       - go run ./cmd/seed
 
   stack:sso-seed:
-    desc: "Seed SSO with test users and generate CSV (requires running stack)"
+    desc: "Seed SSO with test users and generate CSV (requires running backend stack)"
     cmds:
       - bash deployments/scripts/seed-sso.sh
 
-  # ==================== Dev (orchestrator stack + frontend dev server) ====================
+  # ==================== Dev (Backend + Init DB + Agents) ====================
   dev:
-    desc: "Start full stack + init databases"
+    desc: "Start backend stack, init databases, and start agents stack"
     cmds:
-      - task: stack:up
+      - task: backend:up
       - task: stack:db:init
+      - task: agents:up
 
   # ==================== All services (legacy single containers) ====================
   all:up:

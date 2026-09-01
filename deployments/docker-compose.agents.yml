@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — Стек агентов (Edge Nodes / Workers)
+#
+#  Сервисы:
+#    game-server-node      — gRPC-агент ноды игровых серверов (Docker-in-Docker) (:44044, :44045)
+#    game-deployment-agent — gRPC-агент развертывания веб-сборок игр (:50055)
+#
+#  Использование (на том же ПК):
+#    docker compose -f docker-compose.agents.yml up -d
+#
+#  Использование (на удаленной ноде в LAN):
+#    ORCHESTRATOR_ADDRESS=192.168.1.50:50052 docker compose -f docker-compose.agents.yml up -d
+# ═══════════════════════════════════════════════════════════════
+
+name: gdh-agents
+
+services:
+  game-server-node:
+    build:
+      context: ../src
+      dockerfile: game-server-node/Dockerfile
+    container_name: gdh-node
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      NODE_API_KEY: ${NODE_API_KEY:-dev-api-key-for-local-testing}
+      ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
+    ports:
+      - "44044:44044"
+      - "44045:44045"
+    volumes:
+      - ../src/game-server-node/config:/app/config:ro
+      - node_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  game-deployment-agent:
+    build:
+      context: ../src
+      dockerfile: game-deployment-agent/Dockerfile
+    container_name: gdh-deployment-agent
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      AGENT_API_KEY: ${AGENT_API_KEY:-dev-deployment-agent-key}
+    ports:
+      - "50055:50055"
+    volumes:
+      - ../src/game-deployment-agent/config:/app/config:ro
+      - agent_games_data:/data/games
+
+volumes:
+  node_data:
+  agent_games_data:

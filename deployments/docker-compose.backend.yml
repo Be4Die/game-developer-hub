@@ -1,33 +1,32 @@
 # ═══════════════════════════════════════════════════════════════
-#  Game Developer Hub — полный стек для локальной разработки
+#  Game Developer Hub — Центральный стек бэкенда (Core Platform)
 #
 #  Инфраструктура:
-#    postgres  — единая БД, таблицы orchestrator, sso, project-manager, moderation
-#                не пересекаются (разные префиксы/схемы или проверка в коде)
-#    valkey    — единое KV, orchestrator: db=0, sso: db=1, project-manager: db=2
+#    postgres  — единая БД (orchestrator, sso, project-manager, moderation)
+#    valkey    — единое KV (orchestrator: db=0, sso: db=1, project-manager: db=2)
 #
 #  Сервисы:
-#    orchestrator     — gRPC API оркестратора
-#    sso              — gRPC API аутентификации
-#    project-manager  — gRPC API управления проектами
-#    moderation       — gRPC API модерации и чата проектов
-#    gateway          — gRPC-gateway (HTTP/REST → gRPC)
-#    game-server-node — gRPC-агент ноды (Docker-in-Docker)
-#    nginx            — Nginx веб-сервер и обратный прокси (хостинг Vue SPA + SSL + API proxy)
+#    orchestrator     — gRPC API оркестратора (:50052)
+#    sso              — gRPC API аутентификации (:50051)
+#    project-manager  — gRPC API управления проектами (:50053)
+#    moderation       — gRPC API модерации и чата проектов (:50054)
+#    gateway          — gRPC-gateway HTTP/REST → gRPC (:8080)
+#    nginx            — Nginx веб-сервер, обратный прокси и SSL (:80, :443)
 #
 #  Использование:
-#    docker compose up -d              # запустить всё
-#    docker compose up -d --build      # пересобрать и запустить
-#    docker compose logs -f moderation
-#    docker compose down -v            # остановить и удалить тома
+#    docker compose -f docker-compose.backend.yml up -d
+#    docker compose -f docker-compose.backend.yml down -v
 # ═══════════════════════════════════════════════════════════════
 
+name: gdh-backend
+
 services:
-  # ── Единая инфраструктура ─────────────────────────────────────
+  # ── Инфраструктура БД и KV ────────────────────────────────────
 
   postgres:
     image: postgres:17-alpine
     container_name: gdh-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -36,7 +35,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Миграции применяются при первом старте (порядок по имени файла)
+      # Миграции применяются при первом старте
       - ../src/orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
       - ../src/sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
       - ../src/project-manager/migrations/init.sql:/docker-entrypoint-initdb.d/03-project-manager.sql:ro
@@ -50,6 +49,7 @@ services:
   valkey:
     image: valkey/valkey:8-alpine
     container_name: gdh-valkey
+    restart: unless-stopped
     ports:
       - "6379:6379"
     healthcheck:
@@ -58,7 +58,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Сервисы приложения ──────────────────────────────────────
+  # ── Сервисы ядра платформы ────────────────────────────────────
 
   orchestrator:
     build:
@@ -66,6 +66,10 @@ services:
       dockerfile: orchestrator/Dockerfile
     container_name: gdh-orchestrator
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "50052:50052"
     environment:
       CONFIG_PATH: /app/config/local.yaml
     depends_on:
@@ -89,6 +93,8 @@ services:
       dockerfile: sso/Dockerfile
     container_name: gdh-sso
     restart: unless-stopped
+    ports:
+      - "50051:50051"
     environment:
       CONFIG_PATH: /app/config/docker.yaml
       SSO_API_KEY: dev-api-key-for-local-testing
@@ -113,10 +119,15 @@ services:
       dockerfile: project-manager/Dockerfile
     container_name: gdh-project-manager
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       CONFIG_PATH: /app/config/docker.yaml
       JWT_SECRET: dev-jwt-secret-for-local-testing
       MODERATION_GRPC_ADDR: gdh-moderation:50054
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-agent}
+      DEPLOYMENT_AGENT_ENDPOINT: ${DEPLOYMENT_AGENT_ENDPOINT:-host.docker.internal:50055}
+      DEPLOYMENT_AGENT_API_KEY: ${DEPLOYMENT_AGENT_API_KEY:-dev-deployment-agent-key}
     depends_on:
       postgres:
         condition: service_healthy
@@ -161,6 +172,7 @@ services:
       context: ../src
       dockerfile: gateway/Dockerfile
     container_name: gdh-gateway
+    restart: unless-stopped
     environment:
       ORCHESTRATOR_GRPC_ADDR: gdh-orchestrator:50052
       SSO_GRPC_ADDR: gdh-sso:50051
@@ -181,39 +193,6 @@ services:
         condition: service_healthy
     volumes:
       - project_data:/data/projects:ro
-
-  game-server-node:
-    build:
-      context: ../src
-      dockerfile: game-server-node/Dockerfile
-    container_name: gdh-node
-    environment:
-      CONFIG_PATH: /app/config/docker.yaml
-      NODE_API_KEY: dev-api-key-for-local-testing
-    ports:
-      - "44044:44044"
-      - "44045:44045"
-    depends_on:
-      orchestrator:
-        condition: service_healthy
-    volumes:
-      - ../src/game-server-node/config:/app/config:ro
-      - node_data:/app/data
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  game-deployment-agent:
-    build:
-      context: ../src
-      dockerfile: game-deployment-agent/Dockerfile
-    container_name: gdh-deployment-agent
-    restart: unless-stopped
-    environment:
-      CONFIG_PATH: /app/config/docker.yaml
-      AGENT_API_KEY: dev-deployment-agent-key
-    ports:
-      - "50055:50055"
-    volumes:
-      - games_data:/data/games
 
   nginx:
     build:
@@ -240,6 +219,5 @@ services:
 volumes:
   pgdata:
   builds:
-  node_data:
   project_data:
   games_data:
