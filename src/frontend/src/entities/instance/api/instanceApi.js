@@ -16,9 +16,7 @@ export function getInstance(gameId, instanceId) {
 }
 
 export function startInstance(gameId, payload) {
-  return http
-    .post(`/games/${gameId}/instances`, payload)
-    .then((r) => normalizeInstance(r.data));
+  return http.post(`/games/${gameId}/instances`, payload).then((r) => normalizeInstance(r.data));
 }
 
 export function stopInstance(gameId, instanceId, timeout = 30) {
@@ -28,9 +26,7 @@ export function stopInstance(gameId, instanceId, timeout = 30) {
 }
 
 export function deleteInstance(gameId, instanceId) {
-  return http
-    .delete(`/games/${gameId}/instances/${instanceId}`)
-    .then((r) => r.data);
+  return http.delete(`/games/${gameId}/instances/${instanceId}`).then((r) => r.data);
 }
 
 export function restartInstance(gameId, instanceId) {
@@ -69,11 +65,7 @@ export function createLogStream(
   return new EventSource(url);
 }
 
-export async function fetchLogs(
-  gameId,
-  instanceId,
-  { tail = 100, source } = {}
-) {
+export async function fetchLogs(gameId, instanceId, { tail = 100, source } = {}) {
   const params = new URLSearchParams();
   params.set('follow', 'false');
   params.set('tail', String(tail));

@@ -8,8 +8,8 @@
           <label class="field-label">{{ t('common.search') }}</label>
           <div class="input-wrapper">
             <input
-              type="text"
               v-model="searchQuery"
+              type="text"
               :placeholder="t('moderation.searchPlaceholder')"
               class="filter-input"
             />
@@ -55,20 +55,15 @@
         <button
           v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
-          @click="resetFilters"
           title="Сбросить фильтры"
+          @click="resetFilters"
         >
           <RotateCcw class="icon-xs" />
           <span>{{ t('common.reset') }}</span>
         </button>
 
         <!-- Кнопка обновления -->
-        <button
-          class="btn-refresh"
-          :disabled="loading"
-          @click="loadQueue"
-          title="Обновить"
-        >
+        <button class="btn-refresh" :disabled="loading" title="Обновить" @click="loadQueue">
           <RefreshCw class="icon-xs" :class="{ spin: loading }" />
           <span>{{ t('common.refresh') }}</span>
         </button>
@@ -97,10 +92,7 @@
       </div>
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div
-        v-else-if="filteredRequests.length === 0"
-        class="state-container empty-card"
-      >
+      <div v-else-if="filteredRequests.length === 0" class="state-container empty-card">
         <Search class="icon-md text-muted" />
         <h3>{{ t('common.empty') }}</h3>
         <p>{{ t('stats.noData') }}</p>
@@ -145,11 +137,11 @@
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-type-label">
-                      Проект #{{ req.projectId }}
-                    </div>
+                    <div class="game-type-label">Проект #{{ req.projectId }}</div>
                     <div class="game-title">
-                      {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
+                      {{
+                        req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}`
+                      }}
                     </div>
                   </div>
                 </div>
@@ -157,10 +149,10 @@
 
               <!-- 2 колонка: Версия сборки -->
               <td class="col-version">
-                <span class="version-badge" v-if="req.snapshot.activeBuildVersion">
+                <span v-if="req.snapshot.activeBuildVersion" class="version-badge">
                   v{{ req.snapshot.activeBuildVersion }}
                 </span>
-                <span class="text-muted text-sm" v-else>—</span>
+                <span v-else class="text-muted text-sm">—</span>
               </td>
 
               <!-- 3 колонка: Разработчик -->
@@ -180,20 +172,17 @@
 
               <!-- 5 колонка: Статус -->
               <td class="col-status">
-                <span
-                  class="status-pill"
-                  :class="reqStatusClass(req.status)"
-                >
+                <span class="status-pill" :class="reqStatusClass(req.status)">
                   {{ reqStatusLabel(req.status) }}
                 </span>
               </td>
 
               <!-- 6 колонка: Модератор -->
               <td class="col-mod">
-                <span class="mod-name" v-if="req.moderatorId">
+                <span v-if="req.moderatorId" class="mod-name">
                   {{ req.moderatorId }}
                 </span>
-                <span class="unassigned-text" v-else>
+                <span v-else class="unassigned-text">
                   {{ t('moderation.notAssigned') }}
                 </span>
               </td>
@@ -205,19 +194,19 @@
                     v-if="isPending(req.status)"
                     class="btn-claim-sm"
                     :disabled="claimingId === req.id"
-                    @click="claimAndOpen(req)"
                     :title="t('moderation.claimBtn')"
+                    @click="claimAndOpen(req)"
                   >
-                    <Loader2 class="icon-xs spin" v-if="claimingId === req.id" />
-                    <CheckSquare class="icon-xs" v-else />
+                    <Loader2 v-if="claimingId === req.id" class="icon-xs spin" />
+                    <CheckSquare v-else class="icon-xs" />
                     <span>{{ t('moderation.claimBtn') }}</span>
                   </button>
 
                   <button
                     v-else
                     class="btn-inspect-sm"
-                    @click="openProject(req.projectId)"
                     :title="t('moderation.continueBtn')"
+                    @click="openProject(req.projectId)"
                   >
                     <ArrowRight class="icon-xs" />
                     <span>{{ t('moderation.continueBtn') }}</span>
@@ -239,18 +228,10 @@
         </span>
 
         <div class="page-nav">
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage = 1"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage = 1">
             <ChevronsLeft class="icon-sm" />
           </button>
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage--">
             <ChevronLeft class="icon-sm" />
           </button>
           <span class="page-current">{{ currentPage }} / {{ totalPages }}</span>
@@ -317,9 +298,7 @@ const { t } = useI18n();
 const router = useRouter();
 const { state: authState } = useAuth();
 
-const currentUserId = computed(
-  () => authState.user?.id || authState.user?.email || ''
-);
+const currentUserId = computed(() => authState.user?.id || authState.user?.email || '');
 
 const requests = ref([]);
 const loading = ref(false);
@@ -380,8 +359,7 @@ const filteredRequests = computed(() => {
       (r) =>
         r.moderatorId &&
         currentUserId.value &&
-        (r.moderatorId === currentUserId.value ||
-          r.moderatorId === authState.user?.email)
+        (r.moderatorId === currentUserId.value || r.moderatorId === authState.user?.email)
     );
   }
 
@@ -393,12 +371,7 @@ const filteredRequests = computed(() => {
       const titleEn = (r.snapshot.titleEn || '').toLowerCase();
       const pId = String(r.projectId);
       const owner = (r.ownerId || '').toLowerCase();
-      return (
-        titleRu.includes(q) ||
-        titleEn.includes(q) ||
-        pId.includes(q) ||
-        owner.includes(q)
-      );
+      return titleRu.includes(q) || titleEn.includes(q) || pId.includes(q) || owner.includes(q);
     });
   }
 

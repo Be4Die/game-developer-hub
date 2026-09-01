@@ -3,9 +3,7 @@ import { http } from '@/shared/api';
 // ─── Auth ──────────────────────────────────────────────
 
 export function register({ email, password, display_name }) {
-  return http
-    .post('/auth/register', { email, password, display_name })
-    .then((r) => r.data);
+  return http.post('/auth/register', { email, password, display_name }).then((r) => r.data);
 }
 
 export function login({ email, password }) {
@@ -21,9 +19,7 @@ export function logout(refresh_token) {
 }
 
 export function verifyEmail(verification_code) {
-  return http
-    .post('/auth/verify-email', { verification_code })
-    .then((r) => r.data);
+  return http.post('/auth/verify-email', { verification_code }).then((r) => r.data);
 }
 
 export function resendVerificationEmail(email) {
@@ -35,9 +31,7 @@ export function requestPasswordReset(email) {
 }
 
 export function resetPassword({ reset_token, new_password }) {
-  return http
-    .post('/auth/reset-password', { reset_token, new_password })
-    .then((r) => r.data);
+  return http.post('/auth/reset-password', { reset_token, new_password }).then((r) => r.data);
 }
 
 // ─── Users ─────────────────────────────────────────────
@@ -47,9 +41,7 @@ export function getUser(userId) {
 }
 
 export function searchUsers({ query = '', limit = 100, offset = 0 } = {}) {
-  return http
-    .get('/users', { params: { query, limit, offset } })
-    .then((r) => r.data);
+  return http.get('/users', { params: { query, limit, offset } }).then((r) => r.data);
 }
 
 export function getCurrentUser() {
@@ -57,15 +49,11 @@ export function getCurrentUser() {
 }
 
 export function updateProfile({ display_name } = {}) {
-  return http
-    .patch('/user/profile', { display_name })
-    .then((r) => r.data);
+  return http.patch('/user/profile', { display_name }).then((r) => r.data);
 }
 
 export function updateUser(userId, { display_name, avatar_url } = {}) {
-  return http
-    .patch('/user/profile', { display_name, avatar_url })
-    .then((r) => r.data);
+  return http.patch('/user/profile', { display_name, avatar_url }).then((r) => r.data);
 }
 
 export function changePassword({ current_password, new_password, old_password }) {
@@ -74,7 +62,6 @@ export function changePassword({ current_password, new_password, old_password })
     .post('/user/profile:change-password', { current_password: current, new_password })
     .then((r) => r.data);
 }
-
 
 // ─── Tokens ────────────────────────────────────────────
 
@@ -89,9 +76,7 @@ export function listSessions() {
 // ─── Admin: Moderator Management ───────────────────────
 
 export function createModerator({ login, password, display_name }) {
-  return http
-    .post('/users/moderators', { login, password, display_name })
-    .then((r) => r.data);
+  return http.post('/users/moderators', { login, password, display_name }).then((r) => r.data);
 }
 
 export function deleteUser(userId) {
@@ -102,10 +87,7 @@ export function getModerators() {
   return http.get('/users', { params: { limit: 100, offset: 0 } }).then((r) => {
     const users = r.data.users || [];
     const mods = users.filter(
-      (u) =>
-        u.role === 'USER_ROLE_MODERATOR' ||
-        u.role === 'moderator' ||
-        u.role === 2
+      (u) => u.role === 'USER_ROLE_MODERATOR' || u.role === 'moderator' || u.role === 2
     );
     mods.sort((a, b) => {
       const aScore = (a.email || '').includes('moderator') ? 0 : 1;

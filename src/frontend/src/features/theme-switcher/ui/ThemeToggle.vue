@@ -1,5 +1,5 @@
 <template>
-  <button class="theme-toggle" @click="toggleTheme" :title="t('header.toggleTheme')">
+  <button class="theme-toggle" :title="t('header.toggleTheme')" @click="toggleTheme">
     <Sun v-if="isDark" class="icon-sm" />
     <Moon v-else class="icon-sm" />
   </button>
@@ -12,7 +12,6 @@ import { useTheme } from '@/shared/lib';
 
 const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
-
 </script>
 
 <style scoped>

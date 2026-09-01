@@ -15,9 +15,7 @@
     <div class="summary-grid">
       <div class="summary-card">
         <span class="summary-label">{{ t('servers.tabs.builds') }}</span>
-        <span class="summary-value">{{
-          loading ? '...' : builds.length
-        }}</span>
+        <span class="summary-value">{{ loading ? '...' : builds.length }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">{{ t('servers.runningInstances') }}</span>
@@ -28,9 +26,7 @@
       </div>
       <div class="summary-card">
         <span class="summary-label">{{ t('servers.onlinePlayers') }}</span>
-        <span class="summary-value">{{
-          loading ? '...' : totalPlayers
-        }}</span>
+        <span class="summary-value">{{ loading ? '...' : totalPlayers }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">{{ t('servers.tabs.nodes') }}</span>
@@ -46,28 +42,18 @@
     </div>
 
     <!-- Политика оркестрации -->
-    <OrchestrationPolicyEditor
-      :game-id="gameId"
-      :builds="builds"
-      :nodes="nodes"
-    />
+    <OrchestrationPolicyEditor :game-id="gameId" :builds="builds" :nodes="nodes" />
 
     <!-- Быстрые действия -->
     <div class="quick-actions">
-      <router-link
-        :to="`/projects/${gameId}/servers/builds`"
-        class="action-card"
-      >
+      <router-link :to="`/projects/${gameId}/servers/builds`" class="action-card">
         <Upload class="action-icon" />
         <div>
           <strong>{{ t('servers.uploadBuild') }}</strong>
           <p>{{ t('servers.uploadBuildDesc') }}</p>
         </div>
       </router-link>
-      <router-link
-        :to="`/projects/${gameId}/servers/instances`"
-        class="action-card"
-      >
+      <router-link :to="`/projects/${gameId}/servers/instances`" class="action-card">
         <Play class="action-icon" />
         <div>
           <strong>{{ t('servers.startInstance') }}</strong>
@@ -80,14 +66,12 @@
     <div class="recent-section">
       <div class="section-header">
         <h2>{{ t('servers.recentInstances') }}</h2>
-        <router-link
-          :to="`/projects/${gameId}/servers/instances`"
-          class="link"
+        <router-link :to="`/projects/${gameId}/servers/instances`" class="link"
           >{{ t('servers.allInstances') }} →</router-link
         >
       </div>
       <div class="recent-table-wrap">
-        <table class="recent-table" v-if="instances.length">
+        <table v-if="instances.length" class="recent-table">
           <thead>
             <tr>
               <th>{{ t('common.name') }}</th>
@@ -101,12 +85,8 @@
             <tr
               v-for="inst in instances.slice(0, 5)"
               :key="inst.id"
-              @click="
-                $router.push(
-                  `/projects/${gameId}/servers/instances/${inst.id}`
-                )
-              "
               class="clickable-row"
+              @click="$router.push(`/projects/${gameId}/servers/instances/${inst.id}`)"
             >
               <td class="cell-name">
                 {{ inst.name || `Instance #${inst.id}` }}
@@ -117,9 +97,7 @@
               <td><StatusBadge :status="inst.status" type="instance" /></td>
               <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
               <td class="cell-muted">
-                {{
-                  inst.started_at ? formatDate(inst.started_at) : '—'
-                }}
+                {{ inst.started_at ? formatDate(inst.started_at) : '—' }}
               </td>
             </tr>
           </tbody>
@@ -150,7 +128,6 @@ const props = defineProps({
   gameId: { type: [String, Number], required: true },
 });
 
-
 const builds = ref([]);
 const instances = ref([]);
 const nodes = ref([]);
@@ -158,17 +135,12 @@ const loading = ref(true);
 const error = ref(null);
 const queueCount = ref(0);
 
-const runningCount = computed(
-  () => instances.value.filter((i) => i.status === 'running').length
-);
+const runningCount = computed(() => instances.value.filter((i) => i.status === 'running').length);
 const totalPlayers = computed(() =>
   instances.value.reduce((sum, i) => sum + (i.player_count ?? 0), 0)
 );
 const onlineNodes = computed(
-  () =>
-    nodes.value.filter(
-      (n) => n.status === 'online' || n.status === 'NODE_STATUS_ONLINE'
-    ).length
+  () => nodes.value.filter((n) => n.status === 'online' || n.status === 'NODE_STATUS_ONLINE').length
 );
 
 async function fetchQueueCount() {

@@ -3,24 +3,13 @@
     <!-- Шапка -->
     <div class="detail-header">
       <div class="header-left">
-        <button
-          class="btn-outline back-btn"
-          @click="$router.push('/nodes')"
-        >
+        <button class="btn-outline back-btn" @click="$router.push('/nodes')">
           <ArrowLeft class="icon-sm" /> Ноды
         </button>
         <h1>{{ node.address || 'Нода' }}</h1>
-        <StatusBadge
-          v-if="node.status"
-          :status="node.status"
-          type="node"
-        />
+        <StatusBadge v-if="node.status" :status="node.status" type="node" />
       </div>
-      <button
-        class="btn-delete-lg"
-        @click="showDeleteConfirm = true"
-        v-if="!isUnauthorized"
-      >
+      <button v-if="!isUnauthorized" class="btn-delete-lg" @click="showDeleteConfirm = true">
         <Trash2 class="icon-sm" /> Удалить ноду
       </button>
     </div>
@@ -28,9 +17,7 @@
     <!-- Ошибка -->
     <div v-if="error" class="error-banner">
       <AlertCircle class="icon-sm" /> {{ error }}
-      <button class="btn-outline btn-sm" @click="fetchNode">
-        Повторить
-      </button>
+      <button class="btn-outline btn-sm" @click="fetchNode">Повторить</button>
     </div>
 
     <template v-if="!error && node.id">
@@ -38,16 +25,15 @@
       <div v-if="isUnauthorized" class="card auth-card">
         <h3>Авторизация ноды</h3>
         <p class="auth-hint">
-          Эта нода анонсировала себя оркестратору и ожидает
-          авторизации. Введите API-ключ ноды (NODE_API_KEY) чтобы
-          подключить её.
+          Эта нода анонсировала себя оркестратору и ожидает авторизации. Введите API-ключ ноды
+          (NODE_API_KEY) чтобы подключить её.
         </p>
         <div class="auth-form">
           <div class="form-group">
             <label>API-ключ ноды *</label>
             <input
-              type="text"
               v-model="authToken"
+              type="text"
               class="form-input"
               placeholder="dev-api-key-for-local-testing"
               @keyup.enter="submitAuthorize"
@@ -58,12 +44,10 @@
           </div>
           <button
             class="btn-primary"
-            @click="submitAuthorize"
             :disabled="!authToken || authorizing"
+            @click="submitAuthorize"
           >
-            {{
-              authorizing ? 'Авторизация...' : 'Авторизовать ноду'
-            }}
+            {{ authorizing ? 'Авторизация...' : 'Авторизовать ноду' }}
           </button>
         </div>
       </div>
@@ -73,8 +57,7 @@
         <h3>Информация о ноде</h3>
         <div class="info-grid-inner">
           <div class="info-row">
-            <span class="info-label">ID</span
-            ><span class="info-val">{{ node.id }}</span>
+            <span class="info-label">ID</span><span class="info-val">{{ node.id }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Адрес</span
@@ -88,49 +71,35 @@
           </div>
           <div class="info-row">
             <span class="info-label">Статус</span
-            ><span class="info-val"
-              ><StatusBadge :status="node.status" type="node"
-            /></span>
+            ><span class="info-val"><StatusBadge :status="node.status" type="node" /></span>
           </div>
           <div class="info-row">
             <span class="info-label">CPU</span
-            ><span class="info-val">{{
-              node.cpu_cores ? node.cpu_cores + ' ядер' : '—'
-            }}</span>
+            ><span class="info-val">{{ node.cpu_cores ? node.cpu_cores + ' ядер' : '—' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Память</span
             ><span class="info-val">{{
-              node.total_memory_bytes
-                ? formatBytes(node.total_memory_bytes)
-                : '—'
+              node.total_memory_bytes ? formatBytes(node.total_memory_bytes) : '—'
             }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Диск</span
             ><span class="info-val">{{
-              node.total_disk_bytes
-                ? formatBytes(node.total_disk_bytes)
-                : '—'
+              node.total_disk_bytes ? formatBytes(node.total_disk_bytes) : '—'
             }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Версия агента</span
-            ><span class="info-val">{{
-              node.agent_version || '—'
-            }}</span>
+            ><span class="info-val">{{ node.agent_version || '—' }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Последний heartbeat</span
-            ><span class="info-val">{{
-              formatDateTime(node.last_ping_at)
-            }}</span>
+            ><span class="info-val">{{ formatDateTime(node.last_ping_at) }}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Создана</span
-            ><span class="info-val">{{
-              formatDateTime(node.created_at)
-            }}</span>
+            ><span class="info-val">{{ formatDateTime(node.created_at) }}</span>
           </div>
         </div>
       </div>
@@ -139,11 +108,7 @@
       <template v-if="!isUnauthorized">
         <div class="section-header"><h2>Потребление ресурсов</h2></div>
         <div class="resources-grid">
-          <ResourceUsageCard
-            label="CPU"
-            :value="usage.cpu_usage_percent"
-            type="percent"
-          />
+          <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
           <ResourceUsageCard
             label="Память"
             :value="usage.memory_used_bytes"
@@ -171,10 +136,8 @@
             <span class="count">{{ activeCount }}</span>
           </h2>
         </div>
-        <div v-if="instancesLoading" class="loading-state">
-          Загрузка...
-        </div>
-        <div class="table-wrap" v-else-if="nodeInstances.length">
+        <div v-if="instancesLoading" class="loading-state">Загрузка...</div>
+        <div v-else-if="nodeInstances.length" class="table-wrap">
           <table class="data-table">
             <thead>
               <tr>
@@ -189,12 +152,8 @@
               <tr
                 v-for="inst in nodeInstances"
                 :key="inst.id"
-                @click="
-                  $router.push(
-                    `/projects/${inst.game_id}/servers/instances/${inst.id}`
-                  )
-                "
                 class="clickable-row"
+                @click="$router.push(`/projects/${inst.game_id}/servers/instances/${inst.id}`)"
               >
                 <td class="cell-name">
                   {{ inst.name || `#${inst.id}` }}
@@ -204,10 +163,7 @@
                   <code>{{ inst.build_version }}</code>
                 </td>
                 <td>
-                  <StatusBadge
-                    :status="inst.status"
-                    type="instance"
-                  />
+                  <StatusBadge :status="inst.status" type="instance" />
                 </td>
                 <td>
                   {{ inst.player_count ?? 0 }} /
@@ -222,35 +178,16 @@
     </template>
 
     <!-- Подтверждение удаления -->
-    <div
-      v-if="showDeleteConfirm"
-      class="modal-overlay"
-      @click.self="showDeleteConfirm = false"
-    >
+    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
       <div class="modal card">
         <h3>Удалить ноду?</h3>
         <p>
-          Нода <code>{{ node.address }}</code> будет удалена из
-          реестра.
+          Нода <code>{{ node.address }}</code> будет удалена из реестра.
         </p>
-        <p class="text-danger">
-          Все инстансы на этой ноде будут переведены в статус
-          «Авария».
-        </p>
+        <p class="text-danger">Все инстансы на этой ноде будут переведены в статус «Авария».</p>
         <div class="modal-actions">
-          <button
-            class="btn-primary"
-            @click="doDelete"
-            :disabled="deleting"
-          >
-            Удалить
-          </button>
-          <button
-            class="btn-outline"
-            @click="showDeleteConfirm = false"
-          >
-            Отмена
-          </button>
+          <button class="btn-primary" :disabled="deleting" @click="doDelete">Удалить</button>
+          <button class="btn-outline" @click="showDeleteConfirm = false">Отмена</button>
         </div>
       </div>
     </div>
@@ -294,9 +231,7 @@ const authError = ref(null);
 const authorizing = ref(false);
 
 const isUnauthorized = computed(
-  () =>
-    node.value.status === 'NODE_STATUS_UNAUTHORIZED' ||
-    node.value.status === 'unauthorized'
+  () => node.value.status === 'NODE_STATUS_UNAUTHORIZED' || node.value.status === 'unauthorized'
 );
 const activeCount = computed(() => usage.value.active_instance_count ?? 0);
 
@@ -350,8 +285,7 @@ async function submitAuthorize() {
     } else if (e.response?.status === 409) {
       authError.value = 'Нода уже авторизована';
     } else {
-      authError.value =
-        e.response?.data?.message ?? 'Ошибка авторизации ноды';
+      authError.value = e.response?.data?.message ?? 'Ошибка авторизации ноды';
     }
   } finally {
     authorizing.value = false;
@@ -374,11 +308,7 @@ async function doDelete() {
 watch(
   () => node.value.status,
   async (status) => {
-    if (
-      status !== 'NODE_STATUS_UNAUTHORIZED' &&
-      status !== 'unauthorized' &&
-      !error.value
-    ) {
+    if (status !== 'NODE_STATUS_UNAUTHORIZED' && status !== 'unauthorized' && !error.value) {
       await fetchUsage();
       await fetchInstances();
       if (usageInterval) clearInterval(usageInterval);

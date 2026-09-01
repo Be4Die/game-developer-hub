@@ -62,10 +62,7 @@
                   </span>
                 </td>
                 <td>
-                  <span
-                    class="badge"
-                    :class="statusBadgeClass(u.status)"
-                  >
+                  <span class="badge" :class="statusBadgeClass(u.status)">
                     <span class="status-dot"></span>
                     {{ statusLabel(u.status) }}
                   </span>
@@ -78,7 +75,6 @@
       </div>
     </div>
 
-
     <!-- Moderators Tab -->
     <div v-if="activeTab === 'moderators'" class="tab-content">
       <!-- Create Moderator Form -->
@@ -87,9 +83,7 @@
       <!-- Moderators List -->
       <div class="card">
         <h2>Список модераторов</h2>
-        <div v-if="moderators.length === 0" class="empty-state">
-          Нет активных модераторов
-        </div>
+        <div v-if="moderators.length === 0" class="empty-state">Нет активных модераторов</div>
         <div v-else class="table-container">
           <table>
             <thead>
@@ -107,10 +101,7 @@
                 </td>
                 <td class="email-cell">{{ mod.email }}</td>
                 <td>
-                  <span
-                    class="badge"
-                    :class="statusBadgeClass(mod.status)"
-                  >
+                  <span class="badge" :class="statusBadgeClass(mod.status)">
                     <span class="status-dot"></span>
                     {{ statusLabel(mod.status) }}
                   </span>
@@ -118,9 +109,9 @@
                 <td>
                   <button
                     class="btn btn-danger"
-                    style="padding: 6px 14px; font-size: 0.8rem;"
-                    @click="confirmDelete(mod)"
+                    style="padding: 6px 14px; font-size: 0.8rem"
                     :disabled="deleting"
+                    @click="confirmDelete(mod)"
                   >
                     {{ deleting ? 'Удаление...' : 'Удалить' }}
                   </button>
@@ -147,10 +138,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { searchUsers, deleteUser } from '@/entities/user';
-import {
-  CreateModeratorForm,
-  DeleteModeratorModal,
-} from '@/features/manage-moderators';
+import { CreateModeratorForm, DeleteModeratorModal } from '@/features/manage-moderators';
 import { formatDate, showToast } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -174,9 +162,7 @@ const users = computed(() => {
 });
 
 const moderators = computed(() =>
-  allUsers.value.filter(
-    (u) => u.role === 'USER_ROLE_MODERATOR' || u.role === 'moderator'
-  )
+  allUsers.value.filter((u) => u.role === 'USER_ROLE_MODERATOR' || u.role === 'moderator')
 );
 
 function debouncedSearch() {
@@ -224,7 +210,6 @@ function roleLabel(role) {
   }
 }
 
-
 function statusBadgeClass(status) {
   switch (status) {
     case 'USER_STATUS_ACTIVE':
@@ -259,17 +244,11 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await deleteUser(deleteTarget.value.id);
-    showToast(
-      `Модератор "${deleteTarget.value.display_name}" удалён`,
-      'success'
-    );
+    showToast(`Модератор "${deleteTarget.value.display_name}" удалён`, 'success');
     deleteTarget.value = null;
     await loadUsers();
   } catch (err) {
-    showToast(
-      err.response?.data?.message || 'Не удалось удалить модератора',
-      'error'
-    );
+    showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'error');
   } finally {
     deleting.value = false;
   }
@@ -351,7 +330,9 @@ onMounted(() => {
   font-size: 0.9rem;
   width: 280px;
   font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   outline: none;
 }
 

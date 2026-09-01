@@ -10,45 +10,22 @@
           <ArrowLeft class="icon-sm" /> Инстансы
         </button>
         <h1>{{ instance.name || `Инстанс #${instance.id}` }}</h1>
-        <StatusBadge
-          v-if="instance.status"
-          :status="instance.status"
-          type="instance"
-        />
+        <StatusBadge v-if="instance.status" :status="instance.status" type="instance" />
       </div>
       <div class="header-actions">
-        <button
-          v-if="isRunning"
-          class="btn-restart"
-          @click="handleRestart"
-          :disabled="restarting"
-        >
+        <button v-if="isRunning" class="btn-restart" :disabled="restarting" @click="handleRestart">
           <RotateCcw class="icon-sm" />
           {{ restarting ? 'Перезапуск...' : 'Перезапустить' }}
         </button>
-        <button
-          v-if="isRunning"
-          class="btn-stop-lg"
-          @click="handleStop"
-          :disabled="stopping"
-        >
+        <button v-if="isRunning" class="btn-stop-lg" :disabled="stopping" @click="handleStop">
           <Square class="icon-sm" />
           {{ stopping ? 'Остановка...' : 'Остановить' }}
         </button>
-        <button
-          v-if="isStopped"
-          class="btn-resume"
-          @click="handleResume"
-          :disabled="resuming"
-        >
+        <button v-if="isStopped" class="btn-resume" :disabled="resuming" @click="handleResume">
           <Play class="icon-sm" />
           {{ resuming ? 'Запуск...' : 'Запустить' }}
         </button>
-        <button
-          class="btn-delete"
-          @click="handleDelete"
-          :disabled="deleting"
-        >
+        <button class="btn-delete" :disabled="deleting" @click="handleDelete">
           <Trash2 class="icon-sm" />
           {{ deleting ? 'Удаление...' : 'Удалить' }}
         </button>
@@ -58,9 +35,7 @@
     <!-- Ошибка загрузки -->
     <div v-if="error" class="error-banner">
       <AlertCircle class="icon-sm" /> {{ error }}
-      <button class="btn-outline btn-sm" @click="fetchInstance">
-        Повторить
-      </button>
+      <button class="btn-outline btn-sm" @click="fetchInstance">Повторить</button>
     </div>
 
     <template v-if="!error">
@@ -70,8 +45,7 @@
           <h3>Информация</h3>
           <div class="info-rows">
             <div class="info-row">
-              <span class="info-label">ID</span
-              ><span class="info-val">{{ instance.id }}</span>
+              <span class="info-label">ID</span><span class="info-val">{{ instance.id }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Версия билда</span
@@ -85,10 +59,7 @@
             </div>
             <div class="info-row">
               <span class="info-label">Порты</span
-              ><span class="info-val"
-                >{{ instance.internal_port }} →
-                {{ instance.host_port }}</span
-              >
+              ><span class="info-val">{{ instance.internal_port }} → {{ instance.host_port }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Нода</span
@@ -96,31 +67,22 @@
             </div>
             <div class="info-row">
               <span class="info-label">Адрес</span
-              ><span class="info-val"
-                >{{ instance.server_address }}:{{
-                  instance.host_port
-                }}</span
-              >
+              ><span class="info-val">{{ instance.server_address }}:{{ instance.host_port }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Игроки</span
               ><span class="info-val"
-                >{{ instance.player_count ?? 0 }} /
-                {{ instance.max_players }}</span
+                >{{ instance.player_count ?? 0 }} / {{ instance.max_players }}</span
               >
             </div>
             <div class="info-row">
               <span class="info-label">Создан</span
-              ><span class="info-val">{{
-                formatDateTime(instance.created_at)
-              }}</span>
+              ><span class="info-val">{{ formatDateTime(instance.created_at) }}</span>
             </div>
             <div class="info-row">
               <span class="info-label">Запущен</span
               ><span class="info-val">{{
-                instance.started_at
-                  ? formatDateTime(instance.started_at)
-                  : '—'
+                instance.started_at ? formatDateTime(instance.started_at) : '—'
               }}</span>
             </div>
           </div>
@@ -129,21 +91,9 @@
         <div class="card resources-card">
           <h3>Потребление ресурсов</h3>
           <div class="resources-grid">
-            <ResourceUsageCard
-              label="CPU"
-              :value="usage.cpu_usage_percent"
-              type="percent"
-            />
-            <ResourceUsageCard
-              label="Память"
-              :value="usage.memory_used_bytes"
-              type="bytes"
-            />
-            <ResourceUsageCard
-              label="Диск"
-              :value="usage.disk_used_bytes"
-              type="bytes"
-            />
+            <ResourceUsageCard label="CPU" :value="usage.cpu_usage_percent" type="percent" />
+            <ResourceUsageCard label="Память" :value="usage.memory_used_bytes" type="bytes" />
+            <ResourceUsageCard label="Диск" :value="usage.disk_used_bytes" type="bytes" />
             <ResourceUsageCard
               label="Сеть"
               :value="usage.network_bytes_per_sec"
@@ -155,17 +105,10 @@
       </div>
 
       <!-- developer_payload -->
-      <div
-        class="card info-card"
-        v-if="Object.keys(instance.developer_payload || {}).length"
-      >
+      <div v-if="Object.keys(instance.developer_payload || {}).length" class="card info-card">
         <h3>Developer Payload</h3>
         <div class="info-rows">
-          <div
-            class="info-row"
-            v-for="(v, k) in instance.developer_payload"
-            :key="k"
-          >
+          <div v-for="(v, k) in instance.developer_payload" :key="k" class="info-row">
             <span class="info-label">{{ k }}</span
             ><span class="info-val">{{ v }}</span>
           </div>
@@ -194,14 +137,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  ArrowLeft,
-  Square,
-  AlertCircle,
-  RotateCcw,
-  Trash2,
-  Play,
-} from 'lucide-vue-next';
+import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2, Play } from 'lucide-vue-next';
 import { StatusBadge, ResourceUsageCard, ConfirmDialog } from '@/shared/ui';
 import { LogsViewer } from '@/widgets/logs-viewer';
 import {
@@ -262,9 +198,7 @@ const statusKey = computed(() => {
 });
 
 const isRunning = computed(() => statusKey.value === 'running');
-const isStopped = computed(
-  () => statusKey.value === 'stopped' || statusKey.value === 'crashed'
-);
+const isStopped = computed(() => statusKey.value === 'stopped' || statusKey.value === 'crashed');
 
 async function fetchInstance() {
   error.value = null;

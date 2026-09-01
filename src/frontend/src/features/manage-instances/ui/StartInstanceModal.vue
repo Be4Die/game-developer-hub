@@ -7,11 +7,7 @@
           <label>{{ t('common.version') }} *</label>
           <select v-model="startForm.build_version" class="form-input">
             <option value="" disabled>Select build</option>
-            <option
-              v-for="b in availableBuilds"
-              :key="b.build_version"
-              :value="b.build_version"
-            >
+            <option v-for="b in availableBuilds" :key="b.build_version" :value="b.build_version">
               {{ b.build_version }}
             </option>
           </select>
@@ -19,8 +15,8 @@
         <div class="form-group">
           <label>{{ t('common.name') }}</label>
           <input
-            type="text"
             v-model="startForm.name"
+            type="text"
             class="form-input"
             placeholder="EU-1"
             maxlength="128"
@@ -29,8 +25,8 @@
         <div class="form-group">
           <label>Max Players</label>
           <input
-            type="number"
             v-model.number="startForm.max_players"
+            type="number"
             class="form-input"
             min="1"
             placeholder="Default"
@@ -43,30 +39,16 @@
         <div class="form-group form-group-wide">
           <label>Arguments</label>
           <div class="args-list">
-            <div
-              v-for="(arg, i) in startForm.args"
-              :key="i"
-              class="arg-row"
-            >
+            <div v-for="(arg, i) in startForm.args" :key="i" class="arg-row">
               <input
-                type="text"
                 v-model="startForm.args[i]"
+                type="text"
                 class="form-input"
                 placeholder="--flag value"
               />
-              <button
-                class="arg-remove"
-                @click="startForm.args.splice(i, 1)"
-              >
-                &times;
-              </button>
+              <button class="arg-remove" @click="startForm.args.splice(i, 1)">&times;</button>
             </div>
-            <button
-              class="arg-add"
-              @click="startForm.args.push('')"
-            >
-              + Add argument
-            </button>
+            <button class="arg-add" @click="startForm.args.push('')">+ Add argument</button>
           </div>
         </div>
       </div>
@@ -74,8 +56,8 @@
       <div class="modal-actions">
         <button
           class="btn-primary"
-          @click="submitStart"
           :disabled="!startForm.build_version || starting"
+          @click="submitStart"
         >
           {{ starting ? t('common.loading') : t('servers.startInstance') }}
         </button>
@@ -95,7 +77,6 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 
 const props = defineProps({
-
   gameId: { type: [String, Number], required: true },
   availableBuilds: { type: Array, default: () => [] },
 });
@@ -143,8 +124,7 @@ async function submitStart() {
     if (e.response?.status === 409) {
       startError.value = 'Недостаточно ресурсов на доступных нодах';
     } else {
-      startError.value =
-        e.response?.data?.message ?? 'Ошибка запуска инстанса';
+      startError.value = e.response?.data?.message ?? 'Ошибка запуска инстанса';
     }
   } finally {
     starting.value = false;

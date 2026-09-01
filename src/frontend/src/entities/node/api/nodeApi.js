@@ -12,9 +12,7 @@ export function listNodes(status) {
     };
     params.status = statusMap[status] || status;
   }
-  return http
-    .get('/nodes', { params })
-    .then((r) => (r.data.nodes ?? []).map(normalizeNode));
+  return http.get('/nodes', { params }).then((r) => (r.data.nodes ?? []).map(normalizeNode));
 }
 
 export function getNode(nodeId) {
@@ -62,7 +60,5 @@ export function getNodeUsage(nodeId) {
 }
 
 export function listNodeInstances(nodeId) {
-  return http
-    .get(`/nodes/${nodeId}/instances`)
-    .then((r) => (r.data.instances ?? []));
+  return http.get(`/nodes/${nodeId}/instances`).then((r) => r.data.instances ?? []);
 }

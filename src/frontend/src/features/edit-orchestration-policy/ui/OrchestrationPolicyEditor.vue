@@ -16,9 +16,7 @@
         <div class="policy-grid">
           <div class="policy-item">
             <span class="policy-label">Режим</span>
-            <span class="policy-value">{{
-              modeLabels[policy.mode] || policy.mode
-            }}</span>
+            <span class="policy-value">{{ modeLabels[policy.mode] || policy.mode }}</span>
           </div>
           <div class="policy-item">
             <span class="policy-label">Целевое число инстансов</span>
@@ -26,9 +24,7 @@
           </div>
           <div class="policy-item">
             <span class="policy-label">Авторестарт при падении</span>
-            <span class="policy-value">{{
-              policy.auto_restart ? 'Включён' : 'Отключён'
-            }}</span>
+            <span class="policy-value">{{ policy.auto_restart ? 'Включён' : 'Отключён' }}</span>
           </div>
           <div class="policy-item">
             <span class="policy-label">Таймаут простоя (мин)</span>
@@ -52,10 +48,7 @@
               behaviorLabels[policy.scale_behavior] || policy.scale_behavior
             }}</span>
           </div>
-          <div
-            v-if="policy.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'"
-            class="policy-item"
-          >
+          <div v-if="policy.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'" class="policy-item">
             <span class="policy-label">Расположение очереди</span>
             <span class="policy-value">{{
               queueLocationLabels[policy.queue_location] || policy.queue_location
@@ -63,27 +56,19 @@
           </div>
           <div class="policy-item">
             <span class="policy-label">Резервация (сек)</span>
-            <span class="policy-value">{{
-              policy.queue_reservation_seconds ?? 30
-            }}</span>
+            <span class="policy-value">{{ policy.queue_reservation_seconds ?? 30 }}</span>
           </div>
           <div class="policy-item">
             <span class="policy-label">Heartbeat таймаут (сек)</span>
-            <span class="policy-value">{{
-              policy.queue_heartbeat_timeout ?? 15
-            }}</span>
+            <span class="policy-value">{{ policy.queue_heartbeat_timeout ?? 15 }}</span>
           </div>
           <div class="policy-item">
             <span class="policy-label">Нода</span>
-            <span class="policy-value">{{
-              nodePreferenceLabel(policy.node_preference)
-            }}</span>
+            <span class="policy-value">{{ nodePreferenceLabel(policy.node_preference) }}</span>
           </div>
         </div>
         <div class="policy-read-actions">
-          <button class="btn-outline btn-sm" @click="startEdit">
-            Изменить
-          </button>
+          <button class="btn-outline btn-sm" @click="startEdit">Изменить</button>
         </div>
       </div>
 
@@ -92,7 +77,12 @@
           <label>
             <span class="label-row">
               Режим оркестрации
-              <Tooltip position="right">Определяет базовое поведение оркестратора.<br><br>«Только ручное управление» — никакого авто-вмешательства.<br>«Держать запущенным» — поддерживает целевое число инстансов.<br>«Экономичный» — останавливает при простое, запускает при обнаружении игроков.</Tooltip>
+              <Tooltip position="right"
+                >Определяет базовое поведение оркестратора.<br /><br />«Только ручное управление» —
+                никакого авто-вмешательства.<br />«Держать запущенным» — поддерживает целевое число
+                инстансов.<br />«Экономичный» — останавливает при простое, запускает при обнаружении
+                игроков.</Tooltip
+              >
             </span>
             <select v-model="draft.mode">
               <option value="ORCHESTRATION_MODE_DISABLED">Только ручное управление</option>
@@ -103,7 +93,11 @@
           <label>
             <span class="label-row">
               Целевое число инстансов
-              <Tooltip position="right">Сколько инстансов должно быть запущено в режиме «Держать запущенным».<br><br>При падении одного из них оркестратор автоматически поднимет новый, чтобы поддержать это число.</Tooltip>
+              <Tooltip position="right"
+                >Сколько инстансов должно быть запущено в режиме «Держать запущенным».<br /><br />При
+                падении одного из них оркестратор автоматически поднимет новый, чтобы поддержать это
+                число.</Tooltip
+              >
             </span>
             <input v-model.number="draft.target_instances" type="number" min="0" />
           </label>
@@ -111,44 +105,68 @@
             <input v-model="draft.auto_restart" type="checkbox" />
             <span class="label-row">
               Авторестарт при падении
-              <Tooltip position="right">Если включён, оркестратор автоматически перезапустит инстанс при краше.<br><br>Если контейнер был удалён — запустит новый инстанс взамен.</Tooltip>
+              <Tooltip position="right"
+                >Если включён, оркестратор автоматически перезапустит инстанс при краше.<br /><br />Если
+                контейнер был удалён — запустит новый инстанс взамен.</Tooltip
+              >
             </span>
           </label>
           <label>
             <span class="label-row">
               Таймаут простоя (мин)
-              <Tooltip position="right">Актуально только в режиме «Экономичный».<br><br>Через сколько минут без игроков инстанс будет автоматически остановлен для экономии ресурсов.</Tooltip>
+              <Tooltip position="right"
+                >Актуально только в режиме «Экономичный».<br /><br />Через сколько минут без игроков
+                инстанс будет автоматически остановлен для экономии ресурсов.</Tooltip
+              >
             </span>
             <input v-model.number="draft.scale_to_zero_timeout" type="number" min="1" />
           </label>
           <label>
             <span class="label-row">
               Версия билда по умолчанию
-              <Tooltip position="right">Какой билд использовать при авто-старте инстанса.<br><br>Выберите конкретную версию или оставьте «latest» — тогда всегда будет использоваться последний загруженный билд.</Tooltip>
+              <Tooltip position="right"
+                >Какой билд использовать при авто-старте инстанса.<br /><br />Выберите конкретную
+                версию или оставьте «latest» — тогда всегда будет использоваться последний
+                загруженный билд.</Tooltip
+              >
             </span>
             <select v-model="draft.default_build_version">
               <option value="latest">latest</option>
-              <option v-for="b in builds" :key="b.build_version" :value="b.build_version">{{ b.build_version }}</option>
+              <option v-for="b in builds" :key="b.build_version" :value="b.build_version">
+                {{ b.build_version }}
+              </option>
             </select>
           </label>
           <label>
             <span class="label-row">
               Макс. игроков / инстанс
-              <Tooltip position="right">Порог для определения переполнения.<br><br>Если число игроков достигает или превышает это значение, срабатывает выбранное поведение при переполнении: запуск нового инстанса или очередь.</Tooltip>
+              <Tooltip position="right"
+                >Порог для определения переполнения.<br /><br />Если число игроков достигает или
+                превышает это значение, срабатывает выбранное поведение при переполнении: запуск
+                нового инстанса или очередь.</Tooltip
+              >
             </span>
             <input v-model.number="draft.max_players_per_instance" type="number" min="1" />
           </label>
           <label>
             <span class="label-row">
               Макс. инстансов на игру
-              <Tooltip position="right">Абсолютный потолок количества инстансов для защиты от неконтролируемого масштабирования.<br><br>Учитываются все инстансы: запущенные, остановленные и упавшие.</Tooltip>
+              <Tooltip position="right"
+                >Абсолютный потолок количества инстансов для защиты от неконтролируемого
+                масштабирования.<br /><br />Учитываются все инстансы: запущенные, остановленные и
+                упавшие.</Tooltip
+              >
             </span>
             <input v-model.number="draft.max_instances_per_game" type="number" min="1" />
           </label>
           <label>
             <span class="label-row">
               При переполнении
-              <Tooltip position="right">Что делать, когда инстанс заполнен.<br><br>«Запускать новый инстанс» — оркестратор поднимет дополнительный сервер.<br>«Очередь игроков» — новые игроки будут ждать освобождения слотов.</Tooltip>
+              <Tooltip position="right"
+                >Что делать, когда инстанс заполнен.<br /><br />«Запускать новый инстанс» —
+                оркестратор поднимет дополнительный сервер.<br />«Очередь игроков» — новые игроки
+                будут ждать освобождения слотов.</Tooltip
+              >
             </span>
             <select v-model="draft.scale_behavior">
               <option value="SCALE_BEHAVIOR_SPAWN">Запускать новый инстанс</option>
@@ -158,26 +176,51 @@
           <label v-if="draft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
             <span class="label-row">
               Расположение очереди
-              <Tooltip position="right">Где реализована очередь игроков.<br><br>«На стороне клиента» — оркестратор управляет очередью, игроки polling'ят статус.<br>«На стороне сервера» — игровой сервер сам управляет очередью, оркестратор только масштабирует по размеру очереди.</Tooltip>
+              <Tooltip position="right"
+                >Где реализована очередь игроков.<br /><br />«На стороне клиента» — оркестратор
+                управляет очередью, игроки polling'ят статус.<br />«На стороне сервера» — игровой
+                сервер сам управляет очередью, оркестратор только масштабирует по размеру
+                очереди.</Tooltip
+              >
             </span>
             <select v-model="draft.queue_location">
               <option value="QUEUE_LOCATION_CLIENT">На стороне клиента</option>
               <option value="QUEUE_LOCATION_SERVER">На стороне сервера</option>
             </select>
           </label>
-          <label v-if="draft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE' && draft.queue_location === 'QUEUE_LOCATION_SERVER'">
+          <label
+            v-if="
+              draft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE' &&
+              draft.queue_location === 'QUEUE_LOCATION_SERVER'
+            "
+          >
             <span class="label-row">
               Порог масштабирования по очереди
-              <Tooltip position="right">При каком размере очереди на игровом сервере запускать новый инстанс. 0 = автоматически (половина max_players).</Tooltip>
+              <Tooltip position="right"
+                >При каком размере очереди на игровом сервере запускать новый инстанс. 0 =
+                автоматически (половина max_players).</Tooltip
+              >
             </span>
-            <input v-model.number="draft.queue_scale_up_threshold" type="number" min="0" max="1000" />
+            <input
+              v-model.number="draft.queue_scale_up_threshold"
+              type="number"
+              min="0"
+              max="1000"
+            />
           </label>
           <label v-if="draft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
             <span class="label-row">
               Резервация слота (сек)
-              <Tooltip position="right">Сколько секунд даётся игроку на подключение после выделения слота.</Tooltip>
+              <Tooltip position="right"
+                >Сколько секунд даётся игроку на подключение после выделения слота.</Tooltip
+              >
             </span>
-            <input v-model.number="draft.queue_reservation_seconds" type="number" min="5" max="300" />
+            <input
+              v-model.number="draft.queue_reservation_seconds"
+              type="number"
+              min="5"
+              max="300"
+            />
           </label>
           <label v-if="draft.scale_behavior === 'SCALE_BEHAVIOR_QUEUE'">
             <span class="label-row">
@@ -196,11 +239,17 @@
           <label>
             <span class="label-row">
               Предпочтительная нода
-              <Tooltip position="right">На какой ноде развёртывать инстансы при авто-старте.<br><br>«Авто» — оркестратор сам выберет наименее загруженную онлайн-ноду.<br>«Конкретная нода» — все авто-старты будут направлены на выбранный сервер.</Tooltip>
+              <Tooltip position="right"
+                >На какой ноде развёртывать инстансы при авто-старте.<br /><br />«Авто» —
+                оркестратор сам выберет наименее загруженную онлайн-ноду.<br />«Конкретная нода» —
+                все авто-старты будут направлены на выбранный сервер.</Tooltip
+              >
             </span>
             <select v-model="draft.node_preference">
               <option value="auto">Авто (наименее загруженная)</option>
-              <option v-for="n in onlineNodeList" :key="n.id" :value="n.id">{{ n.address }} ({{ n.id }})</option>
+              <option v-for="n in onlineNodeList" :key="n.id" :value="n.id">
+                {{ n.address }} ({{ n.id }})
+              </option>
             </select>
           </label>
         </div>
@@ -210,12 +259,10 @@
         </div>
 
         <div class="policy-edit-actions">
-          <button class="btn-primary btn-sm" @click="savePolicy" :disabled="saving">
+          <button class="btn-primary btn-sm" :disabled="saving" @click="savePolicy">
             {{ saving ? 'Сохранение…' : 'Сохранить' }}
           </button>
-          <button class="btn-outline btn-sm" @click="cancelEdit" :disabled="saving">
-            Отмена
-          </button>
+          <button class="btn-outline btn-sm" :disabled="saving" @click="cancelEdit">Отмена</button>
         </div>
       </div>
     </div>
@@ -252,9 +299,7 @@ const policy = ref(null);
 const draft = ref({});
 
 const onlineNodeList = computed(() =>
-  props.nodes.filter(
-    (n) => n.status === 'online' || n.status === 'NODE_STATUS_ONLINE'
-  )
+  props.nodes.filter((n) => n.status === 'online' || n.status === 'NODE_STATUS_ONLINE')
 );
 
 function startEdit() {

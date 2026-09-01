@@ -4,8 +4,8 @@
       type="button"
       class="locale-btn"
       :class="{ active: currentLocale === 'ru' }"
-      @click="handleSelect('ru')"
       title="Русский язык"
+      @click="handleSelect('ru')"
     >
       <span class="flag">🇷🇺</span>
       <span class="code">RU</span>
@@ -15,8 +15,8 @@
       type="button"
       class="locale-btn"
       :class="{ active: currentLocale === 'en' }"
-      @click="handleSelect('en')"
       title="English language"
+      @click="handleSelect('en')"
     >
       <span class="flag">🇬🇧</span>
       <span class="code">EN</span>

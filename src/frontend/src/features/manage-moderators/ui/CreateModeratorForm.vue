@@ -1,17 +1,11 @@
 <template>
   <div class="card">
     <h2>Создать модератора</h2>
-    <form @submit.prevent="handleCreate" class="form-grid">
+    <form class="form-grid" @submit.prevent="handleCreate">
       <div class="form-group">
         <label for="login">Логин</label>
         <div class="email-input-group">
-          <input
-            id="login"
-            v-model="form.login"
-            type="text"
-            placeholder="username"
-            required
-          />
+          <input id="login" v-model="form.login" type="text" placeholder="username" required />
           <span class="email-domain">@welwise.com</span>
         </div>
         <span class="form-hint">Email будет сформирован автоматически</span>
@@ -43,11 +37,7 @@
         </button>
       </div>
     </form>
-    <div
-      v-if="createdEmail"
-      class="alert alert-success"
-      style="margin-top: 16px;"
-    >
+    <div v-if="createdEmail" class="alert alert-success" style="margin-top: 16px">
       <strong>Email для входа:</strong> {{ createdEmail }}
     </div>
   </div>
@@ -77,19 +67,13 @@ async function handleCreate() {
       display_name: form.display_name,
     });
     createdEmail.value = res.user.email;
-    showToast(
-      `Модератор "${res.user.display_name}" успешно создан`,
-      'success'
-    );
+    showToast(`Модератор "${res.user.display_name}" успешно создан`, 'success');
     form.login = '';
     form.display_name = '';
     form.password = '';
     emit('created', res.user);
   } catch (err) {
-    showToast(
-      err.response?.data?.message || 'Не удалось создать модератора',
-      'error'
-    );
+    showToast(err.response?.data?.message || 'Не удалось создать модератора', 'error');
   } finally {
     loading.value = false;
   }
@@ -129,7 +113,9 @@ async function handleCreate() {
   border-radius: var(--radius-sm);
   background: var(--bg-input);
   overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .email-input-group:focus-within {

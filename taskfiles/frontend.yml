@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  FRONTEND_DIR: "."
+  FRONTEND_DIR: "src/frontend"
 
 tasks:
   deps:
@@ -42,3 +42,28 @@ tasks:
     dir: "{{.FRONTEND_DIR}}"
     cmds:
       - cloc --exclude-dir=node_modules,.git .
+
+  check:
+    desc: "Lint frontend code with ESLint"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint
+
+  fix:
+    desc: "Fix lint issues and format frontend code"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run lint:fix
+      - npm run format
+
+  run-format:
+    desc: "Format frontend code with Prettier"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format
+
+  check-format:
+    desc: "Check frontend code formatting with Prettier"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run format:check

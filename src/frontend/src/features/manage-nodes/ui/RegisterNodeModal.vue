@@ -25,32 +25,26 @@
           <label>Доступная нода *</label>
           <select v-model="availableForm.node_id" class="form-input">
             <option value="" disabled>Выберите ноду</option>
-            <option
-              v-for="n in availableNodes"
-              :key="n.id"
-              :value="n.id"
-            >
+            <option v-for="n in availableNodes" :key="n.id" :value="n.id">
               {{ n.address }} (ID: {{ n.id }})
             </option>
           </select>
           <p v-if="!availableNodes.length" class="hint">
-            Нет доступных нод для подключения. Убедитесь, что нода запущена в
-            режиме auto-discovery.
+            Нет доступных нод для подключения. Убедитесь, что нода запущена в режиме auto-discovery.
           </p>
         </div>
         <div class="form-group">
           <label>Ключ авторизации (API-ключ ноды) *</label>
           <input
-            type="text"
             v-model="availableForm.token"
+            type="text"
             class="form-input"
             placeholder="dev-api-key-for-local-testing"
           />
         </div>
         <p class="hint">
-          Ноды в этом списке самостоятельно анонсировали себя оркестратору и
-          ожидают авторизации. Введите API-ключ ноды (NODE_API_KEY) для
-          подключения.
+          Ноды в этом списке самостоятельно анонсировали себя оркестратору и ожидают авторизации.
+          Введите API-ключ ноды (NODE_API_KEY) для подключения.
         </p>
       </div>
 
@@ -59,8 +53,8 @@
         <div class="form-group">
           <label>Адрес (host:port) *</label>
           <input
-            type="text"
             v-model="manualForm.address"
+            type="text"
             class="form-input"
             placeholder="192.168.1.100:44044"
           />
@@ -68,24 +62,17 @@
         <div class="form-group">
           <label>Ключ авторизации (API-ключ ноды) *</label>
           <input
-            type="text"
             v-model="manualForm.token"
+            type="text"
             class="form-input"
             placeholder="dev-api-key-for-local-testing"
           />
         </div>
         <div class="form-group">
           <label>Регион (опционально)</label>
-          <input
-            type="text"
-            v-model="manualForm.region"
-            class="form-input"
-            placeholder="EU"
-          />
+          <input v-model="manualForm.region" type="text" class="form-input" placeholder="EU" />
         </div>
-        <p class="hint">
-          Введите адрес ноды и её API-ключ (NODE_API_KEY) для подключения.
-        </p>
+        <p class="hint">Введите адрес ноды и её API-ключ (NODE_API_KEY) для подключения.</p>
       </div>
 
       <div v-if="registerError" class="form-error">
@@ -93,11 +80,7 @@
       </div>
 
       <div class="modal-actions">
-        <button
-          class="btn-primary"
-          @click="submitRegister"
-          :disabled="registering || !canSubmit"
-        >
+        <button class="btn-primary" :disabled="registering || !canSubmit" @click="submitRegister">
           {{ registering ? 'Подключение...' : 'Подключить' }}
         </button>
         <button class="btn-outline" @click="$emit('cancel')">Отмена</button>
@@ -111,7 +94,7 @@ import { ref, computed } from 'vue';
 import { registerNode } from '@/entities/node';
 import { showToast } from '@/shared/lib';
 
-const props = defineProps({
+defineProps({
   availableNodes: { type: Array, default: () => [] },
 });
 
@@ -166,8 +149,7 @@ async function submitRegister() {
     } else if (e.response?.status === 409) {
       registerError.value = 'Нода с таким адресом уже зарегистрирована';
     } else {
-      registerError.value =
-        e.response?.data?.message ?? 'Ошибка подключения ноды';
+      registerError.value = e.response?.data?.message ?? 'Ошибка подключения ноды';
     }
   } finally {
     registering.value = false;

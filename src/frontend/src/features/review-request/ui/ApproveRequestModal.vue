@@ -6,7 +6,8 @@
         <h3>Одобрить проект</h3>
       </div>
       <p class="modal-hint">
-        Проект будет опубликован в Production. Вы можете оставить комментарий для разработчика (необязательно).
+        Проект будет опубликован в Production. Вы можете оставить комментарий для разработчика
+        (необязательно).
       </p>
       <div class="input-group">
         <label class="input-label">Комментарий модератора</label>
@@ -19,11 +20,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" @click="$emit('cancel')">Отмена</button>
-        <button
-          class="btn-confirm-approve"
-          @click="onConfirm"
-          :disabled="loading"
-        >
+        <button class="btn-confirm-approve" :disabled="loading" @click="onConfirm">
           {{ loading ? 'Одобрение...' : '✓ Подтвердить одобрение' }}
         </button>
       </div>

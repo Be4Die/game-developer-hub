@@ -8,8 +8,8 @@
           <label class="field-label">Адрес / Регион</label>
           <div class="input-wrapper">
             <input
-              type="text"
               v-model="searchQuery"
+              type="text"
               placeholder="Поиск по адресу или региону..."
               class="filter-input"
             />
@@ -28,11 +28,7 @@
         <div class="filter-field field-status">
           <label class="field-label">Статус</label>
           <div class="select-wrapper">
-            <select
-              v-model="statusFilter"
-              class="filter-select"
-              @change="fetchNodes"
-            >
+            <select v-model="statusFilter" class="filter-select" @change="fetchNodes">
               <option value="all">—</option>
               <option value="online">В сети</option>
               <option value="offline">Не в сети</option>
@@ -47,8 +43,8 @@
         <button
           v-if="searchQuery || statusFilter !== 'all'"
           class="btn-reset-filters"
-          @click="resetFilters"
           title="Сбросить фильтры"
+          @click="resetFilters"
         >
           <RotateCcw class="icon-xs" />
           <span>Сбросить</span>
@@ -64,9 +60,7 @@
       <!-- Ошибка -->
       <div v-if="error" class="error-banner">
         <AlertCircle class="icon-sm" /> {{ error }}
-        <button class="btn-retry" @click="fetchNodes">
-          Повторить
-        </button>
+        <button class="btn-retry" @click="fetchNodes">Повторить</button>
       </div>
 
       <!-- Загрузка -->
@@ -123,22 +117,14 @@
               <!-- Память -->
               <td class="col-ram">
                 <span class="cell-text">
-                  {{
-                    node.total_memory_bytes
-                      ? formatBytes(node.total_memory_bytes)
-                      : '—'
-                  }}
+                  {{ node.total_memory_bytes ? formatBytes(node.total_memory_bytes) : '—' }}
                 </span>
               </td>
 
               <!-- Диск -->
               <td class="col-disk">
                 <span class="cell-text">
-                  {{
-                    node.total_disk_bytes
-                      ? formatBytes(node.total_disk_bytes)
-                      : '—'
-                  }}
+                  {{ node.total_disk_bytes ? formatBytes(node.total_disk_bytes) : '—' }}
                 </span>
               </td>
 
@@ -156,9 +142,9 @@
               <td class="col-actions" @click.stop>
                 <button
                   class="btn-icon text-danger-hover"
-                  @click="confirmDelete(node)"
                   title="Удалить"
                   :disabled="deletingId === node.id"
+                  @click="confirmDelete(node)"
                 >
                   <Trash2 class="icon-xs" />
                 </button>
@@ -175,7 +161,11 @@
         </div>
         <h3>Нет вычислительных нод</h3>
         <p>
-          {{ statusFilter !== 'all' ? 'Нет нод с выбранным статусом' : 'Подключите свой сервер для оркестрации игровых инстансов' }}
+          {{
+            statusFilter !== 'all'
+              ? 'Нет нод с выбранным статусом'
+              : 'Подключите свой сервер для оркестрации игровых инстансов'
+          }}
         </p>
         <button class="btn-add-node" @click="openRegisterModal">
           <Plus class="icon-sm" />
@@ -193,31 +183,18 @@
     />
 
     <!-- Подтверждение удаления -->
-    <div
-      v-if="deleteTarget"
-      class="modal-overlay"
-      @click.self="deleteTarget = null"
-    >
+    <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal card">
         <h3>Удалить ноду?</h3>
         <p>
-          Нода <code>{{ deleteTarget.address }}</code> будет удалена из
-          реестра.
+          Нода <code>{{ deleteTarget.address }}</code> будет удалена из реестра.
         </p>
-        <p class="text-danger">
-          Все инстансы на этой ноде будут переведены в статус «Авария».
-        </p>
+        <p class="text-danger">Все инстансы на этой ноде будут переведены в статус «Авария».</p>
         <div class="modal-actions">
-          <button
-            class="btn-danger"
-            @click="doDelete"
-            :disabled="deleting"
-          >
+          <button class="btn-danger" :disabled="deleting" @click="doDelete">
             {{ deleting ? 'Удаление...' : 'Удалить' }}
           </button>
-          <button class="btn-outline" @click="deleteTarget = null">
-            Отмена
-          </button>
+          <button class="btn-outline" @click="deleteTarget = null">Отмена</button>
         </div>
       </div>
     </div>
@@ -267,9 +244,7 @@ const filteredNodes = computed(() => {
 
 const availableNodes = computed(() =>
   nodes.value.filter(
-    (n) =>
-      n.status === 'NODE_STATUS_UNAUTHORIZED' &&
-      (!n.owner_id || n.owner_id === '')
+    (n) => n.status === 'NODE_STATUS_UNAUTHORIZED' && (!n.owner_id || n.owner_id === '')
   )
 );
 
@@ -282,9 +257,7 @@ async function fetchNodes() {
   loading.value = true;
   error.value = null;
   try {
-    nodes.value = await listNodes(
-      statusFilter.value === 'all' ? undefined : statusFilter.value
-    );
+    nodes.value = await listNodes(statusFilter.value === 'all' ? undefined : statusFilter.value);
   } catch (e) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {

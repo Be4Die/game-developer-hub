@@ -954,6 +954,34 @@ tasks:
         vars:
           FRONTEND_DIR: src/frontend
 
+  frontend:lint:
+    desc: "Lint frontend code"
+    cmds:
+      - task: frontend:check
+        vars:
+          FRONTEND_DIR: src/frontend
+
+  frontend:lint:fix:
+    desc: "Lint and autofix frontend code"
+    cmds:
+      - task: frontend:fix
+        vars:
+          FRONTEND_DIR: src/frontend
+
+  frontend:format:
+    desc: "Format frontend code with Prettier"
+    cmds:
+      - task: frontend:run-format
+        vars:
+          FRONTEND_DIR: src/frontend
+
+  frontend:format:check:
+    desc: "Check frontend formatting with Prettier"
+    cmds:
+      - task: frontend:check-format
+        vars:
+          FRONTEND_DIR: src/frontend
+
   # ==================== Stack (deployments/) ====================
   stack:up:
     desc: "Start full stack via docker compose (Postgres, Valkey, Orchestrator, SSO, Gateway, Node, Nginx)"
@@ -1109,6 +1137,7 @@ tasks:
       - task: agent:lint
       - task: gateway:lint
       - task: proto:lint
+      - task: frontend:lint
 
   all:cloc:
     desc: "Count lines of code (excluding node_modules, generated proto)"

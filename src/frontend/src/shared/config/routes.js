@@ -21,4 +21,3 @@ export const ROUTES = {
   SETTINGS: '/settings',
   ADMIN_DASHBOARD: '/admin/dashboard',
 };
-

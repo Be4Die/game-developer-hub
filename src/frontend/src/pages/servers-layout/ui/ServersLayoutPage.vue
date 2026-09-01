@@ -40,7 +40,6 @@ defineProps({
 });
 </script>
 
-
 <style scoped>
 .servers-layout {
   display: flex;

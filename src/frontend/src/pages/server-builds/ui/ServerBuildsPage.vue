@@ -26,7 +26,7 @@
     <!-- Таблица билдов -->
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
     <div v-else-if="error" class="empty-state"></div>
-    <div class="table-wrap" v-else-if="builds.length">
+    <div v-else-if="builds.length" class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -54,9 +54,9 @@
             <td>
               <button
                 class="btn-icon"
-                @click="confirmDelete(b)"
                 :title="t('common.delete')"
                 :disabled="deleting"
+                @click="confirmDelete(b)"
               >
                 <Trash2 class="icon-sm" />
               </button>
@@ -68,25 +68,15 @@
     <div v-else class="empty-state">{{ t('servers.noBuilds') }}</div>
 
     <!-- Диалог подтверждения удаления -->
-    <div
-      v-if="deleteTarget"
-      class="modal-overlay"
-      @click.self="deleteTarget = null"
-    >
+    <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal card">
         <h3>{{ t('common.delete') }}?</h3>
         <p>
           <code>{{ deleteTarget.build_version }}</code>
         </p>
-        <p v-if="deleteTarget._inUse" class="text-danger">
-          In use
-        </p>
+        <p v-if="deleteTarget._inUse" class="text-danger">In use</p>
         <div class="modal-actions">
-          <button
-            class="btn-primary"
-            @click="doDelete"
-            :disabled="deleteTarget._inUse || deleting"
-          >
+          <button class="btn-primary" :disabled="deleteTarget._inUse || deleting" @click="doDelete">
             {{ t('common.delete') }}
           </button>
           <button class="btn-outline" @click="deleteTarget = null">
@@ -110,7 +100,6 @@ import { formatBytes, formatDate, showToast } from '@/shared/lib';
 const { t } = useI18n();
 
 const props = defineProps({
-
   gameId: { type: [String, Number], required: true },
 });
 

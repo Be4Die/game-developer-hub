@@ -33,7 +33,6 @@ export function statusLabel(status) {
   return map[norm] || t('projects.draft');
 }
 
-
 export function getMediaUrl(path) {
   if (!path) return '';
   if (

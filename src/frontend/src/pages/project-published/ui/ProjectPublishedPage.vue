@@ -91,10 +91,7 @@
 
         <div class="media-grid">
           <!-- СЛОТ 1: ИКОНКА ИГРЫ -->
-          <div
-            class="media-slot"
-            :class="iconUrl ? 'is-filled' : 'is-empty'"
-          >
+          <div class="media-slot" :class="iconUrl ? 'is-filled' : 'is-empty'">
             <div class="media-slot-header">
               <div class="media-slot-title-group">
                 <ImageIcon class="icon-sm text-primary" />
@@ -104,11 +101,7 @@
             </div>
 
             <div v-if="iconUrl" class="media-preview-wrapper icon-size">
-              <img
-                :src="iconUrl"
-                alt="Icon preview"
-                class="media-preview-image"
-              />
+              <img :src="iconUrl" alt="Icon preview" class="media-preview-image" />
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -116,10 +109,7 @@
           </div>
 
           <!-- СЛОТ 2: ОБЛОЖКА ИГРЫ -->
-          <div
-            class="media-slot"
-            :class="coverUrl ? 'is-filled' : 'is-empty'"
-          >
+          <div class="media-slot" :class="coverUrl ? 'is-filled' : 'is-empty'">
             <div class="media-slot-header">
               <div class="media-slot-title-group">
                 <ImageIcon class="icon-sm text-primary" />
@@ -129,11 +119,7 @@
             </div>
 
             <div v-if="coverUrl" class="media-preview-wrapper cover-size">
-              <img
-                :src="coverUrl"
-                alt="Cover preview"
-                class="media-preview-image"
-              />
+              <img :src="coverUrl" alt="Cover preview" class="media-preview-image" />
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -141,10 +127,7 @@
           </div>
 
           <!-- СЛОТ 3: ПРОМО-ВИДЕО -->
-          <div
-            class="media-slot"
-            :class="videoUrl ? 'is-filled' : 'is-empty'"
-          >
+          <div class="media-slot" :class="videoUrl ? 'is-filled' : 'is-empty'">
             <div class="media-slot-header">
               <div class="media-slot-title-group">
                 <Film class="icon-sm text-primary" />
@@ -154,12 +137,7 @@
             </div>
 
             <div v-if="videoUrl" class="media-preview-wrapper video-size">
-              <video
-                :src="videoUrl"
-                controls
-                playsinline
-                class="media-preview-video"
-              ></video>
+              <video :src="videoUrl" controls playsinline class="media-preview-video"></video>
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -198,11 +176,7 @@
 import { ref, computed, onMounted, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  Image as ImageIcon,
-  Film,
-  Download,
-} from 'lucide-vue-next';
+import { Image as ImageIcon, Film, Download } from 'lucide-vue-next';
 import { getProject, getPublished, getMediaUrl } from '@/entities/project';
 
 const { t } = useI18n();
@@ -220,11 +194,7 @@ const releaseData = computed(() => {
 });
 
 const releaseVersion = computed(() => {
-  return (
-    releaseData.value?.version ||
-    releaseData.value?.active_build_version ||
-    ''
-  );
+  return releaseData.value?.version || releaseData.value?.active_build_version || '';
 });
 
 const iconUrl = computed(() => {
@@ -511,4 +481,3 @@ onMounted(loadData);
   background: var(--bg-secondary);
 }
 </style>
-

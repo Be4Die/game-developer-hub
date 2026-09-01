@@ -3,14 +3,14 @@
     <div class="logs-toolbar">
       <div class="toolbar-left">
         <label class="toolbar-item">
-          <input type="checkbox" v-model="follow" @change="reconnect" />
+          <input v-model="follow" type="checkbox" @change="reconnect" />
           Стриминг
         </label>
         <label class="toolbar-item">
           Хвост
           <input
-            type="number"
             v-model.number="tail"
+            type="number"
             min="0"
             max="1000"
             class="toolbar-input"
@@ -19,11 +19,7 @@
         </label>
         <label class="toolbar-item">
           Источник
-          <select
-            v-model="sourceFilter"
-            class="toolbar-select"
-            @change="reconnect"
-          >
+          <select v-model="sourceFilter" class="toolbar-select" @change="reconnect">
             <option value="all">Все</option>
             <option value="stdout">stdout</option>
             <option value="stderr">stderr</option>
@@ -31,24 +27,13 @@
         </label>
       </div>
       <div class="toolbar-right">
-        <button class="toolbar-btn" @click="clearLogs" title="Очистить">
-          Очистить
-        </button>
-        <button class="toolbar-btn" @click="copyLogs" title="Копировать">
-          Копировать
-        </button>
+        <button class="toolbar-btn" title="Очистить" @click="clearLogs">Очистить</button>
+        <button class="toolbar-btn" title="Копировать" @click="copyLogs">Копировать</button>
       </div>
     </div>
-    <div class="logs-terminal" ref="terminal" @scroll="onScroll">
-      <div
-        v-if="filteredEntries.length === 0 && !connected"
-        class="logs-empty"
-      >
-        Подключение...
-      </div>
-      <div v-else-if="filteredEntries.length === 0" class="logs-empty">
-        Нет записей
-      </div>
+    <div ref="terminal" class="logs-terminal" @scroll="onScroll">
+      <div v-if="filteredEntries.length === 0 && !connected" class="logs-empty">Подключение...</div>
+      <div v-else-if="filteredEntries.length === 0" class="logs-empty">Нет записей</div>
       <div
         v-for="(entry, i) in filteredEntries"
         :key="i"
@@ -113,8 +98,7 @@ function connect() {
       try {
         const entry = JSON.parse(e.data);
         entries.value.push(entry);
-        if (entries.value.length > 500)
-          entries.value = entries.value.slice(-300);
+        if (entries.value.length > 500) entries.value = entries.value.slice(-300);
         nextTick(scrollToBottom);
       } catch {
         /* ignore invalid data */

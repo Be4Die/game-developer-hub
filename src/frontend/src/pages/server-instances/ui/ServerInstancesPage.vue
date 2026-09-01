@@ -5,11 +5,7 @@
         {{ t('servers.tabs.instances') }} <span class="counter">{{ instances.length }}/4</span>
       </h1>
       <div class="header-actions">
-        <select
-          v-model="statusFilter"
-          class="filter-select"
-          @change="fetchInstances"
-        >
+        <select v-model="statusFilter" class="filter-select" @change="fetchInstances">
           <option value="all">{{ t('projects.allStatuses') }}</option>
           <option value="starting">Starting</option>
           <option value="running">Running</option>
@@ -33,7 +29,7 @@
 
     <!-- Таблица инстансов -->
     <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
-    <div class="table-wrap" v-else-if="filteredInstances.length">
+    <div v-else-if="filteredInstances.length" class="table-wrap">
       <table class="data-table">
         <thead>
           <tr>
@@ -51,12 +47,8 @@
           <tr
             v-for="inst in filteredInstances"
             :key="inst.id"
-            @click="
-              $router.push(
-                `/projects/${gameId}/servers/instances/${inst.id}`
-              )
-            "
             class="clickable-row"
+            @click="$router.push(`/projects/${gameId}/servers/instances/${inst.id}`)"
           >
             <td class="cell-name">
               {{ inst.name || `Instance #${inst.id}` }}
@@ -67,9 +59,7 @@
             <td><StatusBadge :status="inst.status" type="instance" /></td>
             <td class="cell-muted">{{ inst.node_id }}</td>
             <td>{{ inst.player_count ?? 0 }} / {{ inst.max_players }}</td>
-            <td class="cell-muted">
-              {{ inst.server_address }}:{{ inst.host_port }}
-            </td>
+            <td class="cell-muted">{{ inst.server_address }}:{{ inst.host_port }}</td>
             <td class="cell-muted">
               {{ inst.started_at ? formatDate(inst.started_at) : '—' }}
             </td>
@@ -77,20 +67,18 @@
               <button
                 v-if="inst.status === 'running'"
                 class="btn-stop"
-                @click="handleStop(inst)"
                 :disabled="stoppingId === inst.id"
                 title="Stop"
+                @click="handleStop(inst)"
               >
                 <Square class="icon-sm" />
               </button>
               <button
-                v-if="
-                  inst.status === 'stopped' || inst.status === 'crashed'
-                "
+                v-if="inst.status === 'stopped' || inst.status === 'crashed'"
                 class="btn-resume"
-                @click="handleResume(inst)"
                 :disabled="resumingId === inst.id"
                 title="Start"
+                @click="handleResume(inst)"
               >
                 <Play class="icon-sm" />
               </button>
@@ -119,11 +107,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Play, Square, AlertCircle } from 'lucide-vue-next';
 import { StatusBadge } from '@/shared/ui';
-import {
-  listInstances,
-  stopInstance,
-  resumeInstance,
-} from '@/entities/instance';
+import { listInstances, stopInstance, resumeInstance } from '@/entities/instance';
 import { listServerBuilds } from '@/entities/build';
 import { StartInstanceModal } from '@/features/manage-instances';
 import { formatDate, showToast } from '@/shared/lib';
@@ -131,7 +115,6 @@ import { formatDate, showToast } from '@/shared/lib';
 const { t } = useI18n();
 
 const props = defineProps({
-
   gameId: { type: [String, Number], required: true },
 });
 

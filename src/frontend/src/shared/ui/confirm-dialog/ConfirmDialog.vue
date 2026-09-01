@@ -16,7 +16,6 @@
             <button class="btn-outline" @click="onCancel">{{ dialogCancelText }}</button>
             <button :class="confirmClass" @click="onConfirm">{{ dialogConfirmText }}</button>
           </div>
-
         </div>
       </div>
     </Transition>
@@ -43,25 +42,27 @@ const dialogTitle = computed(() => props.title || t('common.confirm'));
 const dialogConfirmText = computed(() => props.confirmText || t('common.confirm'));
 const dialogCancelText = computed(() => props.cancelText || t('common.cancel'));
 
-
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
 
 const confirmClass = computed(() => {
   switch (props.type) {
-    case 'danger': return 'btn-danger'
-    case 'info': return 'btn-primary'
-    default: return 'btn-warning'
+    case 'danger':
+      return 'btn-danger';
+    case 'info':
+      return 'btn-primary';
+    default:
+      return 'btn-warning';
   }
-})
+});
 
 function onConfirm() {
-  emit('confirm')
-  emit('update:modelValue', false)
+  emit('confirm');
+  emit('update:modelValue', false);
 }
 
 function onCancel() {
-  emit('cancel')
-  emit('update:modelValue', false)
+  emit('cancel');
+  emit('update:modelValue', false);
 }
 </script>
 
@@ -83,7 +84,7 @@ function onCancel() {
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 
@@ -104,9 +105,15 @@ function onCancel() {
   height: 22px;
   flex-shrink: 0;
 }
-.dialog-icon.warning { color: var(--warning); }
-.dialog-icon.danger  { color: var(--danger); }
-.dialog-icon.info    { color: var(--primary); }
+.dialog-icon.warning {
+  color: var(--warning);
+}
+.dialog-icon.danger {
+  color: var(--danger);
+}
+.dialog-icon.info {
+  color: var(--primary);
+}
 
 .dialog-body {
   padding: 12px 20px;
@@ -137,7 +144,9 @@ function onCancel() {
   cursor: pointer;
   transition: 0.15s;
 }
-.btn-warning:hover { background: var(--warning-dark, #e6a000); }
+.btn-warning:hover {
+  background: var(--warning-dark, #e6a000);
+}
 
 .btn-danger {
   padding: 8px 16px;
@@ -150,7 +159,9 @@ function onCancel() {
   cursor: pointer;
   transition: 0.15s;
 }
-.btn-danger:hover { background: var(--danger-dark, #c53030); }
+.btn-danger:hover {
+  background: var(--danger-dark, #c53030);
+}
 
 .btn-outline {
   padding: 8px 16px;
@@ -175,7 +186,9 @@ function onCancel() {
 }
 .dialog-enter-active .dialog-box,
 .dialog-leave-active .dialog-box {
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 .dialog-enter-from,
 .dialog-leave-to {

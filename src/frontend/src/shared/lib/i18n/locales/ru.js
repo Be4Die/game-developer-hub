@@ -152,7 +152,8 @@ export default {
     statusInfo: 'Текущий статус: {status}',
     sendToModeration: 'Отправить на модерацию',
     sendUpdateToModeration: 'Отправить обновление',
-    publishedNotice: 'Игра опубликована (v{version}). Вы редактируете черновик следующего обновления.',
+    publishedNotice:
+      'Игра опубликована (v{version}). Вы редактируете черновик следующего обновления.',
     publishedDate: 'Дата публикации',
     openPublishedGame: 'Открыть игру (Prod)',
     publishedVersionReadOnly: 'Опубликованная версия',
@@ -271,10 +272,12 @@ export default {
     approve: 'Одобрить публикацию',
     reject: 'Отклонить с замечаниями',
     approveConfirmTitle: 'Одобрить публикацию игры?',
-    approveConfirmDesc: 'Проект перейдет в статус опубликованного и станет доступен игрокам на платформе.',
+    approveConfirmDesc:
+      'Проект перейдет в статус опубликованного и станет доступен игрокам на платформе.',
     rejectModalTitle: 'Отклонение заявки',
     rejectReasonLabel: 'Причина отклонения / Замечания:',
-    rejectReasonPlaceholder: 'Укажите конкретные замечания, которые разработчику необходимо исправить...',
+    rejectReasonPlaceholder:
+      'Укажите конкретные замечания, которые разработчику необходимо исправить...',
     verdictApproved: 'Проект одобрен и опубликован',
     verdictRejected: 'Заявка отклонена. Замечания отправлены в чат.',
     chatTitle: 'Сквозной чат модерации',
@@ -376,4 +379,3 @@ export default {
     filterPlaceholder: 'Фильтр сообщений...',
   },
 };
-

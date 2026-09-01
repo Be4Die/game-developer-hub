@@ -5,7 +5,7 @@
       <ThemeToggle />
     </div>
     <div class="auth-brand">
-      <LogoIcon :size="48" :textSize="28" :showSub="true" :glow="true" />
+      <LogoIcon :size="48" :text-size="28" :show-sub="true" :glow="true" />
     </div>
 
     <AuthForm />
@@ -49,4 +49,3 @@ import { AuthForm } from '@/features/auth-by-email';
   gap: 8px;
 }
 </style>
-

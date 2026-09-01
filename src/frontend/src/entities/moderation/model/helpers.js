@@ -1,29 +1,40 @@
 import { i18n } from '@/shared/lib';
-import {
-  REQUEST_STATUS,
-  REQUEST_STATUS_LABELS,
-  REQUEST_STATUS_BADGES,
-} from './constants';
+import { REQUEST_STATUS, REQUEST_STATUS_LABELS, REQUEST_STATUS_BADGES } from './constants';
 
 export function getStatusText(status) {
   const t = i18n.global.t;
-  if (status === REQUEST_STATUS.PENDING || status === 'REQUEST_STATUS_PENDING' || status === 'pending') {
+  if (
+    status === REQUEST_STATUS.PENDING ||
+    status === 'REQUEST_STATUS_PENDING' ||
+    status === 'pending'
+  ) {
     return t('projects.moderation');
   }
-  if (status === REQUEST_STATUS.IN_REVIEW || status === 'REQUEST_STATUS_IN_REVIEW' || status === 'in_review') {
+  if (
+    status === REQUEST_STATUS.IN_REVIEW ||
+    status === 'REQUEST_STATUS_IN_REVIEW' ||
+    status === 'in_review'
+  ) {
     return t('projects.moderation');
   }
-  if (status === REQUEST_STATUS.APPROVED || status === 'REQUEST_STATUS_APPROVED' || status === 'approved') {
+  if (
+    status === REQUEST_STATUS.APPROVED ||
+    status === 'REQUEST_STATUS_APPROVED' ||
+    status === 'approved'
+  ) {
     return t('projects.approved');
   }
-  if (status === REQUEST_STATUS.REJECTED || status === 'REQUEST_STATUS_REJECTED' || status === 'rejected') {
+  if (
+    status === REQUEST_STATUS.REJECTED ||
+    status === 'REQUEST_STATUS_REJECTED' ||
+    status === 'rejected'
+  ) {
     return t('projects.rejected');
   }
   return REQUEST_STATUS_LABELS[status] || t('common.unknown');
 }
 
 export function getStatusBadgeClass(status) {
-
   return REQUEST_STATUS_BADGES[status] || 'badge-neutral';
 }
 
@@ -47,8 +58,15 @@ export function parseSenderRole(role) {
   if (role === undefined || role === null) return 1;
   if (typeof role === 'number') return role;
   const str = String(role).toUpperCase();
-  if (str === 'SENDER_ROLE_DEVELOPER' || str === 'DEVELOPER' || str === 'USER_ROLE_USER' || str === 'USER') return 1;
-  if (str === 'SENDER_ROLE_MODERATOR' || str === 'MODERATOR' || str === 'USER_ROLE_MODERATOR') return 2;
+  if (
+    str === 'SENDER_ROLE_DEVELOPER' ||
+    str === 'DEVELOPER' ||
+    str === 'USER_ROLE_USER' ||
+    str === 'USER'
+  )
+    return 1;
+  if (str === 'SENDER_ROLE_MODERATOR' || str === 'MODERATOR' || str === 'USER_ROLE_MODERATOR')
+    return 2;
   if (str === 'SENDER_ROLE_SYSTEM' || str === 'SYSTEM') return 3;
   const num = parseInt(role, 10);
   return isNaN(num) ? 1 : num;
@@ -68,7 +86,7 @@ export function parseMessageType(type) {
 }
 
 export function determineDialogState(messagesOrLastMsg) {
-  let lastMsg = null;
+  let lastMsg;
   if (Array.isArray(messagesOrLastMsg)) {
     if (messagesOrLastMsg.length === 0) {
       return 'none';

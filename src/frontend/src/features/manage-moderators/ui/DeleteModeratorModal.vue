@@ -1,27 +1,18 @@
 <template>
   <transition name="modal-fade">
-    <div
-      v-if="target"
-      class="modal-overlay"
-      @click.self="$emit('cancel')"
-    >
+    <div v-if="target" class="modal-overlay" @click.self="$emit('cancel')">
       <div class="modal-card">
         <button class="modal-close" @click="$emit('cancel')">&#x2715;</button>
         <h3>Подтверждение удаления</h3>
         <p>
           Вы уверены, что хотите удалить модератора
-          <strong>{{ target.display_name }}</strong>?
+          <strong>{{ target.display_name }}</strong
+          >?
         </p>
         <p class="warning-text">Это действие нельзя отменить.</p>
         <div class="modal-actions">
-          <button class="btn btn-secondary" @click="$emit('cancel')">
-            Отмена
-          </button>
-          <button
-            class="btn btn-danger"
-            @click="handleDelete"
-            :disabled="deleting"
-          >
+          <button class="btn btn-secondary" @click="$emit('cancel')">Отмена</button>
+          <button class="btn btn-danger" :disabled="deleting" @click="handleDelete">
             {{ deleting ? 'Удаление...' : 'Удалить' }}
           </button>
         </div>
@@ -47,16 +38,10 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await deleteUser(props.target.id);
-    showToast(
-      `Модератор "${props.target.display_name}" удалён`,
-      'success'
-    );
+    showToast(`Модератор "${props.target.display_name}" удалён`, 'success');
     emit('deleted', props.target.id);
   } catch (err) {
-    showToast(
-      err.response?.data?.message || 'Не удалось удалить модератора',
-      'error'
-    );
+    showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'error');
   } finally {
     deleting.value = false;
   }
@@ -131,7 +116,9 @@ async function handleDelete() {
 
 .modal-fade-enter-active,
 .modal-fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 .modal-fade-enter-from,

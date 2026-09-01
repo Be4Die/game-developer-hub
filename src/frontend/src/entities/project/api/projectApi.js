@@ -14,14 +14,12 @@ export const listProjects = (params = {}) => {
 export const createProject = (payload) =>
   http.post('/projects', payload).then((r) => r.data.project);
 
-export const getProject = (id) =>
-  http.get(`/projects/${id}`).then((r) => r.data.project);
+export const getProject = (id) => http.get(`/projects/${id}`).then((r) => r.data.project);
 
 export const updateProject = (id, payload) =>
   http.patch(`/projects/${id}`, payload).then((r) => r.data.project);
 
-export const deleteProject = (id) =>
-  http.delete(`/projects/${id}`).then((r) => r.data);
+export const deleteProject = (id) => http.delete(`/projects/${id}`).then((r) => r.data);
 
 export const uploadMedia = (id, mediaType, file) => {
   const form = new FormData();
@@ -40,5 +38,4 @@ export const submitForModeration = (id) =>
 export const getPublished = (id) =>
   http.get(`/projects/${id}/published`).then((r) => r.data.release);
 
-export const unpublish = (id) =>
-  http.post(`/projects/${id}/unpublish`).then((r) => r.data);
+export const unpublish = (id) => http.post(`/projects/${id}/unpublish`).then((r) => r.data);

@@ -48,7 +48,6 @@
       </div>
     </div>
 
-
     <!-- Секции дашборда -->
     <div class="dashboard-grid">
       <!-- Активная очередь новых заявок -->
@@ -58,12 +57,12 @@
             <Inbox class="icon-sm text-warning" />
             <h2>Новые проекты</h2>
           </div>
-          <span class="badge badge-warning" v-if="pendingRequests.length > 0">
+          <span v-if="pendingRequests.length > 0" class="badge badge-warning">
             {{ pendingRequests.length }}
           </span>
         </div>
 
-        <div class="requests-list" v-if="pendingRequests.length > 0">
+        <div v-if="pendingRequests.length > 0" class="requests-list">
           <div
             v-for="req in pendingRequests"
             :key="req.projectId"
@@ -82,24 +81,28 @@
             <h3 class="request-title">
               {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
             </h3>
-            <p class="request-desc">{{ req.snapshot.aboutRu || req.snapshot.aboutEn || req.snapshot.about || 'Описание не указано' }}</p>
+            <p class="request-desc">
+              {{
+                req.snapshot.aboutRu ||
+                req.snapshot.aboutEn ||
+                req.snapshot.about ||
+                'Описание не указано'
+              }}
+            </p>
 
             <div class="request-meta-row">
               <span class="meta-tag">Проект: #{{ req.projectId }}</span>
-              <span class="meta-tag" v-if="req.snapshot.activeBuildVersion">
+              <span v-if="req.snapshot.activeBuildVersion" class="meta-tag">
                 Версия: v{{ req.snapshot.activeBuildVersion }}
               </span>
-              <button
-                class="btn-claim-inline"
-                @click.stop="openProject(req.projectId)"
-              >
+              <button class="btn-claim-inline" @click.stop="openProject(req.projectId)">
                 К проверке →
               </button>
             </div>
           </div>
         </div>
 
-        <div class="empty-state card" v-else>
+        <div v-else class="empty-state card">
           <CheckCircle2 class="icon-lg text-success" />
           <p>Очередь пуста</p>
           <span class="subtext">Все новые проекты проверены или взяты в работу</span>
@@ -113,12 +116,12 @@
             <Eye class="icon-sm text-info" />
             <h2>Проекты в проверке</h2>
           </div>
-          <span class="badge badge-info" v-if="inReviewRequests.length > 0">
+          <span v-if="inReviewRequests.length > 0" class="badge badge-info">
             {{ inReviewRequests.length }}
           </span>
         </div>
 
-        <div class="requests-list" v-if="inReviewRequests.length > 0">
+        <div v-if="inReviewRequests.length > 0" class="requests-list">
           <div
             v-for="req in inReviewRequests"
             :key="req.projectId"
@@ -135,7 +138,14 @@
             <h3 class="request-title">
               {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
             </h3>
-            <p class="request-desc">{{ req.snapshot.aboutRu || req.snapshot.aboutEn || req.snapshot.about || 'Описание не указано' }}</p>
+            <p class="request-desc">
+              {{
+                req.snapshot.aboutRu ||
+                req.snapshot.aboutEn ||
+                req.snapshot.about ||
+                'Описание не указано'
+              }}
+            </p>
 
             <div class="request-meta-row">
               <span class="meta-tag">Проект: #{{ req.projectId }}</span>
@@ -147,7 +157,7 @@
           </div>
         </div>
 
-        <div class="empty-state card" v-else>
+        <div v-else class="empty-state card">
           <Inbox class="icon-lg text-muted" />
           <p>Нет проектов в проверке</p>
           <span class="subtext">Возьмите проект из очереди слева для проведения проверки</span>
@@ -181,7 +191,6 @@ import {
 const { t } = useI18n();
 const router = useRouter();
 const loading = ref(false);
-
 
 const pendingRequests = computed(() =>
   moderationStore.requests.filter(
@@ -364,7 +373,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: transform 0.15s, border-color 0.15s;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
 }
 
 .request-card:hover {

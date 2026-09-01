@@ -19,7 +19,6 @@ import { ModerationProjectPage } from '@/pages/moderation-project';
 import { ProfilePage } from '@/pages/profile';
 import { AdminDashboardPage } from '@/pages/admin-dashboard';
 
-
 export const routes = [
   {
     path: '/',
@@ -147,4 +146,3 @@ export const routes = [
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];
-

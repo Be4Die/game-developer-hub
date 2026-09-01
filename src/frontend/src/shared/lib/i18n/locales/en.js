@@ -152,7 +152,8 @@ export default {
     statusInfo: 'Current status: {status}',
     sendToModeration: 'Submit for Moderation',
     sendUpdateToModeration: 'Submit Update',
-    publishedNotice: 'Game is published (v{version}). You are editing the draft for the next update.',
+    publishedNotice:
+      'Game is published (v{version}). You are editing the draft for the next update.',
     publishedDate: 'Published Date',
     openPublishedGame: 'Open game (Prod)',
     publishedVersionReadOnly: 'Published Version',
@@ -271,7 +272,8 @@ export default {
     approve: 'Approve Publication',
     reject: 'Reject with Remarks',
     approveConfirmTitle: 'Approve game publication?',
-    approveConfirmDesc: 'The project will be marked as published and will become available to platform players.',
+    approveConfirmDesc:
+      'The project will be marked as published and will become available to platform players.',
     rejectModalTitle: 'Reject Submission',
     rejectReasonLabel: 'Rejection Reason / Remarks:',
     rejectReasonPlaceholder: 'Specify the remarks the developer needs to fix...',
@@ -376,4 +378,3 @@ export default {
     filterPlaceholder: 'Filter messages...',
   },
 };
-

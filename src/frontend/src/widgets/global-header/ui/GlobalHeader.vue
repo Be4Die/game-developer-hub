@@ -2,85 +2,44 @@
   <header class="top-header">
     <div class="header-left">
       <router-link to="/" class="logo-link">
-        <LogoIcon :size="28" :textSize="16" :showSub="false" :noHover="true" />
+        <LogoIcon :size="28" :text-size="16" :show-sub="false" :no-hover="true" />
       </router-link>
       <nav class="main-nav">
         <template v-if="isDeveloper">
-          <router-link
-            to="/projects"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/projects" class="nav-item" active-class="active">
             <FolderGit2 class="icon-sm" /> {{ t('header.projects') }}
           </router-link>
-          <router-link
-            to="/nodes"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/nodes" class="nav-item" active-class="active">
             <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
         </template>
         <template v-if="isModerator">
-          <router-link
-            to="/moderator/queue"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/queue" class="nav-item" active-class="active">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
-          <router-link
-            to="/moderator/chats"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/chats" class="nav-item" active-class="active">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>
-          <router-link
-            to="/moderator/archive"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/archive" class="nav-item" active-class="active">
             <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
           </router-link>
         </template>
         <template v-if="isAdmin">
-          <router-link
-            to="/admin/dashboard"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/admin/dashboard" class="nav-item" active-class="active">
             <Users class="icon-sm" /> {{ t('header.adminPanel') }}
           </router-link>
-          <router-link
-            to="/moderator/queue"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/queue" class="nav-item" active-class="active">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
-          <router-link
-            to="/moderator/chats"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/chats" class="nav-item" active-class="active">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>
-          <router-link
-            to="/moderator/archive"
-            class="nav-item"
-            active-class="active"
-          >
+          <router-link to="/moderator/archive" class="nav-item" active-class="active">
             <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
           </router-link>
         </template>
         <!-- Переход в профиль в общей панели навигации -->
-        <router-link
-          v-if="isAuthed"
-          to="/profile"
-          class="nav-item"
-          active-class="active"
-        >
+        <router-link v-if="isAuthed" to="/profile" class="nav-item" active-class="active">
           <User class="icon-sm" /> {{ t('header.profile') }}
         </router-link>
       </nav>
@@ -90,11 +49,7 @@
     <div class="header-right">
       <div v-if="isAuthed" class="header-user-section">
         <span class="user-name" :title="userEmail">{{ displayName }}</span>
-        <button
-          class="btn-logout"
-          @click="handleLogout"
-          :title="t('header.logout')"
-        >
+        <button class="btn-logout" :title="t('header.logout')" @click="handleLogout">
           <LogOut class="icon-sm" />
           <span>{{ t('header.logout') }}</span>
         </button>

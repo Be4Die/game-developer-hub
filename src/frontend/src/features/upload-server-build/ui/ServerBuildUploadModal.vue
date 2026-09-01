@@ -5,26 +5,18 @@
       <div class="form-group form-group-wide">
         <label>Image file (TAR, max 2GB)</label>
         <div class="file-drop" @dragover.prevent @drop.prevent="onDrop">
-          <input
-            type="file"
-            ref="fileInput"
-            accept=".tar,.tar.gz"
-            @change="onFileSelect"
-            hidden
-          />
+          <input ref="fileInput" type="file" accept=".tar,.tar.gz" hidden @change="onFileSelect" />
           <button class="btn-outline" @click="$refs.fileInput.click()">
             {{ t('common.upload') }}
           </button>
-          <span class="file-name">{{
-            uploadForm.file?.name ?? 'or drag and drop here'
-          }}</span>
+          <span class="file-name">{{ uploadForm.file?.name ?? 'or drag and drop here' }}</span>
         </div>
       </div>
       <div class="form-group">
         <label>{{ t('common.version') }} *</label>
         <input
-          type="text"
           v-model="uploadForm.build_version"
+          type="text"
           placeholder="1.0.0"
           class="form-input"
         />
@@ -41,8 +33,8 @@
       <div class="form-group">
         <label>Internal Port</label>
         <input
-          type="number"
           v-model.number="uploadForm.internal_port"
+          type="number"
           class="form-input"
           min="1"
           max="65535"
@@ -50,21 +42,14 @@
       </div>
       <div class="form-group">
         <label>Max Players</label>
-        <input
-          type="number"
-          v-model.number="uploadForm.max_players"
-          class="form-input"
-          min="1"
-        />
+        <input v-model.number="uploadForm.max_players" type="number" class="form-input" min="1" />
       </div>
     </div>
     <div class="form-actions">
       <button
         class="btn-primary"
+        :disabled="!uploadForm.build_version || !uploadForm.file || uploading"
         @click="submitBuild"
-        :disabled="
-          !uploadForm.build_version || !uploadForm.file || uploading
-        "
       >
         {{ t('common.upload') }}
       </button>
@@ -76,10 +61,7 @@
         <span>{{ uploadProgress }}%</span>
       </div>
       <div class="progress-bar-bg">
-        <div
-          class="progress-bar-fill"
-          :style="{ width: uploadProgress + '%' }"
-        ></div>
+        <div class="progress-bar-fill" :style="{ width: uploadProgress + '%' }"></div>
       </div>
     </div>
   </div>
@@ -94,7 +76,6 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 
 const props = defineProps({
-
   gameId: { type: [String, Number], required: true },
 });
 

@@ -8,11 +8,7 @@
     </div>
 
     <!-- Login Form -->
-    <form
-      v-if="mode === 'login'"
-      @submit.prevent="handleLogin"
-      class="auth-form"
-    >
+    <form v-if="mode === 'login'" class="auth-form" @submit.prevent="handleLogin">
       <h2>{{ t('auth.loginTitle') }}</h2>
       <div class="form-group">
         <label for="email">{{ t('auth.email') }}</label>
@@ -36,11 +32,7 @@
           required
         />
       </div>
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        :disabled="authState.loading"
-      >
+      <button type="submit" class="btn btn-primary btn-full" :disabled="authState.loading">
         {{ authState.loading ? t('common.loading') : t('auth.signIn') }}
       </button>
       <p class="auth-switch">
@@ -50,11 +42,7 @@
     </form>
 
     <!-- Registration Form -->
-    <form
-      v-if="mode === 'register'"
-      @submit.prevent="handleRegister"
-      class="auth-form"
-    >
+    <form v-if="mode === 'register'" class="auth-form" @submit.prevent="handleRegister">
       <h2>{{ t('auth.registerTitle') }}</h2>
       <div class="form-group">
         <label for="reg-name">{{ t('auth.displayName') }}</label>
@@ -102,11 +90,7 @@
           }}</span>
         </div>
       </div>
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        :disabled="authState.loading"
-      >
+      <button type="submit" class="btn btn-primary btn-full" :disabled="authState.loading">
         {{ authState.loading ? t('common.loading') : t('auth.signUp') }}
       </button>
       <p class="auth-switch">
@@ -116,11 +100,7 @@
     </form>
 
     <!-- Email Verification Form -->
-    <form
-      v-if="mode === 'verify'"
-      @submit.prevent="handleVerify"
-      class="auth-form"
-    >
+    <form v-if="mode === 'verify'" class="auth-form" @submit.prevent="handleVerify">
       <h2>Подтверждение email</h2>
       <p class="verify-info">
         На email <strong>{{ form.email }}</strong> отправлен код подтверждения.<br />
@@ -138,11 +118,7 @@
           pattern="\d{6}"
         />
       </div>
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        :disabled="authState.loading"
-      >
+      <button type="submit" class="btn btn-primary btn-full" :disabled="authState.loading">
         {{ authState.loading ? t('common.loading') : t('common.confirm') }}
       </button>
       <p class="auth-switch">
@@ -219,7 +195,7 @@ async function handleLogin() {
   try {
     const res = await login({ email: form.email, password: form.password });
     emit('success');
-    
+
     const role = res.user?.role || authState.user?.role;
     if (role === 'USER_ROLE_ADMIN' || role === 3) {
       router.push('/admin/dashboard');
@@ -267,7 +243,6 @@ async function resendCode() {
   }
 }
 </script>
-
 
 <style scoped>
 .auth-card {
@@ -330,7 +305,9 @@ async function resendCode() {
 .strength-fill {
   height: 100%;
   border-radius: 2px;
-  transition: width 0.3s, background 0.3s;
+  transition:
+    width 0.3s,
+    background 0.3s;
 }
 
 .strength-fill.weak {

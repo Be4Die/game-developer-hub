@@ -17,7 +17,7 @@
     </div>
 
     <!-- Область сообщений -->
-    <div class="chat-messages-scroll" ref="messagesContainer">
+    <div ref="messagesContainer" class="chat-messages-scroll">
       <div v-if="loading && !messages.length" class="chat-state-box">
         <span class="loader-spinner"></span>
         <p>{{ t('common.loading') }}</p>
@@ -26,7 +26,10 @@
       <div v-else-if="!messages.length" class="chat-state-box empty">
         <MessageSquareDashed class="icon-lg text-muted" />
         <p>{{ t('moderation.noChats') }}</p>
-        <span class="subtext">Здесь фиксируются системные события и ведется диалог между разработчиком и модератором</span>
+        <span class="subtext"
+          >Здесь фиксируются системные события и ведется диалог между разработчиком и
+          модератором</span
+        >
       </div>
 
       <div v-else class="messages-stack">
@@ -74,8 +77,8 @@
       <button
         class="btn-send"
         :disabled="!inputContent.trim() || sending"
-        @click="handleSend"
         :title="t('moderation.sendMessage')"
+        @click="handleSend"
       >
         <Send class="icon-sm" />
       </button>
@@ -86,8 +89,8 @@
       <button
         class="btn-resolve-dialog"
         :disabled="closingDialog"
-        @click="handleCloseDialog"
         :title="t('moderation.closeDialogBtn')"
+        @click="handleCloseDialog"
       >
         <CheckCircle2 class="icon-xs text-success" />
         <span>{{ t('moderation.closeDialogBtn') }}</span>
@@ -99,13 +102,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  MessageSquare,
-  MessageSquareDashed,
-  Info,
-  Send,
-  CheckCircle2,
-} from 'lucide-vue-next';
+import { MessageSquare, MessageSquareDashed, Info, Send, CheckCircle2 } from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import {
   formatDateTime,
@@ -162,9 +159,7 @@ const dialogState = computed(() => {
 
 const dialogStatusLabel = computed(() => {
   if (dialogState.value === 'unanswered') {
-    return isModeratorOrAdmin.value
-      ? t('moderation.unanswered')
-      : t('moderation.waitingResponse');
+    return isModeratorOrAdmin.value ? t('moderation.unanswered') : t('moderation.waitingResponse');
   }
   if (dialogState.value === 'in_dialog') {
     return t('moderation.inDialog');
@@ -192,12 +187,7 @@ const showResolveButton = computed(() => {
 function isSystemMessage(msg) {
   const msgType = parseMessageType(msg.message_type ?? msg.messageType);
   const senderRole = parseSenderRole(msg.sender_role ?? msg.senderRole);
-  return (
-    msg.is_system ||
-    msgType > 1 ||
-    senderRole === 3 ||
-    msg.sender_id === 'system'
-  );
+  return msg.is_system || msgType > 1 || senderRole === 3 || msg.sender_id === 'system';
 }
 
 function isOwn(msg) {
@@ -585,7 +575,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: background-color 0.15s, opacity 0.15s;
+  transition:
+    background-color 0.15s,
+    opacity 0.15s;
   flex-shrink: 0;
 }
 

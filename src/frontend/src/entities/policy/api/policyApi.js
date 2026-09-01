@@ -1,15 +1,11 @@
 import { http } from '@/shared/api';
 
 export function getPolicy(gameId) {
-  return http
-    .get(`/games/${gameId}/policy`)
-    .then((r) => r.data.policy ?? r.data);
+  return http.get(`/games/${gameId}/policy`).then((r) => r.data.policy ?? r.data);
 }
 
 export function setPolicy(gameId, payload) {
-  return http
-    .post(`/games/${gameId}/policy`, payload)
-    .then((r) => r.data.policy ?? r.data);
+  return http.post(`/games/${gameId}/policy`, payload).then((r) => r.data.policy ?? r.data);
 }
 
 export function joinQueue(gameId, playerId, mode = '') {
@@ -19,9 +15,7 @@ export function joinQueue(gameId, playerId, mode = '') {
 }
 
 export function heartbeatQueue(gameId, playerId) {
-  return http
-    .post(`/games/${gameId}/queue/heartbeat`, { player_id: playerId })
-    .then((r) => r.data);
+  return http.post(`/games/${gameId}/queue/heartbeat`, { player_id: playerId }).then((r) => r.data);
 }
 
 export function leaveQueue(gameId, playerId) {

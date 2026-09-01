@@ -6,8 +6,8 @@
         <div class="user-main-info">
           <span class="user-title">{{ userDisplayName }}</span>
           <span class="role-badge" :class="roleBadgeClass">
-            <Shield class="icon-xs" v-if="isModeratorOrAdmin" />
-            <Code2 class="icon-xs" v-else />
+            <Shield v-if="isModeratorOrAdmin" class="icon-xs" />
+            <Code2 v-else class="icon-xs" />
             {{ localizedRoleName }}
           </span>
         </div>
@@ -16,7 +16,7 @@
             <Mail class="icon-xs text-muted" />
             <span>{{ userEmail }}</span>
           </div>
-          <div class="detail-item" v-if="registeredDate">
+          <div v-if="registeredDate" class="detail-item">
             <Calendar class="icon-xs text-muted" />
             <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
           </div>
@@ -26,17 +26,17 @@
       <!-- 2-колоночная адаптивная сетка -->
       <div class="profile-grid">
         <!-- Изменение отображаемого имени (только для разработчиков) -->
-        <section class="profile-card card-name" v-if="!isModerator">
+        <section v-if="!isModerator" class="profile-card card-name">
           <h2 class="card-title">
             <UserCheck class="icon-sm text-primary" />
             {{ t('profile.editProfile') }}
           </h2>
 
-          <form @submit.prevent="handleUpdateDisplayName" class="inline-name-form">
+          <form class="inline-name-form" @submit.prevent="handleUpdateDisplayName">
             <input
               id="displayNameInput"
-              type="text"
               v-model="displayNameForm"
+              type="text"
               class="form-input field-name-input"
               :placeholder="t('auth.displayNamePlaceholder')"
               :disabled="nameSaving"
@@ -47,8 +47,8 @@
               class="btn-primary btn-save-name"
               :disabled="nameSaving || !isNameChanged"
             >
-              <Loader2 class="icon-sm spin" v-if="nameSaving" />
-              <Check class="icon-sm" v-else />
+              <Loader2 v-if="nameSaving" class="icon-sm spin" />
+              <Check v-else class="icon-sm" />
               <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
             </button>
           </form>
@@ -73,7 +73,7 @@
                 <span class="lang-name">Русский</span>
                 <span class="lang-sub">Russian</span>
               </div>
-              <Check class="icon-sm lang-check" v-if="currentLocale === 'ru'" />
+              <Check v-if="currentLocale === 'ru'" class="icon-sm lang-check" />
             </button>
 
             <button
@@ -87,27 +87,27 @@
                 <span class="lang-name">English</span>
                 <span class="lang-sub">Английский</span>
               </div>
-              <Check class="icon-sm lang-check" v-if="currentLocale === 'en'" />
+              <Check v-if="currentLocale === 'en'" class="icon-sm lang-check" />
             </button>
           </div>
         </section>
 
         <!-- Смена пароля (только для разработчиков) -->
-        <section class="profile-card card-password" v-if="!isModerator">
+        <section v-if="!isModerator" class="profile-card card-password">
           <h2 class="card-title">
             <Lock class="icon-sm text-primary" />
             {{ t('profile.security') }}
           </h2>
 
-          <form @submit.prevent="handleChangePassword" class="password-form">
+          <form class="password-form" @submit.prevent="handleChangePassword">
             <div class="form-group">
               <label class="form-label" for="currentPasswordInput">
                 {{ t('auth.currentPassword') }}
               </label>
               <input
                 id="currentPasswordInput"
-                type="password"
                 v-model="passwordForm.currentPassword"
+                type="password"
                 class="form-input"
                 :placeholder="t('auth.passwordPlaceholder')"
                 :disabled="passwordSaving"
@@ -121,8 +121,8 @@
               </label>
               <input
                 id="newPasswordInput"
-                type="password"
                 v-model="passwordForm.newPassword"
+                type="password"
                 class="form-input"
                 :placeholder="t('auth.passwordPlaceholder')"
                 :disabled="passwordSaving"
@@ -137,8 +137,8 @@
               </label>
               <input
                 id="confirmPasswordInput"
-                type="password"
                 v-model="passwordForm.confirmPassword"
+                type="password"
                 class="form-input"
                 :placeholder="t('auth.passwordPlaceholder')"
                 :disabled="passwordSaving"
@@ -153,9 +153,11 @@
                 class="btn-primary btn-password-submit"
                 :disabled="passwordSaving || !isPasswordFormFilled"
               >
-                <Loader2 class="icon-sm spin" v-if="passwordSaving" />
-                <Key class="icon-sm" v-else />
-                <span>{{ passwordSaving ? t('common.saving') : t('profile.changePasswordBtn') }}</span>
+                <Loader2 v-if="passwordSaving" class="icon-sm spin" />
+                <Key v-else class="icon-sm" />
+                <span>{{
+                  passwordSaving ? t('common.saving') : t('profile.changePasswordBtn')
+                }}</span>
               </button>
             </div>
           </form>
@@ -208,11 +210,7 @@ const userEmail = computed(() => user.value.email || '');
 
 const isModerator = computed(() => {
   const role = user.value.role;
-  return (
-    role === 'USER_ROLE_MODERATOR' ||
-    role === 'moderator' ||
-    role === 2
-  );
+  return role === 'USER_ROLE_MODERATOR' || role === 'moderator' || role === 2;
 });
 
 const isModeratorOrAdmin = computed(() => {

@@ -15,8 +15,7 @@ export const uploadClientBuild = (projectId, version, file, onProgress) => {
   return http
     .post(`/projects/${projectId}/builds`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (e) =>
-        onProgress?.(Math.round((e.loaded * 100) / e.total)),
+      onUploadProgress: (e) => onProgress?.(Math.round((e.loaded * 100) / e.total)),
     })
     .then((r) => r.data);
 };
@@ -42,7 +41,5 @@ export function uploadServerBuild(gameId, formData, onProgress) {
 }
 
 export function deleteServerBuild(gameId, buildVersion) {
-  return http.delete(
-    `/games/${gameId}/builds/${encodeURIComponent(buildVersion)}`
-  );
+  return http.delete(`/games/${gameId}/builds/${encodeURIComponent(buildVersion)}`);
 }

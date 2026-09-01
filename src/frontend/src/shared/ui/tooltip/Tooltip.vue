@@ -1,6 +1,11 @@
 <template>
   <span class="tooltip-wrapper">
-    <HelpCircle class="tooltip-icon" @mouseenter="show = true" @mouseleave="show = false" @click="toggle" />
+    <HelpCircle
+      class="tooltip-icon"
+      @mouseenter="show = true"
+      @mouseleave="show = false"
+      @click="toggle"
+    />
     <Transition name="tooltip">
       <div v-if="show" class="tooltip-box" :class="position">
         <div class="tooltip-arrow"></div>
@@ -13,17 +18,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { HelpCircle } from 'lucide-vue-next'
+import { ref } from 'vue';
+import { HelpCircle } from 'lucide-vue-next';
 
-const props = defineProps({
+defineProps({
   position: { type: String, default: 'top' },
-})
+});
 
-const show = ref(false)
+const show = ref(false);
 
 function toggle() {
-  show.value = !show.value
+  show.value = !show.value;
 }
 </script>
 
@@ -119,13 +124,15 @@ function toggle() {
   font-size: 0.82rem;
   line-height: 1.5;
   color: var(--text-main);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   white-space: pre-line;
 }
 
 .tooltip-enter-active,
 .tooltip-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 .tooltip-enter-from,
 .tooltip-leave-to {

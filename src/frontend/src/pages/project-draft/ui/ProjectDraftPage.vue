@@ -2,46 +2,36 @@
   <div class="tab-fade-in">
     <div class="form-grid">
       <!-- Уведомления статуса модерации (если есть) -->
-      <div
-        v-if="isUnderReview"
-        class="card review-notice"
-      >
+      <div v-if="isUnderReview" class="card review-notice">
         ⏳ {{ t('projects.moderation') }} — Заявка проверяется модератором.
       </div>
-      <div
-        v-else-if="isRejected && rejectionReason"
-        class="card rejection-notice"
-      >
+      <div v-else-if="isRejected && rejectionReason" class="card rejection-notice">
         <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
       </div>
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
-        <div class="section-head"><h3>{{ t('projectDraft.basicInfo') }}</h3></div>
+        <div class="section-head">
+          <h3>{{ t('projectDraft.basicInfo') }}</h3>
+        </div>
         <div class="input-row">
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameTitleRu') }} <span class="req">*</span></label>
+              <label class="input-label"
+                >{{ t('projectDraft.gameTitleRu') }} <span class="req">*</span></label
+              >
               <span class="char-count">{{ meta.title_ru.length }}/50</span>
             </div>
-            <input
-              type="text"
-              class="input-control"
-              maxlength="50"
-              v-model="meta.title_ru"
-            />
+            <input v-model="meta.title_ru" type="text" class="input-control" maxlength="50" />
           </div>
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameTitleEn') }} <span class="req">*</span></label>
+              <label class="input-label"
+                >{{ t('projectDraft.gameTitleEn') }} <span class="req">*</span></label
+              >
               <span class="char-count">{{ meta.title_en.length }}/50</span>
             </div>
-            <input
-              type="text"
-              class="input-control"
-              maxlength="50"
-              v-model="meta.title_en"
-            />
+            <input v-model="meta.title_en" type="text" class="input-control" maxlength="50" />
           </div>
         </div>
         <div class="input-row">
@@ -51,10 +41,10 @@
               <span class="char-count">{{ meta.seo_ru.length }}/180</span>
             </div>
             <textarea
+              v-model="meta.seo_ru"
               class="input-control"
               rows="2"
               maxlength="180"
-              v-model="meta.seo_ru"
             ></textarea>
           </div>
           <div class="input-group">
@@ -63,36 +53,40 @@
               <span class="char-count">{{ meta.seo_en.length }}/180</span>
             </div>
             <textarea
+              v-model="meta.seo_en"
               class="input-control"
               rows="2"
               maxlength="180"
-              v-model="meta.seo_en"
             ></textarea>
           </div>
         </div>
         <div class="input-row">
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameDescriptionRu') }} <span class="req">*</span></label>
+              <label class="input-label"
+                >{{ t('projectDraft.gameDescriptionRu') }} <span class="req">*</span></label
+              >
               <span class="char-count">{{ meta.about_ru.length }}/800</span>
             </div>
             <textarea
+              v-model="meta.about_ru"
               class="input-control"
               rows="4"
               maxlength="800"
-              v-model="meta.about_ru"
             ></textarea>
           </div>
           <div class="input-group">
             <div class="input-header">
-              <label class="input-label">{{ t('projectDraft.gameDescriptionEn') }} <span class="req">*</span></label>
+              <label class="input-label"
+                >{{ t('projectDraft.gameDescriptionEn') }} <span class="req">*</span></label
+              >
               <span class="char-count">{{ meta.about_en.length }}/800</span>
             </div>
             <textarea
+              v-model="meta.about_en"
               class="input-control"
               rows="4"
               maxlength="800"
-              v-model="meta.about_en"
             ></textarea>
           </div>
         </div>
@@ -100,22 +94,22 @@
 
       <!-- СКРЫТЫЕ ИНПУТЫ ДЛЯ МЕДИА -->
       <input
-        type="file"
         ref="fileIcon"
+        type="file"
         accept="image/png"
         hidden
         @change="handleFileInput('icon', $event)"
       />
       <input
-        type="file"
         ref="fileCoverMain"
+        type="file"
         accept="image/png"
         hidden
         @change="handleFileInput('cover', $event)"
       />
       <input
-        type="file"
         ref="fileVideo"
+        type="file"
         accept="video/mp4"
         hidden
         @change="handleFileInput('video', $event)"
@@ -123,8 +117,10 @@
 
       <!-- БЛОК 2: ПРОМО И МЕДИА-МАТЕРИАЛЫ -->
       <div class="card form-section">
-        <div class="section-head"><h3>{{ t('projectDraft.seoAndMedia') }}</h3></div>
-        
+        <div class="section-head">
+          <h3>{{ t('projectDraft.seoAndMedia') }}</h3>
+        </div>
+
         <div class="media-grid">
           <!-- СЛОТ 1: ИКОНКА ИГРЫ -->
           <div
@@ -133,7 +129,7 @@
               'is-filled': media.icon && mediaUrls.icon,
               'is-empty': !media.icon || !mediaUrls.icon,
               'is-dragging': dragStates.icon,
-              'is-loading': uploading.icon
+              'is-loading': uploading.icon,
             }"
             @dragover.prevent="onDragOver('icon', $event)"
             @dragleave.prevent="onDragLeave('icon', $event)"
@@ -161,8 +157,8 @@
               <button
                 type="button"
                 class="media-action-btn btn-delete"
-                @click.stop="removeMedia('icon')"
                 :title="t('projectDraft.removeFile')"
+                @click.stop="removeMedia('icon')"
               >
                 <Trash2 class="icon-xs" />
               </button>
@@ -179,7 +175,11 @@
                   <Upload class="icon-md" />
                 </div>
                 <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
-                <button type="button" class="btn-select-file" @click.stop="triggerFileInput('icon')">
+                <button
+                  type="button"
+                  class="btn-select-file"
+                  @click.stop="triggerFileInput('icon')"
+                >
                   {{ t('projectDraft.selectFile') }}
                 </button>
               </div>
@@ -193,7 +193,7 @@
               'is-filled': media.cover && mediaUrls.cover,
               'is-empty': !media.cover || !mediaUrls.cover,
               'is-dragging': dragStates.cover,
-              'is-loading': uploading.cover
+              'is-loading': uploading.cover,
             }"
             @dragover.prevent="onDragOver('cover', $event)"
             @dragleave.prevent="onDragLeave('cover', $event)"
@@ -221,8 +221,8 @@
               <button
                 type="button"
                 class="media-action-btn btn-delete"
-                @click.stop="removeMedia('cover')"
                 :title="t('projectDraft.removeFile')"
+                @click.stop="removeMedia('cover')"
               >
                 <Trash2 class="icon-xs" />
               </button>
@@ -239,7 +239,11 @@
                   <Upload class="icon-md" />
                 </div>
                 <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
-                <button type="button" class="btn-select-file" @click.stop="triggerFileInput('cover')">
+                <button
+                  type="button"
+                  class="btn-select-file"
+                  @click.stop="triggerFileInput('cover')"
+                >
                   {{ t('projectDraft.selectFile') }}
                 </button>
               </div>
@@ -253,7 +257,7 @@
               'is-filled': media.video && mediaUrls.video,
               'is-empty': !media.video || !mediaUrls.video,
               'is-dragging': dragStates.video,
-              'is-loading': uploading.video
+              'is-loading': uploading.video,
             }"
             @dragover.prevent="onDragOver('video', $event)"
             @dragleave.prevent="onDragLeave('video', $event)"
@@ -283,8 +287,8 @@
               <button
                 type="button"
                 class="media-action-btn btn-delete"
-                @click.stop="removeMedia('video')"
                 :title="t('projectDraft.removeFile')"
+                @click.stop="removeMedia('video')"
               >
                 <Trash2 class="icon-xs" />
               </button>
@@ -301,7 +305,11 @@
                   <Upload class="icon-md" />
                 </div>
                 <p class="upload-prompt-text">{{ t('projectDraft.dropOrClick') }}</p>
-                <button type="button" class="btn-select-file" @click.stop="triggerFileInput('video')">
+                <button
+                  type="button"
+                  class="btn-select-file"
+                  @click.stop="triggerFileInput('video')"
+                >
                   {{ t('projectDraft.selectFile') }}
                 </button>
               </div>
@@ -312,12 +320,11 @@
 
       <!-- БЛОК 3: БИЛД -->
       <div class="card form-section">
-        <div class="section-head"><h3>{{ t('projectDraft.clientBuildSection') }}</h3></div>
+        <div class="section-head">
+          <h3>{{ t('projectDraft.clientBuildSection') }}</h3>
+        </div>
 
-        <ClientBuildUploader
-          :project-id="projectId"
-          @build-uploaded="onBuildUploaded"
-        />
+        <ClientBuildUploader :project-id="projectId" @build-uploaded="onBuildUploaded" />
 
         <!-- Список версий -->
         <div v-if="recentBuilds.length" class="build-versions">
@@ -330,7 +337,10 @@
             @click="setActiveBuild(b.version)"
           >
             <div class="build-info">
-              <div class="build-radio-indicator" :class="{ selected: activeBuildVersion === b.version }">
+              <div
+                class="build-radio-indicator"
+                :class="{ selected: activeBuildVersion === b.version }"
+              >
                 <div v-if="activeBuildVersion === b.version" class="radio-inner-dot"></div>
               </div>
               <div class="build-labels">
@@ -346,8 +356,8 @@
               <button
                 type="button"
                 class="btn-icon-download"
-                @click.stop="downloadBuild(b.version)"
                 :title="t('common.download') || 'Скачать ZIP'"
+                @click.stop="downloadBuild(b.version)"
               >
                 <Download class="icon-xs" />
               </button>
@@ -363,15 +373,7 @@
 import { ref, computed, onMounted, watch, inject, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  CheckCircle,
-  Image as ImageIcon,
-  Film,
-  Upload,
-  Trash2,
-  Loader2,
-  Download,
-} from 'lucide-vue-next';
+import { Image as ImageIcon, Film, Upload, Trash2, Loader2, Download } from 'lucide-vue-next';
 import {
   getProject,
   updateProject,
@@ -380,12 +382,7 @@ import {
   submitForModeration as submitProjectForModeration,
 } from '@/entities/project';
 import { listClientBuilds } from '@/entities/build';
-import {
-  moderationApi,
-  getStatusText,
-  getStatusBadgeClass,
-  REQUEST_STATUS,
-} from '@/entities/moderation';
+import { moderationApi, REQUEST_STATUS } from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
 
@@ -423,9 +420,6 @@ const rejectionReason = ref('');
 const recentBuilds = ref([]);
 const projectData = ref(null);
 
-let autoSaveTimeout = null;
-let skipAutoSave = false;
-
 const isUnderReview = computed(() => {
   const st = moderationStatus.value;
   return (
@@ -438,41 +432,28 @@ const isUnderReview = computed(() => {
   );
 });
 
-const isApproved = computed(() => {
-  const st = moderationStatus.value;
-  return (
-    st === REQUEST_STATUS.APPROVED ||
-    st === 'REQUEST_STATUS_APPROVED' ||
-    st === 'approved'
-  );
-});
-
 const isRejected = computed(() => {
   const st = moderationStatus.value;
-  return (
-    st === REQUEST_STATUS.REJECTED ||
-    st === 'REQUEST_STATUS_REJECTED' ||
-    st === 'rejected'
-  );
-});
-
-const isPublished = computed(() => {
-  return (
-    projectData.value?.status === 3 ||
-    projectData.value?.status === 'PROJECT_STATUS_PUBLISHED' ||
-    !!projectData.value?.release
-  );
-});
-
-const publishedVersion = computed(() => {
-  return projectData.value?.release?.version || '';
+  return st === REQUEST_STATUS.REJECTED || st === 'REQUEST_STATUS_REJECTED' || st === 'rejected';
 });
 
 if (draftActions) {
   draftActions.value.save = () => saveMeta(false);
   draftActions.value.submit = () => submitForModeration();
-  watch(submitting, (v) => { if (draftActions.value) draftActions.value.isSubmitting = v; }, { immediate: true });
-  watch(isUnderReview, (v) => { if (draftActions.value) draftActions.value.isUnderReview = v; }, { immediate: true });
+  watch(
+    submitting,
+    (v) => {
+      if (draftActions.value) draftActions.value.isSubmitting = v;
+    },
+    { immediate: true }
+  );
+  watch(
+    isUnderReview,
+    (v) => {
+      if (draftActions.value) draftActions.value.isUnderReview = v;
+    },
+    { immediate: true }
+  );
 }
 
 function triggerFileInput(type) {
@@ -527,8 +508,7 @@ async function loadModerationStatus() {
     if (data && data.request) {
       moderationRequest.value = data.request;
       moderationStatus.value = data.request.status;
-      rejectionReason.value =
-        data.request.rejection_reason || data.request.rejectionReason || '';
+      rejectionReason.value = data.request.rejection_reason || data.request.rejectionReason || '';
     } else {
       moderationRequest.value = null;
       moderationStatus.value = null;
@@ -551,7 +531,8 @@ async function loadProject(keepStaged = false) {
       title_en: project.draft?.title_en || project.title_en || '',
       seo_ru: project.draft?.seo_ru || project.seo_ru || '',
       seo_en: project.draft?.seo_en || project.seo_en || '',
-      about_ru: project.draft?.about_ru || project.about_ru || project.draft?.about || project.about || '',
+      about_ru:
+        project.draft?.about_ru || project.about_ru || project.draft?.about || project.about || '',
       about_en: project.draft?.about_en || project.about_en || '',
     };
 
@@ -573,9 +554,7 @@ async function loadProject(keepStaged = false) {
     }
 
     activeBuildVersion.value =
-      project.draft?.active_build_version ||
-      project.active_build_version ||
-      '';
+      project.draft?.active_build_version || project.active_build_version || '';
 
     const builds = await listClientBuilds(projectId.value);
     recentBuilds.value = builds;
@@ -611,10 +590,7 @@ async function submitForModeration() {
     await loadModerationStatus();
     showToast('Заявка на модерацию успешно отправлена!', 'success');
   } catch (e) {
-    showToast(
-      e.response?.data?.message || e.message || 'Ошибка отправки на модерацию',
-      'danger'
-    );
+    showToast(e.response?.data?.message || e.message || 'Ошибка отправки на модерацию', 'danger');
   } finally {
     submitting.value = false;
   }
@@ -630,7 +606,10 @@ async function saveMeta(silent = false) {
           await uploadMedia(projectId.value, type, pendingFiles[type]);
           pendingFiles[type] = null;
         } catch (uploadErr) {
-          showToast(`Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`, 'danger');
+          showToast(
+            `Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`,
+            'danger'
+          );
           throw uploadErr;
         } finally {
           uploading[type] = false;

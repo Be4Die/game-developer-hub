@@ -6,7 +6,8 @@
         <h3>Отклонить проект</h3>
       </div>
       <p class="modal-hint">
-        Укажите обязательную причину отказа. Разработчик получит уведомление и увидит причину в карточке черновика для устранения замечаний.
+        Укажите обязательную причину отказа. Разработчик получит уведомление и увидит причину в
+        карточке черновика для устранения замечаний.
       </p>
       <div class="input-group">
         <label class="input-label">Причина отказа <span class="req">*</span></label>
@@ -20,11 +21,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn-cancel" @click="$emit('cancel')">Отмена</button>
-        <button
-          class="btn-confirm-reject"
-          @click="onConfirm"
-          :disabled="!reason.trim() || loading"
-        >
+        <button class="btn-confirm-reject" :disabled="!reason.trim() || loading" @click="onConfirm">
           {{ loading ? 'Отклонение...' : '✕ Отклонить проект' }}
         </button>
       </div>

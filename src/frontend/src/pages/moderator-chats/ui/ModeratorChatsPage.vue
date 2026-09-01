@@ -8,8 +8,8 @@
           <label class="field-label">{{ t('common.search') }}</label>
           <div class="input-wrapper">
             <input
-              type="text"
               v-model="searchQuery"
+              type="text"
               :placeholder="t('moderation.searchChatsPlaceholder')"
               class="filter-input"
             />
@@ -55,20 +55,15 @@
         <button
           v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
-          @click="resetFilters"
           title="Сбросить фильтры"
+          @click="resetFilters"
         >
           <RotateCcw class="icon-xs" />
           <span>{{ t('common.reset') }}</span>
         </button>
 
         <!-- Кнопка обновления -->
-        <button
-          class="btn-refresh"
-          :disabled="loading"
-          @click="loadChats"
-          title="Обновить"
-        >
+        <button class="btn-refresh" :disabled="loading" title="Обновить" @click="loadChats">
           <RefreshCw class="icon-xs" :class="{ spin: loading }" />
           <span>{{ t('common.refresh') }}</span>
         </button>
@@ -97,10 +92,7 @@
       </div>
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div
-        v-else-if="filteredChats.length === 0"
-        class="state-container empty-card"
-      >
+      <div v-else-if="filteredChats.length === 0" class="state-container empty-card">
         <Search class="icon-md text-muted" />
         <h3>{{ t('common.empty') }}</h3>
         <p>{{ t('stats.noData') }}</p>
@@ -142,9 +134,7 @@
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-type-label">
-                      Проект #{{ item.projectId }}
-                    </div>
+                    <div class="game-type-label">Проект #{{ item.projectId }}</div>
                     <div class="game-title">
                       {{ item.titleRu || item.titleEn || `Проект #${item.projectId}` }}
                     </div>
@@ -161,10 +151,7 @@
 
               <!-- 3 колонка: Статус ответа / диалога -->
               <td class="col-reply-status">
-                <span
-                  class="status-pill"
-                  :class="dialogStatusClass(item.dialogState)"
-                >
+                <span class="status-pill" :class="dialogStatusClass(item.dialogState)">
                   {{ dialogStatusLabel(item.dialogState) }}
                 </span>
               </td>
@@ -190,18 +177,10 @@
         </span>
 
         <div class="page-nav">
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage = 1"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage = 1">
             <ChevronsLeft class="icon-sm" />
           </button>
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage--">
             <ChevronLeft class="icon-sm" />
           </button>
           <span class="page-current">{{ currentPage }} / {{ totalPages }}</span>
@@ -255,8 +234,6 @@ import {
   normalizeRequest,
   formatDateTime,
   determineDialogState,
-  parseSenderRole,
-  parseMessageType,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { showToast } from '@/shared/lib';
@@ -381,27 +358,6 @@ const paginatedChats = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredChats.value.slice(start, start + pageSize.value);
 });
-
-function senderRoleLabel(item) {
-  const msgType = parseMessageType(item.lastMessage?.message_type ?? item.lastMessage?.messageType);
-  if (msgType > 1) return t('moderation.systemRole');
-
-  const r = parseSenderRole(item.lastMessage?.sender_role ?? item.lastMessage?.senderRole);
-  if (r === 1) return t('moderation.developerRole');
-  if (r === 2) return t('moderation.moderatorRole');
-  if (r === 3) return t('moderation.systemRole');
-  return '—';
-}
-
-function senderRoleClass(item) {
-  const msgType = parseMessageType(item.lastMessage?.message_type ?? item.lastMessage?.messageType);
-  if (msgType > 1) return 'role-sys';
-
-  const r = parseSenderRole(item.lastMessage?.sender_role ?? item.lastMessage?.senderRole);
-  if (r === 1) return 'role-dev';
-  if (r === 2) return 'role-mod';
-  return 'role-sys';
-}
 
 function dialogStatusLabel(state) {
   if (state === 'unanswered') return t('moderation.unanswered');

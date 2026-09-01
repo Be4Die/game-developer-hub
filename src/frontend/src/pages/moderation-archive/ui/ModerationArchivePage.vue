@@ -8,8 +8,8 @@
           <label class="field-label">{{ t('common.search') }}</label>
           <div class="input-wrapper">
             <input
-              type="text"
               v-model="searchQuery"
+              type="text"
               :placeholder="t('moderation.searchArchivePlaceholder')"
               class="filter-input"
             />
@@ -55,20 +55,15 @@
         <button
           v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
-          @click="resetFilters"
           title="Сбросить фильтры"
+          @click="resetFilters"
         >
           <RotateCcw class="icon-xs" />
           <span>{{ t('common.reset') }}</span>
         </button>
 
         <!-- Кнопка обновления -->
-        <button
-          class="btn-refresh"
-          :disabled="loading"
-          @click="loadArchive"
-          title="Обновить"
-        >
+        <button class="btn-refresh" :disabled="loading" title="Обновить" @click="loadArchive">
           <RefreshCw class="icon-xs" :class="{ spin: loading }" />
           <span>{{ t('common.refresh') }}</span>
         </button>
@@ -97,10 +92,7 @@
       </div>
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div
-        v-else-if="filteredRequests.length === 0"
-        class="state-container empty-card"
-      >
+      <div v-else-if="filteredRequests.length === 0" class="state-container empty-card">
         <Search class="icon-md text-muted" />
         <h3>{{ t('common.empty') }}</h3>
         <p>{{ t('stats.noData') }}</p>
@@ -150,7 +142,9 @@
                       Заявка #{{ req.id }} • Проект #{{ req.projectId }}
                     </div>
                     <div class="game-title">
-                      {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
+                      {{
+                        req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}`
+                      }}
                     </div>
                   </div>
                 </div>
@@ -158,10 +152,10 @@
 
               <!-- 2 колонка: Версия сборки -->
               <td class="col-version">
-                <span class="version-badge" v-if="req.snapshot.activeBuildVersion">
+                <span v-if="req.snapshot.activeBuildVersion" class="version-badge">
                   v{{ req.snapshot.activeBuildVersion }}
                 </span>
-                <span class="text-muted text-sm" v-else>—</span>
+                <span v-else class="text-muted text-sm">—</span>
               </td>
 
               <!-- 3 колонка: Разработчик -->
@@ -174,20 +168,17 @@
 
               <!-- 4 колонка: Вердикт / Статус -->
               <td class="col-verdict">
-                <span
-                  class="status-pill"
-                  :class="verdictClass(req.status)"
-                >
+                <span class="status-pill" :class="verdictClass(req.status)">
                   {{ verdictLabel(req.status) }}
                 </span>
               </td>
 
               <!-- 5 колонка: Модератор -->
               <td class="col-mod">
-                <span class="mod-name" v-if="req.moderatorId">
+                <span v-if="req.moderatorId" class="mod-name">
                   {{ req.moderatorId }}
                 </span>
-                <span class="unassigned-text" v-else>
+                <span v-else class="unassigned-text">
                   {{ t('moderation.notAssigned') }}
                 </span>
               </td>
@@ -214,8 +205,8 @@
                 <div class="row-actions">
                   <button
                     class="btn-inspect-sm"
-                    @click="openProject(req.projectId)"
                     :title="t('moderation.viewDetails')"
+                    @click="openProject(req.projectId)"
                   >
                     <Eye class="icon-xs" />
                     <span>{{ t('moderation.viewDetails') }}</span>
@@ -237,18 +228,10 @@
         </span>
 
         <div class="page-nav">
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage = 1"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage = 1">
             <ChevronsLeft class="icon-sm" />
           </button>
-          <button
-            class="page-nav-btn"
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
+          <button class="page-nav-btn" :disabled="currentPage === 1" @click="currentPage--">
             <ChevronLeft class="icon-sm" />
           </button>
           <span class="page-current">{{ currentPage }} / {{ totalPages }}</span>
@@ -398,15 +381,11 @@ const filteredRequests = computed(() => {
   // Сортировка
   if (sortBy.value === 'newest') {
     list.sort(
-      (a, b) =>
-        new Date(b.reviewedAt || b.submittedAt) -
-        new Date(a.reviewedAt || a.submittedAt)
+      (a, b) => new Date(b.reviewedAt || b.submittedAt) - new Date(a.reviewedAt || a.submittedAt)
     );
   } else if (sortBy.value === 'oldest') {
     list.sort(
-      (a, b) =>
-        new Date(a.reviewedAt || a.submittedAt) -
-        new Date(b.reviewedAt || b.submittedAt)
+      (a, b) => new Date(a.reviewedAt || a.submittedAt) - new Date(b.reviewedAt || b.submittedAt)
     );
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => {

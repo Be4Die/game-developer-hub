@@ -20,7 +20,20 @@ export function formatProjectDate(dateStr) {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const months = [
+      'янв',
+      'фев',
+      'мар',
+      'апр',
+      'май',
+      'июн',
+      'июл',
+      'авг',
+      'сен',
+      'окт',
+      'ноя',
+      'дек',
+    ];
     const day = d.getDate();
     const month = months[d.getMonth()];
     const year = d.getFullYear();
@@ -62,7 +75,7 @@ export function formatBytes(bytes, decimals = 1) {
 export function formatTime(timestamp) {
   if (!timestamp) return '';
   // Check if timestamp is in seconds or ms or ISO string
-  let ts = timestamp;
+  let ts;
   if (typeof timestamp === 'string' && isNaN(Number(timestamp))) {
     ts = new Date(timestamp).getTime();
   } else {

@@ -8,10 +8,7 @@
     <GlobalHeader v-if="$route.path !== '/login'" />
     <main class="page-content">
       <div
-        v-if="
-          userRole === 'Модератор' &&
-          $route.path.startsWith('/projects')
-        "
+        v-if="userRole === 'Модератор' && $route.path.startsWith('/projects')"
         class="moderator-stub"
       >
         <h2>{{ t('roles.moderator') }}</h2>
@@ -38,9 +35,7 @@ const router = useRouter();
 const route = useRoute();
 const { state: authState, loadUser } = useAuth();
 
-const userRole = computed(
-  () => ROLE_MAP[authState.user?.role] || 'Пользователь'
-);
+const userRole = computed(() => ROLE_MAP[authState.user?.role] || 'Пользователь');
 
 onMounted(() => {
   loadUser();
@@ -62,7 +57,6 @@ watch(userRole, (newRole) => {
   }
 });
 </script>
-
 
 <style>
 .app-layout {

@@ -117,14 +117,16 @@ export const moderationStore = reactive({
     this.loading = true;
     try {
       const data = await moderationApi.listActiveChats(params);
-      this.activeChats = (data.chats || []).map(c => ({
+      this.activeChats = (data.chats || []).map((c) => ({
         projectId: c.project_id,
-        lastMessage: c.last_message ? {
-          id: c.last_message.id,
-          content: c.last_message.content,
-          createdAt: c.last_message.created_at,
-          senderRole: c.last_message.sender_role,
-        } : null
+        lastMessage: c.last_message
+          ? {
+              id: c.last_message.id,
+              content: c.last_message.content,
+              createdAt: c.last_message.created_at,
+              senderRole: c.last_message.sender_role,
+            }
+          : null,
       }));
       this.totalChats = data.total || 0;
     } catch (err) {

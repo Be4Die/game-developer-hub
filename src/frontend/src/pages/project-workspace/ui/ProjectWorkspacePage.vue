@@ -5,12 +5,7 @@
       <div class="game-header">
         <div class="game-identity-row">
           <div class="game-icon-box">
-            <img
-              v-if="projectIconUrl"
-              :src="projectIconUrl"
-              alt="Icon"
-              class="game-icon-img"
-            />
+            <img v-if="projectIconUrl" :src="projectIconUrl" alt="Icon" class="game-icon-img" />
             <div v-else class="game-icon-mock">
               <span>Draft</span>
             </div>
@@ -35,11 +30,7 @@
       </div>
 
       <nav class="game-nav">
-        <router-link
-          :to="`/projects/${id}/draft`"
-          class="nav-btn"
-          active-class="active"
-        >
+        <router-link :to="`/projects/${id}/draft`" class="nav-btn" active-class="active">
           <PenTool class="icon-sm" /> {{ t('projectWorkspace.draftTab') }}
         </router-link>
         <router-link
@@ -50,18 +41,10 @@
         >
           <CheckCircle class="icon-sm" /> {{ t('projectWorkspace.publishedTab') }}
         </router-link>
-        <router-link
-          :to="`/projects/${id}/servers`"
-          class="nav-btn"
-          active-class="active"
-        >
+        <router-link :to="`/projects/${id}/servers`" class="nav-btn" active-class="active">
           <Server class="icon-sm" /> {{ t('projectWorkspace.serversTab') }}
         </router-link>
-        <router-link
-          :to="`/projects/${id}/stats`"
-          class="nav-btn"
-          active-class="active"
-        >
+        <router-link :to="`/projects/${id}/stats`" class="nav-btn" active-class="active">
           <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
         </router-link>
       </nav>
@@ -70,33 +53,30 @@
       <div class="sidebar-footer">
         <button
           class="btn-sidebar-save"
-          @click="handleSidebarSave"
           :disabled="draftActions.isSaving || draftActions.isSubmitting"
+          @click="handleSidebarSave"
         >
-          <Loader2 class="icon-xs spin" v-if="draftActions.isSaving" />
-          <Save class="icon-xs" v-else />
+          <Loader2 v-if="draftActions.isSaving" class="icon-xs spin" />
+          <Save v-else class="icon-xs" />
           <span>{{ draftActions.isSaving ? t('common.saving') : t('common.save') }}</span>
         </button>
 
         <button
           class="btn-sidebar-submit"
+          :disabled="draftActions.isSubmitting || draftActions.isUnderReview"
           @click="handleSidebarSubmit"
-          :disabled="
-            draftActions.isSubmitting ||
-            draftActions.isUnderReview
-          "
         >
-          <Loader2 class="icon-xs spin" v-if="draftActions.isSubmitting" />
-          <Send class="icon-xs" v-else />
+          <Loader2 v-if="draftActions.isSubmitting" class="icon-xs spin" />
+          <Send v-else class="icon-xs" />
           <span>
             {{
               draftActions.isSubmitting
                 ? t('projectDraft.sending')
                 : draftActions.isUnderReview
-                ? t('projects.moderation')
-                : isPublished
-                ? t('projectDraft.sendUpdateToModeration')
-                : t('projectDraft.sendToModeration')
+                  ? t('projects.moderation')
+                  : isPublished
+                    ? t('projectDraft.sendUpdateToModeration')
+                    : t('projectDraft.sendToModeration')
             }}
           </span>
         </button>
@@ -110,13 +90,13 @@
 
     <!-- ПРАВЫЙ САЙДБАР: Чат проекта -->
     <aside class="chat-sidebar">
-      <ProjectChat :projectId="id" class="workspace-chat" />
+      <ProjectChat :project-id="id" class="workspace-chat" />
     </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, provide, reactive } from 'vue';
+import { ref, computed, watch, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -131,11 +111,11 @@ import {
 } from 'lucide-vue-next';
 import { getProject, getMediaUrl } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
-import { useAuth } from '@/entities/user';
-import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
-const props = defineProps(['id']);
+const props = defineProps({
+  id: { type: [String, Number], default: null },
+});
 const route = useRoute();
 const router = useRouter();
 
@@ -198,9 +178,7 @@ watch(
 
 function openDevGame() {
   const url =
-    project.value?.draft?.dev_url ||
-    project.value?.dev_url ||
-    `/games/${props.id}/dev/index.html`;
+    project.value?.draft?.dev_url || project.value?.dev_url || `/games/${props.id}/dev/index.html`;
   window.open(url, '_blank');
 }
 
@@ -228,9 +206,6 @@ async function handleSidebarSubmit() {
     await draftActions.value.submit();
   }
 }
-
-const { state: authState } = useAuth();
-const currentUserId = computed(() => authState.user?.id);
 </script>
 
 <style scoped>

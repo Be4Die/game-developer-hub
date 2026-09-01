@@ -7,8 +7,8 @@
           <label class="input-label">{{ t('common.version') }} <span class="req">*</span></label>
         </div>
         <input
-          type="text"
           v-model="newBuildVersion"
+          type="text"
           class="input-control"
           placeholder="1.0.0"
           :disabled="buildStatus === 'uploading'"
@@ -46,18 +46,10 @@
       </div>
 
       <div class="staged-file-actions">
-        <button
-          type="button"
-          class="btn-action-text"
-          @click="$refs.fileZip.click()"
-        >
+        <button type="button" class="btn-action-text" @click="$refs.fileZip.click()">
           {{ t('projectDraft.replaceFile') }}
         </button>
-        <button
-          type="button"
-          class="btn-action-text text-danger"
-          @click="removeStagedFile"
-        >
+        <button type="button" class="btn-action-text text-danger" @click="removeStagedFile">
           {{ t('common.delete') }}
         </button>
       </div>
@@ -83,11 +75,7 @@
         <span class="upload-prompt-sub">
           {{ t('projectDraft.uploadFormats') }}
         </span>
-        <button
-          type="button"
-          class="btn-select-file"
-          @click.stop="$refs.fileZip.click()"
-        >
+        <button type="button" class="btn-select-file" @click.stop="$refs.fileZip.click()">
           {{ t('projectDraft.selectFile') }}
         </button>
       </div>
@@ -100,25 +88,20 @@
           <Loader2 class="icon-xs spin text-primary" />
           <span>Загрузка и распаковка сборки в Dev-окружение...</span>
         </span>
-        <span class="prog-percent">
-          {{ buildProgress }}%
-        </span>
+        <span class="prog-percent"> {{ buildProgress }}% </span>
       </div>
       <div class="prog-bg">
-        <div
-          class="prog-fill"
-          :style="{ width: buildProgress + '%' }"
-        ></div>
+        <div class="prog-fill" :style="{ width: buildProgress + '%' }"></div>
       </div>
-      <div class="prog-subtext" v-if="stagedFile">
+      <div v-if="stagedFile" class="prog-subtext">
         {{ stagedFile.name }} ({{ formatFileSize(stagedFile.size) }})
       </div>
     </div>
 
     <!-- Hidden file input -->
     <input
-      type="file"
       ref="fileZip"
+      type="file"
       accept=".zip,.tar.gz,.tgz"
       hidden
       @change="handleZipSelected"
@@ -148,15 +131,10 @@ const newBuildVersion = ref('');
 const stagedFile = ref(null);
 const buildStatus = ref('idle');
 const buildProgress = ref(0);
-const uploadedVersion = ref('');
 const isDragging = ref(false);
 
 const canUpload = computed(() => {
-  return (
-    !!newBuildVersion.value.trim() &&
-    !!stagedFile.value &&
-    buildStatus.value !== 'uploading'
-  );
+  return !!newBuildVersion.value.trim() && !!stagedFile.value && buildStatus.value !== 'uploading';
 });
 
 function formatFileSize(bytes) {
@@ -303,10 +281,7 @@ async function startUpload() {
     emit('buildUploaded', version);
   } catch (err) {
     buildStatus.value = 'idle';
-    showToast(
-      err.response?.data?.message || err.message || 'Ошибка загрузки билда',
-      'danger'
-    );
+    showToast(err.response?.data?.message || err.message || 'Ошибка загрузки билда', 'danger');
   }
 }
 </script>
@@ -398,7 +373,9 @@ async function startUpload() {
   box-sizing: border-box;
   color: var(--text-main, #f0f6fc);
   outline: none;
-  transition: border-color 0.2s, background-color 0.2s;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 .input-control:focus {

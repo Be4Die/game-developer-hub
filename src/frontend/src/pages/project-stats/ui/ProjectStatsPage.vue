@@ -42,22 +42,8 @@
       <div class="chart-container">
         <svg viewBox="0 0 700 250" class="line-chart">
           <!-- Сетка -->
-          <line
-            x1="50"
-            y1="20"
-            x2="50"
-            y2="220"
-            stroke="var(--border)"
-            stroke-width="1"
-          />
-          <line
-            x1="50"
-            y1="220"
-            x2="680"
-            y2="220"
-            stroke="var(--border)"
-            stroke-width="1"
-          />
+          <line x1="50" y1="20" x2="50" y2="220" stroke="var(--border)" stroke-width="1" />
+          <line x1="50" y1="220" x2="680" y2="220" stroke="var(--border)" stroke-width="1" />
           <line
             x1="50"
             y1="170"
@@ -125,74 +111,20 @@
           />
 
           <!-- Точки -->
-          <circle
-            cx="140"
-            cy="95"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
-          <circle
-            cx="235"
-            cy="60"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
-          <circle
-            cx="330"
-            cy="80"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
-          <circle
-            cx="425"
-            cy="40"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
-          <circle
-            cx="520"
-            cy="55"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
-          <circle
-            cx="615"
-            cy="30"
-            r="5"
-            fill="#3B82F6"
-            stroke="white"
-            stroke-width="2"
-          />
+          <circle cx="140" cy="95" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
+          <circle cx="235" cy="60" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
+          <circle cx="330" cy="80" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
+          <circle cx="425" cy="40" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
+          <circle cx="520" cy="55" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
+          <circle cx="615" cy="30" r="5" fill="#3B82F6" stroke="white" stroke-width="2" />
 
           <!-- X-axis labels -->
-          <text x="140" y="240" text-anchor="middle" class="axis-label">
-            Пн
-          </text>
-          <text x="235" y="240" text-anchor="middle" class="axis-label">
-            Вт
-          </text>
-          <text x="330" y="240" text-anchor="middle" class="axis-label">
-            Ср
-          </text>
-          <text x="425" y="240" text-anchor="middle" class="axis-label">
-            Чт
-          </text>
-          <text x="520" y="240" text-anchor="middle" class="axis-label">
-            Пт
-          </text>
-          <text x="615" y="240" text-anchor="middle" class="axis-label">
-            Сб
-          </text>
+          <text x="140" y="240" text-anchor="middle" class="axis-label">Пн</text>
+          <text x="235" y="240" text-anchor="middle" class="axis-label">Вт</text>
+          <text x="330" y="240" text-anchor="middle" class="axis-label">Ср</text>
+          <text x="425" y="240" text-anchor="middle" class="axis-label">Чт</text>
+          <text x="520" y="240" text-anchor="middle" class="axis-label">Пт</text>
+          <text x="615" y="240" text-anchor="middle" class="axis-label">Сб</text>
         </svg>
       </div>
     </div>
@@ -201,29 +133,13 @@
     <div class="chart-card">
       <div class="chart-header">
         <h3>Доход за неделю (₽)</h3>
-        <div class="chart-legend">
-          <span class="legend-dot green"></span> Доход
-        </div>
+        <div class="chart-legend"><span class="legend-dot green"></span> Доход</div>
       </div>
       <div class="chart-container">
         <svg viewBox="0 0 700 250" class="bar-chart">
           <!-- Сетка -->
-          <line
-            x1="50"
-            y1="20"
-            x2="50"
-            y2="220"
-            stroke="var(--border)"
-            stroke-width="1"
-          />
-          <line
-            x1="50"
-            y1="220"
-            x2="680"
-            y2="220"
-            stroke="var(--border)"
-            stroke-width="1"
-          />
+          <line x1="50" y1="20" x2="50" y2="220" stroke="var(--border)" stroke-width="1" />
+          <line x1="50" y1="220" x2="680" y2="220" stroke="var(--border)" stroke-width="1" />
           <line
             x1="50"
             y1="170"
@@ -269,103 +185,31 @@
           <text x="45" y="24" text-anchor="end" class="axis-label">20k</text>
 
           <!-- Столбцы -->
-          <rect
-            x="100"
-            y="140"
-            width="50"
-            height="80"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="125" y="132" text-anchor="middle" class="bar-value">
-            4,200
-          </text>
+          <rect x="100" y="140" width="50" height="80" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="125" y="132" text-anchor="middle" class="bar-value">4,200</text>
 
-          <rect
-            x="195"
-            y="110"
-            width="50"
-            height="110"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="220" y="102" text-anchor="middle" class="bar-value">
-            5,800
-          </text>
+          <rect x="195" y="110" width="50" height="110" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="220" y="102" text-anchor="middle" class="bar-value">5,800</text>
 
-          <rect
-            x="290"
-            y="90"
-            width="50"
-            height="130"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="315" y="82" text-anchor="middle" class="bar-value">
-            6,500
-          </text>
+          <rect x="290" y="90" width="50" height="130" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="315" y="82" text-anchor="middle" class="bar-value">6,500</text>
 
-          <rect
-            x="385"
-            y="60"
-            width="50"
-            height="160"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="410" y="52" text-anchor="middle" class="bar-value">
-            7,900
-          </text>
+          <rect x="385" y="60" width="50" height="160" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="410" y="52" text-anchor="middle" class="bar-value">7,900</text>
 
-          <rect
-            x="480"
-            y="80"
-            width="50"
-            height="140"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="505" y="72" text-anchor="middle" class="bar-value">
-            7,100
-          </text>
+          <rect x="480" y="80" width="50" height="140" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="505" y="72" text-anchor="middle" class="bar-value">7,100</text>
 
-          <rect
-            x="575"
-            y="35"
-            width="50"
-            height="185"
-            rx="4"
-            fill="#10B981"
-            opacity="0.8"
-          />
-          <text x="600" y="27" text-anchor="middle" class="bar-value">
-            9,000
-          </text>
+          <rect x="575" y="35" width="50" height="185" rx="4" fill="#10B981" opacity="0.8" />
+          <text x="600" y="27" text-anchor="middle" class="bar-value">9,000</text>
 
           <!-- X-axis labels -->
-          <text x="125" y="240" text-anchor="middle" class="axis-label">
-            Пн
-          </text>
-          <text x="220" y="240" text-anchor="middle" class="axis-label">
-            Вт
-          </text>
-          <text x="315" y="240" text-anchor="middle" class="axis-label">
-            Ср
-          </text>
-          <text x="410" y="240" text-anchor="middle" class="axis-label">
-            Чт
-          </text>
-          <text x="505" y="240" text-anchor="middle" class="axis-label">
-            Пт
-          </text>
-          <text x="600" y="240" text-anchor="middle" class="axis-label">
-            Сб
-          </text>
+          <text x="125" y="240" text-anchor="middle" class="axis-label">Пн</text>
+          <text x="220" y="240" text-anchor="middle" class="axis-label">Вт</text>
+          <text x="315" y="240" text-anchor="middle" class="axis-label">Ср</text>
+          <text x="410" y="240" text-anchor="middle" class="axis-label">Чт</text>
+          <text x="505" y="240" text-anchor="middle" class="axis-label">Пт</text>
+          <text x="600" y="240" text-anchor="middle" class="axis-label">Сб</text>
         </svg>
       </div>
     </div>
@@ -378,14 +222,7 @@
         </div>
         <div class="donut-container">
           <svg viewBox="0 0 200 200" class="donut-chart">
-            <circle
-              cx="100"
-              cy="100"
-              r="70"
-              fill="none"
-              stroke="#E5E7EB"
-              stroke-width="30"
-            />
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#E5E7EB" stroke-width="30" />
             <!-- Поиск: 45% -->
             <circle
               cx="100"
@@ -424,22 +261,8 @@
             />
             <!-- Центр -->
             <circle cx="100" cy="100" r="50" fill="var(--bg-card)" />
-            <text
-              x="100"
-              y="95"
-              text-anchor="middle"
-              class="donut-value"
-            >
-              9,341
-            </text>
-            <text
-              x="100"
-              y="115"
-              text-anchor="middle"
-              class="donut-sub"
-            >
-              всего
-            </text>
+            <text x="100" y="95" text-anchor="middle" class="donut-value">9,341</text>
+            <text x="100" y="115" text-anchor="middle" class="donut-sub">всего</text>
           </svg>
         </div>
         <div class="donut-legend">
@@ -473,23 +296,17 @@
             <span>Доля</span>
           </div>
           <div class="table-row">
-            <div class="platform-name">
-              <Monitor class="icon-xs" /> PC (Windows)
-            </div>
+            <div class="platform-name"><Monitor class="icon-xs" /> PC (Windows)</div>
             <span>5,604</span>
             <span><span class="bar-mini" style="width: 60%"></span>60%</span>
           </div>
           <div class="table-row">
-            <div class="platform-name">
-              <Smartphone class="icon-xs" /> Android
-            </div>
+            <div class="platform-name"><Smartphone class="icon-xs" /> Android</div>
             <span>2,802</span>
             <span><span class="bar-mini" style="width: 30%"></span>30%</span>
           </div>
           <div class="table-row">
-            <div class="platform-name">
-              <Tablet class="icon-xs" /> iOS
-            </div>
+            <div class="platform-name"><Tablet class="icon-xs" /> iOS</div>
             <span>935</span>
             <span><span class="bar-mini" style="width: 10%"></span>10%</span>
           </div>
@@ -501,18 +318,10 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import {
-  Users,
-  Clock,
-  Wallet,
-  Monitor,
-  Smartphone,
-  Tablet,
-} from 'lucide-vue-next';
+import { Users, Clock, Wallet, Monitor, Smartphone, Tablet } from 'lucide-vue-next';
 
 const { t } = useI18n();
 </script>
-
 
 <style scoped>
 .tab-fade-in {

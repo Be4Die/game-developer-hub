@@ -1,10 +1,6 @@
 <template>
   <div class="theme-grid">
-    <div
-      class="theme-card"
-      :class="{ active: !isDark }"
-      @click="selectTheme('light')"
-    >
+    <div class="theme-card" :class="{ active: !isDark }" @click="selectTheme('light')">
       <div class="theme-preview theme-preview-light">
         <div class="preview-header"></div>
         <div class="preview-body">
@@ -18,11 +14,7 @@
         <span>{{ t('profile.themeLight') }}</span>
       </div>
     </div>
-    <div
-      class="theme-card"
-      :class="{ active: isDark }"
-      @click="selectTheme('dark')"
-    >
+    <div class="theme-card" :class="{ active: isDark }" @click="selectTheme('dark')">
       <div class="theme-preview theme-preview-dark">
         <div class="preview-header"></div>
         <div class="preview-body">
@@ -46,7 +38,6 @@ import { useTheme } from '@/shared/lib';
 
 const { t } = useI18n();
 const { isDark, setTheme } = useTheme();
-
 
 function selectTheme(value) {
   setTheme(value);
@@ -94,21 +85,21 @@ function selectTheme(value) {
 }
 
 .theme-preview-light {
-  background: #F3F4F6;
+  background: #f3f4f6;
 }
 
 .theme-preview-light .preview-header {
   height: 18px;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 4px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
 }
 
 .theme-preview-light .preview-body {
   flex: 1;
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 4px;
-  border: 1px solid #E5E7EB;
+  border: 1px solid #e5e7eb;
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -117,13 +108,13 @@ function selectTheme(value) {
 
 .theme-preview-light .preview-card {
   height: 20px;
-  background: #F3F4F6;
+  background: #f3f4f6;
   border-radius: 3px;
 }
 
 .theme-preview-light .preview-line {
   height: 6px;
-  background: #E5E7EB;
+  background: #e5e7eb;
   border-radius: 3px;
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="moderator-workspace" v-if="projectData">
+  <div v-if="projectData" class="moderator-workspace">
     <!-- ЛЕВАЯ КОЛОНКА: ИНСПЕКТОР ЧЕРНОВИКА И ДЕЙСТВИЯ -->
     <main class="review-inspector">
       <div class="inspector-scroll">
@@ -22,20 +22,20 @@
               <div class="identity-top-row">
                 <span class="project-id-tag">Проект #{{ projectId }}</span>
                 <span
-                  class="status-badge"
                   v-if="activeRequest"
+                  class="status-badge"
                   :class="getStatusBadgeClass(requestStatus)"
                 >
                   {{ getStatusText(requestStatus) }}
                 </span>
-                <span class="version-tag" v-if="projectData.activeBuildVersion">
+                <span v-if="projectData.activeBuildVersion" class="version-tag">
                   v{{ projectData.activeBuildVersion }}
                 </span>
               </div>
               <h1 class="project-main-title">
                 {{ projectData.titleRu || projectData.titleEn || `Проект #${projectId}` }}
               </h1>
-              <div class="project-sub-title" v-if="projectData.titleEn && projectData.titleRu">
+              <div v-if="projectData.titleEn && projectData.titleRu" class="project-sub-title">
                 {{ projectData.titleEn }}
               </div>
             </div>
@@ -181,7 +181,8 @@
                 Версия сборки: <strong>v{{ projectData.activeBuildVersion || '1.0.0' }}</strong>
               </span>
               <p class="build-desc">
-                Проверьте работоспособность игры, управление, отсутствие критических ошибок и соответствие контента правилам платформы.
+                Проверьте работоспособность игры, управление, отсутствие критических ошибок и
+                соответствие контента правилам платформы.
               </p>
             </div>
 
@@ -225,8 +226,8 @@
             <button
               v-if="isPending"
               class="btn-verdict btn-claim-ticket"
-              @click="handleClaim"
               :disabled="actionLoading"
+              @click="handleClaim"
             >
               <Eye class="icon-sm" />
               <span>{{ t('moderation.claimBtn') }}</span>
@@ -236,8 +237,8 @@
             <template v-else-if="isInReview">
               <button
                 class="btn-verdict btn-approve-ticket"
-                @click="showApproveModal = true"
                 :disabled="actionLoading"
+                @click="showApproveModal = true"
               >
                 <CheckCircle2 class="icon-sm" />
                 <span>{{ t('moderation.approve') }}</span>
@@ -245,8 +246,8 @@
 
               <button
                 class="btn-verdict btn-reject-ticket"
-                @click="showRejectModal = true"
                 :disabled="actionLoading"
+                @click="showRejectModal = true"
               >
                 <XCircle class="icon-sm" />
                 <span>{{ t('moderation.reject') }}</span>
@@ -259,7 +260,7 @@
 
     <!-- ПРАВАЯ КОЛОНКА: ЧАТ ПРОЕКТА -->
     <aside class="moderator-chat-aside">
-      <ProjectChat :projectId="projectId" />
+      <ProjectChat :project-id="projectId" />
     </aside>
 
     <!-- Модальные окна одобрения и отклонения -->
@@ -314,10 +315,7 @@ import {
   ProjectChat,
 } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
-import {
-  ApproveRequestModal,
-  RejectRequestModal,
-} from '@/features/review-request';
+import { ApproveRequestModal, RejectRequestModal } from '@/features/review-request';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -338,10 +336,7 @@ const requestStatus = computed(() => activeRequest.value?.status);
 const isPending = computed(() => {
   const st = requestStatus.value;
   return (
-    st === REQUEST_STATUS.PENDING ||
-    st === 'REQUEST_STATUS_PENDING' ||
-    st === 1 ||
-    st === 'pending'
+    st === REQUEST_STATUS.PENDING || st === 'REQUEST_STATUS_PENDING' || st === 1 || st === 'pending'
   );
 });
 
@@ -434,9 +429,7 @@ async function loadProjectInfo() {
 }
 
 function openDevPreview() {
-  const devUrl =
-    projectData.value?.devUrl ||
-    `/games/${projectId.value}/dev/index.html`;
+  const devUrl = projectData.value?.devUrl || `/games/${projectId.value}/dev/index.html`;
   window.open(devUrl, '_blank');
 }
 

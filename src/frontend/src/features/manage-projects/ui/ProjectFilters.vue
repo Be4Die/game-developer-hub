@@ -7,9 +7,9 @@
         <input
           type="text"
           :value="searchQuery"
-          @input="$emit('update:searchQuery', $event.target.value)"
           :placeholder="t('common.name')"
           class="filter-input"
+          @input="$emit('update:searchQuery', $event.target.value)"
         />
         <button
           v-if="searchQuery"
@@ -28,8 +28,8 @@
       <div class="select-wrapper">
         <select
           :value="statusFilter"
-          @change="$emit('update:statusFilter', $event.target.value)"
           class="filter-select"
+          @change="$emit('update:statusFilter', $event.target.value)"
         >
           <option value="all">—</option>
           <option value="draft">{{ t('projects.draft') }}</option>
@@ -47,8 +47,8 @@
       <div class="select-wrapper">
         <select
           :value="sortBy"
-          @change="$emit('update:sortBy', $event.target.value)"
           class="filter-select"
+          @change="$emit('update:sortBy', $event.target.value)"
         >
           <option value="newest">{{ t('stats.today') }} / {{ t('common.created') }}</option>
           <option value="oldest">{{ t('common.created') }} ↑</option>
@@ -62,19 +62,15 @@
     <button
       v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
       class="btn-reset-filters"
-      @click="$emit('reset')"
       title="Сбросить фильтры"
+      @click="$emit('reset')"
     >
       <RotateCcw class="icon-xs" />
       <span>{{ t('common.reset') }}</span>
     </button>
 
     <!-- Кнопка создания игры -->
-    <button
-      class="btn-add-game"
-      :disabled="creating"
-      @click="$emit('create')"
-    >
+    <button class="btn-add-game" :disabled="creating" @click="$emit('create')">
       <span v-if="creating" class="spinner-btn"></span>
       <span>{{ creating ? t('common.saving') : t('projects.createBtn') }}</span>
     </button>
@@ -94,13 +90,7 @@ defineProps({
   creating: { type: Boolean, default: false },
 });
 
-defineEmits([
-  'update:searchQuery',
-  'update:statusFilter',
-  'update:sortBy',
-  'reset',
-  'create',
-]);
+defineEmits(['update:searchQuery', 'update:statusFilter', 'update:sortBy', 'reset', 'create']);
 </script>
 
 <style scoped>
@@ -250,7 +240,9 @@ defineEmits([
   font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.15s, opacity 0.15s;
+  transition:
+    background-color 0.15s,
+    opacity 0.15s;
   white-space: nowrap;
 }
 

@@ -3,9 +3,9 @@
     <div class="main-content-wrap">
       <!-- Панель фильтров и поиска в стиле Яндекс.Консоли -->
       <ProjectFilters
-        v-model:searchQuery="searchQuery"
-        v-model:statusFilter="statusFilter"
-        v-model:sortBy="sortBy"
+        v-model:search-query="searchQuery"
+        v-model:status-filter="statusFilter"
+        v-model:sort-by="sortBy"
         :creating="creating"
         @reset="resetFilters"
         @create="createNewGame"
@@ -19,9 +19,7 @@
 
       <!-- Пустой список без проектов -->
       <div
-        v-else-if="
-          games.length === 0 && !searchQuery && statusFilter === 'all'
-        "
+        v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
@@ -31,11 +29,7 @@
         <p>
           {{ t('projects.noProjectsDesc') }}
         </p>
-        <button
-          class="btn-add-game-primary"
-          :disabled="creating"
-          @click="createNewGame"
-        >
+        <button class="btn-add-game-primary" :disabled="creating" @click="createNewGame">
           <span v-if="creating" class="spinner-sm"></span>
           <Plus v-else class="icon-sm" />
           {{ creating ? t('common.saving') : t('projects.createBtn') }}
@@ -43,10 +37,7 @@
       </div>
 
       <!-- Пустой список по результатам поиска -->
-      <div
-        v-else-if="filteredGames.length === 0"
-        class="state-container empty-card"
-      >
+      <div v-else-if="filteredGames.length === 0" class="state-container empty-card">
         <Search class="icon-md text-muted" />
         <h3>{{ t('common.empty') }}</h3>
         <p>{{ t('stats.noData') }}</p>
@@ -107,10 +98,7 @@
 
               <!-- 3 колонка: Статус -->
               <td class="col-status">
-                <span
-                  class="status-pill"
-                  :class="statusClass(game.status)"
-                >
+                <span class="status-pill" :class="statusClass(game.status)">
                   {{ statusLabel(game.status) }}
                 </span>
               </td>
@@ -134,10 +122,7 @@
     </div>
 
     <!-- Пагинация прикреплена к низу страницы по центру в стиле Яндекс.Консоли -->
-    <div
-      v-if="filteredGames.length > 0"
-      class="pagination-container"
-    >
+    <div v-if="filteredGames.length > 0" class="pagination-container">
       <div class="pagination-center">
         <button
           class="page-nav-btn"
@@ -284,11 +269,7 @@ const openProject = (id) => {
 
 const confirmDeleteProject = async (game) => {
   const title = game.title_ru || game.title_en || `#${game.id}`;
-  if (
-    !confirm(
-      `Вы действительно хотите удалить проект «${title}» и все его сборки?`
-    )
-  ) {
+  if (!confirm(`Вы действительно хотите удалить проект «${title}» и все его сборки?`)) {
     return;
   }
   try {
@@ -328,34 +309,23 @@ const filteredGames = computed(() => {
   }
 
   if (sortBy.value === 'newest') {
-    list.sort(
-      (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
-    );
+    list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   } else if (sortBy.value === 'oldest') {
-    list.sort(
-      (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
-    );
+    list.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
   } else if (sortBy.value === 'title') {
     list.sort((a, b) =>
-      (a.title_ru || a.title_en || '').localeCompare(
-        b.title_ru || b.title_en || ''
-      )
+      (a.title_ru || a.title_en || '').localeCompare(b.title_ru || b.title_en || '')
     );
   }
 
   return list;
 });
 
-const totalPages = computed(
-  () => Math.ceil(filteredGames.value.length / pageSize.value) || 1
-);
+const totalPages = computed(() => Math.ceil(filteredGames.value.length / pageSize.value) || 1);
 const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
 
 const paginatedGames = computed(() => {
-  return filteredGames.value.slice(
-    pageStart.value,
-    pageStart.value + pageSize.value
-  );
+  return filteredGames.value.slice(pageStart.value, pageStart.value + pageSize.value);
 });
 
 const visiblePages = computed(() => {
