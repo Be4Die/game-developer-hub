@@ -27,6 +27,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
   },
   server: {
+    host: "0.0.0.0",
     proxy: {
       "/api/orchestrator/v1": {
         target: "http://localhost:8080",
