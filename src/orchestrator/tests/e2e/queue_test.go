@@ -35,7 +35,7 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 	}
 
 	// Join queue
-	joinResp, err := env.queueClient.QueueServiceJoin(ctx, &pb.QueueServiceJoinRequest{
+	joinResp, err := env.queueClient.Join(ctx, &pb.QueueServiceJoinRequest{
 		GameId:   gameID,
 		PlayerId: "player-1",
 	})
@@ -53,7 +53,7 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 	}
 
 	// Heartbeat
-	hbResp, err := env.queueClient.QueueServiceHeartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
+	hbResp, err := env.queueClient.Heartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
 		GameId:   gameID,
 		PlayerId: "player-1",
 	})
@@ -68,7 +68,7 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 	}
 
 	// Второй игрок join
-	joinResp2, err := env.queueClient.QueueServiceJoin(ctx, &pb.QueueServiceJoinRequest{
+	joinResp2, err := env.queueClient.Join(ctx, &pb.QueueServiceJoinRequest{
 		GameId:   gameID,
 		PlayerId: "player-2",
 	})
@@ -80,7 +80,7 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 	}
 
 	// Leave
-	_, err = env.queueClient.QueueServiceLeave(ctx, &pb.QueueServiceLeaveRequest{
+	_, err = env.queueClient.Leave(ctx, &pb.QueueServiceLeaveRequest{
 		GameId:   gameID,
 		PlayerId: "player-1",
 	})
@@ -89,7 +89,7 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 	}
 
 	// player-2 теперь первый
-	hbResp2, err := env.queueClient.QueueServiceHeartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
+	hbResp2, err := env.queueClient.Heartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
 		GameId:   gameID,
 		PlayerId: "player-2",
 	})
@@ -156,7 +156,7 @@ func TestE2E_Queue_CleanupExpired(t *testing.T) {
 	}
 
 	// Join
-	_, err = env.queueClient.QueueServiceJoin(ctx, &pb.QueueServiceJoinRequest{
+	_, err = env.queueClient.Join(ctx, &pb.QueueServiceJoinRequest{
 		GameId:   gameID,
 		PlayerId: "expired-player",
 	})
@@ -168,7 +168,7 @@ func TestE2E_Queue_CleanupExpired(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Heartbeat должен вернуть EXPIRED
-	hbResp, err := env.queueClient.QueueServiceHeartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
+	hbResp, err := env.queueClient.Heartbeat(ctx, &pb.QueueServiceHeartbeatRequest{
 		GameId:   gameID,
 		PlayerId: "expired-player",
 	})

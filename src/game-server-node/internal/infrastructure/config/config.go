@@ -31,11 +31,11 @@ type Config struct {
 type OrchestratorConfig struct {
 	// Mode определяет режим работы: "manual" или "auto-discovery" (по умолчанию).
 	// В режиме auto-discovery нода сама анонсирует себя в оркестраторе.
-	Mode string `yaml:"mode" env-default:"auto-discovery"`
+	Mode string `yaml:"mode" env:"ORCHESTRATOR_MODE" env-default:"auto-discovery"`
 
 	// Address - адрес оркестратора (host:port) для gRPC соединения.
 	// Используется только в режиме auto-discovery.
-	Address string `yaml:"address" env-default:"orchestrator:50052"`
+	Address string `yaml:"address" env:"ORCHESTRATOR_ADDRESS" env-default:"orchestrator:50052"`
 
 	// AnnounceInterval - интервал между повторными попытками анонсирования.
 	// Используется если первичный announce не удался.

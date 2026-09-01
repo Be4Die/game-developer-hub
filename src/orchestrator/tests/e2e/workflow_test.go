@@ -21,7 +21,7 @@ func TestE2E_FullWorkflow(t *testing.T) {
 	defer cancel()
 
 	// Шаг 1: Health check.
-	healthResp, err := env.healthClient.Check(ctx, &pb.HealthServiceCheckRequest{})
+	healthResp, err := env.healthClient.Check(withJWT(ctx, e2eJWTSecret, e2eIssuer), &pb.HealthServiceCheckRequest{})
 	if err != nil {
 		t.Fatalf("HealthCheck failed: %v", err)
 	}

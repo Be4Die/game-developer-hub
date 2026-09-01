@@ -105,6 +105,21 @@ func (s *QueueService) Heartbeat(ctx context.Context, gameID int64, playerID str
 		}, nil
 	}
 
+	// Проверяем, не истёк ли heartbeat timeout
+	if policy.QueueHeartbeatTimeout > 0 {
+		lastHB, err := s.store.GetLastHeartbeat(ctx, gameID, playerID)
+		if err == nil {
+			cutoff := time.Now().Add(-time.Duration(policy.QueueHeartbeatTimeout) * time.Second).Unix()
+			if lastHB < cutoff {
+				_ = s.store.Leave(ctx, gameID, playerID)
+				_ = s.eventRepo.Log(ctx, gameID, playerID, domain.QueueEventTimeout, 0, 0)
+				return &QueueStatusResult{Status: domain.QueueStatusExpired}, nil
+			}
+		} else if errors.Is(err, domain.ErrNotFound) {
+			return &QueueStatusResult{Status: domain.QueueStatusExpired}, nil
+		}
+	}
+
 	// Обычный heartbeat
 	if err := s.store.Heartbeat(ctx, gameID, playerID); err != nil {
 		if errors.Is(err, domain.ErrNotFound) {

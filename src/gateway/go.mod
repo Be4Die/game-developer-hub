@@ -5,11 +5,12 @@ go 1.25.3
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/stretchr/testify v1.12.1
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 )
 
-require github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+require go.yaml.in/yaml/v3 v3.0.5 // indirect
 
 require (
 	github.com/Be4Die/game-developer-hub/protos v0.0.0

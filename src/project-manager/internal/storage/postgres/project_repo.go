@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	"github.com/jackc/pgx/v5"
@@ -55,16 +56,15 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		iconPath, coverPath  *string
 		videoPath, activeVer *string
 		devURL               *string
-		draftUpdatedAt       *context.Context // placeholder
+		draftUpdatedAt       *time.Time
 	)
-	_ = draftUpdatedAt
 
 	row := r.pool.QueryRow(ctx, query, id)
 	err := row.Scan(
 		&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
 		&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 		&iconPath, &coverPath, &videoPath, &activeVer,
-		&devURL, &draft.UpdatedAt,
+		&devURL, &draftUpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -73,85 +73,7 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		return nil, fmt.Errorf("postgres.ProjectRepo.Get: %w", err)
 	}
 
-	draft.ProjectID = p.ID
-	if titleRu != nil {
-		draft.TitleRu = *titleRu
-	}
-	if titleEn != nil {
-		draft.TitleEn = *titleEn
-	}
-	if seoRu != nil {
-		draft.SeoRu = *seoRu
-	}
-	if seoEn != nil {
-		draft.SeoEn = *seoEn
-	}
-	if aboutRu != nil {
-		draft.AboutRu = *aboutRu
-	}
-	if aboutEn != nil {
-		draft.AboutEn = *aboutEn
-	}
-	if iconPath != nil {
-		draft.IconPath = *iconPath
-	}
-	if coverPath != nil {
-		draft.CoverPath = *coverPath
-	}
-	if videoPath != nil {
-		draft.VideoPath = *videoPath
-	}
-	if activeVer != nil {
-		draft.ActiveBuildVersion = *activeVer
-	}
-	if devURL != nil {
-		draft.DevURL = *devURL
-	}
-	p.Draft = &draft
-
-	return &p, nil
-}
-
-// ListByOwner возвращает список проектов пользователя с пагинацией.
-func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
-	const query = `
-		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
-		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
-		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.updated_at
-		FROM projects p
-		LEFT JOIN project_drafts d ON d.project_id = p.id
-		WHERE p.owner_id = $1
-		ORDER BY p.created_at DESC
-		LIMIT $2 OFFSET $3
-	`
-	rows, err := r.pool.Query(ctx, query, ownerID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("postgres.ProjectRepo.ListByOwner: %w", err)
-	}
-	defer rows.Close()
-
-	var projects []*domain.Project
-	for rows.Next() {
-		var (
-			p                    domain.Project
-			draft                domain.Draft
-			titleRu, titleEn     *string
-			seoRu, seoEn         *string
-			aboutRu, aboutEn     *string
-			iconPath, coverPath  *string
-			videoPath, activeVer *string
-			devURL               *string
-		)
-		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
-			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
-			&iconPath, &coverPath, &videoPath, &activeVer,
-			&devURL, &draft.UpdatedAt,
-		); err != nil {
-			return nil, fmt.Errorf("postgres.ProjectRepo.ListByOwner scan: %w", err)
-		}
-
+	if draftUpdatedAt != nil || titleRu != nil {
 		draft.ProjectID = p.ID
 		if titleRu != nil {
 			draft.TitleRu = *titleRu
@@ -186,7 +108,96 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 		if devURL != nil {
 			draft.DevURL = *devURL
 		}
+		if draftUpdatedAt != nil {
+			draft.UpdatedAt = *draftUpdatedAt
+		}
 		p.Draft = &draft
+	}
+
+	return &p, nil
+}
+
+// ListByOwner возвращает список проектов пользователя с пагинацией.
+func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
+	const query = `
+		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
+		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
+		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
+		       d.dev_url, d.updated_at
+		FROM projects p
+		LEFT JOIN project_drafts d ON d.project_id = p.id
+		WHERE p.owner_id = $1
+		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.pool.Query(ctx, query, ownerID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("postgres.ProjectRepo.ListByOwner: %w", err)
+	}
+	defer rows.Close()
+
+	var projects []*domain.Project
+	for rows.Next() {
+		var (
+			p                    domain.Project
+			draft                domain.Draft
+			titleRu, titleEn     *string
+			seoRu, seoEn         *string
+			aboutRu, aboutEn     *string
+			iconPath, coverPath  *string
+			videoPath, activeVer *string
+			devURL               *string
+			draftUpdatedAt       *time.Time
+		)
+		if err := rows.Scan(
+			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
+			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
+			&iconPath, &coverPath, &videoPath, &activeVer,
+			&devURL, &draftUpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("postgres.ProjectRepo.ListByOwner scan: %w", err)
+		}
+
+		if draftUpdatedAt != nil || titleRu != nil {
+			draft.ProjectID = p.ID
+			if titleRu != nil {
+				draft.TitleRu = *titleRu
+			}
+			if titleEn != nil {
+				draft.TitleEn = *titleEn
+			}
+			if seoRu != nil {
+				draft.SeoRu = *seoRu
+			}
+			if seoEn != nil {
+				draft.SeoEn = *seoEn
+			}
+			if aboutRu != nil {
+				draft.AboutRu = *aboutRu
+			}
+			if aboutEn != nil {
+				draft.AboutEn = *aboutEn
+			}
+			if iconPath != nil {
+				draft.IconPath = *iconPath
+			}
+			if coverPath != nil {
+				draft.CoverPath = *coverPath
+			}
+			if videoPath != nil {
+				draft.VideoPath = *videoPath
+			}
+			if activeVer != nil {
+				draft.ActiveBuildVersion = *activeVer
+			}
+			if devURL != nil {
+				draft.DevURL = *devURL
+			}
+			if draftUpdatedAt != nil {
+				draft.UpdatedAt = *draftUpdatedAt
+			}
+			p.Draft = &draft
+		}
 
 		projects = append(projects, &p)
 	}

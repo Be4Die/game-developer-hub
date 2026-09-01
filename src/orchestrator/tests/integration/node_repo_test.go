@@ -209,7 +209,7 @@ func TestNodeRepo_UpdateLastPing(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 
-	beforePing := time.Now()
+	beforePing := time.Now().Add(-time.Second)
 	if err := env.nodeRepo.UpdateLastPing(ctx, node.ID); err != nil {
 		t.Fatalf("UpdateLastPing failed: %v", err)
 	}

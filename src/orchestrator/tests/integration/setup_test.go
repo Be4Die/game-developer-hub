@@ -135,6 +135,7 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 	migrations := []string{
 		`CREATE TABLE IF NOT EXISTS nodes (
 			id            BIGSERIAL PRIMARY KEY,
+			owner_id      TEXT NOT NULL DEFAULT '',
 			address       TEXT NOT NULL UNIQUE,
 			token_hash    BYTEA NOT NULL,
 			api_token     TEXT NOT NULL DEFAULT '',
@@ -165,6 +166,7 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 		)`,
 		`CREATE TABLE IF NOT EXISTS instances (
 			id               BIGSERIAL PRIMARY KEY,
+			owner_id         TEXT NOT NULL DEFAULT '',
 			node_id          BIGINT NOT NULL REFERENCES nodes(id),
 			server_build_id  BIGINT NOT NULL REFERENCES server_builds(id),
 			game_id          BIGINT NOT NULL,
@@ -193,6 +195,11 @@ func createTables(t *testing.T, pool *pgxpool.Pool) {
 			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
 			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
 			node_preference          TEXT NOT NULL DEFAULT 'auto',
+			queue_location            SMALLINT NOT NULL DEFAULT 1,
+			queue_scale_up_threshold  INTEGER NOT NULL DEFAULT 0,
+			queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
+			queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
+			queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,
 			created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
 			updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
 		)`,

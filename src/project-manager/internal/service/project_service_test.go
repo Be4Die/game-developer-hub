@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *mockReleaseRepo) {
@@ -228,5 +230,134 @@ func TestUnit_ProjectService_RejectDraft(t *testing.T) {
 	updatedProj, _ := pRepo.Get(ctx, p.ID)
 	if updatedProj.Status != domain.ProjectStatusDraft {
 		t.Errorf("expected project status Draft after reject, got: %v", updatedProj.Status)
+	}
+}
+
+func TestUnit_ProjectService_ListProjectsAndBuilds(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _ := setupTestProjectService(t)
+
+	p1, _ := svc.CreateProject(ctx, "user-abc", "Игра 1", "Game 1")
+	p2, _ := svc.CreateProject(ctx, "user-abc", "Игра 2", "Game 2")
+	_, _ = svc.CreateProject(ctx, "user-other", "Игра 3", "Game 3")
+
+	// List user-abc projects
+	list, total, err := svc.ListProjects(ctx, "user-abc", 10, 0)
+	if err != nil {
+		t.Fatalf("list projects failed: %v", err)
+	}
+	if total != 2 || len(list) != 2 {
+		t.Errorf("expected 2 projects, got total=%d, len=%d", total, len(list))
+	}
+
+	// Upload builds to p1
+	_, _, _ = svc.UploadBuildStream(ctx, p1.ID, "user-abc", "1.0.0", bytes.NewReader([]byte("b1")))
+	_, _, _ = svc.UploadBuildStream(ctx, p1.ID, "user-abc", "1.0.1", bytes.NewReader([]byte("b2")))
+
+	builds, err := svc.ListBuilds(ctx, p1.ID, "user-abc")
+	if err != nil {
+		t.Fatalf("list builds failed: %v", err)
+	}
+	if len(builds) != 2 {
+		t.Errorf("expected 2 builds, got %d", len(builds))
+	}
+
+	// List builds for other user should be forbidden
+	_, err = svc.ListBuilds(ctx, p1.ID, "user-intruder")
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden for non-owner listing builds, got: %v", err)
+	}
+
+	_ = p2
+}
+
+func TestUnit_ProjectService_MediaManagement(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _ := setupTestProjectService(t)
+
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+
+	// 1. Upload Icon
+	iconPath, err := svc.UploadMediaStream(ctx, p.ID, "user-123", "icon", bytes.NewReader([]byte("icon-png")))
+	if err != nil {
+		t.Fatalf("upload icon failed: %v", err)
+	}
+	if iconPath == "" {
+		t.Errorf("expected non-empty icon path")
+	}
+
+	// 2. Forbidden upload by non-owner
+	_, err = svc.UploadMediaStream(ctx, p.ID, "user-intruder", "icon", bytes.NewReader([]byte("icon-png")))
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden on media upload by non-owner, got: %v", err)
+	}
+
+	// 3. Publish and Unpublish
+	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
+		TitleRu: "Игра",
+		AboutRu: "Описание",
+	})
+	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("zip")))
+	rel, err := svc.PublishRelease(ctx, p.ID, "1.0.0", "mod")
+	require.NoError(t, err)
+	assert.Equal(t, "1.0.0", rel.Version)
+
+	pub, err := svc.GetPublished(ctx, p.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "1.0.0", pub.Version)
+
+	// Unpublish by non-owner -> forbidden
+	err = svc.Unpublish(ctx, p.ID, "user-intruder")
+	assert.ErrorIs(t, err, domain.ErrForbidden)
+
+	// Unpublish by owner
+	err = svc.Unpublish(ctx, p.ID, "user-123")
+	require.NoError(t, err)
+}
+
+func TestUnit_ProjectService_DeleteProjectAndBuild(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, pRepo, _ := setupTestProjectService(t)
+
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("b1")))
+
+	// Delete build by non-owner
+	err := svc.DeleteBuild(ctx, p.ID, "user-intruder", "1.0.0")
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden for non-owner deleting build, got: %v", err)
+	}
+
+	// Delete build by owner
+	err = svc.DeleteBuild(ctx, p.ID, "user-123", "1.0.0")
+	if err != nil {
+		t.Fatalf("delete build failed: %v", err)
+	}
+
+	// Delete project by non-owner
+	err = svc.DeleteProject(ctx, p.ID, "user-intruder")
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden for non-owner deleting project, got: %v", err)
+	}
+
+	// Delete project by owner
+	err = svc.DeleteProject(ctx, p.ID, "user-123")
+	if err != nil {
+		t.Fatalf("delete project failed: %v", err)
+	}
+
+	// Verify project deleted
+	_, err = pRepo.Get(ctx, p.ID)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("expected ErrNotFound for deleted project, got: %v", err)
 	}
 }

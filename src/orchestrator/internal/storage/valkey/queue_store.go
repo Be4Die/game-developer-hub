@@ -107,6 +107,19 @@ func (s *QueueStore) Heartbeat(ctx context.Context, gameID int64, playerID strin
 	return nil
 }
 
+// GetLastHeartbeat возвращает timestamp последнего heartbeat игрока.
+func (s *QueueStore) GetLastHeartbeat(ctx context.Context, gameID int64, playerID string) (int64, error) {
+	mKey := metaKey(gameID, playerID)
+	lastHB, err := s.client.HGet(ctx, mKey, "last_heartbeat").Int64()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return 0, domain.ErrNotFound
+		}
+		return 0, fmt.Errorf("valkey.QueueStore.GetLastHeartbeat: %w", err)
+	}
+	return lastHB, nil
+}
+
 // GetPosition возвращает позицию (1-based) и общее количество.
 func (s *QueueStore) GetPosition(ctx context.Context, gameID int64, playerID string) (position, total int64, err error) {
 	qKey := queueKey(gameID)

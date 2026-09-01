@@ -18,8 +18,8 @@ func NewQueueHandler(svc *service.QueueService) *QueueHandler {
 	return &QueueHandler{queueService: svc}
 }
 
-// QueueServiceJoin добавляет игрока в очередь.
-func (h *QueueHandler) QueueServiceJoin(ctx context.Context, req *pb.QueueServiceJoinRequest) (*pb.QueueServiceJoinResponse, error) {
+// Join добавляет игрока в очередь.
+func (h *QueueHandler) Join(ctx context.Context, req *pb.QueueServiceJoinRequest) (*pb.QueueServiceJoinResponse, error) {
 	result, err := h.queueService.Join(ctx, req.GetGameId(), req.GetPlayerId(), req.GetMode())
 	if err != nil {
 		return nil, domainError(err, "queue join")
@@ -27,8 +27,8 @@ func (h *QueueHandler) QueueServiceJoin(ctx context.Context, req *pb.QueueServic
 	return queueStatusResultToProto(result), nil
 }
 
-// QueueServiceHeartbeat обновляет heartbeat и возвращает статус.
-func (h *QueueHandler) QueueServiceHeartbeat(ctx context.Context, req *pb.QueueServiceHeartbeatRequest) (*pb.QueueServiceHeartbeatResponse, error) {
+// Heartbeat обновляет heartbeat и возвращает статус.
+func (h *QueueHandler) Heartbeat(ctx context.Context, req *pb.QueueServiceHeartbeatRequest) (*pb.QueueServiceHeartbeatResponse, error) {
 	result, err := h.queueService.Heartbeat(ctx, req.GetGameId(), req.GetPlayerId())
 	if err != nil {
 		return nil, domainError(err, "queue heartbeat")
@@ -36,8 +36,8 @@ func (h *QueueHandler) QueueServiceHeartbeat(ctx context.Context, req *pb.QueueS
 	return heartbeatResponseToProto(result), nil
 }
 
-// QueueServiceLeave удаляет игрока из очереди.
-func (h *QueueHandler) QueueServiceLeave(ctx context.Context, req *pb.QueueServiceLeaveRequest) (*pb.QueueServiceLeaveResponse, error) {
+// Leave удаляет игрока из очереди.
+func (h *QueueHandler) Leave(ctx context.Context, req *pb.QueueServiceLeaveRequest) (*pb.QueueServiceLeaveResponse, error) {
 	if err := h.queueService.Leave(ctx, req.GetGameId(), req.GetPlayerId()); err != nil {
 		return nil, domainError(err, "queue leave")
 	}
@@ -53,8 +53,8 @@ func (h *QueueHandler) Count(ctx context.Context, req *pb.QueueServiceCountReque
 	return &pb.QueueServiceCountResponse{Count: count}, nil
 }
 
-// QueueServiceStatus возвращает статус без обновления heartbeat.
-func (h *QueueHandler) QueueServiceStatus(ctx context.Context, req *pb.QueueServiceStatusRequest) (*pb.QueueServiceStatusResponse, error) {
+// Status возвращает статус без обновления heartbeat.
+func (h *QueueHandler) Status(ctx context.Context, req *pb.QueueServiceStatusRequest) (*pb.QueueServiceStatusResponse, error) {
 	result, err := h.queueService.Status(ctx, req.GetGameId(), req.GetPlayerId())
 	if err != nil {
 		return nil, domainError(err, "queue status")

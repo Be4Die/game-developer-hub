@@ -30,6 +30,9 @@ type QueueStore interface {
 	// Возвращает ErrNotFound если игрока нет в очереди.
 	Heartbeat(ctx context.Context, gameID int64, playerID string) error
 
+	// GetLastHeartbeat возвращает timestamp последнего heartbeat игрока.
+	GetLastHeartbeat(ctx context.Context, gameID int64, playerID string) (int64, error)
+
 	// GetPosition возвращает позицию игрока в очереди (1-based) и общее количество.
 	// Возвращает ErrNotFound если игрока нет в очереди.
 	GetPosition(ctx context.Context, gameID int64, playerID string) (position, total int64, err error)

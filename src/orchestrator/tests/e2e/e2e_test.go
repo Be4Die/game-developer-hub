@@ -88,6 +88,19 @@ type e2eTestEnv struct {
 	log             *slog.Logger
 }
 
+// getDockerSocketBind returns the appropriate docker socket bind string.
+func getDockerSocketBind() string {
+	if _, err := os.Stat("/var/run/docker.sock"); err == nil {
+		return "/var/run/docker.sock:/var/run/docker.sock"
+	}
+	home, _ := os.UserHomeDir()
+	desktopSock := home + "/.docker/desktop/docker.sock"
+	if _, err := os.Stat(desktopSock); err == nil {
+		return desktopSock + ":/var/run/docker.sock"
+	}
+	return "/var/run/docker.sock:/var/run/docker.sock"
+}
+
 // setupE2E запускает PostgreSQL, Valkey, game-server-node и orchestrator in-process.
 func setupE2E(t *testing.T) *e2eTestEnv {
 	t.Helper()
@@ -126,12 +139,13 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		Image:        nodeImageTag,
 		ExposedPorts: []string{"44044/tcp"},
 		Env: map[string]string{
-			"CONFIG_PATH":  "/app/config/local.yaml",
-			"NODE_API_KEY": "test-node-token",
+			"CONFIG_PATH":       "/app/config/local.yaml",
+			"NODE_API_KEY":      "test-node-token",
+			"ORCHESTRATOR_MODE": "manual",
 		},
-		WaitingFor: wait.ForListeningPort("44044/tcp").WithStartupTimeout(15 * time.Second),
+		WaitingFor: wait.ForLog("grpc server started").WithStartupTimeout(20 * time.Second),
 		HostConfigModifier: func(hc *container.HostConfig) {
-			hc.Binds = append(hc.Binds, "/var/run/docker.sock:/var/run/docker.sock")
+			hc.Binds = append(hc.Binds, getDockerSocketBind())
 		},
 	}
 
@@ -400,6 +414,8 @@ func createE2ETables(t *testing.T, pool *pgxpool.Pool) {
 			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
 			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
 			node_preference          TEXT NOT NULL DEFAULT 'auto',
+			queue_location            SMALLINT NOT NULL DEFAULT 1,
+			queue_scale_up_threshold  INTEGER NOT NULL DEFAULT 0,
 			queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
 			queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
 			queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,

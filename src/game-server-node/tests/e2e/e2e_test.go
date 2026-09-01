@@ -54,6 +54,19 @@ type testClient struct {
 	containerLog *slog.Logger
 }
 
+// getDockerSocketBind returns the appropriate docker socket bind string.
+func getDockerSocketBind() string {
+	if _, err := os.Stat("/var/run/docker.sock"); err == nil {
+		return "/var/run/docker.sock:/var/run/docker.sock"
+	}
+	home, _ := os.UserHomeDir()
+	desktopSock := home + "/.docker/desktop/docker.sock"
+	if _, err := os.Stat(desktopSock); err == nil {
+		return desktopSock + ":/var/run/docker.sock"
+	}
+	return "/var/run/docker.sock:/var/run/docker.sock"
+}
+
 // setupServerContainer поднимает свежий контейнер game-server-node и возвращает
 // testClient для подключения. Контейнер автоматически уничтожается через t.Cleanup.
 func setupServerContainer(t *testing.T) *testClient {
@@ -65,12 +78,13 @@ func setupServerContainer(t *testing.T) *testClient {
 		Image:        "game-server-node:latest",
 		ExposedPorts: []string{"44044/tcp"},
 		Env: map[string]string{
-			"CONFIG_PATH":  "/app/config/local.yaml",
-			"NODE_API_KEY": getE2EAPIKey(),
+			"CONFIG_PATH":       "/app/config/local.yaml",
+			"NODE_API_KEY":      getE2EAPIKey(),
+			"ORCHESTRATOR_MODE": "manual",
 		},
-		WaitingFor: wait.ForListeningPort("44044/tcp").WithStartupTimeout(15 * time.Second),
+		WaitingFor: wait.ForLog("grpc server started").WithStartupTimeout(20 * time.Second),
 		HostConfigModifier: func(hc *container.HostConfig) {
-			hc.Binds = append(hc.Binds, "/var/run/docker.sock:/var/run/docker.sock")
+			hc.Binds = append(hc.Binds, getDockerSocketBind())
 		},
 	}
 
@@ -110,10 +124,23 @@ func setupServerContainer(t *testing.T) *testClient {
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 
+	streamAuthInterceptor := func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+getE2EAPIKey())
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+
 	conn, err := grpc.NewClient(
 		grpcAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(authInterceptor),
+		grpc.WithStreamInterceptor(streamAuthInterceptor),
 	)
 	if err != nil {
 		t.Fatalf("не удалось подключиться к %s: %v", grpcAddress, err)

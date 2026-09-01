@@ -38,7 +38,18 @@ type Runtime struct {
 // New создаёт и инициализирует Docker-клиент.
 // Возвращает ошибку если демон недоступен.
 func New(log *slog.Logger) (*Runtime, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	opts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+	if os.Getenv("DOCKER_HOST") == "" {
+		if _, err := os.Stat("/var/run/docker.sock"); os.IsNotExist(err) {
+			home, _ := os.UserHomeDir()
+			desktopSock := filepath.Join(home, ".docker", "desktop", "docker.sock")
+			if _, err := os.Stat(desktopSock); err == nil {
+				opts = append(opts, client.WithHost("unix://"+desktopSock))
+			}
+		}
+	}
+
+	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		return nil, fmt.Errorf("docker.New: %w", err)
 	}

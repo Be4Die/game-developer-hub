@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"testing"
 	"time"
 
@@ -263,7 +264,8 @@ func loadTestImage(ctx context.Context, t *testing.T, tc *testClient, gameID int
 			},
 		})
 		if err != nil {
-			t.Fatalf("LoadImage Send chunk error at offset %d: %v", offset, err)
+			closeResp, closeErr := stream.CloseAndRecv()
+			t.Fatalf("LoadImage Send chunk error at offset %d: %v (server error: %v, resp: %v)", offset, err, closeErr, closeResp)
 		}
 
 		totalSent += len(chunk)
@@ -282,7 +284,17 @@ func loadTestImage(ctx context.Context, t *testing.T, tc *testClient, gameID int
 
 // saveDockerImageToTar сохраняет Docker образ в tar формат через Docker API.
 func saveDockerImageToTar(ctx context.Context, imageTag string) ([]byte, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	opts := []client.Opt{client.FromEnv, client.WithAPIVersionNegotiation()}
+	if os.Getenv("DOCKER_HOST") == "" {
+		if _, err := os.Stat("/var/run/docker.sock"); os.IsNotExist(err) {
+			home, _ := os.UserHomeDir()
+			desktopSock := home + "/.docker/desktop/docker.sock"
+			if _, err := os.Stat(desktopSock); err == nil {
+				opts = append(opts, client.WithHost("unix://"+desktopSock))
+			}
+		}
+	}
+	cli, err := client.NewClientWithOpts(opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Docker client: %w", err)
 	}

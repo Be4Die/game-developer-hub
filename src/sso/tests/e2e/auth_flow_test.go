@@ -9,6 +9,7 @@ import (
 
 	pb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -48,12 +49,13 @@ func TestE2E_FullAuthFlow(t *testing.T) {
 		t.Fatal("expected error logging in before verification")
 	}
 
-	// Step 2: Verify email (store code in Valkey directly, call VerifyEmail via gRPC)
-	if err := env.redisClient.Set(ctx, "email_verify:e2e-flow@test.com", "123456", 10*time.Minute).Err(); err != nil {
-		t.Fatalf("store verification code failed: %v", err)
+	// Step 2: Verify email (read the generated code from Valkey, then call VerifyEmail)
+	code, err := env.redisClient.Get(ctx, "sso:verify:e2e-flow@test.com").Result()
+	if err != nil {
+		t.Fatalf("get verification code from valkey failed: %v", err)
 	}
 
-	_, err = env.authClient.VerifyEmail(ctx, &pb.AuthServiceVerifyEmailRequest{VerificationCode: "123456"})
+	_, err = env.authClient.VerifyEmail(ctx, &pb.AuthServiceVerifyEmailRequest{VerificationCode: code})
 	if err != nil {
 		t.Fatalf("VerifyEmail failed: %v", err)
 	}
@@ -255,8 +257,9 @@ func TestE2E_UserProfile(t *testing.T) {
 	})
 	userID := loginResp.User.Id
 
-	// Get profile
-	profileResp, err := env.userClient.GetProfile(ctx, &pb.UserServiceGetProfileRequest{UserId: userID})
+	// Get profile with user context
+	userCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs("x-user-id", userID))
+	profileResp, err := env.userClient.GetProfile(userCtx, &pb.UserServiceGetProfileRequest{UserId: userID})
 	if err != nil {
 		t.Fatalf("GetProfile failed: %v", err)
 	}
