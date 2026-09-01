@@ -11,7 +11,7 @@ INSTANCES="${4:-4}"
 echo "Заполнение тестовыми данными: $ADDR"
 echo "  nodes=$NODES builds=$BUILDS instances=$INSTANCES"
 
-cd "$(dirname "$0")/../orchestrator"
+cd "$(dirname "$0")/../../src/orchestrator"
 
 SEED_NODES="$NODES" SEED_BUILDS="$BUILDS" SEED_INSTANCES="$INSTANCES" \
   go run ./cmd/seed

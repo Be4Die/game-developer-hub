@@ -5,18 +5,18 @@ coverage.out
 **/load-test-report.json
 
 # Go build artifacts (executables)
-orchestrator/cmd/load-test/load-test
-orchestrator/cmd/seed/seed
-orchestrator/cmd/server/server
-game-server-node/cmd/load-test/load-test
-game-server-node/cmd/seed/seed
-game-server-node/cmd/server/server
+src/orchestrator/cmd/load-test/load-test
+src/orchestrator/cmd/seed/seed
+src/orchestrator/cmd/server/server
+src/game-server-node/cmd/load-test/load-test
+src/game-server-node/cmd/seed/seed
+src/game-server-node/cmd/server/server
 
 # Executables generated in project root or subdirs
-/orchestrator/seed
-/game-server-node/seed
-/game-server-node/load-test
-/orchestrator/load-test
+/src/orchestrator/seed
+/src/game-server-node/seed
+/src/game-server-node/load-test
+/src/orchestrator/load-test
 
 # General Go binaries
 *.exe

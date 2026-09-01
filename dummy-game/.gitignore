@@ -1,9 +1,0 @@
-# Binaries
-bin/
-*.tar.gz
-*.zip
-
-# Go
-vendor/
-*.test
-*.out

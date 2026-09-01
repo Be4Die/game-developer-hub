@@ -37,10 +37,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # Миграции применяются при первом старте (порядок по имени файла)
-      - ../orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
-      - ../sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
-      - ../project-manager/migrations/init.sql:/docker-entrypoint-initdb.d/03-project-manager.sql:ro
-      - ../moderation/migrations/init.sql:/docker-entrypoint-initdb.d/04-moderation.sql:ro
+      - ../src/orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
+      - ../src/sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
+      - ../src/project-manager/migrations/init.sql:/docker-entrypoint-initdb.d/03-project-manager.sql:ro
+      - ../src/moderation/migrations/init.sql:/docker-entrypoint-initdb.d/04-moderation.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -62,7 +62,7 @@ services:
 
   orchestrator:
     build:
-      context: ..
+      context: ../src
       dockerfile: orchestrator/Dockerfile
     container_name: gdh-orchestrator
     restart: unless-stopped
@@ -74,7 +74,7 @@ services:
       valkey:
         condition: service_healthy
     volumes:
-      - ../orchestrator/config:/app/config:ro
+      - ../src/orchestrator/config:/app/config:ro
       - builds:/app/data/builds
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 50052 || exit 1"]
@@ -85,7 +85,7 @@ services:
 
   sso:
     build:
-      context: ..
+      context: ../src
       dockerfile: sso/Dockerfile
     container_name: gdh-sso
     restart: unless-stopped
@@ -99,7 +99,7 @@ services:
       valkey:
         condition: service_healthy
     volumes:
-      - ../sso/config:/app/config:ro
+      - ../src/sso/config:/app/config:ro
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"]
       interval: 10s
@@ -109,7 +109,7 @@ services:
 
   project-manager:
     build:
-      context: ..
+      context: ../src
       dockerfile: project-manager/Dockerfile
     container_name: gdh-project-manager
     restart: unless-stopped
@@ -134,7 +134,7 @@ services:
 
   moderation:
     build:
-      context: ..
+      context: ../src
       dockerfile: moderation/Dockerfile
     container_name: gdh-moderation
     restart: unless-stopped
@@ -158,7 +158,7 @@ services:
 
   gateway:
     build:
-      context: ..
+      context: ../src
       dockerfile: gateway/Dockerfile
     container_name: gdh-gateway
     environment:
@@ -184,7 +184,7 @@ services:
 
   game-server-node:
     build:
-      context: ..
+      context: ../src
       dockerfile: game-server-node/Dockerfile
     container_name: gdh-node
     environment:
@@ -197,13 +197,13 @@ services:
       orchestrator:
         condition: service_healthy
     volumes:
-      - ../game-server-node/config:/app/config:ro
+      - ../src/game-server-node/config:/app/config:ro
       - node_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
 
   game-deployment-agent:
     build:
-      context: ..
+      context: ../src
       dockerfile: game-deployment-agent/Dockerfile
     container_name: gdh-deployment-agent
     restart: unless-stopped
@@ -217,7 +217,7 @@ services:
 
   nginx:
     build:
-      context: ../frontend
+      context: ../src/frontend
       dockerfile: Dockerfile
     container_name: gdh-nginx
     restart: unless-stopped
