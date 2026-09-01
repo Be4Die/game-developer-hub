@@ -1,6 +1,6 @@
 <template>
   <div class="profile-page">
-    <div class="profile-container">
+    <div class="profile-container" :class="{ 'is-compact': isModeratorOrAdmin }">
       <!-- Карточка информации об аккаунте (без псевдо-аватара) -->
       <section class="user-info-card">
         <div class="user-main-info">
@@ -23,10 +23,10 @@
         </div>
       </section>
 
-      <!-- 2-колоночная адаптивная сетка -->
-      <div class="profile-grid">
+      <!-- 2-колоночная адаптивная сетка (для модератора и админа — вертикальный стек) -->
+      <div class="profile-grid" :class="{ 'grid-vertical': isModeratorOrAdmin }">
         <!-- Изменение отображаемого имени (только для разработчиков) -->
-        <section v-if="!isModerator" class="profile-card card-name">
+        <section v-if="!isModeratorOrAdmin" class="profile-card card-name">
           <h2 class="card-title">
             <UserCheck class="icon-sm text-primary" />
             {{ t('profile.editProfile') }}
@@ -93,7 +93,7 @@
         </section>
 
         <!-- Смена пароля (только для разработчиков) -->
-        <section v-if="!isModerator" class="profile-card card-password">
+        <section v-if="!isModeratorOrAdmin" class="profile-card card-password">
           <h2 class="card-title">
             <Lock class="icon-sm text-primary" />
             {{ t('profile.security') }}
@@ -207,11 +207,6 @@ const userDisplayName = computed(
   () => user.value.display_name || user.value.email?.split('@')[0] || t('roles.user')
 );
 const userEmail = computed(() => user.value.email || '');
-
-const isModerator = computed(() => {
-  const role = user.value.role;
-  return role === 'USER_ROLE_MODERATOR' || role === 'moderator' || role === 2;
-});
 
 const isModeratorOrAdmin = computed(() => {
   const role = user.value.role;
@@ -345,6 +340,11 @@ function selectLanguage(lang) {
   gap: 24px;
 }
 
+.profile-container.is-compact {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
 .user-info-card {
   width: 100%;
   display: flex;
@@ -416,6 +416,13 @@ function selectLanguage(lang) {
 .profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.profile-grid.grid-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   width: 100%;
 }

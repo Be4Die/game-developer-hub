@@ -50,6 +50,8 @@ export default {
     moderatorChats: 'Чаты',
     moderationArchive: 'Архив',
     adminPanel: 'Администрирование',
+    developers: 'Разработчики',
+    moderators: 'Модераторы',
     profile: 'Профиль',
     logout: 'Выйти',
     toggleTheme: 'Переключить тему',

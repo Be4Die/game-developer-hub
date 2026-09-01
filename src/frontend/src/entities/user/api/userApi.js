@@ -83,6 +83,10 @@ export function deleteUser(userId) {
   return http.delete(`/users/${userId}`).then((r) => r.data);
 }
 
+export function setUserStatus(userId, newStatus) {
+  return http.patch(`/users/${userId}:set-status`, { new_status: newStatus }).then((r) => r.data);
+}
+
 export function getModerators() {
   return http.get('/users', { params: { limit: 100, offset: 0 } }).then((r) => {
     const users = r.data.users || [];

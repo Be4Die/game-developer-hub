@@ -102,7 +102,21 @@ type CreateModeratorResponse struct {
 	User User
 }
 
+// SetUserStatusRequest — запрос на изменение статуса пользователя.
+type SetUserStatusRequest struct {
+	CallerID string
+	UserID   string
+	Status   UserStatus
+}
+
+// SetUserStatusResponse — результат изменения статуса.
+type SetUserStatusResponse struct {
+	User User
+}
+
 // DeleteUserRequest — запрос на удаление пользователя.
 type DeleteUserRequest struct {
-	UserID string
+	CallerID string
+	UserID   string
 }
+

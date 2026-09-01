@@ -50,6 +50,8 @@ export default {
     moderatorChats: 'Chats',
     moderationArchive: 'Archive',
     adminPanel: 'Administration',
+    developers: 'Developers',
+    moderators: 'Moderators',
     profile: 'Profile',
     logout: 'Log out',
     toggleTheme: 'Toggle theme',

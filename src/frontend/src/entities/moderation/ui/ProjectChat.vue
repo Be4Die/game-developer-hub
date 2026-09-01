@@ -65,7 +65,7 @@
     </div>
 
     <!-- Поле ввода сообщения -->
-    <div class="chat-input-row">
+    <div v-if="!isChatReadOnly" class="chat-input-row">
       <textarea
         v-model="inputContent"
         class="chat-textarea"
@@ -83,9 +83,13 @@
         <Send class="icon-sm" />
       </button>
     </div>
+    <div v-else class="chat-readonly-banner">
+      <Eye class="icon-xs text-muted" />
+      <span>Режим аудита: чат доступен только для чтения</span>
+    </div>
 
     <!-- Нижняя панель действий чата: Кнопка закрытия вопроса модератором -->
-    <div v-if="showResolveButton" class="chat-footer-actions">
+    <div v-if="!isChatReadOnly && showResolveButton" class="chat-footer-actions">
       <button
         class="btn-resolve-dialog"
         :disabled="closingDialog"
@@ -102,7 +106,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MessageSquare, MessageSquareDashed, Info, Send, CheckCircle2 } from 'lucide-vue-next';
+import { MessageSquare, MessageSquareDashed, Info, Send, CheckCircle2, Eye } from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import {
   formatDateTime,
@@ -124,6 +128,10 @@ const props = defineProps({
     type: Number,
     default: 4000,
   },
+  readonly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['dialogStatusChanged']);
@@ -131,6 +139,13 @@ const emit = defineEmits(['dialogStatusChanged']);
 const { state: authState } = useAuth();
 const currentUserId = computed(() => authState.user?.id || authState.user?.sub || '');
 const currentUserRole = computed(() => authState.user?.role || '');
+
+const isAdmin = computed(() => {
+  const r = currentUserRole.value;
+  return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
+});
+
+const isChatReadOnly = computed(() => props.readonly || isAdmin.value);
 
 const isModeratorOrAdmin = computed(() => {
   const r = currentUserRole.value;
@@ -543,6 +558,17 @@ onUnmounted(() => {
   padding: 12px;
   background: var(--bg-card, #161b22);
   border-top: 1px solid var(--border, #30363d);
+}
+
+.chat-readonly-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-secondary, #0d1117);
+  border-top: 1px solid var(--border, #30363d);
+  color: var(--text-muted, #8b949e);
+  font-size: 0.8rem;
 }
 
 .chat-textarea {

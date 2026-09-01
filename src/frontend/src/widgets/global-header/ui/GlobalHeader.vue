@@ -25,8 +25,11 @@
           </router-link>
         </template>
         <template v-if="isAdmin">
-          <router-link to="/admin/dashboard" class="nav-item" active-class="active">
-            <Users class="icon-sm" /> {{ t('header.adminPanel') }}
+          <router-link to="/admin/developers" class="nav-item" active-class="active">
+            <Users class="icon-sm" /> {{ t('header.developers') }}
+          </router-link>
+          <router-link to="/admin/moderators" class="nav-item" active-class="active">
+            <ShieldCheck class="icon-sm" /> {{ t('header.moderators') }}
           </router-link>
           <router-link to="/moderator/queue" class="nav-item" active-class="active">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
@@ -73,6 +76,7 @@ import {
   Archive,
   LogOut,
   Users,
+  ShieldCheck,
 } from 'lucide-vue-next';
 
 const { t } = useI18n();

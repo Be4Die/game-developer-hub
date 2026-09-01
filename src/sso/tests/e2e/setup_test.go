@@ -146,7 +146,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		log, userRepo, sessionRepo, tokenManager, passwordHasher,
 		emailStore, resetStore, emailSender, 24*time.Hour,
 	)
-	userService := service.NewUserService(log, userRepo, passwordHasher)
+	userService := service.NewUserService(log, userRepo, passwordHasher, sessionRepo)
 	tokenService := service.NewTokenService(log, sessionRepo, sessionCache, tokenManager)
 
 	// ─── gRPC Handlers ──────────────────────────────────────────

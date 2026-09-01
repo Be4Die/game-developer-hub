@@ -95,6 +95,11 @@ func TestDomainErrToStatus(t *testing.T) {
 		{domain.ErrEmailNotVerified, codes.FailedPrecondition},
 		{domain.ErrUserSuspended, codes.PermissionDenied},
 		{domain.ErrModeratorManagedByAdmin, codes.PermissionDenied},
+		{domain.ErrProfileImmutable, codes.PermissionDenied},
+		{domain.ErrPermissionDenied, codes.PermissionDenied},
+		{domain.ErrCannotModifyAdminStatus, codes.PermissionDenied},
+		{domain.ErrCannotModifyModeratorStatus, codes.PermissionDenied},
+		{domain.ErrCannotDeleteAdmin, codes.PermissionDenied},
 		{errors.New("unknown"), codes.Internal},
 	}
 

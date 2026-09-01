@@ -87,7 +87,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log, userRepo, sessionRepo, tokenManager, passwordHasher,
 		emailStore, resetStore, emailSender, cfg.JWT.RefreshTokenTTL,
 	)
-	userService := service.NewUserService(log, userRepo, passwordHasher)
+	userService := service.NewUserService(log, userRepo, passwordHasher, sessionRepo)
 	tokenService := service.NewTokenService(log, sessionRepo, sessionCache, tokenManager)
 
 	// 6. Инициализация обработчиков gRPC.

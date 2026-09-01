@@ -903,6 +903,19 @@ function openChat(projectId) {
   }
 }
 
+.audit-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-md, 8px);
+  color: #60a5fa;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
 @media (max-width: 800px) {
   .moderation-page-container {
     padding: 16px;

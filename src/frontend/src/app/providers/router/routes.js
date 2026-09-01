@@ -17,7 +17,8 @@ import { ModeratorChatsPage } from '@/pages/moderator-chats';
 import { ModerationArchivePage } from '@/pages/moderation-archive';
 import { ModerationProjectPage } from '@/pages/moderation-project';
 import { ProfilePage } from '@/pages/profile';
-import { AdminDashboardPage } from '@/pages/admin-dashboard';
+import { AdminDevelopersPage } from '@/pages/admin-developers';
+import { AdminModeratorsPage } from '@/pages/admin-moderators';
 
 export const routes = [
   {
@@ -25,7 +26,7 @@ export const routes = [
     redirect: () => {
       if (!isAuthenticated()) return '/login';
       const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
-      if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/admin/dashboard';
+      if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/admin/developers';
       if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return '/moderator/queue';
       return '/projects';
     },
@@ -140,9 +141,23 @@ export const routes = [
     redirect: '/profile',
   },
   {
+    path: '/admin',
+    redirect: '/admin/developers',
+  },
+  {
     path: '/admin/dashboard',
-    name: 'admin-dashboard',
-    component: AdminDashboardPage,
+    redirect: '/admin/developers',
+  },
+  {
+    path: '/admin/developers',
+    name: 'admin-developers',
+    component: AdminDevelopersPage,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/admin/moderators',
+    name: 'admin-moderators',
+    component: AdminModeratorsPage,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];

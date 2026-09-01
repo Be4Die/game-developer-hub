@@ -159,8 +159,7 @@ func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.UserServiceChang
 }
 
 // SetUserStatus изменяет статус учётной записи пользователя.
-// Требует роль admin. Возвращает codes.Unimplemented, пока не реализовано в сервисе.
-func (h *UserHandler) SetUserStatus(_ context.Context, req *pb.UserServiceSetStatusRequest) (*pb.UserServiceSetStatusResponse, error) {
+func (h *UserHandler) SetUserStatus(ctx context.Context, req *pb.UserServiceSetStatusRequest) (*pb.UserServiceSetStatusResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -168,8 +167,21 @@ func (h *UserHandler) SetUserStatus(_ context.Context, req *pb.UserServiceSetSta
 		return nil, err
 	}
 
-	// TODO: реализовать в UserService
-	return nil, status.Error(codes.Unimplemented, "SetUserStatus not yet implemented in service layer")
+	callerID := extractUserIDFromContext(ctx)
+	if callerID == "" {
+		return nil, status.Error(codes.Unauthenticated, "missing user context")
+	}
+
+	user, err := h.svc.SetUserStatus(ctx, domain.SetUserStatusRequest{
+		CallerID: callerID,
+		UserID:   req.UserId,
+		Status:   protoToUserStatus(req.NewStatus),
+	})
+	if err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.UserServiceSetStatusResponse{User: userToProto(user)}, nil
 }
 
 // CreateModerator создаёт учётную запись модератора.
@@ -197,14 +209,22 @@ func (h *UserHandler) CreateModerator(ctx context.Context, req *pb.UserServiceCr
 	return &pb.UserServiceCreateModeratorResponse{User: userToProto(resp.User)}, nil
 }
 
-// DeleteUser удаляет пользователя (hard delete).
+// DeleteUser удаляет пользователя (soft delete).
 // Доступно только администраторам.
 func (h *UserHandler) DeleteUser(ctx context.Context, req *pb.UserServiceDeleteUserRequest) (*pb.UserServiceDeleteUserResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	if err := h.svc.DeleteUser(ctx, domain.DeleteUserRequest{UserID: req.UserId}); err != nil {
+	callerID := extractUserIDFromContext(ctx)
+	if callerID == "" {
+		return nil, status.Error(codes.Unauthenticated, "missing user context")
+	}
+
+	if err := h.svc.DeleteUser(ctx, domain.DeleteUserRequest{
+		CallerID: callerID,
+		UserID:   req.UserId,
+	}); err != nil {
 		return nil, domainErrToStatus(err)
 	}
 

@@ -222,9 +222,15 @@
 
           <!-- Панель действий: когда заявка активна -->
           <div v-else-if="activeRequest" class="verdict-actions-row">
+            <!-- Режим аудита для администратора -->
+            <div v-if="isAdmin" class="audit-readonly-notice">
+              <Eye class="icon-xs" />
+              <span>Режим аудита: принятие решений доступно только назначенному модератору.</span>
+            </div>
+
             <!-- Кнопка "Взять в работу" (Pending) -->
             <button
-              v-if="isPending"
+              v-else-if="isPending"
               class="btn-verdict btn-claim-ticket"
               :disabled="actionLoading"
               @click="handleClaim"
@@ -260,7 +266,7 @@
 
     <!-- ПРАВАЯ КОЛОНКА: ЧАТ ПРОЕКТА -->
     <aside class="moderator-chat-aside">
-      <ProjectChat :project-id="projectId" />
+      <ProjectChat :project-id="projectId" :readonly="isAdmin" />
     </aside>
 
     <!-- Модальные окна одобрения и отклонения -->
@@ -315,12 +321,20 @@ import {
   ProjectChat,
 } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
+import { useAuth } from '@/entities/user';
 import { ApproveRequestModal, RejectRequestModal } from '@/features/review-request';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const { state: authState } = useAuth();
+
+const isAdmin = computed(() => {
+  const r = authState.user?.role;
+  return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
+});
+
 const projectId = computed(() => route.params.projectId);
 
 const activeRequest = ref(null);
@@ -934,6 +948,32 @@ onMounted(() => {
   height: calc(100vh - 60px);
   gap: 12px;
   color: var(--text-muted, #b0b8c4);
+}
+
+.audit-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-md, 8px);
+  color: #60a5fa;
+  font-size: 0.84rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.audit-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.82rem;
 }
 
 @media (max-width: 1000px) {

@@ -9,18 +9,25 @@ import (
 	"github.com/Be4Die/game-developer-hub/sso/internal/domain"
 )
 
-// UserService реализует логику управления профилем.
+// UserService реализует логику управления профилем и пользователями.
 type UserService struct {
 	log            *slog.Logger
 	userRepo       domain.UserRepository
+	sessionRepo    domain.SessionRepository
 	passwordHasher domain.PasswordHasher
 }
 
 // NewUserService создаёт сервис управления пользователями.
-func NewUserService(log *slog.Logger, userRepo domain.UserRepository, passwordHasher domain.PasswordHasher) *UserService {
+func NewUserService(
+	log *slog.Logger,
+	userRepo domain.UserRepository,
+	passwordHasher domain.PasswordHasher,
+	sessionRepo domain.SessionRepository,
+) *UserService {
 	return &UserService{
 		log:            log,
 		userRepo:       userRepo,
+		sessionRepo:    sessionRepo,
 		passwordHasher: passwordHasher,
 	}
 }
@@ -46,8 +53,8 @@ func (s *UserService) UpdateProfile(ctx context.Context, req domain.UpdateProfil
 		return domain.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if user.Role == domain.RoleModerator {
-		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrModeratorManagedByAdmin)
+	if user.Role == domain.RoleModerator || user.Role == domain.RoleAdmin {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrProfileImmutable)
 	}
 
 	if req.DisplayName != nil {
@@ -75,8 +82,8 @@ func (s *UserService) ChangePassword(ctx context.Context, req domain.ChangePassw
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if user.Role == domain.RoleModerator {
-		return fmt.Errorf("%s: %w", op, domain.ErrModeratorManagedByAdmin)
+	if user.Role == domain.RoleModerator || user.Role == domain.RoleAdmin {
+		return fmt.Errorf("%s: %w", op, domain.ErrProfileImmutable)
 	}
 
 	// Проверяем текущий пароль.
@@ -171,10 +178,89 @@ func (s *UserService) CreateModerator(ctx context.Context, req domain.CreateMode
 	return domain.CreateModeratorResponse{User: *created}, nil
 }
 
-// DeleteUser удаляет пользователя (hard delete).
-// Администраторы не могут быть удалены (защита от удаления последнего админа).
+// SetUserStatus изменяет статус учётной записи пользователя.
+// Модератор может блокировать/разблокировать только разработчиков.
+// Администратор может блокировать/разблокировать/удалять разработчиков и восстанавливать их.
+// Модератора нельзя заблокировать/разблокировать. Администратора нельзя заблокировать/изменить статус.
+func (s *UserService) SetUserStatus(ctx context.Context, req domain.SetUserStatusRequest) (domain.User, error) {
+	const op = "UserService.SetUserStatus"
+
+	caller, err := s.userRepo.GetByID(ctx, req.CallerID)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%s: get caller: %w", op, err)
+	}
+
+	if caller.Role != domain.RoleAdmin && caller.Role != domain.RoleModerator {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+	}
+
+	target, err := s.userRepo.GetByID(ctx, req.UserID)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%s: get target: %w", op, err)
+	}
+
+	// Администратора нельзя заблокировать/разблокировать или перевести в удалён
+	if target.Role == domain.RoleAdmin {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrCannotModifyAdminStatus)
+	}
+
+	// Модератора нельзя заблокировать или разблокировать
+	if target.Role == domain.RoleModerator {
+		if req.Status == domain.StatusSuspended {
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrCannotModifyModeratorStatus)
+		}
+		// Модератор не может менять статус другого модератора вообще
+		if caller.Role == domain.RoleModerator {
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+		}
+	}
+
+	// Модератор может менять статус только разработчиков на Active или Suspended
+	if caller.Role == domain.RoleModerator {
+		if target.Role != domain.RoleDeveloper {
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+		}
+		if req.Status == domain.StatusDeleted {
+			return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+		}
+	}
+
+	target.Status = req.Status
+	target.UpdatedAt = time.Now()
+
+	if err := s.userRepo.Update(ctx, *target); err != nil {
+		return domain.User{}, fmt.Errorf("%s: update user status: %w", op, err)
+	}
+
+	// При блокировке или soft-delete отзываем сессии
+	if (req.Status == domain.StatusSuspended || req.Status == domain.StatusDeleted) && s.sessionRepo != nil {
+		if _, err := s.sessionRepo.RevokeAllForUser(ctx, target.ID, ""); err != nil {
+			s.log.Warn("failed to revoke sessions on status change", slog.String("user_id", target.ID), slog.String("error", err.Error()))
+		}
+	}
+
+	s.log.Info("user status changed",
+		slog.String("target_id", target.ID),
+		slog.String("new_status", target.Status.String()),
+		slog.String("caller_id", caller.ID),
+	)
+
+	return *target, nil
+}
+
+// DeleteUser выполняет soft delete пользователя (StatusDeleted).
+// Доступно только администраторам. Администраторы не могут быть удалены.
 func (s *UserService) DeleteUser(ctx context.Context, req domain.DeleteUserRequest) error {
 	const op = "UserService.DeleteUser"
+
+	caller, err := s.userRepo.GetByID(ctx, req.CallerID)
+	if err != nil {
+		return fmt.Errorf("%s: get caller: %w", op, err)
+	}
+
+	if caller.Role != domain.RoleAdmin {
+		return fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+	}
 
 	// Проверяем что пользователь существует.
 	user, err := s.userRepo.GetByID(ctx, req.UserID)
@@ -187,11 +273,20 @@ func (s *UserService) DeleteUser(ctx context.Context, req domain.DeleteUserReque
 		return fmt.Errorf("%s: %w", op, domain.ErrCannotDeleteAdmin)
 	}
 
-	if err := s.userRepo.Delete(ctx, req.UserID); err != nil {
-		return fmt.Errorf("%s: delete user: %w", op, err)
+	user.Status = domain.StatusDeleted
+	user.UpdatedAt = time.Now()
+
+	if err := s.userRepo.Update(ctx, *user); err != nil {
+		return fmt.Errorf("%s: update user status to deleted: %w", op, err)
 	}
 
-	s.log.Info("user deleted",
+	if s.sessionRepo != nil {
+		if _, err := s.sessionRepo.RevokeAllForUser(ctx, req.UserID, ""); err != nil {
+			s.log.Warn("failed to revoke sessions for deleted user", slog.String("user_id", req.UserID), slog.String("error", err.Error()))
+		}
+	}
+
+	s.log.Info("user soft deleted",
 		slog.String("user_id", req.UserID),
 		slog.String("email", user.Email),
 		slog.String("role", user.Role.String()),
@@ -199,3 +294,4 @@ func (s *UserService) DeleteUser(ctx context.Context, req domain.DeleteUserReque
 
 	return nil
 }
+

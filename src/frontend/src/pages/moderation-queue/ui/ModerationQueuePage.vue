@@ -190,27 +190,39 @@
               <!-- 7 колонка: Действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
-                  <button
-                    v-if="isPending(req.status)"
-                    class="btn-claim-sm"
-                    :disabled="claimingId === req.id"
-                    :title="t('moderation.claimBtn')"
-                    @click="claimAndOpen(req)"
-                  >
-                    <Loader2 v-if="claimingId === req.id" class="icon-xs spin" />
-                    <CheckSquare v-else class="icon-xs" />
-                    <span>{{ t('moderation.claimBtn') }}</span>
-                  </button>
+                  <template v-if="isAdmin">
+                    <button
+                      class="btn-inspect-sm"
+                      title="Просмотр проекта"
+                      @click="openProject(req.projectId)"
+                    >
+                      <Eye class="icon-xs" />
+                      <span>Просмотр</span>
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button
+                      v-if="isPending(req.status)"
+                      class="btn-claim-sm"
+                      :disabled="claimingId === req.id"
+                      :title="t('moderation.claimBtn')"
+                      @click="claimAndOpen(req)"
+                    >
+                      <Loader2 v-if="claimingId === req.id" class="icon-xs spin" />
+                      <CheckSquare v-else class="icon-xs" />
+                      <span>{{ t('moderation.claimBtn') }}</span>
+                    </button>
 
-                  <button
-                    v-else
-                    class="btn-inspect-sm"
-                    :title="t('moderation.continueBtn')"
-                    @click="openProject(req.projectId)"
-                  >
-                    <ArrowRight class="icon-xs" />
-                    <span>{{ t('moderation.continueBtn') }}</span>
-                  </button>
+                    <button
+                      v-else
+                      class="btn-inspect-sm"
+                      :title="t('moderation.continueBtn')"
+                      @click="openProject(req.projectId)"
+                    >
+                      <ArrowRight class="icon-xs" />
+                      <span>{{ t('moderation.continueBtn') }}</span>
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -283,6 +295,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Eye,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -297,6 +310,11 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 const router = useRouter();
 const { state: authState } = useAuth();
+
+const isAdmin = computed(() => {
+  const r = authState.user?.role;
+  return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
+});
 
 const currentUserId = computed(() => authState.user?.id || authState.user?.email || '');
 
@@ -1008,6 +1026,19 @@ async function claimAndOpen(req) {
   to {
     transform: rotate(360deg);
   }
+}
+
+.audit-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: var(--radius-md, 8px);
+  color: #60a5fa;
+  font-size: 0.84rem;
+  font-weight: 500;
 }
 
 @media (max-width: 800px) {

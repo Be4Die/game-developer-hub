@@ -2,18 +2,43 @@
   <transition name="modal-fade">
     <div v-if="target" class="modal-overlay" @click.self="$emit('cancel')">
       <div class="modal-card">
-        <button class="modal-close" @click="$emit('cancel')">&#x2715;</button>
-        <h3>Подтверждение удаления</h3>
-        <p>
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <Trash2 class="icon-md text-danger" />
+            <div>
+              <h3>Удаление модератора</h3>
+              <p class="modal-subtitle">Подтверждение удаления учётной записи</p>
+            </div>
+          </div>
+          <button class="modal-close" @click="$emit('cancel')">
+            <X class="icon-sm" />
+          </button>
+        </div>
+
+        <p class="modal-text">
           Вы уверены, что хотите удалить модератора
-          <strong>{{ target.display_name }}</strong
-          >?
+          <strong>{{ target.display_name || target.email }}</strong>?
         </p>
-        <p class="warning-text">Это действие нельзя отменить.</p>
+        <p class="hint-text">
+          Аккаунт будет помечен как удалённый. Администратор сможет восстановить его в любой момент.
+        </p>
+
         <div class="modal-actions">
-          <button class="btn btn-secondary" @click="$emit('cancel')">Отмена</button>
-          <button class="btn btn-danger" :disabled="deleting" @click="handleDelete">
-            {{ deleting ? 'Удаление...' : 'Удалить' }}
+          <button
+            class="btn-modal-secondary"
+            :disabled="deleting"
+            @click="$emit('cancel')"
+          >
+            Отмена
+          </button>
+          <button
+            class="btn-modal-danger"
+            :disabled="deleting"
+            @click="handleDelete"
+          >
+            <Loader2 v-if="deleting" class="icon-xs spin" />
+            <Trash2 v-else class="icon-xs" />
+            <span>{{ deleting ? 'Удаление...' : 'Удалить' }}</span>
           </button>
         </div>
       </div>
@@ -23,6 +48,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { Trash2, X, Loader2 } from 'lucide-vue-next';
 import { deleteUser } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
@@ -38,10 +64,10 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await deleteUser(props.target.id);
-    showToast(`Модератор "${props.target.display_name}" удалён`, 'success');
+    showToast(`Модератор "${props.target.display_name || props.target.email}" удалён`, 'success');
     emit('deleted', props.target.id);
   } catch (err) {
-    showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'error');
+    showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'danger');
   } finally {
     deleting.value = false;
   }
@@ -52,84 +78,141 @@ async function handleDelete() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 300;
   display: flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
+  padding: 16px;
 }
 
 .modal-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 32px 28px;
-  width: 420px;
-  position: relative;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  padding: 24px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  box-shadow: var(--shadow-lg);
+  gap: 16px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-title-wrap h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.modal-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: var(--text-tertiary, #8b949e);
 }
 
 .modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 1rem;
-  color: var(--text-muted);
+  color: var(--text-tertiary, #8b949e);
   cursor: pointer;
-  transition: color 0.2s;
+  padding: 4px;
 }
 
 .modal-close:hover {
-  color: var(--text-main);
+  color: var(--text-main, #f0f6fc);
 }
 
-.modal-card h3 {
+.modal-text {
   margin: 0;
-  font-size: 1.1rem;
-  color: var(--text-main);
-}
-
-.modal-card p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 13px;
+  color: var(--text-main, #f0f6fc);
   line-height: 1.5;
+}
+
+.hint-text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary, #8b949e);
+  line-height: 1.4;
 }
 
 .modal-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
-  margin-top: 8px;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, #30363d);
 }
 
-.warning-text {
-  color: var(--danger) !important;
-  font-weight: 600;
+.btn-modal-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #da3633;
+  color: #ffffff;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-modal-danger:hover:not(:disabled) {
+  background: #f85149;
+}
+
+.btn-modal-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-modal-secondary:hover:not(:disabled) {
+  background: var(--bg-tertiary, #21262d);
 }
 
 .modal-fade-enter-active,
 .modal-fade-leave-active {
   transition:
-    opacity 0.2s,
-    transform 0.2s;
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
-
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
-@media (max-width: 768px) {
-  .modal-card {
-    width: 90vw;
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

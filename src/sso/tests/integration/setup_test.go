@@ -134,7 +134,7 @@ func setupIntegration(t *testing.T) *IntegrationTestEnv {
 		log, userRepo, sessionRepo, tokenManager, passwordHasher,
 		emailStore, resetStore, emailSender, 24*time.Hour,
 	)
-	userService := service.NewUserService(log, userRepo, passwordHasher)
+	userService := service.NewUserService(log, userRepo, passwordHasher, sessionRepo)
 	tokenService := service.NewTokenService(log, sessionRepo, sessionCache, tokenManager)
 
 	t.Cleanup(func() {

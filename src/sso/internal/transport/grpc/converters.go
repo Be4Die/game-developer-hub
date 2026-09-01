@@ -78,6 +78,19 @@ func userStatusToProto(s domain.UserStatus) pb.UserStatus {
 
 // ─── Proto → Domain ─────────────────────────────────────────────
 
+func protoToUserStatus(s pb.UserStatus) domain.UserStatus {
+	switch s {
+	case pb.UserStatus_USER_STATUS_ACTIVE:
+		return domain.StatusActive
+	case pb.UserStatus_USER_STATUS_SUSPENDED:
+		return domain.StatusSuspended
+	case pb.UserStatus_USER_STATUS_DELETED:
+		return domain.StatusDeleted
+	default:
+		return 0
+	}
+}
+
 // ─── Errors ─────────────────────────────────────────────────────
 
 func domainErrToStatus(err error) error {
@@ -94,7 +107,13 @@ func domainErrToStatus(err error) error {
 		return status.Errorf(codes.Unauthenticated, "%v", err)
 	case errors.Is(err, domain.ErrEmailNotVerified):
 		return status.Errorf(codes.FailedPrecondition, "%v", err)
-	case errors.Is(err, domain.ErrUserSuspended), errors.Is(err, domain.ErrModeratorManagedByAdmin):
+	case errors.Is(err, domain.ErrUserSuspended),
+		errors.Is(err, domain.ErrModeratorManagedByAdmin),
+		errors.Is(err, domain.ErrProfileImmutable),
+		errors.Is(err, domain.ErrPermissionDenied),
+		errors.Is(err, domain.ErrCannotModifyAdminStatus),
+		errors.Is(err, domain.ErrCannotModifyModeratorStatus),
+		errors.Is(err, domain.ErrCannotDeleteAdmin):
 		return status.Errorf(codes.PermissionDenied, "%v", err)
 	default:
 		return status.Errorf(codes.Internal, "%v", err)
