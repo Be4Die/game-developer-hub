@@ -47,14 +47,16 @@ func (h *DeploymentHandler) DeployDevStream(stream pb.WebGameDeploymentService_D
 
 	errChan := make(chan error, 1)
 	go func() {
-		defer pw.Close()
+		defer func() {
+			_ = pw.Close()
+		}()
 		for {
 			req, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
 				return
 			}
 			if err != nil {
-				pw.CloseWithError(err)
+				_ = pw.CloseWithError(err)
 				return
 			}
 			if chunk := req.GetChunk(); len(chunk) > 0 {
@@ -73,7 +75,7 @@ func (h *DeploymentHandler) DeployDevStream(stream pb.WebGameDeploymentService_D
 	}()
 
 	if err := <-errChan; err != nil {
-		if errors.Is(err, domain.ErrInvalidArchive) || errors.Is(err, domain.ErrNoIndexHtml) ||
+		if errors.Is(err, domain.ErrInvalidArchive) || errors.Is(err, domain.ErrNoIndexHTML) ||
 			errors.Is(err, domain.ErrZipSlip) || errors.Is(err, domain.ErrZipBomb) ||
 			errors.Is(err, domain.ErrDisallowedFileType) {
 			return status.Errorf(codes.InvalidArgument, "%v", err)
@@ -146,7 +148,7 @@ func (h *DeploymentHandler) DeleteProject(ctx context.Context, req *pb.DeletePro
 }
 
 // Health возвращает статус здоровья агента.
-func (h *DeploymentHandler) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+func (h *DeploymentHandler) Health(_ context.Context, _ *pb.HealthRequest) (*pb.HealthResponse, error) {
 	freeBytes := h.svc.GetFreeDiskBytes()
 	return &pb.HealthResponse{
 		Healthy:       true,

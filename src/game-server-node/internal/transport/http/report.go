@@ -1,4 +1,4 @@
-// Package http реализует HTTP-сервер для приёма отчётов от игровых серверов.
+// Package http provides HTTP handlers for instance reports.
 package http
 
 import (
@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
 )
@@ -42,7 +43,9 @@ func (h *ReportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("decode json: %v", err), http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 
 	if payload.InstanceID <= 0 {
 		http.Error(w, "instance_id is required", http.StatusBadRequest)
@@ -88,7 +91,8 @@ func NewReportServer(log *slog.Logger, storage *memory.Storage, port int) *http.
 	mux.Handle("/v1/report", NewReportHandler(log, storage))
 
 	return &http.Server{
-		Addr:    "0.0.0.0:" + strconv.Itoa(port),
-		Handler: mux,
+		Addr:              "0.0.0.0:" + strconv.Itoa(port),
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 }

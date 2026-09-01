@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -51,7 +52,7 @@ func (h *BuildHandler) Upload(ctx context.Context, req *pb.BuildServiceUploadReq
 func (h *BuildHandler) UploadStream(stream pb.BuildService_UploadStreamServer) error {
 	// Читаем первое сообщение с метаданными.
 	metaReq, err := stream.Recv()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return status.Error(codes.InvalidArgument, "missing upload metadata")
 	}
 	if err != nil {
@@ -85,7 +86,7 @@ func (h *BuildHandler) UploadStream(stream pb.BuildService_UploadStreamServer) e
 	go func() {
 		for {
 			req, recvErr := stream.Recv()
-			if recvErr == io.EOF {
+			if errors.Is(recvErr, io.EOF) {
 				_ = pw.Close()
 				done <- nil
 				return

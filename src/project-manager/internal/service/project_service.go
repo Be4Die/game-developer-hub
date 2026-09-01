@@ -270,9 +270,7 @@ func (s *ProjectService) UploadBuildStream(ctx context.Context, projectID int64,
 	}
 
 	// 4. Обновление активной сборки в черновике
-	if err := s.draftRepo.UpdateActiveBuild(ctx, projectID, version, deployRes.URL); err != nil {
-		// non-critical
-	}
+	_ = s.draftRepo.UpdateActiveBuild(ctx, projectID, version, deployRes.URL)
 
 	// 5. Аудит развертывания
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{

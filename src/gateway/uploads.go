@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -56,8 +57,7 @@ func writeProtoJSON(w http.ResponseWriter, msg proto.Message) {
 }
 
 // authContext добавляет токены аутентификации из HTTP-запроса в исходящий gRPC-контекст.
-func authContext(r *http.Request) context.Context {
-	ctx := r.Context()
+func authContext(ctx context.Context, r *http.Request) context.Context {
 	if token := r.Header.Get("Authorization"); token != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, "authorization", token)
 	}
@@ -79,7 +79,8 @@ func handleBuildUpload(client gwpb.BuildServiceClient, fallback http.Handler) ht
 			return
 		}
 
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -107,9 +108,10 @@ func handleBuildUpload(client gwpb.BuildServiceClient, fallback http.Handler) ht
 		internalPort := parseUint32(r.FormValue("internal_port"), 8080)
 		maxPlayers := parseUint32(r.FormValue("max_players"), 16)
 
-		log.Printf("upload build: game=%d version=%s file=%s size=%d", gameID, buildVersion, header.Filename, header.Size)
+		cleanFilename := filepath.Base(filepath.Clean(header.Filename))
+		log.Printf("upload build: game=%d version=%s file=%s size=%d", gameID, buildVersion, cleanFilename, header.Size) //nolint:gosec
 
-		stream, err := client.UploadStream(authContext(r))
+		stream, err := client.UploadStream(authContext(r.Context(), r))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
 			return
@@ -161,7 +163,8 @@ func handleProjectBuildUpload(client projpb.ProjectServiceClient, fallback http.
 			return
 		}
 
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -185,9 +188,10 @@ func handleProjectBuildUpload(client projpb.ProjectServiceClient, fallback http.
 		}
 		defer func() { _ = file.Close() }()
 
-		log.Printf("upload project build: project=%d version=%s file=%s size=%d", projectID, version, header.Filename, header.Size)
+		cleanFilename := filepath.Base(filepath.Clean(header.Filename))
+		log.Printf("upload project build: project=%d version=%s file=%s size=%d", projectID, version, cleanFilename, header.Size) //nolint:gosec
 
-		stream, err := client.UploadBuildStream(authContext(r))
+		stream, err := client.UploadBuildStream(authContext(r.Context(), r))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
 			return
@@ -236,7 +240,8 @@ func handleProjectMediaUpload(client projpb.ProjectServiceClient, fallback http.
 			return
 		}
 
-		if err := r.ParseMultipartForm(32 << 20); err != nil {
+		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return
 		}
@@ -260,7 +265,7 @@ func handleProjectMediaUpload(client projpb.ProjectServiceClient, fallback http.
 		}
 		defer func() { _ = file.Close() }()
 
-		stream, err := client.UploadMediaStream(authContext(r))
+		stream, err := client.UploadMediaStream(authContext(r.Context(), r))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("create upload stream: %v", err), http.StatusInternalServerError)
 			return

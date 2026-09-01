@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -147,9 +147,15 @@ func (m *instMockInstanceState) Delete(ctx context.Context, instanceID int64) er
 	}
 	return nil
 }
-func (m *instMockInstanceState) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error { return nil }
-func (m *instMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) { return time.Time{}, domain.ErrNotFound }
-func (m *instMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error { return nil }
+func (m *instMockInstanceState) SetZeroPlayersSince(ctx context.Context, instanceID int64, t time.Time) error {
+	return nil
+}
+func (m *instMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanceID int64) (time.Time, error) {
+	return time.Time{}, domain.ErrNotFound
+}
+func (m *instMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error {
+	return nil
+}
 
 type instMockBuildStorage struct {
 	createFn                    func(ctx context.Context, build *domain.ServerBuild) error
@@ -297,17 +303,17 @@ func (m *instMockNodeStateStore) Delete(ctx context.Context, nodeID int64) error
 }
 
 type instMockNodeClient struct {
-	buildImageFn        func(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error
-	loadImageFn         func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
-	startInstanceFn     func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
-	stopInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
-	streamLogsFn        func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
-	getNodeInfoFn       func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
-	heartbeatFn         func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error)
-	listInstancesFn     func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
-	getInstanceFn       func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
-	getInstanceUsageFn  func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
-	deleteInstanceFn    func(ctx context.Context, address, apiKey string, instanceID int64) error
+	buildImageFn       func(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error
+	loadImageFn        func(ctx context.Context, address, apiKey string, meta domain.ImageMetadata, reader io.Reader) (*domain.ImageLoadResult, error)
+	startInstanceFn    func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error)
+	stopInstanceFn     func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error
+	streamLogsFn       func(ctx context.Context, address, apiKey string, req domain.StreamLogsRequest) (domain.LogStream, error)
+	getNodeInfoFn      func(ctx context.Context, address, apiKey string) (*domain.NodeInfo, error)
+	heartbeatFn        func(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error)
+	listInstancesFn    func(ctx context.Context, address, apiKey string) ([]*domain.Instance, error)
+	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
+	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
+	deleteInstanceFn   func(ctx context.Context, address, apiKey string, instanceID int64) error
 }
 
 func (m *instMockNodeClient) BuildImage(ctx context.Context, address, apiKey string, metadata domain.BuildImageMetadata, archive io.Reader) error {

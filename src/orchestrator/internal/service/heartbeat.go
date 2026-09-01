@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 // instanceOrchestrator описывает методы InstanceService, нужные HeartbeatService.
@@ -319,7 +319,7 @@ func (s *HeartbeatService) reconcileInstances(ctx context.Context, node *domain.
 			)
 
 			// Проверяем политику и перезапускаем если нужно.
-			go s.maybeAutoRestart(context.Background(), inst)
+			go s.maybeAutoRestart(context.WithoutCancel(ctx), inst)
 		}
 	}
 
@@ -396,7 +396,7 @@ func (s *HeartbeatService) EnforcePolicies(ctx context.Context) {
 		}
 
 		// Проверяем лимит max_instances_per_game по ВСЕМ инстансам.
-		if int32(totalCount) >= policy.MaxInstancesPerGame {
+		if int64(totalCount) >= int64(policy.MaxInstancesPerGame) {
 			s.log.Info("policy: max_instances_per_game reached",
 				slog.Int64("game_id", policy.GameID),
 				slog.Int("total", totalCount),
@@ -412,7 +412,7 @@ func (s *HeartbeatService) EnforcePolicies(ctx context.Context) {
 			slog.Int("needed", needed),
 		)
 		for i := 0; i < needed; i++ {
-			go s.autoStartInstance(context.Background(), policy.GameID, policy)
+			go s.autoStartInstance(context.WithoutCancel(ctx), policy.GameID, policy)
 		}
 	}
 }
@@ -421,7 +421,7 @@ func (s *HeartbeatService) EnforcePolicies(ctx context.Context) {
 func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
 	// Проверяем лимит инстансов из политики (все статусы).
 	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int32(len(all)) >= policy.MaxInstancesPerGame {
+	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
 		s.log.Warn("autoStartInstance: max_instances_per_game reached",
 			slog.Int64("game_id", gameID),
 			slog.Int("current", len(all)),
@@ -548,7 +548,7 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 
 		// Считаем текущее общее количество инстансов (все статусы) для лимита.
 		all, _ := s.instanceRepo.ListByGame(ctx, policy.GameID, nil)
-		if int32(len(all)) >= policy.MaxInstancesPerGame {
+		if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
 			continue
 		}
 
@@ -558,7 +558,7 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 
 			if policy.ScaleBehavior == domain.ScaleBehaviorSpawn {
 				pc, _ := s.instanceState.GetPlayerCount(ctx, inst.ID)
-				if pc >= uint32(policy.MaxPlayersPerInstance) {
+				if policy.MaxPlayersPerInstance > 0 && pc >= uint32(policy.MaxPlayersPerInstance) {
 					shouldScale = true
 					scaleReason = "instance full"
 				}
@@ -587,7 +587,7 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 					slog.Int64("instance_id", inst.ID),
 					slog.Int64("game_id", policy.GameID),
 				)
-				go s.autoStartInstance(context.Background(), policy.GameID, policy)
+				go s.autoStartInstance(context.WithoutCancel(ctx), policy.GameID, policy)
 				break // Одно масштабирование за цикл.
 			}
 		}
@@ -627,7 +627,7 @@ func (s *HeartbeatService) markNodeOffline(ctx context.Context, node *domain.Nod
 		)
 
 		// Проверяем политику и перезапускаем если нужно.
-		go s.maybeAutoRestart(context.Background(), inst)
+		go s.maybeAutoRestart(context.WithoutCancel(ctx), inst)
 	}
 
 	return nil

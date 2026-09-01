@@ -2,6 +2,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -64,7 +65,7 @@ func (a *App) MustRun() {
 		panic(err)
 	}
 
-	if err := a.grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+	if err := a.grpcServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 		a.log.Error("gRPC server failed", slog.String("error", err.Error()))
 		panic(err)
 	}

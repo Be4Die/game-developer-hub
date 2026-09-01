@@ -34,7 +34,9 @@ func TestUnit_DeploymentService_Lifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempBase)
+	defer func() {
+		_ = os.RemoveAll(tempBase)
+	}()
 
 	svc := NewDeploymentService(tempBase, "/games", 100, 1000)
 

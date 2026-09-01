@@ -6,6 +6,7 @@ import "time"
 // RequestStatus статус рассмотрения запроса на модерацию.
 type RequestStatus int16
 
+// Константы статусов рассмотрения запроса.
 const (
 	RequestStatusUnspecified RequestStatus = 0
 	RequestStatusPending     RequestStatus = 1 // Ожидает назначения модератора

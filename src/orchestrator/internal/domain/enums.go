@@ -149,4 +149,3 @@ const (
 	QueueEventLeave
 	QueueEventCancel
 )
-

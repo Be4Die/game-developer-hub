@@ -1,3 +1,4 @@
+// Package deployment implements artifact deployment mechanisms.
 package deployment
 
 import (
@@ -5,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_deployment_agent/v1"
@@ -76,11 +78,13 @@ func (d *AgentDeployer) DeployDev(ctx context.Context, projectID int64, version 
 	}
 
 	// 2. Читаем архив с диска и стримим чанками по 64 КБ
-	file, err := os.Open(archivePath)
+	file, err := os.Open(filepath.Clean(archivePath)) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("agent_deployer: open archive %s: %w", archivePath, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	buf := make([]byte, 64*1024)
 	for {
@@ -116,7 +120,7 @@ func (d *AgentDeployer) DeployDev(ctx context.Context, projectID int64, version 
 }
 
 // DeployProd активирует версию в прод-окружении на агенте.
-func (d *AgentDeployer) DeployProd(ctx context.Context, projectID int64, version string, archivePath string) (*domain.DeploymentResult, error) {
+func (d *AgentDeployer) DeployProd(ctx context.Context, projectID int64, version string, _ string) (*domain.DeploymentResult, error) {
 	ctx = d.withAuth(ctx)
 
 	res, err := d.client.DeployProd(ctx, &pb.DeployProdRequest{

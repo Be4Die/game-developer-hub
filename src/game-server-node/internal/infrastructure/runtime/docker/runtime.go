@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
@@ -137,7 +138,7 @@ func (r *Runtime) BuildImage(ctx context.Context, imageTag string, internalPort 
 
 	// If build failed, aggressively cleanup any dangling artifacts created by this build.
 	if buildErr != nil {
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
 		defer cancel()
 		if err := r.CleanupBuildArtifacts(cleanupCtx, imageTag); err != nil {
 			r.log.Warn("failed to cleanup build artifacts",
@@ -174,8 +175,8 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 	internalPort := nat.Port(fmt.Sprintf("%d/tcp", opts.InternalPort))
 
 	containerConfig := &container.Config{
-		Image:   opts.ImageTag,
-		Labels:  opts.Labels,
+		Image:  opts.ImageTag,
+		Labels: opts.Labels,
 		ExposedPorts: nat.PortSet{
 			internalPort: struct{}{},
 		},
@@ -513,7 +514,7 @@ func (r *Runtime) extractTar(reader io.Reader, destDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(path, os.FileMode(header.Mode)); err != nil {
+			if err := os.MkdirAll(path, header.FileInfo().Mode()); err != nil {
 				return fmt.Errorf("mkdir %q: %w", path, err)
 			}
 		case tar.TypeReg:
@@ -530,7 +531,7 @@ func (r *Runtime) extractTar(reader io.Reader, destDir string) error {
 			}
 			_ = out.Close()
 			// Preserve original file permissions from tar header.
-			if err := os.Chmod(path, os.FileMode(header.Mode)); err != nil {
+			if err := os.Chmod(path, header.FileInfo().Mode()); err != nil {
 				return fmt.Errorf("chmod %q: %w", path, err)
 			}
 		}
@@ -633,7 +634,7 @@ func (r *Runtime) CleanupBuildArtifacts(ctx context.Context, imageTag string) er
 
 	// 1. Remove any containers that were created during a failed build (intermediate containers).
 	//    Docker labels intermediate containers with a specific hash, but we also
-		//    prune containers with "exited" status to be safe.
+	//    prune containers with "exited" status to be safe.
 	pruneResp, err := r.cli.ContainersPrune(ctx, filters.NewArgs(
 		filters.Arg("status", "exited"),
 	))
@@ -653,7 +654,7 @@ func (r *Runtime) CleanupBuildArtifacts(ctx context.Context, imageTag string) er
 	// 2. Remove the target image tag if it was partially created.
 	if imageTag != "" {
 		_, err = r.cli.ImageRemove(ctx, imageTag, image.RemoveOptions{Force: true})
-		if err != nil && !client.IsErrNotFound(err) {
+		if err != nil && !cerrdefs.IsNotFound(err) {
 			r.log.Warn("failed to remove image",
 				slog.String("op", op),
 				slog.String("image_tag", imageTag),

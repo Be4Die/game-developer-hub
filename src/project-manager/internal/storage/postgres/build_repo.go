@@ -1,7 +1,9 @@
+// Package postgres implements postgres repositories for project-manager.
 package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
@@ -47,7 +49,7 @@ func (r *BuildRepo) Get(ctx context.Context, projectID int64, version string) (*
 		&b.ID, &b.ProjectID, &b.Version, &b.FilePath, &b.FileSize, &b.IsUnpacked, &b.UnpackedPath, &b.CreatedAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("postgres.BuildRepo.Get: %w", err)

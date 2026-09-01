@@ -38,7 +38,7 @@ func (d *LocalDeployer) versionDir(projectID int64, version string) string {
 }
 
 // DeployDev развёртывает сборку в dev-окружение проекта.
-func (d *LocalDeployer) DeployDev(ctx context.Context, projectID int64, version string, archivePath string) (*domain.DeploymentResult, error) {
+func (d *LocalDeployer) DeployDev(_ context.Context, projectID int64, version string, archivePath string) (*domain.DeploymentResult, error) {
 	unpackedDir := d.versionDir(projectID, version)
 
 	// Распаковываем архив (если еще не распакован)
@@ -65,7 +65,7 @@ func (d *LocalDeployer) DeployDev(ctx context.Context, projectID int64, version 
 }
 
 // DeployProd развёртывает одобренную версию в прод-окружение для игроков.
-func (d *LocalDeployer) DeployProd(ctx context.Context, projectID int64, version string, archivePath string) (*domain.DeploymentResult, error) {
+func (d *LocalDeployer) DeployProd(_ context.Context, projectID int64, version string, archivePath string) (*domain.DeploymentResult, error) {
 	unpackedDir := d.versionDir(projectID, version)
 
 	// Убедимся, что сборка распакована
@@ -94,7 +94,7 @@ func (d *LocalDeployer) DeployProd(ctx context.Context, projectID int64, version
 }
 
 // UndeployProd снимает игру с публикации, удаляя продуктивный symlink.
-func (d *LocalDeployer) UndeployProd(ctx context.Context, projectID int64) error {
+func (d *LocalDeployer) UndeployProd(_ context.Context, projectID int64) error {
 	symlinkPath := filepath.Join(d.projectDir(projectID), "prod")
 	if err := os.Remove(symlinkPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("local_deployer: undeploy prod: %w", err)
@@ -103,7 +103,7 @@ func (d *LocalDeployer) UndeployProd(ctx context.Context, projectID int64) error
 }
 
 // DeleteVersion удаляет распакованную директорию конкретной версии сборки (Garbage Collection).
-func (d *LocalDeployer) DeleteVersion(ctx context.Context, projectID int64, version string) error {
+func (d *LocalDeployer) DeleteVersion(_ context.Context, projectID int64, version string) error {
 	unpackedDir := d.versionDir(projectID, version)
 	if err := os.RemoveAll(unpackedDir); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("local_deployer: delete version %s: %w", unpackedDir, err)
@@ -112,7 +112,7 @@ func (d *LocalDeployer) DeleteVersion(ctx context.Context, projectID int64, vers
 }
 
 // DeleteProject удаляет всю директорию проекта с распакованными сборками и симлинками.
-func (d *LocalDeployer) DeleteProject(ctx context.Context, projectID int64) error {
+func (d *LocalDeployer) DeleteProject(_ context.Context, projectID int64) error {
 	projDir := d.projectDir(projectID)
 	if err := os.RemoveAll(projDir); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("local_deployer: delete project dir %s: %w", projDir, err)

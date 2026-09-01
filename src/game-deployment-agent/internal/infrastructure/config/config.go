@@ -45,7 +45,7 @@ func MustLoad() *Config {
 		configPath = "config/local.yaml"
 	}
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) { //nolint:gosec
 		panic(fmt.Sprintf("config file does not exist: %s", configPath))
 	}
 

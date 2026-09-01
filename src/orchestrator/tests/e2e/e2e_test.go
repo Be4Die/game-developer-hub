@@ -439,11 +439,6 @@ func (env *e2eTestEnv) cleanupTables(t *testing.T) {
 	}
 }
 
-	if err := env.redisClient.FlushDB(ctx).Err(); err != nil {
-		t.Fatalf("failed to flush valkey: %v", err)
-	}
-}
-
 // ─── Helpers ────────────────────────────────────────────────────
 
 func ptrStr(s string) *string {

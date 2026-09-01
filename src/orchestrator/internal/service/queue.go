@@ -2,22 +2,34 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 
+func clampInt32(v int64) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if v < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(v)
+}
+
 // QueueService управляет очередью игроков.
 type QueueService struct {
-	store          domain.QueueStore
-	eventRepo      domain.QueueEventRepo
-	policySvc      *GamePolicyService
-	instanceRepo   domain.InstanceRepo
-	instanceState  domain.InstanceStateStore
-	nodeRepo       domain.NodeRepo
-	log            *slog.Logger
+	store         domain.QueueStore
+	eventRepo     domain.QueueEventRepo
+	policySvc     *GamePolicyService
+	instanceRepo  domain.InstanceRepo
+	instanceState domain.InstanceStateStore
+	nodeRepo      domain.NodeRepo
+	log           *slog.Logger
 }
 
 // NewQueueService создаёт сервис очереди.
@@ -65,8 +77,8 @@ func (s *QueueService) Join(ctx context.Context, gameID int64, playerID, mode st
 
 	return &QueueStatusResult{
 		Status:               domain.QueueStatusWaiting,
-		Position:             int32(pos),
-		TotalInQueue:         int32(total),
+		Position:             clampInt32(pos),
+		TotalInQueue:         clampInt32(total),
 		EstimatedWaitSeconds: s.estimateWait(pos),
 	}, nil
 }
@@ -87,15 +99,15 @@ func (s *QueueService) Heartbeat(ctx context.Context, gameID int64, playerID str
 			return &QueueStatusResult{Status: domain.QueueStatusExpired}, nil
 		}
 		return &QueueStatusResult{
-			Status:               domain.QueueStatusReserved,
-			ReservedEndpoint:     endpoint,
-			ReservedUntil:        expiresAt,
+			Status:           domain.QueueStatusReserved,
+			ReservedEndpoint: endpoint,
+			ReservedUntil:    expiresAt,
 		}, nil
 	}
 
 	// Обычный heartbeat
 	if err := s.store.Heartbeat(ctx, gameID, playerID); err != nil {
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return &QueueStatusResult{Status: domain.QueueStatusExpired}, nil
 		}
 		return nil, fmt.Errorf("QueueService.Heartbeat: %w", err)
@@ -125,8 +137,8 @@ func (s *QueueService) Heartbeat(ctx context.Context, gameID int64, playerID str
 
 	return &QueueStatusResult{
 		Status:               domain.QueueStatusWaiting,
-		Position:             int32(pos),
-		TotalInQueue:         int32(total),
+		Position:             clampInt32(pos),
+		TotalInQueue:         clampInt32(total),
 		EstimatedWaitSeconds: s.estimateWait(pos),
 	}, nil
 }
@@ -157,7 +169,7 @@ func (s *QueueService) Status(ctx context.Context, gameID int64, playerID string
 
 	pos, total, err := s.store.GetPosition(ctx, gameID, playerID)
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return &QueueStatusResult{Status: domain.QueueStatusExpired}, nil
 		}
 		return nil, fmt.Errorf("QueueService.Status: %w", err)
@@ -165,8 +177,8 @@ func (s *QueueService) Status(ctx context.Context, gameID int64, playerID string
 
 	return &QueueStatusResult{
 		Status:               domain.QueueStatusWaiting,
-		Position:             int32(pos),
-		TotalInQueue:         int32(total),
+		Position:             clampInt32(pos),
+		TotalInQueue:         clampInt32(total),
 		EstimatedWaitSeconds: s.estimateWait(pos),
 	}, nil
 }
@@ -187,7 +199,10 @@ func (s *QueueService) ProcessQueue(ctx context.Context, gameID int64) error {
 
 	// Проверяем, есть ли очередь
 	count, err := s.store.Count(ctx, gameID)
-	if err != nil || count == 0 {
+	if err != nil {
+		return fmt.Errorf("QueueService.ProcessQueue: count: %w", err)
+	}
+	if count == 0 {
 		return nil // очередь пуста
 	}
 
@@ -235,7 +250,7 @@ func (s *QueueService) ProcessQueue(ctx context.Context, gameID int64) error {
 	// Резервируем для первого игрока
 	playerID, err := s.store.Reserve(ctx, gameID, endpoint, time.Duration(policy.QueueReservationSec)*time.Second)
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return nil // очередь опустела
 		}
 		return fmt.Errorf("QueueService.ProcessQueue: reserve: %w", err)
@@ -282,6 +297,5 @@ func (s *QueueService) Count(ctx context.Context, gameID int64) (int64, error) {
 // estimateWait оценивает время ожидания (грубая эвристика).
 func (s *QueueService) estimateWait(position int64) int32 {
 	// Примерно 20 сек на игрока впереди (можно улучшить по статистике)
-	return int32(position * 20)
+	return clampInt32(position * 20)
 }
-

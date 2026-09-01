@@ -20,12 +20,12 @@ func TestE2E_Queue_JoinAndHeartbeat(t *testing.T) {
 
 	// Устанавливаем политику с queue
 	_, err := env.policyClient.Set(ctx, &pb.GamePolicyServiceSetRequest{
-		GameId:                gameID,
-		Mode:                  pb.OrchestrationMode_ORCHESTRATION_MODE_KEEP_ALIVE,
-		TargetInstances:       1,
-		MaxInstancesPerGame:   1,
-		MaxPlayersPerInstance: 10,
-		ScaleBehavior:         pb.ScaleBehavior_SCALE_BEHAVIOR_QUEUE,
+		GameId:                  gameID,
+		Mode:                    pb.OrchestrationMode_ORCHESTRATION_MODE_KEEP_ALIVE,
+		TargetInstances:         1,
+		MaxInstancesPerGame:     1,
+		MaxPlayersPerInstance:   10,
+		ScaleBehavior:           pb.ScaleBehavior_SCALE_BEHAVIOR_QUEUE,
 		QueueReservationSeconds: 30,
 		QueueHeartbeatTimeout:   15,
 		QueueMaxWaitSeconds:     300,

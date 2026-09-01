@@ -44,10 +44,7 @@ func (s *AnnouncementService) Announce(ctx context.Context, activeContainerIDs [
 	}
 
 	// Определяем внешний адрес ноды.
-	address, err := s.determineExternalAddress()
-	if err != nil {
-		return nil, fmt.Errorf("AnnouncementService.Announce: determine address: %w", err)
-	}
+	address := s.determineExternalAddress()
 
 	// Получаем системную информацию.
 	resources, err := s.sysProvider.GetMax()
@@ -67,14 +64,14 @@ func (s *AnnouncementService) Announce(ctx context.Context, activeContainerIDs [
 
 	// Формируем и отправляем запрос. Передаём NODE_API_KEY как api_key и список контейнеров.
 	req := &orchestrator.AnnounceRequest{
-		Address:             address,
-		Region:              s.cfg.Node.Region,
-		AgentVersion:        s.cfg.Node.Version,
-		CPUCores:            resources.CPUCores,
-		TotalMemoryBytes:    resources.TotalMemorySize,
-		TotalDiskBytes:      resources.TotalDiskSpace,
-		APIKey:              s.cfg.APIKey,
-		ActiveContainerIDs:  activeContainerIDs,
+		Address:            address,
+		Region:             s.cfg.Node.Region,
+		AgentVersion:       s.cfg.Node.Version,
+		CPUCores:           resources.CPUCores,
+		TotalMemoryBytes:   resources.TotalMemorySize,
+		TotalDiskBytes:     resources.TotalDiskSpace,
+		APIKey:             s.cfg.APIKey,
+		ActiveContainerIDs: activeContainerIDs,
 	}
 
 	announceCtx, cancel := context.WithTimeout(ctx, s.cfg.Orchestrator.AnnounceTimeout)
@@ -128,70 +125,17 @@ func (s *AnnouncementService) AnnounceWithRetry(ctx context.Context, activeConta
 // Иначе пытается определить автоматически:
 //   - Docker Desktop (Windows/macOS): host.docker.internal
 //   - Linux Docker Engine: 172.17.0.1 (bridge gateway)
-func (s *AnnouncementService) determineExternalAddress() (string, error) {
+func (s *AnnouncementService) determineExternalAddress() string {
 	// Если задан явный адрес — используем его.
 	if s.cfg.Orchestrator.ExternalAddress != "" {
-		return s.cfg.Orchestrator.ExternalAddress, nil
+		return s.cfg.Orchestrator.ExternalAddress
 	}
 
 	// Пробуем host.docker.internal (работает на Docker Desktop из коробки).
 	if addrs, err := net.LookupHost("host.docker.internal"); err == nil && len(addrs) > 0 {
-		return fmt.Sprintf("host.docker.internal:%d", s.cfg.GRPC.Port), nil
+		return fmt.Sprintf("host.docker.internal:%d", s.cfg.GRPC.Port)
 	}
 
 	// Fallback на стандартный gateway Linux Docker bridge.
-	return fmt.Sprintf("172.17.0.1:%d", s.cfg.GRPC.Port), nil
-}
-
-// getAutoAddress определяет адрес автоматически.
-// Использует имя интерфейса из конфига или выбирает первый подходящий.
-func (s *AnnouncementService) getAutoAddress() (string, error) {
-	// Получаем список всех интерфейсов.
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", fmt.Errorf("getAutoAddress: list interfaces: %w", err)
-	}
-
-	var preferred net.Interface
-	ethName := s.cfg.Node.EthName
-
-	for _, iface := range ifaces {
-		// Пропускаем down-интерфейсы и loopback.
-		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-
-		// Если задан конкретный интерфейс — ищем его.
-		if ethName != "" {
-			if iface.Name == ethName {
-				preferred = iface
-				break
-			}
-			continue
-		}
-
-		// Иначе берём первый подходящий.
-		if preferred.Name == "" {
-			preferred = iface
-		}
-	}
-
-	if preferred.Name == "" {
-		return "", fmt.Errorf("getAutoAddress: no suitable network interface found")
-	}
-
-	// Получаем адреса интерфейса.
-	addrs, err := preferred.Addrs()
-	if err != nil {
-		return "", fmt.Errorf("getAutoAddress: get addresses for %s: %w", preferred.Name, err)
-	}
-
-	for _, addr := range addrs {
-		// Ищем IPv4 адрес.
-		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.To4() != nil {
-			return fmt.Sprintf("%s:%d", ipnet.IP.String(), s.cfg.GRPC.Port), nil
-		}
-	}
-
-	return "", fmt.Errorf("getAutoAddress: no IPv4 address found on interface %s", preferred.Name)
+	return fmt.Sprintf("172.17.0.1:%d", s.cfg.GRPC.Port)
 }

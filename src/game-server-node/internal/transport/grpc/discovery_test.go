@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/service"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"

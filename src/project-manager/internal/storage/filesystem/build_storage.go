@@ -26,9 +26,9 @@ func (s *BuildStorage) projectDir(projectID int64) string {
 
 // SaveArchiveStream сохраняет архив сборки из потока io.Reader.
 // Потоково записывает данные во временный файл и атомарно перемещает в целевой путь.
-func (s *BuildStorage) SaveArchiveStream(ctx context.Context, projectID int64, version string, src io.Reader) (string, int64, error) {
+func (s *BuildStorage) SaveArchiveStream(_ context.Context, projectID int64, version string, src io.Reader) (string, int64, error) {
 	dir := s.projectDir(projectID)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", 0, fmt.Errorf("mkdir: %w", err)
 	}
 
@@ -63,7 +63,7 @@ func (s *BuildStorage) SaveArchiveStream(ctx context.Context, projectID int64, v
 		writeErr = err
 		return "", 0, fmt.Errorf("rename temp to target: %w", err)
 	}
-	_ = os.Chmod(targetPath, 0o644)
+	_ = os.Chmod(targetPath, 0o600)
 
 	return targetPath, written, nil
 }

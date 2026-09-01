@@ -8,6 +8,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+// Окружения сервиса.
 const (
 	EnvLocal = "local"
 	EnvDev   = "dev"
@@ -16,7 +17,7 @@ const (
 
 // Config структура всей конфигурации сервиса moderation.
 type Config struct {
-	Env            string         `yaml:"env" env:"ENV" env-default:"local"`
+	Env            string `yaml:"env" env:"ENV" env-default:"local"`
 	GRPC           GRPCConfig
 	DB             DBConfig
 	ProjectManager PMConfig

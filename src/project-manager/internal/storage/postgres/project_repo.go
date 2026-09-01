@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
@@ -46,15 +47,15 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		WHERE p.id = $1
 	`
 	var (
-		p                     domain.Project
-		draft                 domain.Draft
-		titleRu, titleEn      *string
-		seoRu, seoEn          *string
-		aboutRu, aboutEn      *string
-		iconPath, coverPath   *string
-		videoPath, activeVer   *string
-		devURL                *string
-		draftUpdatedAt        *context.Context // placeholder
+		p                    domain.Project
+		draft                domain.Draft
+		titleRu, titleEn     *string
+		seoRu, seoEn         *string
+		aboutRu, aboutEn     *string
+		iconPath, coverPath  *string
+		videoPath, activeVer *string
+		devURL               *string
+		draftUpdatedAt       *context.Context // placeholder
 	)
 	_ = draftUpdatedAt
 
@@ -66,7 +67,7 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		&devURL, &draft.UpdatedAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("postgres.ProjectRepo.Get: %w", err)
@@ -133,14 +134,14 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 	var projects []*domain.Project
 	for rows.Next() {
 		var (
-			p                     domain.Project
-			draft                 domain.Draft
-			titleRu, titleEn      *string
-			seoRu, seoEn          *string
-			aboutRu, aboutEn      *string
-			iconPath, coverPath   *string
-			videoPath, activeVer   *string
-			devURL                *string
+			p                    domain.Project
+			draft                domain.Draft
+			titleRu, titleEn     *string
+			seoRu, seoEn         *string
+			aboutRu, aboutEn     *string
+			iconPath, coverPath  *string
+			videoPath, activeVer *string
+			devURL               *string
 		)
 		if err := rows.Scan(
 			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,

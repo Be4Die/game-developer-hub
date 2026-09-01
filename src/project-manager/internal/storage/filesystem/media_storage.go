@@ -3,6 +3,7 @@ package filesystem
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,12 +15,12 @@ import (
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 )
 
-// MediaStorage реализует domain.MediaStorage для хранения промо-материалов на файловой системе.
+// MediaStorage управляет сохранением и валидацией медиафайлов проектов (иконки, обложки, видео).
 type MediaStorage struct {
 	basePath string
 }
 
-// NewMediaStorage создаёт экземпляр хранилища медиа-файлов.
+// NewMediaStorage создает экземпляр хранилища медиафайлов.
 func NewMediaStorage(basePath string) *MediaStorage {
 	return &MediaStorage{basePath: basePath}
 }
@@ -42,15 +43,17 @@ func (s *MediaStorage) getFileName(mediaType string) (string, error) {
 }
 
 func validateMediaMime(path string, mediaType string) error {
-	f, err := os.Open(path)
+	f, err := os.Open(filepath.Clean(path)) //nolint:gosec
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	buf := make([]byte, 512)
 	n, err := f.Read(buf)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
 	if n == 0 {
@@ -72,14 +75,14 @@ func validateMediaMime(path string, mediaType string) error {
 }
 
 // SaveMediaStream сохраняет промо-файл из потока io.Reader с валидацией MIME-типа.
-func (s *MediaStorage) SaveMediaStream(ctx context.Context, projectID int64, mediaType string, src io.Reader) (string, error) {
+func (s *MediaStorage) SaveMediaStream(_ context.Context, projectID int64, mediaType string, src io.Reader) (string, error) {
 	fileName, err := s.getFileName(mediaType)
 	if err != nil {
 		return "", err
 	}
 
 	dir := s.projectDir(projectID)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", fmt.Errorf("mkdir: %w", err)
 	}
 
@@ -118,7 +121,7 @@ func (s *MediaStorage) SaveMediaStream(ctx context.Context, projectID int64, med
 		return "", fmt.Errorf("rename: %w", err)
 	}
 
-	_ = os.Chmod(targetPath, 0o644)
+	_ = os.Chmod(targetPath, 0o600)
 
 	return targetPath, nil
 }
@@ -142,7 +145,7 @@ func (s *MediaStorage) DeleteMedia(projectID int64, mediaType string) error {
 }
 
 // SnapshotMediaForRelease создает неизменяемую копию медиафайла для конкретного релиза.
-func (s *MediaStorage) SnapshotMediaForRelease(ctx context.Context, projectID int64, version string, srcPath string, mediaType string) (string, error) {
+func (s *MediaStorage) SnapshotMediaForRelease(_ context.Context, projectID int64, version string, srcPath string, mediaType string) (string, error) {
 	if srcPath == "" {
 		return "", nil
 	}
@@ -152,35 +155,39 @@ func (s *MediaStorage) SnapshotMediaForRelease(ctx context.Context, projectID in
 	}
 
 	releaseDir := filepath.Join(s.basePath, "media", strconv.FormatInt(projectID, 10), "releases", version)
-	if err := os.MkdirAll(releaseDir, 0o755); err != nil {
+	if err := os.MkdirAll(releaseDir, 0o750); err != nil {
 		return "", fmt.Errorf("mkdir release media: %w", err)
 	}
 
 	destPath := filepath.Join(releaseDir, fileName)
 
 	// Открываем исходный файл
-	srcFile, err := os.Open(srcPath)
+	srcFile, err := os.Open(filepath.Clean(srcPath)) //nolint:gosec
 	if err != nil {
 		// Резервная попытка: проверить в директории проекта
 		altPath := filepath.Join(s.projectDir(projectID), fileName)
-		srcFile, err = os.Open(altPath)
+		srcFile, err = os.Open(filepath.Clean(altPath)) //nolint:gosec
 		if err != nil {
 			// Если исходного файла нет на диске, сохраняем исходный путь
 			return srcPath, nil
 		}
 	}
-	defer srcFile.Close()
+	defer func() {
+		_ = srcFile.Close()
+	}()
 
-	destFile, err := os.Create(destPath)
+	destFile, err := os.Create(filepath.Clean(destPath)) //nolint:gosec
 	if err != nil {
 		return "", fmt.Errorf("create release media file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close()
+	}()
 
 	if _, err := io.Copy(destFile, srcFile); err != nil {
 		return "", fmt.Errorf("copy media to release: %w", err)
 	}
-	_ = os.Chmod(destPath, 0o644)
+	_ = os.Chmod(destPath, 0o600)
 
 	return destPath, nil
 }

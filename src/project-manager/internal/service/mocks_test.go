@@ -1,3 +1,4 @@
+// Package service contains unit tests and mocks for project-manager service layer.
 package service
 
 import (

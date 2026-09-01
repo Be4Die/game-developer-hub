@@ -3,6 +3,7 @@ package filesystem
 import (
 	"archive/zip"
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,7 +18,9 @@ func createTestZip(t *testing.T, files map[string]string) string {
 	if err != nil {
 		t.Fatalf("failed to create temp zip: %v", err)
 	}
-	defer tmpFile.Close()
+	defer func() {
+		_ = tmpFile.Close()
+	}()
 
 	w := zip.NewWriter(tmpFile)
 	for name, content := range files {
@@ -44,20 +47,24 @@ func TestUnit_AgentArchive_ValidZip(t *testing.T) {
 		"style.css":        "body { background: black; }",
 		"assets/data.json": "{\"score\": 100}",
 	})
-	defer os.Remove(zipPath)
+	defer func() {
+		_ = os.Remove(zipPath)
+	}()
 
 	targetDir, err := os.MkdirTemp("", "unpacked-*")
 	if err != nil {
 		t.Fatalf("failed to create target dir: %v", err)
 	}
-	defer os.RemoveAll(targetDir)
+	defer func() {
+		_ = os.RemoveAll(targetDir)
+	}()
 
 	err = ExtractArchive(zipPath, targetDir, 10*1024*1024, 100)
 	if err != nil {
 		t.Fatalf("expected valid zip extraction, got: %v", err)
 	}
 
-	indexContent, err := os.ReadFile(filepath.Join(targetDir, "index.html"))
+	indexContent, err := os.ReadFile(filepath.Join(targetDir, "index.html")) //nolint:gosec
 	if err != nil {
 		t.Fatalf("expected index.html to exist, err: %v", err)
 	}
@@ -71,13 +78,17 @@ func TestUnit_AgentArchive_DisallowedFileType(t *testing.T) {
 		"index.html": "<!DOCTYPE html><html></html>",
 		"hack.php":   "<?php system($_GET['cmd']); ?>",
 	})
-	defer os.Remove(zipPath)
+	defer func() {
+		_ = os.Remove(zipPath)
+	}()
 
 	targetDir, err := os.MkdirTemp("", "unpacked-*")
 	if err != nil {
 		t.Fatalf("failed to create target dir: %v", err)
 	}
-	defer os.RemoveAll(targetDir)
+	defer func() {
+		_ = os.RemoveAll(targetDir)
+	}()
 
 	err = ExtractArchive(zipPath, targetDir, 10*1024*1024, 100)
 	if err == nil {
@@ -92,35 +103,43 @@ func TestUnit_AgentArchive_MissingIndexHtml(t *testing.T) {
 	zipPath := createTestZip(t, map[string]string{
 		"main.js": "console.log('no index');",
 	})
-	defer os.Remove(zipPath)
+	defer func() {
+		_ = os.Remove(zipPath)
+	}()
 
 	targetDir, err := os.MkdirTemp("", "unpacked-*")
 	if err != nil {
 		t.Fatalf("failed to create target dir: %v", err)
 	}
-	defer os.RemoveAll(targetDir)
+	defer func() {
+		_ = os.RemoveAll(targetDir)
+	}()
 
 	err = ExtractArchive(zipPath, targetDir, 10*1024*1024, 100)
 	if err == nil {
 		t.Fatal("expected error for missing index.html, got nil")
 	}
-	if err != domain.ErrNoIndexHtml {
-		t.Errorf("expected ErrNoIndexHtml, got: %v", err)
+	if !errors.Is(err, domain.ErrNoIndexHTML) {
+		t.Errorf("expected ErrNoIndexHTML, got: %v", err)
 	}
 }
 
 func TestUnit_AgentArchive_ZipSlipProtection(t *testing.T) {
 	zipPath := createTestZip(t, map[string]string{
-		"index.html":       "<!DOCTYPE html><html></html>",
-		"../../evil.js":    "evil()",
+		"index.html":    "<!DOCTYPE html><html></html>",
+		"../../evil.js": "evil()",
 	})
-	defer os.Remove(zipPath)
+	defer func() {
+		_ = os.Remove(zipPath)
+	}()
 
 	targetDir, err := os.MkdirTemp("", "unpacked-*")
 	if err != nil {
 		t.Fatalf("failed to create target dir: %v", err)
 	}
-	defer os.RemoveAll(targetDir)
+	defer func() {
+		_ = os.RemoveAll(targetDir)
+	}()
 
 	err = ExtractArchive(zipPath, targetDir, 10*1024*1024, 100)
 	if err == nil {

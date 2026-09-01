@@ -54,7 +54,7 @@ func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ow
 		Content:     "Черновик отправлен на модерацию",
 		Payload: map[string]any{
 			"active_build_version": snapshot.ActiveBuildVersion,
-			"dev_url":             snapshot.DevURL,
+			"dev_url":              snapshot.DevURL,
 		},
 	}
 	_, _ = s.messageRepo.Create(ctx, sysMsg)
@@ -118,7 +118,7 @@ func (s *ModerationService) Approve(ctx context.Context, projectID int64, modera
 	prodURL, err := s.projectClient.PublishRelease(ctx, req.ProjectID, req.Snapshot.ActiveBuildVersion, moderatorID, comment)
 	if err != nil {
 		// Ошибка инфраструктуры деплоя — не отклоняем проект, сохраняем в IN_REVIEW
-		return nil, "", fmt.Errorf("%w: %v", domain.ErrDeployFailed, err)
+		return nil, "", fmt.Errorf("%w: %w", domain.ErrDeployFailed, err)
 	}
 
 	// 2. Фиксация вердикта

@@ -30,7 +30,7 @@ func TestCORSMiddleware(t *testing.T) {
 func TestJWTMetadataAnnotator(t *testing.T) {
 	// Sample unsigned JWT payload: {"sub":"user-123","role":"admin"} -> eyJzdWIiOiJ1c2VyLTEyMyIsInJvbGUiOiJhZG1pbiJ9
 	// Header: {"alg":"none"} -> eyJhbGciOiJub25lIn0
-	token := "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1c2VyLTEyMyIsInJvbGUiOiJhZG1pbiJ9.sig"
+	token := "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1c2VyLTEyMyIsInJvbGUiOiJhZG1pbiJ9.sig" //nolint:gosec // test token
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects", nil)
 	req.Header.Set("Authorization", "Bearer "+token)

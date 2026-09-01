@@ -1,3 +1,4 @@
+// Package config provides configuration structures for the gateway service.
 package config
 
 import (

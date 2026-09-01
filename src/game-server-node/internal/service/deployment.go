@@ -197,12 +197,12 @@ func (s *DeploymentService) loadContainerRegistry() error {
 }
 
 // saveContainerRegistry сохраняет все инстансы из in-memory storage в JSON-файл.
-func (s *DeploymentService) saveContainerRegistry() error {
+func (s *DeploymentService) saveContainerRegistry(ctx context.Context) error {
 	if s.containerMapPath == "" {
 		return nil
 	}
 
-	instances, err := s.storage.GetAllInstances(context.Background())
+	instances, err := s.storage.GetAllInstances(ctx)
 	if err != nil {
 		return fmt.Errorf("get all instances: %w", err)
 	}
@@ -406,7 +406,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 		return 0, 0, fmt.Errorf("%s: save instance: %w", op, err)
 	}
 
-	if err := s.saveContainerRegistry(); err != nil {
+	if err := s.saveContainerRegistry(ctx); err != nil {
 		s.log.Warn("failed to save container registry",
 			slog.String("op", op),
 			slog.String("error", err.Error()),
@@ -442,7 +442,7 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
 
-		if errSave := s.saveContainerRegistry(); errSave != nil {
+		if errSave := s.saveContainerRegistry(ctx); errSave != nil {
 			s.log.Warn("failed to save container registry",
 				slog.String("op", op),
 				slog.String("error", errSave.Error()),
@@ -456,7 +456,7 @@ func (s *DeploymentService) StopInstance(ctx context.Context, instanceID int64, 
 	instance.Status = domain.InstanceStatusStopped
 	_ = s.storage.RecordInstance(ctx, *instance)
 
-	if err := s.saveContainerRegistry(); err != nil {
+	if err := s.saveContainerRegistry(ctx); err != nil {
 		s.log.Warn("failed to save container registry",
 			slog.String("op", op),
 			slog.String("error", err.Error()),
@@ -484,7 +484,7 @@ func (s *DeploymentService) RestartInstance(ctx context.Context, instanceID int6
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
 
-		if errSave := s.saveContainerRegistry(); errSave != nil {
+		if errSave := s.saveContainerRegistry(ctx); errSave != nil {
 			s.log.Warn("failed to save container registry",
 				slog.String("op", op),
 				slog.String("error", errSave.Error()),
@@ -497,7 +497,7 @@ func (s *DeploymentService) RestartInstance(ctx context.Context, instanceID int6
 	instance.Status = domain.InstanceStatusRunning
 	_ = s.storage.RecordInstance(ctx, *instance)
 
-	if err := s.saveContainerRegistry(); err != nil {
+	if err := s.saveContainerRegistry(ctx); err != nil {
 		s.log.Warn("failed to save container registry",
 			slog.String("op", op),
 			slog.String("error", err.Error()),
@@ -525,7 +525,7 @@ func (s *DeploymentService) StartStoppedInstance(ctx context.Context, instanceID
 		instance.Status = domain.InstanceStatusCrashed
 		_ = s.storage.RecordInstance(ctx, *instance)
 
-		if errSave := s.saveContainerRegistry(); errSave != nil {
+		if errSave := s.saveContainerRegistry(ctx); errSave != nil {
 			s.log.Warn("failed to save container registry",
 				slog.String("op", op),
 				slog.String("error", errSave.Error()),
@@ -538,7 +538,7 @@ func (s *DeploymentService) StartStoppedInstance(ctx context.Context, instanceID
 	instance.Status = domain.InstanceStatusRunning
 	_ = s.storage.RecordInstance(ctx, *instance)
 
-	if err := s.saveContainerRegistry(); err != nil {
+	if err := s.saveContainerRegistry(ctx); err != nil {
 		s.log.Warn("failed to save container registry",
 			slog.String("op", op),
 			slog.String("error", err.Error()),
@@ -584,7 +584,7 @@ func (s *DeploymentService) DeleteInstance(ctx context.Context, instanceID int64
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if err := s.saveContainerRegistry(); err != nil {
+	if err := s.saveContainerRegistry(ctx); err != nil {
 		s.log.Warn("failed to save container registry",
 			slog.String("op", op),
 			slog.String("error", err.Error()),

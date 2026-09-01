@@ -106,10 +106,16 @@ func (c *GRPCModerationClient) GetLatestRequest(ctx context.Context, projectID i
 		return nil, domain.ErrNotFound
 	}
 
+	rawStatus := int32(req.GetStatus())
+	var status int16
+	if rawStatus >= -32768 && rawStatus <= 32767 {
+		status = int16(rawStatus)
+	}
+
 	return &domain.ModerationRequestInfo{
 		RequestID:       req.GetId(),
 		ProjectID:       req.GetProjectId(),
-		Status:          int16(req.GetStatus()),
+		Status:          status,
 		RejectionReason: req.GetRejectionReason(),
 	}, nil
 }

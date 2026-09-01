@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 // BuildPipeline определяет пайплайн преобразования архива билда

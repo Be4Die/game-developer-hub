@@ -32,7 +32,7 @@ func (s *ProjectStubClient) SetDeployFails(fail bool) {
 }
 
 // PublishRelease эмулирует развёртывание и публикацию игры.
-func (s *ProjectStubClient) PublishRelease(ctx context.Context, projectID int64, version, approvedBy, comment string) (string, error) {
+func (s *ProjectStubClient) PublishRelease(_ context.Context, projectID int64, _, _, _ string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -46,7 +46,7 @@ func (s *ProjectStubClient) PublishRelease(ctx context.Context, projectID int64,
 }
 
 // RejectDraft эмулирует отклонение черновика.
-func (s *ProjectStubClient) RejectDraft(ctx context.Context, projectID int64, reason string) error {
+func (s *ProjectStubClient) RejectDraft(_ context.Context, projectID int64, reason string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.rejectedMods[projectID] = reason

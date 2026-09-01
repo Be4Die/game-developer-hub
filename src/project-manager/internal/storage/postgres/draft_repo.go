@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
@@ -49,7 +50,7 @@ func (r *DraftRepo) Get(ctx context.Context, projectID int64) (*domain.Draft, er
 		&d.IconPath, &d.CoverPath, &d.VideoPath, &d.ActiveBuildVersion, &d.DevURL, &d.UpdatedAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("postgres.DraftRepo.Get: %w", err)

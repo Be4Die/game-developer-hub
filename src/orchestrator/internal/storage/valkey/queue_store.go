@@ -14,9 +14,9 @@ import (
 
 // Префиксы ключей очереди.
 const (
-	keyQueue      = "queue:"
-	keyQueueMeta  = "queue:meta:"
-	keyQueueResv  = "queue:resv:"
+	keyQueue     = "queue:"
+	keyQueueMeta = "queue:meta:"
+	keyQueueResv = "queue:resv:"
 )
 
 // QueueStore реализует domain.QueueStore поверх Valkey.
@@ -58,11 +58,11 @@ func (s *QueueStore) Join(ctx context.Context, gameID int64, playerID, mode stri
 
 	// Сохраняем мета-данные
 	meta := map[string]interface{}{
-		"join_time":       now.Unix(),
-		"last_heartbeat":  now.Unix(),
-		"mode":            mode,
-		"reserved_inst":   0,
-		"reserved_until":  0,
+		"join_time":      now.Unix(),
+		"last_heartbeat": now.Unix(),
+		"mode":           mode,
+		"reserved_inst":  0,
+		"reserved_until": 0,
 	}
 	if err := s.client.HSet(ctx, mKey, meta).Err(); err != nil {
 		return fmt.Errorf("valkey.QueueStore.Join: hset: %w", err)

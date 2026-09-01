@@ -10,7 +10,7 @@ import (
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 )
 
-func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *mockDraftRepo, *mockBuildRepo, *mockModerationClient, *mockReleaseRepo) {
+func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *mockReleaseRepo) {
 	t.Helper()
 	pRepo := newMockProjectRepo()
 	dRepo := newMockDraftRepo()
@@ -27,7 +27,7 @@ func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *
 		bStorage, mStorage, deployer, nil, 5,
 	)
 
-	return svc, pRepo, dRepo, bRepo, mClient, rRepo
+	return svc, pRepo, rRepo
 }
 
 func TestUnit_ProjectService_CreateProject(t *testing.T) {
@@ -35,7 +35,7 @@ func TestUnit_ProjectService_CreateProject(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, _, _, _, _, _ := setupTestProjectService(t)
+	svc, _, _ := setupTestProjectService(t)
 
 	p, err := svc.CreateProject(ctx, "user-123", "Тестовая игра", "Test Game")
 	if err != nil {
@@ -58,7 +58,7 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, _, _, _, _, _ := setupTestProjectService(t)
+	svc, _, _ := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 
@@ -102,7 +102,7 @@ func TestUnit_ProjectService_UploadBuildStream(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, _, _, _, _, _ := setupTestProjectService(t)
+	svc, _, _ := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 
@@ -131,7 +131,7 @@ func TestUnit_ProjectService_SubmitForModeration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, pRepo, _, _, _, _ := setupTestProjectService(t)
+	svc, pRepo, _ := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 
@@ -176,7 +176,7 @@ func TestUnit_ProjectService_PublishRelease(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, pRepo, _, _, _, rRepo := setupTestProjectService(t)
+	svc, pRepo, rRepo := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
@@ -215,7 +215,7 @@ func TestUnit_ProjectService_RejectDraft(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	svc, pRepo, _, _, _, _ := setupTestProjectService(t)
+	svc, pRepo, _ := setupTestProjectService(t)
 
 	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
 	_ = pRepo.UpdateStatus(ctx, p.ID, domain.ProjectStatusPending)

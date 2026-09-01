@@ -1,3 +1,4 @@
+// Package service provides deployment business logic.
 package service
 
 import (
@@ -43,9 +44,9 @@ func (s *DeploymentService) versionDir(projectID int64, version string) string {
 }
 
 // DeployDevStream сохраняет временный архив из потока io.Reader, распаковывает в versions/{version} и обновляет dev symlink.
-func (s *DeploymentService) DeployDevStream(ctx context.Context, projectID int64, version string, archiveReader io.Reader) (*domain.DeploymentResult, error) {
+func (s *DeploymentService) DeployDevStream(_ context.Context, projectID int64, version string, archiveReader io.Reader) (*domain.DeploymentResult, error) {
 	projDir := s.projectDir(projectID)
-	if err := os.MkdirAll(projDir, 0o755); err != nil {
+	if err := os.MkdirAll(projDir, 0o750); err != nil {
 		return nil, fmt.Errorf("create project dir: %w", err)
 	}
 
@@ -93,7 +94,7 @@ func (s *DeploymentService) DeployDevStream(ctx context.Context, projectID int64
 }
 
 // DeployProd переключает боевой симлинк prod -> versions/{version}.
-func (s *DeploymentService) DeployProd(ctx context.Context, projectID int64, version string) (*domain.DeploymentResult, error) {
+func (s *DeploymentService) DeployProd(_ context.Context, projectID int64, version string) (*domain.DeploymentResult, error) {
 	projDir := s.projectDir(projectID)
 	unpackedDir := s.versionDir(projectID, version)
 
@@ -119,7 +120,7 @@ func (s *DeploymentService) DeployProd(ctx context.Context, projectID int64, ver
 }
 
 // UndeployProd снимает игру с публикации, удаляя симлинк prod.
-func (s *DeploymentService) UndeployProd(ctx context.Context, projectID int64) error {
+func (s *DeploymentService) UndeployProd(_ context.Context, projectID int64) error {
 	symlinkPath := filepath.Join(s.projectDir(projectID), "prod")
 	if err := os.Remove(symlinkPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("remove prod symlink: %w", err)
@@ -128,7 +129,7 @@ func (s *DeploymentService) UndeployProd(ctx context.Context, projectID int64) e
 }
 
 // DeleteVersion удаляет директорию распакованной версии сборок (Garbage Collection).
-func (s *DeploymentService) DeleteVersion(ctx context.Context, projectID int64, version string) error {
+func (s *DeploymentService) DeleteVersion(_ context.Context, projectID int64, version string) error {
 	unpackedDir := s.versionDir(projectID, version)
 	if err := os.RemoveAll(unpackedDir); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("delete version dir %s: %w", unpackedDir, err)
@@ -137,7 +138,7 @@ func (s *DeploymentService) DeleteVersion(ctx context.Context, projectID int64, 
 }
 
 // DeleteProject удаляет всю директорию проекта на агенте.
-func (s *DeploymentService) DeleteProject(ctx context.Context, projectID int64) error {
+func (s *DeploymentService) DeleteProject(_ context.Context, projectID int64) error {
 	projDir := s.projectDir(projectID)
 	if err := os.RemoveAll(projDir); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("delete project dir %s: %w", projDir, err)
@@ -149,11 +150,14 @@ func (s *DeploymentService) DeleteProject(ctx context.Context, projectID int64) 
 func (s *DeploymentService) GetFreeDiskBytes() uint64 {
 	var stat syscall.Statfs_t
 	dir := s.gamesBasePath
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return 0
 	}
 	if err := syscall.Statfs(dir, &stat); err != nil {
 		return 0
 	}
-	return stat.Bavail * uint64(stat.Bsize)
+	if stat.Bsize > 0 {
+		return stat.Bavail * uint64(stat.Bsize)
+	}
+	return 0
 }

@@ -2,8 +2,10 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
@@ -11,6 +13,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func clampInt32(v int) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if v < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(v)
+}
 
 // ProjectHandler реализует gRPC-сервис ProjectServiceServer.
 type ProjectHandler struct {
@@ -65,7 +77,7 @@ func (h *ProjectHandler) List(ctx context.Context, req *pb.ProjectListRequest) (
 	}
 	resp := &pb.ProjectListResponse{
 		Projects: make([]*pb.Project, len(projects)),
-		Total:    int32(total),
+		Total:    clampInt32(total),
 	}
 	for i, p := range projects {
 		resp.Projects[i] = projectToProto(p)
@@ -130,7 +142,7 @@ func (h *ProjectHandler) UploadBuild(ctx context.Context, req *pb.ProjectUploadB
 // UploadBuildStream загружает сборку веб-игры потоково (чанки по 64 КБ).
 func (h *ProjectHandler) UploadBuildStream(stream pb.ProjectService_UploadBuildStreamServer) error {
 	metaReq, err := stream.Recv()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return status.Error(codes.InvalidArgument, "missing upload metadata")
 	}
 	if err != nil {
@@ -155,7 +167,7 @@ func (h *ProjectHandler) UploadBuildStream(stream pb.ProjectService_UploadBuildS
 	go func() {
 		for {
 			req, recvErr := stream.Recv()
-			if recvErr == io.EOF {
+			if errors.Is(recvErr, io.EOF) {
 				_ = pw.Close()
 				done <- nil
 				return
@@ -241,7 +253,7 @@ func (h *ProjectHandler) UploadMedia(ctx context.Context, req *pb.ProjectUploadM
 // UploadMediaStream загружает промо-материал потоково.
 func (h *ProjectHandler) UploadMediaStream(stream pb.ProjectService_UploadMediaStreamServer) error {
 	metaReq, err := stream.Recv()
-	if err == io.EOF {
+	if errors.Is(err, io.EOF) {
 		return status.Error(codes.InvalidArgument, "missing metadata")
 	}
 	if err != nil {
@@ -264,7 +276,7 @@ func (h *ProjectHandler) UploadMediaStream(stream pb.ProjectService_UploadMediaS
 	go func() {
 		for {
 			req, recvErr := stream.Recv()
-			if recvErr == io.EOF {
+			if errors.Is(recvErr, io.EOF) {
 				_ = pw.Close()
 				done <- nil
 				return

@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
 
-// GamePolicyService управляет политиками оркестрации серверов по проектам.
+// GamePolicyService управляет политиками масштабирования игр.
 type GamePolicyService struct {
 	policyRepo domain.GamePolicyRepo
 }
@@ -21,7 +22,7 @@ func NewGamePolicyService(policyRepo domain.GamePolicyRepo) *GamePolicyService {
 func (s *GamePolicyService) Get(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
 	policy, err := s.policyRepo.Get(ctx, gameID)
 	if err != nil {
-		if err == domain.ErrNotFound {
+		if errors.Is(err, domain.ErrNotFound) {
 			return defaultPolicy(gameID), nil
 		}
 		return nil, fmt.Errorf("GamePolicyService.Get: %w", err)

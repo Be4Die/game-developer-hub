@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/sysinfo"
 )
 

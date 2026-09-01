@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -66,7 +67,7 @@ func (r *ReleaseRepo) GetActive(ctx context.Context, projectID int64) (*domain.R
 		&rel.PublishedBy, &rel.PublishedAt, &rel.UnpublishAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("postgres.ReleaseRepo.GetActive: %w", err)

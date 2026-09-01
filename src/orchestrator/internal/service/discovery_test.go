@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -87,7 +88,9 @@ type discMockBuildStorage struct {
 	listByGameFn func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error)
 }
 
-func (m *discMockBuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error { return nil }
+func (m *discMockBuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error {
+	return nil
+}
 func (m *discMockBuildStorage) GetByID(ctx context.Context, id int64) (*domain.ServerBuild, error) {
 	return nil, nil
 }
@@ -100,7 +103,9 @@ func (m *discMockBuildStorage) ListByGame(ctx context.Context, gameID int64, lim
 	}
 	return nil, nil
 }
-func (m *discMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) { return 0, nil }
+func (m *discMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) {
+	return 0, nil
+}
 func (m *discMockBuildStorage) Delete(ctx context.Context, id int64) error { return nil }
 func (m *discMockBuildStorage) CountActiveInstancesByBuild(ctx context.Context, buildID int64) (int, error) {
 	return 0, nil
@@ -116,9 +121,13 @@ func (m *discMockGamePolicyRepo) Get(ctx context.Context, gameID int64) (*domain
 	}
 	return nil, domain.ErrNotFound
 }
-func (m *discMockGamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) error { return nil }
+func (m *discMockGamePolicyRepo) Set(ctx context.Context, policy *domain.GamePolicy) error {
+	return nil
+}
 func (m *discMockGamePolicyRepo) Delete(ctx context.Context, gameID int64) error { return nil }
-func (m *discMockGamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, error) { return nil, nil }
+func (m *discMockGamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolicy, error) {
+	return nil, nil
+}
 
 type discMockInstanceStarter struct {
 	startInstanceFn func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
@@ -365,10 +374,10 @@ func TestDiscoveryService_DiscoverServers_AutoStart(t *testing.T) {
 		},
 	}
 
-	started := false
+	var started atomic.Bool
 	instanceSvc := &discMockInstanceStarter{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			started = true
+			started.Store(true)
 			return &domain.Instance{ID: 99}, nil
 		},
 	}
@@ -406,7 +415,7 @@ func TestDiscoveryService_DiscoverServers_AutoStart(t *testing.T) {
 	// autoStartInstance запускается в отдельной горутине.
 	time.Sleep(100 * time.Millisecond)
 
-	if !started {
+	if !started.Load() {
 		t.Error("expected auto-start to be triggered when no running instances exist")
 	}
 }

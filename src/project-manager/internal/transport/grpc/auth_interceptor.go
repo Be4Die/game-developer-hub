@@ -1,8 +1,10 @@
+// Package grpc provides gRPC transport handlers and interceptors for project-manager.
 package grpc
 
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -28,7 +30,7 @@ func NewJWTAuth(secret, issuer string) (*JWTAuth, error) {
 
 // Unary возвращает grpc.UnaryServerInterceptor.
 func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		userID, role, err := a.extractUserID(ctx)
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
@@ -40,7 +42,7 @@ func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
 
 // Stream возвращает grpc.StreamServerInterceptor.
 func (a *JWTAuth) Stream() grpc.StreamServerInterceptor {
-	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		userID, role, err := a.extractUserID(stream.Context())
 		if err != nil {
 			return status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
@@ -61,9 +63,9 @@ func (a *JWTAuth) extractUserID(ctx context.Context) (string, float64, error) {
 	if vals := md.Get("x-user-id"); len(vals) > 0 && vals[0] != "" {
 		var role float64
 		if roleVals := md.Get("x-user-role"); len(roleVals) > 0 && roleVals[0] != "" {
-			var roleInt int
-			fmt.Sscanf(roleVals[0], "%d", &roleInt)
-			role = float64(roleInt)
+			if roleInt, err := strconv.Atoi(roleVals[0]); err == nil {
+				role = float64(roleInt)
+			}
 		}
 		return vals[0], role, nil
 	}
@@ -138,8 +140,10 @@ func UserRoleFromContext(ctx context.Context) (int, bool) {
 	if len(vals) == 0 || vals[0] == "" {
 		return 0, false
 	}
-	var role int
-	fmt.Sscanf(vals[0], "%d", &role)
+	role, err := strconv.Atoi(vals[0])
+	if err != nil {
+		return 0, false
+	}
 	return role, true
 }
 

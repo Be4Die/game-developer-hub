@@ -882,12 +882,34 @@ tasks:
         vars:
           DOCKER_CONTAINER_NAME: "{{.AGENT_CONTAINER_NAME}}"
 
+  agent:lint:
+    desc: "Lint game-deployment-agent Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: src/game-deployment-agent
+
   agent:test:
     desc: "Run game-deployment-agent unit tests with race detector"
     cmds:
       - task: go:test
         vars:
           GO_DIR: src/game-deployment-agent
+
+  # ==================== Gateway ====================
+  gateway:lint:
+    desc: "Lint gateway Go code with golangci-lint"
+    cmds:
+      - task: go:lint
+        vars:
+          GO_DIR: src/gateway
+
+  gateway:test:
+    desc: "Run gateway unit tests with race detector"
+    cmds:
+      - task: go:test
+        vars:
+          GO_DIR: src/gateway
 
   # ==================== Frontend ====================
   frontend:install:
@@ -1073,6 +1095,8 @@ tasks:
       - task: sso:test
       - task: project-manager:test
       - task: moderation:test
+      - task: agent:test
+      - task: gateway:test
 
   all:lint:
     desc: "Lint all code"
@@ -1082,6 +1106,8 @@ tasks:
       - task: sso:lint
       - task: project-manager:lint
       - task: moderation:lint
+      - task: agent:lint
+      - task: gateway:lint
       - task: proto:lint
 
   all:cloc:

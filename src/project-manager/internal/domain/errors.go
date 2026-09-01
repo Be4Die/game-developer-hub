@@ -20,8 +20,8 @@ var (
 	// ErrInvalidArchive возвращается при попытке загрузить поврежденный или небезопасный архив.
 	ErrInvalidArchive = errors.New("invalid archive format or corrupt data")
 
-	// ErrNoIndexHtml возвращается, когда в корне загруженного архива отсутствует файл index.html.
-	ErrNoIndexHtml = errors.New("index.html is required in the root of the archive")
+	// ErrNoIndexHTML возвращается, когда в корне загруженного архива отсутствует файл index.html.
+	ErrNoIndexHTML = errors.New("index.html is required in the root of the archive")
 
 	// ErrDraftNotReady возвращается при попытке отправить на модерацию черновик без обязательных полей или билда.
 	ErrDraftNotReady = errors.New("draft is missing required fields or active build")

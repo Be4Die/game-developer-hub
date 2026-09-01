@@ -51,7 +51,7 @@ type QueueLocation uint8
 // Варианты расположения очереди.
 const (
 	QueueLocationClient QueueLocation = iota + 1 // client-side queue в оркестраторе
-	QueueLocationServer                           // server-side queue внутри игрового сервера
+	QueueLocationServer                          // server-side queue внутри игрового сервера
 )
 
 func (l QueueLocation) String() string {
@@ -77,12 +77,12 @@ type GamePolicy struct {
 	MaxPlayersPerInstance int32
 	MaxInstancesPerGame   int32
 	ScaleBehavior         ScaleBehavior
-	NodePreference        string // "auto" или "node-<id>"
+	NodePreference        string        // "auto" или "node-<id>"
 	QueueLocation         QueueLocation // где реализована очередь (client/server)
-	QueueScaleUpThreshold int32  // порог очереди для масштабирования (server-side queue)
-	QueueReservationSec   int32  // секунды на подключение после резервации
-	QueueMaxWaitSec       int32  // макс. время ожидания в очереди
-	QueueHeartbeatTimeout int32  // выкидывание при отсутствии heartbeat (сек)
+	QueueScaleUpThreshold int32         // порог очереди для масштабирования (server-side queue)
+	QueueReservationSec   int32         // секунды на подключение после резервации
+	QueueMaxWaitSec       int32         // макс. время ожидания в очереди
+	QueueHeartbeatTimeout int32         // выкидывание при отсутствии heartbeat (сек)
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
 }

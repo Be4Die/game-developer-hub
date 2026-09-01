@@ -101,7 +101,7 @@ func TestDeploymentService_StartInstance(t *testing.T) {
 	storage := memory.NewStorage()
 	runtime := &stubRuntime{}
 
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 	ctx := context.Background()
 
 	err := svc.LoadImage(ctx, 42, "test-game:v1", nil)
@@ -154,7 +154,7 @@ func TestDeploymentService_StopInstance_Success(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
 	runtime := &stubRuntime{}
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 	ctx := context.Background()
 
 	// Pre-populate storage with a running instance
@@ -200,7 +200,7 @@ func TestDeploymentService_StopInstance_RuntimeError(t *testing.T) {
 		stopErr: errors.New("docker daemon not responding"),
 	}
 
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 	ctx := context.Background()
 
 	_ = storage.RecordInstance(ctx, domain.Instance{
@@ -228,7 +228,7 @@ func TestDeploymentService_StopInstance_RuntimeError(t *testing.T) {
 func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage() // Empty storage
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 
 	err := svc.StopInstance(context.Background(), 99, 5*time.Second)
 
@@ -240,7 +240,7 @@ func TestDeploymentService_StopInstance_NotFound(t *testing.T) {
 func TestDeploymentService_ResolvePort_Exact(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 	ctx := context.Background()
 
 	port, err := svc.resolvePort(ctx, domain.PortStrategy{Exact: 12345})
@@ -256,7 +256,7 @@ func TestDeploymentService_ResolvePort_Exact(t *testing.T) {
 func TestDeploymentService_ResolvePort_Any(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 	ctx := context.Background()
 
 	port, err := svc.resolvePort(ctx, domain.PortStrategy{Any: true})
@@ -281,7 +281,7 @@ func TestDeploymentService_ResolvePort_Range_FreePort(t *testing.T) {
 		Status: domain.InstanceStatusRunning,
 	})
 
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 
 	port, err := svc.resolvePort(ctx, domain.PortStrategy{
 		Range: &domain.PortRange{Min: 30000, Max: 30005},
@@ -306,7 +306,7 @@ func TestDeploymentService_ResolvePort_Range_AllOccupied(t *testing.T) {
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 2, Port: 40001, Status: domain.InstanceStatusRunning})
 	_ = storage.RecordInstance(ctx, domain.Instance{ID: 3, Port: 40002, Status: domain.InstanceStatusRunning})
 
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 
 	_, err := svc.resolvePort(ctx, domain.PortStrategy{
 		Range: &domain.PortRange{Min: 40000, Max: 40002},
@@ -320,7 +320,7 @@ func TestDeploymentService_ResolvePort_Range_AllOccupied(t *testing.T) {
 func TestDeploymentService_ResolvePort_Range_MinGreaterThanMax(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 	ctx := context.Background()
 
 	_, err := svc.resolvePort(ctx, domain.PortStrategy{
@@ -335,7 +335,7 @@ func TestDeploymentService_ResolvePort_Range_MinGreaterThanMax(t *testing.T) {
 func TestDeploymentService_ResolvePort_Default(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 	ctx := context.Background()
 
 	// Пустая стратегия — должен вернуть 0 (OS-assigned)
@@ -361,7 +361,7 @@ func TestDeploymentService_ResolvePort_Range_SkipsStoppedInstances(t *testing.T)
 		Status: domain.InstanceStatusStopped,
 	})
 
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 
 	port, err := svc.resolvePort(ctx, domain.PortStrategy{
 		Range: &domain.PortRange{Min: 60000, Max: 60005},
@@ -386,7 +386,7 @@ func TestDeploymentService_StreamLogs_Success(t *testing.T) {
 	})
 
 	runtime := &stubRuntime{}
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 
 	logs, err := svc.StreamLogs(ctx, 1, false)
 
@@ -401,7 +401,7 @@ func TestDeploymentService_StreamLogs_Success(t *testing.T) {
 func TestDeploymentService_StreamLogs_InstanceNotFound(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 
 	_, err := svc.StreamLogs(context.Background(), 999, false)
 
@@ -413,7 +413,7 @@ func TestDeploymentService_StreamLogs_InstanceNotFound(t *testing.T) {
 func TestDeploymentService_StartInstance_NoImage(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()
- 	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
+	svc := NewDeploymentService(log, storage, &stubRuntime{}, "", "", "")
 	ctx := context.Background()
 
 	// Не загружаем image для gameID
@@ -438,7 +438,7 @@ func TestDeploymentService_StartInstance_CreateContainerError(t *testing.T) {
 	runtime := &stubRuntime{
 		createErr: errors.New("docker daemon error"),
 	}
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 	ctx := context.Background()
 
 	_ = svc.LoadImage(ctx, 1, "test:v1", nil)
@@ -464,7 +464,7 @@ func TestDeploymentService_StartInstance_StartContainerError(t *testing.T) {
 	runtime := &stubRuntime{
 		startErr: errors.New("container failed to start"),
 	}
- 	svc := NewDeploymentService(log, storage, runtime, "", "", "")
+	svc := NewDeploymentService(log, storage, runtime, "", "", "")
 	ctx := context.Background()
 
 	_ = svc.LoadImage(ctx, 1, "test:v1", nil)

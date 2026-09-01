@@ -50,9 +50,7 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, func()) {
 	pb.RegisterProjectServiceServer(s, projHandler)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
-			// ignore on close
-		}
+		_ = s.Serve(lis)
 	}()
 
 	conn, err := grpc.NewClient(

@@ -1,6 +1,8 @@
+// Package main is the entry point for the gateway service.
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -81,13 +83,13 @@ func handleInstanceLogsStream(client gwpb.InstanceServiceClient) http.HandlerFun
 
 			resp, err := stream.Recv()
 			if err != nil {
-				if err != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					log.Printf("logs stream error: %v", err)
 				}
 				return
 			}
 
-			fmt.Fprintf(w, "event: log\ndata: %s\n\n", formatLogEvent(resp.Entry))
+			_, _ = fmt.Fprintf(w, "event: log\ndata: %s\n\n", formatLogEvent(resp.Entry))
 			flusher.Flush()
 		}
 	}

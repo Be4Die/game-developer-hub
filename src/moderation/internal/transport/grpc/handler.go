@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"math"
 
 	"github.com/Be4Die/game-developer-hub/moderation/internal/domain"
 	"github.com/Be4Die/game-developer-hub/moderation/internal/service"
@@ -9,6 +10,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func clampInt32(v int) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if v < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(v)
+}
 
 // ModerationHandler реализует gRPC-сервис ModerationServiceServer.
 type ModerationHandler struct {
@@ -44,7 +55,7 @@ func (h *ModerationHandler) SubmitDraft(ctx context.Context, req *pb.SubmitDraft
 	}, nil
 }
 
-// ListRequests возвращает постраничный список заявок на модерацию.
+// ListRequests возвращает список заявок на модерацию с фильтрацией и пагинацией.
 func (h *ModerationHandler) ListRequests(ctx context.Context, req *pb.ListModerationRequestsRequest) (*pb.ListModerationRequestsResponse, error) {
 	filter := domain.RequestFilter{
 		Limit:  int(req.GetLimit()),
@@ -52,8 +63,11 @@ func (h *ModerationHandler) ListRequests(ctx context.Context, req *pb.ListModera
 	}
 
 	if req.GetStatus() != pb.RequestStatus_REQUEST_STATUS_UNSPECIFIED {
-		st := domain.RequestStatus(req.GetStatus())
-		filter.Status = &st
+		rawStatus := int32(req.GetStatus())
+		if rawStatus >= math.MinInt16 && rawStatus <= math.MaxInt16 {
+			st := domain.RequestStatus(int16(rawStatus))
+			filter.Status = &st
+		}
 	}
 
 	if req.GetModeratorId() != "" {
@@ -68,7 +82,7 @@ func (h *ModerationHandler) ListRequests(ctx context.Context, req *pb.ListModera
 
 	resp := &pb.ListModerationRequestsResponse{
 		Requests: make([]*pb.ModerationRequest, len(requests)),
-		Total:    int32(total),
+		Total:    clampInt32(total),
 	}
 	for i, r := range requests {
 		resp.Requests[i] = requestToProto(r)
@@ -177,7 +191,7 @@ func (h *ModerationHandler) ListMessages(ctx context.Context, req *pb.ListChatMe
 
 	resp := &pb.ListChatMessagesResponse{
 		Messages: make([]*pb.ChatMessage, len(messages)),
-		Total:    int32(total),
+		Total:    clampInt32(total),
 	}
 	for i, m := range messages {
 		resp.Messages[i] = messageToProto(m)
@@ -186,6 +200,7 @@ func (h *ModerationHandler) ListMessages(ctx context.Context, req *pb.ListChatMe
 	return resp, nil
 }
 
+// ListActiveChats возвращает список активных чатов модерации.
 func (h *ModerationHandler) ListActiveChats(ctx context.Context, req *pb.ListActiveChatsRequest) (*pb.ListActiveChatsResponse, error) {
 	chats, total, err := h.svc.ListActiveChats(ctx, int(req.Limit), int(req.Offset))
 	if err != nil {
@@ -202,7 +217,7 @@ func (h *ModerationHandler) ListActiveChats(ctx context.Context, req *pb.ListAct
 
 	return &pb.ListActiveChatsResponse{
 		Chats: pbChats,
-		Total: int32(total),
+		Total: clampInt32(total),
 	}, nil
 }
 

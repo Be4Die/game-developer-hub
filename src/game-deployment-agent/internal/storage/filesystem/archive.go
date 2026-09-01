@@ -1,9 +1,11 @@
+// Package filesystem provides archive extraction utilities.
 package filesystem
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,67 +23,67 @@ const (
 
 // allowedExtensions содержит разрешенные расширения статических файлов для веб-сборок игр (HTML5/WASM/Unity/Godot).
 var allowedExtensions = map[string]bool{
-	".html":     true,
-	".htm":      true,
-	".js":       true,
-	".mjs":      true,
-	".css":      true,
-	".wasm":     true,
-	".png":      true,
-	".jpg":      true,
-	".jpeg":     true,
-	".webp":     true,
-	".gif":      true,
-	".svg":      true,
-	".ico":      true,
-	".mp3":      true,
-	".wav":      true,
-	".ogg":      true,
-	".ogv":      true,
-	".flac":     true,
-	".aac":      true,
-	".opus":     true,
-	".mp4":      true,
-	".webm":     true,
-	".json":     true,
-	".txt":      true,
-	".xml":      true,
-	".ttf":      true,
-	".woff":     true,
-	".woff2":    true,
-	".eot":      true,
-	".otf":      true,
-	".data":     true,
-	".pck":      true,
-	".bin":      true,
-	".mem":      true,
-	".symbols":  true,
-	".map":      true,
-	".atlas":    true,
-	".fnt":      true,
-	".tga":      true,
-	".bmp":      true,
-	".ktx":      true,
-	".basis":    true,
-	".dds":      true,
-	".hdr":      true,
-	".br":       true, // Brotli compressed assets (Unity WebGL, etc.)
-	".gz":       true, // Gzip compressed assets
-	".unityweb": true, // Unity WebGL bundles
-	".unity3d":  true,
-	".bundle":   true,
-	".glb":      true, // 3D assets
-	".gltf":     true,
-	".fbx":      true,
-	".obj":      true,
-	".mtl":      true,
-	".csv":      true,
-	".tsv":      true,
-	".yaml":     true,
-	".yml":      true,
-	".plist":    true,
+	".html":       true,
+	".htm":        true,
+	".js":         true,
+	".mjs":        true,
+	".css":        true,
+	".wasm":       true,
+	".png":        true,
+	".jpg":        true,
+	".jpeg":       true,
+	".webp":       true,
+	".gif":        true,
+	".svg":        true,
+	".ico":        true,
+	".mp3":        true,
+	".wav":        true,
+	".ogg":        true,
+	".ogv":        true,
+	".flac":       true,
+	".aac":        true,
+	".opus":       true,
+	".mp4":        true,
+	".webm":       true,
+	".json":       true,
+	".txt":        true,
+	".xml":        true,
+	".ttf":        true,
+	".woff":       true,
+	".woff2":      true,
+	".eot":        true,
+	".otf":        true,
+	".data":       true,
+	".pck":        true,
+	".bin":        true,
+	".mem":        true,
+	".symbols":    true,
+	".map":        true,
+	".atlas":      true,
+	".fnt":        true,
+	".tga":        true,
+	".bmp":        true,
+	".ktx":        true,
+	".basis":      true,
+	".dds":        true,
+	".hdr":        true,
+	".br":         true, // Brotli compressed assets (Unity WebGL, etc.)
+	".gz":         true, // Gzip compressed assets
+	".unityweb":   true, // Unity WebGL bundles
+	".unity3d":    true,
+	".bundle":     true,
+	".glb":        true, // 3D assets
+	".gltf":       true,
+	".fbx":        true,
+	".obj":        true,
+	".mtl":        true,
+	".csv":        true,
+	".tsv":        true,
+	".yaml":       true,
+	".yml":        true,
+	".plist":      true,
 	".properties": true,
-	".ini":      true,
+	".ini":        true,
 }
 
 func isAllowedFile(name string) bool {
@@ -115,19 +117,19 @@ func ExtractArchive(archivePath, targetDir string, maxUnpackedBytes int64, maxFi
 		maxFiles = defaultMaxFileCount
 	}
 
-	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+	if err := os.MkdirAll(targetDir, 0o750); err != nil {
 		return fmt.Errorf("create target dir %s: %w", targetDir, err)
 	}
 
-	var hasIndexHtml bool
+	var hasIndexHTML bool
 	var err error
 
 	if strings.HasSuffix(archivePath, ".zip") {
-		hasIndexHtml, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
+		hasIndexHTML, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
 	} else if strings.HasSuffix(archivePath, ".tar.gz") || strings.HasSuffix(archivePath, ".tgz") {
-		hasIndexHtml, err = extractTarGz(archivePath, targetDir, maxUnpackedBytes, maxFiles)
+		hasIndexHTML, err = extractTarGz(archivePath, targetDir, maxUnpackedBytes, maxFiles)
 	} else {
-		hasIndexHtml, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
+		hasIndexHTML, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
 	}
 
 	if err != nil {
@@ -135,24 +137,27 @@ func ExtractArchive(archivePath, targetDir string, maxUnpackedBytes int64, maxFi
 		return err
 	}
 
-	if !hasIndexHtml {
+	if !hasIndexHTML {
 		_ = os.RemoveAll(targetDir)
-		return domain.ErrNoIndexHtml
+		return domain.ErrNoIndexHTML
 	}
 
 	return nil
 }
 
 func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bool, error) {
-	r, err := zip.OpenReader(archivePath)
+	cleanArchive := filepath.Clean(archivePath)
+	r, err := zip.OpenReader(cleanArchive)
 	if err != nil {
-		return false, fmt.Errorf("%w: %v", domain.ErrInvalidArchive, err)
+		return false, fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
 	}
-	defer r.Close()
+	defer func() {
+		_ = r.Close()
+	}()
 
 	var totalBytes int64
 	var fileCount int
-	var hasIndexHtml bool
+	var hasIndexHTML bool
 
 	cleanTarget := filepath.Clean(targetDir)
 
@@ -162,14 +167,14 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 			return false, domain.ErrZipBomb
 		}
 
-		targetPath := filepath.Join(cleanTarget, f.Name)
-		if !strings.HasPrefix(filepath.Clean(targetPath), cleanTarget+string(os.PathSeparator)) && filepath.Clean(targetPath) != cleanTarget {
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, f.Name)) //nolint:gosec // Zip Slip checked below
+		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
 			return false, domain.ErrZipSlip
 		}
 
 		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(targetPath, 0o755); err != nil {
-				return false, fmt.Errorf("mkdir %s: %w", targetPath, err)
+			if err := os.MkdirAll(cleanPath, 0o750); err != nil {
+				return false, fmt.Errorf("mkdir %s: %w", cleanPath, err)
 			}
 			continue
 		}
@@ -180,11 +185,11 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 		}
 
 		if strings.EqualFold(filepath.Clean(f.Name), "index.html") || strings.EqualFold(f.Name, "index.html") {
-			hasIndexHtml = true
+			hasIndexHTML = true
 		}
 
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-			return false, fmt.Errorf("mkdir parent %s: %w", targetPath, err)
+		if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
+			return false, fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
 		}
 
 		rc, err := f.Open()
@@ -192,18 +197,18 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 			return false, fmt.Errorf("open zip item %s: %w", f.Name, err)
 		}
 
-		outFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode()&0o755|0o644)
+		outFile, err := os.OpenFile(cleanPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode()&0o750|0o640) //nolint:gosec // path traversal sanitized above
 		if err != nil {
-			rc.Close()
-			return false, fmt.Errorf("create file %s: %w", targetPath, err)
+			_ = rc.Close()
+			return false, fmt.Errorf("create file %s: %w", cleanPath, err)
 		}
 
 		written, err := io.Copy(outFile, io.LimitReader(rc, maxBytes-totalBytes+1))
-		rc.Close()
-		outFile.Close()
+		_ = rc.Close()
+		_ = outFile.Close()
 
 		if err != nil {
-			return false, fmt.Errorf("copy file %s: %w", targetPath, err)
+			return false, fmt.Errorf("copy file %s: %w", cleanPath, err)
 		}
 
 		totalBytes += written
@@ -212,33 +217,38 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 		}
 	}
 
-	return hasIndexHtml, nil
+	return hasIndexHTML, nil
 }
 
 func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (bool, error) {
-	file, err := os.Open(archivePath)
+	cleanArchive := filepath.Clean(archivePath)
+	file, err := os.Open(cleanArchive) //nolint:gosec
 	if err != nil {
-		return false, fmt.Errorf("%w: %v", domain.ErrInvalidArchive, err)
+		return false, fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	gzr, err := gzip.NewReader(file)
 	if err != nil {
-		return false, fmt.Errorf("%w: gzip error: %v", domain.ErrInvalidArchive, err)
+		return false, fmt.Errorf("%w: gzip error: %w", domain.ErrInvalidArchive, err)
 	}
-	defer gzr.Close()
+	defer func() {
+		_ = gzr.Close()
+	}()
 
 	tr := tar.NewReader(gzr)
 
 	var totalBytes int64
 	var fileCount int
-	var hasIndexHtml bool
+	var hasIndexHTML bool
 
 	cleanTarget := filepath.Clean(targetDir)
 
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -250,15 +260,15 @@ func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (
 			return false, domain.ErrZipBomb
 		}
 
-		targetPath := filepath.Join(cleanTarget, header.Name)
-		if !strings.HasPrefix(filepath.Clean(targetPath), cleanTarget+string(os.PathSeparator)) && filepath.Clean(targetPath) != cleanTarget {
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, header.Name)) //nolint:gosec // Tar Slip checked below
+		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
 			return false, domain.ErrZipSlip
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, 0o755); err != nil {
-				return false, fmt.Errorf("mkdir %s: %w", targetPath, err)
+			if err := os.MkdirAll(cleanPath, 0o750); err != nil {
+				return false, fmt.Errorf("mkdir %s: %w", cleanPath, err)
 			}
 		case tar.TypeReg:
 			if !isAllowedFile(header.Name) {
@@ -266,22 +276,22 @@ func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (
 			}
 
 			if strings.EqualFold(filepath.Clean(header.Name), "index.html") || strings.EqualFold(header.Name, "index.html") {
-				hasIndexHtml = true
+				hasIndexHTML = true
 			}
 
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-				return false, fmt.Errorf("mkdir parent %s: %w", targetPath, err)
+			if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
+				return false, fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
 			}
 
-			outFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, header.FileInfo().Mode()&0o755|0o644)
+			outFile, err := os.OpenFile(cleanPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, header.FileInfo().Mode()&0o750|0o640) //nolint:gosec // path traversal sanitized above
 			if err != nil {
-				return false, fmt.Errorf("create file %s: %w", targetPath, err)
+				return false, fmt.Errorf("create file %s: %w", cleanPath, err)
 			}
 
 			written, err := io.Copy(outFile, io.LimitReader(tr, maxBytes-totalBytes+1))
-			outFile.Close()
+			_ = outFile.Close()
 			if err != nil {
-				return false, fmt.Errorf("copy file %s: %w", targetPath, err)
+				return false, fmt.Errorf("copy file %s: %w", cleanPath, err)
 			}
 
 			totalBytes += written
@@ -291,5 +301,5 @@ func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (
 		}
 	}
 
-	return hasIndexHtml, nil
+	return hasIndexHTML, nil
 }

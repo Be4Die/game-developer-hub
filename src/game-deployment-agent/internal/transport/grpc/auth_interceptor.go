@@ -1,3 +1,4 @@
+// Package grpc provides gRPC handlers and interceptors for game-deployment-agent.
 package grpc
 
 import (
@@ -12,14 +13,14 @@ import (
 
 // APIKeyInterceptor проверяет заголовок x-api-key для всех входящих RPC вызовов.
 func APIKeyInterceptor(expectedKey string) (grpc.UnaryServerInterceptor, grpc.StreamServerInterceptor) {
-	unary := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	unary := func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if err := validateKey(ctx, expectedKey); err != nil {
 			return nil, err
 		}
 		return handler(ctx, req)
 	}
 
-	stream := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	stream := func(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		if err := validateKey(ss.Context(), expectedKey); err != nil {
 			return err
 		}

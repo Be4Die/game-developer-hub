@@ -5,6 +5,7 @@ import "time"
 // SenderRole роль автора сообщения в чате проекта.
 type SenderRole int16
 
+// Константы ролей отправителей.
 const (
 	SenderRoleUnspecified SenderRole = 0
 	SenderRoleDeveloper   SenderRole = 1
@@ -15,6 +16,7 @@ const (
 // MessageType тип события в чате проекта.
 type MessageType int16
 
+// Константы типов сообщений.
 const (
 	MessageTypeUnspecified   MessageType = 0
 	MessageTypeText          MessageType = 1 // Обычное текстовое сообщение

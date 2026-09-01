@@ -6,11 +6,12 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 )
 
 // ─── Mocks for HeartbeatService ─────────────────────────────────────────────
@@ -253,7 +254,9 @@ func (m *hbMockBuildStorage) ListByGame(ctx context.Context, gameID int64, limit
 	}
 	return nil, nil
 }
-func (m *hbMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) { return 0, nil }
+func (m *hbMockBuildStorage) CountByGame(ctx context.Context, gameID int64) (int, error) {
+	return 0, nil
+}
 func (m *hbMockBuildStorage) Delete(ctx context.Context, id int64) error { return nil }
 func (m *hbMockBuildStorage) CountActiveInstancesByBuild(ctx context.Context, buildID int64) (int, error) {
 	return 0, nil
@@ -292,18 +295,18 @@ func (m *hbMockGamePolicyRepo) ListAll(ctx context.Context) ([]*domain.GamePolic
 }
 
 type hbMockInstanceState struct {
-	setStatusFn          func(ctx context.Context, instanceID int64, status domain.InstanceStatus) error
-	getStatusFn          func(ctx context.Context, instanceID int64) (domain.InstanceStatus, error)
-	setPlayerCountFn     func(ctx context.Context, instanceID int64, count uint32) error
-	getPlayerCountFn     func(ctx context.Context, instanceID int64) (uint32, error)
-	setQueueSizeFn       func(ctx context.Context, instanceID int64, size uint32) error
-	getQueueSizeFn       func(ctx context.Context, instanceID int64) (uint32, error)
-	setUsageFn           func(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error
-	getUsageFn           func(ctx context.Context, instanceID int64) (*domain.ResourceUsage, error)
-	deleteFn             func(ctx context.Context, instanceID int64) error
-	setZeroSinceFn       func(ctx context.Context, instanceID int64, t time.Time) error
-	getZeroSinceFn       func(ctx context.Context, instanceID int64) (time.Time, error)
-	deleteZeroSinceFn    func(ctx context.Context, instanceID int64) error
+	setStatusFn       func(ctx context.Context, instanceID int64, status domain.InstanceStatus) error
+	getStatusFn       func(ctx context.Context, instanceID int64) (domain.InstanceStatus, error)
+	setPlayerCountFn  func(ctx context.Context, instanceID int64, count uint32) error
+	getPlayerCountFn  func(ctx context.Context, instanceID int64) (uint32, error)
+	setQueueSizeFn    func(ctx context.Context, instanceID int64, size uint32) error
+	getQueueSizeFn    func(ctx context.Context, instanceID int64) (uint32, error)
+	setUsageFn        func(ctx context.Context, instanceID int64, usage *domain.ResourceUsage) error
+	getUsageFn        func(ctx context.Context, instanceID int64) (*domain.ResourceUsage, error)
+	deleteFn          func(ctx context.Context, instanceID int64) error
+	setZeroSinceFn    func(ctx context.Context, instanceID int64, t time.Time) error
+	getZeroSinceFn    func(ctx context.Context, instanceID int64) (time.Time, error)
+	deleteZeroSinceFn func(ctx context.Context, instanceID int64) error
 }
 
 func (m *hbMockInstanceState) SetStatus(ctx context.Context, instanceID int64, status domain.InstanceStatus) error {
@@ -381,9 +384,9 @@ func (m *hbMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instan
 
 // hbMockInstanceOrchestrator мок для instanceOrchestrator.
 type hbMockInstanceOrchestrator struct {
-	startInstanceFn  func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
+	startInstanceFn   func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error)
 	restartInstanceFn func(ctx context.Context, ownerID string, gameID, instanceID int64) (*domain.Instance, error)
-	stopInstanceFn   func(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error)
+	stopInstanceFn    func(ctx context.Context, ownerID string, gameID, instanceID int64, timeoutSec uint32) (*domain.Instance, error)
 }
 
 func (m *hbMockInstanceOrchestrator) StartInstance(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
@@ -762,7 +765,7 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_NoInstances(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	gameID := int64(42)
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -795,7 +798,7 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_NoInstances(t *testing.T) {
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -808,8 +811,8 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_NoInstances(t *testing.T) {
 	// Даём горутинам время запуститься (в реальном коде они fire-and-forget).
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 3 {
-		t.Errorf("expected 3 instances to be started, got %d", startedCount)
+	if startedCount.Load() != 3 {
+		t.Errorf("expected 3 instances to be started, got %d", startedCount.Load())
 	}
 }
 
@@ -817,7 +820,7 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_AfterManualStop(t *testing.T
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	gameID := int64(42)
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -847,7 +850,7 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_AfterManualStop(t *testing.T
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -859,15 +862,15 @@ func TestHeartbeatService_EnforcePolicies_KeepAlive_AfterManualStop(t *testing.T
 
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 0 {
-		t.Errorf("expected 0 starts after manual stop (total >= target), got %d", startedCount)
+	if startedCount.Load() != 0 {
+		t.Errorf("expected 0 starts after manual stop (total >= target), got %d", startedCount.Load())
 	}
 }
 
 func TestHeartbeatService_EnforcePolicies_Disabled_DoesNothing(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -890,7 +893,7 @@ func TestHeartbeatService_EnforcePolicies_Disabled_DoesNothing(t *testing.T) {
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -902,8 +905,8 @@ func TestHeartbeatService_EnforcePolicies_Disabled_DoesNothing(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 0 {
-		t.Errorf("expected 0 starts for disabled policy, got %d", startedCount)
+	if startedCount.Load() != 0 {
+		t.Errorf("expected 0 starts for disabled policy, got %d", startedCount.Load())
 	}
 }
 
@@ -911,7 +914,7 @@ func TestHeartbeatService_EnforcePolicies_MaxInstancesReached(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	gameID := int64(42)
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -939,7 +942,7 @@ func TestHeartbeatService_EnforcePolicies_MaxInstancesReached(t *testing.T) {
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -951,8 +954,8 @@ func TestHeartbeatService_EnforcePolicies_MaxInstancesReached(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 0 {
-		t.Errorf("expected 0 starts when max_instances reached, got %d", startedCount)
+	if startedCount.Load() != 0 {
+		t.Errorf("expected 0 starts when max_instances reached, got %d", startedCount.Load())
 	}
 }
 
@@ -1119,7 +1122,7 @@ func TestHeartbeatService_EnforceScaleUp_SpawnsWhenFull(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	gameID := int64(42)
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -1163,7 +1166,7 @@ func TestHeartbeatService_EnforceScaleUp_SpawnsWhenFull(t *testing.T) {
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -1175,8 +1178,8 @@ func TestHeartbeatService_EnforceScaleUp_SpawnsWhenFull(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 1 {
-		t.Errorf("expected 1 new instance when full, got %d", startedCount)
+	if startedCount.Load() != 1 {
+		t.Errorf("expected 1 new instance when full, got %d", startedCount.Load())
 	}
 }
 
@@ -1184,7 +1187,7 @@ func TestHeartbeatService_EnforceScaleUp_DoesNothingWhenQueue(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	gameID := int64(42)
-	startedCount := 0
+	var startedCount atomic.Int64
 
 	policyRepo := &hbMockGamePolicyRepo{
 		listAllFn: func(ctx context.Context) ([]*domain.GamePolicy, error) {
@@ -1217,7 +1220,7 @@ func TestHeartbeatService_EnforceScaleUp_DoesNothingWhenQueue(t *testing.T) {
 
 	instanceSvc := &hbMockInstanceOrchestrator{
 		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
-			startedCount++
+			startedCount.Add(1)
 			return nil, nil
 		},
 	}
@@ -1229,7 +1232,7 @@ func TestHeartbeatService_EnforceScaleUp_DoesNothingWhenQueue(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	if startedCount != 0 {
-		t.Errorf("expected 0 starts for queue behavior, got %d", startedCount)
+	if startedCount.Load() != 0 {
+		t.Errorf("expected 0 starts for queue behavior, got %d", startedCount.Load())
 	}
 }

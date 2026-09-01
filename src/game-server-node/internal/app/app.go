@@ -17,8 +17,8 @@ import (
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/infrastructure/sysinfo"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/service"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/storage/memory"
-	httpreport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/http"
 	grpctransport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/grpc"
+	httpreport "github.com/Be4Die/game-developer-hub/game-server-node/internal/transport/http"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc"
 )

@@ -25,7 +25,7 @@ func NewStubModerationClient() *StubModerationClient {
 }
 
 // SubmitDraft сохраняет заявку в памяти и возвращает сгенерированный идентификатор.
-func (s *StubModerationClient) SubmitDraft(ctx context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
+func (s *StubModerationClient) SubmitDraft(_ context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -39,7 +39,7 @@ func (s *StubModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 }
 
 // GetLatestRequest возвращает последнюю заявку по проекту из памяти.
-func (s *StubModerationClient) GetLatestRequest(ctx context.Context, projectID int64) (*domain.ModerationRequestInfo, error) {
+func (s *StubModerationClient) GetLatestRequest(_ context.Context, projectID int64) (*domain.ModerationRequestInfo, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

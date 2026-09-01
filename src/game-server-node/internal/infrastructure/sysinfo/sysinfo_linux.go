@@ -5,6 +5,7 @@ package sysinfo
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,12 +55,12 @@ func NewProvider(ethName string) *LinuxProvider {
 
 // readProc читает файл из procfs с учётом префикса.
 func (p *LinuxProvider) readProc(path string) ([]byte, error) {
-	return os.ReadFile(p.hostPrefix + path)
+	return os.ReadFile(filepath.Clean(p.hostPrefix + path))
 }
 
 // readSys читает файл из sysfs с учётом префикса.
 func (p *LinuxProvider) readSys(path string) ([]byte, error) {
-	return os.ReadFile(p.hostPrefix + path)
+	return os.ReadFile(filepath.Clean(p.hostPrefix + path))
 }
 
 // statfs выполняет statfs с учётом префикса.
@@ -104,7 +105,7 @@ func (p *LinuxProvider) GetUsage() (domain.ResourcesUsage, error) {
 
 	// Disk
 	stat, err := p.statfs("/")
-	if err == nil {
+	if err == nil && stat.Bsize > 0 {
 		usage.Disk = (stat.Blocks - stat.Bfree) * uint64(stat.Bsize)
 	}
 
@@ -155,6 +156,9 @@ func (p *LinuxProvider) getMaxDisk() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	if stat.Bsize <= 0 {
+		return 0, fmt.Errorf("invalid block size")
+	}
 	return stat.Blocks * uint64(stat.Bsize), nil
 }
 
@@ -163,7 +167,11 @@ func (p *LinuxProvider) getMaxCPU() (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return uint32(strings.Count(string(data), "processor\t:")), nil
+	count := strings.Count(string(data), "processor\t:")
+	if count <= 0 || int64(count) > int64(^uint32(0)) {
+		return 0, fmt.Errorf("invalid cpu count")
+	}
+	return uint32(count), nil
 }
 
 func (p *LinuxProvider) getMaxNet() (uint64, error) {

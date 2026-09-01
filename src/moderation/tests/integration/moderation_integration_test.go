@@ -219,9 +219,7 @@ func setupIntegrationServer(t *testing.T) (pb.ModerationServiceClient, func()) {
 	pb.RegisterModerationServiceServer(s, handler)
 
 	go func() {
-		if err := s.Serve(lis); err != nil {
-			// ignore on stop
-		}
+		_ = s.Serve(lis)
 	}()
 
 	conn, err := grpc.NewClient(

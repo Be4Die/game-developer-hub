@@ -1,3 +1,4 @@
+// Package grpc provides gRPC transport and middleware for moderation service.
 package grpc
 
 import (
@@ -28,7 +29,7 @@ func NewJWTAuth(secret, issuer string) (*JWTAuth, error) {
 
 // Unary возвращает grpc.UnaryServerInterceptor.
 func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		userID, role, err := a.extractUserInfo(ctx)
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
@@ -40,7 +41,7 @@ func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
 
 // Stream возвращает grpc.StreamServerInterceptor.
 func (a *JWTAuth) Stream() grpc.StreamServerInterceptor {
-	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		userID, role, err := a.extractUserInfo(stream.Context())
 		if err != nil {
 			return status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
@@ -103,9 +104,10 @@ func (a *JWTAuth) extractUserInfo(ctx context.Context) (string, string, error) {
 	case string:
 		role = v
 	case float64:
-		if v == 2 {
+		switch v {
+		case 2:
 			role = "moderator"
-		} else if v == 3 {
+		case 3:
 			role = "admin"
 		}
 	}

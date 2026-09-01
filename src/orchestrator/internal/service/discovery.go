@@ -135,7 +135,10 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, pl
 
 	// 6. Нет running и нет starting. Проверяем политику.
 	policy, err := s.policyService.Get(ctx, gameID)
-	if err != nil || policy == nil {
+	if err != nil {
+		return nil, fmt.Errorf("DiscoveryService.DiscoverServers: get policy: %w", err)
+	}
+	if policy == nil {
 		return &domain.DiscoveryResult{
 			Status:  domain.DiscoveryStatusUnavailable,
 			Servers: endpoints,
@@ -179,7 +182,7 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, pl
 	}
 
 	// 9. Запускаем асинхронно.
-	go s.autoStartInstance(context.Background(), gameID, policy)
+	go s.autoStartInstance(context.WithoutCancel(ctx), gameID, policy)
 
 	return &domain.DiscoveryResult{
 		Status:  domain.DiscoveryStatusStarting,
@@ -193,7 +196,7 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, pl
 func (s *DiscoveryService) canAutoStart(ctx context.Context, gameID int64, policy *domain.GamePolicy) (bool, string) {
 	// Проверка лимита инстансов.
 	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int32(len(all)) >= policy.MaxInstancesPerGame {
+	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
 		return false, "Maximum instance limit reached for this game"
 	}
 
@@ -219,7 +222,7 @@ func (s *DiscoveryService) canAutoStart(ctx context.Context, gameID int64, polic
 func (s *DiscoveryService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
 	// Дополнительная проверка лимита (race condition).
 	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int32(len(all)) >= policy.MaxInstancesPerGame {
+	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
 		return
 	}
 

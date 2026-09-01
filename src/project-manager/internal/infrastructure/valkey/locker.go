@@ -1,3 +1,4 @@
+// Package valkey provides distributed locking implementations using Valkey/Redis.
 package valkey
 
 import (
@@ -52,7 +53,7 @@ func (l *Locker) Acquire(ctx context.Context, key string, ttl time.Duration) (fu
 	}
 
 	unlock := func() {
-		_ = l.client.Del(context.Background(), lockKey).Err()
+		_ = l.client.Del(context.WithoutCancel(ctx), lockKey).Err()
 	}
 
 	return unlock, nil
@@ -67,6 +68,6 @@ func NewNoOpLocker() *NoOpLocker {
 }
 
 // Acquire всегда успешно возвращает пустой unlock.
-func (l *NoOpLocker) Acquire(ctx context.Context, key string, ttl time.Duration) (func(), error) {
+func (l *NoOpLocker) Acquire(_ context.Context, _ string, _ time.Duration) (func(), error) {
 	return func() {}, nil
 }
