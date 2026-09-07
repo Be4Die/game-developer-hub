@@ -26,6 +26,10 @@ const (
 	NodeService_GetUsage_FullMethodName      = "/orchestrator.v1.NodeService/GetUsage"
 	NodeService_ListInstances_FullMethodName = "/orchestrator.v1.NodeService/ListInstances"
 	NodeService_Announce_FullMethodName      = "/orchestrator.v1.NodeService/Announce"
+	NodeService_UpdateRole_FullMethodName    = "/orchestrator.v1.NodeService/UpdateRole"
+	NodeService_CreateService_FullMethodName = "/orchestrator.v1.NodeService/CreateService"
+	NodeService_ListServices_FullMethodName  = "/orchestrator.v1.NodeService/ListServices"
+	NodeService_DeleteService_FullMethodName = "/orchestrator.v1.NodeService/DeleteService"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -49,6 +53,14 @@ type NodeServiceClient interface {
 	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
 	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
 	Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error)
+	// Обновить роль ноды (Mixed, Compute, Storage).
+	UpdateRole(ctx context.Context, in *NodeServiceUpdateRoleRequest, opts ...grpc.CallOption) (*NodeServiceUpdateRoleResponse, error)
+	// Развернуть управляемый сервис хранения данных на ноде.
+	CreateService(ctx context.Context, in *NodeServiceCreateServiceRequest, opts ...grpc.CallOption) (*NodeServiceCreateServiceResponse, error)
+	// Список управляемых сервисов на ноде.
+	ListServices(ctx context.Context, in *NodeServiceListServicesRequest, opts ...grpc.CallOption) (*NodeServiceListServicesResponse, error)
+	// Удалить управляемый сервис на ноде.
+	DeleteService(ctx context.Context, in *NodeServiceDeleteServiceRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -129,6 +141,46 @@ func (c *nodeServiceClient) Announce(ctx context.Context, in *NodeServiceAnnounc
 	return out, nil
 }
 
+func (c *nodeServiceClient) UpdateRole(ctx context.Context, in *NodeServiceUpdateRoleRequest, opts ...grpc.CallOption) (*NodeServiceUpdateRoleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceUpdateRoleResponse)
+	err := c.cc.Invoke(ctx, NodeService_UpdateRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) CreateService(ctx context.Context, in *NodeServiceCreateServiceRequest, opts ...grpc.CallOption) (*NodeServiceCreateServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceCreateServiceResponse)
+	err := c.cc.Invoke(ctx, NodeService_CreateService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) ListServices(ctx context.Context, in *NodeServiceListServicesRequest, opts ...grpc.CallOption) (*NodeServiceListServicesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceListServicesResponse)
+	err := c.cc.Invoke(ctx, NodeService_ListServices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) DeleteService(ctx context.Context, in *NodeServiceDeleteServiceRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceDeleteServiceResponse)
+	err := c.cc.Invoke(ctx, NodeService_DeleteService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -150,6 +202,14 @@ type NodeServiceServer interface {
 	// Анонсирование ноды. Нода сама заявляет о себе оркестратору.
 	// Создает запись ноды со статусом UNAUTHORIZED и возвращает ID с токеном.
 	Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error)
+	// Обновить роль ноды (Mixed, Compute, Storage).
+	UpdateRole(context.Context, *NodeServiceUpdateRoleRequest) (*NodeServiceUpdateRoleResponse, error)
+	// Развернуть управляемый сервис хранения данных на ноде.
+	CreateService(context.Context, *NodeServiceCreateServiceRequest) (*NodeServiceCreateServiceResponse, error)
+	// Список управляемых сервисов на ноде.
+	ListServices(context.Context, *NodeServiceListServicesRequest) (*NodeServiceListServicesResponse, error)
+	// Удалить управляемый сервис на ноде.
+	DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -180,6 +240,18 @@ func (UnimplementedNodeServiceServer) ListInstances(context.Context, *NodeServic
 }
 func (UnimplementedNodeServiceServer) Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Announce not implemented")
+}
+func (UnimplementedNodeServiceServer) UpdateRole(context.Context, *NodeServiceUpdateRoleRequest) (*NodeServiceUpdateRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateRole not implemented")
+}
+func (UnimplementedNodeServiceServer) CreateService(context.Context, *NodeServiceCreateServiceRequest) (*NodeServiceCreateServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateService not implemented")
+}
+func (UnimplementedNodeServiceServer) ListServices(context.Context, *NodeServiceListServicesRequest) (*NodeServiceListServicesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListServices not implemented")
+}
+func (UnimplementedNodeServiceServer) DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteService not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -328,6 +400,78 @@ func _NodeService_Announce_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_UpdateRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceUpdateRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).UpdateRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_UpdateRole_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).UpdateRole(ctx, req.(*NodeServiceUpdateRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_CreateService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceCreateServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).CreateService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_CreateService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).CreateService(ctx, req.(*NodeServiceCreateServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_ListServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceListServicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ListServices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_ListServices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ListServices(ctx, req.(*NodeServiceListServicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_DeleteService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceDeleteServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).DeleteService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_DeleteService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).DeleteService(ctx, req.(*NodeServiceDeleteServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +506,22 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Announce",
 			Handler:    _NodeService_Announce_Handler,
+		},
+		{
+			MethodName: "UpdateRole",
+			Handler:    _NodeService_UpdateRole_Handler,
+		},
+		{
+			MethodName: "CreateService",
+			Handler:    _NodeService_CreateService_Handler,
+		},
+		{
+			MethodName: "ListServices",
+			Handler:    _NodeService_ListServices_Handler,
+		},
+		{
+			MethodName: "DeleteService",
+			Handler:    _NodeService_DeleteService_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

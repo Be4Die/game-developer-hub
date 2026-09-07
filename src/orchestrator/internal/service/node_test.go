@@ -682,3 +682,263 @@ func TestNodeService_AnnounceNode_AlreadyOnline(t *testing.T) {
 		t.Fatalf("expected ErrAlreadyExists, got %v", err)
 	}
 }
+
+type mockManagedServiceRepo struct {
+	createFn      func(ctx context.Context, s *domain.ManagedService) error
+	getByIDFn     func(ctx context.Context, id int64) (*domain.ManagedService, error)
+	getByNameFn   func(ctx context.Context, nodeID int64, name string) (*domain.ManagedService, error)
+	listByNodeFn  func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error)
+	listByOwnerFn func(ctx context.Context, ownerID string) ([]*domain.ManagedService, error)
+	listByGameFn  func(ctx context.Context, gameID int64) ([]*domain.ManagedService, error)
+	updateFn      func(ctx context.Context, s *domain.ManagedService) error
+	deleteFn      func(ctx context.Context, id int64) error
+}
+
+func (m *mockManagedServiceRepo) Create(ctx context.Context, s *domain.ManagedService) error {
+	if m.createFn != nil {
+		return m.createFn(ctx, s)
+	}
+	return nil
+}
+func (m *mockManagedServiceRepo) GetByID(ctx context.Context, id int64) (*domain.ManagedService, error) {
+	if m.getByIDFn != nil {
+		return m.getByIDFn(ctx, id)
+	}
+	return nil, nil
+}
+func (m *mockManagedServiceRepo) GetByName(ctx context.Context, nodeID int64, name string) (*domain.ManagedService, error) {
+	if m.getByNameFn != nil {
+		return m.getByNameFn(ctx, nodeID, name)
+	}
+	return nil, nil
+}
+func (m *mockManagedServiceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+	if m.listByNodeFn != nil {
+		return m.listByNodeFn(ctx, nodeID)
+	}
+	return nil, nil
+}
+func (m *mockManagedServiceRepo) ListByOwner(ctx context.Context, ownerID string) ([]*domain.ManagedService, error) {
+	if m.listByOwnerFn != nil {
+		return m.listByOwnerFn(ctx, ownerID)
+	}
+	return nil, nil
+}
+func (m *mockManagedServiceRepo) ListByGame(ctx context.Context, gameID int64) ([]*domain.ManagedService, error) {
+	if m.listByGameFn != nil {
+		return m.listByGameFn(ctx, gameID)
+	}
+	return nil, nil
+}
+func (m *mockManagedServiceRepo) Update(ctx context.Context, s *domain.ManagedService) error {
+	if m.updateFn != nil {
+		return m.updateFn(ctx, s)
+	}
+	return nil
+}
+func (m *mockManagedServiceRepo) Delete(ctx context.Context, id int64) error {
+	if m.deleteFn != nil {
+		return m.deleteFn(ctx, id)
+	}
+	return nil
+}
+
+func TestNodeService_UpdateRole(t *testing.T) {
+	node := &domain.Node{
+		ID:      10,
+		OwnerID: "user-1",
+		Role:    domain.NodeRoleMixed,
+	}
+	var updatedRole domain.NodeRole
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+		updateRoleFn: func(ctx context.Context, id int64, role domain.NodeRole) error {
+			updatedRole = role
+			return nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+
+	ctx := context.Background()
+	updatedNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if updatedNode.Role != domain.NodeRoleStorage || updatedRole != domain.NodeRoleStorage {
+		t.Errorf("expected role %v, got %v (updatedNode=%v)", domain.NodeRoleStorage, updatedRole, updatedNode.Role)
+	}
+
+	// Test forbidden owner
+	_, err = svc.UpdateRole(ctx, "wrong-user", 10, domain.NodeRoleCompute)
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden, got %v", err)
+	}
+}
+
+func TestNodeService_CreateService(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleCompute,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+
+	svcRepo := &mockManagedServiceRepo{}
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{}).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	// Should fail on Compute-only node
+	_, err := svc.CreateService(ctx, "user-1", 10, CreateServiceParams{
+		ServiceType: domain.ServiceTypePostgres,
+		Name:        "my-pg",
+	})
+	if err == nil {
+		t.Fatal("expected error on compute-only node, got nil")
+	}
+
+	// Change role to Mixed
+	node.Role = domain.NodeRoleMixed
+	var deployedReq domain.DeployServiceRequest
+	nodeClient := &hbMockNodeClient{
+		DeployServiceFn: func(ctx context.Context, nodeAddress, apiKey string, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error) {
+			deployedReq = req
+			return &domain.DeployServiceResult{
+				ContainerID:   "c-123",
+				HostPort:      5432,
+				ConnectionURI: "postgresql://postgres:pass@127.0.0.1:5432/game_db",
+				VolumePath:    "/var/lib/gdh/volumes/my-pg",
+			}, nil
+		},
+	}
+
+	var createdService *domain.ManagedService
+	svcRepo.createFn = func(ctx context.Context, s *domain.ManagedService) error {
+		createdService = s
+		s.ID = 100
+		return nil
+	}
+
+	svc = NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	result, err := svc.CreateService(ctx, "user-1", 10, CreateServiceParams{
+		ServiceType:    domain.ServiceTypePostgres,
+		Name:           "my-pg",
+		Password:       "pass",
+		DBName:         "game_db",
+		AllowedGameIDs: []int64{1, 2},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ID != 100 {
+		t.Errorf("expected ID 100, got %d", result.ID)
+	}
+	if deployedReq.Name != "my-pg" {
+		t.Errorf("expected deployed name my-pg, got %s", deployedReq.Name)
+	}
+	if createdService.HostPort != 5432 {
+		t.Errorf("expected port 5432, got %d", createdService.HostPort)
+	}
+}
+
+func TestNodeService_ListServices_FilterByGame(t *testing.T) {
+	node := &domain.Node{
+		ID:      10,
+		OwnerID: "user-1",
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+	allServices := []*domain.ManagedService{
+		{ID: 1, Name: "global-redis", AllowedGameIDs: nil},
+		{ID: 2, Name: "game1-pg", AllowedGameIDs: []int64{1}},
+		{ID: 3, Name: "game2-pg", AllowedGameIDs: []int64{2}},
+	}
+	svcRepo := &mockManagedServiceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+			return allServices, nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{}).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	// Without game filter: returns all 3
+	res, err := svc.ListServices(ctx, "user-1", 10, nil)
+	if err != nil || len(res) != 3 {
+		t.Fatalf("expected 3 services, got %d (err: %v)", len(res), err)
+	}
+
+	// Filter by game 1: should return global-redis and game1-pg (total 2)
+	g1 := int64(1)
+	res, err = svc.ListServices(ctx, "user-1", 10, &g1)
+	if err != nil || len(res) != 2 {
+		t.Fatalf("expected 2 services for game 1, got %d (err: %v)", len(res), err)
+	}
+}
+
+func TestNodeService_DeleteService(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Status:   domain.NodeStatusOnline,
+		Address:  "127.0.0.1:44044",
+		APIToken: "tok",
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+
+	removedName := ""
+	nodeClient := &hbMockNodeClient{
+		RemoveServiceFn: func(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error {
+			removedName = name
+			return nil
+		},
+	}
+
+	deletedID := int64(0)
+	svcRepo := &mockManagedServiceRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.ManagedService, error) {
+			return &domain.ManagedService{
+				ID:     id,
+				NodeID: 10,
+				Name:   "to-del",
+			}, nil
+		},
+		deleteFn: func(ctx context.Context, id int64) error {
+			deletedID = id
+			return nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	err := svc.DeleteService(ctx, "user-1", 10, 50, true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if removedName != "to-del" {
+		t.Errorf("expected nodeClient.RemoveService called with to-del, got %q", removedName)
+	}
+	if deletedID != 50 {
+		t.Errorf("expected repo.Delete called with 50, got %d", deletedID)
+	}
+}
+

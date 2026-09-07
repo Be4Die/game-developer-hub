@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/service"
 	pb "github.com/Be4Die/game-developer-hub/protos/game_server_node/v1"
 	"google.golang.org/grpc/codes"
@@ -285,3 +286,99 @@ func (h *DeploymentHandler) StreamLogs(
 
 	return nil
 }
+
+// DeployService разворачивает управляемый сервис на ноде.
+func (h *DeploymentHandler) DeployService(ctx context.Context, req *pb.DeployServiceRequest) (*pb.DeployServiceResponse, error) {
+	result, err := h.svc.DeployService(ctx, domain.DeployServiceRequest{
+		ServiceType: protoToDomainServiceType(req.GetServiceType()),
+		Name:        req.GetName(),
+		Port:        req.GetPort(),
+		EnvVars:     req.GetEnvVars(),
+		VolumeName:  req.GetVolumeName(),
+	})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "deploy service: %v", err)
+	}
+
+	return &pb.DeployServiceResponse{
+		Name:          result.Name,
+		ContainerId:   result.ContainerID,
+		HostPort:      result.HostPort,
+		ConnectionUri: result.ConnectionURI,
+		VolumePath:    result.VolumePath,
+	}, nil
+}
+
+// RemoveService останавливает и удаляет управляемый сервис.
+func (h *DeploymentHandler) RemoveService(ctx context.Context, req *pb.RemoveServiceRequest) (*pb.RemoveServiceResponse, error) {
+	if err := h.svc.RemoveService(ctx, req.GetName(), req.GetDeleteVolume()); err != nil {
+		return nil, status.Errorf(codes.Internal, "remove service: %v", err)
+	}
+	return &pb.RemoveServiceResponse{}, nil
+}
+
+// ListServices возвращает список развернутых управляемых сервисов.
+func (h *DeploymentHandler) ListServices(ctx context.Context, _ *pb.ListServicesRequest) (*pb.ListServicesResponse, error) {
+	services, err := h.svc.ListServices(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list services: %v", err)
+	}
+
+	pbServices := make([]*pb.ServiceInfo, 0, len(services))
+	for _, s := range services {
+		pbServices = append(pbServices, &pb.ServiceInfo{
+			Name:            s.Name,
+			ServiceType:     domainToProtoServiceType(s.ServiceType),
+			ContainerId:     s.ContainerID,
+			Status:          s.Status,
+			HostPort:        s.HostPort,
+			VolumePath:      s.VolumePath,
+			VolumeSizeBytes: s.VolumeSizeBytes,
+		})
+	}
+
+	return &pb.ListServicesResponse{Services: pbServices}, nil
+}
+
+func protoToDomainServiceType(t pb.ServiceType) domain.ServiceType {
+	switch t {
+	case pb.ServiceType_SERVICE_TYPE_POSTGRES:
+		return domain.ServiceTypePostgres
+	case pb.ServiceType_SERVICE_TYPE_REDIS:
+		return domain.ServiceTypeRedis
+	case pb.ServiceType_SERVICE_TYPE_MYSQL:
+		return domain.ServiceTypeMySQL
+	case pb.ServiceType_SERVICE_TYPE_MINIO:
+		return domain.ServiceTypeMinIO
+	case pb.ServiceType_SERVICE_TYPE_VOLUME:
+		return domain.ServiceTypeVolume
+	case pb.ServiceType_SERVICE_TYPE_ADMINER:
+		return domain.ServiceTypeAdminer
+	case pb.ServiceType_SERVICE_TYPE_PGADMIN:
+		return domain.ServiceTypePGAdmin
+	default:
+		return domain.ServiceTypeUnspecified
+	}
+}
+
+func domainToProtoServiceType(t domain.ServiceType) pb.ServiceType {
+	switch t {
+	case domain.ServiceTypePostgres:
+		return pb.ServiceType_SERVICE_TYPE_POSTGRES
+	case domain.ServiceTypeRedis:
+		return pb.ServiceType_SERVICE_TYPE_REDIS
+	case domain.ServiceTypeMySQL:
+		return pb.ServiceType_SERVICE_TYPE_MYSQL
+	case domain.ServiceTypeMinIO:
+		return pb.ServiceType_SERVICE_TYPE_MINIO
+	case domain.ServiceTypeVolume:
+		return pb.ServiceType_SERVICE_TYPE_VOLUME
+	case domain.ServiceTypeAdminer:
+		return pb.ServiceType_SERVICE_TYPE_ADMINER
+	case domain.ServiceTypePGAdmin:
+		return pb.ServiceType_SERVICE_TYPE_PGADMIN
+	default:
+		return pb.ServiceType_SERVICE_TYPE_UNSPECIFIED
+	}
+}
+

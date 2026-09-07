@@ -207,6 +207,9 @@ func (m *mockRuntime) ContainerStats(ctx context.Context, containerID string) (d
 func (m *mockRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInfo, error) {
 	return []domain.ContainerInfo{}, nil
 }
+func (m *mockRuntime) PullImage(ctx context.Context, imageTag string) error       { return nil }
+func (m *mockRuntime) EnsureNetwork(ctx context.Context, networkName string) error { return nil }
+func (m *mockRuntime) RemoveVolume(ctx context.Context, name string) error          { return nil }
 
 func TestDiscoveryHandler_GetInstanceUsage(t *testing.T) {
 	ctx := context.Background()

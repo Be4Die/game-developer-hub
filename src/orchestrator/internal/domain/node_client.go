@@ -50,6 +50,15 @@ type NodeClient interface {
 
 	// GetInstanceUsage возвращает потребление ресурсов конкретным инстансом.
 	GetInstanceUsage(ctx context.Context, nodeAddress, apiKey string, instanceID int64) (*ResourceUsage, error)
+
+	// DeployService разворачивает управляемый сервис хранения данных на ноде.
+	DeployService(ctx context.Context, nodeAddress, apiKey string, req DeployServiceRequest) (*DeployServiceResult, error)
+
+	// RemoveService удаляет управляемый сервис с ноды.
+	RemoveService(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error
+
+	// ListServices возвращает список управляемых сервисов на ноде.
+	ListServices(ctx context.Context, nodeAddress, apiKey string) ([]ServiceInfo, error)
 }
 
 // LogStream представляет поток журнальных записей от ноды.
@@ -124,3 +133,33 @@ type HeartbeatResult struct {
 	Usage               *ResourceUsage
 	ActiveInstanceCount uint32
 }
+
+// DeployServiceRequest содержит параметры развертывания управляемого сервиса на ноде.
+type DeployServiceRequest struct {
+	ServiceType ServiceType
+	Name        string
+	Port        uint32
+	EnvVars     map[string]string
+	VolumeName  string
+}
+
+// DeployServiceResult содержит результат развертывания сервиса.
+type DeployServiceResult struct {
+	Name          string
+	ContainerID   string
+	HostPort      uint32
+	ConnectionURI string
+	VolumePath    string
+}
+
+// ServiceInfo содержит информацию о сервисе на ноде.
+type ServiceInfo struct {
+	Name            string
+	ServiceType     ServiceType
+	ContainerID     string
+	Status          string
+	HostPort        uint32
+	VolumePath      string
+	VolumeSizeBytes uint64
+}
+

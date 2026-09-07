@@ -96,6 +96,18 @@ func (s *stubRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInf
 	return []domain.ContainerInfo{}, nil
 }
 
+func (s *stubRuntime) PullImage(ctx context.Context, imageTag string) error {
+	return nil
+}
+
+func (s *stubRuntime) EnsureNetwork(ctx context.Context, networkName string) error {
+	return nil
+}
+
+func (s *stubRuntime) RemoveVolume(ctx context.Context, name string) error {
+	return nil
+}
+
 func TestDeploymentService_StartInstance(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()

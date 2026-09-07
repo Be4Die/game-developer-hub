@@ -153,6 +153,72 @@ func (h *NodeHandler) Announce(ctx context.Context, req *pb.NodeServiceAnnounceR
 	}, nil
 }
 
+// UpdateRole изменяет роль ноды (Mixed, Compute, Storage).
+func (h *NodeHandler) UpdateRole(ctx context.Context, req *pb.NodeServiceUpdateRoleRequest) (*pb.NodeServiceUpdateRoleResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	node, err := h.nodeService.UpdateRole(ctx, ownerID, req.GetNodeId(), nodeRoleFromProto(req.GetRole()))
+	if err != nil {
+		return nil, domainError(err, "update node role")
+	}
+
+	return &pb.NodeServiceUpdateRoleResponse{Node: nodeToProto(node)}, nil
+}
+
+// CreateService разворачивает управляемый сервис хранения данных на ноде.
+func (h *NodeHandler) CreateService(ctx context.Context, req *pb.NodeServiceCreateServiceRequest) (*pb.NodeServiceCreateServiceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	params := service.CreateServiceParams{
+		ServiceType:    serviceTypeFromProto(req.GetType()),
+		Name:           req.GetName(),
+		AllowedGameIDs: req.GetAllowedGameIds(),
+		Password:       req.GetPassword(),
+		DBName:         req.GetDbName(),
+		Port:           req.GetPort(),
+	}
+
+	svc, err := h.nodeService.CreateService(ctx, ownerID, req.GetNodeId(), params)
+	if err != nil {
+		return nil, domainError(err, "create managed service")
+	}
+
+	return &pb.NodeServiceCreateServiceResponse{Service: managedServiceToProto(svc)}, nil
+}
+
+// ListServices возвращает список управляемых сервисов на ноде.
+func (h *NodeHandler) ListServices(ctx context.Context, req *pb.NodeServiceListServicesRequest) (*pb.NodeServiceListServicesResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	var gameID *int64
+	if req.GameId != nil {
+		gameID = req.GameId
+	}
+
+	services, err := h.nodeService.ListServices(ctx, ownerID, req.GetNodeId(), gameID)
+	if err != nil {
+		return nil, domainError(err, "list managed services")
+	}
+
+	protoServices := make([]*pb.ManagedService, 0, len(services))
+	for _, s := range services {
+		protoServices = append(protoServices, managedServiceToProto(s))
+	}
+
+	return &pb.NodeServiceListServicesResponse{Services: protoServices}, nil
+}
+
+// DeleteService удаляет управляемый сервис.
+func (h *NodeHandler) DeleteService(ctx context.Context, req *pb.NodeServiceDeleteServiceRequest) (*pb.NodeServiceDeleteServiceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+
+	if err := h.nodeService.DeleteService(ctx, ownerID, req.GetNodeId(), req.GetServiceId(), req.GetDeleteVolume()); err != nil {
+		return nil, domainError(err, "delete managed service")
+	}
+
+	return &pb.NodeServiceDeleteServiceResponse{}, nil
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 func nodeStatusFromProto(s pb.NodeStatus) domain.NodeStatus {

@@ -98,6 +98,7 @@ func nodeToProto(n *domain.Node) *pb.Node {
 		Address:          n.Address,
 		Region:           n.Region,
 		Status:           nodeStatusToProto(n.Status),
+		Role:             nodeRoleToProto(n.Role),
 		CpuCores:         n.CPUCores,
 		TotalMemoryBytes: n.TotalMemory,
 		TotalDiskBytes:   n.TotalDisk,
@@ -114,6 +115,7 @@ func enrichedNodeToProto(n *service.EnrichedNode) *pb.Node {
 		Address:      n.Address,
 		Region:       n.Region,
 		Status:       n.Status,
+		Role:         n.Role,
 		CPUCores:     n.CPUCores,
 		TotalMemory:  n.TotalMemory,
 		TotalDisk:    n.TotalDisk,
@@ -126,6 +128,106 @@ func enrichedNodeToProto(n *service.EnrichedNode) *pb.Node {
 		node.LastPingAt = timestamppb.New(n.LastPingAt)
 	}
 	return node
+}
+
+func nodeRoleToProto(r domain.NodeRole) pb.NodeRole {
+	switch r {
+	case domain.NodeRoleMixed:
+		return pb.NodeRole_NODE_ROLE_MIXED
+	case domain.NodeRoleCompute:
+		return pb.NodeRole_NODE_ROLE_COMPUTE
+	case domain.NodeRoleStorage:
+		return pb.NodeRole_NODE_ROLE_STORAGE
+	default:
+		return pb.NodeRole_NODE_ROLE_UNSPECIFIED
+	}
+}
+
+func nodeRoleFromProto(r pb.NodeRole) domain.NodeRole {
+	switch r {
+	case pb.NodeRole_NODE_ROLE_MIXED:
+		return domain.NodeRoleMixed
+	case pb.NodeRole_NODE_ROLE_COMPUTE:
+		return domain.NodeRoleCompute
+	case pb.NodeRole_NODE_ROLE_STORAGE:
+		return domain.NodeRoleStorage
+	default:
+		return domain.NodeRoleUnspecified
+	}
+}
+
+func serviceTypeToProto(t domain.ServiceType) pb.ServiceType {
+	switch t {
+	case domain.ServiceTypePostgres:
+		return pb.ServiceType_SERVICE_TYPE_POSTGRES
+	case domain.ServiceTypeRedis:
+		return pb.ServiceType_SERVICE_TYPE_REDIS
+	case domain.ServiceTypeMySQL:
+		return pb.ServiceType_SERVICE_TYPE_MYSQL
+	case domain.ServiceTypeMinIO:
+		return pb.ServiceType_SERVICE_TYPE_MINIO
+	case domain.ServiceTypeVolume:
+		return pb.ServiceType_SERVICE_TYPE_VOLUME
+	case domain.ServiceTypeAdminer:
+		return pb.ServiceType_SERVICE_TYPE_ADMINER
+	case domain.ServiceTypePGAdmin:
+		return pb.ServiceType_SERVICE_TYPE_PGADMIN
+	default:
+		return pb.ServiceType_SERVICE_TYPE_UNSPECIFIED
+	}
+}
+
+func serviceTypeFromProto(t pb.ServiceType) domain.ServiceType {
+	switch t {
+	case pb.ServiceType_SERVICE_TYPE_POSTGRES:
+		return domain.ServiceTypePostgres
+	case pb.ServiceType_SERVICE_TYPE_REDIS:
+		return domain.ServiceTypeRedis
+	case pb.ServiceType_SERVICE_TYPE_MYSQL:
+		return domain.ServiceTypeMySQL
+	case pb.ServiceType_SERVICE_TYPE_MINIO:
+		return domain.ServiceTypeMinIO
+	case pb.ServiceType_SERVICE_TYPE_VOLUME:
+		return domain.ServiceTypeVolume
+	case pb.ServiceType_SERVICE_TYPE_ADMINER:
+		return domain.ServiceTypeAdminer
+	case pb.ServiceType_SERVICE_TYPE_PGADMIN:
+		return domain.ServiceTypePGAdmin
+	default:
+		return domain.ServiceTypeUnspecified
+	}
+}
+
+func serviceStatusToProto(s domain.ServiceStatus) pb.ServiceStatus {
+	switch s {
+	case domain.ServiceStatusStarting:
+		return pb.ServiceStatus_SERVICE_STATUS_STARTING
+	case domain.ServiceStatusRunning:
+		return pb.ServiceStatus_SERVICE_STATUS_RUNNING
+	case domain.ServiceStatusStopped:
+		return pb.ServiceStatus_SERVICE_STATUS_STOPPED
+	case domain.ServiceStatusError:
+		return pb.ServiceStatus_SERVICE_STATUS_ERROR
+	default:
+		return pb.ServiceStatus_SERVICE_STATUS_UNSPECIFIED
+	}
+}
+
+func managedServiceToProto(s *domain.ManagedService) *pb.ManagedService {
+	return &pb.ManagedService{
+		Id:              s.ID,
+		NodeId:          s.NodeID,
+		OwnerId:         s.OwnerID,
+		AllowedGameIds:  s.AllowedGameIDs,
+		Type:            serviceTypeToProto(s.ServiceType),
+		Name:            s.Name,
+		Status:          serviceStatusToProto(s.Status),
+		Port:            s.HostPort,
+		ConnectionUri:   s.ConnectionURI,
+		VolumeSizeBytes: s.VolumeSizeBytes,
+		CreatedAt:       timestamppb.New(s.CreatedAt),
+		UpdatedAt:       timestamppb.New(s.UpdatedAt),
+	}
 }
 
 func resourceUsageToProto(u *domain.ResourceUsage) *pb.ResourceUsage {

@@ -28,6 +28,9 @@ type hbMockNodeClient struct {
 	getInstanceFn      func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.Instance, error)
 	getInstanceUsageFn func(ctx context.Context, address, apiKey string, instanceID int64) (*domain.ResourceUsage, error)
 	deleteInstanceFn   func(ctx context.Context, address, apiKey string, instanceID int64) error
+	DeployServiceFn    func(ctx context.Context, nodeAddress, apiKey string, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error)
+	RemoveServiceFn    func(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error
+	ListServicesFn     func(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error)
 }
 
 func (m *hbMockNodeClient) Heartbeat(ctx context.Context, address, apiKey string) (*domain.HeartbeatResult, error) {
@@ -78,6 +81,24 @@ func (m *hbMockNodeClient) DeleteInstance(ctx context.Context, address, apiKey s
 	}
 	return nil
 }
+func (m *hbMockNodeClient) DeployService(ctx context.Context, nodeAddress, apiKey string, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error) {
+	if m.DeployServiceFn != nil {
+		return m.DeployServiceFn(ctx, nodeAddress, apiKey, req)
+	}
+	return &domain.DeployServiceResult{}, nil
+}
+func (m *hbMockNodeClient) RemoveService(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error {
+	if m.RemoveServiceFn != nil {
+		return m.RemoveServiceFn(ctx, nodeAddress, apiKey, name, deleteVolume)
+	}
+	return nil
+}
+func (m *hbMockNodeClient) ListServices(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
+	if m.ListServicesFn != nil {
+		return m.ListServicesFn(ctx, nodeAddress, apiKey)
+	}
+	return nil, nil
+}
 
 type hbMockNodeRepo struct {
 	createFn         func(ctx context.Context, node *domain.Node) error
@@ -87,6 +108,7 @@ type hbMockNodeRepo struct {
 	listFn           func(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error)
 	deleteFn         func(ctx context.Context, id int64) error
 	updateLastPingFn func(ctx context.Context, id int64) error
+	updateRoleFn     func(ctx context.Context, id int64, role domain.NodeRole) error
 }
 
 func (m *hbMockNodeRepo) Create(ctx context.Context, node *domain.Node) error {
@@ -128,6 +150,12 @@ func (m *hbMockNodeRepo) Delete(ctx context.Context, id int64) error {
 func (m *hbMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error {
 	if m.updateLastPingFn != nil {
 		return m.updateLastPingFn(ctx, id)
+	}
+	return nil
+}
+func (m *hbMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRole) error {
+	if m.updateRoleFn != nil {
+		return m.updateRoleFn(ctx, id, role)
 	}
 	return nil
 }

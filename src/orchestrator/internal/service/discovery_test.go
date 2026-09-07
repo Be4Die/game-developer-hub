@@ -157,6 +157,9 @@ func (m *discMockNodeRepo) List(ctx context.Context, status *domain.NodeStatus) 
 }
 func (m *discMockNodeRepo) Delete(ctx context.Context, id int64) error         { return nil }
 func (m *discMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error { return nil }
+func (m *discMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRole) error {
+	return nil
+}
 
 func newTestDiscoveryService(
 	instanceRepo domain.InstanceRepo,

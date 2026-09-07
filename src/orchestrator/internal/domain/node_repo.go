@@ -25,4 +25,7 @@ type NodeRepo interface {
 
 	// UpdateLastPing обновляет время последнего heartbeat ноды.
 	UpdateLastPing(ctx context.Context, id int64) error
+
+	// UpdateRole обновляет роль ноды (mixed, compute, storage).
+	UpdateRole(ctx context.Context, id int64, role NodeRole) error
 }

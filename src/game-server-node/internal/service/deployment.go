@@ -39,6 +39,7 @@ type DeploymentService struct {
 	containerMapPath string
 	nodeID           string
 	reportPort       int // порт HTTP-сервера отчётов, 0 = отключён
+	managedState     *ManagedServiceState
 
 	// Simple ID generator. In production — use UUID or database sequence.
 	nextID atomic.Int64
@@ -61,6 +62,11 @@ func NewDeploymentService(
 	containerMapPath string,
 	nodeID string,
 ) *DeploymentService {
+	servicesRegistryPath := ""
+	if containerMapPath != "" {
+		servicesRegistryPath = filepath.Join(filepath.Dir(containerMapPath), "services.json")
+	}
+
 	svc := &DeploymentService{
 		log:              log,
 		storage:          storage,
@@ -69,6 +75,7 @@ func NewDeploymentService(
 		containerMapPath: containerMapPath,
 		nodeID:           nodeID,
 		images:           make(map[int64]string),
+		managedState:     NewManagedServiceState(log, runtime, servicesRegistryPath, ""),
 	}
 
 	// Load persisted image registry (if any).

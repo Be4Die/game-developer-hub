@@ -1,5 +1,10 @@
 import { http } from '@/shared/api';
-import { normalizeNode } from '../model/nodeModel';
+import {
+  normalizeNode,
+  normalizeService,
+  nodeRoleToProto,
+  serviceTypeToProto,
+} from '../model/nodeModel';
 
 export function listNodes(status) {
   const params = {};
@@ -62,3 +67,38 @@ export function getNodeUsage(nodeId) {
 export function listNodeInstances(nodeId) {
   return http.get(`/nodes/${nodeId}/instances`).then((r) => r.data.instances ?? []);
 }
+
+export function updateNodeRole(nodeId, role) {
+  const protoRole = nodeRoleToProto[role] || role;
+  return http.patch(`/nodes/${nodeId}/role`, { role: protoRole }).then((r) => normalizeNode(r.data.node));
+}
+
+export function listNodeServices(nodeId, gameId = null) {
+  const params = {};
+  if (gameId) params.game_id = gameId;
+  return http
+    .get(`/nodes/${nodeId}/services`, { params })
+    .then((r) => (r.data.services ?? []).map(normalizeService));
+}
+
+export function createNodeService(nodeId, payload) {
+  const protoType = serviceTypeToProto[payload.service_type] || payload.service_type;
+  const requestBody = {
+    service_type: protoType,
+    name: payload.name,
+    password: payload.password || '',
+    db_name: payload.db_name || '',
+    port: payload.port ? Number(payload.port) : 0,
+    allowed_game_ids: (payload.allowed_game_ids ?? []).map(Number),
+  };
+  return http
+    .post(`/nodes/${nodeId}/services`, requestBody)
+    .then((r) => normalizeService(r.data.service));
+}
+
+export function deleteNodeService(nodeId, serviceId, deleteVolume = false) {
+  return http.delete(`/nodes/${nodeId}/services/${serviceId}`, {
+    params: { delete_volume: deleteVolume },
+  });
+}
+

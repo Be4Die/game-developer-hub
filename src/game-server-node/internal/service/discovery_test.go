@@ -79,6 +79,18 @@ func (s *stubDiscoveryRuntime) ListContainers(ctx context.Context) ([]domain.Con
 	return []domain.ContainerInfo{}, nil
 }
 
+func (s *stubDiscoveryRuntime) PullImage(ctx context.Context, imageTag string) error {
+	return nil
+}
+
+func (s *stubDiscoveryRuntime) EnsureNetwork(ctx context.Context, networkName string) error {
+	return nil
+}
+
+func (s *stubDiscoveryRuntime) RemoveVolume(ctx context.Context, name string) error {
+	return nil
+}
+
 func TestDiscoveryService_Heartbeat(t *testing.T) {
 	ctx := context.Background()
 

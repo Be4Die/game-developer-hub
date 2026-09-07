@@ -22,6 +22,7 @@ type InstanceService struct {
 	nodeState     domain.NodeStateStore
 	nodeClient    domain.NodeClient
 	limits        config.LimitsConfig
+	serviceRepo   domain.ManagedServiceRepo
 }
 
 // NewInstanceService создаёт сервис управления инстансами.
@@ -43,6 +44,12 @@ func NewInstanceService(
 		nodeClient:    nodeClient,
 		limits:        limits,
 	}
+}
+
+// WithServiceRepo задает репозиторий управляемых сервисов для автоматической инжекции переменных.
+func (s *InstanceService) WithServiceRepo(r domain.ManagedServiceRepo) *InstanceService {
+	s.serviceRepo = r
+	return s
 }
 
 // StartInstanceParams содержит параметры запуска инстанса.
@@ -106,6 +113,39 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		maxPlayers = *params.MaxPlayers
 	}
 
+	// Инжектируем подключение к базам данных/кэшам, если они развернуты для игры
+	envVars := make(map[string]string)
+	for k, v := range params.EnvVars {
+		envVars[k] = v
+	}
+
+	if s.serviceRepo != nil {
+		if services, err := s.serviceRepo.ListByGame(ctx, params.GameID); err == nil {
+			for _, svc := range services {
+				if svc.Status == domain.ServiceStatusRunning {
+					switch svc.ServiceType {
+					case domain.ServiceTypePostgres, domain.ServiceTypeMySQL:
+						if _, ok := envVars["DATABASE_URL"]; !ok {
+							envVars["DATABASE_URL"] = svc.ConnectionURI
+						}
+					case domain.ServiceTypeRedis:
+						if _, ok := envVars["REDIS_URL"]; !ok {
+							envVars["REDIS_URL"] = svc.ConnectionURI
+						}
+					case domain.ServiceTypeMinIO:
+						if _, ok := envVars["S3_ENDPOINT"]; !ok {
+							envVars["S3_ENDPOINT"] = svc.ConnectionURI
+						}
+					case domain.ServiceTypeVolume:
+						if _, ok := envVars["STORAGE_VOLUME_PATH"]; !ok {
+							envVars["STORAGE_VOLUME_PATH"] = svc.VolumePath
+						}
+					}
+				}
+			}
+		}
+	}
+
 	startReq := domain.StartInstanceRequest{
 		GameID:           params.GameID,
 		InstanceID:       nextID, // Передаём выделенный ID
@@ -115,7 +155,7 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		PortAllocation:   params.PortAllocation,
 		MaxPlayers:       maxPlayers,
 		DeveloperPayload: params.DeveloperPayload,
-		EnvVars:          params.EnvVars,
+		EnvVars:          envVars,
 		Args:             params.Args,
 		ResourceLimits:   params.ResourceLimits,
 	}
@@ -516,6 +556,11 @@ func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.S
 
 	for _, n := range nodes {
 		if n.Status != domain.NodeStatusOnline {
+			continue
+		}
+
+		// Исключаем ноды хранения (Storage) из автоматического подбора compute-нагрузок
+		if n.Role == domain.NodeRoleStorage {
 			continue
 		}
 

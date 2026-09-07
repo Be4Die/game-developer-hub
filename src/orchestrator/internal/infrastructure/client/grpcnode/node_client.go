@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
@@ -53,11 +55,34 @@ func (c *Client) getConn(_ context.Context, address string) (*grpc.ClientConn, e
 		return conn, nil
 	}
 
+	dialTarget := address
+	if !strings.Contains(address, "://") {
+		dialTarget = "passthrough:///" + address
+	}
+
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(c.cfg.MaxMessageSize)),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			MinConnectTimeout: c.cfg.ConnectTimeout,
+		}),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			var dialer net.Dialer
+			host, port, err := net.SplitHostPort(addr)
+			if err == nil {
+				ips, lookupErr := net.LookupIP(host)
+				if lookupErr == nil {
+					for _, ip := range ips {
+						if ipv4 := ip.To4(); ipv4 != nil {
+							conn, dialErr := dialer.DialContext(ctx, "tcp4", net.JoinHostPort(ipv4.String(), port))
+							if dialErr == nil {
+								return conn, nil
+							}
+						}
+					}
+				}
+			}
+			return dialer.DialContext(ctx, "tcp", addr)
 		}),
 	}
 
@@ -74,9 +99,9 @@ func (c *Client) getConn(_ context.Context, address string) (*grpc.ClientConn, e
 		opts = append(opts, grpc.WithKeepaliveParams(ka))
 	}
 
-	conn, err := grpc.NewClient(address, opts...) //nolint:staticcheck
+	conn, err := grpc.NewClient(dialTarget, opts...) //nolint:staticcheck
 	if err != nil {
-		return nil, fmt.Errorf("grpc.NewClient(%s): %w", address, err)
+		return nil, fmt.Errorf("grpc.NewClient(%s): %w", dialTarget, err)
 	}
 
 	c.conns[address] = conn
@@ -631,6 +656,122 @@ func IsGRPCNotFound(err error) bool {
 		return st.Code() == codes.NotFound
 	}
 	return IsGRPCNotFound(errors.Unwrap(err))
+}
+
+// DeployService разворачивает управляемый сервис на ноде через gRPC.
+func (c *Client) DeployService(ctx context.Context, nodeAddress, apiKey string, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.DeployService: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	var pbType pb.ServiceType
+	switch req.ServiceType {
+	case domain.ServiceTypePostgres:
+		pbType = pb.ServiceType_SERVICE_TYPE_POSTGRES
+	case domain.ServiceTypeRedis:
+		pbType = pb.ServiceType_SERVICE_TYPE_REDIS
+	case domain.ServiceTypeMySQL:
+		pbType = pb.ServiceType_SERVICE_TYPE_MYSQL
+	case domain.ServiceTypeMinIO:
+		pbType = pb.ServiceType_SERVICE_TYPE_MINIO
+	case domain.ServiceTypeVolume:
+		pbType = pb.ServiceType_SERVICE_TYPE_VOLUME
+	case domain.ServiceTypeAdminer:
+		pbType = pb.ServiceType_SERVICE_TYPE_ADMINER
+	case domain.ServiceTypePGAdmin:
+		pbType = pb.ServiceType_SERVICE_TYPE_PGADMIN
+	}
+
+	resp, err := client.DeployService(ctx, &pb.DeployServiceRequest{
+		ServiceType: pbType,
+		Name:        req.Name,
+		Port:        req.Port,
+		EnvVars:     req.EnvVars,
+		VolumeName:  req.VolumeName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Client.DeployService: %w", err)
+	}
+
+	return &domain.DeployServiceResult{
+		Name:          resp.GetName(),
+		ContainerID:   resp.GetContainerId(),
+		HostPort:      resp.GetHostPort(),
+		ConnectionURI: resp.GetConnectionUri(),
+		VolumePath:    resp.GetVolumePath(),
+	}, nil
+}
+
+// RemoveService удаляет сервис на ноде через gRPC.
+func (c *Client) RemoveService(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("Client.RemoveService: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	_, err = client.RemoveService(ctx, &pb.RemoveServiceRequest{
+		Name:         name,
+		DeleteVolume: deleteVolume,
+	})
+	if err != nil {
+		return fmt.Errorf("Client.RemoveService: %w", err)
+	}
+	return nil
+}
+
+// ListServices запрашивает список сервисов на ноде через gRPC.
+func (c *Client) ListServices(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.ListServices: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	resp, err := client.ListServices(ctx, &pb.ListServicesRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("Client.ListServices: %w", err)
+	}
+
+	res := make([]domain.ServiceInfo, 0, len(resp.GetServices()))
+	for _, s := range resp.GetServices() {
+		var domainType domain.ServiceType
+		switch s.GetServiceType() {
+		case pb.ServiceType_SERVICE_TYPE_POSTGRES:
+			domainType = domain.ServiceTypePostgres
+		case pb.ServiceType_SERVICE_TYPE_REDIS:
+			domainType = domain.ServiceTypeRedis
+		case pb.ServiceType_SERVICE_TYPE_MYSQL:
+			domainType = domain.ServiceTypeMySQL
+		case pb.ServiceType_SERVICE_TYPE_MINIO:
+			domainType = domain.ServiceTypeMinIO
+		case pb.ServiceType_SERVICE_TYPE_VOLUME:
+			domainType = domain.ServiceTypeVolume
+		case pb.ServiceType_SERVICE_TYPE_ADMINER:
+			domainType = domain.ServiceTypeAdminer
+		case pb.ServiceType_SERVICE_TYPE_PGADMIN:
+			domainType = domain.ServiceTypePGAdmin
+		}
+
+		res = append(res, domain.ServiceInfo{
+			Name:            s.GetName(),
+			ServiceType:     domainType,
+			ContainerID:     s.GetContainerId(),
+			Status:          s.GetStatus(),
+			HostPort:        s.GetHostPort(),
+			VolumePath:      s.GetVolumePath(),
+			VolumeSizeBytes: s.GetVolumeSizeBytes(),
+		})
+	}
+	return res, nil
 }
 
 var _ domain.NodeClient = (*Client)(nil)

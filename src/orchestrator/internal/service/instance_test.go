@@ -218,6 +218,7 @@ type instMockNodeRepo struct {
 	listFn           func(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error)
 	deleteFn         func(ctx context.Context, id int64) error
 	updateLastPingFn func(ctx context.Context, id int64) error
+	updateRoleFn     func(ctx context.Context, id int64, role domain.NodeRole) error
 }
 
 func (m *instMockNodeRepo) Create(ctx context.Context, node *domain.Node) error {
@@ -259,6 +260,12 @@ func (m *instMockNodeRepo) Delete(ctx context.Context, id int64) error {
 func (m *instMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error {
 	if m.updateLastPingFn != nil {
 		return m.updateLastPingFn(ctx, id)
+	}
+	return nil
+}
+func (m *instMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRole) error {
+	if m.updateRoleFn != nil {
+		return m.updateRoleFn(ctx, id, role)
 	}
 	return nil
 }
@@ -387,6 +394,15 @@ func (m *instMockNodeClient) DeleteInstance(ctx context.Context, address, apiKey
 		return m.deleteInstanceFn(ctx, address, apiKey, instanceID)
 	}
 	return nil
+}
+func (m *instMockNodeClient) DeployService(ctx context.Context, nodeAddress, apiKey string, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error) {
+	return &domain.DeployServiceResult{}, nil
+}
+func (m *instMockNodeClient) RemoveService(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error {
+	return nil
+}
+func (m *instMockNodeClient) ListServices(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
+	return nil, nil
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -1035,4 +1051,216 @@ func searchStr(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+type instMockManagedServiceRepo struct {
+	listByNodeFn func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error)
+	listByGameFn func(ctx context.Context, gameID int64) ([]*domain.ManagedService, error)
+}
+
+func (m *instMockManagedServiceRepo) Create(ctx context.Context, s *domain.ManagedService) error { return nil }
+func (m *instMockManagedServiceRepo) GetByID(ctx context.Context, id int64) (*domain.ManagedService, error) { return nil, nil }
+func (m *instMockManagedServiceRepo) GetByName(ctx context.Context, nodeID int64, name string) (*domain.ManagedService, error) { return nil, nil }
+func (m *instMockManagedServiceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+	if m.listByNodeFn != nil {
+		return m.listByNodeFn(ctx, nodeID)
+	}
+	return nil, nil
+}
+func (m *instMockManagedServiceRepo) ListByOwner(ctx context.Context, ownerID string) ([]*domain.ManagedService, error) { return nil, nil }
+func (m *instMockManagedServiceRepo) ListByGame(ctx context.Context, gameID int64) ([]*domain.ManagedService, error) {
+	if m.listByGameFn != nil {
+		return m.listByGameFn(ctx, gameID)
+	}
+	return nil, nil
+}
+func (m *instMockManagedServiceRepo) Update(ctx context.Context, s *domain.ManagedService) error { return nil }
+func (m *instMockManagedServiceRepo) Delete(ctx context.Context, id int64) error { return nil }
+
+func TestInstanceService_StartInstance_ExcludesStorageNode(t *testing.T) {
+	build := &domain.ServerBuild{
+		ID:           1,
+		GameID:       1,
+		Version:      "v1",
+		ImageTag:     "my-game:v1",
+		InternalPort: 8080,
+	}
+	storageNode := &domain.Node{
+		ID:      1,
+		Address: "storage-node:44044",
+		Status:  domain.NodeStatusOnline,
+		Role:    domain.NodeRoleStorage,
+	}
+	mixedNode := &domain.Node{
+		ID:      2,
+		Address: "mixed-node:44044",
+		Status:  domain.NodeStatusOnline,
+		Role:    domain.NodeRoleMixed,
+	}
+
+	var selectedNodeAddr string
+	nodeClient := &instMockNodeClient{
+		startInstanceFn: func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+			selectedNodeAddr = address
+			return &domain.StartInstanceResult{
+				InstanceID: 100,
+				HostPort:   8080,
+			}, nil
+		},
+	}
+
+	nodeRepo := &instMockNodeRepo{
+		listFn: func(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error) {
+			return []*domain.Node{storageNode, mixedNode}, nil
+		},
+	}
+
+	instanceRepo := &instMockInstanceRepo{
+		countByGameFn: func(ctx context.Context, gameID int64) (int, error) {
+			return 0, nil
+		},
+		createFn: func(ctx context.Context, inst *domain.Instance) error {
+			inst.ID = 100
+			return nil
+		},
+	}
+
+	buildStorage := &instMockBuildStorage{
+		getByVersionFn: func(ctx context.Context, gameID int64, version string) (*domain.ServerBuild, error) {
+			return build, nil
+		},
+	}
+
+	svc := NewInstanceService(
+		instanceRepo,
+		&instMockInstanceState{},
+		buildStorage,
+		nodeRepo,
+		&instMockNodeStateStore{},
+		nodeClient,
+		config.LimitsConfig{MaxInstancesPerGame: 5},
+	)
+
+	ctx := context.Background()
+	inst, err := svc.StartInstance(ctx, StartInstanceParams{
+		OwnerID:      "user-1",
+		GameID:       1,
+		BuildVersion: "v1",
+		NodePreference: "auto",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if inst == nil {
+		t.Fatal("expected instance, got nil")
+	}
+	if selectedNodeAddr != "mixed-node:44044" {
+		t.Errorf("expected mixed-node:44044 to be chosen, but got %s", selectedNodeAddr)
+	}
+}
+
+func TestInstanceService_StartInstance_InjectsDatabaseEnv(t *testing.T) {
+	build := &domain.ServerBuild{
+		ID:           1,
+		GameID:       1,
+		Version:      "v1",
+		ImageTag:     "my-game:v1",
+		InternalPort: 8080,
+	}
+	mixedNode := &domain.Node{
+		ID:      2,
+		Address: "192.168.1.10:44044",
+		Status:  domain.NodeStatusOnline,
+		Role:    domain.NodeRoleMixed,
+	}
+
+	var capturedEnvVars map[string]string
+	nodeClient := &instMockNodeClient{
+		startInstanceFn: func(ctx context.Context, address, apiKey string, req domain.StartInstanceRequest) (*domain.StartInstanceResult, error) {
+			capturedEnvVars = req.EnvVars
+			return &domain.StartInstanceResult{
+				InstanceID: 100,
+				HostPort:   8080,
+			}, nil
+		},
+	}
+
+	nodeRepo := &instMockNodeRepo{
+		listFn: func(ctx context.Context, status *domain.NodeStatus) ([]*domain.Node, error) {
+			return []*domain.Node{mixedNode}, nil
+		},
+	}
+
+	instanceRepo := &instMockInstanceRepo{
+		countByGameFn: func(ctx context.Context, gameID int64) (int, error) {
+			return 0, nil
+		},
+		createFn: func(ctx context.Context, inst *domain.Instance) error {
+			inst.ID = 100
+			return nil
+		},
+	}
+
+	buildStorage := &instMockBuildStorage{
+		getByVersionFn: func(ctx context.Context, gameID int64, version string) (*domain.ServerBuild, error) {
+			return build, nil
+		},
+	}
+
+	serviceRepo := &instMockManagedServiceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64) ([]*domain.ManagedService, error) {
+			return []*domain.ManagedService{
+				{
+					ID:            10,
+					NodeID:        2,
+					Name:          "game-pg",
+					ServiceType:   domain.ServiceTypePostgres,
+					Status:        domain.ServiceStatusRunning,
+					ConnectionURI: "postgresql://postgres:secret@192.168.1.10:5432/game_db",
+				},
+				{
+					ID:            11,
+					NodeID:        2,
+					Name:          "game-redis",
+					ServiceType:   domain.ServiceTypeRedis,
+					Status:        domain.ServiceStatusRunning,
+					ConnectionURI: "redis://:redpass@192.168.1.10:6379",
+				},
+			}, nil
+		},
+	}
+
+	svc := NewInstanceService(
+		instanceRepo,
+		&instMockInstanceState{},
+		buildStorage,
+		nodeRepo,
+		&instMockNodeStateStore{},
+		nodeClient,
+		config.LimitsConfig{MaxInstancesPerGame: 5},
+	).WithServiceRepo(serviceRepo)
+
+	ctx := context.Background()
+	_, err := svc.StartInstance(ctx, StartInstanceParams{
+		OwnerID:      "user-1",
+		GameID:       1,
+		BuildVersion: "v1",
+		NodePreference: "auto",
+		EnvVars: map[string]string{
+			"CUSTOM_CONFIG": "true",
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if capturedEnvVars["CUSTOM_CONFIG"] != "true" {
+		t.Errorf("expected CUSTOM_CONFIG=true, got %s", capturedEnvVars["CUSTOM_CONFIG"])
+	}
+	if capturedEnvVars["DATABASE_URL"] != "postgresql://postgres:secret@192.168.1.10:5432/game_db" {
+		t.Errorf("expected DATABASE_URL to be injected, got %s", capturedEnvVars["DATABASE_URL"])
+	}
+	if capturedEnvVars["REDIS_URL"] != "redis://:redpass@192.168.1.10:6379" {
+		t.Errorf("expected REDIS_URL to be injected, got %s", capturedEnvVars["REDIS_URL"])
+	}
 }

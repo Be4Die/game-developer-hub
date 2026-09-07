@@ -193,6 +193,180 @@ func (NodeStatus) EnumDescriptor() ([]byte, []int) {
 	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{2}
 }
 
+// Роль вычислительной ноды.
+type NodeRole int32
+
+const (
+	NodeRole_NODE_ROLE_UNSPECIFIED NodeRole = 0
+	NodeRole_NODE_ROLE_MIXED       NodeRole = 1 // Игровые серверы + сервисы данных
+	NodeRole_NODE_ROLE_COMPUTE     NodeRole = 2 // Только игровые серверы (stateless)
+	NodeRole_NODE_ROLE_STORAGE     NodeRole = 3 // Только базы данных и хранилища (stateful)
+)
+
+// Enum value maps for NodeRole.
+var (
+	NodeRole_name = map[int32]string{
+		0: "NODE_ROLE_UNSPECIFIED",
+		1: "NODE_ROLE_MIXED",
+		2: "NODE_ROLE_COMPUTE",
+		3: "NODE_ROLE_STORAGE",
+	}
+	NodeRole_value = map[string]int32{
+		"NODE_ROLE_UNSPECIFIED": 0,
+		"NODE_ROLE_MIXED":       1,
+		"NODE_ROLE_COMPUTE":     2,
+		"NODE_ROLE_STORAGE":     3,
+	}
+)
+
+func (x NodeRole) Enum() *NodeRole {
+	p := new(NodeRole)
+	*p = x
+	return p
+}
+
+func (x NodeRole) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (NodeRole) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_common_proto_enumTypes[3].Descriptor()
+}
+
+func (NodeRole) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_common_proto_enumTypes[3]
+}
+
+func (x NodeRole) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use NodeRole.Descriptor instead.
+func (NodeRole) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
+// Тип управляемого сервиса хранения данных.
+type ServiceType int32
+
+const (
+	ServiceType_SERVICE_TYPE_UNSPECIFIED ServiceType = 0
+	ServiceType_SERVICE_TYPE_POSTGRES    ServiceType = 1
+	ServiceType_SERVICE_TYPE_REDIS       ServiceType = 2
+	ServiceType_SERVICE_TYPE_MYSQL       ServiceType = 3
+	ServiceType_SERVICE_TYPE_MINIO       ServiceType = 4
+	ServiceType_SERVICE_TYPE_VOLUME      ServiceType = 5
+	ServiceType_SERVICE_TYPE_ADMINER     ServiceType = 6
+	ServiceType_SERVICE_TYPE_PGADMIN     ServiceType = 7
+)
+
+// Enum value maps for ServiceType.
+var (
+	ServiceType_name = map[int32]string{
+		0: "SERVICE_TYPE_UNSPECIFIED",
+		1: "SERVICE_TYPE_POSTGRES",
+		2: "SERVICE_TYPE_REDIS",
+		3: "SERVICE_TYPE_MYSQL",
+		4: "SERVICE_TYPE_MINIO",
+		5: "SERVICE_TYPE_VOLUME",
+		6: "SERVICE_TYPE_ADMINER",
+		7: "SERVICE_TYPE_PGADMIN",
+	}
+	ServiceType_value = map[string]int32{
+		"SERVICE_TYPE_UNSPECIFIED": 0,
+		"SERVICE_TYPE_POSTGRES":    1,
+		"SERVICE_TYPE_REDIS":       2,
+		"SERVICE_TYPE_MYSQL":       3,
+		"SERVICE_TYPE_MINIO":       4,
+		"SERVICE_TYPE_VOLUME":      5,
+		"SERVICE_TYPE_ADMINER":     6,
+		"SERVICE_TYPE_PGADMIN":     7,
+	}
+)
+
+func (x ServiceType) Enum() *ServiceType {
+	p := new(ServiceType)
+	*p = x
+	return p
+}
+
+func (x ServiceType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ServiceType) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_common_proto_enumTypes[4].Descriptor()
+}
+
+func (ServiceType) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_common_proto_enumTypes[4]
+}
+
+func (x ServiceType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ServiceType.Descriptor instead.
+func (ServiceType) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
+}
+
+// Статус сервиса хранения данных.
+type ServiceStatus int32
+
+const (
+	ServiceStatus_SERVICE_STATUS_UNSPECIFIED ServiceStatus = 0
+	ServiceStatus_SERVICE_STATUS_STARTING    ServiceStatus = 1
+	ServiceStatus_SERVICE_STATUS_RUNNING     ServiceStatus = 2
+	ServiceStatus_SERVICE_STATUS_STOPPED     ServiceStatus = 3
+	ServiceStatus_SERVICE_STATUS_ERROR       ServiceStatus = 4
+)
+
+// Enum value maps for ServiceStatus.
+var (
+	ServiceStatus_name = map[int32]string{
+		0: "SERVICE_STATUS_UNSPECIFIED",
+		1: "SERVICE_STATUS_STARTING",
+		2: "SERVICE_STATUS_RUNNING",
+		3: "SERVICE_STATUS_STOPPED",
+		4: "SERVICE_STATUS_ERROR",
+	}
+	ServiceStatus_value = map[string]int32{
+		"SERVICE_STATUS_UNSPECIFIED": 0,
+		"SERVICE_STATUS_STARTING":    1,
+		"SERVICE_STATUS_RUNNING":     2,
+		"SERVICE_STATUS_STOPPED":     3,
+		"SERVICE_STATUS_ERROR":       4,
+	}
+)
+
+func (x ServiceStatus) Enum() *ServiceStatus {
+	p := new(ServiceStatus)
+	*p = x
+	return p
+}
+
+func (x ServiceStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ServiceStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_common_proto_enumTypes[5].Descriptor()
+}
+
+func (ServiceStatus) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_common_proto_enumTypes[5]
+}
+
+func (x ServiceStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ServiceStatus.Descriptor instead.
+func (ServiceStatus) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
+}
+
 // Источник лога.
 type LogSource int32
 
@@ -227,11 +401,11 @@ func (x LogSource) String() string {
 }
 
 func (LogSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[3].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[6].Descriptor()
 }
 
 func (LogSource) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[3]
+	return &file_orchestrator_v1_common_proto_enumTypes[6]
 }
 
 func (x LogSource) Number() protoreflect.EnumNumber {
@@ -240,7 +414,7 @@ func (x LogSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LogSource.Descriptor instead.
 func (LogSource) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{3}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{6}
 }
 
 // Стратегия выделения порта.
@@ -280,11 +454,11 @@ func (x PortAllocationStrategy) String() string {
 }
 
 func (PortAllocationStrategy) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[4].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[7].Descriptor()
 }
 
 func (PortAllocationStrategy) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[4]
+	return &file_orchestrator_v1_common_proto_enumTypes[7]
 }
 
 func (x PortAllocationStrategy) Number() protoreflect.EnumNumber {
@@ -293,7 +467,7 @@ func (x PortAllocationStrategy) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortAllocationStrategy.Descriptor instead.
 func (PortAllocationStrategy) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{7}
 }
 
 // Статус ответа discovery.
@@ -342,11 +516,11 @@ func (x DiscoveryStatus) String() string {
 }
 
 func (DiscoveryStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[5].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[8].Descriptor()
 }
 
 func (DiscoveryStatus) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[5]
+	return &file_orchestrator_v1_common_proto_enumTypes[8]
 }
 
 func (x DiscoveryStatus) Number() protoreflect.EnumNumber {
@@ -355,7 +529,7 @@ func (x DiscoveryStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DiscoveryStatus.Descriptor instead.
 func (DiscoveryStatus) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{8}
 }
 
 // Серверный билд.
@@ -663,6 +837,7 @@ type Node struct {
 	LastPingAt       *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_ping_at,json=lastPingAt,proto3" json:"last_ping_at,omitempty"`
 	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Role             NodeRole               `protobuf:"varint,13,opt,name=role,proto3,enum=orchestrator.v1.NodeRole" json:"role,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -781,6 +956,146 @@ func (x *Node) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Node) GetRole() NodeRole {
+	if x != nil {
+		return x.Role
+	}
+	return NodeRole_NODE_ROLE_UNSPECIFIED
+}
+
+// Управляемый сервис хранения данных (Managed Database/Cache/Storage).
+type ManagedService struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	NodeId          int64                  `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	OwnerId         string                 `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	AllowedGameIds  []int64                `protobuf:"varint,4,rep,packed,name=allowed_game_ids,json=allowedGameIds,proto3" json:"allowed_game_ids,omitempty"`
+	Type            ServiceType            `protobuf:"varint,5,opt,name=type,proto3,enum=orchestrator.v1.ServiceType" json:"type,omitempty"`
+	Name            string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	Status          ServiceStatus          `protobuf:"varint,7,opt,name=status,proto3,enum=orchestrator.v1.ServiceStatus" json:"status,omitempty"`
+	Port            uint32                 `protobuf:"varint,8,opt,name=port,proto3" json:"port,omitempty"`
+	ConnectionUri   string                 `protobuf:"bytes,9,opt,name=connection_uri,json=connectionUri,proto3" json:"connection_uri,omitempty"`
+	VolumeSizeBytes uint64                 `protobuf:"varint,10,opt,name=volume_size_bytes,json=volumeSizeBytes,proto3" json:"volume_size_bytes,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ManagedService) Reset() {
+	*x = ManagedService{}
+	mi := &file_orchestrator_v1_common_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ManagedService) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ManagedService) ProtoMessage() {}
+
+func (x *ManagedService) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_common_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ManagedService.ProtoReflect.Descriptor instead.
+func (*ManagedService) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ManagedService) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ManagedService) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *ManagedService) GetOwnerId() string {
+	if x != nil {
+		return x.OwnerId
+	}
+	return ""
+}
+
+func (x *ManagedService) GetAllowedGameIds() []int64 {
+	if x != nil {
+		return x.AllowedGameIds
+	}
+	return nil
+}
+
+func (x *ManagedService) GetType() ServiceType {
+	if x != nil {
+		return x.Type
+	}
+	return ServiceType_SERVICE_TYPE_UNSPECIFIED
+}
+
+func (x *ManagedService) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ManagedService) GetStatus() ServiceStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ServiceStatus_SERVICE_STATUS_UNSPECIFIED
+}
+
+func (x *ManagedService) GetPort() uint32 {
+	if x != nil {
+		return x.Port
+	}
+	return 0
+}
+
+func (x *ManagedService) GetConnectionUri() string {
+	if x != nil {
+		return x.ConnectionUri
+	}
+	return ""
+}
+
+func (x *ManagedService) GetVolumeSizeBytes() uint64 {
+	if x != nil {
+		return x.VolumeSizeBytes
+	}
+	return 0
+}
+
+func (x *ManagedService) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *ManagedService) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
 // Потребление ресурсов.
 type ResourceUsage struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -794,7 +1109,7 @@ type ResourceUsage struct {
 
 func (x *ResourceUsage) Reset() {
 	*x = ResourceUsage{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[3]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +1121,7 @@ func (x *ResourceUsage) String() string {
 func (*ResourceUsage) ProtoMessage() {}
 
 func (x *ResourceUsage) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[3]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +1134,7 @@ func (x *ResourceUsage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceUsage.ProtoReflect.Descriptor instead.
 func (*ResourceUsage) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{3}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ResourceUsage) GetCpuUsagePercent() float64 {
@@ -861,7 +1176,7 @@ type ResourceLimits struct {
 
 func (x *ResourceLimits) Reset() {
 	*x = ResourceLimits{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[4]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -873,7 +1188,7 @@ func (x *ResourceLimits) String() string {
 func (*ResourceLimits) ProtoMessage() {}
 
 func (x *ResourceLimits) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[4]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -886,7 +1201,7 @@ func (x *ResourceLimits) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceLimits.ProtoReflect.Descriptor instead.
 func (*ResourceLimits) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ResourceLimits) GetCpuMillis() int32 {
@@ -913,7 +1228,7 @@ type PortAllocationAny struct {
 
 func (x *PortAllocationAny) Reset() {
 	*x = PortAllocationAny{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[5]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -925,7 +1240,7 @@ func (x *PortAllocationAny) String() string {
 func (*PortAllocationAny) ProtoMessage() {}
 
 func (x *PortAllocationAny) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[5]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1253,7 @@ func (x *PortAllocationAny) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortAllocationAny.ProtoReflect.Descriptor instead.
 func (*PortAllocationAny) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *PortAllocationAny) GetStrategy() PortAllocationStrategy {
@@ -959,7 +1274,7 @@ type PortAllocationExact struct {
 
 func (x *PortAllocationExact) Reset() {
 	*x = PortAllocationExact{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[6]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -971,7 +1286,7 @@ func (x *PortAllocationExact) String() string {
 func (*PortAllocationExact) ProtoMessage() {}
 
 func (x *PortAllocationExact) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[6]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -984,7 +1299,7 @@ func (x *PortAllocationExact) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortAllocationExact.ProtoReflect.Descriptor instead.
 func (*PortAllocationExact) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{6}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PortAllocationExact) GetStrategy() PortAllocationStrategy {
@@ -1013,7 +1328,7 @@ type PortAllocationRange struct {
 
 func (x *PortAllocationRange) Reset() {
 	*x = PortAllocationRange{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[7]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1340,7 @@ func (x *PortAllocationRange) String() string {
 func (*PortAllocationRange) ProtoMessage() {}
 
 func (x *PortAllocationRange) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[7]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1353,7 @@ func (x *PortAllocationRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortAllocationRange.ProtoReflect.Descriptor instead.
 func (*PortAllocationRange) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{7}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PortAllocationRange) GetStrategy() PortAllocationStrategy {
@@ -1077,7 +1392,7 @@ type PortAllocation struct {
 
 func (x *PortAllocation) Reset() {
 	*x = PortAllocation{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[8]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1089,7 +1404,7 @@ func (x *PortAllocation) String() string {
 func (*PortAllocation) ProtoMessage() {}
 
 func (x *PortAllocation) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[8]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1102,7 +1417,7 @@ func (x *PortAllocation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortAllocation.ProtoReflect.Descriptor instead.
 func (*PortAllocation) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{8}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *PortAllocation) GetStrategy() isPortAllocation_Strategy {
@@ -1176,7 +1491,7 @@ type ServerEndpoint struct {
 
 func (x *ServerEndpoint) Reset() {
 	*x = ServerEndpoint{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[9]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1188,7 +1503,7 @@ func (x *ServerEndpoint) String() string {
 func (*ServerEndpoint) ProtoMessage() {}
 
 func (x *ServerEndpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[9]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1201,7 +1516,7 @@ func (x *ServerEndpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerEndpoint.ProtoReflect.Descriptor instead.
 func (*ServerEndpoint) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{9}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ServerEndpoint) GetInstanceId() int64 {
@@ -1258,7 +1573,7 @@ type LogEntry struct {
 
 func (x *LogEntry) Reset() {
 	*x = LogEntry{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[10]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1270,7 +1585,7 @@ func (x *LogEntry) String() string {
 func (*LogEntry) ProtoMessage() {}
 
 func (x *LogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[10]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1283,7 +1598,7 @@ func (x *LogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
 func (*LogEntry) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{10}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *LogEntry) GetTimestamp() *timestamppb.Timestamp {
@@ -1318,7 +1633,7 @@ type Error struct {
 
 func (x *Error) Reset() {
 	*x = Error{}
-	mi := &file_orchestrator_v1_common_proto_msgTypes[11]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1330,7 +1645,7 @@ func (x *Error) String() string {
 func (*Error) ProtoMessage() {}
 
 func (x *Error) ProtoReflect() protoreflect.Message {
-	mi := &file_orchestrator_v1_common_proto_msgTypes[11]
+	mi := &file_orchestrator_v1_common_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1343,7 +1658,7 @@ func (x *Error) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Error.ProtoReflect.Descriptor instead.
 func (*Error) Descriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{11}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Error) GetCode() string {
@@ -1405,7 +1720,7 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\xe6\x03\n" +
+	"\r_player_count\"\x95\x04\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x18\n" +
@@ -1419,6 +1734,23 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\flast_ping_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastPingAt\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12-\n" +
+	"\x04role\x18\r \x01(\x0e2\x19.orchestrator.v1.NodeRoleR\x04role\"\xd9\x03\n" +
+	"\x0eManagedService\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\anode_id\x18\x02 \x01(\x03R\x06nodeId\x12\x19\n" +
+	"\bowner_id\x18\x03 \x01(\tR\aownerId\x12(\n" +
+	"\x10allowed_game_ids\x18\x04 \x03(\x03R\x0eallowedGameIds\x120\n" +
+	"\x04type\x18\x05 \x01(\x0e2\x1c.orchestrator.v1.ServiceTypeR\x04type\x12\x12\n" +
+	"\x04name\x18\x06 \x01(\tR\x04name\x126\n" +
+	"\x06status\x18\a \x01(\x0e2\x1e.orchestrator.v1.ServiceStatusR\x06status\x12\x12\n" +
+	"\x04port\x18\b \x01(\rR\x04port\x12%\n" +
+	"\x0econnection_uri\x18\t \x01(\tR\rconnectionUri\x12*\n" +
+	"\x11volume_size_bytes\x18\n" +
+	" \x01(\x04R\x0fvolumeSizeBytes\x129\n" +
 	"\n" +
 	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
@@ -1482,7 +1814,27 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x18NODE_STATUS_UNAUTHORIZED\x10\x01\x12\x16\n" +
 	"\x12NODE_STATUS_ONLINE\x10\x02\x12\x17\n" +
 	"\x13NODE_STATUS_OFFLINE\x10\x03\x12\x1b\n" +
-	"\x17NODE_STATUS_MAINTENANCE\x10\x04*U\n" +
+	"\x17NODE_STATUS_MAINTENANCE\x10\x04*h\n" +
+	"\bNodeRole\x12\x19\n" +
+	"\x15NODE_ROLE_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fNODE_ROLE_MIXED\x10\x01\x12\x15\n" +
+	"\x11NODE_ROLE_COMPUTE\x10\x02\x12\x15\n" +
+	"\x11NODE_ROLE_STORAGE\x10\x03*\xdb\x01\n" +
+	"\vServiceType\x12\x1c\n" +
+	"\x18SERVICE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15SERVICE_TYPE_POSTGRES\x10\x01\x12\x16\n" +
+	"\x12SERVICE_TYPE_REDIS\x10\x02\x12\x16\n" +
+	"\x12SERVICE_TYPE_MYSQL\x10\x03\x12\x16\n" +
+	"\x12SERVICE_TYPE_MINIO\x10\x04\x12\x17\n" +
+	"\x13SERVICE_TYPE_VOLUME\x10\x05\x12\x18\n" +
+	"\x14SERVICE_TYPE_ADMINER\x10\x06\x12\x18\n" +
+	"\x14SERVICE_TYPE_PGADMIN\x10\a*\x9e\x01\n" +
+	"\rServiceStatus\x12\x1e\n" +
+	"\x1aSERVICE_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
+	"\x17SERVICE_STATUS_STARTING\x10\x01\x12\x1a\n" +
+	"\x16SERVICE_STATUS_RUNNING\x10\x02\x12\x1a\n" +
+	"\x16SERVICE_STATUS_STOPPED\x10\x03\x12\x18\n" +
+	"\x14SERVICE_STATUS_ERROR\x10\x04*U\n" +
 	"\tLogSource\x12\x1a\n" +
 	"\x16LOG_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOG_SOURCE_STDOUT\x10\x01\x12\x15\n" +
@@ -1514,57 +1866,66 @@ func file_orchestrator_v1_common_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_common_proto_rawDescData
 }
 
-var file_orchestrator_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_orchestrator_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_orchestrator_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
+var file_orchestrator_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_orchestrator_v1_common_proto_goTypes = []any{
 	(Protocol)(0),                 // 0: orchestrator.v1.Protocol
 	(InstanceStatus)(0),           // 1: orchestrator.v1.InstanceStatus
 	(NodeStatus)(0),               // 2: orchestrator.v1.NodeStatus
-	(LogSource)(0),                // 3: orchestrator.v1.LogSource
-	(PortAllocationStrategy)(0),   // 4: orchestrator.v1.PortAllocationStrategy
-	(DiscoveryStatus)(0),          // 5: orchestrator.v1.DiscoveryStatus
-	(*ServerBuild)(nil),           // 6: orchestrator.v1.ServerBuild
-	(*Instance)(nil),              // 7: orchestrator.v1.Instance
-	(*Node)(nil),                  // 8: orchestrator.v1.Node
-	(*ResourceUsage)(nil),         // 9: orchestrator.v1.ResourceUsage
-	(*ResourceLimits)(nil),        // 10: orchestrator.v1.ResourceLimits
-	(*PortAllocationAny)(nil),     // 11: orchestrator.v1.PortAllocationAny
-	(*PortAllocationExact)(nil),   // 12: orchestrator.v1.PortAllocationExact
-	(*PortAllocationRange)(nil),   // 13: orchestrator.v1.PortAllocationRange
-	(*PortAllocation)(nil),        // 14: orchestrator.v1.PortAllocation
-	(*ServerEndpoint)(nil),        // 15: orchestrator.v1.ServerEndpoint
-	(*LogEntry)(nil),              // 16: orchestrator.v1.LogEntry
-	(*Error)(nil),                 // 17: orchestrator.v1.Error
-	nil,                           // 18: orchestrator.v1.Instance.DeveloperPayloadEntry
-	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
+	(NodeRole)(0),                 // 3: orchestrator.v1.NodeRole
+	(ServiceType)(0),              // 4: orchestrator.v1.ServiceType
+	(ServiceStatus)(0),            // 5: orchestrator.v1.ServiceStatus
+	(LogSource)(0),                // 6: orchestrator.v1.LogSource
+	(PortAllocationStrategy)(0),   // 7: orchestrator.v1.PortAllocationStrategy
+	(DiscoveryStatus)(0),          // 8: orchestrator.v1.DiscoveryStatus
+	(*ServerBuild)(nil),           // 9: orchestrator.v1.ServerBuild
+	(*Instance)(nil),              // 10: orchestrator.v1.Instance
+	(*Node)(nil),                  // 11: orchestrator.v1.Node
+	(*ManagedService)(nil),        // 12: orchestrator.v1.ManagedService
+	(*ResourceUsage)(nil),         // 13: orchestrator.v1.ResourceUsage
+	(*ResourceLimits)(nil),        // 14: orchestrator.v1.ResourceLimits
+	(*PortAllocationAny)(nil),     // 15: orchestrator.v1.PortAllocationAny
+	(*PortAllocationExact)(nil),   // 16: orchestrator.v1.PortAllocationExact
+	(*PortAllocationRange)(nil),   // 17: orchestrator.v1.PortAllocationRange
+	(*PortAllocation)(nil),        // 18: orchestrator.v1.PortAllocation
+	(*ServerEndpoint)(nil),        // 19: orchestrator.v1.ServerEndpoint
+	(*LogEntry)(nil),              // 20: orchestrator.v1.LogEntry
+	(*Error)(nil),                 // 21: orchestrator.v1.Error
+	nil,                           // 22: orchestrator.v1.Instance.DeveloperPayloadEntry
+	(*timestamppb.Timestamp)(nil), // 23: google.protobuf.Timestamp
 }
 var file_orchestrator_v1_common_proto_depIdxs = []int32{
 	0,  // 0: orchestrator.v1.ServerBuild.protocol:type_name -> orchestrator.v1.Protocol
-	19, // 1: orchestrator.v1.ServerBuild.created_at:type_name -> google.protobuf.Timestamp
+	23, // 1: orchestrator.v1.ServerBuild.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: orchestrator.v1.Instance.protocol:type_name -> orchestrator.v1.Protocol
 	1,  // 3: orchestrator.v1.Instance.status:type_name -> orchestrator.v1.InstanceStatus
-	18, // 4: orchestrator.v1.Instance.developer_payload:type_name -> orchestrator.v1.Instance.DeveloperPayloadEntry
-	19, // 5: orchestrator.v1.Instance.started_at:type_name -> google.protobuf.Timestamp
-	19, // 6: orchestrator.v1.Instance.created_at:type_name -> google.protobuf.Timestamp
-	19, // 7: orchestrator.v1.Instance.updated_at:type_name -> google.protobuf.Timestamp
+	22, // 4: orchestrator.v1.Instance.developer_payload:type_name -> orchestrator.v1.Instance.DeveloperPayloadEntry
+	23, // 5: orchestrator.v1.Instance.started_at:type_name -> google.protobuf.Timestamp
+	23, // 6: orchestrator.v1.Instance.created_at:type_name -> google.protobuf.Timestamp
+	23, // 7: orchestrator.v1.Instance.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 8: orchestrator.v1.Node.status:type_name -> orchestrator.v1.NodeStatus
-	19, // 9: orchestrator.v1.Node.last_ping_at:type_name -> google.protobuf.Timestamp
-	19, // 10: orchestrator.v1.Node.created_at:type_name -> google.protobuf.Timestamp
-	19, // 11: orchestrator.v1.Node.updated_at:type_name -> google.protobuf.Timestamp
-	4,  // 12: orchestrator.v1.PortAllocationAny.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	4,  // 13: orchestrator.v1.PortAllocationExact.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	4,  // 14: orchestrator.v1.PortAllocationRange.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	11, // 15: orchestrator.v1.PortAllocation.any:type_name -> orchestrator.v1.PortAllocationAny
-	12, // 16: orchestrator.v1.PortAllocation.exact:type_name -> orchestrator.v1.PortAllocationExact
-	13, // 17: orchestrator.v1.PortAllocation.range:type_name -> orchestrator.v1.PortAllocationRange
-	0,  // 18: orchestrator.v1.ServerEndpoint.protocol:type_name -> orchestrator.v1.Protocol
-	19, // 19: orchestrator.v1.LogEntry.timestamp:type_name -> google.protobuf.Timestamp
-	3,  // 20: orchestrator.v1.LogEntry.source:type_name -> orchestrator.v1.LogSource
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	23, // 9: orchestrator.v1.Node.last_ping_at:type_name -> google.protobuf.Timestamp
+	23, // 10: orchestrator.v1.Node.created_at:type_name -> google.protobuf.Timestamp
+	23, // 11: orchestrator.v1.Node.updated_at:type_name -> google.protobuf.Timestamp
+	3,  // 12: orchestrator.v1.Node.role:type_name -> orchestrator.v1.NodeRole
+	4,  // 13: orchestrator.v1.ManagedService.type:type_name -> orchestrator.v1.ServiceType
+	5,  // 14: orchestrator.v1.ManagedService.status:type_name -> orchestrator.v1.ServiceStatus
+	23, // 15: orchestrator.v1.ManagedService.created_at:type_name -> google.protobuf.Timestamp
+	23, // 16: orchestrator.v1.ManagedService.updated_at:type_name -> google.protobuf.Timestamp
+	7,  // 17: orchestrator.v1.PortAllocationAny.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	7,  // 18: orchestrator.v1.PortAllocationExact.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	7,  // 19: orchestrator.v1.PortAllocationRange.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	15, // 20: orchestrator.v1.PortAllocation.any:type_name -> orchestrator.v1.PortAllocationAny
+	16, // 21: orchestrator.v1.PortAllocation.exact:type_name -> orchestrator.v1.PortAllocationExact
+	17, // 22: orchestrator.v1.PortAllocation.range:type_name -> orchestrator.v1.PortAllocationRange
+	0,  // 23: orchestrator.v1.ServerEndpoint.protocol:type_name -> orchestrator.v1.Protocol
+	23, // 24: orchestrator.v1.LogEntry.timestamp:type_name -> google.protobuf.Timestamp
+	6,  // 25: orchestrator.v1.LogEntry.source:type_name -> orchestrator.v1.LogSource
+	26, // [26:26] is the sub-list for method output_type
+	26, // [26:26] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_common_proto_init() }
@@ -1573,7 +1934,7 @@ func file_orchestrator_v1_common_proto_init() {
 		return
 	}
 	file_orchestrator_v1_common_proto_msgTypes[1].OneofWrappers = []any{}
-	file_orchestrator_v1_common_proto_msgTypes[8].OneofWrappers = []any{
+	file_orchestrator_v1_common_proto_msgTypes[9].OneofWrappers = []any{
 		(*PortAllocation_Any)(nil),
 		(*PortAllocation_Exact)(nil),
 		(*PortAllocation_Range)(nil),
@@ -1583,8 +1944,8 @@ func file_orchestrator_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_common_proto_rawDesc), len(file_orchestrator_v1_common_proto_rawDesc)),
-			NumEnums:      6,
-			NumMessages:   13,
+			NumEnums:      9,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

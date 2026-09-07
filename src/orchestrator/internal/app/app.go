@@ -68,6 +68,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	buildRepo := postgres.NewBuildStorage(pool)
 	policyRepo := postgres.NewGamePolicyRepo(pool)
 	queueEventRepo := postgres.NewQueueEventRepo(pool)
+	managedServiceRepo := postgres.NewManagedServiceRepo(pool)
 
 	// ─── Хранилища (Valkey) ─────────────────────────────────────
 	nodeState := valkey.NewNodeStateStore(valkeyClient, cfg.KV.KeyTTL)
@@ -84,7 +85,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	instanceService := service.NewInstanceService(
 		instanceRepo, instanceState, buildRepo, nodeRepo, nodeState, nodeClient, cfg.Limits,
-	)
+	).WithServiceRepo(managedServiceRepo)
 
 	policyService := service.NewGamePolicyService(policyRepo)
 
@@ -98,7 +99,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	nodeService := service.NewNodeService(
 		log, nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
-	)
+	).WithServiceRepo(managedServiceRepo)
 
 	heartbeatService := service.NewHeartbeatService(
 		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, buildRepo, policyService, instanceService, queueService,

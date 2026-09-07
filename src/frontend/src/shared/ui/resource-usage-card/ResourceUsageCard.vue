@@ -1,19 +1,27 @@
 <template>
   <div class="resource-card">
-    <span class="resource-label">{{ label }}</span>
-    <div v-if="typeof percent === 'number'" class="resource-bar-bg">
+    <div class="resource-header">
+      <div class="resource-title-group">
+        <component :is="resolvedIcon" v-if="resolvedIcon" class="resource-icon" />
+        <span class="resource-label">{{ label }}</span>
+      </div>
+      <span class="resource-value">{{ displayValue }}</span>
+    </div>
+
+    <div class="resource-bar-bg" :class="{ 'bar-placeholder': percent == null }">
       <div
+        v-if="typeof percent === 'number'"
         class="resource-bar-fill"
         :style="{ width: clampPercent(percent) + '%' }"
         :class="barColor"
       />
     </div>
-    <span class="resource-value">{{ displayValue }}</span>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { Cpu, Layers, HardDrive, Network, Activity } from 'lucide-vue-next';
 
 const props = defineProps({
   label: { type: String, required: true },
@@ -25,6 +33,17 @@ const props = defineProps({
     default: 'percent',
     validator: (v) => ['percent', 'bytes', 'raw'].includes(v),
   },
+  icon: { type: [Object, Function], default: null },
+});
+
+const resolvedIcon = computed(() => {
+  if (props.icon) return props.icon;
+  const l = (props.label || '').toLowerCase();
+  if (l.includes('cpu') || l.includes('процессор')) return Cpu;
+  if (l.includes('пам') || l.includes('ram') || l.includes('mem')) return Layers;
+  if (l.includes('диск') || l.includes('disk')) return HardDrive;
+  if (l.includes('сеть') || l.includes('net')) return Network;
+  return Activity;
 });
 
 const percent = computed(() => {
@@ -55,7 +74,7 @@ function formatBytes(b) {
 
 const displayValue = computed(() => {
   if (props.value == null) return '—';
-  if (props.type === 'percent') return props.value.toFixed(1) + '%';
+  if (props.type === 'percent') return Number(props.value).toFixed(1) + '%';
   if (props.type === 'bytes') {
     const used = formatBytes(props.value);
     return props.max ? `${used} / ${formatBytes(props.max)}` : used;
@@ -66,43 +85,89 @@ const displayValue = computed(() => {
 
 <style scoped>
 .resource-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s;
 }
+
+.resource-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.resource-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.resource-title-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.resource-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted, #8b949e);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.resource-card:hover .resource-icon {
+  color: var(--text-main, #f0f6fc);
+}
+
 .resource-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  color: var(--text-muted, #8b949e);
   font-weight: 500;
 }
+
 .resource-value {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-main);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
+
 .resource-bar-bg {
   width: 100%;
-  height: 6px;
-  background: var(--border);
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
   overflow: hidden;
 }
+
+.bar-placeholder {
+  opacity: 0.15;
+}
+
 .resource-bar-fill {
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s ease;
 }
+
 .bar-ok {
-  background: var(--success);
+  background: #3fb950;
 }
+
 .bar-warning {
-  background: var(--warning);
+  background: #d29922;
 }
+
 .bar-danger {
-  background: var(--danger);
+  background: #f85149;
 }
 </style>

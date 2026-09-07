@@ -48,6 +48,36 @@ service NodeService {
       body: "*"
     };
   }
+
+  // Обновить роль ноды (Mixed, Compute, Storage).
+  rpc UpdateRole(NodeServiceUpdateRoleRequest) returns (NodeServiceUpdateRoleResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/nodes/{node_id}/role"
+      body: "*"
+      additional_bindings {
+        put: "/api/v1/nodes/{node_id}/role"
+        body: "*"
+      }
+    };
+  }
+
+  // Развернуть управляемый сервис хранения данных на ноде.
+  rpc CreateService(NodeServiceCreateServiceRequest) returns (NodeServiceCreateServiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services"
+      body: "*"
+    };
+  }
+
+  // Список управляемых сервисов на ноде.
+  rpc ListServices(NodeServiceListServicesRequest) returns (NodeServiceListServicesResponse) {
+    option (google.api.http) = {get: "/api/v1/nodes/{node_id}/services"};
+  }
+
+  // Удалить управляемый сервис на ноде.
+  rpc DeleteService(NodeServiceDeleteServiceRequest) returns (NodeServiceDeleteServiceResponse) {
+    option (google.api.http) = {delete: "/api/v1/nodes/{node_id}/services/{service_id}"};
+  }
 }
 
 // ─── Register ───────────────────────────────────────────────────────────────
@@ -150,3 +180,48 @@ message NodeServiceAnnounceResponse {
   // ID созданной ноды в оркестраторе.
   int64 node_id = 1;
 }
+
+// ─── UpdateRole ─────────────────────────────────────────────────────────────
+
+message NodeServiceUpdateRoleRequest {
+  int64 node_id = 1;
+  NodeRole role = 2;
+}
+
+message NodeServiceUpdateRoleResponse {
+  Node node = 1;
+}
+
+// ─── Managed Services ───────────────────────────────────────────────────────
+
+message NodeServiceCreateServiceRequest {
+  int64 node_id = 1;
+  ServiceType type = 2 [json_name = "service_type"];
+  string name = 3;
+  repeated int64 allowed_game_ids = 4;
+  optional string password = 5;
+  optional string db_name = 6;
+  uint32 port = 7;
+}
+
+message NodeServiceCreateServiceResponse {
+  ManagedService service = 1;
+}
+
+message NodeServiceListServicesRequest {
+  int64 node_id = 1;
+  optional int64 game_id = 2;
+}
+
+message NodeServiceListServicesResponse {
+  repeated ManagedService services = 1;
+}
+
+message NodeServiceDeleteServiceRequest {
+  int64 node_id = 1;
+  int64 service_id = 2;
+  bool delete_volume = 3;
+}
+
+message NodeServiceDeleteServiceResponse {}
+

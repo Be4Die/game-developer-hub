@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -20,6 +21,7 @@ type NodeService struct {
 	instanceRepo  domain.InstanceRepo
 	instanceState domain.InstanceStateStore
 	nodeClient    domain.NodeClient
+	serviceRepo   domain.ManagedServiceRepo
 }
 
 // NewNodeService создаёт сервис управления нодами.
@@ -39,6 +41,12 @@ func NewNodeService(
 		nodeClient:    nodeClient,
 		log:           log,
 	}
+}
+
+// WithServiceRepo задает репозиторий управляемых сервисов хранения.
+func (s *NodeService) WithServiceRepo(r domain.ManagedServiceRepo) *NodeService {
+	s.serviceRepo = r
+	return s
 }
 
 // RegisterNodeParams содержит параметры подключения ноды.
@@ -338,13 +346,29 @@ func (s *NodeService) createAnnouncedNode(ctx context.Context, params AnnounceNo
 }
 
 func (s *NodeService) updateAnnouncedNode(ctx context.Context, existing *domain.Node, params AnnounceNodeParams) (*AnnounceNodeResult, error) {
-	if existing.Status == domain.NodeStatusOnline {
-		return nil, domain.ErrAlreadyExists
-	}
-
 	apiKey := params.APIKey
 	tokenHash := sha256.Sum256([]byte(apiKey))
 	now := time.Now()
+
+	if existing.Status == domain.NodeStatusOnline {
+		// Если нода уже онлайн и токен совпадает — нода перезапустилась, обновляем характеристики
+		if len(existing.TokenHash) > 0 && subtle.ConstantTimeCompare(existing.TokenHash, tokenHash[:]) == 1 {
+			existing.CPUCores = params.CPUCores
+			existing.TotalMemory = params.TotalMemoryBytes
+			existing.TotalDisk = params.TotalDiskBytes
+			existing.AgentVersion = params.AgentVersion
+			existing.LastPingAt = now
+			existing.UpdatedAt = now
+			if err := s.nodeRepo.Update(ctx, existing); err != nil {
+				return nil, fmt.Errorf("NodeService.updateAnnouncedNode: update: %w", err)
+			}
+			return &AnnounceNodeResult{
+				NodeID: existing.ID,
+			}, nil
+		}
+		return nil, domain.ErrAlreadyExists
+	}
+
 	existing.TokenHash = tokenHash[:]
 	existing.APIToken = apiKey
 	existing.Region = params.Region
@@ -440,3 +464,242 @@ func (s *NodeService) SyncInstances(ctx context.Context, nodeID int64, activeCon
 
 	return nil
 }
+
+// UpdateRole изменяет роль вычислительной ноды (Mixed, Compute, Storage).
+func (s *NodeService) UpdateRole(ctx context.Context, ownerID string, nodeID int64, role domain.NodeRole) (*domain.Node, error) {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.UpdateRole: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	if err := s.nodeRepo.UpdateRole(ctx, nodeID, role); err != nil {
+		return nil, fmt.Errorf("NodeService.UpdateRole: update role: %w", err)
+	}
+
+	node.Role = role
+	node.UpdatedAt = time.Now()
+	s.log.Info("node role updated",
+		slog.Int64("node_id", nodeID),
+		slog.String("role", role.String()),
+	)
+	return node, nil
+}
+
+// CreateServiceParams задает параметры для создания сервиса данных на ноде.
+type CreateServiceParams struct {
+	ServiceType    domain.ServiceType
+	Name           string
+	AllowedGameIDs []int64
+	Password       string
+	DBName         string
+	Port           uint32
+}
+
+// CreateService разворачивает управляемый сервис хранения (Postgres, Redis, MySQL, MinIO) на ноде.
+func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID int64, params CreateServiceParams) (*domain.ManagedService, error) {
+	if s.serviceRepo == nil {
+		return nil, fmt.Errorf("NodeService.CreateService: service repository is not configured")
+	}
+
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.CreateService: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+	if node.Status != domain.NodeStatusOnline {
+		return nil, fmt.Errorf("NodeService.CreateService: node %d is not online", nodeID)
+	}
+	if node.Role == domain.NodeRoleCompute {
+		return nil, fmt.Errorf("NodeService.CreateService: node %d is in compute-only role", nodeID)
+	}
+
+	envVars := make(map[string]string)
+	credentials := make(map[string]string)
+
+	switch params.ServiceType {
+	case domain.ServiceTypePostgres:
+		pass := params.Password
+		if pass == "" {
+			pass = "gdh_secret_" + strconv.FormatInt(time.Now().UnixNano()%100000, 10)
+		}
+		db := params.DBName
+		if db == "" {
+			db = "game_db"
+		}
+		envVars["POSTGRES_USER"] = "postgres"
+		envVars["POSTGRES_PASSWORD"] = pass
+		envVars["POSTGRES_DB"] = db
+		credentials["username"] = "postgres"
+		credentials["password"] = pass
+		credentials["database"] = db
+
+	case domain.ServiceTypeRedis:
+		if params.Password != "" {
+			envVars["REDIS_PASSWORD"] = params.Password
+			credentials["password"] = params.Password
+		}
+
+	case domain.ServiceTypeMySQL:
+		pass := params.Password
+		if pass == "" {
+			pass = "gdh_root_secret"
+		}
+		db := params.DBName
+		if db == "" {
+			db = "game_db"
+		}
+		envVars["MYSQL_ROOT_PASSWORD"] = pass
+		envVars["MYSQL_DATABASE"] = db
+		credentials["username"] = "root"
+		credentials["password"] = pass
+		credentials["database"] = db
+
+	case domain.ServiceTypeMinIO:
+		user := "minioadmin"
+		pass := params.Password
+		if pass == "" {
+			pass = "minioadmin"
+		}
+		envVars["MINIO_ROOT_USER"] = user
+		envVars["MINIO_ROOT_PASSWORD"] = pass
+		credentials["access_key"] = user
+		credentials["secret_key"] = pass
+
+	case domain.ServiceTypeVolume:
+		// Чистый персистентный том под данные (SQLite, RocksDB, кастомные сейвы)
+
+	case domain.ServiceTypeAdminer:
+		// Web-панель управления СУБД (PostgreSQL / MySQL)
+
+	case domain.ServiceTypePGAdmin:
+		credentials["username"] = "admin@gdh.local"
+		credentials["password"] = "admin"
+	}
+
+	req := domain.DeployServiceRequest{
+		ServiceType: params.ServiceType,
+		Name:        params.Name,
+		Port:        params.Port,
+		EnvVars:     envVars,
+		VolumeName:  params.Name,
+	}
+
+	deployResult, err := s.nodeClient.DeployService(ctx, node.Address, node.APIToken, req)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.CreateService: node deploy: %w", err)
+	}
+
+	now := time.Now()
+	serviceRecord := &domain.ManagedService{
+		NodeID:         nodeID,
+		OwnerID:        ownerID,
+		AllowedGameIDs: params.AllowedGameIDs,
+		ServiceType:    params.ServiceType,
+		Name:           params.Name,
+		ContainerID:    deployResult.ContainerID,
+		HostPort:       deployResult.HostPort,
+		ConnectionURI:  deployResult.ConnectionURI,
+		Credentials:    credentials,
+		Status:         domain.ServiceStatusRunning,
+		VolumePath:     deployResult.VolumePath,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+
+	if err := s.serviceRepo.Create(ctx, serviceRecord); err != nil {
+		// Rollback on node
+		_ = s.nodeClient.RemoveService(ctx, node.Address, node.APIToken, params.Name, true)
+		return nil, fmt.Errorf("NodeService.CreateService: save record: %w", err)
+	}
+
+	s.log.Info("managed service created",
+		slog.Int64("service_id", serviceRecord.ID),
+		slog.String("name", params.Name),
+		slog.Int64("node_id", nodeID),
+	)
+	return serviceRecord, nil
+}
+
+// ListServices возвращает сервисы хранения на ноде с опциональной фильтрацией по игре.
+func (s *NodeService) ListServices(ctx context.Context, ownerID string, nodeID int64, gameID *int64) ([]*domain.ManagedService, error) {
+	if s.serviceRepo == nil {
+		return nil, fmt.Errorf("NodeService.ListServices: service repository is not configured")
+	}
+
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.ListServices: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	services, err := s.serviceRepo.ListByNode(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.ListServices: %w", err)
+	}
+
+	if gameID == nil {
+		return services, nil
+	}
+
+	filtered := make([]*domain.ManagedService, 0, len(services))
+	for _, svc := range services {
+		if len(svc.AllowedGameIDs) == 0 {
+			filtered = append(filtered, svc)
+			continue
+		}
+		for _, gid := range svc.AllowedGameIDs {
+			if gid == *gameID {
+				filtered = append(filtered, svc)
+				break
+			}
+		}
+	}
+	return filtered, nil
+}
+
+// DeleteService удаляет управляемый сервис с ноды и из базы данных.
+func (s *NodeService) DeleteService(ctx context.Context, ownerID string, nodeID, serviceID int64, deleteVolume bool) error {
+	if s.serviceRepo == nil {
+		return fmt.Errorf("NodeService.DeleteService: service repository is not configured")
+	}
+
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return fmt.Errorf("NodeService.DeleteService: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return domain.ErrForbidden
+	}
+
+	svc, err := s.serviceRepo.GetByID(ctx, serviceID)
+	if err != nil {
+		return fmt.Errorf("NodeService.DeleteService: get service: %w", err)
+	}
+	if svc.NodeID != nodeID {
+		return fmt.Errorf("NodeService.DeleteService: service does not belong to node %d", nodeID)
+	}
+
+	// Удаляем контейнер и том на ноде
+	if node.Status == domain.NodeStatusOnline {
+		_ = s.nodeClient.RemoveService(ctx, node.Address, node.APIToken, svc.Name, deleteVolume)
+	}
+
+	if err := s.serviceRepo.Delete(ctx, serviceID); err != nil {
+		return fmt.Errorf("NodeService.DeleteService: delete from DB: %w", err)
+	}
+
+	s.log.Info("managed service deleted",
+		slog.Int64("service_id", serviceID),
+		slog.String("name", svc.Name),
+		slog.Bool("delete_volume", deleteVolume),
+	)
+	return nil
+}
+

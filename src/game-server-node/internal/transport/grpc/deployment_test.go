@@ -57,6 +57,9 @@ func (f *fakeRuntime) ContainerStats(ctx context.Context, id string) (domain.Res
 func (f *fakeRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInfo, error) {
 	return []domain.ContainerInfo{}, nil
 }
+func (f *fakeRuntime) PullImage(ctx context.Context, imageTag string) error       { return nil }
+func (f *fakeRuntime) EnsureNetwork(ctx context.Context, networkName string) error { return nil }
+func (f *fakeRuntime) RemoveVolume(ctx context.Context, name string) error          { return nil }
 
 func TestDeploymentHandler_StartInstance(t *testing.T) {
 	// Arrange

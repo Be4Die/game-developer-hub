@@ -149,3 +149,94 @@ const (
 	QueueEventLeave
 	QueueEventCancel
 )
+
+// ─── NodeRole ────────────────────────────────────────────────────────────────
+
+// NodeRole определяет роль вычислительной ноды.
+type NodeRole uint8
+
+const (
+	NodeRoleUnspecified NodeRole = iota
+	NodeRoleMixed
+	NodeRoleCompute
+	NodeRoleStorage
+)
+
+func (r NodeRole) String() string {
+	switch r {
+	case NodeRoleMixed:
+		return "mixed"
+	case NodeRoleCompute:
+		return "compute"
+	case NodeRoleStorage:
+		return "storage"
+	default:
+		return "unspecified"
+	}
+}
+
+// ─── ServiceType ─────────────────────────────────────────────────────────────
+
+// ServiceType определяет тип управляемого сервиса хранения данных.
+type ServiceType uint8
+
+const (
+	ServiceTypeUnspecified ServiceType = iota
+	ServiceTypePostgres
+	ServiceTypeRedis
+	ServiceTypeMySQL
+	ServiceTypeMinIO
+	ServiceTypeVolume
+	ServiceTypeAdminer
+	ServiceTypePGAdmin
+)
+
+func (t ServiceType) String() string {
+	switch t {
+	case ServiceTypePostgres:
+		return "postgres"
+	case ServiceTypeRedis:
+		return "redis"
+	case ServiceTypeMySQL:
+		return "mysql"
+	case ServiceTypeMinIO:
+		return "minio"
+	case ServiceTypeVolume:
+		return "volume"
+	case ServiceTypeAdminer:
+		return "adminer"
+	case ServiceTypePGAdmin:
+		return "pgadmin"
+	default:
+		return "unknown"
+	}
+}
+
+// ─── ServiceStatus ───────────────────────────────────────────────────────────
+
+// ServiceStatus описывает состояние сервиса данных.
+type ServiceStatus uint8
+
+const (
+	ServiceStatusUnspecified ServiceStatus = iota
+	ServiceStatusStarting
+	ServiceStatusRunning
+	ServiceStatusStopped
+	ServiceStatusError
+)
+
+func (s ServiceStatus) String() string {
+	switch s {
+	case ServiceStatusStarting:
+		return "starting"
+	case ServiceStatusRunning:
+		return "running"
+	case ServiceStatusStopped:
+		return "stopped"
+	case ServiceStatusError:
+		return "error"
+	default:
+		return "unknown"
+	}
+}
+

@@ -27,6 +27,9 @@ const (
 	DeploymentService_StartStoppedInstance_FullMethodName = "/game_server_node.v1.DeploymentService/StartStoppedInstance"
 	DeploymentService_DeleteInstance_FullMethodName       = "/game_server_node.v1.DeploymentService/DeleteInstance"
 	DeploymentService_StreamLogs_FullMethodName           = "/game_server_node.v1.DeploymentService/StreamLogs"
+	DeploymentService_DeployService_FullMethodName        = "/game_server_node.v1.DeploymentService/DeployService"
+	DeploymentService_RemoveService_FullMethodName        = "/game_server_node.v1.DeploymentService/RemoveService"
+	DeploymentService_ListServices_FullMethodName         = "/game_server_node.v1.DeploymentService/ListServices"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -54,6 +57,12 @@ type DeploymentServiceClient interface {
 	DeleteInstance(ctx context.Context, in *DeleteInstanceRequest, opts ...grpc.CallOption) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
 	StreamLogs(ctx context.Context, in *StreamLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamLogsResponse], error)
+	// Развертывание управляемого сервиса (Postgres, Redis, MySQL, MinIO).
+	DeployService(ctx context.Context, in *DeployServiceRequest, opts ...grpc.CallOption) (*DeployServiceResponse, error)
+	// Остановка и удаление управляемого сервиса.
+	RemoveService(ctx context.Context, in *RemoveServiceRequest, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
+	// Список развернутых сервисов на ноде.
+	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
 }
 
 type deploymentServiceClient struct {
@@ -159,6 +168,36 @@ func (c *deploymentServiceClient) StreamLogs(ctx context.Context, in *StreamLogs
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_StreamLogsClient = grpc.ServerStreamingClient[StreamLogsResponse]
 
+func (c *deploymentServiceClient) DeployService(ctx context.Context, in *DeployServiceRequest, opts ...grpc.CallOption) (*DeployServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeployServiceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_DeployService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) RemoveService(ctx context.Context, in *RemoveServiceRequest, opts ...grpc.CallOption) (*RemoveServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveServiceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_RemoveService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListServicesResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_ListServices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeploymentServiceServer is the server API for DeploymentService service.
 // All implementations must embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
@@ -184,6 +223,12 @@ type DeploymentServiceServer interface {
 	DeleteInstance(context.Context, *DeleteInstanceRequest) (*DeleteInstanceResponse, error)
 	// Стрим журналов экземпляра в реальном времени.
 	StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error
+	// Развертывание управляемого сервиса (Postgres, Redis, MySQL, MinIO).
+	DeployService(context.Context, *DeployServiceRequest) (*DeployServiceResponse, error)
+	// Остановка и удаление управляемого сервиса.
+	RemoveService(context.Context, *RemoveServiceRequest) (*RemoveServiceResponse, error)
+	// Список развернутых сервисов на ноде.
+	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
 	mustEmbedUnimplementedDeploymentServiceServer()
 }
 
@@ -217,6 +262,15 @@ func (UnimplementedDeploymentServiceServer) DeleteInstance(context.Context, *Del
 }
 func (UnimplementedDeploymentServiceServer) StreamLogs(*StreamLogsRequest, grpc.ServerStreamingServer[StreamLogsResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamLogs not implemented")
+}
+func (UnimplementedDeploymentServiceServer) DeployService(context.Context, *DeployServiceRequest) (*DeployServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeployService not implemented")
+}
+func (UnimplementedDeploymentServiceServer) RemoveService(context.Context, *RemoveServiceRequest) (*RemoveServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveService not implemented")
+}
+func (UnimplementedDeploymentServiceServer) ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListServices not implemented")
 }
 func (UnimplementedDeploymentServiceServer) mustEmbedUnimplementedDeploymentServiceServer() {}
 func (UnimplementedDeploymentServiceServer) testEmbeddedByValue()                           {}
@@ -354,6 +408,60 @@ func _DeploymentService_StreamLogs_Handler(srv interface{}, stream grpc.ServerSt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_StreamLogsServer = grpc.ServerStreamingServer[StreamLogsResponse]
 
+func _DeploymentService_DeployService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeployServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).DeployService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_DeployService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).DeployService(ctx, req.(*DeployServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_RemoveService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).RemoveService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_RemoveService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).RemoveService(ctx, req.(*RemoveServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_ListServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListServicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).ListServices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_ListServices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).ListServices(ctx, req.(*ListServicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeploymentService_ServiceDesc is the grpc.ServiceDesc for DeploymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +488,18 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteInstance",
 			Handler:    _DeploymentService_DeleteInstance_Handler,
+		},
+		{
+			MethodName: "DeployService",
+			Handler:    _DeploymentService_DeployService_Handler,
+		},
+		{
+			MethodName: "RemoveService",
+			Handler:    _DeploymentService_RemoveService_Handler,
+		},
+		{
+			MethodName: "ListServices",
+			Handler:    _DeploymentService_ListServices_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

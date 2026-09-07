@@ -42,8 +42,17 @@ type ContainerRuntime interface {
 	// ContainerStats возвращает текущие метрики использования ресурсов.
 	ContainerStats(ctx context.Context, containerID string) (ResourcesUsage, error)
 
+	// PullImage скачивает образ из Docker Hub / реестра, если его нет локально.
+	PullImage(ctx context.Context, imageTag string) error
+
+	// EnsureNetwork создает пользовательскую bridge-сеть Docker, если она не существует.
+	EnsureNetwork(ctx context.Context, networkName string) error
+
 	// ListContainers возвращает информацию обо всех контейнерах на хосте.
 	ListContainers(ctx context.Context) ([]ContainerInfo, error)
+
+	// RemoveVolume удаляет именованный том Docker.
+	RemoveVolume(ctx context.Context, volumeName string) error
 }
 
 // ContainerInfo содержит базовые данные о контейнере.
@@ -55,12 +64,16 @@ type ContainerInfo struct {
 
 // ContainerOpts задаёт параметры создания контейнера.
 type ContainerOpts struct {
-	ImageTag     string
-	InternalPort uint32
-	HostPort     uint32
-	EnvVars      map[string]string
-	Args         []string
-	CPUMillis    *uint32
-	MemoryBytes  *uint64
-	Labels       map[string]string
+	ContainerName string
+	ImageTag      string
+	InternalPort  uint32
+	HostPort      uint32
+	EnvVars       map[string]string
+	Args          []string
+	CPUMillis     *uint32
+	MemoryBytes   *uint64
+	Labels        map[string]string
+	Binds         []string
+	Network       string
 }
+

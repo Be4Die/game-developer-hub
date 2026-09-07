@@ -34,6 +34,10 @@
         </div>
         <div class="form-group form-group-wide">
           <label>Environment Variables</label>
+          <div class="env-storage-hint">
+            <Database class="icon-xs" />
+            <span>Базы данных и кэши (PostgreSQL, Redis, MySQL, MinIO), развернутые на нодах, автоматически инжектируются (<code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>S3_ENDPOINT</code>).</span>
+          </div>
           <KeyValueEditor v-model="startForm.env_vars" />
         </div>
         <div class="form-group form-group-wide">
@@ -70,6 +74,7 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Database } from 'lucide-vue-next';
 import { KeyValueEditor } from '@/shared/ui';
 import { startInstance } from '@/entities/instance';
 import { showToast } from '@/shared/lib';
@@ -236,5 +241,26 @@ async function submitStart() {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+.env-storage-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.env-storage-hint .icon-xs {
+  width: 14px;
+  height: 14px;
+  color: var(--primary);
+  flex-shrink: 0;
 }
 </style>

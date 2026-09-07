@@ -4,6 +4,8 @@ package orchestrator
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 	"time"
 
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
@@ -20,8 +22,31 @@ type Client struct {
 // NewClient создаёт новый клиент для подключения к оркестратору.
 // Возвращает ошибку если не удалось установить соединение.
 func NewClient(_ context.Context, address string, _ time.Duration) (*Client, error) {
-	conn, err := grpc.NewClient(address,
+	dialTarget := address
+	if !strings.Contains(address, "://") {
+		dialTarget = "passthrough:///" + address
+	}
+
+	conn, err := grpc.NewClient(dialTarget,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			var dialer net.Dialer
+			host, port, splitErr := net.SplitHostPort(addr)
+			if splitErr == nil {
+				ips, lookupErr := net.LookupIP(host)
+				if lookupErr == nil {
+					for _, ip := range ips {
+						if ipv4 := ip.To4(); ipv4 != nil {
+							c, dialErr := dialer.DialContext(ctx, "tcp4", net.JoinHostPort(ipv4.String(), port))
+							if dialErr == nil {
+								return c, nil
+							}
+						}
+					}
+				}
+			}
+			return dialer.DialContext(ctx, "tcp", addr)
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("orchestrator.NewClient: create client for %s: %w", address, err)

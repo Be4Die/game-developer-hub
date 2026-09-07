@@ -21,6 +21,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
@@ -213,6 +214,10 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 		},
 	}
 
+	if len(opts.Binds) > 0 {
+		hostConfig.Binds = opts.Binds
+	}
+
 	if opts.CPUMillis != nil || opts.MemoryBytes != nil {
 		hostConfig.Resources = container.Resources{}
 
@@ -226,7 +231,16 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 		}
 	}
 
-	resp, err := r.cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
+	var networkingConfig *network.NetworkingConfig
+	if opts.Network != "" {
+		networkingConfig = &network.NetworkingConfig{
+			EndpointsConfig: map[string]*network.EndpointSettings{
+				opts.Network: {},
+			},
+		}
+	}
+
+	resp, err := r.cli.ContainerCreate(ctx, containerConfig, hostConfig, networkingConfig, nil, opts.ContainerName)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -238,6 +252,46 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 	)
 
 	return resp.ID, nil
+}
+
+// PullImage скачивает Docker-образ из реестра при необходимости.
+func (r *Runtime) PullImage(ctx context.Context, imageTag string) error {
+	const op = "DockerRuntime.PullImage"
+
+	r.log.Info("pulling docker image", slog.String("image", imageTag))
+	reader, err := r.cli.ImagePull(ctx, imageTag, image.PullOptions{})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() { _ = reader.Close() }()
+	_, _ = io.Copy(io.Discard, reader)
+	return nil
+}
+
+// EnsureNetwork создает пользовательскую bridge-сеть Docker, если она не существует.
+func (r *Runtime) EnsureNetwork(ctx context.Context, networkName string) error {
+	const op = "DockerRuntime.EnsureNetwork"
+
+	nets, err := r.cli.NetworkList(ctx, network.ListOptions{
+		Filters: filters.NewArgs(filters.Arg("name", networkName)),
+	})
+	if err != nil {
+		return fmt.Errorf("%s: list networks: %w", op, err)
+	}
+	for _, n := range nets {
+		if n.Name == networkName {
+			return nil
+		}
+	}
+
+	_, err = r.cli.NetworkCreate(ctx, networkName, network.CreateOptions{
+		Driver: "bridge",
+	})
+	if err != nil {
+		return fmt.Errorf("%s: create network %s: %w", op, networkName, err)
+	}
+	r.log.Info("docker bridge network created", slog.String("network", networkName))
+	return nil
 }
 
 // StartContainer запускает остановленный контейнер.
@@ -693,3 +747,12 @@ func (r *Runtime) CleanupBuildArtifacts(ctx context.Context, imageTag string) er
 
 	return nil
 }
+
+// RemoveVolume удаляет именованный том Docker.
+func (r *Runtime) RemoveVolume(ctx context.Context, volumeName string) error {
+	if volumeName == "" {
+		return nil
+	}
+	return r.cli.VolumeRemove(ctx, volumeName, true)
+}
+

@@ -76,6 +76,7 @@
             <tr>
               <th class="col-addr">Адрес</th>
               <th class="col-region">Регион</th>
+              <th class="col-role">Режим</th>
               <th class="col-status">Статус</th>
               <th class="col-cpu">CPU</th>
               <th class="col-ram">Память</th>
@@ -100,6 +101,11 @@
               <!-- Регион -->
               <td class="col-region">
                 <span class="cell-text">{{ node.region || '—' }}</span>
+              </td>
+
+              <!-- Роль -->
+              <td class="col-role">
+                <StatusBadge :status="node.role || 'mixed'" type="role" />
               </td>
 
               <!-- Статус -->

@@ -6,8 +6,12 @@
 import { computed } from 'vue';
 
 const props = defineProps({
-  status: { type: String, required: true },
-  type: { type: String, default: 'instance', validator: (v) => ['instance', 'node'].includes(v) },
+  status: { type: [String, Number], required: true },
+  type: {
+    type: String,
+    default: 'instance',
+    validator: (v) => ['instance', 'node', 'role', 'service'].includes(v),
+  },
 });
 
 const instanceMap = {
@@ -30,7 +34,7 @@ const nodeMap = {
   online: { label: 'В сети', cls: 'success' },
   offline: { label: 'Не в сети', cls: 'muted' },
   maintenance: { label: 'Обслуживание', cls: 'warning' },
-  // Proto-format statuses (from gRPC-gateway JSON)
+  // Proto-format statuses
   NODE_STATUS_UNSPECIFIED: { label: 'Неизвестно', cls: 'muted' },
   NODE_STATUS_UNAUTHORIZED: { label: 'Не авторизована', cls: 'warning' },
   NODE_STATUS_ONLINE: { label: 'В сети', cls: 'success' },
@@ -38,14 +42,70 @@ const nodeMap = {
   NODE_STATUS_MAINTENANCE: { label: 'Обслуживание', cls: 'warning' },
 };
 
-const map = computed(() => (props.type === 'node' ? nodeMap : instanceMap));
+const roleMap = {
+  mixed: { label: 'Mixed', cls: 'primary' },
+  compute: { label: 'Compute', cls: 'neutral' },
+  storage: { label: 'Storage', cls: 'warning' },
+  NODE_ROLE_UNSPECIFIED: { label: 'Mixed', cls: 'primary' },
+  NODE_ROLE_MIXED: { label: 'Mixed', cls: 'primary' },
+  NODE_ROLE_COMPUTE: { label: 'Compute', cls: 'neutral' },
+  NODE_ROLE_STORAGE: { label: 'Storage', cls: 'warning' },
+};
+
+const serviceMap = {
+  running: { label: 'Работает', cls: 'success' },
+  starting: { label: 'Запуск...', cls: 'warning' },
+  stopped: { label: 'Остановлен', cls: 'muted' },
+  failed: { label: 'Ошибка', cls: 'danger' },
+  unknown: { label: 'Неизвестно', cls: 'muted' },
+  SERVICE_STATUS_UNSPECIFIED: { label: 'Неизвестно', cls: 'muted' },
+  SERVICE_STATUS_STARTING: { label: 'Запуск...', cls: 'warning' },
+  SERVICE_STATUS_RUNNING: { label: 'Работает', cls: 'success' },
+  SERVICE_STATUS_STOPPED: { label: 'Остановлен', cls: 'muted' },
+  SERVICE_STATUS_FAILED: { label: 'Ошибка', cls: 'danger' },
+};
+
+const map = computed(() => {
+  if (props.type === 'node') return nodeMap;
+  if (props.type === 'role') return roleMap;
+  if (props.type === 'service') return serviceMap;
+  return instanceMap;
+});
 
 // Convert numeric status to proto enum string if needed
 const statusKey = computed(() => {
   const status = props.status;
-  // Handle numeric statuses from API (0 -> INSTANCE_STATUS_UNSPECIFIED, etc.)
   if (typeof status === 'number' || /^\d+$/.test(String(status))) {
     const numStatus = Number(status);
+    if (props.type === 'role') {
+      const numRoleMap = {
+        0: 'NODE_ROLE_UNSPECIFIED',
+        1: 'NODE_ROLE_MIXED',
+        2: 'NODE_ROLE_COMPUTE',
+        3: 'NODE_ROLE_STORAGE',
+      };
+      return numRoleMap[numStatus] || 'NODE_ROLE_UNSPECIFIED';
+    }
+    if (props.type === 'service') {
+      const numServiceMap = {
+        0: 'SERVICE_STATUS_UNSPECIFIED',
+        1: 'SERVICE_STATUS_STARTING',
+        2: 'SERVICE_STATUS_RUNNING',
+        3: 'SERVICE_STATUS_STOPPED',
+        4: 'SERVICE_STATUS_FAILED',
+      };
+      return numServiceMap[numStatus] || 'SERVICE_STATUS_UNSPECIFIED';
+    }
+    if (props.type === 'node') {
+      const nodeStatusMap = {
+        0: 'NODE_STATUS_UNSPECIFIED',
+        1: 'NODE_STATUS_UNAUTHORIZED',
+        2: 'NODE_STATUS_ONLINE',
+        3: 'NODE_STATUS_OFFLINE',
+        4: 'NODE_STATUS_MAINTENANCE',
+      };
+      return nodeStatusMap[numStatus] || 'NODE_STATUS_UNSPECIFIED';
+    }
     const instanceStatusMap = {
       0: 'INSTANCE_STATUS_UNSPECIFIED',
       1: 'INSTANCE_STATUS_STARTING',
@@ -54,22 +114,12 @@ const statusKey = computed(() => {
       4: 'INSTANCE_STATUS_STOPPED',
       5: 'INSTANCE_STATUS_CRASHED',
     };
-    const nodeStatusMap = {
-      0: 'NODE_STATUS_UNSPECIFIED',
-      1: 'NODE_STATUS_UNAUTHORIZED',
-      2: 'NODE_STATUS_ONLINE',
-      3: 'NODE_STATUS_OFFLINE',
-      4: 'NODE_STATUS_MAINTENANCE',
-    };
-    if (props.type === 'node') {
-      return nodeStatusMap[numStatus] || 'NODE_STATUS_UNSPECIFIED';
-    }
     return instanceStatusMap[numStatus] || 'INSTANCE_STATUS_UNSPECIFIED';
   }
   return status;
 });
 
-const label = computed(() => map.value[statusKey.value]?.label ?? props.status ?? '—');
+const label = computed(() => map.value[statusKey.value]?.label ?? String(props.status ?? '—'));
 const statusClass = computed(() => `badge-${map.value[statusKey.value]?.cls ?? 'muted'}`);
 </script>
 
