@@ -270,7 +270,8 @@
           </div>
           <p class="modal-text">
             Вы уверены, что хотите заблокировать разработчика
-            <strong>{{ statusTargetModal.display_name || statusTargetModal.email }}</strong>?
+            <strong>{{ statusTargetModal.display_name || statusTargetModal.email }}</strong
+            >?
           </p>
           <p class="warning-text">
             Пользователь будет немедленно отключён от системы и не сможет авторизоваться.
@@ -315,10 +316,12 @@
           </div>
           <p class="modal-text">
             Вы уверены, что хотите удалить учётную запись
-            <strong>{{ deleteTargetModal.display_name || deleteTargetModal.email }}</strong>?
+            <strong>{{ deleteTargetModal.display_name || deleteTargetModal.email }}</strong
+            >?
           </p>
           <p class="hint-text">
-            Аккаунт будет помечен как удалённый. Вы сможете восстановить его позже при необходимости.
+            Аккаунт будет помечен как удалённый. Вы сможете восстановить его позже при
+            необходимости.
           </p>
           <div class="modal-actions">
             <button
@@ -401,12 +404,7 @@ async function loadUsers() {
 const developers = computed(() => {
   return allUsers.value.filter((u) => {
     const r = u.role;
-    return (
-      r === 'USER_ROLE_DEVELOPER' ||
-      r === 'developer' ||
-      r === 1 ||
-      (!r && !isModOrAdmin(u))
-    );
+    return r === 'USER_ROLE_DEVELOPER' || r === 'developer' || r === 1 || (!r && !isModOrAdmin(u));
   });
 });
 
@@ -448,7 +446,9 @@ const filteredDevelopers = computed(() => {
 
   // Сортировка
   if (sortBy.value === 'name') {
-    list.sort((a, b) => (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
+    list.sort((a, b) =>
+      (a.display_name || a.email || '').localeCompare(b.display_name || b.email || '')
+    );
   } else if (sortBy.value === 'newest') {
     list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   } else if (sortBy.value === 'oldest') {

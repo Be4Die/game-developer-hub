@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -296,4 +297,236 @@ func (r *RequestRepo) Resolve(ctx context.Context, id int64, status domain.Reque
 	}
 
 	return nil
+}
+
+// GetModeratorStats собирает агрегированную статистику по конкретному модератору.
+func (r *RequestRepo) GetModeratorStats(ctx context.Context, moderatorID string) (*domain.ModeratorStats, error) {
+	stats := &domain.ModeratorStats{
+		ModeratorID: moderatorID,
+	}
+
+	query := `
+		SELECT
+			COUNT(*) FILTER (WHERE status = 3) AS approved_count,
+			COUNT(*) FILTER (WHERE status = 4) AS rejected_count,
+			COUNT(*) FILTER (WHERE status = 2) AS in_review_count,
+			COUNT(*) AS total_assigned,
+			COALESCE(
+				AVG(EXTRACT(EPOCH FROM (resolved_at - started_review_at)))
+				FILTER (WHERE status IN (3, 4) AND resolved_at IS NOT NULL AND started_review_at IS NOT NULL),
+				0
+			) AS avg_duration_sec,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= CURRENT_DATE) AS today_resolved,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= DATE_TRUNC('week', NOW())) AS week_resolved,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= DATE_TRUNC('month', NOW())) AS month_resolved
+		FROM moderation_requests
+		WHERE moderator_id = $1
+	`
+
+	var avgDuration float64
+	err := r.pool.QueryRow(ctx, query, moderatorID).Scan(
+		&stats.ApprovedCount,
+		&stats.RejectedCount,
+		&stats.InReviewCount,
+		&stats.TotalAssigned,
+		&avgDuration,
+		&stats.TodayResolved,
+		&stats.WeekResolved,
+		&stats.MonthResolved,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("RequestRepo.GetModeratorStats query: %w", err)
+	}
+
+	stats.AvgReviewDurationSeconds = int64(avgDuration)
+	stats.TotalResolved = stats.ApprovedCount + stats.RejectedCount
+	if stats.TotalResolved > 0 {
+		stats.ApprovalRate = math.Round((float64(stats.ApprovedCount)/float64(stats.TotalResolved)*100)*10) / 10
+		stats.RejectionRate = math.Round((float64(stats.RejectedCount)/float64(stats.TotalResolved)*100)*10) / 10
+	}
+
+	// Количество отправленных сообщений модератором в чатах проектов
+	msgQuery := `
+		SELECT COUNT(*)
+		FROM moderation_messages
+		WHERE sender_id = $1 AND sender_role = 2
+	`
+	_ = r.pool.QueryRow(ctx, msgQuery, moderatorID).Scan(&stats.MessagesSent)
+
+	return stats, nil
+}
+
+// ListModeratorsStats собирает сводную статистику по всем модераторам системы.
+func (r *RequestRepo) ListModeratorsStats(ctx context.Context) ([]*domain.ModeratorStats, error) {
+	query := `
+		SELECT
+			moderator_id,
+			COUNT(*) FILTER (WHERE status = 3) AS approved_count,
+			COUNT(*) FILTER (WHERE status = 4) AS rejected_count,
+			COUNT(*) FILTER (WHERE status = 2) AS in_review_count,
+			COUNT(*) AS total_assigned,
+			COALESCE(
+				AVG(EXTRACT(EPOCH FROM (resolved_at - started_review_at)))
+				FILTER (WHERE status IN (3, 4) AND resolved_at IS NOT NULL AND started_review_at IS NOT NULL),
+				0
+			) AS avg_duration_sec,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= CURRENT_DATE) AS today_resolved,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= DATE_TRUNC('week', NOW())) AS week_resolved,
+			COUNT(*) FILTER (WHERE status IN (3, 4) AND resolved_at >= DATE_TRUNC('month', NOW())) AS month_resolved
+		FROM moderation_requests
+		WHERE moderator_id != ''
+		GROUP BY moderator_id
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("RequestRepo.ListModeratorsStats query: %w", err)
+	}
+	defer rows.Close()
+
+	statsMap := make(map[string]*domain.ModeratorStats)
+	var result []*domain.ModeratorStats
+
+	for rows.Next() {
+		stats := &domain.ModeratorStats{}
+		var avgDuration float64
+		if err := rows.Scan(
+			&stats.ModeratorID,
+			&stats.ApprovedCount,
+			&stats.RejectedCount,
+			&stats.InReviewCount,
+			&stats.TotalAssigned,
+			&avgDuration,
+			&stats.TodayResolved,
+			&stats.WeekResolved,
+			&stats.MonthResolved,
+		); err != nil {
+			return nil, fmt.Errorf("RequestRepo.ListModeratorsStats scan: %w", err)
+		}
+
+		stats.AvgReviewDurationSeconds = int64(avgDuration)
+		stats.TotalResolved = stats.ApprovedCount + stats.RejectedCount
+		if stats.TotalResolved > 0 {
+			stats.ApprovalRate = math.Round((float64(stats.ApprovedCount)/float64(stats.TotalResolved)*100)*10) / 10
+			stats.RejectionRate = math.Round((float64(stats.RejectedCount)/float64(stats.TotalResolved)*100)*10) / 10
+		}
+
+		statsMap[stats.ModeratorID] = stats
+		result = append(result, stats)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("RequestRepo.ListModeratorsStats rows: %w", err)
+	}
+
+	// Подсчёт сообщений по каждому модератору
+	msgQuery := `
+		SELECT sender_id, COUNT(*)
+		FROM moderation_messages
+		WHERE sender_role = 2 AND sender_id != ''
+		GROUP BY sender_id
+	`
+	msgRows, err := r.pool.Query(ctx, msgQuery)
+	if err == nil {
+		defer msgRows.Close()
+		for msgRows.Next() {
+			var senderID string
+			var count int32
+			if err := msgRows.Scan(&senderID, &count); err == nil {
+				if s, ok := statsMap[senderID]; ok {
+					s.MessagesSent = count
+				}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// ListModeratorActivity возвращает постраничный список заявок, рассмотренных конкретным модератором.
+func (r *RequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+	var whereConditions []string
+	var args []any
+	argIdx := 1
+
+	whereConditions = append(whereConditions, fmt.Sprintf("moderator_id = $%d", argIdx))
+	args = append(args, moderatorID)
+	argIdx++
+
+	if status != nil && *status != domain.RequestStatusUnspecified {
+		whereConditions = append(whereConditions, fmt.Sprintf("status = $%d", argIdx))
+		args = append(args, int16(*status))
+		argIdx++
+	}
+
+	whereSQL := "WHERE " + strings.Join(whereConditions, " AND ")
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM moderation_requests %s", whereSQL)
+	var total int
+	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity count: %w", err)
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			id, project_id, owner_id, moderator_id, status, snapshot_meta,
+			rejection_reason, submitted_at, started_review_at, resolved_at,
+			created_at, updated_at
+		FROM moderation_requests
+		%s
+		ORDER BY COALESCE(resolved_at, started_review_at, updated_at) DESC
+		LIMIT $%d OFFSET $%d
+	`, whereSQL, argIdx, argIdx+1)
+
+	args = append(args, limit, offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity select: %w", err)
+	}
+	defer rows.Close()
+
+	var requests []*domain.ModerationRequest
+	for rows.Next() {
+		req := &domain.ModerationRequest{}
+		var snapshotRaw []byte
+		var statusInt int16
+
+		err := rows.Scan(
+			&req.ID,
+			&req.ProjectID,
+			&req.OwnerID,
+			&req.ModeratorID,
+			&statusInt,
+			&snapshotRaw,
+			&req.RejectionReason,
+			&req.SubmittedAt,
+			&req.StartedReviewAt,
+			&req.ResolvedAt,
+			&req.CreatedAt,
+			&req.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity scan: %w", err)
+		}
+
+		req.Status = domain.RequestStatus(statusInt)
+		if len(snapshotRaw) > 0 {
+			_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
+		}
+
+		requests = append(requests, req)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity rows: %w", err)
+	}
+
+	return requests, total, nil
 }

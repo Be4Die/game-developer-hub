@@ -136,4 +136,42 @@ export const moderationApi = {
       message: res.data.message,
     };
   },
+
+  /**
+   * Получить статистику конкретного модератора
+   */
+  async getModeratorStats(moderatorId) {
+    const res = await http.get(`/moderation/moderators/${moderatorId}/stats`);
+    return { stats: res.data.stats };
+  },
+
+  /**
+   * Получить сводную статистику по всем модераторам
+   */
+  async listModeratorsStats() {
+    const res = await http.get('/moderation/moderators/stats');
+    return { stats: res.data.stats ?? [] };
+  },
+
+  /**
+   * Получить журнал действий конкретного модератора
+   */
+  async listModeratorActivity(moderatorId, params = {}) {
+    const query = new URLSearchParams();
+    if (params.status !== undefined && params.status !== '') {
+      query.append('status', params.status);
+    }
+    if (params.limit !== undefined) {
+      query.append('limit', params.limit);
+    }
+    if (params.offset !== undefined) {
+      query.append('offset', params.offset);
+    }
+    const qStr = query.toString() ? `?${query.toString()}` : '';
+    const res = await http.get(`/moderation/moderators/${moderatorId}/activity${qStr}`);
+    return {
+      requests: res.data.requests ?? [],
+      total: res.data.total ?? (res.data.requests ? res.data.requests.length : 0),
+    };
+  },
 };

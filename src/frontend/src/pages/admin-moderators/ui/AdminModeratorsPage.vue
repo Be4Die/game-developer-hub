@@ -107,13 +107,21 @@
             <tr>
               <th class="col-name">Название</th>
               <th class="col-email">Почта</th>
+              <th class="col-resolved">{{ t('moderation.resolvedColumn') }}</th>
+              <th class="col-in-review">{{ t('moderation.inReviewColumn') }}</th>
+              <th class="col-avg-time">{{ t('moderation.avgDurationColumn') }}</th>
               <th class="col-date">Создан</th>
               <th class="col-status">{{ t('common.status') }}</th>
               <th class="col-actions"></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="mod in paginatedModerators" :key="mod.id" class="table-row">
+            <tr
+              v-for="mod in paginatedModerators"
+              :key="mod.id"
+              class="table-row table-row-clickable"
+              @click="openModeratorStats(mod)"
+            >
               <!-- Колонка 1: Название / Имя -->
               <td class="col-name">
                 <span class="user-name-text">{{ mod.display_name || 'Модератор' }}</span>
@@ -124,21 +132,58 @@
                 <span class="email-text">{{ mod.email }}</span>
               </td>
 
-              <!-- Колонка 3: Дата создания -->
+              <!-- Колонка 3: Рассмотрено заявок -->
+              <td class="col-resolved">
+                <span class="stat-number">{{ statsMap[mod.id]?.total_resolved || 0 }}</span>
+                <span v-if="statsMap[mod.id]?.total_resolved > 0" class="stat-subtext">
+                  ({{ statsMap[mod.id]?.approved_count || 0 }} од.)
+                </span>
+              </td>
+
+              <!-- Колонка 4: В работе -->
+              <td class="col-in-review">
+                <span v-if="statsMap[mod.id]?.in_review_count > 0" class="in-review-badge">
+                  {{ statsMap[mod.id]?.in_review_count }}
+                </span>
+                <span v-else class="text-muted">—</span>
+              </td>
+
+              <!-- Колонка 5: Среднее время проверки -->
+              <td class="col-avg-time">
+                <span class="stat-time">
+                  {{
+                    statsMap[mod.id]?.avg_review_duration_seconds
+                      ? formatDurationSeconds(statsMap[mod.id]?.avg_review_duration_seconds)
+                      : '—'
+                  }}
+                </span>
+              </td>
+
+              <!-- Колонка 6: Дата создания -->
               <td class="col-date">
                 <span class="date-text">{{ formatProjectDate(mod.created_at) }}</span>
               </td>
 
-              <!-- Колонка 4: Статус -->
+              <!-- Колонка 7: Статус -->
               <td class="col-status">
                 <span class="status-pill" :class="statusBadgeClass(mod.status)">
                   {{ statusLabel(mod.status) }}
                 </span>
               </td>
 
-              <!-- Колонка 4: Действия -->
+              <!-- Колонка 8: Действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
+                  <!-- Кнопка статистики и журнала -->
+                  <button
+                    class="btn-action btn-action-stats"
+                    title="Статистика и журнал действий"
+                    @click="openModeratorStats(mod)"
+                  >
+                    <BarChart2 class="icon-xs" />
+                    <span>Статистика</span>
+                  </button>
+
                   <!-- Кнопка восстановления (если удален) -->
                   <button
                     v-if="isUserDeleted(mod.status)"
@@ -247,6 +292,13 @@
       @deleted="handleModeratorDeleted"
       @cancel="deleteTarget = null"
     />
+
+    <!-- Модалка статистики и журнала действий модератора -->
+    <ModeratorStatsModal
+      v-if="selectedModerator"
+      :moderator="selectedModerator"
+      @close="selectedModerator = null"
+    />
   </div>
 </template>
 
@@ -265,15 +317,23 @@ import {
   ChevronsRight,
   RotateCcw,
   Trash2,
+  BarChart2,
 } from 'lucide-vue-next';
 import { searchUsers, setUserStatus } from '@/entities/user';
-import { CreateModeratorModal, DeleteModeratorModal } from '@/features/manage-moderators';
+import {
+  CreateModeratorModal,
+  DeleteModeratorModal,
+  ModeratorStatsModal,
+} from '@/features/manage-moderators';
+import { moderationApi, formatDurationSeconds } from '@/entities/moderation';
 import { formatProjectDate, showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 
 const loading = ref(false);
 const allUsers = ref([]);
+const statsMap = ref({});
+const selectedModerator = ref(null);
 const searchQuery = ref('');
 const statusFilter = ref('all');
 const sortBy = ref('newest');
@@ -291,7 +351,10 @@ onMounted(() => {
 async function loadUsers() {
   loading.value = true;
   try {
-    const res = await searchUsers({ query: '', limit: 100 });
+    const [res] = await Promise.all([
+      searchUsers({ query: '', limit: 100 }),
+      loadModeratorsStats(),
+    ]);
     allUsers.value = res.users || [];
   } catch (err) {
     allUsers.value = [];
@@ -299,6 +362,23 @@ async function loadUsers() {
   } finally {
     loading.value = false;
   }
+}
+
+async function loadModeratorsStats() {
+  try {
+    const res = await moderationApi.listModeratorsStats();
+    const map = {};
+    for (const s of res.stats || []) {
+      map[s.moderator_id] = s;
+    }
+    statsMap.value = map;
+  } catch (err) {
+    console.warn('Failed to load moderators stats', err);
+  }
+}
+
+function openModeratorStats(mod) {
+  selectedModerator.value = mod;
 }
 
 // Фильтруем только модераторов
@@ -334,7 +414,9 @@ const filteredModerators = computed(() => {
 
   // Сортировка
   if (sortBy.value === 'name') {
-    list.sort((a, b) => (a.display_name || a.email || '').localeCompare(b.display_name || b.email || ''));
+    list.sort((a, b) =>
+      (a.display_name || a.email || '').localeCompare(b.display_name || b.email || '')
+    );
   } else if (sortBy.value === 'newest') {
     list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   } else if (sortBy.value === 'oldest') {
@@ -628,24 +710,36 @@ function handleModeratorDeleted() {
 }
 
 .yandex-games-table th.col-name {
-  width: 32%;
+  width: 20%;
   padding-left: 12px;
 }
 
 .yandex-games-table th.col-email {
-  width: 30%;
+  width: 18%;
 }
 
-.yandex-games-table th.col-date {
-  width: 15%;
+.yandex-games-table th.col-resolved {
+  width: 14%;
 }
 
-.yandex-games-table th.col-status {
+.yandex-games-table th.col-in-review {
+  width: 10%;
+}
+
+.yandex-games-table th.col-avg-time {
   width: 11%;
 }
 
+.yandex-games-table th.col-date {
+  width: 11%;
+}
+
+.yandex-games-table th.col-status {
+  width: 8%;
+}
+
 .yandex-games-table th.col-actions {
-  width: 12%;
+  width: 8%;
   text-align: right;
   padding-right: 12px;
 }
@@ -653,6 +747,48 @@ function handleModeratorDeleted() {
 .table-row {
   border-bottom: 1px solid var(--border, #21262d);
   transition: background-color 0.15s ease;
+}
+
+.table-row-clickable {
+  cursor: pointer;
+}
+
+.stat-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.stat-subtext {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+  margin-left: 4px;
+}
+
+.in-review-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.stat-time {
+  font-size: 13px;
+  color: var(--text-muted, #b0b8c4);
+  font-weight: 500;
+}
+
+.btn-action-stats:hover:not(:disabled) {
+  color: var(--primary, #58a6ff);
+  border-color: rgba(88, 166, 255, 0.5);
+  background: rgba(88, 166, 255, 0.1);
 }
 
 .table-row:hover {

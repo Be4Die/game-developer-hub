@@ -186,6 +186,52 @@ message CloseDialogResponse {
   ChatMessage message = 2;
 }
 
+// ─── Статистика и журнал действий модератора ─────────────────
+
+// ModeratorStats агрегированные статистические показатели работы модератора.
+message ModeratorStats {
+  string moderator_id = 1;
+  int32 total_assigned = 2;              // Всего закреплено (in_review + approved + rejected)
+  int32 in_review_count = 3;             // На проверке прямо сейчас
+  int32 approved_count = 4;              // Одобрено
+  int32 rejected_count = 5;              // Отклонено
+  int32 total_resolved = 6;              // Всего вынесено решений (approved + rejected)
+  double approval_rate = 7;              // Доля одобренных, % (0.0 - 100.0)
+  double rejection_rate = 8;             // Доля отклоненных, % (0.0 - 100.0)
+  int64 avg_review_duration_seconds = 9; // Средняя длительность рассмотрения заявки в секундах
+  int32 messages_sent = 10;              // Сообщений отправлено в чатах проектов
+  int32 today_resolved = 11;             // Рассмотрено за сегодня
+  int32 week_resolved = 12;              // Рассмотрено за текущую неделю
+  int32 month_resolved = 13;             // Рассмотрено за текущий месяц
+}
+
+message GetModeratorStatsRequest {
+  string moderator_id = 1;
+}
+
+message GetModeratorStatsResponse {
+  ModeratorStats stats = 1;
+}
+
+message ListModeratorsStatsRequest {
+}
+
+message ListModeratorsStatsResponse {
+  repeated ModeratorStats stats = 1;
+}
+
+message ListModeratorActivityRequest {
+  string moderator_id = 1;
+  RequestStatus status = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListModeratorActivityResponse {
+  repeated ModerationRequest requests = 1;
+  int32 total = 2;
+}
+
 // ─── Сервис ───────────────────────────────────────────────────
 
 service ModerationService {
@@ -230,4 +276,17 @@ service ModerationService {
   rpc CloseDialog(CloseDialogRequest) returns (CloseDialogResponse) {
     option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/close-dialog", body: "*" };
   }
+
+  rpc GetModeratorStats(GetModeratorStatsRequest) returns (GetModeratorStatsResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/moderators/{moderator_id}/stats" };
+  }
+
+  rpc ListModeratorsStats(ListModeratorsStatsRequest) returns (ListModeratorsStatsResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/moderators/stats" };
+  }
+
+  rpc ListModeratorActivity(ListModeratorActivityRequest) returns (ListModeratorActivityResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/moderators/{moderator_id}/activity" };
+  }
 }
+

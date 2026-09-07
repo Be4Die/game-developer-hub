@@ -139,6 +139,104 @@ func (m *mockRequestRepo) Resolve(ctx context.Context, id int64, status domain.R
 	return nil
 }
 
+func (m *mockRequestRepo) GetModeratorStats(ctx context.Context, moderatorID string) (*domain.ModeratorStats, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	stats := &domain.ModeratorStats{
+		ModeratorID: moderatorID,
+	}
+
+	var totalDuration int64
+	var durationCount int64
+
+	for _, req := range m.requests {
+		if req.ModeratorID != moderatorID {
+			continue
+		}
+		stats.TotalAssigned++
+		switch req.Status {
+		case domain.RequestStatusInReview:
+			stats.InReviewCount++
+		case domain.RequestStatusApproved:
+			stats.ApprovedCount++
+		case domain.RequestStatusRejected:
+			stats.RejectedCount++
+		}
+		if req.Status == domain.RequestStatusApproved || req.Status == domain.RequestStatusRejected {
+			stats.TodayResolved++
+			stats.WeekResolved++
+			stats.MonthResolved++
+			if req.StartedReviewAt != nil && req.ResolvedAt != nil {
+				dur := req.ResolvedAt.Sub(*req.StartedReviewAt)
+				if dur > 0 {
+					totalDuration += int64(dur.Seconds())
+					durationCount++
+				}
+			}
+		}
+	}
+
+	stats.TotalResolved = stats.ApprovedCount + stats.RejectedCount
+	if stats.TotalResolved > 0 {
+		stats.ApprovalRate = float64(stats.ApprovedCount) / float64(stats.TotalResolved) * 100
+		stats.RejectionRate = float64(stats.RejectedCount) / float64(stats.TotalResolved) * 100
+	}
+	if durationCount > 0 {
+		stats.AvgReviewDurationSeconds = totalDuration / durationCount
+	}
+
+	return stats, nil
+}
+
+func (m *mockRequestRepo) ListModeratorsStats(ctx context.Context) ([]*domain.ModeratorStats, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	mods := make(map[string]bool)
+	for _, req := range m.requests {
+		if req.ModeratorID != "" {
+			mods[req.ModeratorID] = true
+		}
+	}
+
+	var result []*domain.ModeratorStats
+	for modID := range mods {
+		stats, _ := m.GetModeratorStats(ctx, modID)
+		result = append(result, stats)
+	}
+
+	return result, nil
+}
+
+func (m *mockRequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var list []*domain.ModerationRequest
+	for _, req := range m.requests {
+		if req.ModeratorID != moderatorID {
+			continue
+		}
+		if status != nil && req.Status != *status {
+			continue
+		}
+		copied := *req
+		list = append(list, &copied)
+	}
+
+	total := len(list)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if limit <= 0 || end > total {
+		end = total
+	}
+
+	return list[offset:end], total, nil
+}
+
 type mockMessageRepo struct {
 	mu       sync.RWMutex
 	messages map[int64][]*domain.ChatMessage

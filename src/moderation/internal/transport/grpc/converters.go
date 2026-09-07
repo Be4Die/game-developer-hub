@@ -94,3 +94,25 @@ func snapshotFromProto(p *pb.ProjectSnapshot) domain.ProjectSnapshot {
 		DevURL:             p.GetDevUrl(),
 	}
 }
+
+func moderatorStatsToProto(s *domain.ModeratorStats) *pb.ModeratorStats {
+	if s == nil {
+		return nil
+	}
+	return &pb.ModeratorStats{
+		ModeratorId:              s.ModeratorID,
+		TotalAssigned:            s.TotalAssigned,
+		InReviewCount:            s.InReviewCount,
+		ApprovedCount:            s.ApprovedCount,
+		RejectedCount:            s.RejectedCount,
+		TotalResolved:            s.TotalResolved,
+		ApprovalRate:             s.ApprovalRate,
+		RejectionRate:            s.RejectionRate,
+		AvgReviewDurationSeconds: s.AvgReviewDurationSeconds,
+		MessagesSent:             s.MessagesSent,
+		TodayResolved:            s.TodayResolved,
+		WeekResolved:             s.WeekResolved,
+		MonthResolved:            s.MonthResolved,
+	}
+}
+

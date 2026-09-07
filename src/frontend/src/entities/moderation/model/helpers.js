@@ -160,3 +160,24 @@ export function normalizeRequest(req) {
     },
   };
 }
+
+export function formatDurationSeconds(sec) {
+  if (!sec || sec <= 0) return '0 мин';
+  const totalMin = Math.round(sec / 60);
+  if (totalMin < 1) return '< 1 мин';
+  if (totalMin < 60) return `${totalMin} мин`;
+  const hours = Math.floor(totalMin / 60);
+  const remMinutes = totalMin % 60;
+  if (remMinutes === 0) return `${hours} ч`;
+  return `${hours} ч ${remMinutes} мин`;
+}
+
+export function getRequestDuration(req) {
+  if (!req) return '—';
+  const started = req.started_review_at || req.startedReviewAt;
+  const resolved = req.resolved_at || req.resolvedAt;
+  if (!started || !resolved) return '—';
+  const diffSec = Math.round((new Date(resolved) - new Date(started)) / 1000);
+  if (diffSec <= 0) return '< 1 мин';
+  return formatDurationSeconds(diffSec);
+}

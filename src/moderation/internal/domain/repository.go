@@ -18,6 +18,9 @@ type RequestRepo interface {
 	List(ctx context.Context, filter RequestFilter) ([]*ModerationRequest, int, error)
 	Claim(ctx context.Context, id int64, moderatorID string) error
 	Resolve(ctx context.Context, id int64, status RequestStatus, reason, moderatorID string) error
+	GetModeratorStats(ctx context.Context, moderatorID string) (*ModeratorStats, error)
+	ListModeratorsStats(ctx context.Context) ([]*ModeratorStats, error)
+	ListModeratorActivity(ctx context.Context, moderatorID string, status *RequestStatus, limit, offset int) ([]*ModerationRequest, int, error)
 }
 
 // MessageRepo определяет контракт репозитория сообщений чата проекта.

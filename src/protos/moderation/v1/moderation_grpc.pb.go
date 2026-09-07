@@ -30,6 +30,9 @@ const (
 	ModerationService_ListMessages_FullMethodName              = "/moderation.v1.ModerationService/ListMessages"
 	ModerationService_ListActiveChats_FullMethodName           = "/moderation.v1.ModerationService/ListActiveChats"
 	ModerationService_CloseDialog_FullMethodName               = "/moderation.v1.ModerationService/CloseDialog"
+	ModerationService_GetModeratorStats_FullMethodName         = "/moderation.v1.ModerationService/GetModeratorStats"
+	ModerationService_ListModeratorsStats_FullMethodName       = "/moderation.v1.ModerationService/ListModeratorsStats"
+	ModerationService_ListModeratorActivity_FullMethodName     = "/moderation.v1.ModerationService/ListModeratorActivity"
 )
 
 // ModerationServiceClient is the client API for ModerationService service.
@@ -47,6 +50,9 @@ type ModerationServiceClient interface {
 	ListMessages(ctx context.Context, in *ListChatMessagesRequest, opts ...grpc.CallOption) (*ListChatMessagesResponse, error)
 	ListActiveChats(ctx context.Context, in *ListActiveChatsRequest, opts ...grpc.CallOption) (*ListActiveChatsResponse, error)
 	CloseDialog(ctx context.Context, in *CloseDialogRequest, opts ...grpc.CallOption) (*CloseDialogResponse, error)
+	GetModeratorStats(ctx context.Context, in *GetModeratorStatsRequest, opts ...grpc.CallOption) (*GetModeratorStatsResponse, error)
+	ListModeratorsStats(ctx context.Context, in *ListModeratorsStatsRequest, opts ...grpc.CallOption) (*ListModeratorsStatsResponse, error)
+	ListModeratorActivity(ctx context.Context, in *ListModeratorActivityRequest, opts ...grpc.CallOption) (*ListModeratorActivityResponse, error)
 }
 
 type moderationServiceClient struct {
@@ -167,6 +173,36 @@ func (c *moderationServiceClient) CloseDialog(ctx context.Context, in *CloseDial
 	return out, nil
 }
 
+func (c *moderationServiceClient) GetModeratorStats(ctx context.Context, in *GetModeratorStatsRequest, opts ...grpc.CallOption) (*GetModeratorStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetModeratorStatsResponse)
+	err := c.cc.Invoke(ctx, ModerationService_GetModeratorStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) ListModeratorsStats(ctx context.Context, in *ListModeratorsStatsRequest, opts ...grpc.CallOption) (*ListModeratorsStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListModeratorsStatsResponse)
+	err := c.cc.Invoke(ctx, ModerationService_ListModeratorsStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) ListModeratorActivity(ctx context.Context, in *ListModeratorActivityRequest, opts ...grpc.CallOption) (*ListModeratorActivityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListModeratorActivityResponse)
+	err := c.cc.Invoke(ctx, ModerationService_ListModeratorActivity_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModerationServiceServer is the server API for ModerationService service.
 // All implementations must embed UnimplementedModerationServiceServer
 // for forward compatibility.
@@ -182,6 +218,9 @@ type ModerationServiceServer interface {
 	ListMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error)
 	ListActiveChats(context.Context, *ListActiveChatsRequest) (*ListActiveChatsResponse, error)
 	CloseDialog(context.Context, *CloseDialogRequest) (*CloseDialogResponse, error)
+	GetModeratorStats(context.Context, *GetModeratorStatsRequest) (*GetModeratorStatsResponse, error)
+	ListModeratorsStats(context.Context, *ListModeratorsStatsRequest) (*ListModeratorsStatsResponse, error)
+	ListModeratorActivity(context.Context, *ListModeratorActivityRequest) (*ListModeratorActivityResponse, error)
 	mustEmbedUnimplementedModerationServiceServer()
 }
 
@@ -224,6 +263,15 @@ func (UnimplementedModerationServiceServer) ListActiveChats(context.Context, *Li
 }
 func (UnimplementedModerationServiceServer) CloseDialog(context.Context, *CloseDialogRequest) (*CloseDialogResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CloseDialog not implemented")
+}
+func (UnimplementedModerationServiceServer) GetModeratorStats(context.Context, *GetModeratorStatsRequest) (*GetModeratorStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetModeratorStats not implemented")
+}
+func (UnimplementedModerationServiceServer) ListModeratorsStats(context.Context, *ListModeratorsStatsRequest) (*ListModeratorsStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListModeratorsStats not implemented")
+}
+func (UnimplementedModerationServiceServer) ListModeratorActivity(context.Context, *ListModeratorActivityRequest) (*ListModeratorActivityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListModeratorActivity not implemented")
 }
 func (UnimplementedModerationServiceServer) mustEmbedUnimplementedModerationServiceServer() {}
 func (UnimplementedModerationServiceServer) testEmbeddedByValue()                           {}
@@ -444,6 +492,60 @@ func _ModerationService_CloseDialog_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModerationService_GetModeratorStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetModeratorStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).GetModeratorStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_GetModeratorStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).GetModeratorStats(ctx, req.(*GetModeratorStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_ListModeratorsStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModeratorsStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).ListModeratorsStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_ListModeratorsStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).ListModeratorsStats(ctx, req.(*ListModeratorsStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_ListModeratorActivity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModeratorActivityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).ListModeratorActivity(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_ListModeratorActivity_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).ListModeratorActivity(ctx, req.(*ListModeratorActivityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModerationService_ServiceDesc is the grpc.ServiceDesc for ModerationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -494,6 +596,18 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CloseDialog",
 			Handler:    _ModerationService_CloseDialog_Handler,
+		},
+		{
+			MethodName: "GetModeratorStats",
+			Handler:    _ModerationService_GetModeratorStats_Handler,
+		},
+		{
+			MethodName: "ListModeratorsStats",
+			Handler:    _ModerationService_ListModeratorsStats_Handler,
+		},
+		{
+			MethodName: "ListModeratorActivity",
+			Handler:    _ModerationService_ListModeratorActivity_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

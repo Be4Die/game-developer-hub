@@ -102,7 +102,10 @@ async function handleCreate() {
       password: form.password,
       display_name: form.display_name.trim(),
     });
-    showToast(`Модератор "${res.user?.display_name || form.display_name}" успешно создан`, 'success');
+    showToast(
+      `Модератор "${res.user?.display_name || form.display_name}" успешно создан`,
+      'success'
+    );
     emit('created', res.user);
   } catch (err) {
     showToast(err.response?.data?.message || 'Не удалось создать модератора', 'danger');

@@ -276,3 +276,107 @@ func TestUnit_ModerationService_SendMessage_And_ListMessages(t *testing.T) {
 		t.Errorf("unexpected content msg 1: %s", msgs[1].Content)
 	}
 }
+
+func TestUnit_ModerationService_ModeratorStatsAndActivity(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, reqRepo, _, _ := setupTestModerationService(t)
+
+	// Создаем несколько заявок
+	now := time.Now()
+	past := now.Add(-30 * time.Minute)
+
+	req1 := &domain.ModerationRequest{
+		ProjectID:       1,
+		OwnerID:         "dev-1",
+		ModeratorID:     "mod-42",
+		Status:          domain.RequestStatusApproved,
+		StartedReviewAt: &past,
+		ResolvedAt:      &now,
+	}
+	id1, _ := reqRepo.Create(ctx, req1)
+	_ = reqRepo.Resolve(ctx, id1, domain.RequestStatusApproved, "", "mod-42")
+
+	req2 := &domain.ModerationRequest{
+		ProjectID:       2,
+		OwnerID:         "dev-2",
+		ModeratorID:     "mod-42",
+		Status:          domain.RequestStatusRejected,
+		RejectionReason: "Некорректная иконка",
+		StartedReviewAt: &past,
+		ResolvedAt:      &now,
+	}
+	id2, _ := reqRepo.Create(ctx, req2)
+	_ = reqRepo.Resolve(ctx, id2, domain.RequestStatusRejected, "Некорректная иконка", "mod-42")
+
+	req3 := &domain.ModerationRequest{
+		ProjectID:       3,
+		OwnerID:         "dev-3",
+		ModeratorID:     "mod-42",
+		Status:          domain.RequestStatusInReview,
+		StartedReviewAt: &now,
+	}
+	id3, _ := reqRepo.Create(ctx, req3)
+	_ = reqRepo.Claim(ctx, id3, "mod-42")
+
+	// 1. Проверяем GetModeratorStats
+	stats, err := svc.GetModeratorStats(ctx, "mod-42")
+	if err != nil {
+		t.Fatalf("expected stats success, got: %v", err)
+	}
+	if stats.ModeratorID != "mod-42" {
+		t.Errorf("expected mod-42, got: %s", stats.ModeratorID)
+	}
+	if stats.TotalResolved != 2 {
+		t.Errorf("expected 2 total resolved, got: %d", stats.TotalResolved)
+	}
+	if stats.ApprovedCount != 1 || stats.RejectedCount != 1 {
+		t.Errorf("expected 1 approved and 1 rejected, got %d, %d", stats.ApprovedCount, stats.RejectedCount)
+	}
+	if stats.InReviewCount != 1 {
+		t.Errorf("expected 1 in review, got %d", stats.InReviewCount)
+	}
+	if stats.ApprovalRate != 50.0 || stats.RejectionRate != 50.0 {
+		t.Errorf("expected 50%% approval/rejection rates, got %f, %f", stats.ApprovalRate, stats.RejectionRate)
+	}
+
+	// 2. Проверяем валидацию пустого moderator_id
+	_, err = svc.GetModeratorStats(ctx, "  ")
+	if err == nil {
+		t.Errorf("expected error for empty moderator_id")
+	}
+
+	// 3. Проверяем ListModeratorsStats
+	allStats, err := svc.ListModeratorsStats(ctx)
+	if err != nil {
+		t.Fatalf("expected list stats success, got: %v", err)
+	}
+	if len(allStats) != 1 {
+		t.Fatalf("expected 1 moderator in stats, got: %d", len(allStats))
+	}
+	if allStats[0].ModeratorID != "mod-42" {
+		t.Errorf("expected mod-42, got: %s", allStats[0].ModeratorID)
+	}
+
+	// 4. Проверяем ListModeratorActivity
+	activity, total, err := svc.ListModeratorActivity(ctx, "mod-42", nil, 10, 0)
+	if err != nil {
+		t.Fatalf("expected activity success, got: %v", err)
+	}
+	if total != 3 || len(activity) != 3 {
+		t.Errorf("expected 3 activity items, got total=%d, len=%d", total, len(activity))
+	}
+
+	// Фильтр по статусу
+	rejectedStatus := domain.RequestStatusRejected
+	filteredActivity, filteredTotal, err := svc.ListModeratorActivity(ctx, "mod-42", &rejectedStatus, 10, 0)
+	if err != nil {
+		t.Fatalf("expected filtered activity success, got: %v", err)
+	}
+	if filteredTotal != 1 || len(filteredActivity) != 1 {
+		t.Errorf("expected 1 rejected activity, got total=%d, len=%d", filteredTotal, len(filteredActivity))
+	}
+}
+

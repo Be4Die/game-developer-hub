@@ -279,3 +279,25 @@ func (s *ModerationService) CloseDialog(ctx context.Context, projectID int64, mo
 
 	return sysMsg, nil
 }
+
+// GetModeratorStats возвращает агрегированную статистику по конкретному модератору.
+func (s *ModerationService) GetModeratorStats(ctx context.Context, moderatorID string) (*domain.ModeratorStats, error) {
+	if strings.TrimSpace(moderatorID) == "" {
+		return nil, fmt.Errorf("moderator id is required")
+	}
+	return s.requestRepo.GetModeratorStats(ctx, strings.TrimSpace(moderatorID))
+}
+
+// ListModeratorsStats возвращает сводную статистику по всем модераторам.
+func (s *ModerationService) ListModeratorsStats(ctx context.Context) ([]*domain.ModeratorStats, error) {
+	return s.requestRepo.ListModeratorsStats(ctx)
+}
+
+// ListModeratorActivity возвращает постраничный список заявок конкретного модератора.
+func (s *ModerationService) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+	if strings.TrimSpace(moderatorID) == "" {
+		return nil, 0, fmt.Errorf("moderator id is required")
+	}
+	return s.requestRepo.ListModeratorActivity(ctx, strings.TrimSpace(moderatorID), status, limit, offset)
+}
+

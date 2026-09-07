@@ -17,25 +17,18 @@
 
         <p class="modal-text">
           Вы уверены, что хотите удалить модератора
-          <strong>{{ target.display_name || target.email }}</strong>?
+          <strong>{{ target.display_name || target.email }}</strong
+          >?
         </p>
         <p class="hint-text">
           Аккаунт будет помечен как удалённый. Администратор сможет восстановить его в любой момент.
         </p>
 
         <div class="modal-actions">
-          <button
-            class="btn-modal-secondary"
-            :disabled="deleting"
-            @click="$emit('cancel')"
-          >
+          <button class="btn-modal-secondary" :disabled="deleting" @click="$emit('cancel')">
             Отмена
           </button>
-          <button
-            class="btn-modal-danger"
-            :disabled="deleting"
-            @click="handleDelete"
-          >
+          <button class="btn-modal-danger" :disabled="deleting" @click="handleDelete">
             <Loader2 v-if="deleting" class="icon-xs spin" />
             <Trash2 v-else class="icon-xs" />
             <span>{{ deleting ? 'Удаление...' : 'Удалить' }}</span>

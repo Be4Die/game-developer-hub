@@ -243,3 +243,92 @@ func (h *ModerationHandler) CloseDialog(ctx context.Context, req *pb.CloseDialog
 		Message: messageToProto(msg),
 	}, nil
 }
+
+// GetModeratorStats возвращает статистические показатели работы конкретного модератора.
+func (h *ModerationHandler) GetModeratorStats(ctx context.Context, req *pb.GetModeratorStatsRequest) (*pb.GetModeratorStatsResponse, error) {
+	currentUserID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	userRole := UserRoleFromContext(ctx)
+	targetModID := req.GetModeratorId()
+	if targetModID == "" {
+		targetModID = currentUserID
+	}
+
+	if userRole != "admin" && (userRole != "moderator" || currentUserID != targetModID) {
+		return nil, status.Error(codes.PermissionDenied, "access denied to moderator stats")
+	}
+
+	stats, err := h.svc.GetModeratorStats(ctx, targetModID)
+	if err != nil {
+		return nil, domainError(err, "get moderator stats")
+	}
+
+	return &pb.GetModeratorStatsResponse{
+		Stats: moderatorStatsToProto(stats),
+	}, nil
+}
+
+// ListModeratorsStats возвращает сводную статистику по всем модераторам для панели администратора.
+func (h *ModerationHandler) ListModeratorsStats(ctx context.Context, _ *pb.ListModeratorsStatsRequest) (*pb.ListModeratorsStatsResponse, error) {
+	userRole := UserRoleFromContext(ctx)
+	if userRole != "admin" {
+		return nil, status.Error(codes.PermissionDenied, "only administrators can list moderators stats")
+	}
+
+	statsList, err := h.svc.ListModeratorsStats(ctx)
+	if err != nil {
+		return nil, domainError(err, "list moderators stats")
+	}
+
+	resp := &pb.ListModeratorsStatsResponse{
+		Stats: make([]*pb.ModeratorStats, len(statsList)),
+	}
+	for i, s := range statsList {
+		resp.Stats[i] = moderatorStatsToProto(s)
+	}
+
+	return resp, nil
+}
+
+// ListModeratorActivity возвращает постраничный журнал заявок конкретного модератора.
+func (h *ModerationHandler) ListModeratorActivity(ctx context.Context, req *pb.ListModeratorActivityRequest) (*pb.ListModeratorActivityResponse, error) {
+	currentUserID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	userRole := UserRoleFromContext(ctx)
+	targetModID := req.GetModeratorId()
+	if targetModID == "" {
+		targetModID = currentUserID
+	}
+
+	if userRole != "admin" && (userRole != "moderator" || currentUserID != targetModID) {
+		return nil, status.Error(codes.PermissionDenied, "access denied to moderator activity")
+	}
+
+	var statusFilter *domain.RequestStatus
+	if req.GetStatus() != pb.RequestStatus_REQUEST_STATUS_UNSPECIFIED {
+		st := domain.RequestStatus(int16(req.GetStatus()))
+		statusFilter = &st
+	}
+
+	requests, total, err := h.svc.ListModeratorActivity(ctx, targetModID, statusFilter, int(req.GetLimit()), int(req.GetOffset()))
+	if err != nil {
+		return nil, domainError(err, "list moderator activity")
+	}
+
+	resp := &pb.ListModeratorActivityResponse{
+		Requests: make([]*pb.ModerationRequest, len(requests)),
+		Total:    clampInt32(total),
+	}
+	for i, r := range requests {
+		resp.Requests[i] = requestToProto(r)
+	}
+
+	return resp, nil
+}
+
