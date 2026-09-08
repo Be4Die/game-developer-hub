@@ -158,8 +158,8 @@ export const moderationApi = {
    */
   async listModeratorActivity(moderatorId, params = {}) {
     const query = new URLSearchParams();
-    if (params.status !== undefined && params.status !== '') {
-      query.append('status', params.status);
+    if (params.action_type !== undefined && params.action_type !== '') {
+      query.append('action_type', params.action_type);
     }
     if (params.limit !== undefined) {
       query.append('limit', params.limit);
@@ -170,8 +170,8 @@ export const moderationApi = {
     const qStr = query.toString() ? `?${query.toString()}` : '';
     const res = await http.get(`/moderation/moderators/${moderatorId}/activity${qStr}`);
     return {
-      requests: res.data.requests ?? [],
-      total: res.data.total ?? (res.data.requests ? res.data.requests.length : 0),
+      items: res.data.items ?? [],
+      total: res.data.total ?? 0,
     };
   },
 };

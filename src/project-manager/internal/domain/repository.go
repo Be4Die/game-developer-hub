@@ -8,6 +8,8 @@ type ProjectRepo interface {
 	Get(ctx context.Context, id int64) (*Project, error)
 	ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*Project, error)
 	CountByOwner(ctx context.Context, ownerID string) (int, error)
+	ListForUser(ctx context.Context, userID string, limit, offset int) ([]*Project, error)
+	CountForUser(ctx context.Context, userID string) (int, error)
 	UpdateStatus(ctx context.Context, id int64, status ProjectStatus) error
 	Delete(ctx context.Context, id int64) error
 }

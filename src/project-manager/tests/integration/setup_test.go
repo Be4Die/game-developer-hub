@@ -107,6 +107,9 @@ func setupIntegration(t *testing.T) *TestEnv {
 	bRepo := pg.NewBuildRepo(pool)
 	rRepo := pg.NewReleaseRepo(pool)
 	depRepo := pg.NewDeploymentRepo(pool)
+	memRepo := pg.NewMemberRepo(pool)
+	invRepo := pg.NewInvitationRepo(pool)
+	blockRepo := pg.NewBlockRepo(pool)
 
 	tmpDir := t.TempDir()
 	bStorage := filesystem.NewBuildStorage(filepath.Join(tmpDir, "projects"))
@@ -115,7 +118,7 @@ func setupIntegration(t *testing.T) *TestEnv {
 	mClient := newMockModerationClient()
 
 	projSvc := service.NewProjectService(
-		pRepo, dRepo, bRepo, rRepo, depRepo, mClient,
+		pRepo, dRepo, bRepo, rRepo, depRepo, memRepo, invRepo, blockRepo, mClient,
 		bStorage, mStorage, deployer, locker, 5,
 	)
 

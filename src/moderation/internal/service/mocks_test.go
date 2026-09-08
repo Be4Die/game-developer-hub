@@ -209,20 +209,40 @@ func (m *mockRequestRepo) ListModeratorsStats(ctx context.Context) ([]*domain.Mo
 	return result, nil
 }
 
-func (m *mockRequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+func (m *mockRequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, actionType string, limit, offset int) ([]*domain.ModeratorActivityItem, int, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	var list []*domain.ModerationRequest
+	var list []*domain.ModeratorActivityItem
 	for _, req := range m.requests {
 		if req.ModeratorID != moderatorID {
 			continue
 		}
-		if status != nil && req.Status != *status {
+		item := &domain.ModeratorActivityItem{
+			ID:           req.ID,
+			ProjectID:    req.ProjectID,
+			ProjectTitle: req.Snapshot.TitleRu,
+			CreatedAt:    req.UpdatedAt,
+		}
+		switch req.Status {
+		case domain.RequestStatusApproved:
+			item.ActionType = "approved"
+			item.ActionTitle = "Одобрил публикацию"
+		case domain.RequestStatusRejected:
+			item.ActionType = "rejected"
+			item.ActionTitle = "Отклонил заявку"
+			item.Details = req.RejectionReason
+		case domain.RequestStatusInReview:
+			item.ActionType = "claimed"
+			item.ActionTitle = "Взял на проверку"
+		default:
+			item.ActionType = "event"
+			item.ActionTitle = "Действие"
+		}
+		if actionType != "" && item.ActionType != actionType {
 			continue
 		}
-		copied := *req
-		list = append(list, &copied)
+		list = append(list, item)
 	}
 
 	total := len(list)

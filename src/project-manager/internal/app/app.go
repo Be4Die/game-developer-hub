@@ -65,6 +65,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	buildRepo := postgres.NewBuildRepo(pool)
 	releaseRepo := postgres.NewReleaseRepo(pool)
 	deploymentRepo := postgres.NewDeploymentRepo(pool)
+	memberRepo := postgres.NewMemberRepo(pool)
+	invitationRepo := postgres.NewInvitationRepo(pool)
+	blockRepo := postgres.NewBlockRepo(pool)
 
 	// ─── Хранилища и Драйверы развертывания ─────────────────────
 	buildStorage := filesystem.NewBuildStorage(cfg.Storage.ProjectsPath)
@@ -112,6 +115,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		buildRepo,
 		releaseRepo,
 		deploymentRepo,
+		memberRepo,
+		invitationRepo,
+		blockRepo,
 		moderationClient,
 		buildStorage,
 		mediaStorage,

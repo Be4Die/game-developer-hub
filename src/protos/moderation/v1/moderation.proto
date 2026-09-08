@@ -220,15 +220,28 @@ message ListModeratorsStatsResponse {
   repeated ModeratorStats stats = 1;
 }
 
+// ModeratorActivityItem запись в журнале действий модератора.
+message ModeratorActivityItem {
+  int64 id = 1;
+  int64 project_id = 2;
+  string action_type = 3;     // "chat_message", "dialog_closed", "approved", "rejected", "claimed"
+  string action_title = 4;    // "Сообщение в чате", "Вопрос решён", "Одобрение проекта", "Отклонение заявки", "Взятие на проверку"
+  string project_title = 5;   // Название игры
+  string project_icon = 6;    // Иконка игры
+  string build_version = 7;   // Версия билда
+  string details = 8;         // Текст сообщения / причина отказа / комментарий
+  string created_at = 9;      // Timestamp совершения действия
+}
+
 message ListModeratorActivityRequest {
   string moderator_id = 1;
-  RequestStatus status = 2;
+  string action_type = 2;     // Фильтр: "" (все), "chat_message", "dialog_closed", "approved", "rejected", "claimed"
   int32 limit = 3;
   int32 offset = 4;
 }
 
 message ListModeratorActivityResponse {
-  repeated ModerationRequest requests = 1;
+  repeated ModeratorActivityItem items = 1;
   int32 total = 2;
 }
 

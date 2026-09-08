@@ -48,19 +48,17 @@ func (h *ProjectHandler) Create(ctx context.Context, req *pb.ProjectCreateReques
 	return &pb.ProjectCreateResponse{Project: projectToProto(p)}, nil
 }
 
-// Get возвращает проект по ID.
+// Get возвращает проект по ID с правами доступа текущего пользователя.
 func (h *ProjectHandler) Get(ctx context.Context, req *pb.ProjectGetRequest) (*pb.ProjectGetResponse, error) {
-	ownerID, ok := UserIDFromContext(ctx)
+	userID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
-	p, err := h.svc.GetProject(ctx, req.GetId())
+	userRole, _ := UserRoleFromContext(ctx)
+	isStaff := userRole == 2 || userRole == 3
+	p, err := h.svc.GetProjectForUser(ctx, req.GetId(), userID, isStaff)
 	if err != nil {
 		return nil, domainError(err, "get project")
-	}
-	userRole, _ := UserRoleFromContext(ctx)
-	if p.OwnerID != ownerID && userRole != 2 && userRole != 3 {
-		return nil, status.Error(codes.PermissionDenied, "access denied")
 	}
 	return &pb.ProjectGetResponse{Project: projectToProto(p)}, nil
 }
@@ -371,4 +369,212 @@ func (h *ProjectHandler) Unpublish(ctx context.Context, req *pb.ProjectUnpublish
 		return nil, domainError(err, "unpublish project")
 	}
 	return &pb.ProjectUnpublishResponse{Success: true}, nil
+}
+
+// ─── Приглашения и общий доступ ──────────────────────────────
+
+// SendInvitation отправляет приглашение пользователю в команду проекта.
+func (h *ProjectHandler) SendInvitation(ctx context.Context, req *pb.ProjectSendInvitationRequest) (*pb.ProjectSendInvitationResponse, error) {
+	inviterID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	inviterEmail := UserEmailFromContext(ctx)
+	inviterName := UserNameFromContext(ctx)
+
+	inv, err := h.svc.SendInvitation(
+		ctx,
+		req.GetProjectId(),
+		inviterID,
+		inviterEmail,
+		inviterName,
+		req.GetInviteeId(),
+		req.GetInviteeEmail(),
+		req.GetPermissions(),
+	)
+	if err != nil {
+		return nil, domainError(err, "send invitation")
+	}
+	return &pb.ProjectSendInvitationResponse{Invitation: invitationToProto(inv)}, nil
+}
+
+// ListIncomingInvitations возвращает входящие активные приглашения текущего пользователя.
+func (h *ProjectHandler) ListIncomingInvitations(ctx context.Context, _ *pb.ProjectListIncomingInvitationsRequest) (*pb.ProjectListIncomingInvitationsResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	invitations, err := h.svc.ListIncomingInvitations(ctx, userID)
+	if err != nil {
+		return nil, domainError(err, "list incoming invitations")
+	}
+	resp := &pb.ProjectListIncomingInvitationsResponse{
+		Invitations: make([]*pb.ProjectInvitation, len(invitations)),
+	}
+	for i, inv := range invitations {
+		resp.Invitations[i] = invitationToProto(inv)
+	}
+	return resp, nil
+}
+
+// ListOutgoingInvitations возвращает исходящие приглашения пользователя по проектам.
+func (h *ProjectHandler) ListOutgoingInvitations(ctx context.Context, req *pb.ProjectListOutgoingInvitationsRequest) (*pb.ProjectListOutgoingInvitationsResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	invitations, err := h.svc.ListOutgoingInvitations(ctx, userID, req.GetProjectId())
+	if err != nil {
+		return nil, domainError(err, "list outgoing invitations")
+	}
+	resp := &pb.ProjectListOutgoingInvitationsResponse{
+		Invitations: make([]*pb.ProjectInvitation, len(invitations)),
+	}
+	for i, inv := range invitations {
+		resp.Invitations[i] = invitationToProto(inv)
+	}
+	return resp, nil
+}
+
+// RespondInvitation принимает или отклоняет приглашение в проект.
+func (h *ProjectHandler) RespondInvitation(ctx context.Context, req *pb.ProjectRespondInvitationRequest) (*pb.ProjectRespondInvitationResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.RespondInvitation(ctx, req.GetInvitationId(), userID, req.GetAccept()); err != nil {
+		return nil, domainError(err, "respond invitation")
+	}
+	return &pb.ProjectRespondInvitationResponse{Success: true}, nil
+}
+
+// CancelInvitation отменяет отправленное приглашение.
+func (h *ProjectHandler) CancelInvitation(ctx context.Context, req *pb.ProjectCancelInvitationRequest) (*pb.ProjectCancelInvitationResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.CancelInvitation(ctx, req.GetInvitationId(), userID); err != nil {
+		return nil, domainError(err, "cancel invitation")
+	}
+	return &pb.ProjectCancelInvitationResponse{Success: true}, nil
+}
+
+// ListMembers возвращает участников проекта.
+func (h *ProjectHandler) ListMembers(ctx context.Context, req *pb.ProjectListMembersRequest) (*pb.ProjectListMembersResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	members, ownerID, err := h.svc.ListProjectMembers(ctx, req.GetProjectId(), userID)
+	if err != nil {
+		return nil, domainError(err, "list members")
+	}
+	resp := &pb.ProjectListMembersResponse{
+		Members: make([]*pb.ProjectMember, len(members)),
+		OwnerId: ownerID,
+	}
+	for i, m := range members {
+		resp.Members[i] = memberToProto(m)
+	}
+	return resp, nil
+}
+
+// UpdateMemberPermissions изменяет права участника проекта.
+func (h *ProjectHandler) UpdateMemberPermissions(ctx context.Context, req *pb.ProjectUpdateMemberPermissionsRequest) (*pb.ProjectUpdateMemberPermissionsResponse, error) {
+	ownerID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	member, err := h.svc.UpdateMemberPermissions(ctx, req.GetProjectId(), ownerID, req.GetUserId(), req.GetPermissions())
+	if err != nil {
+		return nil, domainError(err, "update member permissions")
+	}
+	return &pb.ProjectUpdateMemberPermissionsResponse{Member: memberToProto(member)}, nil
+}
+
+// RemoveMember удаляет участника из проекта.
+func (h *ProjectHandler) RemoveMember(ctx context.Context, req *pb.ProjectRemoveMemberRequest) (*pb.ProjectRemoveMemberResponse, error) {
+	ownerID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.RemoveMember(ctx, req.GetProjectId(), ownerID, req.GetUserId()); err != nil {
+		return nil, domainError(err, "remove member")
+	}
+	return &pb.ProjectRemoveMemberResponse{Success: true}, nil
+}
+
+// LeaveProject позволяет участнику покинуть проект.
+func (h *ProjectHandler) LeaveProject(ctx context.Context, req *pb.ProjectLeaveRequest) (*pb.ProjectLeaveResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.LeaveProject(ctx, req.GetProjectId(), userID); err != nil {
+		return nil, domainError(err, "leave project")
+	}
+	return &pb.ProjectLeaveResponse{Success: true}, nil
+}
+
+// ListSharedProjects возвращает проекты, в которых текущий пользователь является участником.
+func (h *ProjectHandler) ListSharedProjects(ctx context.Context, _ *pb.ProjectListSharedProjectsRequest) (*pb.ProjectListSharedProjectsResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	projects, err := h.svc.ListSharedProjects(ctx, userID)
+	if err != nil {
+		return nil, domainError(err, "list shared projects")
+	}
+	resp := &pb.ProjectListSharedProjectsResponse{
+		Projects: make([]*pb.SharedProjectItem, len(projects)),
+	}
+	for i, sp := range projects {
+		resp.Projects[i] = sharedProjectToProto(sp)
+	}
+	return resp, nil
+}
+
+// BlockUser добавляет пользователя в черный список для блокировки спама.
+func (h *ProjectHandler) BlockUser(ctx context.Context, req *pb.ProjectBlockUserRequest) (*pb.ProjectBlockUserResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.BlockUser(ctx, userID, req.GetBlockedUserId(), req.GetBlockedUserEmail(), ""); err != nil {
+		return nil, domainError(err, "block user")
+	}
+	return &pb.ProjectBlockUserResponse{Success: true}, nil
+}
+
+// UnblockUser удаляет пользователя из черного списка.
+func (h *ProjectHandler) UnblockUser(ctx context.Context, req *pb.ProjectUnblockUserRequest) (*pb.ProjectUnblockUserResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.UnblockUser(ctx, userID, req.GetBlockedUserId()); err != nil {
+		return nil, domainError(err, "unblock user")
+	}
+	return &pb.ProjectUnblockUserResponse{Success: true}, nil
+}
+
+// ListBlockedUsers возвращает список заблокированных пользователей.
+func (h *ProjectHandler) ListBlockedUsers(ctx context.Context, _ *pb.ProjectListBlockedUsersRequest) (*pb.ProjectListBlockedUsersResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	blocks, err := h.svc.ListBlockedUsers(ctx, userID)
+	if err != nil {
+		return nil, domainError(err, "list blocked users")
+	}
+	resp := &pb.ProjectListBlockedUsersResponse{
+		Blocks: make([]*pb.UserAccessBlock, len(blocks)),
+	}
+	for i, b := range blocks {
+		resp.Blocks[i] = blockToProto(b)
+	}
+	return resp, nil
 }

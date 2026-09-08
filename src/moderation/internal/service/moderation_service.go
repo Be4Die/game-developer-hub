@@ -293,11 +293,12 @@ func (s *ModerationService) ListModeratorsStats(ctx context.Context) ([]*domain.
 	return s.requestRepo.ListModeratorsStats(ctx)
 }
 
-// ListModeratorActivity возвращает постраничный список заявок конкретного модератора.
-func (s *ModerationService) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+// ListModeratorActivity возвращает постраничный журнал действий конкретного модератора.
+func (s *ModerationService) ListModeratorActivity(ctx context.Context, moderatorID string, actionType string, limit, offset int) ([]*domain.ModeratorActivityItem, int, error) {
 	if strings.TrimSpace(moderatorID) == "" {
 		return nil, 0, fmt.Errorf("moderator id is required")
 	}
-	return s.requestRepo.ListModeratorActivity(ctx, strings.TrimSpace(moderatorID), status, limit, offset)
+	return s.requestRepo.ListModeratorActivity(ctx, strings.TrimSpace(moderatorID), strings.TrimSpace(actionType), limit, offset)
 }
+
 

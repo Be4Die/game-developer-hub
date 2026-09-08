@@ -47,6 +47,9 @@ func projectToProto(p *domain.Project) *pb.Project {
 		proto.ProdUrl = p.Release.ProdURL
 	}
 
+	proto.CurrentUserPermissions = p.CurrentUserPermissions
+	proto.IsOwner = p.IsOwner
+
 	return proto
 }
 
@@ -105,5 +108,69 @@ func releaseToProto(r *domain.Release) *pb.ProjectRelease {
 		VideoPath:   r.VideoPath,
 		ProdUrl:     r.ProdURL,
 		PublishedAt: formatTime(r.PublishedAt),
+	}
+}
+
+func memberToProto(m *domain.Member) *pb.ProjectMember {
+	if m == nil {
+		return nil
+	}
+	return &pb.ProjectMember{
+		Id:          m.ID,
+		ProjectId:   m.ProjectID,
+		UserId:      m.UserID,
+		UserEmail:   m.UserEmail,
+		UserName:    m.UserName,
+		Permissions: m.Permissions,
+		CreatedAt:   formatTime(m.CreatedAt),
+		UpdatedAt:   formatTime(m.UpdatedAt),
+	}
+}
+
+func invitationToProto(inv *domain.Invitation) *pb.ProjectInvitation {
+	if inv == nil {
+		return nil
+	}
+	return &pb.ProjectInvitation{
+		Id:           inv.ID,
+		ProjectId:    inv.ProjectID,
+		ProjectTitle: inv.ProjectTitle,
+		ProjectIcon:  inv.ProjectIcon,
+		InviterId:    inv.InviterID,
+		InviterEmail: inv.InviterEmail,
+		InviterName:  inv.InviterName,
+		InviteeId:    inv.InviteeID,
+		InviteeEmail: inv.InviteeEmail,
+		Permissions:  inv.Permissions,
+		Status:       pb.InvitationStatus(inv.Status),
+		CreatedAt:    formatTime(inv.CreatedAt),
+		UpdatedAt:    formatTime(inv.UpdatedAt),
+	}
+}
+
+func blockToProto(b *domain.UserBlock) *pb.UserAccessBlock {
+	if b == nil {
+		return nil
+	}
+	return &pb.UserAccessBlock{
+		Id:               b.ID,
+		UserId:           b.UserID,
+		BlockedUserId:    b.BlockedUserID,
+		BlockedUserEmail: b.BlockedUserEmail,
+		BlockedUserName:  b.BlockedUserName,
+		CreatedAt:        formatTime(b.CreatedAt),
+	}
+}
+
+func sharedProjectToProto(sp *domain.SharedProject) *pb.SharedProjectItem {
+	if sp == nil {
+		return nil
+	}
+	return &pb.SharedProjectItem{
+		Project:     projectToProto(sp.Project),
+		Permissions: sp.Permissions,
+		OwnerEmail:  sp.OwnerEmail,
+		OwnerName:   sp.OwnerName,
+		JoinedAt:    formatTime(sp.JoinedAt),
 	}
 }

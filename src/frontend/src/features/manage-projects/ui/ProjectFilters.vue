@@ -41,6 +41,23 @@
       </div>
     </div>
 
+    <!-- Селектор принадлежности (Мои / Общие) -->
+    <div class="filter-field field-role">
+      <label class="field-label">{{ t('header.sharedAccess') }}</label>
+      <div class="select-wrapper">
+        <select
+          :value="roleFilter"
+          class="filter-select"
+          @change="$emit('update:roleFilter', $event.target.value)"
+        >
+          <option value="all">Все проекты</option>
+          <option value="owned">Мои проекты</option>
+          <option value="shared">Доступные мне</option>
+        </select>
+        <ChevronDown class="icon-xs select-arrow" />
+      </div>
+    </div>
+
     <!-- Селектор сортировки -->
     <div class="filter-field field-sort">
       <label class="field-label">{{ t('common.actions') }}</label>
@@ -60,7 +77,7 @@
 
     <!-- Кнопка сброса фильтров -->
     <button
-      v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
+      v-if="searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || sortBy !== 'newest'"
       class="btn-reset-filters"
       title="Сбросить фильтры"
       @click="$emit('reset')"
@@ -86,11 +103,19 @@ const { t } = useI18n();
 defineProps({
   searchQuery: { type: String, default: '' },
   statusFilter: { type: String, default: 'all' },
+  roleFilter: { type: String, default: 'all' },
   sortBy: { type: String, default: 'newest' },
   creating: { type: Boolean, default: false },
 });
 
-defineEmits(['update:searchQuery', 'update:statusFilter', 'update:sortBy', 'reset', 'create']);
+defineEmits([
+  'update:searchQuery',
+  'update:statusFilter',
+  'update:roleFilter',
+  'update:sortBy',
+  'reset',
+  'create',
+]);
 </script>
 
 <style scoped>
@@ -114,12 +139,17 @@ defineEmits(['update:searchQuery', 'update:statusFilter', 'update:sortBy', 'rese
 }
 
 .field-status {
-  width: 180px;
+  width: 170px;
+  flex-shrink: 0;
+}
+
+.field-role {
+  width: 170px;
   flex-shrink: 0;
 }
 
 .field-sort {
-  width: 200px;
+  width: 190px;
   flex-shrink: 0;
 }
 

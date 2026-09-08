@@ -51,3 +51,19 @@ export function getMediaUrl(path) {
     .replace(/^media\//, '');
   return `/api/v1/media/${clean}`;
 }
+
+export function hasPermission(project, perm) {
+  if (!project) return false;
+  if (project.is_owner !== false) return true;
+  return (
+    Array.isArray(project.current_user_permissions) &&
+    project.current_user_permissions.includes(perm)
+  );
+}
+
+export function permissionLabel(perm) {
+  const t = i18n.global.t;
+  const key = `access.permissions.${perm}`;
+  const translated = t(key);
+  return translated !== key ? translated : perm;
+}

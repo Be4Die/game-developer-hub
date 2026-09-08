@@ -116,12 +116,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="mod in paginatedModerators"
-              :key="mod.id"
-              class="table-row table-row-clickable"
-              @click="openModeratorStats(mod)"
-            >
+            <tr v-for="mod in paginatedModerators" :key="mod.id" class="table-row">
               <!-- Колонка 1: Название / Имя -->
               <td class="col-name">
                 <span class="user-name-text">{{ mod.display_name || 'Модератор' }}</span>
@@ -172,16 +167,15 @@
               </td>
 
               <!-- Колонка 8: Действия -->
-              <td class="col-actions" @click.stop>
+              <td class="col-actions">
                 <div class="row-actions">
-                  <!-- Кнопка статистики и журнала -->
+                  <!-- Кнопка перехода к деталям модератора -->
                   <button
-                    class="btn-action btn-action-stats"
-                    title="Статистика и журнал действий"
-                    @click="openModeratorStats(mod)"
+                    class="btn-action"
+                    title="Детали модератора"
+                    @click="router.push(`/admin/moderators/${mod.id}`)"
                   >
-                    <BarChart2 class="icon-xs" />
-                    <span>Статистика</span>
+                    <span>{{ t('moderation.details') }}</span>
                   </button>
 
                   <!-- Кнопка восстановления (если удален) -->
@@ -292,18 +286,12 @@
       @deleted="handleModeratorDeleted"
       @cancel="deleteTarget = null"
     />
-
-    <!-- Модалка статистики и журнала действий модератора -->
-    <ModeratorStatsModal
-      v-if="selectedModerator"
-      :moderator="selectedModerator"
-      @close="selectedModerator = null"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
   ShieldCheck,
@@ -317,23 +305,18 @@ import {
   ChevronsRight,
   RotateCcw,
   Trash2,
-  BarChart2,
 } from 'lucide-vue-next';
 import { searchUsers, setUserStatus } from '@/entities/user';
-import {
-  CreateModeratorModal,
-  DeleteModeratorModal,
-  ModeratorStatsModal,
-} from '@/features/manage-moderators';
+import { CreateModeratorModal, DeleteModeratorModal } from '@/features/manage-moderators';
 import { moderationApi, formatDurationSeconds } from '@/entities/moderation';
 import { formatProjectDate, showToast } from '@/shared/lib';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const loading = ref(false);
 const allUsers = ref([]);
 const statsMap = ref({});
-const selectedModerator = ref(null);
 const searchQuery = ref('');
 const statusFilter = ref('all');
 const sortBy = ref('newest');
@@ -375,10 +358,6 @@ async function loadModeratorsStats() {
   } catch (err) {
     console.warn('Failed to load moderators stats', err);
   }
-}
-
-function openModeratorStats(mod) {
-  selectedModerator.value = mod;
 }
 
 // Фильтруем только модераторов

@@ -18,6 +18,9 @@ type ProjectService struct {
 	buildRepo        domain.BuildRepo
 	releaseRepo      domain.ReleaseRepo
 	deploymentRepo   domain.DeploymentRepo
+	memberRepo       domain.MemberRepo
+	invitationRepo   domain.InvitationRepo
+	blockRepo        domain.BlockRepo
 	moderationClient domain.ModerationClient
 	buildStorage     domain.BuildStorage
 	mediaStorage     domain.MediaStorage
@@ -33,6 +36,9 @@ func NewProjectService(
 	buildRepo domain.BuildRepo,
 	releaseRepo domain.ReleaseRepo,
 	deploymentRepo domain.DeploymentRepo,
+	memberRepo domain.MemberRepo,
+	invitationRepo domain.InvitationRepo,
+	blockRepo domain.BlockRepo,
 	moderationClient domain.ModerationClient,
 	buildStorage domain.BuildStorage,
 	mediaStorage domain.MediaStorage,
@@ -52,6 +58,9 @@ func NewProjectService(
 		buildRepo:        buildRepo,
 		releaseRepo:      releaseRepo,
 		deploymentRepo:   deploymentRepo,
+		memberRepo:       memberRepo,
+		invitationRepo:   invitationRepo,
+		blockRepo:        blockRepo,
 		moderationClient: moderationClient,
 		buildStorage:     buildStorage,
 		mediaStorage:     mediaStorage,
@@ -113,19 +122,99 @@ func (s *ProjectService) GetProject(ctx context.Context, projectID int64) (*doma
 	return p, nil
 }
 
-// ListProjects возвращает постраничный список проектов указанного владельца и общее количество.
-func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, int, error) {
-	projects, err := s.projectRepo.ListByOwner(ctx, ownerID, limit, offset)
+// CheckAccess проверяет доступ пользователя к проекту и возвращает сущность проекта с вычисленными правами.
+func (s *ProjectService) CheckAccess(ctx context.Context, projectID int64, userID string, requiredPerm string) (*domain.Project, error) {
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.CheckAccess: %w", err)
+	}
+
+	if p.OwnerID == userID {
+		p.IsOwner = true
+		p.CurrentUserPermissions = domain.AllPermissions()
+		return p, nil
+	}
+
+	if s.memberRepo == nil {
+		return nil, domain.ErrForbidden
+	}
+
+	m, err := s.memberRepo.Get(ctx, projectID, userID)
+	if err != nil {
+		return nil, domain.ErrForbidden
+	}
+
+	if requiredPerm != "" && !m.HasPermission(requiredPerm) {
+		return nil, domain.ErrForbidden
+	}
+
+	p.IsOwner = false
+	p.CurrentUserPermissions = m.Permissions
+	return p, nil
+}
+
+// GetProjectForUser загружает проект и вычисляет права текущего пользователя (или модератора/администратора).
+func (s *ProjectService) GetProjectForUser(ctx context.Context, projectID int64, userID string, isStaff bool) (*domain.Project, error) {
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.GetProjectForUser: %w", err)
+	}
+
+	if d, err := s.draftRepo.Get(ctx, projectID); err == nil {
+		p.Draft = d
+	}
+
+	if rel, err := s.releaseRepo.GetActive(ctx, projectID); err == nil {
+		p.Release = rel
+	}
+
+	if isStaff {
+		p.IsOwner = (p.OwnerID == userID)
+		p.CurrentUserPermissions = domain.AllPermissions()
+		return p, nil
+	}
+
+	if p.OwnerID == userID {
+		p.IsOwner = true
+		p.CurrentUserPermissions = domain.AllPermissions()
+		return p, nil
+	}
+
+	if s.memberRepo != nil {
+		if m, err := s.memberRepo.Get(ctx, projectID, userID); err == nil {
+			p.IsOwner = false
+			p.CurrentUserPermissions = m.Permissions
+			return p, nil
+		}
+	}
+
+	return nil, domain.ErrForbidden
+}
+
+// ListProjects возвращает постраничный список доступных пользователю проектов (собственных и совместных) и общее количество.
+func (s *ProjectService) ListProjects(ctx context.Context, userID string, limit, offset int) ([]*domain.Project, int, error) {
+	projects, err := s.projectRepo.ListForUser(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("ProjectService.ListProjects: %w", err)
 	}
 
-	total, err := s.projectRepo.CountByOwner(ctx, ownerID)
+	total, err := s.projectRepo.CountForUser(ctx, userID)
 	if err != nil {
 		total = len(projects)
 	}
 
 	for _, p := range projects {
+		if p.OwnerID == userID {
+			p.IsOwner = true
+			p.CurrentUserPermissions = domain.AllPermissions()
+		} else {
+			p.IsOwner = false
+			if len(p.CurrentUserPermissions) == 0 && s.memberRepo != nil {
+				if m, err := s.memberRepo.Get(ctx, p.ID, userID); err == nil {
+					p.CurrentUserPermissions = m.Permissions
+				}
+			}
+		}
 		if d, err := s.draftRepo.Get(ctx, p.ID); err == nil {
 			p.Draft = d
 		}
@@ -138,7 +227,7 @@ func (s *ProjectService) ListProjects(ctx context.Context, ownerID string, limit
 }
 
 // UpdateDraft обновляет метаданные черновика проекта.
-func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, ownerID string, meta domain.DraftMeta) error {
+func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, userID string, meta domain.DraftMeta) error {
 	if len([]rune(meta.TitleRu)) > 50 || len([]rune(meta.TitleEn)) > 50 {
 		return domain.ErrInvalidInput
 	}
@@ -155,12 +244,8 @@ func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, owner
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("ProjectService.UpdateDraft: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return domain.ErrForbidden
+	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo); err != nil {
+		return err
 	}
 
 	draft, err := s.draftRepo.Get(ctx, projectID)
@@ -228,12 +313,9 @@ func (s *ProjectService) UploadBuildStream(ctx context.Context, projectID int64,
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
+	_, err = s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild)
 	if err != nil {
-		return nil, "", fmt.Errorf("ProjectService.UploadBuild: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return nil, "", domain.ErrForbidden
+		return nil, "", err
 	}
 
 	// Проверка на дубликат версии
@@ -300,12 +382,8 @@ func (s *ProjectService) UploadBuild(ctx context.Context, projectID int64, owner
 
 // ListBuilds возвращает список сборок проекта.
 func (s *ProjectService) ListBuilds(ctx context.Context, projectID int64, ownerID string) ([]*domain.Build, error) {
-	p, err := s.projectRepo.Get(ctx, projectID)
-	if err != nil {
-		return nil, fmt.Errorf("ProjectService.ListBuilds: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return nil, domain.ErrForbidden
+	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild); err != nil {
+		return nil, err
 	}
 	return s.buildRepo.ListByProject(ctx, projectID, s.maxVersions)
 }
@@ -318,12 +396,8 @@ func (s *ProjectService) DeleteBuild(ctx context.Context, projectID int64, owner
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("ProjectService.DeleteBuild: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return domain.ErrForbidden
+	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild); err != nil {
+		return err
 	}
 
 	b, err := s.buildRepo.Get(ctx, projectID, version)
@@ -350,12 +424,8 @@ func (s *ProjectService) UploadMediaStream(ctx context.Context, projectID int64,
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
-	if err != nil {
-		return "", fmt.Errorf("ProjectService.UploadMedia: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return "", domain.ErrForbidden
+	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadMedia); err != nil {
+		return "", err
 	}
 
 	filePath, err := s.mediaStorage.SaveMediaStream(ctx, projectID, mediaType, reader)
@@ -383,12 +453,9 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
+	p, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermSubmitModeration)
 	if err != nil {
-		return 0, fmt.Errorf("ProjectService.SubmitForModeration: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return 0, domain.ErrForbidden
+		return 0, err
 	}
 	if p.Status == domain.ProjectStatusPending {
 		return 0, domain.ErrAlreadyInModeration
@@ -406,7 +473,7 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 
 	snapshot := &domain.ProjectSnapshot{
 		ProjectID:          projectID,
-		OwnerID:            ownerID,
+		OwnerID:            p.OwnerID,
 		TitleRu:            draft.TitleRu,
 		TitleEn:            draft.TitleEn,
 		AboutRu:            draft.AboutRu,
@@ -530,12 +597,8 @@ func (s *ProjectService) Unpublish(ctx context.Context, projectID int64, ownerID
 	}
 	defer unlock()
 
-	p, err := s.projectRepo.Get(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("ProjectService.Unpublish: %w", err)
-	}
-	if p.OwnerID != ownerID {
-		return domain.ErrForbidden
+	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermSubmitModeration); err != nil {
+		return err
 	}
 
 	if err := s.deployer.UndeployProd(ctx, projectID); err != nil {
@@ -549,4 +612,319 @@ func (s *ProjectService) Unpublish(ctx context.Context, projectID int64, ownerID
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusDraft)
 
 	return nil
+}
+
+// ─── Совместный доступ и управление участниками ─────────────────────────────────────
+
+// SendInvitation отправляет приглашение к совместной разработке.
+func (s *ProjectService) SendInvitation(
+	ctx context.Context,
+	projectID int64,
+	inviterID, inviterEmail, inviterName string,
+	inviteeID, inviteeEmail string,
+	permissions []string,
+) (*domain.Invitation, error) {
+	if s.invitationRepo == nil || s.memberRepo == nil || s.blockRepo == nil {
+		return nil, domain.ErrInvalidInput
+	}
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.SendInvitation get project: %w", err)
+	}
+	if p.OwnerID != inviterID {
+		return nil, domain.ErrForbidden
+	}
+	if inviterID == inviteeID {
+		return nil, domain.ErrCannotInviteSelf
+	}
+
+	// 1. Проверка блокировки: заблокировал ли получатель отправителя?
+	isBlocked, err := s.blockRepo.IsBlocked(ctx, inviteeID, inviterID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.SendInvitation check block: %w", err)
+	}
+	if isBlocked {
+		return nil, domain.ErrUserBlocked
+	}
+
+	// 2. Проверка: уже участник?
+	isMember, err := s.memberRepo.IsMember(ctx, projectID, inviteeID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.SendInvitation check member: %w", err)
+	}
+	if isMember {
+		return nil, domain.ErrAlreadyMember
+	}
+
+	// 3. Проверка: уже есть открытое приглашение?
+	if _, err := s.invitationRepo.GetPending(ctx, projectID, inviteeID); err == nil {
+		return nil, domain.ErrAlreadyInvited
+	}
+
+	// 4. Фильтрация разрешений
+	var validPerms []string
+	for _, perm := range permissions {
+		if domain.IsValidPermission(perm) {
+			validPerms = append(validPerms, perm)
+		}
+	}
+	if len(validPerms) == 0 {
+		return nil, domain.ErrInvalidInput
+	}
+
+	inv := &domain.Invitation{
+		ProjectID:    projectID,
+		InviterID:    inviterID,
+		InviterEmail: inviterEmail,
+		InviterName:  inviterName,
+		InviteeID:    inviteeID,
+		InviteeEmail: inviteeEmail,
+		Permissions:  validPerms,
+		Status:       domain.InvitationStatusPending,
+	}
+
+	id, err := s.invitationRepo.Create(ctx, inv)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.SendInvitation create: %w", err)
+	}
+	inv.ID = id
+	inv.ProjectTitle = fmt.Sprintf("Проект #%d", projectID)
+	if d, err := s.draftRepo.Get(ctx, projectID); err == nil {
+		if d.TitleRu != "" {
+			inv.ProjectTitle = d.TitleRu
+		} else if d.TitleEn != "" {
+			inv.ProjectTitle = d.TitleEn
+		}
+		inv.ProjectIcon = d.IconPath
+	}
+	return inv, nil
+}
+
+// ListIncomingInvitations возвращает входящие активные приглашения пользователя.
+func (s *ProjectService) ListIncomingInvitations(ctx context.Context, userID string) ([]*domain.Invitation, error) {
+	if s.invitationRepo == nil {
+		return nil, nil
+	}
+	return s.invitationRepo.ListIncoming(ctx, userID)
+}
+
+// ListOutgoingInvitations возвращает исходящие приглашения владельца проекта.
+func (s *ProjectService) ListOutgoingInvitations(ctx context.Context, userID string, projectID int64) ([]*domain.Invitation, error) {
+	if s.invitationRepo == nil {
+		return nil, nil
+	}
+	if projectID != 0 {
+		p, err := s.projectRepo.Get(ctx, projectID)
+		if err != nil {
+			return nil, err
+		}
+		if p.OwnerID != userID {
+			return nil, domain.ErrForbidden
+		}
+	}
+	return s.invitationRepo.ListOutgoing(ctx, userID, projectID)
+}
+
+// RespondInvitation принимает или отклоняет входящее приглашение.
+func (s *ProjectService) RespondInvitation(ctx context.Context, invitationID int64, userID string, accept bool) error {
+	if s.invitationRepo == nil || s.memberRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	inv, err := s.invitationRepo.Get(ctx, invitationID)
+	if err != nil {
+		return fmt.Errorf("ProjectService.RespondInvitation get: %w", err)
+	}
+	if inv.InviteeID != userID {
+		return domain.ErrForbidden
+	}
+	if inv.Status != domain.InvitationStatusPending {
+		return domain.ErrInvitationClosed
+	}
+
+	if accept {
+		if err := s.invitationRepo.UpdateStatus(ctx, invitationID, domain.InvitationStatusAccepted); err != nil {
+			return fmt.Errorf("ProjectService.RespondInvitation update status: %w", err)
+		}
+		m := &domain.Member{
+			ProjectID:   inv.ProjectID,
+			UserID:      inv.InviteeID,
+			UserEmail:   inv.InviteeEmail,
+			Permissions: inv.Permissions,
+		}
+		if err := s.memberRepo.Add(ctx, m); err != nil {
+			return fmt.Errorf("ProjectService.RespondInvitation add member: %w", err)
+		}
+		return nil
+	}
+
+	return s.invitationRepo.UpdateStatus(ctx, invitationID, domain.InvitationStatusDeclined)
+}
+
+// CancelInvitation отменяет отправленное приглашение (только отправитель или владелец проекта).
+func (s *ProjectService) CancelInvitation(ctx context.Context, invitationID int64, userID string) error {
+	if s.invitationRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	inv, err := s.invitationRepo.Get(ctx, invitationID)
+	if err != nil {
+		return fmt.Errorf("ProjectService.CancelInvitation get: %w", err)
+	}
+	if inv.InviterID != userID {
+		p, err := s.projectRepo.Get(ctx, inv.ProjectID)
+		if err != nil || p.OwnerID != userID {
+			return domain.ErrForbidden
+		}
+	}
+	if inv.Status != domain.InvitationStatusPending {
+		return domain.ErrInvitationClosed
+	}
+	return s.invitationRepo.UpdateStatus(ctx, invitationID, domain.InvitationStatusCanceled)
+}
+
+// ListProjectMembers возвращает список участников проекта и ID владельца.
+func (s *ProjectService) ListProjectMembers(ctx context.Context, projectID int64, userID string) ([]*domain.Member, string, error) {
+	if s.memberRepo == nil {
+		return nil, "", nil
+	}
+	p, err := s.CheckAccess(ctx, projectID, userID, "")
+	if err != nil {
+		return nil, "", err
+	}
+	members, err := s.memberRepo.ListByProject(ctx, projectID)
+	if err != nil {
+		return nil, "", fmt.Errorf("ProjectService.ListProjectMembers: %w", err)
+	}
+	return members, p.OwnerID, nil
+}
+
+// UpdateMemberPermissions обновляет разрешения участника (доступно только владельцу проекта).
+func (s *ProjectService) UpdateMemberPermissions(ctx context.Context, projectID int64, ownerID, memberUserID string, permissions []string) (*domain.Member, error) {
+	if s.memberRepo == nil {
+		return nil, domain.ErrInvalidInput
+	}
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.UpdateMemberPermissions get: %w", err)
+	}
+	if p.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	var validPerms []string
+	for _, perm := range permissions {
+		if domain.IsValidPermission(perm) {
+			validPerms = append(validPerms, perm)
+		}
+	}
+
+	if err := s.memberRepo.UpdatePermissions(ctx, projectID, memberUserID, validPerms); err != nil {
+		return nil, fmt.Errorf("ProjectService.UpdateMemberPermissions update: %w", err)
+	}
+	return s.memberRepo.Get(ctx, projectID, memberUserID)
+}
+
+// RemoveMember удаляет участника из проекта (доступно только владельцу проекта).
+func (s *ProjectService) RemoveMember(ctx context.Context, projectID int64, ownerID, memberUserID string) error {
+	if s.memberRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("ProjectService.RemoveMember get: %w", err)
+	}
+	if p.OwnerID != ownerID {
+		return domain.ErrForbidden
+	}
+	return s.memberRepo.Delete(ctx, projectID, memberUserID)
+}
+
+// LeaveProject позволяет участнику добровольно покинуть проект.
+func (s *ProjectService) LeaveProject(ctx context.Context, projectID int64, userID string) error {
+	if s.memberRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	p, err := s.projectRepo.Get(ctx, projectID)
+	if err != nil {
+		return fmt.Errorf("ProjectService.LeaveProject get: %w", err)
+	}
+	if p.OwnerID == userID {
+		return domain.ErrForbidden // Владелец не может покинуть собственный проект
+	}
+	return s.memberRepo.Delete(ctx, projectID, userID)
+}
+
+// ListSharedProjects возвращает все проекты, к которым пользователю предоставлен доступ в качестве участника.
+func (s *ProjectService) ListSharedProjects(ctx context.Context, userID string) ([]*domain.SharedProject, error) {
+	if s.memberRepo == nil {
+		return nil, nil
+	}
+	memberships, err := s.memberRepo.ListByUser(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.ListSharedProjects list memberships: %w", err)
+	}
+
+	var res []*domain.SharedProject
+	for _, m := range memberships {
+		p, err := s.projectRepo.Get(ctx, m.ProjectID)
+		if err != nil {
+			continue
+		}
+		p.IsOwner = false
+		p.CurrentUserPermissions = m.Permissions
+		if d, err := s.draftRepo.Get(ctx, p.ID); err == nil {
+			p.Draft = d
+		}
+		if rel, err := s.releaseRepo.GetActive(ctx, p.ID); err == nil {
+			p.Release = rel
+		}
+
+		res = append(res, &domain.SharedProject{
+			Project:     p,
+			Permissions: m.Permissions,
+			JoinedAt:    m.CreatedAt,
+		})
+	}
+	return res, nil
+}
+
+// BlockUser добавляет пользователя в черный список и отменяет висящие приглашения от него.
+func (s *ProjectService) BlockUser(ctx context.Context, userID, blockedUserID, blockedEmail, blockedName string) error {
+	if s.blockRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	if userID == blockedUserID {
+		return domain.ErrInvalidInput
+	}
+
+	block := &domain.UserBlock{
+		UserID:           userID,
+		BlockedUserID:    blockedUserID,
+		BlockedUserEmail: blockedEmail,
+		BlockedUserName:  blockedName,
+	}
+	if err := s.blockRepo.Block(ctx, block); err != nil {
+		return fmt.Errorf("ProjectService.BlockUser: %w", err)
+	}
+
+	// Отменяем любые висящие приглашения от заблокированного пользователя
+	if s.invitationRepo != nil {
+		_ = s.invitationRepo.CancelAllPendingBetween(ctx, blockedUserID, userID)
+	}
+	return nil
+}
+
+// UnblockUser удаляет пользователя из черного списка.
+func (s *ProjectService) UnblockUser(ctx context.Context, userID, blockedUserID string) error {
+	if s.blockRepo == nil {
+		return domain.ErrInvalidInput
+	}
+	return s.blockRepo.Unblock(ctx, userID, blockedUserID)
+}
+
+// ListBlockedUsers возвращает список заблокированных пользователей.
+func (s *ProjectService) ListBlockedUsers(ctx context.Context, userID string) ([]*domain.UserBlock, error) {
+	if s.blockRepo == nil {
+		return nil, nil
+	}
+	return s.blockRepo.ListBlocked(ctx, userID)
 }

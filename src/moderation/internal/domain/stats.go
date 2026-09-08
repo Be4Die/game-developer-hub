@@ -1,5 +1,6 @@
-// Package domain содержит бизнес-сущности и правила предметной области модерации.
 package domain
+
+import "time"
 
 // ModeratorStats представляет агрегированные статистические показатели работы модератора.
 type ModeratorStats struct {
@@ -17,3 +18,17 @@ type ModeratorStats struct {
 	WeekResolved             int32   `json:"week_resolved"`
 	MonthResolved            int32   `json:"month_resolved"`
 }
+
+// ModeratorActivityItem представляет отдельную операцию модератора в журнале действий.
+type ModeratorActivityItem struct {
+	ID           int64     `json:"id"`
+	ProjectID    int64     `json:"project_id"`
+	ActionType   string    `json:"action_type"`
+	ActionTitle  string    `json:"action_title"`
+	ProjectTitle string    `json:"project_title"`
+	ProjectIcon  string    `json:"project_icon"`
+	BuildVersion string    `json:"build_version"`
+	Details      string    `json:"details"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+

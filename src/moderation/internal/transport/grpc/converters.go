@@ -116,3 +116,21 @@ func moderatorStatsToProto(s *domain.ModeratorStats) *pb.ModeratorStats {
 	}
 }
 
+func moderatorActivityItemToProto(item *domain.ModeratorActivityItem) *pb.ModeratorActivityItem {
+	if item == nil {
+		return nil
+	}
+	return &pb.ModeratorActivityItem{
+		Id:           item.ID,
+		ProjectId:    item.ProjectID,
+		ActionType:   item.ActionType,
+		ActionTitle:  item.ActionTitle,
+		ProjectTitle: item.ProjectTitle,
+		ProjectIcon:  item.ProjectIcon,
+		BuildVersion: item.BuildVersion,
+		Details:      item.Details,
+		CreatedAt:    formatTime(item.CreatedAt),
+	}
+}
+
+

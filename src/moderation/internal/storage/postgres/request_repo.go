@@ -442,25 +442,32 @@ func (r *RequestRepo) ListModeratorsStats(ctx context.Context) ([]*domain.Modera
 	return result, nil
 }
 
-// ListModeratorActivity возвращает постраничный список заявок, рассмотренных конкретным модератором.
-func (r *RequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, status *domain.RequestStatus, limit, offset int) ([]*domain.ModerationRequest, int, error) {
+// ListModeratorActivity возвращает постраничный журнал всех действий конкретного модератора (сообщения, решения, закрытия диалогов).
+func (r *RequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, actionType string, limit, offset int) ([]*domain.ModeratorActivityItem, int, error) {
 	var whereConditions []string
 	var args []any
 	argIdx := 1
 
-	whereConditions = append(whereConditions, fmt.Sprintf("moderator_id = $%d", argIdx))
+	whereConditions = append(whereConditions, fmt.Sprintf("m.sender_id = $%d", argIdx))
 	args = append(args, moderatorID)
 	argIdx++
 
-	if status != nil && *status != domain.RequestStatusUnspecified {
-		whereConditions = append(whereConditions, fmt.Sprintf("status = $%d", argIdx))
-		args = append(args, int16(*status))
-		argIdx++
+	switch actionType {
+	case "chat_message":
+		whereConditions = append(whereConditions, "m.message_type = 1")
+	case "dialog_closed":
+		whereConditions = append(whereConditions, "m.message_type = 3 AND m.payload->>'dialog_status' = 'closed'")
+	case "claimed":
+		whereConditions = append(whereConditions, "m.message_type = 3 AND (m.payload->>'dialog_status' IS NULL OR m.payload->>'dialog_status' != 'closed')")
+	case "approved":
+		whereConditions = append(whereConditions, "m.message_type = 4")
+	case "rejected":
+		whereConditions = append(whereConditions, "m.message_type = 5")
 	}
 
 	whereSQL := "WHERE " + strings.Join(whereConditions, " AND ")
 
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM moderation_requests %s", whereSQL)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM moderation_messages m %s", whereSQL)
 	var total int
 	if err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity count: %w", err)
@@ -475,12 +482,26 @@ func (r *RequestRepo) ListModeratorActivity(ctx context.Context, moderatorID str
 
 	query := fmt.Sprintf(`
 		SELECT
-			id, project_id, owner_id, moderator_id, status, snapshot_meta,
-			rejection_reason, submitted_at, started_review_at, resolved_at,
-			created_at, updated_at
-		FROM moderation_requests
+			m.id,
+			m.project_id,
+			m.message_type,
+			m.content,
+			m.payload,
+			m.created_at,
+			COALESCE(r.snapshot_meta->>'title_ru', r.snapshot_meta->>'title_en', '') AS project_title,
+			COALESCE(r.snapshot_meta->>'icon_path', '') AS project_icon,
+			COALESCE(r.snapshot_meta->>'active_build_version', '') AS build_version
+		FROM moderation_messages m
+		LEFT JOIN LATERAL (
+			SELECT snapshot_meta
+			FROM moderation_requests
+			WHERE (m.request_id IS NOT NULL AND id = m.request_id)
+			   OR (m.request_id IS NULL AND project_id = m.project_id)
+			ORDER BY id DESC
+			LIMIT 1
+		) r ON true
 		%s
-		ORDER BY COALESCE(resolved_at, started_review_at, updated_at) DESC
+		ORDER BY m.created_at DESC
 		LIMIT $%d OFFSET $%d
 	`, whereSQL, argIdx, argIdx+1)
 
@@ -492,41 +513,94 @@ func (r *RequestRepo) ListModeratorActivity(ctx context.Context, moderatorID str
 	}
 	defer rows.Close()
 
-	var requests []*domain.ModerationRequest
+	var items []*domain.ModeratorActivityItem
 	for rows.Next() {
-		req := &domain.ModerationRequest{}
-		var snapshotRaw []byte
-		var statusInt int16
+		var id, projectID int64
+		var msgType int16
+		var content string
+		var payloadRaw []byte
+		var createdAt time.Time
+		var projectTitle, projectIcon, buildVersion string
 
 		err := rows.Scan(
-			&req.ID,
-			&req.ProjectID,
-			&req.OwnerID,
-			&req.ModeratorID,
-			&statusInt,
-			&snapshotRaw,
-			&req.RejectionReason,
-			&req.SubmittedAt,
-			&req.StartedReviewAt,
-			&req.ResolvedAt,
-			&req.CreatedAt,
-			&req.UpdatedAt,
+			&id,
+			&projectID,
+			&msgType,
+			&content,
+			&payloadRaw,
+			&createdAt,
+			&projectTitle,
+			&projectIcon,
+			&buildVersion,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity scan: %w", err)
 		}
 
-		req.Status = domain.RequestStatus(statusInt)
-		if len(snapshotRaw) > 0 {
-			_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
+		item := &domain.ModeratorActivityItem{
+			ID:           id,
+			ProjectID:    projectID,
+			ProjectTitle: projectTitle,
+			ProjectIcon:  projectIcon,
+			BuildVersion: buildVersion,
+			CreatedAt:    createdAt,
 		}
 
-		requests = append(requests, req)
+		switch msgType {
+		case 1:
+			item.ActionType = "chat_message"
+			item.ActionTitle = "Сообщение в чате"
+			item.Details = content
+		case 3:
+			var payload map[string]any
+			if len(payloadRaw) > 0 {
+				_ = json.Unmarshal(payloadRaw, &payload)
+			}
+			if payload != nil && payload["dialog_status"] == "closed" {
+				item.ActionType = "dialog_closed"
+				item.ActionTitle = "Вопрос решён"
+				item.Details = content
+			} else {
+				item.ActionType = "claimed"
+				item.ActionTitle = "Взял на проверку"
+				item.Details = content
+			}
+		case 4:
+			item.ActionType = "approved"
+			item.ActionTitle = "Одобрил публикацию"
+			var payload map[string]any
+			if len(payloadRaw) > 0 {
+				_ = json.Unmarshal(payloadRaw, &payload)
+			}
+			if payload != nil && payload["comment"] != nil && payload["comment"] != "" {
+				item.Details = fmt.Sprintf("%v", payload["comment"])
+			} else {
+				item.Details = content
+			}
+		case 5:
+			item.ActionType = "rejected"
+			item.ActionTitle = "Отклонил заявку"
+			var payload map[string]any
+			if len(payloadRaw) > 0 {
+				_ = json.Unmarshal(payloadRaw, &payload)
+			}
+			if payload != nil && payload["reason"] != nil && payload["reason"] != "" {
+				item.Details = fmt.Sprintf("%v", payload["reason"])
+			} else {
+				item.Details = content
+			}
+		default:
+			item.ActionType = "event"
+			item.ActionTitle = "Действие"
+			item.Details = content
+		}
+
+		items = append(items, item)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, 0, fmt.Errorf("RequestRepo.ListModeratorActivity rows: %w", err)
 	}
 
-	return requests, total, nil
+	return items, total, nil
 }

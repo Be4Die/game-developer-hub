@@ -9,6 +9,10 @@
           <router-link to="/projects" class="nav-item" active-class="active">
             <FolderGit2 class="icon-sm" /> {{ t('header.projects') }}
           </router-link>
+          <router-link to="/access" class="nav-item" active-class="active">
+            <Users class="icon-sm" /> {{ t('header.sharedAccess') }}
+            <span v-if="incomingCount > 0" class="header-badge">{{ incomingCount }}</span>
+          </router-link>
           <router-link to="/nodes" class="nav-item" active-class="active">
             <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
@@ -62,10 +66,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuth } from '@/entities/user';
+import { listIncomingInvitations } from '@/entities/project';
 import { LogoIcon } from '@/shared/ui';
 import {
   FolderGit2,
@@ -81,6 +86,7 @@ import {
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const { state: authState, logout } = useAuth();
 
 const isAuthed = computed(() => !!authState.user);
@@ -104,6 +110,30 @@ const isModerator = computed(() => {
 const isDeveloper = computed(() => {
   return !isAdmin.value && !isModerator.value;
 });
+
+const incomingCount = ref(0);
+
+async function refreshIncomingCount() {
+  if (isAuthed.value && isDeveloper.value) {
+    try {
+      const invs = await listIncomingInvitations();
+      incomingCount.value = invs.length;
+    } catch {
+      incomingCount.value = 0;
+    }
+  }
+}
+
+onMounted(() => {
+  refreshIncomingCount();
+});
+
+watch(
+  () => [route.path, isAuthed.value],
+  () => {
+    refreshIncomingCount();
+  }
+);
 
 async function handleLogout() {
   try {
@@ -208,6 +238,21 @@ async function handleLogout() {
   color: var(--danger, #f85149);
   background: var(--danger-light, rgba(248, 81, 73, 0.1));
   border-color: rgba(248, 81, 73, 0.3);
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--primary, #3b5bdb);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  margin-left: 4px;
 }
 
 @media (max-width: 768px) {

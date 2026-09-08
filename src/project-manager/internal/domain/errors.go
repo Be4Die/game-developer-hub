@@ -40,4 +40,22 @@ var (
 
 	// ErrLockBusy возвращается при попытке выполнения параллельной операции над заблокированным проектом.
 	ErrLockBusy = errors.New("project is locked by another operation, please retry later")
+
+	// ErrUserBlocked возвращается, когда получатель приглашения заблокировал отправителя.
+	ErrUserBlocked = errors.New("user has blocked invitations from you")
+
+	// ErrAlreadyMember возвращается, если пользователь уже является участником проекта.
+	ErrAlreadyMember = errors.New("user is already a member of this project")
+
+	// ErrAlreadyInvited возвращается, если открытое приглашение пользователю уже отправлено.
+	ErrAlreadyInvited = errors.New("invitation already pending for this user")
+
+	// ErrCannotInviteSelf возвращается при попытке отправить приглашение самому себе.
+	ErrCannotInviteSelf = errors.New("cannot invite self to project")
+
+	// ErrInvitationNotFound возвращается, если указанное приглашение не найдено.
+	ErrInvitationNotFound = errors.New("invitation not found")
+
+	// ErrInvitationClosed возвращается при попытке ответить на уже закрытое приглашение.
+	ErrInvitationClosed = errors.New("invitation is already closed")
 )

@@ -14,6 +14,19 @@
             <h2 class="game-title-short" :title="projectTitle">
               {{ projectTitle }}
             </h2>
+            <div v-if="project" class="role-access-badge-wrap">
+              <span v-if="isOwner" class="badge-role-owner">
+                {{ t('access.statuses.owner') }}
+              </span>
+              <span
+                v-else
+                class="badge-role-collab"
+                :title="collaboratorPermissionsText"
+              >
+                <Users class="icon-xs" />
+                <span>{{ t('access.statuses.collaborator') }}</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -41,10 +54,20 @@
         >
           <CheckCircle class="icon-sm" /> {{ t('projectWorkspace.publishedTab') }}
         </router-link>
-        <router-link :to="`/projects/${id}/servers`" class="nav-btn" active-class="active">
+        <router-link
+          v-if="canManageServers"
+          :to="`/projects/${id}/servers`"
+          class="nav-btn"
+          active-class="active"
+        >
           <Server class="icon-sm" /> {{ t('projectWorkspace.serversTab') }}
         </router-link>
-        <router-link :to="`/projects/${id}/stats`" class="nav-btn" active-class="active">
+        <router-link
+          v-if="canViewStats"
+          :to="`/projects/${id}/stats`"
+          class="nav-btn"
+          active-class="active"
+        >
           <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
         </router-link>
       </nav>
@@ -53,7 +76,11 @@
       <div class="sidebar-footer">
         <button
           class="btn-sidebar-save"
-          :disabled="draftActions.isSaving || draftActions.isSubmitting"
+          :disabled="
+            draftActions.isSaving ||
+            draftActions.isSubmitting ||
+            (!canEditInfo && !canUploadMedia && !canUploadBuild)
+          "
           @click="handleSidebarSave"
         >
           <Loader2 v-if="draftActions.isSaving" class="icon-xs spin" />
@@ -63,7 +90,11 @@
 
         <button
           class="btn-sidebar-submit"
-          :disabled="draftActions.isSubmitting || draftActions.isUnderReview"
+          :disabled="
+            draftActions.isSubmitting ||
+            draftActions.isUnderReview ||
+            !canSubmitModeration
+          "
           @click="handleSidebarSubmit"
         >
           <Loader2 v-if="draftActions.isSubmitting" class="icon-xs spin" />
@@ -108,8 +139,9 @@ import {
   Save,
   Send,
   Loader2,
+  Users,
 } from 'lucide-vue-next';
-import { getProject, getMediaUrl } from '@/entities/project';
+import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
 
 const { t } = useI18n();
@@ -122,6 +154,22 @@ const router = useRouter();
 // ─── Project data (shared with child tabs) ───────────────────
 const project = ref(null);
 provide('project', project);
+
+const isOwner = computed(() => project.value?.is_owner !== false);
+const permissions = computed(() => project.value?.current_user_permissions || []);
+const canEditInfo = computed(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
+const canUploadMedia = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
+const canUploadBuild = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
+const canViewStats = computed(() => isOwner.value || permissions.value.includes('PERM_VIEW_STATS'));
+const canManageServers = computed(() => isOwner.value || permissions.value.includes('PERM_MANAGE_SERVERS'));
+const canSubmitModeration = computed(
+  () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
+);
+
+const collaboratorPermissionsText = computed(() => {
+  if (isOwner.value) return '';
+  return permissions.value.map((p) => permissionLabel(p)).join(', ');
+});
 
 const draftActions = ref({
   save: null,
@@ -176,6 +224,20 @@ watch(
   { immediate: true }
 );
 
+// Редирект с табов stats/servers, если у участника нет соответствующих прав
+watch(
+  () => [route.name, route.path, project.value],
+  () => {
+    if (!project.value) return;
+    if (route.name === 'stats' && !canViewStats.value) {
+      router.replace(`/projects/${props.id}/draft`);
+    }
+    if ((route.name === 'servers' || route.path.includes('/servers')) && !canManageServers.value) {
+      router.replace(`/projects/${props.id}/draft`);
+    }
+  }
+);
+
 function openDevGame() {
   const url =
     project.value?.draft?.dev_url || project.value?.dev_url || `/games/${props.id}/dev/index.html`;
@@ -202,6 +264,7 @@ async function handleSidebarSave() {
 }
 
 async function handleSidebarSubmit() {
+  if (!canSubmitModeration.value) return;
   if (draftActions.value.submit) {
     await draftActions.value.submit();
   }
@@ -209,6 +272,34 @@ async function handleSidebarSubmit() {
 </script>
 
 <style scoped>
+.role-access-badge-wrap {
+  margin-top: 4px;
+}
+
+.badge-role-owner {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.badge-role-collab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  cursor: help;
+}
+
 .game-workspace {
   display: flex;
   height: calc(100vh - 60px);

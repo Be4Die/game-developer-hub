@@ -20,16 +20,43 @@ func setupTestProjectService(t *testing.T) (*ProjectService, *mockProjectRepo, *
 	mClient := newMockModerationClient()
 	rRepo := newMockReleaseRepo()
 	depRepo := newMockDeploymentRepo()
+	memRepo := newMockMemberRepo()
+	invRepo := newMockInvitationRepo()
+	blockRepo := newMockBlockRepo()
 	bStorage := &mockBuildStorage{}
 	mStorage := &mockMediaStorage{}
 	deployer := &mockDeployer{}
 
 	svc := NewProjectService(
-		pRepo, dRepo, bRepo, rRepo, depRepo, mClient,
+		pRepo, dRepo, bRepo, rRepo, depRepo, memRepo, invRepo, blockRepo, mClient,
 		bStorage, mStorage, deployer, nil, 5,
 	)
 
 	return svc, pRepo, rRepo
+}
+
+func setupTestProjectServiceFull(t *testing.T) (*ProjectService, *mockProjectRepo, *mockMemberRepo, *mockInvitationRepo, *mockBlockRepo) {
+	t.Helper()
+	pRepo := newMockProjectRepo()
+	dRepo := newMockDraftRepo()
+	bRepo := newMockBuildRepo()
+	mClient := newMockModerationClient()
+	rRepo := newMockReleaseRepo()
+	depRepo := newMockDeploymentRepo()
+	memRepo := newMockMemberRepo()
+	invRepo := newMockInvitationRepo()
+	blockRepo := newMockBlockRepo()
+	pRepo.memberRepo = memRepo
+	bStorage := &mockBuildStorage{}
+	mStorage := &mockMediaStorage{}
+	deployer := &mockDeployer{}
+
+	svc := NewProjectService(
+		pRepo, dRepo, bRepo, rRepo, depRepo, memRepo, invRepo, blockRepo, mClient,
+		bStorage, mStorage, deployer, nil, 5,
+	)
+
+	return svc, pRepo, memRepo, invRepo, blockRepo
 }
 
 func TestUnit_ProjectService_CreateProject(t *testing.T) {
@@ -360,4 +387,160 @@ func TestUnit_ProjectService_DeleteProjectAndBuild(t *testing.T) {
 	if !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("expected ErrNotFound for deleted project, got: %v", err)
 	}
+}
+
+func TestUnit_ProjectService_SharedAccess_InvitationsAndPermissions(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _, _, _ := setupTestProjectServiceFull(t)
+
+	// 1. Создаем проект владельцем
+	p, err := svc.CreateProject(ctx, "dev-owner", "Игра Владельца", "Owner Game")
+	require.NoError(t, err)
+
+	// 2. Попытка пригласить самого себя — ошибка
+	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-owner", "owner@welwise.com", []string{domain.PermUploadBuild})
+	assert.ErrorIs(t, err, domain.ErrCannotInviteSelf)
+
+	// 3. Отправка корректного приглашения участнику
+	inv, err := svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-collab", "collab@welwise.com", []string{domain.PermUploadBuild, domain.PermEditInfo})
+	require.NoError(t, err)
+	assert.Equal(t, domain.InvitationStatusPending, inv.Status)
+
+	// 4. Повторная отправка пока висит инвайт — ошибка
+	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-collab", "collab@welwise.com", []string{domain.PermUploadBuild})
+	assert.ErrorIs(t, err, domain.ErrAlreadyInvited)
+
+	// 5. Проверка входящих приглашений у получателя
+	incoming, err := svc.ListIncomingInvitations(ctx, "dev-collab")
+	require.NoError(t, err)
+	require.Len(t, incoming, 1)
+	assert.Equal(t, inv.ID, incoming[0].ID)
+
+	// 6. Принятие приглашения
+	err = svc.RespondInvitation(ctx, inv.ID, "dev-collab", true)
+	require.NoError(t, err)
+
+	// 7. Проверка прав участника:
+	// dev-collab может редактировать черновик (есть PermEditInfo)
+	err = svc.UpdateDraft(ctx, p.ID, "dev-collab", domain.DraftMeta{
+		TitleRu: "Новое название от коллаборатора",
+	})
+	assert.NoError(t, err)
+
+	// dev-collab НЕ может отправить на модерацию (нет PermSubmitModeration)
+	_, err = svc.SubmitForModeration(ctx, p.ID, "dev-collab")
+	assert.ErrorIs(t, err, domain.ErrForbidden)
+
+	// dev-collab НЕ может удалить проект
+	err = svc.DeleteProject(ctx, p.ID, "dev-collab")
+	assert.ErrorIs(t, err, domain.ErrForbidden)
+
+	// 8. Владелец обновляет права участника, добавляя PermSubmitModeration
+	updatedMember, err := svc.UpdateMemberPermissions(ctx, p.ID, "dev-owner", "dev-collab", []string{
+		domain.PermUploadBuild, domain.PermEditInfo, domain.PermSubmitModeration,
+	})
+	require.NoError(t, err)
+	assert.True(t, updatedMember.HasPermission(domain.PermSubmitModeration))
+
+	// 9. Проверка списка совместных проектов у dev-collab
+	shared, err := svc.ListSharedProjects(ctx, "dev-collab")
+	require.NoError(t, err)
+	require.Len(t, shared, 1)
+	assert.Equal(t, p.ID, shared[0].Project.ID)
+	assert.False(t, shared[0].Project.IsOwner)
+
+	// 10. Участник добровольно покидает проект
+	err = svc.LeaveProject(ctx, p.ID, "dev-collab")
+	require.NoError(t, err)
+
+	// После выхода операция обновления черновика отклоняется
+	err = svc.UpdateDraft(ctx, p.ID, "dev-collab", domain.DraftMeta{TitleRu: "Хак"})
+	assert.ErrorIs(t, err, domain.ErrForbidden)
+}
+
+func TestUnit_ProjectService_SharedAccess_BlockSpam(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _, _, _ := setupTestProjectServiceFull(t)
+
+	// Создаем проект спамером
+	p, err := svc.CreateProject(ctx, "dev-spammer", "Спам Игра", "Spam Game")
+	require.NoError(t, err)
+
+	// Жертва блокирует спамера
+	err = svc.BlockUser(ctx, "dev-victim", "dev-spammer", "spammer@bad.com", "Spammer")
+	require.NoError(t, err)
+
+	// Проверяем список заблокированных
+	blocks, err := svc.ListBlockedUsers(ctx, "dev-victim")
+	require.NoError(t, err)
+	require.Len(t, blocks, 1)
+	assert.Equal(t, "dev-spammer", blocks[0].BlockedUserID)
+
+	// Попытка спамера отправить инвайт жертве — ошибка ErrUserBlocked
+	_, err = svc.SendInvitation(ctx, p.ID, "dev-spammer", "spammer@bad.com", "Spammer", "dev-victim", "victim@welwise.com", []string{domain.PermUploadBuild})
+	assert.ErrorIs(t, err, domain.ErrUserBlocked)
+
+	// Жертва разблокирует спамера
+	err = svc.UnblockUser(ctx, "dev-victim", "dev-spammer")
+	require.NoError(t, err)
+
+	// Теперь инвайт проходит
+	inv, err := svc.SendInvitation(ctx, p.ID, "dev-spammer", "spammer@bad.com", "Spammer", "dev-victim", "victim@welwise.com", []string{domain.PermUploadBuild})
+	require.NoError(t, err)
+	assert.Equal(t, domain.InvitationStatusPending, inv.Status)
+
+	// Жертва снова блокирует спамера — активный инвайт автоматически отменяется!
+	err = svc.BlockUser(ctx, "dev-victim", "dev-spammer", "spammer@bad.com", "Spammer")
+	require.NoError(t, err)
+
+	// Проверяем, что во входящих ничего нет
+	incoming, err := svc.ListIncomingInvitations(ctx, "dev-victim")
+	require.NoError(t, err)
+	assert.Empty(t, incoming)
+}
+
+func TestUnit_ProjectService_ListProjectsIncludesShared(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, memRepo, _, _ := setupTestProjectServiceFull(t)
+
+	// Владелец создаёт проект
+	p, err := svc.CreateProject(ctx, "dev-owner", "Собственный проект", "Owner Project")
+	require.NoError(t, err)
+
+	// Добавляем участника
+	err = memRepo.Add(ctx, &domain.Member{
+		ProjectID:   p.ID,
+		UserID:      "dev-member",
+		UserEmail:   "member@welwise.com",
+		Permissions: []string{domain.PermEditInfo},
+	})
+	require.NoError(t, err)
+
+	// Участник запрашивает список проектов — проект должен быть в списке!
+	list, total, err := svc.ListProjects(ctx, "dev-member", 10, 0)
+	require.NoError(t, err)
+	require.Equal(t, 1, total)
+	require.Len(t, list, 1)
+
+	sharedP := list[0]
+	assert.Equal(t, p.ID, sharedP.ID)
+	assert.False(t, sharedP.IsOwner)
+	assert.Equal(t, []string{domain.PermEditInfo}, sharedP.CurrentUserPermissions)
+
+	// Владелец запрашивает список — у него проект как владелец
+	ownerList, ownerTotal, err := svc.ListProjects(ctx, "dev-owner", 10, 0)
+	require.NoError(t, err)
+	require.Equal(t, 1, ownerTotal)
+	require.Len(t, ownerList, 1)
+	assert.True(t, ownerList[0].IsOwner)
+	assert.Equal(t, domain.AllPermissions(), ownerList[0].CurrentUserPermissions)
 }

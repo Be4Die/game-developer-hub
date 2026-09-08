@@ -19,22 +19,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProjectService_Create_FullMethodName              = "/project_manager.v1.ProjectService/Create"
-	ProjectService_Get_FullMethodName                 = "/project_manager.v1.ProjectService/Get"
-	ProjectService_List_FullMethodName                = "/project_manager.v1.ProjectService/List"
-	ProjectService_Update_FullMethodName              = "/project_manager.v1.ProjectService/Update"
-	ProjectService_Delete_FullMethodName              = "/project_manager.v1.ProjectService/Delete"
-	ProjectService_UploadBuild_FullMethodName         = "/project_manager.v1.ProjectService/UploadBuild"
-	ProjectService_UploadBuildStream_FullMethodName   = "/project_manager.v1.ProjectService/UploadBuildStream"
-	ProjectService_ListBuilds_FullMethodName          = "/project_manager.v1.ProjectService/ListBuilds"
-	ProjectService_DeleteBuild_FullMethodName         = "/project_manager.v1.ProjectService/DeleteBuild"
-	ProjectService_UploadMedia_FullMethodName         = "/project_manager.v1.ProjectService/UploadMedia"
-	ProjectService_UploadMediaStream_FullMethodName   = "/project_manager.v1.ProjectService/UploadMediaStream"
-	ProjectService_SubmitForModeration_FullMethodName = "/project_manager.v1.ProjectService/SubmitForModeration"
-	ProjectService_PublishRelease_FullMethodName      = "/project_manager.v1.ProjectService/PublishRelease"
-	ProjectService_RejectDraft_FullMethodName         = "/project_manager.v1.ProjectService/RejectDraft"
-	ProjectService_GetPublished_FullMethodName        = "/project_manager.v1.ProjectService/GetPublished"
-	ProjectService_Unpublish_FullMethodName           = "/project_manager.v1.ProjectService/Unpublish"
+	ProjectService_Create_FullMethodName                  = "/project_manager.v1.ProjectService/Create"
+	ProjectService_Get_FullMethodName                     = "/project_manager.v1.ProjectService/Get"
+	ProjectService_List_FullMethodName                    = "/project_manager.v1.ProjectService/List"
+	ProjectService_Update_FullMethodName                  = "/project_manager.v1.ProjectService/Update"
+	ProjectService_Delete_FullMethodName                  = "/project_manager.v1.ProjectService/Delete"
+	ProjectService_UploadBuild_FullMethodName             = "/project_manager.v1.ProjectService/UploadBuild"
+	ProjectService_UploadBuildStream_FullMethodName       = "/project_manager.v1.ProjectService/UploadBuildStream"
+	ProjectService_ListBuilds_FullMethodName              = "/project_manager.v1.ProjectService/ListBuilds"
+	ProjectService_DeleteBuild_FullMethodName             = "/project_manager.v1.ProjectService/DeleteBuild"
+	ProjectService_UploadMedia_FullMethodName             = "/project_manager.v1.ProjectService/UploadMedia"
+	ProjectService_UploadMediaStream_FullMethodName       = "/project_manager.v1.ProjectService/UploadMediaStream"
+	ProjectService_SubmitForModeration_FullMethodName     = "/project_manager.v1.ProjectService/SubmitForModeration"
+	ProjectService_PublishRelease_FullMethodName          = "/project_manager.v1.ProjectService/PublishRelease"
+	ProjectService_RejectDraft_FullMethodName             = "/project_manager.v1.ProjectService/RejectDraft"
+	ProjectService_GetPublished_FullMethodName            = "/project_manager.v1.ProjectService/GetPublished"
+	ProjectService_Unpublish_FullMethodName               = "/project_manager.v1.ProjectService/Unpublish"
+	ProjectService_SendInvitation_FullMethodName          = "/project_manager.v1.ProjectService/SendInvitation"
+	ProjectService_ListIncomingInvitations_FullMethodName = "/project_manager.v1.ProjectService/ListIncomingInvitations"
+	ProjectService_ListOutgoingInvitations_FullMethodName = "/project_manager.v1.ProjectService/ListOutgoingInvitations"
+	ProjectService_RespondInvitation_FullMethodName       = "/project_manager.v1.ProjectService/RespondInvitation"
+	ProjectService_CancelInvitation_FullMethodName        = "/project_manager.v1.ProjectService/CancelInvitation"
+	ProjectService_ListMembers_FullMethodName             = "/project_manager.v1.ProjectService/ListMembers"
+	ProjectService_UpdateMemberPermissions_FullMethodName = "/project_manager.v1.ProjectService/UpdateMemberPermissions"
+	ProjectService_RemoveMember_FullMethodName            = "/project_manager.v1.ProjectService/RemoveMember"
+	ProjectService_LeaveProject_FullMethodName            = "/project_manager.v1.ProjectService/LeaveProject"
+	ProjectService_ListSharedProjects_FullMethodName      = "/project_manager.v1.ProjectService/ListSharedProjects"
+	ProjectService_BlockUser_FullMethodName               = "/project_manager.v1.ProjectService/BlockUser"
+	ProjectService_UnblockUser_FullMethodName             = "/project_manager.v1.ProjectService/UnblockUser"
+	ProjectService_ListBlockedUsers_FullMethodName        = "/project_manager.v1.ProjectService/ListBlockedUsers"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -60,6 +73,22 @@ type ProjectServiceClient interface {
 	RejectDraft(ctx context.Context, in *ProjectRejectDraftRequest, opts ...grpc.CallOption) (*ProjectRejectDraftResponse, error)
 	GetPublished(ctx context.Context, in *ProjectGetPublishedRequest, opts ...grpc.CallOption) (*ProjectGetPublishedResponse, error)
 	Unpublish(ctx context.Context, in *ProjectUnpublishRequest, opts ...grpc.CallOption) (*ProjectUnpublishResponse, error)
+	// Приглашения и общий доступ
+	SendInvitation(ctx context.Context, in *ProjectSendInvitationRequest, opts ...grpc.CallOption) (*ProjectSendInvitationResponse, error)
+	ListIncomingInvitations(ctx context.Context, in *ProjectListIncomingInvitationsRequest, opts ...grpc.CallOption) (*ProjectListIncomingInvitationsResponse, error)
+	ListOutgoingInvitations(ctx context.Context, in *ProjectListOutgoingInvitationsRequest, opts ...grpc.CallOption) (*ProjectListOutgoingInvitationsResponse, error)
+	RespondInvitation(ctx context.Context, in *ProjectRespondInvitationRequest, opts ...grpc.CallOption) (*ProjectRespondInvitationResponse, error)
+	CancelInvitation(ctx context.Context, in *ProjectCancelInvitationRequest, opts ...grpc.CallOption) (*ProjectCancelInvitationResponse, error)
+	// Участники и доступы
+	ListMembers(ctx context.Context, in *ProjectListMembersRequest, opts ...grpc.CallOption) (*ProjectListMembersResponse, error)
+	UpdateMemberPermissions(ctx context.Context, in *ProjectUpdateMemberPermissionsRequest, opts ...grpc.CallOption) (*ProjectUpdateMemberPermissionsResponse, error)
+	RemoveMember(ctx context.Context, in *ProjectRemoveMemberRequest, opts ...grpc.CallOption) (*ProjectRemoveMemberResponse, error)
+	LeaveProject(ctx context.Context, in *ProjectLeaveRequest, opts ...grpc.CallOption) (*ProjectLeaveResponse, error)
+	ListSharedProjects(ctx context.Context, in *ProjectListSharedProjectsRequest, opts ...grpc.CallOption) (*ProjectListSharedProjectsResponse, error)
+	// Черный список / Бан спамеров
+	BlockUser(ctx context.Context, in *ProjectBlockUserRequest, opts ...grpc.CallOption) (*ProjectBlockUserResponse, error)
+	UnblockUser(ctx context.Context, in *ProjectUnblockUserRequest, opts ...grpc.CallOption) (*ProjectUnblockUserResponse, error)
+	ListBlockedUsers(ctx context.Context, in *ProjectListBlockedUsersRequest, opts ...grpc.CallOption) (*ProjectListBlockedUsersResponse, error)
 }
 
 type projectServiceClient struct {
@@ -236,6 +265,136 @@ func (c *projectServiceClient) Unpublish(ctx context.Context, in *ProjectUnpubli
 	return out, nil
 }
 
+func (c *projectServiceClient) SendInvitation(ctx context.Context, in *ProjectSendInvitationRequest, opts ...grpc.CallOption) (*ProjectSendInvitationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectSendInvitationResponse)
+	err := c.cc.Invoke(ctx, ProjectService_SendInvitation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListIncomingInvitations(ctx context.Context, in *ProjectListIncomingInvitationsRequest, opts ...grpc.CallOption) (*ProjectListIncomingInvitationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListIncomingInvitationsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListIncomingInvitations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListOutgoingInvitations(ctx context.Context, in *ProjectListOutgoingInvitationsRequest, opts ...grpc.CallOption) (*ProjectListOutgoingInvitationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListOutgoingInvitationsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListOutgoingInvitations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) RespondInvitation(ctx context.Context, in *ProjectRespondInvitationRequest, opts ...grpc.CallOption) (*ProjectRespondInvitationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectRespondInvitationResponse)
+	err := c.cc.Invoke(ctx, ProjectService_RespondInvitation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) CancelInvitation(ctx context.Context, in *ProjectCancelInvitationRequest, opts ...grpc.CallOption) (*ProjectCancelInvitationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectCancelInvitationResponse)
+	err := c.cc.Invoke(ctx, ProjectService_CancelInvitation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListMembers(ctx context.Context, in *ProjectListMembersRequest, opts ...grpc.CallOption) (*ProjectListMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListMembersResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UpdateMemberPermissions(ctx context.Context, in *ProjectUpdateMemberPermissionsRequest, opts ...grpc.CallOption) (*ProjectUpdateMemberPermissionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectUpdateMemberPermissionsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_UpdateMemberPermissions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) RemoveMember(ctx context.Context, in *ProjectRemoveMemberRequest, opts ...grpc.CallOption) (*ProjectRemoveMemberResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectRemoveMemberResponse)
+	err := c.cc.Invoke(ctx, ProjectService_RemoveMember_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) LeaveProject(ctx context.Context, in *ProjectLeaveRequest, opts ...grpc.CallOption) (*ProjectLeaveResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectLeaveResponse)
+	err := c.cc.Invoke(ctx, ProjectService_LeaveProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListSharedProjects(ctx context.Context, in *ProjectListSharedProjectsRequest, opts ...grpc.CallOption) (*ProjectListSharedProjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListSharedProjectsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListSharedProjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) BlockUser(ctx context.Context, in *ProjectBlockUserRequest, opts ...grpc.CallOption) (*ProjectBlockUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectBlockUserResponse)
+	err := c.cc.Invoke(ctx, ProjectService_BlockUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UnblockUser(ctx context.Context, in *ProjectUnblockUserRequest, opts ...grpc.CallOption) (*ProjectUnblockUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectUnblockUserResponse)
+	err := c.cc.Invoke(ctx, ProjectService_UnblockUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListBlockedUsers(ctx context.Context, in *ProjectListBlockedUsersRequest, opts ...grpc.CallOption) (*ProjectListBlockedUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListBlockedUsersResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListBlockedUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -259,6 +418,22 @@ type ProjectServiceServer interface {
 	RejectDraft(context.Context, *ProjectRejectDraftRequest) (*ProjectRejectDraftResponse, error)
 	GetPublished(context.Context, *ProjectGetPublishedRequest) (*ProjectGetPublishedResponse, error)
 	Unpublish(context.Context, *ProjectUnpublishRequest) (*ProjectUnpublishResponse, error)
+	// Приглашения и общий доступ
+	SendInvitation(context.Context, *ProjectSendInvitationRequest) (*ProjectSendInvitationResponse, error)
+	ListIncomingInvitations(context.Context, *ProjectListIncomingInvitationsRequest) (*ProjectListIncomingInvitationsResponse, error)
+	ListOutgoingInvitations(context.Context, *ProjectListOutgoingInvitationsRequest) (*ProjectListOutgoingInvitationsResponse, error)
+	RespondInvitation(context.Context, *ProjectRespondInvitationRequest) (*ProjectRespondInvitationResponse, error)
+	CancelInvitation(context.Context, *ProjectCancelInvitationRequest) (*ProjectCancelInvitationResponse, error)
+	// Участники и доступы
+	ListMembers(context.Context, *ProjectListMembersRequest) (*ProjectListMembersResponse, error)
+	UpdateMemberPermissions(context.Context, *ProjectUpdateMemberPermissionsRequest) (*ProjectUpdateMemberPermissionsResponse, error)
+	RemoveMember(context.Context, *ProjectRemoveMemberRequest) (*ProjectRemoveMemberResponse, error)
+	LeaveProject(context.Context, *ProjectLeaveRequest) (*ProjectLeaveResponse, error)
+	ListSharedProjects(context.Context, *ProjectListSharedProjectsRequest) (*ProjectListSharedProjectsResponse, error)
+	// Черный список / Бан спамеров
+	BlockUser(context.Context, *ProjectBlockUserRequest) (*ProjectBlockUserResponse, error)
+	UnblockUser(context.Context, *ProjectUnblockUserRequest) (*ProjectUnblockUserResponse, error)
+	ListBlockedUsers(context.Context, *ProjectListBlockedUsersRequest) (*ProjectListBlockedUsersResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -316,6 +491,45 @@ func (UnimplementedProjectServiceServer) GetPublished(context.Context, *ProjectG
 }
 func (UnimplementedProjectServiceServer) Unpublish(context.Context, *ProjectUnpublishRequest) (*ProjectUnpublishResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Unpublish not implemented")
+}
+func (UnimplementedProjectServiceServer) SendInvitation(context.Context, *ProjectSendInvitationRequest) (*ProjectSendInvitationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendInvitation not implemented")
+}
+func (UnimplementedProjectServiceServer) ListIncomingInvitations(context.Context, *ProjectListIncomingInvitationsRequest) (*ProjectListIncomingInvitationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListIncomingInvitations not implemented")
+}
+func (UnimplementedProjectServiceServer) ListOutgoingInvitations(context.Context, *ProjectListOutgoingInvitationsRequest) (*ProjectListOutgoingInvitationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOutgoingInvitations not implemented")
+}
+func (UnimplementedProjectServiceServer) RespondInvitation(context.Context, *ProjectRespondInvitationRequest) (*ProjectRespondInvitationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RespondInvitation not implemented")
+}
+func (UnimplementedProjectServiceServer) CancelInvitation(context.Context, *ProjectCancelInvitationRequest) (*ProjectCancelInvitationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelInvitation not implemented")
+}
+func (UnimplementedProjectServiceServer) ListMembers(context.Context, *ProjectListMembersRequest) (*ProjectListMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMembers not implemented")
+}
+func (UnimplementedProjectServiceServer) UpdateMemberPermissions(context.Context, *ProjectUpdateMemberPermissionsRequest) (*ProjectUpdateMemberPermissionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMemberPermissions not implemented")
+}
+func (UnimplementedProjectServiceServer) RemoveMember(context.Context, *ProjectRemoveMemberRequest) (*ProjectRemoveMemberResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveMember not implemented")
+}
+func (UnimplementedProjectServiceServer) LeaveProject(context.Context, *ProjectLeaveRequest) (*ProjectLeaveResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method LeaveProject not implemented")
+}
+func (UnimplementedProjectServiceServer) ListSharedProjects(context.Context, *ProjectListSharedProjectsRequest) (*ProjectListSharedProjectsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSharedProjects not implemented")
+}
+func (UnimplementedProjectServiceServer) BlockUser(context.Context, *ProjectBlockUserRequest) (*ProjectBlockUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BlockUser not implemented")
+}
+func (UnimplementedProjectServiceServer) UnblockUser(context.Context, *ProjectUnblockUserRequest) (*ProjectUnblockUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnblockUser not implemented")
+}
+func (UnimplementedProjectServiceServer) ListBlockedUsers(context.Context, *ProjectListBlockedUsersRequest) (*ProjectListBlockedUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBlockedUsers not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -604,6 +818,240 @@ func _ProjectService_Unpublish_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_SendInvitation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectSendInvitationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).SendInvitation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_SendInvitation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).SendInvitation(ctx, req.(*ProjectSendInvitationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListIncomingInvitations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListIncomingInvitationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListIncomingInvitations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListIncomingInvitations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListIncomingInvitations(ctx, req.(*ProjectListIncomingInvitationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListOutgoingInvitations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListOutgoingInvitationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListOutgoingInvitations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListOutgoingInvitations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListOutgoingInvitations(ctx, req.(*ProjectListOutgoingInvitationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_RespondInvitation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectRespondInvitationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).RespondInvitation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_RespondInvitation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).RespondInvitation(ctx, req.(*ProjectRespondInvitationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_CancelInvitation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectCancelInvitationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).CancelInvitation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_CancelInvitation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).CancelInvitation(ctx, req.(*ProjectCancelInvitationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListMembers(ctx, req.(*ProjectListMembersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UpdateMemberPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectUpdateMemberPermissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UpdateMemberPermissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UpdateMemberPermissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UpdateMemberPermissions(ctx, req.(*ProjectUpdateMemberPermissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_RemoveMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectRemoveMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).RemoveMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_RemoveMember_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).RemoveMember(ctx, req.(*ProjectRemoveMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_LeaveProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectLeaveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).LeaveProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_LeaveProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).LeaveProject(ctx, req.(*ProjectLeaveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListSharedProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListSharedProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListSharedProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListSharedProjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListSharedProjects(ctx, req.(*ProjectListSharedProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_BlockUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectBlockUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).BlockUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_BlockUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).BlockUser(ctx, req.(*ProjectBlockUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UnblockUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectUnblockUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UnblockUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UnblockUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UnblockUser(ctx, req.(*ProjectUnblockUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListBlockedUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListBlockedUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListBlockedUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListBlockedUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListBlockedUsers(ctx, req.(*ProjectListBlockedUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -666,6 +1114,58 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Unpublish",
 			Handler:    _ProjectService_Unpublish_Handler,
+		},
+		{
+			MethodName: "SendInvitation",
+			Handler:    _ProjectService_SendInvitation_Handler,
+		},
+		{
+			MethodName: "ListIncomingInvitations",
+			Handler:    _ProjectService_ListIncomingInvitations_Handler,
+		},
+		{
+			MethodName: "ListOutgoingInvitations",
+			Handler:    _ProjectService_ListOutgoingInvitations_Handler,
+		},
+		{
+			MethodName: "RespondInvitation",
+			Handler:    _ProjectService_RespondInvitation_Handler,
+		},
+		{
+			MethodName: "CancelInvitation",
+			Handler:    _ProjectService_CancelInvitation_Handler,
+		},
+		{
+			MethodName: "ListMembers",
+			Handler:    _ProjectService_ListMembers_Handler,
+		},
+		{
+			MethodName: "UpdateMemberPermissions",
+			Handler:    _ProjectService_UpdateMemberPermissions_Handler,
+		},
+		{
+			MethodName: "RemoveMember",
+			Handler:    _ProjectService_RemoveMember_Handler,
+		},
+		{
+			MethodName: "LeaveProject",
+			Handler:    _ProjectService_LeaveProject_Handler,
+		},
+		{
+			MethodName: "ListSharedProjects",
+			Handler:    _ProjectService_ListSharedProjects_Handler,
+		},
+		{
+			MethodName: "BlockUser",
+			Handler:    _ProjectService_BlockUser_Handler,
+		},
+		{
+			MethodName: "UnblockUser",
+			Handler:    _ProjectService_UnblockUser_Handler,
+		},
+		{
+			MethodName: "ListBlockedUsers",
+			Handler:    _ProjectService_ListBlockedUsers_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

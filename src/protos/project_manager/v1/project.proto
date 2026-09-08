@@ -52,6 +52,8 @@ message Project {
   ProjectDraft draft = 17;
   ProjectRelease release = 18;
   string about_en = 19;
+  repeated string current_user_permissions = 20;
+  bool is_owner = 21;
 }
 
 // ProjectDraft рабочее состояние черновика проекта.
@@ -282,6 +284,170 @@ message ProjectUnpublishResponse {
   bool success = 1;
 }
 
+// ─── Доступ и Участники ───────────────────────────────────────
+
+enum InvitationStatus {
+  INVITATION_STATUS_UNSPECIFIED = 0;
+  INVITATION_STATUS_PENDING = 1;
+  INVITATION_STATUS_ACCEPTED = 2;
+  INVITATION_STATUS_DECLINED = 3;
+  INVITATION_STATUS_CANCELED = 4;
+}
+
+message ProjectMember {
+  int64 id = 1;
+  int64 project_id = 2;
+  string user_id = 3;
+  string user_email = 4;
+  string user_name = 5;
+  repeated string permissions = 6;
+  string created_at = 7;
+  string updated_at = 8;
+}
+
+message ProjectInvitation {
+  int64 id = 1;
+  int64 project_id = 2;
+  string project_title = 3;
+  string project_icon = 4;
+  string inviter_id = 5;
+  string inviter_email = 6;
+  string inviter_name = 7;
+  string invitee_id = 8;
+  string invitee_email = 9;
+  repeated string permissions = 10;
+  InvitationStatus status = 11;
+  string created_at = 12;
+  string updated_at = 13;
+}
+
+message UserAccessBlock {
+  int64 id = 1;
+  string user_id = 2;
+  string blocked_user_id = 3;
+  string blocked_user_email = 4;
+  string blocked_user_name = 5;
+  string created_at = 6;
+}
+
+message SharedProjectItem {
+  Project project = 1;
+  repeated string permissions = 2;
+  string owner_email = 3;
+  string owner_name = 4;
+  string joined_at = 5;
+}
+
+// ─── Приглашения ──────────────────────────────────────────────
+message ProjectSendInvitationRequest {
+  int64 project_id = 1;
+  string invitee_id = 2;
+  string invitee_email = 3;
+  repeated string permissions = 4;
+}
+
+message ProjectSendInvitationResponse {
+  ProjectInvitation invitation = 1;
+}
+
+message ProjectListIncomingInvitationsRequest {}
+
+message ProjectListIncomingInvitationsResponse {
+  repeated ProjectInvitation invitations = 1;
+}
+
+message ProjectListOutgoingInvitationsRequest {
+  int64 project_id = 1;
+}
+
+message ProjectListOutgoingInvitationsResponse {
+  repeated ProjectInvitation invitations = 1;
+}
+
+message ProjectRespondInvitationRequest {
+  int64 invitation_id = 1;
+  bool accept = 2;
+}
+
+message ProjectRespondInvitationResponse {
+  bool success = 1;
+}
+
+message ProjectCancelInvitationRequest {
+  int64 invitation_id = 1;
+}
+
+message ProjectCancelInvitationResponse {
+  bool success = 1;
+}
+
+// ─── Участники проекта ─────────────────────────────────────────
+message ProjectListMembersRequest {
+  int64 project_id = 1;
+}
+
+message ProjectListMembersResponse {
+  repeated ProjectMember members = 1;
+  string owner_id = 2;
+}
+
+message ProjectUpdateMemberPermissionsRequest {
+  int64 project_id = 1;
+  string user_id = 2;
+  repeated string permissions = 3;
+}
+
+message ProjectUpdateMemberPermissionsResponse {
+  ProjectMember member = 1;
+}
+
+message ProjectRemoveMemberRequest {
+  int64 project_id = 1;
+  string user_id = 2;
+}
+
+message ProjectRemoveMemberResponse {
+  bool success = 1;
+}
+
+message ProjectLeaveRequest {
+  int64 project_id = 1;
+}
+
+message ProjectLeaveResponse {
+  bool success = 1;
+}
+
+message ProjectListSharedProjectsRequest {}
+
+message ProjectListSharedProjectsResponse {
+  repeated SharedProjectItem projects = 1;
+}
+
+// ─── Блокировка / Черный список ───────────────────────────────
+message ProjectBlockUserRequest {
+  string blocked_user_id = 1;
+  string blocked_user_email = 2;
+}
+
+message ProjectBlockUserResponse {
+  bool success = 1;
+}
+
+message ProjectUnblockUserRequest {
+  string blocked_user_id = 1;
+}
+
+message ProjectUnblockUserResponse {
+  bool success = 1;
+}
+
+message ProjectListBlockedUsersRequest {}
+
+message ProjectListBlockedUsersResponse {
+  repeated UserAccessBlock blocks = 1;
+}
+
 // ─── Service ──────────────────────────────────────────
 
 service ProjectService {
@@ -328,5 +494,50 @@ service ProjectService {
   }
   rpc Unpublish(ProjectUnpublishRequest) returns (ProjectUnpublishResponse) {
     option (google.api.http) = { post: "/api/v1/projects/{id}/unpublish", body: "*" };
+  }
+
+  // Приглашения и общий доступ
+  rpc SendInvitation(ProjectSendInvitationRequest) returns (ProjectSendInvitationResponse) {
+    option (google.api.http) = { post: "/api/v1/projects/{project_id}/invitations", body: "*" };
+  }
+  rpc ListIncomingInvitations(ProjectListIncomingInvitationsRequest) returns (ProjectListIncomingInvitationsResponse) {
+    option (google.api.http) = { get: "/api/v1/invitations/incoming" };
+  }
+  rpc ListOutgoingInvitations(ProjectListOutgoingInvitationsRequest) returns (ProjectListOutgoingInvitationsResponse) {
+    option (google.api.http) = { get: "/api/v1/invitations/outgoing" };
+  }
+  rpc RespondInvitation(ProjectRespondInvitationRequest) returns (ProjectRespondInvitationResponse) {
+    option (google.api.http) = { post: "/api/v1/invitations/{invitation_id}/respond", body: "*" };
+  }
+  rpc CancelInvitation(ProjectCancelInvitationRequest) returns (ProjectCancelInvitationResponse) {
+    option (google.api.http) = { post: "/api/v1/invitations/{invitation_id}/cancel", body: "*" };
+  }
+
+  // Участники и доступы
+  rpc ListMembers(ProjectListMembersRequest) returns (ProjectListMembersResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{project_id}/members" };
+  }
+  rpc UpdateMemberPermissions(ProjectUpdateMemberPermissionsRequest) returns (ProjectUpdateMemberPermissionsResponse) {
+    option (google.api.http) = { patch: "/api/v1/projects/{project_id}/members/{user_id}", body: "*" };
+  }
+  rpc RemoveMember(ProjectRemoveMemberRequest) returns (ProjectRemoveMemberResponse) {
+    option (google.api.http) = { delete: "/api/v1/projects/{project_id}/members/{user_id}" };
+  }
+  rpc LeaveProject(ProjectLeaveRequest) returns (ProjectLeaveResponse) {
+    option (google.api.http) = { post: "/api/v1/projects/{project_id}/leave", body: "*" };
+  }
+  rpc ListSharedProjects(ProjectListSharedProjectsRequest) returns (ProjectListSharedProjectsResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/shared" };
+  }
+
+  // Черный список / Бан спамеров
+  rpc BlockUser(ProjectBlockUserRequest) returns (ProjectBlockUserResponse) {
+    option (google.api.http) = { post: "/api/v1/access/blocks", body: "*" };
+  }
+  rpc UnblockUser(ProjectUnblockUserRequest) returns (ProjectUnblockUserResponse) {
+    option (google.api.http) = { delete: "/api/v1/access/blocks/{blocked_user_id}" };
+  }
+  rpc ListBlockedUsers(ProjectListBlockedUsersRequest) returns (ProjectListBlockedUsersResponse) {
+    option (google.api.http) = { get: "/api/v1/access/blocks" };
   }
 }

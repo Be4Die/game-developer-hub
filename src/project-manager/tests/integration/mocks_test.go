@@ -67,6 +67,30 @@ func (m *mockProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int
 	return count, nil
 }
 
+func (m *mockProjectRepo) ListForUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Project, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []*domain.Project
+	for _, p := range m.projects {
+		if p.OwnerID == userID {
+			res = append(res, p)
+		}
+	}
+	return res, nil
+}
+
+func (m *mockProjectRepo) CountForUser(ctx context.Context, userID string) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, p := range m.projects {
+		if p.OwnerID == userID {
+			count++
+		}
+	}
+	return count, nil
+}
+
 func (m *mockProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.ProjectStatus) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

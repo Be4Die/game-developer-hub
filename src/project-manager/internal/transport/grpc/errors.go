@@ -31,6 +31,18 @@ func domainError(err error, action string) error {
 		return status.Errorf(codes.AlreadyExists, "%s: already in moderation", action)
 	case errors.Is(err, domain.ErrNoActiveBuild):
 		return status.Errorf(codes.FailedPrecondition, "%s: no active build", action)
+	case errors.Is(err, domain.ErrUserBlocked):
+		return status.Errorf(codes.PermissionDenied, "%s: user has blocked invitations from you", action)
+	case errors.Is(err, domain.ErrAlreadyMember):
+		return status.Errorf(codes.AlreadyExists, "%s: user is already a member", action)
+	case errors.Is(err, domain.ErrAlreadyInvited):
+		return status.Errorf(codes.AlreadyExists, "%s: invitation already pending", action)
+	case errors.Is(err, domain.ErrCannotInviteSelf):
+		return status.Errorf(codes.InvalidArgument, "%s: cannot invite self", action)
+	case errors.Is(err, domain.ErrInvitationNotFound):
+		return status.Errorf(codes.NotFound, "%s: invitation not found", action)
+	case errors.Is(err, domain.ErrInvitationClosed):
+		return status.Errorf(codes.FailedPrecondition, "%s: invitation is already closed", action)
 	default:
 		return status.Errorf(codes.Internal, "%s: %v", action, err)
 	}

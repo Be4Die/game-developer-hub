@@ -40,7 +40,7 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, func()) {
 	deployer := deployment.NewLocalDeployer(filepath.Join(tmpDir, "games"), "/games")
 
 	projSvc := service.NewProjectService(
-		pRepo, dRepo, bRepo, rRepo, depRepo, mClient,
+		pRepo, dRepo, bRepo, rRepo, depRepo, nil, nil, nil, mClient,
 		bStorage, mStorage, deployer, nil, 5,
 	)
 

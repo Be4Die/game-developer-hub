@@ -24,6 +24,8 @@ type Project struct {
 	Status    ProjectStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Draft     *Draft
-	Release   *Release
+	Draft                  *Draft
+	Release                *Release
+	CurrentUserPermissions []string
+	IsOwner                bool
 }

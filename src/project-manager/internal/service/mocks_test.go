@@ -13,9 +13,10 @@ import (
 )
 
 type mockProjectRepo struct {
-	mu       sync.Mutex
-	projects map[int64]*domain.Project
-	nextID   int64
+	mu         sync.Mutex
+	projects   map[int64]*domain.Project
+	nextID     int64
+	memberRepo domain.MemberRepo
 }
 
 func newMockProjectRepo() *mockProjectRepo {
@@ -68,6 +69,30 @@ func (m *mockProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int
 		}
 	}
 	return count, nil
+}
+
+func (m *mockProjectRepo) ListForUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Project, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []*domain.Project
+	for _, p := range m.projects {
+		if p.OwnerID == userID {
+			res = append(res, p)
+		} else if m.memberRepo != nil {
+			if isMem, _ := m.memberRepo.IsMember(ctx, p.ID, userID); isMem {
+				res = append(res, p)
+			}
+		}
+	}
+	return res, nil
+}
+
+func (m *mockProjectRepo) CountForUser(ctx context.Context, userID string) (int, error) {
+	list, err := m.ListForUser(ctx, userID, 0, 0)
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
 }
 
 func (m *mockProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.ProjectStatus) error {
@@ -380,3 +405,223 @@ func (d *mockDeployer) DeleteVersion(ctx context.Context, projectID int64, versi
 	return nil
 }
 func (d *mockDeployer) DeleteProject(ctx context.Context, projectID int64) error { return nil }
+
+type mockMemberRepo struct {
+	mu      sync.Mutex
+	members map[string]*domain.Member
+}
+
+func newMockMemberRepo() *mockMemberRepo {
+	return &mockMemberRepo{members: make(map[string]*domain.Member)}
+}
+
+func (m *mockMemberRepo) Add(ctx context.Context, mem *domain.Member) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d:%s", mem.ProjectID, mem.UserID)
+	m.members[key] = mem
+	return nil
+}
+
+func (m *mockMemberRepo) Get(ctx context.Context, projectID int64, userID string) (*domain.Member, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d:%s", projectID, userID)
+	mem, ok := m.members[key]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return mem, nil
+}
+
+func (m *mockMemberRepo) ListByProject(ctx context.Context, projectID int64) ([]*domain.Member, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []*domain.Member
+	for _, mem := range m.members {
+		if mem.ProjectID == projectID {
+			res = append(res, mem)
+		}
+	}
+	return res, nil
+}
+
+func (m *mockMemberRepo) ListByUser(ctx context.Context, userID string) ([]*domain.Member, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []*domain.Member
+	for _, mem := range m.members {
+		if mem.UserID == userID {
+			res = append(res, mem)
+		}
+	}
+	return res, nil
+}
+
+func (m *mockMemberRepo) UpdatePermissions(ctx context.Context, projectID int64, userID string, perms []string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d:%s", projectID, userID)
+	mem, ok := m.members[key]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	mem.Permissions = perms
+	return nil
+}
+
+func (m *mockMemberRepo) Delete(ctx context.Context, projectID int64, userID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d:%s", projectID, userID)
+	delete(m.members, key)
+	return nil
+}
+
+func (m *mockMemberRepo) IsMember(ctx context.Context, projectID int64, userID string) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d:%s", projectID, userID)
+	_, ok := m.members[key]
+	return ok, nil
+}
+
+type mockInvitationRepo struct {
+	mu          sync.Mutex
+	invitations map[int64]*domain.Invitation
+	nextID      int64
+}
+
+func newMockInvitationRepo() *mockInvitationRepo {
+	return &mockInvitationRepo{
+		invitations: make(map[int64]*domain.Invitation),
+		nextID:      1,
+	}
+}
+
+func (r *mockInvitationRepo) Create(ctx context.Context, inv *domain.Invitation) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	inv.ID = r.nextID
+	r.nextID++
+	inv.CreatedAt = time.Now()
+	inv.UpdatedAt = time.Now()
+	r.invitations[inv.ID] = inv
+	return inv.ID, nil
+}
+
+func (r *mockInvitationRepo) Get(ctx context.Context, id int64) (*domain.Invitation, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	inv, ok := r.invitations[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return inv, nil
+}
+
+func (r *mockInvitationRepo) GetPending(ctx context.Context, projectID int64, inviteeID string) (*domain.Invitation, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, inv := range r.invitations {
+		if inv.ProjectID == projectID && inv.InviteeID == inviteeID && inv.Status == domain.InvitationStatusPending {
+			return inv, nil
+		}
+	}
+	return nil, domain.ErrNotFound
+}
+
+func (r *mockInvitationRepo) ListIncoming(ctx context.Context, inviteeID string) ([]*domain.Invitation, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var res []*domain.Invitation
+	for _, inv := range r.invitations {
+		if inv.InviteeID == inviteeID && inv.Status == domain.InvitationStatusPending {
+			res = append(res, inv)
+		}
+	}
+	return res, nil
+}
+
+func (r *mockInvitationRepo) ListOutgoing(ctx context.Context, inviterID string, projectID int64) ([]*domain.Invitation, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var res []*domain.Invitation
+	for _, inv := range r.invitations {
+		if inv.InviterID == inviterID && (projectID == 0 || inv.ProjectID == projectID) {
+			res = append(res, inv)
+		}
+	}
+	return res, nil
+}
+
+func (r *mockInvitationRepo) UpdateStatus(ctx context.Context, id int64, status domain.InvitationStatus) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	inv, ok := r.invitations[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	inv.Status = status
+	inv.UpdatedAt = time.Now()
+	return nil
+}
+
+func (r *mockInvitationRepo) CancelAllPendingBetween(ctx context.Context, inviterID, inviteeID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, inv := range r.invitations {
+		if inv.InviterID == inviterID && inv.InviteeID == inviteeID && inv.Status == domain.InvitationStatusPending {
+			inv.Status = domain.InvitationStatusCanceled
+			inv.UpdatedAt = time.Now()
+		}
+	}
+	return nil
+}
+
+type mockBlockRepo struct {
+	mu     sync.Mutex
+	blocks map[string]*domain.UserBlock
+}
+
+func newMockBlockRepo() *mockBlockRepo {
+	return &mockBlockRepo{blocks: make(map[string]*domain.UserBlock)}
+}
+
+func (r *mockBlockRepo) Block(ctx context.Context, b *domain.UserBlock) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := fmt.Sprintf("%s:%s", b.UserID, b.BlockedUserID)
+	b.CreatedAt = time.Now()
+	r.blocks[key] = b
+	return nil
+}
+
+func (r *mockBlockRepo) Unblock(ctx context.Context, userID, blockedUserID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := fmt.Sprintf("%s:%s", userID, blockedUserID)
+	delete(r.blocks, key)
+	return nil
+}
+
+func (r *mockBlockRepo) IsBlocked(ctx context.Context, blockerID, targetID string) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := fmt.Sprintf("%s:%s", blockerID, targetID)
+	_, ok := r.blocks[key]
+	return ok, nil
+}
+
+func (r *mockBlockRepo) ListBlocked(ctx context.Context, userID string) ([]*domain.UserBlock, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	var res []*domain.UserBlock
+	for _, b := range r.blocks {
+		if b.UserID == userID {
+			res = append(res, b)
+		}
+	}
+	return res, nil
+}
+

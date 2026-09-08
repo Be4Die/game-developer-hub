@@ -293,7 +293,7 @@ func (h *ModerationHandler) ListModeratorsStats(ctx context.Context, _ *pb.ListM
 	return resp, nil
 }
 
-// ListModeratorActivity возвращает постраничный журнал заявок конкретного модератора.
+// ListModeratorActivity возвращает постраничный журнал действий конкретного модератора.
 func (h *ModerationHandler) ListModeratorActivity(ctx context.Context, req *pb.ListModeratorActivityRequest) (*pb.ListModeratorActivityResponse, error) {
 	currentUserID, ok := UserIDFromContext(ctx)
 	if !ok {
@@ -310,23 +310,17 @@ func (h *ModerationHandler) ListModeratorActivity(ctx context.Context, req *pb.L
 		return nil, status.Error(codes.PermissionDenied, "access denied to moderator activity")
 	}
 
-	var statusFilter *domain.RequestStatus
-	if req.GetStatus() != pb.RequestStatus_REQUEST_STATUS_UNSPECIFIED {
-		st := domain.RequestStatus(int16(req.GetStatus()))
-		statusFilter = &st
-	}
-
-	requests, total, err := h.svc.ListModeratorActivity(ctx, targetModID, statusFilter, int(req.GetLimit()), int(req.GetOffset()))
+	items, total, err := h.svc.ListModeratorActivity(ctx, targetModID, req.GetActionType(), int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
 		return nil, domainError(err, "list moderator activity")
 	}
 
 	resp := &pb.ListModeratorActivityResponse{
-		Requests: make([]*pb.ModerationRequest, len(requests)),
-		Total:    clampInt32(total),
+		Items: make([]*pb.ModeratorActivityItem, len(items)),
+		Total: clampInt32(total),
 	}
-	for i, r := range requests {
-		resp.Requests[i] = requestToProto(r)
+	for i, it := range items {
+		resp.Items[i] = moderatorActivityItemToProto(it)
 	}
 
 	return resp, nil

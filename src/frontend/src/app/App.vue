@@ -51,7 +51,11 @@ watch(userRole, (newRole) => {
       router.push('/moderator/queue');
     }
   } else if (newRole === 'Администратор') {
-    if (!route.path.startsWith('/admin') && route.path !== '/profile') {
+    if (
+      !route.path.startsWith('/admin') &&
+      !route.path.startsWith('/moderator') &&
+      route.path !== '/profile'
+    ) {
       router.push('/admin/dashboard');
     }
   }

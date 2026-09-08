@@ -361,7 +361,7 @@ func TestUnit_ModerationService_ModeratorStatsAndActivity(t *testing.T) {
 	}
 
 	// 4. Проверяем ListModeratorActivity
-	activity, total, err := svc.ListModeratorActivity(ctx, "mod-42", nil, 10, 0)
+	activity, total, err := svc.ListModeratorActivity(ctx, "mod-42", "", 10, 0)
 	if err != nil {
 		t.Fatalf("expected activity success, got: %v", err)
 	}
@@ -369,9 +369,8 @@ func TestUnit_ModerationService_ModeratorStatsAndActivity(t *testing.T) {
 		t.Errorf("expected 3 activity items, got total=%d, len=%d", total, len(activity))
 	}
 
-	// Фильтр по статусу
-	rejectedStatus := domain.RequestStatusRejected
-	filteredActivity, filteredTotal, err := svc.ListModeratorActivity(ctx, "mod-42", &rejectedStatus, 10, 0)
+	// Фильтр по типу действия
+	filteredActivity, filteredTotal, err := svc.ListModeratorActivity(ctx, "mod-42", "rejected", 10, 0)
 	if err != nil {
 		t.Fatalf("expected filtered activity success, got: %v", err)
 	}

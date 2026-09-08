@@ -19,6 +19,8 @@ import { ModerationProjectPage } from '@/pages/moderation-project';
 import { ProfilePage } from '@/pages/profile';
 import { AdminDevelopersPage } from '@/pages/admin-developers';
 import { AdminModeratorsPage } from '@/pages/admin-moderators';
+import { AdminModeratorDetailPage } from '@/pages/admin-moderator-detail';
+import { SharedAccessPage } from '@/pages/shared-access';
 
 export const routes = [
   {
@@ -41,6 +43,12 @@ export const routes = [
     path: '/projects',
     name: 'projects',
     component: ProjectsListPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/access',
+    name: 'shared-access',
+    component: SharedAccessPage,
     meta: { requiresAuth: true },
   },
   {
@@ -158,6 +166,13 @@ export const routes = [
     path: '/admin/moderators',
     name: 'admin-moderators',
     component: AdminModeratorsPage,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/admin/moderators/:id',
+    name: 'admin-moderator-detail',
+    component: AdminModeratorDetailPage,
+    props: true,
     meta: { requiresAuth: true, requiresAdmin: true },
   },
 ];

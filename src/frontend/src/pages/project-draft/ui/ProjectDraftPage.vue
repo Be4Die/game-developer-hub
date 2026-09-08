@@ -22,7 +22,13 @@
               >
               <span class="char-count">{{ meta.title_ru.length }}/50</span>
             </div>
-            <input v-model="meta.title_ru" type="text" class="input-control" maxlength="50" />
+            <input
+              v-model="meta.title_ru"
+              type="text"
+              class="input-control"
+              maxlength="50"
+              :disabled="!canEditInfo"
+            />
           </div>
           <div class="input-group">
             <div class="input-header">
@@ -31,7 +37,13 @@
               >
               <span class="char-count">{{ meta.title_en.length }}/50</span>
             </div>
-            <input v-model="meta.title_en" type="text" class="input-control" maxlength="50" />
+            <input
+              v-model="meta.title_en"
+              type="text"
+              class="input-control"
+              maxlength="50"
+              :disabled="!canEditInfo"
+            />
           </div>
         </div>
         <div class="input-row">
@@ -45,6 +57,7 @@
               class="input-control"
               rows="2"
               maxlength="180"
+              :disabled="!canEditInfo"
             ></textarea>
           </div>
           <div class="input-group">
@@ -57,6 +70,7 @@
               class="input-control"
               rows="2"
               maxlength="180"
+              :disabled="!canEditInfo"
             ></textarea>
           </div>
         </div>
@@ -73,6 +87,7 @@
               class="input-control"
               rows="4"
               maxlength="800"
+              :disabled="!canEditInfo"
             ></textarea>
           </div>
           <div class="input-group">
@@ -87,6 +102,7 @@
               class="input-control"
               rows="4"
               maxlength="800"
+              :disabled="!canEditInfo"
             ></textarea>
           </div>
         </div>
@@ -130,11 +146,12 @@
               'is-empty': !media.icon || !mediaUrls.icon,
               'is-dragging': dragStates.icon,
               'is-loading': uploading.icon,
+              'is-disabled': !canUploadMedia,
             }"
-            @dragover.prevent="onDragOver('icon', $event)"
-            @dragleave.prevent="onDragLeave('icon', $event)"
-            @drop.prevent="onDrop('icon', $event)"
-            @click="(!media.icon || !mediaUrls.icon) && triggerFileInput('icon')"
+            @dragover.prevent="canUploadMedia && onDragOver('icon', $event)"
+            @dragleave.prevent="canUploadMedia && onDragLeave('icon', $event)"
+            @drop.prevent="canUploadMedia && onDrop('icon', $event)"
+            @click="(!media.icon || !mediaUrls.icon) && canUploadMedia && triggerFileInput('icon')"
           >
             <div class="media-slot-header">
               <div class="media-slot-title-group">
@@ -155,6 +172,7 @@
               />
               <span v-if="pendingFiles.icon" class="staged-pill">Локальный файл</span>
               <button
+                v-if="canUploadMedia"
                 type="button"
                 class="media-action-btn btn-delete"
                 :title="t('projectDraft.removeFile')"
@@ -178,7 +196,8 @@
                 <button
                   type="button"
                   class="btn-select-file"
-                  @click.stop="triggerFileInput('icon')"
+                  :disabled="!canUploadMedia"
+                  @click.stop="canUploadMedia && triggerFileInput('icon')"
                 >
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -194,11 +213,12 @@
               'is-empty': !media.cover || !mediaUrls.cover,
               'is-dragging': dragStates.cover,
               'is-loading': uploading.cover,
+              'is-disabled': !canUploadMedia,
             }"
-            @dragover.prevent="onDragOver('cover', $event)"
-            @dragleave.prevent="onDragLeave('cover', $event)"
-            @drop.prevent="onDrop('cover', $event)"
-            @click="(!media.cover || !mediaUrls.cover) && triggerFileInput('cover')"
+            @dragover.prevent="canUploadMedia && onDragOver('cover', $event)"
+            @dragleave.prevent="canUploadMedia && onDragLeave('cover', $event)"
+            @drop.prevent="canUploadMedia && onDrop('cover', $event)"
+            @click="(!media.cover || !mediaUrls.cover) && canUploadMedia && triggerFileInput('cover')"
           >
             <div class="media-slot-header">
               <div class="media-slot-title-group">
@@ -219,6 +239,7 @@
               />
               <span v-if="pendingFiles.cover" class="staged-pill">Локальный файл</span>
               <button
+                v-if="canUploadMedia"
                 type="button"
                 class="media-action-btn btn-delete"
                 :title="t('projectDraft.removeFile')"
@@ -242,7 +263,8 @@
                 <button
                   type="button"
                   class="btn-select-file"
-                  @click.stop="triggerFileInput('cover')"
+                  :disabled="!canUploadMedia"
+                  @click.stop="canUploadMedia && triggerFileInput('cover')"
                 >
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -258,11 +280,12 @@
               'is-empty': !media.video || !mediaUrls.video,
               'is-dragging': dragStates.video,
               'is-loading': uploading.video,
+              'is-disabled': !canUploadMedia,
             }"
-            @dragover.prevent="onDragOver('video', $event)"
-            @dragleave.prevent="onDragLeave('video', $event)"
-            @drop.prevent="onDrop('video', $event)"
-            @click="(!media.video || !mediaUrls.video) && triggerFileInput('video')"
+            @dragover.prevent="canUploadMedia && onDragOver('video', $event)"
+            @dragleave.prevent="canUploadMedia && onDragLeave('video', $event)"
+            @drop.prevent="canUploadMedia && onDrop('video', $event)"
+            @click="(!media.video || !mediaUrls.video) && canUploadMedia && triggerFileInput('video')"
           >
             <div class="media-slot-header">
               <div class="media-slot-title-group">
@@ -285,6 +308,7 @@
               ></video>
               <span v-if="pendingFiles.video" class="staged-pill">Локальный файл</span>
               <button
+                v-if="canUploadMedia"
                 type="button"
                 class="media-action-btn btn-delete"
                 :title="t('projectDraft.removeFile')"
@@ -308,7 +332,8 @@
                 <button
                   type="button"
                   class="btn-select-file"
-                  @click.stop="triggerFileInput('video')"
+                  :disabled="!canUploadMedia"
+                  @click.stop="canUploadMedia && triggerFileInput('video')"
                 >
                   {{ t('projectDraft.selectFile') }}
                 </button>
@@ -324,7 +349,14 @@
           <h3>{{ t('projectDraft.clientBuildSection') }}</h3>
         </div>
 
-        <ClientBuildUploader :project-id="projectId" @build-uploaded="onBuildUploaded" />
+        <ClientBuildUploader
+          v-if="canUploadBuild"
+          :project-id="projectId"
+          @build-uploaded="onBuildUploaded"
+        />
+        <div v-else class="build-no-perm-notice">
+          <span class="text-muted">{{ t('access.permissions.PERM_UPLOAD_BUILD') }} — нет прав на загрузку новых билдов</span>
+        </div>
 
         <!-- Список версий -->
         <div v-if="recentBuilds.length" class="build-versions">
@@ -334,7 +366,7 @@
             :key="b.version"
             class="build-row"
             :class="{ active: activeBuildVersion === b.version }"
-            @click="setActiveBuild(b.version)"
+            @click="canUploadBuild && setActiveBuild(b.version)"
           >
             <div class="build-info">
               <div
@@ -392,6 +424,15 @@ const projectId = computed(() => route.params.id);
 
 const sharedProject = inject('project', null);
 const draftActions = inject('draftActions', null);
+
+const isOwner = computed(() => sharedProject?.value?.is_owner !== false);
+const permissions = computed(() => sharedProject?.value?.current_user_permissions || []);
+const canEditInfo = computed(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
+const canUploadMedia = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
+const canUploadBuild = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
+const canSubmitModeration = computed(
+  () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
+);
 
 const meta = ref({
   title_ru: '',
@@ -570,6 +611,10 @@ async function loadProject(keepStaged = false) {
 onMounted(() => loadProject(false));
 
 async function submitForModeration() {
+  if (!canSubmitModeration.value) {
+    showToast('Недостаточно прав для отправки на модерацию', 'danger');
+    return;
+  }
   const pId = parseInt(projectId.value, 10);
   if (!pId) {
     showToast('Не удалось определить ID игры', 'danger');
@@ -598,39 +643,46 @@ async function submitForModeration() {
 
 async function saveMeta(silent = false) {
   try {
-    // 1. Сначала загружаем все локально прикрепленные медиафайлы
-    for (const type of ['icon', 'cover', 'video']) {
-      if (pendingFiles[type]) {
-        uploading[type] = true;
-        try {
-          await uploadMedia(projectId.value, type, pendingFiles[type]);
-          pendingFiles[type] = null;
-        } catch (uploadErr) {
-          showToast(
-            `Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`,
-            'danger'
-          );
-          throw uploadErr;
-        } finally {
-          uploading[type] = false;
+    // 1. Сначала загружаем все локально прикрепленные медиафайлы (если есть права)
+    if (canUploadMedia.value) {
+      for (const type of ['icon', 'cover', 'video']) {
+        if (pendingFiles[type]) {
+          uploading[type] = true;
+          try {
+            await uploadMedia(projectId.value, type, pendingFiles[type]);
+            pendingFiles[type] = null;
+          } catch (uploadErr) {
+            showToast(
+              `Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`,
+              'danger'
+            );
+            throw uploadErr;
+          } finally {
+            uploading[type] = false;
+          }
         }
       }
     }
 
-    // 2. Обновляем текстовые метаданные черновика
-    const payload = {
-      ...meta.value,
-      active_build_version: activeBuildVersion.value,
-    };
-    await updateProject(projectId.value, payload);
-    if (sharedProject && sharedProject.value) {
-      sharedProject.value = {
-        ...sharedProject.value,
-        title_ru: meta.value.title_ru,
-        title_en: meta.value.title_en,
-      };
+    // 2. Обновляем текстовые метаданные черновика (если есть права)
+    if (canEditInfo.value || canUploadBuild.value) {
+      const payload = {};
+      if (canEditInfo.value) {
+        Object.assign(payload, meta.value);
+      }
+      if (canUploadBuild.value) {
+        payload.active_build_version = activeBuildVersion.value;
+      }
+      await updateProject(projectId.value, payload);
+      if (sharedProject && sharedProject.value && canEditInfo.value) {
+        sharedProject.value = {
+          ...sharedProject.value,
+          title_ru: meta.value.title_ru,
+          title_en: meta.value.title_en,
+        };
+      }
+      await loadProject(false);
     }
-    await loadProject(false);
     if (!silent) showToast('Черновик успешно сохранён!', 'success');
   } catch (err) {
     if (!silent) showToast('Ошибка сохранения черновика', 'danger');
@@ -1195,5 +1247,19 @@ function downloadBuild(version) {
   color: var(--primary);
   border-color: var(--primary);
   background: var(--bg-secondary);
+}
+
+.media-slot.is-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.build-no-perm-notice {
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  text-align: center;
 }
 </style>

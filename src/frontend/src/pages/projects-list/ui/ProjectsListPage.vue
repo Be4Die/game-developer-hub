@@ -5,6 +5,7 @@
       <ProjectFilters
         v-model:search-query="searchQuery"
         v-model:status-filter="statusFilter"
+        v-model:role-filter="roleFilter"
         v-model:sort-by="sortBy"
         :creating="creating"
         @reset="resetFilters"
@@ -19,7 +20,7 @@
 
       <!-- Пустой список без проектов -->
       <div
-        v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all'"
+        v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all' && roleFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
@@ -83,7 +84,11 @@
                       {{ getGameTypeLabel(game) }}
                     </div>
                     <div class="game-title">
-                      {{ game.title_ru || game.title_en || '—' }}
+                      <span>{{ game.title_ru || game.title_en || '—' }}</span>
+                      <span v-if="game.is_owner === false" class="badge-role-collab" title="Совместный доступ">
+                        <Users class="icon-xs" />
+                        <span>{{ t('access.statuses.collaborator') }}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -107,11 +112,20 @@
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
                   <button
+                    v-if="game.is_owner !== false"
                     class="btn-icon text-danger-hover"
                     title="Удалить проект"
                     @click="confirmDeleteProject(game)"
                   >
                     <Trash2 class="icon-xs" />
+                  </button>
+                  <button
+                    v-else
+                    class="btn-icon text-warning-hover"
+                    :title="t('access.actions.leaveProject')"
+                    @click="confirmLeaveProject(game)"
+                  >
+                    <LogOut class="icon-xs" />
                   </button>
                 </div>
               </td>
@@ -196,6 +210,8 @@ import {
   Gamepad2,
   Search,
   Trash2,
+  Users,
+  LogOut,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -206,6 +222,7 @@ import {
   listProjects,
   createProject,
   deleteProject,
+  leaveProject,
   resetDraftState,
   normalizeProjectStatus,
   statusClass,
@@ -224,6 +241,7 @@ const creating = ref(false);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
+const roleFilter = ref('all');
 const sortBy = ref('newest');
 
 const currentPage = ref(1);
@@ -282,9 +300,25 @@ const confirmDeleteProject = async (game) => {
   }
 };
 
+const confirmLeaveProject = async (game) => {
+  const title = game.title_ru || game.title_en || `#${game.id}`;
+  if (!confirm(`Вы действительно хотите покинуть проект «${title}»? Вы потеряете доступ к совместной разработке.`)) {
+    return;
+  }
+  try {
+    await leaveProject(game.id);
+    games.value = games.value.filter((g) => g.id !== game.id);
+    totalProjects.value = Math.max(0, totalProjects.value - 1);
+    showToast(t('access.messages.leftProject') || 'Вы покинули проект', 'success');
+  } catch (err) {
+    showToast(err.response?.data?.message || 'Ошибка при выходе из проекта', 'danger');
+  }
+};
+
 const resetFilters = () => {
   searchQuery.value = '';
   statusFilter.value = 'all';
+  roleFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
 };
@@ -306,6 +340,12 @@ const filteredGames = computed(() => {
     const statusMap = { draft: 1, pending: 2, published: 3, approved: 4, rejected: 5 };
     const targetStatus = statusMap[statusFilter.value];
     list = list.filter((g) => normalizeProjectStatus(g.status) === targetStatus);
+  }
+
+  if (roleFilter.value === 'owned') {
+    list = list.filter((g) => g.is_owner !== false);
+  } else if (roleFilter.value === 'shared') {
+    list = list.filter((g) => g.is_owner === false);
   }
 
   if (sortBy.value === 'newest') {
@@ -638,6 +678,25 @@ onMounted(loadProjects);
 
 .text-danger-hover:hover {
   color: var(--danger, #f85149) !important;
+}
+
+.text-warning-hover:hover {
+  color: var(--warning, #d29922) !important;
+}
+
+.badge-role-collab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--bg-tertiary, #21262d);
+  color: var(--primary, #58a6ff);
+  border: 1px solid var(--border, #30363d);
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 /* Пагинация прикреплена к низу */
