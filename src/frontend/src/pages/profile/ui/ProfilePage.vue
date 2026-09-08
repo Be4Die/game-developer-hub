@@ -44,16 +44,6 @@
                   </div>
                 </div>
               </div>
-
-              <div class="role-protected-alert">
-                <div class="alert-icon-wrap">
-                  <ShieldAlert class="icon-sm" />
-                </div>
-                <div class="alert-body">
-                  <span class="alert-headline">{{ t('profile.protectedProfile') }}</span>
-                  <p class="alert-message">{{ t('profile.readonlyNotice') }}</p>
-                </div>
-              </div>
             </div>
           </section>
         </div>
@@ -66,8 +56,8 @@
               {{ t('profile.appearance') }}
             </h2>
 
-            <div class="appearance-stacked">
-              <div class="pref-sub-block">
+            <div class="appearance-row-split">
+              <div class="pref-block-half">
                 <span class="sub-block-label">{{ t('profile.interfaceLanguage') }}</span>
                 <div class="languages-grid">
                   <button
@@ -459,7 +449,6 @@ import {
   ShieldCheck,
   UserX,
   User,
-  ShieldAlert,
 } from 'lucide-vue-next';
 import { useAuth, updateProfile, changePassword } from '@/entities/user';
 import {
@@ -894,42 +883,6 @@ onMounted(() => {
   font-weight: 500;
   color: var(--text-main);
   box-sizing: border-box;
-}
-
-.role-protected-alert {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: var(--radius-sm, 6px);
-  padding: 14px 16px;
-  margin-top: 4px;
-}
-
-.alert-icon-wrap {
-  color: var(--warning, #d97706);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.alert-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.alert-headline {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--warning, #d97706);
-}
-
-.alert-message {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-  margin: 0;
 }
 
 /* Тело учетной записи разработчика */
