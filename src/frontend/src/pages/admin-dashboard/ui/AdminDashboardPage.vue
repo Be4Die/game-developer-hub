@@ -35,7 +35,10 @@
             @input="debouncedSearch"
           />
         </div>
-        <div v-if="loading" class="empty-state">{{ t('common.loading') }}</div>
+        <div v-if="loading" class="state-container">
+          <div class="spinner-md"></div>
+          <p>{{ t('common.loading') }}</p>
+        </div>
         <div v-else-if="users.length === 0" class="empty-state">
           {{ t('common.empty') }}
         </div>

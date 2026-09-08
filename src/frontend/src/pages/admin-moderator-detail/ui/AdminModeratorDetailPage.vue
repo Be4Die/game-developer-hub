@@ -1466,11 +1466,14 @@ function getActionLabel(actionType) {
 }
 
 .spinner-md {
-  width: 28px;
-  height: 28px;
-  border: 3px solid rgba(88, 166, 255, 0.2);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #30363d);
   border-top-color: var(--primary, #58a6ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
 }
 </style>

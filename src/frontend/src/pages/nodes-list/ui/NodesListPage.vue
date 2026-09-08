@@ -503,8 +503,13 @@ onMounted(fetchNodes);
 }
 
 .state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 60px 20px;
   text-align: center;
+  gap: 12px;
   color: var(--text-tertiary, #8b949e);
 }
 
@@ -515,7 +520,9 @@ onMounted(fetchNodes);
   border-top-color: var(--primary, #58a6ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin: 0 auto 12px;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
 }
 
 @keyframes spin {

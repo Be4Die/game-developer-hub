@@ -24,7 +24,10 @@
     />
 
     <!-- Таблица билдов -->
-    <div v-if="loading" class="loading-state">{{ t('common.loading') }}</div>
+    <div v-if="loading" class="state-container">
+      <div class="spinner-md"></div>
+      <p>{{ t('common.loading') }}</p>
+    </div>
     <div v-else-if="error" class="empty-state"></div>
     <div v-else-if="builds.length" class="table-wrap">
       <table class="data-table">

@@ -403,8 +403,13 @@ onMounted(loadProjects);
 }
 
 .state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 60px 20px;
   text-align: center;
+  gap: 12px;
   color: var(--text-tertiary, #8b949e);
 }
 
@@ -805,20 +810,25 @@ onMounted(loadProjects);
 .spinner-sm {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  border-top-color: #000000;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .spinner-md {
   width: 32px;
   height: 32px;
   border: 3px solid var(--border, #30363d);
-  border-top-color: #f5b027;
+  border-top-color: var(--primary, #58a6ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
 }
 
 @keyframes spin {

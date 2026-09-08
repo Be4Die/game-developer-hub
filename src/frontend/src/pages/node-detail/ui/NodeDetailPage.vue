@@ -1477,10 +1477,13 @@ onUnmounted(() => {
 .spinner-sm {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(88, 166, 255, 0.2);
+  border: 2px solid var(--border, #30363d);
   border-top-color: var(--primary, #58a6ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 @keyframes spin {

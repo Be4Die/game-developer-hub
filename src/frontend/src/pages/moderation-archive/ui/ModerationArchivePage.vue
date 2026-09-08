@@ -995,8 +995,20 @@ function openProject(projectId) {
   color: var(--text-tertiary, #8b949e);
 }
 
+.spinner-md {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
+}
+
 .spin {
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {

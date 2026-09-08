@@ -1530,7 +1530,13 @@ function formatDate(dateStr) {
 .search-user-wrapper { position: relative; }
 .search-input-box { position: relative; }
 .search-icon { position: absolute; left: 10px; top: 10px; color: var(--text-muted); }
-.search-loader { position: absolute; right: 10px; top: 10px; }
+.search-loader {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  border-color: var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+}
 .has-search-icon { padding-left: 32px; width: 100%; box-sizing: border-box; }
 .user-dropdown {
   position: absolute; top: 100%; left: 0; right: 0;
@@ -1572,12 +1578,26 @@ function formatDate(dateStr) {
 .text-muted { color: var(--text-muted) !important; }
 
 .spinner-sm {
-  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 .spinner-md {
-  width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

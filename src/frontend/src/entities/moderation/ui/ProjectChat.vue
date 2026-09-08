@@ -624,6 +624,8 @@ onUnmounted(() => {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 @keyframes spin {

@@ -950,6 +950,18 @@ onMounted(() => {
   color: var(--text-muted, #b0b8c4);
 }
 
+.spinner-md {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+  display: block;
+  flex-shrink: 0;
+}
+
 .audit-mode-banner {
   display: flex;
   align-items: center;
