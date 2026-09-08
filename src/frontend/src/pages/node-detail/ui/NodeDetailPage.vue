@@ -62,39 +62,8 @@
     </div>
 
     <template v-if="!error && node.id">
-      <!-- Форма авторизации для неавторизованных нод -->
-      <div v-if="isUnauthorized" class="card auth-card">
-        <h3>Авторизация ноды</h3>
-        <p class="auth-hint">
-          Эта нода анонсировала себя оркестратору и ожидает авторизации. Введите API-ключ ноды
-          (<code>NODE_API_KEY</code>) чтобы подключить её к кластеру.
-        </p>
-        <div class="auth-form">
-          <div class="form-group">
-            <label>API-ключ ноды *</label>
-            <input
-              v-model="authToken"
-              type="text"
-              class="form-input"
-              placeholder="dev-api-key-for-local-testing"
-              @keyup.enter="submitAuthorize"
-            />
-          </div>
-          <div v-if="authError" class="auth-error">
-            {{ authError }}
-          </div>
-          <button
-            class="btn-primary"
-            :disabled="!authToken || authorizing"
-            @click="submitAuthorize"
-          >
-            {{ authorizing ? 'Авторизация...' : 'Авторизовать ноду' }}
-          </button>
-        </div>
-      </div>
-
       <!-- Верхний обзорный блок: Информация о ноде (слева) и Потребление ресурсов (справа, 2x2) -->
-      <div class="overview-grid">
+      <div class="overview-grid" :class="{ 'is-unauthorized': isUnauthorized }">
         <!-- Блок информации о ноде -->
         <div class="card specs-card">
           <div class="card-header-simple">
@@ -171,6 +140,32 @@
               type="raw"
             />
           </div>
+        </div>
+      </div>
+
+      <!-- Форма авторизации для неавторизованных нод -->
+      <div v-if="isUnauthorized" class="card auth-card">
+        <div class="auth-form">
+          <div class="form-group">
+            <label>API-ключ ноды *</label>
+            <input
+              v-model="authToken"
+              type="text"
+              class="form-input"
+              placeholder="dev-api-key-for-local-testing"
+              @keyup.enter="submitAuthorize"
+            />
+          </div>
+          <div v-if="authError" class="auth-error">
+            {{ authError }}
+          </div>
+          <button
+            class="btn-primary"
+            :disabled="!authToken || authorizing"
+            @click="submitAuthorize"
+          >
+            {{ authorizing ? 'Авторизация...' : 'Авторизовать ноду' }}
+          </button>
         </div>
       </div>
 
@@ -985,26 +980,24 @@ onUnmounted(() => {
 .auth-card {
   border: 1px solid #d29922;
   background: rgba(210, 153, 34, 0.05);
-  padding: 20px;
-}
-
-.auth-card h3 {
-  margin: 0 0 6px;
-  color: #d29922;
-  font-size: 1rem;
-}
-
-.auth-hint {
-  font-size: 0.85rem;
-  color: var(--text-muted, #8b949e);
-  margin: 0 0 16px;
+  border-radius: var(--radius-lg, 10px);
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  align-self: center;
+  box-sizing: border-box;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 440px;
+  gap: 16px;
+  width: 100%;
+}
+
+.auth-form .form-group {
+  margin-bottom: 0;
 }
 
 .auth-error {
@@ -1018,6 +1011,10 @@ onUnmounted(() => {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   align-items: stretch;
+}
+
+.overview-grid.is-unauthorized {
+  grid-template-columns: 1fr;
 }
 
 @media (max-width: 992px) {
