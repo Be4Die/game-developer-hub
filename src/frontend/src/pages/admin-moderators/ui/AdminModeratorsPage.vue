@@ -116,7 +116,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="mod in paginatedModerators" :key="mod.id" class="table-row">
+            <tr
+              v-for="mod in paginatedModerators"
+              :key="mod.id"
+              class="table-row table-row-clickable"
+              @click="goToModerator(mod.id)"
+            >
               <!-- Колонка 1: Название / Имя -->
               <td class="col-name">
                 <span class="user-name-text">{{ mod.display_name || 'Модератор' }}</span>
@@ -167,17 +172,8 @@
               </td>
 
               <!-- Колонка 8: Действия -->
-              <td class="col-actions">
+              <td class="col-actions" @click.stop>
                 <div class="row-actions">
-                  <!-- Кнопка перехода к деталям модератора -->
-                  <button
-                    class="btn-action"
-                    title="Детали модератора"
-                    @click="router.push(`/admin/moderators/${mod.id}`)"
-                  >
-                    <span>{{ t('moderation.details') }}</span>
-                  </button>
-
                   <!-- Кнопка восстановления (если удален) -->
                   <button
                     v-if="isUserDeleted(mod.status)"
@@ -462,6 +458,12 @@ async function handleRestore(mod) {
     showToast(err.response?.data?.message || 'Не удалось восстановить модератора', 'danger');
   } finally {
     actionPendingId.value = null;
+  }
+}
+
+function goToModerator(modId) {
+  if (modId) {
+    router.push(`/admin/moderators/${modId}`);
   }
 }
 
