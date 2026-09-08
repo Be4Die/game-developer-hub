@@ -99,6 +99,8 @@ export default {
     developerRole: 'Developer',
     registeredAt: 'Registration date',
     accountAndSecurity: 'Account & Security',
+    accountDetails: 'Account Details',
+    protectedProfile: 'Protected Profile',
     appearance: 'Interface & Customization',
     editProfile: 'Display Name',
     editProfileDesc: 'This name is visible to moderators and displayed in the platform header.',

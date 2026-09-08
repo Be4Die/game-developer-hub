@@ -1,16 +1,16 @@
 <template>
   <div class="profile-page">
     <div class="profile-container">
-      <!-- Для модератора/админа (только учетная запись и интерфейс) -->
+      <!-- Для модератора/админа (защищенная учетная запись без смены имени/пароля + интерфейс) -->
       <div v-if="isModeratorOrAdmin" class="profile-main-grid">
-        <!-- Колонка 1: Учетная запись и безопасность -->
+        <!-- Колонка 1: Учетная запись (только просмотр и плашка защищенности) -->
         <div class="profile-col">
           <section class="profile-card card-account">
             <div class="card-header-identity">
               <div class="header-identity-left">
                 <div class="header-title-wrap">
-                  <UserCheck class="icon-md text-primary" />
-                  <h2 class="card-title-lg">{{ t('profile.accountAndSecurity') }}</h2>
+                  <Shield class="icon-md" :class="isModerator ? 'text-warning' : 'text-danger'" />
+                  <h2 class="card-title-lg">{{ t('profile.accountDetails') }}</h2>
                 </div>
                 <span class="role-badge" :class="roleBadgeClass">
                   <Shield class="icon-xs" />
@@ -19,10 +19,6 @@
               </div>
 
               <div class="header-identity-right">
-                <div class="identity-meta-pill">
-                  <Mail class="icon-xs text-muted" />
-                  <span>{{ userEmail }}</span>
-                </div>
                 <div v-if="registeredDate" class="identity-meta-pill">
                   <Calendar class="icon-xs text-muted" />
                   <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
@@ -30,89 +26,33 @@
               </div>
             </div>
 
-            <div class="account-body">
-              <div class="account-sub-section">
-                <label class="form-label" for="displayNameInputMod">
-                  {{ t('profile.editProfile') }}
-                </label>
-                <form class="inline-name-form" @submit.prevent="handleUpdateDisplayName">
-                  <input
-                    id="displayNameInputMod"
-                    v-model="displayNameForm"
-                    type="text"
-                    class="form-input field-name-input"
-                    :placeholder="t('auth.displayNamePlaceholder')"
-                    :disabled="nameSaving"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    class="btn-primary btn-save-name"
-                    :disabled="nameSaving || !isNameChanged"
-                  >
-                    <Loader2 v-if="nameSaving" class="icon-sm spin" />
-                    <Check v-else class="icon-sm" />
-                    <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
-                  </button>
-                </form>
+            <div class="account-readonly-body">
+              <div class="readonly-grid">
+                <div class="readonly-field">
+                  <span class="readonly-field-label">{{ t('profile.editProfile') }}</span>
+                  <div class="readonly-field-value">
+                    <User class="icon-xs text-muted" />
+                    <span>{{ userDisplayName }}</span>
+                  </div>
+                </div>
+
+                <div class="readonly-field">
+                  <span class="readonly-field-label">Email</span>
+                  <div class="readonly-field-value">
+                    <Mail class="icon-xs text-muted" />
+                    <span>{{ userEmail }}</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="card-divider"></div>
-
-              <div class="account-sub-section">
-                <label class="form-label">{{ t('profile.security') }}</label>
-                <form class="password-form" @submit.prevent="handleChangePassword">
-                  <div class="form-group">
-                    <input
-                      v-model="passwordForm.currentPassword"
-                      type="password"
-                      class="form-input"
-                      :placeholder="t('auth.currentPassword')"
-                      :disabled="passwordSaving"
-                      required
-                    />
-                  </div>
-
-                  <div class="form-row-2">
-                    <div class="form-group">
-                      <input
-                        v-model="passwordForm.newPassword"
-                        type="password"
-                        class="form-input"
-                        :placeholder="t('auth.newPassword')"
-                        :disabled="passwordSaving"
-                        minlength="6"
-                        required
-                      />
-                    </div>
-
-                    <div class="form-group">
-                      <input
-                        v-model="passwordForm.confirmPassword"
-                        type="password"
-                        class="form-input"
-                        :placeholder="t('auth.confirmPassword')"
-                        :disabled="passwordSaving"
-                        minlength="6"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div class="form-actions-full">
-                    <button
-                      type="submit"
-                      class="btn-primary btn-password-submit"
-                      :disabled="passwordSaving || !isPasswordFormFilled"
-                    >
-                      <Loader2 v-if="passwordSaving" class="icon-sm spin" />
-                      <Key v-else class="icon-sm" />
-                      <span>{{
-                        passwordSaving ? t('common.saving') : t('profile.changePasswordBtn')
-                      }}</span>
-                    </button>
-                  </div>
-                </form>
+              <div class="role-protected-alert">
+                <div class="alert-icon-wrap">
+                  <ShieldAlert class="icon-sm" />
+                </div>
+                <div class="alert-body">
+                  <span class="alert-headline">{{ t('profile.protectedProfile') }}</span>
+                  <p class="alert-message">{{ t('profile.readonlyNotice') }}</p>
+                </div>
               </div>
             </div>
           </section>
@@ -126,8 +66,8 @@
               {{ t('profile.appearance') }}
             </h2>
 
-            <div class="appearance-row-split">
-              <div class="pref-block-half">
+            <div class="appearance-stacked">
+              <div class="pref-sub-block">
                 <span class="sub-block-label">{{ t('profile.interfaceLanguage') }}</span>
                 <div class="languages-grid">
                   <button
@@ -160,7 +100,7 @@
                 </div>
               </div>
 
-              <div class="pref-block-half">
+              <div class="pref-sub-block">
                 <span class="sub-block-label">{{ t('profile.theme') }}</span>
                 <ThemeCardSelector />
               </div>
@@ -518,6 +458,8 @@ import {
   Palette,
   ShieldCheck,
   UserX,
+  User,
+  ShieldAlert,
 } from 'lucide-vue-next';
 import { useAuth, updateProfile, changePassword } from '@/entities/user';
 import {
@@ -556,6 +498,11 @@ const isModeratorOrAdmin = computed(() => {
   );
 });
 
+const isModerator = computed(() => {
+  const role = user.value.role;
+  return role === 'USER_ROLE_MODERATOR' || role === 'moderator' || role === 2;
+});
+
 const localizedRoleName = computed(() => {
   const role = user.value.role;
   if (role === 'USER_ROLE_ADMIN' || role === 'admin' || role === 3) {
@@ -579,7 +526,7 @@ const registeredDate = computed(() => {
   return formatDate(user.value.created_at);
 });
 
-// Display name form
+// Display name form (для разработчиков)
 const displayNameForm = ref(user.value.display_name || '');
 const nameSaving = ref(false);
 
@@ -600,7 +547,7 @@ const isNameChanged = computed(() => {
 });
 
 async function handleUpdateDisplayName() {
-  if (!isNameChanged.value) return;
+  if (!isNameChanged.value || isModeratorOrAdmin.value) return;
   nameSaving.value = true;
   try {
     const res = await updateProfile({ display_name: displayNameForm.value.trim() });
@@ -614,7 +561,7 @@ async function handleUpdateDisplayName() {
   }
 }
 
-// Password form
+// Password form (для разработчиков)
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
@@ -631,6 +578,7 @@ const isPasswordFormFilled = computed(() => {
 });
 
 async function handleChangePassword() {
+  if (isModeratorOrAdmin.value) return;
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     showToast(t('auth.errorPasswordMismatch'), 'danger');
     return;
@@ -908,7 +856,83 @@ onMounted(() => {
   color: var(--primary, #3b82f6);
 }
 
-/* Тело учетной записи */
+/* Режим только просмотра для модераторов/админов */
+.account-readonly-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.readonly-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.readonly-field-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.readonly-field-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+.role-protected-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm, 6px);
+  padding: 14px 16px;
+  margin-top: 4px;
+}
+
+.alert-icon-wrap {
+  color: var(--warning, #d97706);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.alert-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.alert-headline {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--warning, #d97706);
+}
+
+.alert-message {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Тело учетной записи разработчика */
 .account-body {
   display: flex;
   flex-direction: column;
@@ -1031,7 +1055,15 @@ onMounted(() => {
   width: 100%;
 }
 
-.pref-block-half {
+.appearance-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.pref-block-half,
+.pref-sub-block {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1394,6 +1426,10 @@ onMounted(() => {
   color: var(--primary);
 }
 
+.text-warning {
+  color: var(--warning, #d97706);
+}
+
 .text-danger {
   color: var(--danger, #ef4444);
 }
@@ -1436,6 +1472,9 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   .languages-grid {
+    grid-template-columns: 1fr;
+  }
+  .readonly-grid {
     grid-template-columns: 1fr;
   }
 }

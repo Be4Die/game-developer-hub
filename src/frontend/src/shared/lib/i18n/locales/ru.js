@@ -99,6 +99,8 @@ export default {
     developerRole: 'Разработчик',
     registeredAt: 'Дата регистрации',
     accountAndSecurity: 'Учетная запись и безопасность',
+    accountDetails: 'Данные учетной записи',
+    protectedProfile: 'Защищенный профиль',
     appearance: 'Интерфейс и персонализация',
     editProfile: 'Отображаемое имя',
     editProfileDesc: 'Это имя отображается модераторам и в шапке интерфейса платформы.',
