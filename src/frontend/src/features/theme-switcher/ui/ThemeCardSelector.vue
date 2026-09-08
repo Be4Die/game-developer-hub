@@ -1,39 +1,42 @@
 <template>
   <div class="theme-grid">
-    <div class="theme-card" :class="{ active: !isDark }" @click="selectTheme('light')">
-      <div class="theme-preview theme-preview-light">
-        <div class="preview-header"></div>
-        <div class="preview-body">
-          <div class="preview-card"></div>
-          <div class="preview-line"></div>
-          <div class="preview-line short"></div>
-        </div>
+    <button
+      type="button"
+      class="theme-card"
+      :class="{ active: !isDark }"
+      @click="selectTheme('light')"
+    >
+      <div class="theme-icon-box light-box">
+        <Sun class="icon-md" />
       </div>
-      <div class="theme-info">
-        <Sun class="icon-md theme-icon" />
-        <span>{{ t('profile.themeLight') }}</span>
+      <div class="theme-text">
+        <span class="theme-name">{{ t('profile.themeLight') }}</span>
+        <span class="theme-sub">Light</span>
       </div>
-    </div>
-    <div class="theme-card" :class="{ active: isDark }" @click="selectTheme('dark')">
-      <div class="theme-preview theme-preview-dark">
-        <div class="preview-header"></div>
-        <div class="preview-body">
-          <div class="preview-card"></div>
-          <div class="preview-line"></div>
-          <div class="preview-line short"></div>
-        </div>
+      <Check v-if="!isDark" class="icon-sm theme-check" />
+    </button>
+
+    <button
+      type="button"
+      class="theme-card"
+      :class="{ active: isDark }"
+      @click="selectTheme('dark')"
+    >
+      <div class="theme-icon-box dark-box">
+        <Moon class="icon-md" />
       </div>
-      <div class="theme-info">
-        <Moon class="icon-md theme-icon" />
-        <span>{{ t('profile.themeDark') }}</span>
+      <div class="theme-text">
+        <span class="theme-name">{{ t('profile.themeDark') }}</span>
+        <span class="theme-sub">Dark</span>
       </div>
-    </div>
+      <Check v-if="isDark" class="icon-sm theme-check" />
+    </button>
   </div>
 </template>
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import { Sun, Moon } from 'lucide-vue-next';
+import { Sun, Moon, Check } from 'lucide-vue-next';
 import { useTheme } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -47,22 +50,24 @@ function selectTheme(value) {
 <style scoped>
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  height: 100%;
-  flex: 1;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
 }
 
 .theme-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: all 0.2s;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--bg-secondary);
+  transition: all 0.15s ease;
+  text-align: left;
+  position: relative;
+  outline: none;
 }
 
 .theme-card:hover {
@@ -71,112 +76,59 @@ function selectTheme(value) {
 
 .theme-card.active {
   border-color: var(--primary);
-  box-shadow: 0 0 0 1px var(--primary);
   background: var(--bg-card);
 }
 
-.theme-preview {
-  flex: 1;
-  min-height: 140px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.theme-preview-light {
-  background: #f3f4f6;
-}
-
-.theme-preview-light .preview-header {
-  height: 18px;
-  background: #ffffff;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-}
-
-.theme-preview-light .preview-body {
-  flex: 1;
-  background: #ffffff;
-  border-radius: 4px;
-  border: 1px solid #e5e7eb;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.theme-preview-light .preview-card {
-  height: 20px;
-  background: #f3f4f6;
-  border-radius: 3px;
-}
-
-.theme-preview-light .preview-line {
-  height: 6px;
-  background: #e5e7eb;
-  border-radius: 3px;
-}
-
-.theme-preview-light .preview-line.short {
-  width: 60%;
-}
-
-.theme-preview-dark {
-  background: #181b20;
-}
-
-.theme-preview-dark .preview-header {
-  height: 18px;
-  background: #21262d;
-  border-radius: 4px;
-  border: 1px solid #30363d;
-}
-
-.theme-preview-dark .preview-body {
-  flex: 1;
-  background: #21262d;
-  border-radius: 4px;
-  border: 1px solid #30363d;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.theme-preview-dark .preview-card {
-  height: 20px;
-  background: #161b22;
-  border-radius: 3px;
-}
-
-.theme-preview-dark .preview-line {
-  height: 6px;
-  background: #30363d;
-  border-radius: 3px;
-}
-
-.theme-preview-dark .preview-line.short {
-  width: 60%;
-}
-
-.theme-info {
+.theme-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  background: var(--bg-secondary);
-  font-weight: 500;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.light-box {
+  background: rgba(245, 176, 39, 0.12);
+  color: #f5b027;
+  border: 1px solid rgba(245, 176, 39, 0.25);
+}
+
+.dark-box {
+  background: rgba(88, 166, 255, 0.12);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.25);
+}
+
+.theme-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-name {
   font-size: 0.92rem;
+  font-weight: 600;
   color: var(--text-main);
-  border-top: 1px solid var(--border);
+  line-height: 1.2;
 }
 
-.theme-icon {
+.theme-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.theme-check {
   color: var(--primary);
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
   .theme-grid {
     grid-template-columns: 1fr;
   }

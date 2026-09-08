@@ -1,303 +1,500 @@
 <template>
   <div class="profile-page">
-    <div class="profile-container" :class="{ 'is-compact': isModeratorOrAdmin }">
-      <!-- Карточка информации об аккаунте (без псевдо-аватара) -->
-      <section class="user-info-card">
-        <div class="user-main-info">
-          <span class="user-title">{{ userDisplayName }}</span>
-          <span class="role-badge" :class="roleBadgeClass">
-            <Shield v-if="isModeratorOrAdmin" class="icon-xs" />
-            <Code2 v-else class="icon-xs" />
-            {{ localizedRoleName }}
-          </span>
-        </div>
-        <div class="user-meta-details">
-          <div class="detail-item">
-            <Mail class="icon-xs text-muted" />
-            <span>{{ userEmail }}</span>
-          </div>
-          <div v-if="registeredDate" class="detail-item">
-            <Calendar class="icon-xs text-muted" />
-            <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2-колоночная адаптивная сетка (для модератора и админа — вертикальный стек) -->
-      <div class="profile-grid" :class="{ 'grid-vertical': isModeratorOrAdmin }">
-        <!-- Изменение отображаемого имени (только для разработчиков) -->
-        <section v-if="!isModeratorOrAdmin" class="profile-card card-name">
-          <h2 class="card-title">
-            <UserCheck class="icon-sm text-primary" />
-            {{ t('profile.editProfile') }}
-          </h2>
-
-          <form class="inline-name-form" @submit.prevent="handleUpdateDisplayName">
-            <input
-              id="displayNameInput"
-              v-model="displayNameForm"
-              type="text"
-              class="form-input field-name-input"
-              :placeholder="t('auth.displayNamePlaceholder')"
-              :disabled="nameSaving"
-              required
-            />
-            <button
-              type="submit"
-              class="btn-primary btn-save-name"
-              :disabled="nameSaving || !isNameChanged"
-            >
-              <Loader2 v-if="nameSaving" class="icon-sm spin" />
-              <Check v-else class="icon-sm" />
-              <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
-            </button>
-          </form>
-        </section>
-
-        <!-- Язык интерфейса -->
-        <section class="profile-card card-lang">
-          <h2 class="card-title">
-            <Languages class="icon-sm text-primary" />
-            {{ t('profile.interfaceLanguage') }}
-          </h2>
-
-          <div class="languages-grid">
-            <button
-              type="button"
-              class="lang-card"
-              :class="{ active: currentLocale === 'ru' }"
-              @click="selectLanguage('ru')"
-            >
-              <span class="lang-flag">🇷🇺</span>
-              <div class="lang-text">
-                <span class="lang-name">Русский</span>
-                <span class="lang-sub">Russian</span>
-              </div>
-              <Check v-if="currentLocale === 'ru'" class="icon-sm lang-check" />
-            </button>
-
-            <button
-              type="button"
-              class="lang-card"
-              :class="{ active: currentLocale === 'en' }"
-              @click="selectLanguage('en')"
-            >
-              <span class="lang-flag">🇬🇧</span>
-              <div class="lang-text">
-                <span class="lang-name">English</span>
-                <span class="lang-sub">Английский</span>
-              </div>
-              <Check v-if="currentLocale === 'en'" class="icon-sm lang-check" />
-            </button>
-          </div>
-        </section>
-
-        <!-- Смена пароля (только для разработчиков) -->
-        <section v-if="!isModeratorOrAdmin" class="profile-card card-password">
-          <h2 class="card-title">
-            <Lock class="icon-sm text-primary" />
-            {{ t('profile.security') }}
-          </h2>
-
-          <form class="password-form" @submit.prevent="handleChangePassword">
-            <div class="form-group">
-              <label class="form-label" for="currentPasswordInput">
-                {{ t('auth.currentPassword') }}
-              </label>
-              <input
-                id="currentPasswordInput"
-                v-model="passwordForm.currentPassword"
-                type="password"
-                class="form-input"
-                :placeholder="t('auth.passwordPlaceholder')"
-                :disabled="passwordSaving"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="newPasswordInput">
-                {{ t('auth.newPassword') }}
-              </label>
-              <input
-                id="newPasswordInput"
-                v-model="passwordForm.newPassword"
-                type="password"
-                class="form-input"
-                :placeholder="t('auth.passwordPlaceholder')"
-                :disabled="passwordSaving"
-                minlength="6"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="confirmPasswordInput">
-                {{ t('auth.confirmPassword') }}
-              </label>
-              <input
-                id="confirmPasswordInput"
-                v-model="passwordForm.confirmPassword"
-                type="password"
-                class="form-input"
-                :placeholder="t('auth.passwordPlaceholder')"
-                :disabled="passwordSaving"
-                minlength="6"
-                required
-              />
-            </div>
-
-            <div class="form-actions-full">
-              <button
-                type="submit"
-                class="btn-primary btn-password-submit"
-                :disabled="passwordSaving || !isPasswordFormFilled"
-              >
-                <Loader2 v-if="passwordSaving" class="icon-sm spin" />
-                <Key v-else class="icon-sm" />
-                <span>{{
-                  passwordSaving ? t('common.saving') : t('profile.changePasswordBtn')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <!-- Тема оформления -->
-        <section class="profile-card card-theme">
-          <h2 class="card-title">
-            <Palette class="icon-sm text-primary" />
-            {{ t('profile.theme') }}
-          </h2>
-
-          <ThemeCardSelector class="theme-selector-wrap" />
-        </section>
-
-        <!-- Входящие приглашения в проекты (только для разработчиков) -->
-        <section v-if="!isModeratorOrAdmin" class="profile-card card-invitations">
-          <div class="card-header-flex">
-            <h2 class="card-title no-margin">
-              <Mail class="icon-sm text-primary" />
-              {{ t('profile.invitations') }}
-            </h2>
-            <span v-if="incomingList.length > 0" class="count-badge">
-              {{ incomingList.length }}
-            </span>
-          </div>
-          <p class="card-subtitle-text">{{ t('profile.invitationsDesc') }}</p>
-
-          <div v-if="invitesLoading" class="mini-loader-wrap">
-            <div class="spinner-sm"></div>
-            <span>{{ t('common.loading') }}</span>
-          </div>
-
-          <div v-else-if="incomingList.length === 0" class="empty-compact-box">
-            <Mail class="icon-md text-muted" />
-            <span>{{ t('profile.emptyInvitations') }}</span>
-          </div>
-
-          <div v-else class="invitations-stack">
-            <div v-for="inv in incomingList" :key="inv.id" class="invitation-item-card">
-              <div class="inv-project-header">
-                <div class="inv-project-icon">
-                  <img
-                    v-if="inv.project_icon"
-                    :src="getMediaUrl(inv.project_icon)"
-                    alt="Icon"
-                    class="inv-icon-img"
-                  />
-                  <span v-else class="inv-mock-icon">Draft</span>
+    <div class="profile-container">
+      <!-- Для модератора/админа (только учетная запись и интерфейс) -->
+      <div v-if="isModeratorOrAdmin" class="profile-main-grid">
+        <!-- Колонка 1: Учетная запись и безопасность -->
+        <div class="profile-col">
+          <section class="profile-card card-account">
+            <div class="card-header-identity">
+              <div class="header-identity-left">
+                <div class="header-title-wrap">
+                  <UserCheck class="icon-md text-primary" />
+                  <h2 class="card-title-lg">{{ t('profile.accountAndSecurity') }}</h2>
                 </div>
-                <div class="inv-project-meta">
-                  <span class="inv-project-title">{{ inv.project_title || '—' }}</span>
-                  <span class="inv-inviter-info text-muted">
-                    {{ inv.inviter_name || inv.inviter_email }}
-                    <span v-if="inv.inviter_name && inv.inviter_email">({{ inv.inviter_email }})</span>
+                <span class="role-badge" :class="roleBadgeClass">
+                  <Shield class="icon-xs" />
+                  {{ localizedRoleName }}
+                </span>
+              </div>
+
+              <div class="header-identity-right">
+                <div class="identity-meta-pill">
+                  <Mail class="icon-xs text-muted" />
+                  <span>{{ userEmail }}</span>
+                </div>
+                <div v-if="registeredDate" class="identity-meta-pill">
+                  <Calendar class="icon-xs text-muted" />
+                  <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="account-body">
+              <div class="account-sub-section">
+                <label class="form-label" for="displayNameInputMod">
+                  {{ t('profile.editProfile') }}
+                </label>
+                <form class="inline-name-form" @submit.prevent="handleUpdateDisplayName">
+                  <input
+                    id="displayNameInputMod"
+                    v-model="displayNameForm"
+                    type="text"
+                    class="form-input field-name-input"
+                    :placeholder="t('auth.displayNamePlaceholder')"
+                    :disabled="nameSaving"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    class="btn-primary btn-save-name"
+                    :disabled="nameSaving || !isNameChanged"
+                  >
+                    <Loader2 v-if="nameSaving" class="icon-sm spin" />
+                    <Check v-else class="icon-sm" />
+                    <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
+                  </button>
+                </form>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <div class="account-sub-section">
+                <label class="form-label">{{ t('profile.security') }}</label>
+                <form class="password-form" @submit.prevent="handleChangePassword">
+                  <div class="form-group">
+                    <input
+                      v-model="passwordForm.currentPassword"
+                      type="password"
+                      class="form-input"
+                      :placeholder="t('auth.currentPassword')"
+                      :disabled="passwordSaving"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <input
+                        v-model="passwordForm.newPassword"
+                        type="password"
+                        class="form-input"
+                        :placeholder="t('auth.newPassword')"
+                        :disabled="passwordSaving"
+                        minlength="6"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <input
+                        v-model="passwordForm.confirmPassword"
+                        type="password"
+                        class="form-input"
+                        :placeholder="t('auth.confirmPassword')"
+                        :disabled="passwordSaving"
+                        minlength="6"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-actions-full">
+                    <button
+                      type="submit"
+                      class="btn-primary btn-password-submit"
+                      :disabled="passwordSaving || !isPasswordFormFilled"
+                    >
+                      <Loader2 v-if="passwordSaving" class="icon-sm spin" />
+                      <Key v-else class="icon-sm" />
+                      <span>{{
+                        passwordSaving ? t('common.saving') : t('profile.changePasswordBtn')
+                      }}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Колонка 2: Интерфейс и оформление -->
+        <div class="profile-col">
+          <section class="profile-card card-appearance">
+            <h2 class="card-title">
+              <Palette class="icon-md text-primary" />
+              {{ t('profile.appearance') }}
+            </h2>
+
+            <div class="appearance-row-split">
+              <div class="pref-block-half">
+                <span class="sub-block-label">{{ t('profile.interfaceLanguage') }}</span>
+                <div class="languages-grid">
+                  <button
+                    type="button"
+                    class="lang-card"
+                    :class="{ active: currentLocale === 'ru' }"
+                    @click="selectLanguage('ru')"
+                  >
+                    <span class="lang-flag">🇷🇺</span>
+                    <div class="lang-text">
+                      <span class="lang-name">Русский</span>
+                      <span class="lang-sub">Russian</span>
+                    </div>
+                    <Check v-if="currentLocale === 'ru'" class="icon-sm lang-check" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="lang-card"
+                    :class="{ active: currentLocale === 'en' }"
+                    @click="selectLanguage('en')"
+                  >
+                    <span class="lang-flag">🇬🇧</span>
+                    <div class="lang-text">
+                      <span class="lang-name">English</span>
+                      <span class="lang-sub">Английский</span>
+                    </div>
+                    <Check v-if="currentLocale === 'en'" class="icon-sm lang-check" />
+                  </button>
+                </div>
+              </div>
+
+              <div class="pref-block-half">
+                <span class="sub-block-label">{{ t('profile.theme') }}</span>
+                <ThemeCardSelector />
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Основная 2-колоночная сетка для разработчиков на всю ширину -->
+      <div v-else class="profile-main-grid">
+        <!-- Левая колонка: Учетная запись + Персонализация -->
+        <div class="profile-col">
+          <!-- Карточка 1: Учетная запись и безопасность -->
+          <section class="profile-card card-account">
+            <!-- Шапка учетной записи: Мета-информация без дублирования имени и без псевдо-аватара -->
+            <div class="card-header-identity">
+              <div class="header-identity-left">
+                <div class="header-title-wrap">
+                  <UserCheck class="icon-md text-primary" />
+                  <h2 class="card-title-lg">{{ t('profile.accountAndSecurity') }}</h2>
+                </div>
+                <span class="role-badge" :class="roleBadgeClass">
+                  <Code2 class="icon-xs" />
+                  {{ localizedRoleName }}
+                </span>
+              </div>
+
+              <div class="header-identity-right">
+                <div class="identity-meta-pill">
+                  <Mail class="icon-xs text-muted" />
+                  <span>{{ userEmail }}</span>
+                </div>
+                <div v-if="registeredDate" class="identity-meta-pill">
+                  <Calendar class="icon-xs text-muted" />
+                  <span>{{ t('profile.registeredAt') }}: {{ registeredDate }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="account-body">
+              <!-- Отображаемое имя (единственное место отображения и редактирования) -->
+              <div class="account-sub-section">
+                <label class="form-label" for="displayNameInput">
+                  {{ t('profile.editProfile') }}
+                </label>
+                <form class="inline-name-form" @submit.prevent="handleUpdateDisplayName">
+                  <input
+                    id="displayNameInput"
+                    v-model="displayNameForm"
+                    type="text"
+                    class="form-input field-name-input"
+                    :placeholder="t('auth.displayNamePlaceholder')"
+                    :disabled="nameSaving"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    class="btn-primary btn-save-name"
+                    :disabled="nameSaving || !isNameChanged"
+                  >
+                    <Loader2 v-if="nameSaving" class="icon-sm spin" />
+                    <Check v-else class="icon-sm" />
+                    <span>{{ nameSaving ? t('common.saving') : t('profile.updateProfileBtn') }}</span>
+                  </button>
+                </form>
+              </div>
+
+              <div class="card-divider"></div>
+
+              <!-- Смена пароля -->
+              <div class="account-sub-section">
+                <label class="form-label">{{ t('profile.security') }}</label>
+                <form class="password-form" @submit.prevent="handleChangePassword">
+                  <div class="form-group">
+                    <input
+                      id="currentPasswordInput"
+                      v-model="passwordForm.currentPassword"
+                      type="password"
+                      class="form-input"
+                      :placeholder="t('auth.currentPassword')"
+                      :disabled="passwordSaving"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-row-2">
+                    <div class="form-group">
+                      <input
+                        id="newPasswordInput"
+                        v-model="passwordForm.newPassword"
+                        type="password"
+                        class="form-input"
+                        :placeholder="t('auth.newPassword')"
+                        :disabled="passwordSaving"
+                        minlength="6"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <input
+                        id="confirmPasswordInput"
+                        v-model="passwordForm.confirmPassword"
+                        type="password"
+                        class="form-input"
+                        :placeholder="t('auth.confirmPassword')"
+                        :disabled="passwordSaving"
+                        minlength="6"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="form-actions-full">
+                    <button
+                      type="submit"
+                      class="btn-primary btn-password-submit"
+                      :disabled="passwordSaving || !isPasswordFormFilled"
+                    >
+                      <Loader2 v-if="passwordSaving" class="icon-sm spin" />
+                      <Key v-else class="icon-sm" />
+                      <span>{{
+                        passwordSaving ? t('common.saving') : t('profile.changePasswordBtn')
+                      }}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <!-- Карточка 2: Интерфейс и персонализация -->
+          <section class="profile-card card-appearance">
+            <h2 class="card-title">
+              <Palette class="icon-md text-primary" />
+              {{ t('profile.appearance') }}
+            </h2>
+
+            <div class="appearance-row-split">
+              <!-- Язык интерфейса -->
+              <div class="pref-block-half">
+                <span class="sub-block-label">{{ t('profile.interfaceLanguage') }}</span>
+                <div class="languages-grid">
+                  <button
+                    type="button"
+                    class="lang-card"
+                    :class="{ active: currentLocale === 'ru' }"
+                    @click="selectLanguage('ru')"
+                  >
+                    <span class="lang-flag">🇷🇺</span>
+                    <div class="lang-text">
+                      <span class="lang-name">Русский</span>
+                      <span class="lang-sub">Russian</span>
+                    </div>
+                    <Check v-if="currentLocale === 'ru'" class="icon-sm lang-check" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="lang-card"
+                    :class="{ active: currentLocale === 'en' }"
+                    @click="selectLanguage('en')"
+                  >
+                    <span class="lang-flag">🇬🇧</span>
+                    <div class="lang-text">
+                      <span class="lang-name">English</span>
+                      <span class="lang-sub">Английский</span>
+                    </div>
+                    <Check v-if="currentLocale === 'en'" class="icon-sm lang-check" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Тема оформления -->
+              <div class="pref-block-half">
+                <span class="sub-block-label">{{ t('profile.theme') }}</span>
+                <ThemeCardSelector />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Правая колонка: Коллаборация (Приглашения + Черный список) -->
+        <div class="profile-col">
+          <!-- Карточка 3: Входящие приглашения -->
+          <section class="profile-card card-invitations flex-card">
+            <div class="card-header-flex">
+              <div class="header-title-wrap">
+                <Mail class="icon-md text-primary" />
+                <h2 class="card-title-lg">{{ t('profile.invitations') }}</h2>
+              </div>
+              <span
+                class="count-badge"
+                :class="{ 'count-active': incomingList.length > 0 }"
+              >
+                {{ incomingList.length }}
+              </span>
+            </div>
+
+            <div v-if="invitesLoading" class="mini-loader-wrap">
+              <div class="spinner-sm"></div>
+              <span>{{ t('common.loading') }}</span>
+            </div>
+
+            <div v-else-if="incomingList.length === 0" class="empty-state-modern">
+              <div class="empty-icon-circle">
+                <Mail class="icon-md" />
+              </div>
+              <span class="empty-title">{{ t('profile.emptyInvitations') }}</span>
+              <span class="empty-desc">{{ t('profile.emptyInvitationsHint') }}</span>
+            </div>
+
+            <div v-else class="invitations-stack">
+              <div v-for="inv in incomingList" :key="inv.id" class="invitation-item-card">
+                <div class="inv-project-header">
+                  <div class="inv-project-icon">
+                    <img
+                      v-if="inv.project_icon"
+                      :src="getMediaUrl(inv.project_icon)"
+                      alt="Icon"
+                      class="inv-icon-img"
+                    />
+                    <span v-else class="inv-mock-icon">Draft</span>
+                  </div>
+                  <div class="inv-project-meta">
+                    <span class="inv-project-title">{{ inv.project_title || '—' }}</span>
+                    <span class="inv-inviter-info text-muted">
+                      {{ inv.inviter_name || inv.inviter_email }}
+                    </span>
+                  </div>
+                  <div class="inv-actions">
+                    <button
+                      class="btn-icon text-success-hover"
+                      :disabled="actionInProgress === inv.id"
+                      :title="t('access.actions.accept')"
+                      @click="handleRespondInvite(inv.id, true)"
+                    >
+                      <Check class="icon-sm" />
+                    </button>
+                    <button
+                      class="btn-icon text-warning-hover"
+                      :disabled="actionInProgress === inv.id"
+                      :title="t('access.actions.decline')"
+                      @click="handleRespondInvite(inv.id, false)"
+                    >
+                      <X class="icon-sm" />
+                    </button>
+                    <button
+                      class="btn-icon text-danger-hover"
+                      :disabled="actionInProgress === inv.inviter_id"
+                      :title="t('access.actions.block')"
+                      @click="
+                        promptBlockFromInvite(
+                          inv.inviter_id,
+                          inv.inviter_name || inv.inviter_email
+                        )
+                      "
+                    >
+                      <Ban class="icon-sm" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="inv-permissions-row">
+                  <span
+                    v-if="hasAllPermissions(inv.permissions)"
+                    class="badge-full-access-sm"
+                    :title="inv.permissions.map(permissionLabel).join('\n')"
+                  >
+                    <ShieldCheck class="icon-xs" />
+                    {{ t('access.statuses.fullAccess') }}
+                  </span>
+                  <template v-else>
+                    <span v-for="perm in inv.permissions" :key="perm" class="badge-role-collab">
+                      {{ permissionLabel(perm) }}
+                    </span>
+                  </template>
+                  <span class="inv-date text-muted">
+                    <Clock class="icon-xs" style="margin-right: 2px; vertical-align: middle;" />
+                    {{ formatDate(inv.created_at) }}
                   </span>
                 </div>
-                <div class="inv-actions">
-                  <button
-                    class="btn-icon text-success-hover"
-                    :disabled="actionInProgress === inv.id"
-                    :title="t('access.actions.accept')"
-                    @click="handleRespondInvite(inv.id, true)"
-                  >
-                    <Check class="icon-sm" />
-                  </button>
-                  <button
-                    class="btn-icon text-warning-hover"
-                    :disabled="actionInProgress === inv.id"
-                    :title="t('access.actions.decline')"
-                    @click="handleRespondInvite(inv.id, false)"
-                  >
-                    <X class="icon-sm" />
-                  </button>
-                  <button
-                    class="btn-icon text-danger-hover"
-                    :disabled="actionInProgress === inv.id"
-                    :title="t('access.actions.block')"
-                    @click="promptBlockFromInvite(inv.inviter_id, inv.inviter_name || inv.inviter_email)"
-                  >
-                    <Ban class="icon-sm" />
-                  </button>
-                </div>
-              </div>
-
-              <div class="inv-permissions-row">
-                <span v-for="perm in inv.permissions" :key="perm" class="badge-role-collab">
-                  {{ permissionLabel(perm) }}
-                </span>
-                <span class="inv-date text-muted">
-                  <Clock class="icon-xs" style="margin-right: 2px; vertical-align: middle;" />
-                  {{ formatDate(inv.created_at) }}
-                </span>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Черный список (только для разработчиков) -->
-        <section v-if="!isModeratorOrAdmin" class="profile-card card-blacklist">
-          <div class="card-header-flex">
-            <h2 class="card-title no-margin">
-              <Ban class="icon-sm text-primary" />
-              {{ t('profile.blacklist') }}
-            </h2>
-            <span v-if="blockedUsersList.length > 0" class="count-badge danger-badge">
-              {{ blockedUsersList.length }}
-            </span>
-          </div>
-          <p class="card-subtitle-text">{{ t('profile.blacklistDesc') }}</p>
-
-          <div v-if="blacklistLoading" class="mini-loader-wrap">
-            <div class="spinner-sm"></div>
-            <span>{{ t('common.loading') }}</span>
-          </div>
-
-          <div v-else-if="blockedUsersList.length === 0" class="empty-compact-box">
-            <UserCheck class="icon-md text-muted" />
-            <span>{{ t('profile.emptyBlacklist') }}</span>
-          </div>
-
-          <div v-else class="blacklist-stack">
-            <div v-for="b in blockedUsersList" :key="b.id" class="blocked-item-row">
-              <div class="blocked-user-meta">
-                <span class="blocked-user-name">{{ b.blocked_user_name || b.blocked_user_email }}</span>
-                <span v-if="b.blocked_user_name && b.blocked_user_email" class="blocked-user-email text-muted">
-                  {{ b.blocked_user_email }}
-                </span>
+          <!-- Карточка 4: Черный список -->
+          <section class="profile-card card-blacklist flex-card">
+            <div class="card-header-flex">
+              <div class="header-title-wrap">
+                <Ban class="icon-md text-danger" />
+                <h2 class="card-title-lg">{{ t('profile.blacklist') }}</h2>
               </div>
-              <button
-                class="btn-unblock"
-                :disabled="actionInProgress === b.id"
-                @click="handleUnblock(b.blocked_user_id)"
+              <span
+                class="count-badge"
+                :class="{ 'count-active': blockedUsersList.length > 0 }"
               >
-                <Check class="icon-xs" />
-                <span>{{ t('access.actions.unblock') }}</span>
-              </button>
+                {{ blockedUsersList.length }}
+              </span>
             </div>
-          </div>
-        </section>
+
+            <div v-if="blacklistLoading" class="mini-loader-wrap">
+              <div class="spinner-sm"></div>
+              <span>{{ t('common.loading') }}</span>
+            </div>
+
+            <div v-else-if="blockedUsersList.length === 0" class="empty-state-modern">
+              <div class="empty-icon-circle">
+                <UserX class="icon-md" />
+              </div>
+              <span class="empty-title">{{ t('profile.emptyBlacklist') }}</span>
+              <span class="empty-desc">{{ t('profile.emptyBlacklistHint') }}</span>
+            </div>
+
+            <div v-else class="blacklist-stack">
+              <div v-for="b in blockedUsersList" :key="b.id" class="blocked-item-row">
+                <div class="blocked-user-meta">
+                  <span class="blocked-user-name">{{ b.blocked_user_name || b.blocked_user_email }}</span>
+                  <span v-if="b.blocked_user_name && b.blocked_user_email" class="blocked-user-email text-muted">
+                    {{ b.blocked_user_email }}
+                  </span>
+                </div>
+                <button
+                  class="btn-unblock"
+                  :disabled="actionInProgress === b.id"
+                  @click="handleUnblock(b.blocked_user_id)"
+                >
+                  <Check class="icon-xs" />
+                  <span>{{ t('access.actions.unblock') }}</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   </div>
@@ -309,7 +506,6 @@ import { useI18n } from 'vue-i18n';
 import {
   Mail,
   Calendar,
-  Lock,
   Key,
   Check,
   X,
@@ -319,8 +515,9 @@ import {
   UserCheck,
   Shield,
   Code2,
-  Languages,
   Palette,
+  ShieldCheck,
+  UserX,
 } from 'lucide-vue-next';
 import { useAuth, updateProfile, changePassword } from '@/entities/user';
 import {
@@ -330,6 +527,7 @@ import {
   blockUser,
   unblockUser,
   getMediaUrl,
+  ALL_PERMISSIONS,
   permissionLabel,
 } from '@/entities/project';
 import { ThemeCardSelector } from '@/features/theme-switcher';
@@ -533,6 +731,11 @@ async function promptBlockFromInvite(userId, userName) {
   }
 }
 
+function hasAllPermissions(perms) {
+  if (!perms || !Array.isArray(perms) || perms.length === 0) return false;
+  return ALL_PERMISSIONS.every((p) => perms.includes(p));
+}
+
 onMounted(() => {
   if (!isModeratorOrAdmin.value) {
     loadIncoming();
@@ -544,9 +747,10 @@ onMounted(() => {
 <style scoped>
 .profile-page {
   width: 100%;
+  max-width: 100%;
   min-height: calc(100vh - 60px);
   background: var(--bg-app);
-  padding: 24px 32px 48px;
+  padding: 24px 32px;
   box-sizing: border-box;
 }
 
@@ -556,54 +760,95 @@ onMounted(() => {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-
-.profile-container.is-compact {
-  max-width: 680px;
-  margin: 0 auto;
-}
-
-.user-info-card {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 20px;
+}
+
+/* 2-колоночная сетка на всю ширину */
+.profile-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.profile-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 8px);
-  padding: 20px 28px;
-  flex-wrap: wrap;
+  padding: 20px 22px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s ease;
 }
 
-.user-main-info {
+.profile-card.flex-card {
+  flex: 1;
+}
+
+/* Шапка карточки идентичности и учетной записи */
+.card-header-identity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.header-identity-left {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.user-title {
-  font-size: 1.25rem;
-  font-weight: 700;
+.header-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title-lg {
+  font-size: 1.05rem;
+  font-weight: 600;
   color: var(--text-main);
+  margin: 0;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 16px 0;
 }
 
 .role-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
+  gap: 6px;
+  padding: 3px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .role-developer {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--primary-light, rgba(59, 130, 246, 0.15));
+  color: var(--primary, #3b82f6);
 }
 
 .role-moderator {
@@ -616,109 +861,73 @@ onMounted(() => {
   color: var(--danger, #dc2626);
 }
 
-.user-meta-details {
+.header-identity-right {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
   flex-wrap: wrap;
-  font-size: 0.9rem;
+}
+
+.identity-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  font-size: 0.84rem;
   color: var(--text-muted);
 }
 
-.detail-item {
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.count-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-/* 2-колоночная сетка: равная высота элементов по строкам */
-.profile-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  width: 100%;
-}
-
-.profile-grid.grid-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  width: 100%;
-}
-
-.profile-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md, 8px);
-  padding: 24px 28px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.05rem;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-main);
-  margin: 0 0 20px 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
-/* Строка 1: Карточка имени и Карточка языка */
-.card-name {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.count-badge.count-active {
+  background: var(--primary-light, rgba(59, 130, 246, 0.15));
+  border-color: var(--primary, #3b82f6);
+  color: var(--primary, #3b82f6);
 }
 
-.card-name .inline-name-form {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.card-lang {
+/* Тело учетной записи */
+.account-body {
   display: flex;
   flex-direction: column;
 }
 
-.card-lang .languages-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  align-items: stretch;
-}
-
-/* Строка 2: Карточка пароля и Карточка темы */
-.card-password {
+.account-sub-section {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
-.card-password .password-form {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 16px;
+.card-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+  opacity: 0.7;
 }
 
-.card-theme {
-  display: flex;
-  flex-direction: column;
-}
-
-.card-theme .theme-selector-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Однострочная форма изменения имени */
 .inline-name-form {
   display: flex;
   gap: 12px;
@@ -738,13 +947,13 @@ onMounted(() => {
 .password-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-group {
@@ -754,7 +963,7 @@ onMounted(() => {
 }
 
 .form-label {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -781,7 +990,7 @@ onMounted(() => {
 .form-actions-full {
   display: flex;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .btn-password-submit {
@@ -797,7 +1006,7 @@ onMounted(() => {
   color: #fff;
   border: none;
   border-radius: var(--radius-sm, 6px);
-  padding: 0 20px;
+  padding: 0 18px;
   height: 40px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -814,28 +1023,50 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-/* Языковая сетка */
+/* Блок персонализации и темы */
+.appearance-row-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.pref-block-half {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sub-block-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .languages-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 10px;
+  width: 100%;
 }
 
 .lang-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
+  gap: 12px;
+  padding: 12px 14px;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: left;
+  outline: none;
+  position: relative;
 }
 
 .lang-card:hover {
-  border-color: var(--border-secondary);
+  border-color: var(--border-secondary, rgba(255, 255, 255, 0.2));
 }
 
 .lang-card.active {
@@ -844,29 +1075,331 @@ onMounted(() => {
 }
 
 .lang-flag {
-  font-size: 1.6rem;
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .lang-text {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   flex: 1;
 }
 
 .lang-name {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-main);
+  line-height: 1.2;
 }
 
 .lang-sub {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .lang-check {
   color: var(--primary);
+  margin-left: auto;
   flex-shrink: 0;
+}
+
+/* Пустые состояния */
+.empty-state-modern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm, 6px);
+  flex: 1;
+}
+
+.empty-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.empty-title {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.empty-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+/* Списки приглашений и черного списка */
+.invitations-stack,
+.blacklist-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.invitations-stack {
+  max-height: 240px;
+}
+
+.blacklist-stack {
+  max-height: 240px;
+}
+
+.invitation-item-card {
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inv-project-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inv-project-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.inv-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.inv-mock-icon {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.inv-project-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-project-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inv-inviter-info {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inv-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--bg-card);
+}
+
+.text-success-hover:hover:not(:disabled) {
+  color: var(--success, #10b981);
+}
+
+.text-warning-hover:hover:not(:disabled) {
+  color: var(--warning, #f59e0b);
+}
+
+.text-danger-hover:hover:not(:disabled) {
+  color: var(--danger, #ef4444);
+}
+
+.inv-permissions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge-full-access-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.badge-role-collab {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.inv-date {
+  margin-left: auto;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.blocked-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  gap: 12px;
+}
+
+.blocked-user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.blocked-user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blocked-user-email {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-unblock {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-unblock:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.mini-loader-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.icon-xs {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-md {
+  width: 20px;
+  height: 20px;
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-danger {
+  color: var(--danger, #ef4444);
+}
+
+.text-muted {
+  color: var(--text-muted);
 }
 
 .spin {
@@ -882,236 +1415,19 @@ onMounted(() => {
   }
 }
 
-/* Invitations & Blacklist Cards */
-.card-header-flex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-.no-margin {
-  margin: 0 !important;
-}
-.card-subtitle-text {
-  margin: 0 0 16px 0;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.count-badge {
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 12px;
-  background: var(--primary, #58a6ff);
-  color: #fff;
-}
-.count-badge.danger-badge {
-  background: var(--danger, #f85149);
-}
-
-.mini-loader-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 20px;
-  color: var(--text-muted);
-  font-size: 13px;
-  justify-content: center;
-}
-.empty-compact-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 28px 16px;
-  color: var(--text-muted);
-  font-size: 13px;
-  background: var(--bg-secondary, #0d1117);
-  border: 1px dashed var(--border, #30363d);
-  border-radius: 6px;
-  text-align: center;
-}
-
-.invitations-stack,
-.blacklist-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.invitation-item-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
-  background: var(--bg-secondary, #0d1117);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 6px;
-}
-.inv-project-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.inv-project-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.inv-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.inv-mock-icon {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.inv-project-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-.inv-project-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.inv-inviter-info {
-  font-size: 12px;
-}
-.inv-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.inv-permissions-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border, #21262d);
-}
-.inv-date {
-  font-size: 11px;
-  margin-left: auto;
-}
-
-.badge-role-collab {
-  display: inline-flex;
-  align-items: center;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 1px 7px;
-  border-radius: 10px;
-  background: var(--bg-tertiary, #21262d);
-  color: var(--primary, #58a6ff);
-  border: 1px solid var(--border, #30363d);
-}
-
-.blocked-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--bg-secondary, #0d1117);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 6px;
-}
-.blocked-user-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.blocked-user-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-}
-.blocked-user-email {
-  font-size: 12px;
-}
-.btn-unblock {
-  padding: 5px 12px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 6px;
-  color: var(--text-main, #f0f6fc);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: all 0.15s ease;
-}
-.btn-unblock:hover {
-  background: var(--primary, #58a6ff);
-  border-color: var(--primary, #58a6ff);
-  color: #fff;
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  padding: 6px;
-  cursor: pointer;
-  color: var(--text-tertiary, #8b949e);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.15s;
-}
-.btn-icon:hover {
-  color: var(--text-main, #f0f6fc);
-  background: var(--bg-tertiary, #21262d);
-}
-.text-danger-hover:hover { color: var(--danger, #f85149) !important; }
-.text-warning-hover:hover { color: var(--warning, #d29922) !important; }
-.text-success-hover:hover { color: #2ecc71 !important; }
-
-.spinner-sm {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-  flex-shrink: 0;
-  vertical-align: middle;
-}
-
 @media (max-width: 960px) {
+  .profile-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .appearance-row-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
   .profile-page {
     padding: 16px;
   }
-  .profile-grid {
-    grid-template-columns: 1fr;
-  }
-  .user-info-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-}
-
-@media (max-width: 540px) {
   .inline-name-form {
     flex-direction: column;
     align-items: stretch;
