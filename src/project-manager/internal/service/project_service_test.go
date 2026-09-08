@@ -404,6 +404,13 @@ func TestUnit_ProjectService_SharedAccess_InvitationsAndPermissions(t *testing.T
 	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-owner", "owner@welwise.com", []string{domain.PermUploadBuild})
 	assert.ErrorIs(t, err, domain.ErrCannotInviteSelf)
 
+	// 2.1. Попытка пригласить модератора или администратора — ошибка ErrCannotInviteSystemUser
+	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "mod-1", "moderator@welwise.com", []string{domain.PermUploadBuild})
+	assert.ErrorIs(t, err, domain.ErrCannotInviteSystemUser)
+
+	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "admin-1", "admin@welwise.com", []string{domain.PermUploadBuild})
+	assert.ErrorIs(t, err, domain.ErrCannotInviteSystemUser)
+
 	// 3. Отправка корректного приглашения участнику
 	inv, err := svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-collab", "collab@welwise.com", []string{domain.PermUploadBuild, domain.PermEditInfo})
 	require.NoError(t, err)
@@ -413,15 +420,29 @@ func TestUnit_ProjectService_SharedAccess_InvitationsAndPermissions(t *testing.T
 	_, err = svc.SendInvitation(ctx, p.ID, "dev-owner", "owner@welwise.com", "Owner", "dev-collab", "collab@welwise.com", []string{domain.PermUploadBuild})
 	assert.ErrorIs(t, err, domain.ErrAlreadyInvited)
 
-	// 5. Проверка входящих приглашений у получателя
+	// 5. Проверка входящих и исходящих приглашений до ответа
 	incoming, err := svc.ListIncomingInvitations(ctx, "dev-collab")
 	require.NoError(t, err)
 	require.Len(t, incoming, 1)
 	assert.Equal(t, inv.ID, incoming[0].ID)
 
+	outgoingBefore, err := svc.ListOutgoingInvitations(ctx, "dev-owner", p.ID)
+	require.NoError(t, err)
+	require.Len(t, outgoingBefore, 1)
+	assert.Equal(t, inv.ID, outgoingBefore[0].ID)
+
 	// 6. Принятие приглашения
 	err = svc.RespondInvitation(ctx, inv.ID, "dev-collab", true)
 	require.NoError(t, err)
+
+	// Проверяем, что после принятия инвайт исчез из исходящих и входящих
+	outgoingAfter, err := svc.ListOutgoingInvitations(ctx, "dev-owner", p.ID)
+	require.NoError(t, err)
+	assert.Empty(t, outgoingAfter, "принятый инвайт должен исчезнуть из исходящих")
+
+	incomingAfter, err := svc.ListIncomingInvitations(ctx, "dev-collab")
+	require.NoError(t, err)
+	assert.Empty(t, incomingAfter, "принятый инвайт должен исчезнуть из входящих")
 
 	// 7. Проверка прав участника:
 	// dev-collab может редактировать черновик (есть PermEditInfo)

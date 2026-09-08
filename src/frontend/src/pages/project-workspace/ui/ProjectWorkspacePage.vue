@@ -70,6 +70,14 @@
         >
           <BarChart2 class="icon-sm" /> {{ t('projectWorkspace.statsTab') }}
         </router-link>
+        <router-link
+          v-if="isOwner"
+          :to="`/projects/${id}/access`"
+          class="nav-btn"
+          active-class="active"
+        >
+          <Users class="icon-sm" /> {{ t('projectWorkspace.accessTab') }}
+        </router-link>
       </nav>
 
       <!-- Футер сайдбара: Сохранить и Отправить на модерацию -->

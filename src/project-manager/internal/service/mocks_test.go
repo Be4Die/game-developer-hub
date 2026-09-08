@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -548,7 +549,7 @@ func (r *mockInvitationRepo) ListOutgoing(ctx context.Context, inviterID string,
 	defer r.mu.Unlock()
 	var res []*domain.Invitation
 	for _, inv := range r.invitations {
-		if inv.InviterID == inviterID && (projectID == 0 || inv.ProjectID == projectID) {
+		if inv.InviterID == inviterID && (projectID == 0 || inv.ProjectID == projectID) && inv.Status == domain.InvitationStatusPending {
 			res = append(res, inv)
 		}
 	}
@@ -577,6 +578,16 @@ func (r *mockInvitationRepo) CancelAllPendingBetween(ctx context.Context, invite
 		}
 	}
 	return nil
+}
+
+func (r *mockInvitationRepo) IsSystemUser(ctx context.Context, userID, email string) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if strings.Contains(email, "moderator") || strings.Contains(email, "admin") ||
+		strings.HasPrefix(userID, "mod-") || strings.HasPrefix(userID, "admin-") {
+		return true, nil
+	}
+	return false, nil
 }
 
 type mockBlockRepo struct {

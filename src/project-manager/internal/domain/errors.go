@@ -58,4 +58,7 @@ var (
 
 	// ErrInvitationClosed возвращается при попытке ответить на уже закрытое приглашение.
 	ErrInvitationClosed = errors.New("invitation is already closed")
+
+	// ErrCannotInviteSystemUser возвращается при попытке пригласить модератора или администратора.
+	ErrCannotInviteSystemUser = errors.New("cannot invite system user (moderator or administrator)")
 )

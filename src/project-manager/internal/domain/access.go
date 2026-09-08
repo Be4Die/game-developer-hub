@@ -131,6 +131,7 @@ type InvitationRepo interface {
 	ListOutgoing(ctx context.Context, inviterID string, projectID int64) ([]*Invitation, error)
 	UpdateStatus(ctx context.Context, id int64, status InvitationStatus) error
 	CancelAllPendingBetween(ctx context.Context, inviterID, inviteeID string) error
+	IsSystemUser(ctx context.Context, userID, email string) (bool, error)
 }
 
 // BlockRepo определяет контракт репозитория черного списка.

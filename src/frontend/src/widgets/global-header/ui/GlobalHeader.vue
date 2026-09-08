@@ -9,10 +9,6 @@
           <router-link to="/projects" class="nav-item" active-class="active">
             <FolderGit2 class="icon-sm" /> {{ t('header.projects') }}
           </router-link>
-          <router-link to="/access" class="nav-item" active-class="active">
-            <Users class="icon-sm" /> {{ t('header.sharedAccess') }}
-            <span v-if="incomingCount > 0" class="header-badge">{{ incomingCount }}</span>
-          </router-link>
           <router-link to="/nodes" class="nav-item" active-class="active">
             <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
@@ -48,6 +44,7 @@
         <!-- Переход в профиль в общей панели навигации -->
         <router-link v-if="isAuthed" to="/profile" class="nav-item" active-class="active">
           <User class="icon-sm" /> {{ t('header.profile') }}
+          <span v-if="incomingCount > 0" class="header-badge">{{ incomingCount }}</span>
         </router-link>
       </nav>
     </div>

@@ -638,6 +638,15 @@ func (s *ProjectService) SendInvitation(
 		return nil, domain.ErrCannotInviteSelf
 	}
 
+	// Проверка системного пользователя: нельзя приглашать модераторов и администраторов
+	isSystem, err := s.invitationRepo.IsSystemUser(ctx, inviteeID, inviteeEmail)
+	if err != nil {
+		return nil, fmt.Errorf("ProjectService.SendInvitation check system user: %w", err)
+	}
+	if isSystem {
+		return nil, domain.ErrCannotInviteSystemUser
+	}
+
 	// 1. Проверка блокировки: заблокировал ли получатель отправителя?
 	isBlocked, err := s.blockRepo.IsBlocked(ctx, inviteeID, inviterID)
 	if err != nil {

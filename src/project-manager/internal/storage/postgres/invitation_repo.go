@@ -144,7 +144,7 @@ func (r *InvitationRepo) ListOutgoing(ctx context.Context, inviterID string, pro
 		       COALESCE(d.icon_path, '') AS project_icon
 		FROM project_invitations i
 		LEFT JOIN project_drafts d ON d.project_id = i.project_id
-		WHERE i.inviter_id = $1 AND ($2 = 0 OR i.project_id = $2)
+		WHERE i.inviter_id = $1 AND ($2 = 0 OR i.project_id = $2) AND i.status = 1
 		ORDER BY i.created_at DESC
 	`
 	rows, err := r.pool.Query(ctx, query, inviterID, projectID)
@@ -193,4 +193,25 @@ func (r *InvitationRepo) CancelAllPendingBetween(ctx context.Context, inviterID,
 		return fmt.Errorf("postgres.InvitationRepo.CancelAllPendingBetween: %w", err)
 	}
 	return nil
+}
+
+// IsSystemUser проверяет, является ли пользователь системным (модератор=2, администратор=3).
+func (r *InvitationRepo) IsSystemUser(ctx context.Context, userID, email string) (bool, error) {
+	if userID == "" && email == "" {
+		return false, nil
+	}
+	const query = `
+		SELECT role FROM users
+		WHERE (id::text = $1 OR (email != '' AND email = $2))
+		LIMIT 1
+	`
+	var role int16
+	err := r.pool.QueryRow(ctx, query, userID, email).Scan(&role)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+		return false, fmt.Errorf("postgres.InvitationRepo.IsSystemUser: %w", err)
+	}
+	return role == 2 || role == 3, nil
 }

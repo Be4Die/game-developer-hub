@@ -41,18 +41,18 @@
       </div>
     </div>
 
-    <!-- Селектор принадлежности (Мои / Общие) -->
+    <!-- Селектор принадлежности / доступа -->
     <div class="filter-field field-role">
-      <label class="field-label">{{ t('header.sharedAccess') }}</label>
+      <label class="field-label">{{ t('projects.accessColumn') }}</label>
       <div class="select-wrapper">
         <select
           :value="roleFilter"
           class="filter-select"
           @change="$emit('update:roleFilter', $event.target.value)"
         >
-          <option value="all">Все проекты</option>
-          <option value="owned">Мои проекты</option>
-          <option value="shared">Доступные мне</option>
+          <option value="all">{{ t('common.all') }}</option>
+          <option value="owned">{{ t('access.statuses.owner') }}</option>
+          <option value="shared">{{ t('access.statuses.member') }}</option>
         </select>
         <ChevronDown class="icon-xs select-arrow" />
       </div>

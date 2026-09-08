@@ -20,7 +20,7 @@ import { ProfilePage } from '@/pages/profile';
 import { AdminDevelopersPage } from '@/pages/admin-developers';
 import { AdminModeratorsPage } from '@/pages/admin-moderators';
 import { AdminModeratorDetailPage } from '@/pages/admin-moderator-detail';
-import { SharedAccessPage } from '@/pages/shared-access';
+import { ProjectAccessPage } from '@/pages/project-access';
 
 export const routes = [
   {
@@ -47,9 +47,7 @@ export const routes = [
   },
   {
     path: '/access',
-    name: 'shared-access',
-    component: SharedAccessPage,
-    meta: { requiresAuth: true },
+    redirect: '/profile',
   },
   {
     path: '/projects/:id',
@@ -61,6 +59,7 @@ export const routes = [
       { path: 'draft', name: 'draft', component: ProjectDraftPage },
       { path: 'stats', name: 'stats', component: ProjectStatsPage },
       { path: 'published', name: 'published', component: ProjectPublishedPage },
+      { path: 'access', name: 'project-access', component: ProjectAccessPage },
       {
         path: 'servers',
         component: ServersLayoutPage,

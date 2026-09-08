@@ -39,6 +39,8 @@ func domainError(err error, action string) error {
 		return status.Errorf(codes.AlreadyExists, "%s: invitation already pending", action)
 	case errors.Is(err, domain.ErrCannotInviteSelf):
 		return status.Errorf(codes.InvalidArgument, "%s: cannot invite self", action)
+	case errors.Is(err, domain.ErrCannotInviteSystemUser):
+		return status.Errorf(codes.InvalidArgument, "%s: cannot invite system user (moderator or administrator)", action)
 	case errors.Is(err, domain.ErrInvitationNotFound):
 		return status.Errorf(codes.NotFound, "%s: invitation not found", action)
 	case errors.Is(err, domain.ErrInvitationClosed):

@@ -53,6 +53,7 @@
           <thead>
             <tr>
               <th class="col-game">{{ t('projects.projectNameLabel') }}</th>
+              <th class="col-access">{{ t('projects.accessColumn') }}</th>
               <th class="col-date">{{ t('common.updated') }}</th>
               <th class="col-status">{{ t('common.status') }}</th>
               <th class="col-actions"></th>
@@ -85,16 +86,24 @@
                     </div>
                     <div class="game-title">
                       <span>{{ game.title_ru || game.title_en || '—' }}</span>
-                      <span v-if="game.is_owner === false" class="badge-role-collab" title="Совместный доступ">
-                        <Users class="icon-xs" />
-                        <span>{{ t('access.statuses.collaborator') }}</span>
-                      </span>
                     </div>
                   </div>
                 </div>
               </td>
 
-              <!-- 2 колонка: Дата обновления -->
+              <!-- 2 колонка: Доступ -->
+              <td class="col-access">
+                <span v-if="game.is_owner !== false" class="access-pill access-owner">
+                  <User class="icon-xs" />
+                  <span>{{ t('access.statuses.owner') }}</span>
+                </span>
+                <span v-else class="access-pill access-shared" title="Совместный доступ">
+                  <Users class="icon-xs" />
+                  <span>{{ t('access.statuses.member') }}</span>
+                </span>
+              </td>
+
+              <!-- 3 колонка: Дата обновления -->
               <td class="col-date">
                 <span class="date-text">
                   {{ formatProjectDate(game.updated_at || game.created_at) }}
@@ -210,6 +219,7 @@ import {
   Gamepad2,
   Search,
   Trash2,
+  User,
   Users,
   LogOut,
   ChevronLeft,
@@ -487,12 +497,16 @@ onMounted(loadProjects);
 }
 
 .yandex-games-table th.col-game {
-  width: 48%;
+  width: 38%;
   padding-left: 8px;
 }
 
+.yandex-games-table th.col-access {
+  width: 16%;
+}
+
 .yandex-games-table th.col-date {
-  width: 26%;
+  width: 20%;
 }
 
 .yandex-games-table th.col-status {
@@ -689,19 +703,28 @@ onMounted(loadProjects);
   color: var(--warning, #d29922) !important;
 }
 
-.badge-role-collab {
+.access-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 11px;
+  gap: 5px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 1px 7px;
-  border-radius: 10px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.access-owner {
+  color: var(--text-secondary, #c9d1d9);
   background: var(--bg-tertiary, #21262d);
-  color: var(--primary, #58a6ff);
   border: 1px solid var(--border, #30363d);
-  margin-left: 8px;
-  vertical-align: middle;
+}
+
+.access-shared {
+  color: #a371f7;
+  background: rgba(163, 113, 247, 0.12);
+  border: 1px solid rgba(163, 113, 247, 0.35);
 }
 
 /* Пагинация прикреплена к низу */
