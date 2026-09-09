@@ -58,16 +58,6 @@
           </div>
         </div>
 
-        <!-- Подсказка для Adminer -->
-        <div v-if="form.service_type === 'adminer'" class="info-callout">
-          <LayoutDashboard class="callout-icon" />
-          <div class="callout-text">
-            <strong>Веб-интерфейс Adminer:</strong>
-            Предоставляет легкую веб-панель для просмотра и редактирования таблиц PostgreSQL и MySQL,
-            работающих на этой ноде в сети <code>gdh-network</code>.
-          </div>
-        </div>
-
         <!-- Дополнительные параметры СУБД (сворачиваемые) -->
         <div v-if="form.service_type !== 'volume'" class="collapsible-section">
           <button
@@ -93,7 +83,7 @@
               />
             </div>
 
-            <div v-if="form.service_type !== 'adminer'" class="form-group">
+            <div class="form-group">
               <label>Пароль (опционально)</label>
               <input
                 v-model="form.password"
@@ -240,11 +230,9 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import {
   Database,
-  HardDrive,
   Layers,
   Server,
   FolderPlus,
-  LayoutDashboard,
   Globe,
   Lock,
   ChevronDown,
@@ -304,22 +292,6 @@ const serviceTypes = [
     color: '#00758f',
     bgColor: 'rgba(0, 117, 143, 0.15)',
   },
-  {
-    type: 'minio',
-    title: 'MinIO (S3)',
-    desc: 'Объектное S3-хранилище для ассетов, модов и реплеев',
-    icon: HardDrive,
-    color: '#c72c48',
-    bgColor: 'rgba(199, 44, 72, 0.15)',
-  },
-  {
-    type: 'adminer',
-    title: 'Adminer (Web UI)',
-    desc: 'Веб-интерфейс для визуального управления PostgreSQL и MySQL',
-    icon: LayoutDashboard,
-    color: '#f59e0b',
-    bgColor: 'rgba(245, 158, 11, 0.15)',
-  },
 ];
 
 const form = reactive({
@@ -334,14 +306,10 @@ function getNamePlaceholder() {
   switch (form.service_type) {
     case 'volume':
       return 'shared-saves, game-data';
-    case 'adminer':
-      return 'db-adminer';
     case 'redis':
       return 'game-redis';
     case 'mysql':
       return 'game-mysql';
-    case 'minio':
-      return 'game-minio';
     default:
       return 'game-postgres';
   }
@@ -352,8 +320,6 @@ function selectServiceType(type) {
   if (!form.name || serviceTypes.some((s) => form.name === `game-${s.type}`)) {
     if (type === 'volume') {
       form.name = 'game-volume';
-    } else if (type === 'adminer') {
-      form.name = 'adminer';
     } else {
       form.name = `game-${type}`;
     }

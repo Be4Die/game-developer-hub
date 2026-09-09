@@ -676,8 +676,6 @@ func (c *Client) DeployService(ctx context.Context, nodeAddress, apiKey string, 
 		pbType = pb.ServiceType_SERVICE_TYPE_REDIS
 	case domain.ServiceTypeMySQL:
 		pbType = pb.ServiceType_SERVICE_TYPE_MYSQL
-	case domain.ServiceTypeMinIO:
-		pbType = pb.ServiceType_SERVICE_TYPE_MINIO
 	case domain.ServiceTypeVolume:
 		pbType = pb.ServiceType_SERVICE_TYPE_VOLUME
 	case domain.ServiceTypeAdminer:
@@ -751,8 +749,6 @@ func (c *Client) ListServices(ctx context.Context, nodeAddress, apiKey string) (
 			domainType = domain.ServiceTypeRedis
 		case pb.ServiceType_SERVICE_TYPE_MYSQL:
 			domainType = domain.ServiceTypeMySQL
-		case pb.ServiceType_SERVICE_TYPE_MINIO:
-			domainType = domain.ServiceTypeMinIO
 		case pb.ServiceType_SERVICE_TYPE_VOLUME:
 			domainType = domain.ServiceTypeVolume
 		case pb.ServiceType_SERVICE_TYPE_ADMINER:

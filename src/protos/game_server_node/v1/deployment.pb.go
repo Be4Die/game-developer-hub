@@ -79,7 +79,6 @@ const (
 	ServiceType_SERVICE_TYPE_POSTGRES    ServiceType = 1
 	ServiceType_SERVICE_TYPE_REDIS       ServiceType = 2
 	ServiceType_SERVICE_TYPE_MYSQL       ServiceType = 3
-	ServiceType_SERVICE_TYPE_MINIO       ServiceType = 4
 	ServiceType_SERVICE_TYPE_VOLUME      ServiceType = 5
 	ServiceType_SERVICE_TYPE_ADMINER     ServiceType = 6
 	ServiceType_SERVICE_TYPE_PGADMIN     ServiceType = 7
@@ -92,7 +91,6 @@ var (
 		1: "SERVICE_TYPE_POSTGRES",
 		2: "SERVICE_TYPE_REDIS",
 		3: "SERVICE_TYPE_MYSQL",
-		4: "SERVICE_TYPE_MINIO",
 		5: "SERVICE_TYPE_VOLUME",
 		6: "SERVICE_TYPE_ADMINER",
 		7: "SERVICE_TYPE_PGADMIN",
@@ -102,7 +100,6 @@ var (
 		"SERVICE_TYPE_POSTGRES":    1,
 		"SERVICE_TYPE_REDIS":       2,
 		"SERVICE_TYPE_MYSQL":       3,
-		"SERVICE_TYPE_MINIO":       4,
 		"SERVICE_TYPE_VOLUME":      5,
 		"SERVICE_TYPE_ADMINER":     6,
 		"SERVICE_TYPE_PGADMIN":     7,
@@ -1921,16 +1918,15 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\tLogSource\x12\x1a\n" +
 	"\x16LOG_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOG_SOURCE_STDOUT\x10\x01\x12\x15\n" +
-	"\x11LOG_SOURCE_STDERR\x10\x02*\xdb\x01\n" +
+	"\x11LOG_SOURCE_STDERR\x10\x02*\xc9\x01\n" +
 	"\vServiceType\x12\x1c\n" +
 	"\x18SERVICE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SERVICE_TYPE_POSTGRES\x10\x01\x12\x16\n" +
 	"\x12SERVICE_TYPE_REDIS\x10\x02\x12\x16\n" +
-	"\x12SERVICE_TYPE_MYSQL\x10\x03\x12\x16\n" +
-	"\x12SERVICE_TYPE_MINIO\x10\x04\x12\x17\n" +
+	"\x12SERVICE_TYPE_MYSQL\x10\x03\x12\x17\n" +
 	"\x13SERVICE_TYPE_VOLUME\x10\x05\x12\x18\n" +
 	"\x14SERVICE_TYPE_ADMINER\x10\x06\x12\x18\n" +
-	"\x14SERVICE_TYPE_PGADMIN\x10\a2\x8b\t\n" +
+	"\x14SERVICE_TYPE_PGADMIN\x10\a\"\x04\b\x04\x10\x042\x8b\t\n" +
 	"\x11DeploymentService\x12\\\n" +
 	"\tLoadImage\x12%.game_server_node.v1.LoadImageRequest\x1a&.game_server_node.v1.LoadImageResponse(\x01\x12_\n" +
 	"\n" +

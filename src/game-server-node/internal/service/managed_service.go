@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/Be4Die/game-developer-hub/game-server-node/assets"
 	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
 )
 
@@ -55,6 +58,7 @@ func NewManagedServiceState(log *slog.Logger, runtime domain.ContainerRuntime, r
 	}
 
 	_ = state.load()
+	state.Reconcile(context.Background())
 	return state
 }
 
@@ -75,17 +79,139 @@ func (s *ManagedServiceState) load() error {
 }
 
 func (s *ManagedServiceState) save() error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.saveLocked()
+}
+
+func (s *ManagedServiceState) saveLocked() error {
 	if s.registryPath == "" {
 		return nil
 	}
-	s.mu.RLock()
 	data, err := json.MarshalIndent(s.services, "", "  ")
-	s.mu.RUnlock()
 	if err != nil {
 		return err
 	}
 	_ = os.MkdirAll(filepath.Dir(s.registryPath), 0755)
 	return os.WriteFile(s.registryPath, data, 0644)
+}
+
+// Reconcile синхронизирует состояние сервисов с Docker:
+// - Запускает остановленные контейнеры
+// - Обеспечивает политику рестарта unless-stopped
+// - Актуализирует host port и connection URI
+func (s *ManagedServiceState) Reconcile(ctx context.Context) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	hasChanges := false
+	for name, svc := range s.services {
+		if svc.ServiceType == domain.ServiceTypeVolume {
+			continue
+		}
+
+		targetID := svc.ContainerID
+		if targetID == "" {
+			targetID = fmt.Sprintf("gdh-svc-%s", name)
+		}
+
+		details, err := s.runtime.InspectContainer(ctx, targetID)
+		if err != nil {
+			containerName := fmt.Sprintf("gdh-svc-%s", name)
+			if targetID != containerName {
+				if d, errName := s.runtime.InspectContainer(ctx, containerName); errName == nil {
+					details = d
+					targetID = containerName
+					svc.ContainerID = d.ID
+					hasChanges = true
+					err = nil
+				}
+			}
+		}
+
+		if err != nil {
+			s.log.Warn("managed service container not found in runtime",
+				slog.String("service", name),
+				slog.String("container_id", svc.ContainerID),
+				slog.String("error", err.Error()),
+			)
+			if svc.Status != "stopped" && svc.Status != "error" {
+				svc.Status = "stopped"
+				hasChanges = true
+			}
+			s.services[name] = svc
+			continue
+		}
+
+		// Убеждаемся, что установлена политика unless-stopped
+		if details.RestartPolicy != "unless-stopped" && details.RestartPolicy != "always" {
+			s.log.Info("updating container restart policy to unless-stopped",
+				slog.String("service", name),
+				slog.String("container_id", details.ID),
+			)
+			if err := s.runtime.UpdateRestartPolicy(ctx, details.ID, "unless-stopped"); err != nil {
+				s.log.Warn("failed to update restart policy", slog.String("error", err.Error()))
+			}
+		}
+
+		// Запускаем контейнер, если он остановлен
+		if !details.Running {
+			s.log.Info("starting stopped managed service container",
+				slog.String("service", name),
+				slog.String("container_id", details.ID),
+			)
+			if err := s.runtime.StartContainer(ctx, details.ID); err != nil {
+				s.log.Error("failed to start stopped service container",
+					slog.String("service", name),
+					slog.String("error", err.Error()),
+				)
+				svc.Status = "error"
+				hasChanges = true
+			} else {
+				details.Running = true
+				svc.Status = "running"
+				hasChanges = true
+			}
+		} else {
+			if svc.Status != "running" {
+				svc.Status = "running"
+				hasChanges = true
+			}
+		}
+
+		// Проверяем актуальный хост-порт
+		if details.Running && svc.InternalPort > 0 {
+			actualPort, err := s.runtime.GetHostPort(ctx, details.ID, svc.InternalPort)
+			if err == nil && actualPort > 0 {
+				if svc.HostPort != actualPort {
+					s.log.Info("reconciled service host port from docker",
+						slog.String("service", name),
+						slog.Uint64("old_port", uint64(svc.HostPort)),
+						slog.Uint64("new_port", uint64(actualPort)),
+					)
+					svc.ConnectionURI = replacePortInURI(svc.ConnectionURI, actualPort)
+					svc.HostPort = actualPort
+					hasChanges = true
+				}
+			}
+		}
+
+		// Если это Adminer и он запущен, обеспечиваем наличие темы и плагинов
+		if svc.ServiceType == domain.ServiceTypeAdminer && details.Running {
+			if len(assets.AdminerCSS) > 0 {
+				_ = s.runtime.CopyToContainer(ctx, details.ID, "/var/www/html", "adminer.css", assets.AdminerCSS)
+			}
+			if len(assets.AdminerPasswordPlugin) > 0 {
+				_ = s.runtime.CopyToContainer(ctx, details.ID, "/var/www/html/plugins-enabled", "password.php", assets.AdminerPasswordPlugin)
+			}
+		}
+
+		s.services[name] = svc
+	}
+
+	if hasChanges {
+		_ = s.saveLocked()
+	}
 }
 
 // DeployService разворачивает управляемый сервис с персистентным томом.
@@ -180,18 +306,6 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 			env["MYSQL_DATABASE"] = "game_db"
 		}
 
-	case domain.ServiceTypeMinIO:
-		imageTag = "minio/minio:latest"
-		internalPort = 9000
-		bindPath = fmt.Sprintf("%s:/data", volumeName)
-		args = []string{"server", "/data", "--console-address", ":9001"}
-		if _, ok := env["MINIO_ROOT_USER"]; !ok {
-			env["MINIO_ROOT_USER"] = "minioadmin"
-		}
-		if _, ok := env["MINIO_ROOT_PASSWORD"]; !ok {
-			env["MINIO_ROOT_PASSWORD"] = "minioadmin"
-		}
-
 	case domain.ServiceTypeAdminer:
 		imageTag = "adminer:latest"
 		internalPort = 8080
@@ -211,9 +325,12 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		return nil, fmt.Errorf("%s: unsupported service type %d", op, req.ServiceType)
 	}
 
-	// 3. Подгружаем образ
-	if err := s.runtime.PullImage(ctx, imageTag); err != nil {
-		s.log.Warn("pull image failed, trying local cache", slog.String("image", imageTag), slog.String("err", err.Error()))
+	// 3. Подгружаем образ: если образа нет локально, скачиваем из реестра
+	if !s.runtime.ImageExists(ctx, imageTag) {
+		s.log.Info("image not found locally, pulling from registry", slog.String("image", imageTag))
+		if err := s.runtime.PullImage(ctx, imageTag); err != nil {
+			return nil, fmt.Errorf("%s: image '%s' not found locally and failed to pull from registry: %w", op, imageTag, err)
+		}
 	}
 
 	// 4. Создаем контейнер
@@ -222,12 +339,22 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		binds = append(binds, bindPath)
 	}
 
+	hostPort := req.Port
+	if hostPort == 0 {
+		if p, err := findFreePort(); err == nil {
+			hostPort = p
+		} else {
+			s.log.Warn("failed to allocate free host port, falling back to dynamic port", slog.String("error", err.Error()))
+		}
+	}
+
 	containerName := fmt.Sprintf("gdh-svc-%s", req.Name)
 	opts := domain.ContainerOpts{
 		ContainerName: containerName,
 		ImageTag:      imageTag,
 		InternalPort:  internalPort,
-		HostPort:      req.Port,
+		HostPort:      hostPort,
+		RestartPolicy: "unless-stopped",
 		EnvVars:       env,
 		Args:          args,
 		Binds:         binds,
@@ -244,19 +371,34 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		return nil, fmt.Errorf("%s: create container: %w", op, err)
 	}
 
-	// 5. Запускаем контейнер
+	// 5. Для Adminer копируем файл кастомной темы GDH и плагины прямо в контейнер
+	if req.ServiceType == domain.ServiceTypeAdminer {
+		if len(assets.AdminerCSS) > 0 {
+			if err := s.runtime.CopyToContainer(ctx, containerID, "/var/www/html", "adminer.css", assets.AdminerCSS); err != nil {
+				s.log.Warn("failed to copy custom adminer theme into container", slog.String("err", err.Error()))
+			}
+		}
+		if len(assets.AdminerPasswordPlugin) > 0 {
+			if err := s.runtime.CopyToContainer(ctx, containerID, "/var/www/html/plugins-enabled", "password.php", assets.AdminerPasswordPlugin); err != nil {
+				s.log.Warn("failed to copy adminer password plugin into container", slog.String("err", err.Error()))
+			}
+		}
+	}
+
+	// 6. Запускаем контейнер
 	if err := s.runtime.StartContainer(ctx, containerID); err != nil {
 		_ = s.runtime.RemoveContainer(ctx, containerID)
 		return nil, fmt.Errorf("%s: start container: %w", op, err)
 	}
 
 	// 6. Получаем реальный хост-порт
-	hostPort, err := s.runtime.GetHostPort(ctx, containerID, internalPort)
+	actualHostPort, err := s.runtime.GetHostPort(ctx, containerID, internalPort)
 	if err != nil {
 		_ = s.runtime.StopContainer(ctx, containerID, 5*time.Second)
 		_ = s.runtime.RemoveContainer(ctx, containerID)
 		return nil, fmt.Errorf("%s: get host port: %w", op, err)
 	}
+	hostPort = actualHostPort
 
 	if hostIP == "" {
 		hostIP = "127.0.0.1"
@@ -284,7 +426,7 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 			pass = env["MYSQL_ROOT_PASSWORD"]
 		}
 		connURI = fmt.Sprintf("mysql://%s:%s@%s:%d/%s", user, pass, hostIP, hostPort, env["MYSQL_DATABASE"])
-	case domain.ServiceTypeMinIO, domain.ServiceTypeAdminer, domain.ServiceTypePGAdmin:
+	case domain.ServiceTypeAdminer, domain.ServiceTypePGAdmin:
 		connURI = fmt.Sprintf("http://%s:%d", hostIP, hostPort)
 	}
 
@@ -354,6 +496,8 @@ func (s *ManagedServiceState) RemoveService(ctx context.Context, name string, de
 
 // ListServices возвращает список всех управляемых сервисов и размер их томов.
 func (s *ManagedServiceState) ListServices(ctx context.Context) ([]domain.ServiceInfo, error) {
+	s.Reconcile(ctx)
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -371,6 +515,33 @@ func (s *ManagedServiceState) ListServices(ctx context.Context) ([]domain.Servic
 		})
 	}
 	return result, nil
+}
+
+// findFreePort находит свободный TCP-порт в системе.
+func findFreePort() (uint32, error) {
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return uint32(l.Addr().(*net.TCPAddr).Port), nil
+}
+
+// replacePortInURI заменяет порт в URI подключения, сохраняя схему, креды и параметры.
+func replacePortInURI(rawURI string, newPort uint32) string {
+	if rawURI == "" || newPort == 0 {
+		return rawURI
+	}
+	u, err := url.Parse(rawURI)
+	if err != nil {
+		return rawURI
+	}
+	host := u.Hostname()
+	if host == "" {
+		return rawURI
+	}
+	u.Host = net.JoinHostPort(host, strconv.Itoa(int(newPort)))
+	return u.String()
 }
 
 // calculateDirSize рекурсивно подсчитывает размер директории в байтах.

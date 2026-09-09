@@ -8,7 +8,7 @@ const (
 	ServiceTypePostgres
 	ServiceTypeRedis
 	ServiceTypeMySQL
-	ServiceTypeMinIO
+	_ // formerly MinIO
 	ServiceTypeVolume
 	ServiceTypeAdminer
 	ServiceTypePGAdmin

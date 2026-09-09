@@ -20,11 +20,24 @@ export const nodeRoleToProto = {
 };
 
 export const serviceTypeMap = {
+  0: 'postgres',
+  1: 'postgres',
+  2: 'redis',
+  3: 'mysql',
+  5: 'volume',
+  6: 'adminer',
+  7: 'pgadmin',
+  '0': 'postgres',
+  '1': 'postgres',
+  '2': 'redis',
+  '3': 'mysql',
+  '5': 'volume',
+  '6': 'adminer',
+  '7': 'pgadmin',
   SERVICE_TYPE_UNSPECIFIED: 'postgres',
   SERVICE_TYPE_POSTGRES: 'postgres',
   SERVICE_TYPE_REDIS: 'redis',
   SERVICE_TYPE_MYSQL: 'mysql',
-  SERVICE_TYPE_MINIO: 'minio',
   SERVICE_TYPE_VOLUME: 'volume',
   SERVICE_TYPE_ADMINER: 'adminer',
   SERVICE_TYPE_PGADMIN: 'pgadmin',
@@ -34,13 +47,22 @@ export const serviceTypeToProto = {
   postgres: 'SERVICE_TYPE_POSTGRES',
   redis: 'SERVICE_TYPE_REDIS',
   mysql: 'SERVICE_TYPE_MYSQL',
-  minio: 'SERVICE_TYPE_MINIO',
   volume: 'SERVICE_TYPE_VOLUME',
   adminer: 'SERVICE_TYPE_ADMINER',
   pgadmin: 'SERVICE_TYPE_PGADMIN',
 };
 
 export const serviceStatusMap = {
+  0: 'unknown',
+  1: 'starting',
+  2: 'running',
+  3: 'stopped',
+  4: 'failed',
+  '0': 'unknown',
+  '1': 'starting',
+  '2': 'running',
+  '3': 'stopped',
+  '4': 'failed',
   SERVICE_STATUS_UNSPECIFIED: 'unknown',
   SERVICE_STATUS_STARTING: 'starting',
   SERVICE_STATUS_RUNNING: 'running',
@@ -62,14 +84,15 @@ export function normalizeNodeRole(role) {
 
 export function normalizeService(raw) {
   if (!raw) return raw;
+  const rawType = raw.type ?? raw.service_type;
   return {
     ...raw,
-    service_type: serviceTypeMap[raw.service_type] || (raw.service_type ? String(raw.service_type).toLowerCase() : 'postgres'),
+    service_type: serviceTypeMap[rawType] || (rawType ? String(rawType).toLowerCase() : 'postgres'),
     status: serviceStatusMap[raw.status] || (raw.status ? String(raw.status).toLowerCase() : 'unknown'),
     allowed_game_ids: raw.allowed_game_ids ?? [],
     credentials: raw.credentials ?? {},
     volume_size_bytes: Number(raw.volume_size_bytes ?? 0),
-    host_port: Number(raw.host_port ?? 0),
+    host_port: Number(raw.host_port ?? raw.port ?? 0),
     volume_path: raw.volume_path || '',
     connection_uri: raw.connection_uri || '',
   };

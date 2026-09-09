@@ -91,6 +91,28 @@ func (s *stubDiscoveryRuntime) RemoveVolume(ctx context.Context, name string) er
 	return nil
 }
 
+func (s *stubDiscoveryRuntime) ImageExists(ctx context.Context, imageTag string) bool {
+	return true
+}
+
+func (s *stubDiscoveryRuntime) CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error {
+	return nil
+}
+
+func (s *stubDiscoveryRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
+	return &domain.ContainerDetails{
+		ID:            containerID,
+		Name:          "stub-container",
+		Running:       true,
+		RestartPolicy: "unless-stopped",
+		Ports:         make(map[uint32]uint32),
+	}, nil
+}
+
+func (s *stubDiscoveryRuntime) UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error {
+	return nil
+}
+
 func TestDiscoveryService_Heartbeat(t *testing.T) {
 	ctx := context.Background()
 

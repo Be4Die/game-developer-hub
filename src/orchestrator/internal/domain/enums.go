@@ -185,7 +185,7 @@ const (
 	ServiceTypePostgres
 	ServiceTypeRedis
 	ServiceTypeMySQL
-	ServiceTypeMinIO
+	_ // formerly MinIO
 	ServiceTypeVolume
 	ServiceTypeAdminer
 	ServiceTypePGAdmin
@@ -199,8 +199,6 @@ func (t ServiceType) String() string {
 		return "redis"
 	case ServiceTypeMySQL:
 		return "mysql"
-	case ServiceTypeMinIO:
-		return "minio"
 	case ServiceTypeVolume:
 		return "volume"
 	case ServiceTypeAdminer:

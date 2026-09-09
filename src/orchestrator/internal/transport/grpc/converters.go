@@ -164,8 +164,6 @@ func serviceTypeToProto(t domain.ServiceType) pb.ServiceType {
 		return pb.ServiceType_SERVICE_TYPE_REDIS
 	case domain.ServiceTypeMySQL:
 		return pb.ServiceType_SERVICE_TYPE_MYSQL
-	case domain.ServiceTypeMinIO:
-		return pb.ServiceType_SERVICE_TYPE_MINIO
 	case domain.ServiceTypeVolume:
 		return pb.ServiceType_SERVICE_TYPE_VOLUME
 	case domain.ServiceTypeAdminer:
@@ -185,8 +183,6 @@ func serviceTypeFromProto(t pb.ServiceType) domain.ServiceType {
 		return domain.ServiceTypeRedis
 	case pb.ServiceType_SERVICE_TYPE_MYSQL:
 		return domain.ServiceTypeMySQL
-	case pb.ServiceType_SERVICE_TYPE_MINIO:
-		return domain.ServiceTypeMinIO
 	case pb.ServiceType_SERVICE_TYPE_VOLUME:
 		return domain.ServiceTypeVolume
 	case pb.ServiceType_SERVICE_TYPE_ADMINER:

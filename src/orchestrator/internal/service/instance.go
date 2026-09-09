@@ -132,10 +132,6 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 						if _, ok := envVars["REDIS_URL"]; !ok {
 							envVars["REDIS_URL"] = svc.ConnectionURI
 						}
-					case domain.ServiceTypeMinIO:
-						if _, ok := envVars["S3_ENDPOINT"]; !ok {
-							envVars["S3_ENDPOINT"] = svc.ConnectionURI
-						}
 					case domain.ServiceTypeVolume:
 						if _, ok := envVars["STORAGE_VOLUME_PATH"]; !ok {
 							envVars["STORAGE_VOLUME_PATH"] = svc.VolumePath

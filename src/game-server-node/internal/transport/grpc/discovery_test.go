@@ -210,6 +210,24 @@ func (m *mockRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInf
 func (m *mockRuntime) PullImage(ctx context.Context, imageTag string) error       { return nil }
 func (m *mockRuntime) EnsureNetwork(ctx context.Context, networkName string) error { return nil }
 func (m *mockRuntime) RemoveVolume(ctx context.Context, name string) error          { return nil }
+func (m *mockRuntime) ImageExists(ctx context.Context, imageTag string) bool         { return true }
+func (m *mockRuntime) CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error {
+	return nil
+}
+
+func (m *mockRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
+	return &domain.ContainerDetails{
+		ID:            containerID,
+		Name:          "mock-container",
+		Running:       true,
+		RestartPolicy: "unless-stopped",
+		Ports:         make(map[uint32]uint32),
+	}, nil
+}
+
+func (m *mockRuntime) UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error {
+	return nil
+}
 
 func TestDiscoveryHandler_GetInstanceUsage(t *testing.T) {
 	ctx := context.Background()

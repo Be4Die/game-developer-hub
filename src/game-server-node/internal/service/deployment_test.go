@@ -108,6 +108,28 @@ func (s *stubRuntime) RemoveVolume(ctx context.Context, name string) error {
 	return nil
 }
 
+func (s *stubRuntime) ImageExists(ctx context.Context, imageTag string) bool {
+	return true
+}
+
+func (s *stubRuntime) CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error {
+	return nil
+}
+
+func (s *stubRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
+	return &domain.ContainerDetails{
+		ID:            containerID,
+		Name:          "stub-container",
+		Running:       s.started,
+		RestartPolicy: "unless-stopped",
+		Ports:         map[uint32]uint32{8080: s.hostPort},
+	}, nil
+}
+
+func (s *stubRuntime) UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error {
+	return nil
+}
+
 func TestDeploymentService_StartInstance(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	storage := memory.NewStorage()

@@ -206,7 +206,15 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 		containerConfig.Cmd = opts.Args
 	}
 
+	restartPolicy := opts.RestartPolicy
+	if restartPolicy == "" {
+		restartPolicy = "unless-stopped"
+	}
+
 	hostConfig := &container.HostConfig{
+		RestartPolicy: container.RestartPolicy{
+			Name: container.RestartPolicyMode(restartPolicy),
+		},
 		PortBindings: nat.PortMap{
 			internalPort: []nat.PortBinding{
 				{HostPort: hostPortString(opts.HostPort)},
@@ -446,6 +454,58 @@ func (r *Runtime) GetHostPort(ctx context.Context, containerID string, internalP
 	}
 
 	return 0, fmt.Errorf("failed to get port after %d retries: last error: %w", maxRetries, lastErr)
+}
+
+// InspectContainer возвращает подробную информацию о контейнере.
+func (r *Runtime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
+	const op = "Runtime.InspectContainer"
+
+	inspect, err := r.cli.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	restartPolicy := ""
+	if inspect.HostConfig != nil {
+		restartPolicy = string(inspect.HostConfig.RestartPolicy.Name)
+	}
+
+	details := &domain.ContainerDetails{
+		ID:            inspect.ID,
+		Name:          strings.TrimPrefix(inspect.Name, "/"),
+		Running:       inspect.State != nil && inspect.State.Running,
+		RestartPolicy: restartPolicy,
+		Ports:         make(map[uint32]uint32),
+	}
+
+	if inspect.NetworkSettings != nil && inspect.NetworkSettings.Ports != nil {
+		for portKey, bindings := range inspect.NetworkSettings.Ports {
+			if len(bindings) > 0 && bindings[0].HostPort != "" {
+				var hostPort uint32
+				if _, err := fmt.Sscanf(bindings[0].HostPort, "%d", &hostPort); err == nil {
+					details.Ports[uint32(portKey.Int())] = hostPort
+				}
+			}
+		}
+	}
+
+	return details, nil
+}
+
+// UpdateRestartPolicy обновляет политику перезапуска контейнера в Docker.
+func (r *Runtime) UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error {
+	const op = "Runtime.UpdateRestartPolicy"
+
+	updateConfig := container.UpdateConfig{
+		RestartPolicy: container.RestartPolicy{
+			Name: container.RestartPolicyMode(policy),
+		},
+	}
+	_, err := r.cli.ContainerUpdate(ctx, containerID, updateConfig)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	return nil
 }
 
 // ListContainers возвращает список всех контейнеров на хосте.
@@ -754,5 +814,38 @@ func (r *Runtime) RemoveVolume(ctx context.Context, volumeName string) error {
 		return nil
 	}
 	return r.cli.VolumeRemove(ctx, volumeName, true)
+}
+
+// ImageExists проверяет наличие образа локально в Docker-демоне.
+func (r *Runtime) ImageExists(ctx context.Context, imageTag string) bool {
+	_, _, err := r.cli.ImageInspectWithRaw(ctx, imageTag)
+	return err == nil
+}
+
+// CopyToContainer копирует одиночный файл в контейнер в указанную директорию.
+func (r *Runtime) CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error {
+	const op = "DockerRuntime.CopyToContainer"
+
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	hdr := &tar.Header{
+		Name: filename,
+		Mode: 0644,
+		Size: int64(len(content)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return fmt.Errorf("%s: write tar header: %w", op, err)
+	}
+	if _, err := tw.Write(content); err != nil {
+		return fmt.Errorf("%s: write tar content: %w", op, err)
+	}
+	if err := tw.Close(); err != nil {
+		return fmt.Errorf("%s: close tar: %w", op, err)
+	}
+
+	if err := r.cli.CopyToContainer(ctx, containerID, targetDir, &buf, container.CopyToContainerOptions{}); err != nil {
+		return fmt.Errorf("%s: copy to container: %w", op, err)
+	}
+	return nil
 }
 

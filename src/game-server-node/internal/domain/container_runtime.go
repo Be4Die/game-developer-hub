@@ -53,6 +53,27 @@ type ContainerRuntime interface {
 
 	// RemoveVolume удаляет именованный том Docker.
 	RemoveVolume(ctx context.Context, volumeName string) error
+
+	// ImageExists проверяет наличие образа локально.
+	ImageExists(ctx context.Context, imageTag string) bool
+
+	// CopyToContainer копирует одиночный файл в контейнер в указанную директорию.
+	CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error
+
+	// InspectContainer возвращает подробную информацию о контейнере (статус работы, политика рестарта, порты).
+	InspectContainer(ctx context.Context, containerID string) (*ContainerDetails, error)
+
+	// UpdateRestartPolicy обновляет политику рестарта существующего контейнера.
+	UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error
+}
+
+// ContainerDetails содержит расширенную информацию о состоянии контейнера.
+type ContainerDetails struct {
+	ID            string
+	Name          string
+	Running       bool
+	RestartPolicy string
+	Ports         map[uint32]uint32
 }
 
 // ContainerInfo содержит базовые данные о контейнере.
@@ -68,6 +89,7 @@ type ContainerOpts struct {
 	ImageTag      string
 	InternalPort  uint32
 	HostPort      uint32
+	RestartPolicy string
 	EnvVars       map[string]string
 	Args          []string
 	CPUMillis     *uint32

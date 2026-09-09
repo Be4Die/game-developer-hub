@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -518,6 +520,18 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 		return nil, fmt.Errorf("NodeService.CreateService: node %d is in compute-only role", nodeID)
 	}
 
+	// Singleton-гарантия для Web UI: на одной ноде не может быть более одной веб-панели управления
+	if params.ServiceType == domain.ServiceTypeAdminer {
+		existingServices, err := s.serviceRepo.ListByNode(ctx, nodeID)
+		if err == nil {
+			for _, svc := range existingServices {
+				if svc.ServiceType == domain.ServiceTypeAdminer && svc.Status != domain.ServiceStatusStopped && svc.Status != domain.ServiceStatusError {
+					return nil, fmt.Errorf("NodeService.CreateService: на ноде %d уже развернута веб-панель управления (AdminerEvo)", nodeID)
+				}
+			}
+		}
+	}
+
 	envVars := make(map[string]string)
 	credentials := make(map[string]string)
 
@@ -559,17 +573,6 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 		credentials["password"] = pass
 		credentials["database"] = db
 
-	case domain.ServiceTypeMinIO:
-		user := "minioadmin"
-		pass := params.Password
-		if pass == "" {
-			pass = "minioadmin"
-		}
-		envVars["MINIO_ROOT_USER"] = user
-		envVars["MINIO_ROOT_PASSWORD"] = pass
-		credentials["access_key"] = user
-		credentials["secret_key"] = pass
-
 	case domain.ServiceTypeVolume:
 		// Чистый персистентный том под данные (SQLite, RocksDB, кастомные сейвы)
 
@@ -595,9 +598,13 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 	}
 
 	now := time.Now()
+	serviceOwnerID := ownerID
+	if serviceOwnerID == "" {
+		serviceOwnerID = node.OwnerID
+	}
 	serviceRecord := &domain.ManagedService{
 		NodeID:         nodeID,
-		OwnerID:        ownerID,
+		OwnerID:        serviceOwnerID,
 		AllowedGameIDs: params.AllowedGameIDs,
 		ServiceType:    params.ServiceType,
 		Name:           params.Name,
@@ -642,6 +649,64 @@ func (s *NodeService) ListServices(ctx context.Context, ownerID string, nodeID i
 	services, err := s.serviceRepo.ListByNode(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.ListServices: %w", err)
+	}
+
+	// Синхронизируем состояние сервисов с реальным состоянием на ноде (если нода онлайн)
+	if node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+		nodeServices, err := s.nodeClient.ListServices(ctx, node.Address, node.APIToken)
+		if err == nil {
+			nodeSvcMap := make(map[string]domain.ServiceInfo, len(nodeServices))
+			for _, ns := range nodeServices {
+				nodeSvcMap[ns.Name] = ns
+			}
+
+			for _, svc := range services {
+				ns, ok := nodeSvcMap[svc.Name]
+				if !ok {
+					continue
+				}
+				changed := false
+				if ns.HostPort != 0 && ns.HostPort != svc.HostPort {
+					svc.ConnectionURI = replacePortInURI(svc.ConnectionURI, ns.HostPort)
+					svc.HostPort = ns.HostPort
+					changed = true
+				}
+				if ns.Status != "" {
+					newStatus := domain.ServiceStatusRunning
+					if ns.Status == "stopped" || ns.Status == "exited" {
+						newStatus = domain.ServiceStatusStopped
+					} else if ns.Status == "error" {
+						newStatus = domain.ServiceStatusError
+					}
+					if svc.Status != newStatus {
+						svc.Status = newStatus
+						changed = true
+					}
+				}
+				if ns.ContainerID != "" && ns.ContainerID != svc.ContainerID {
+					svc.ContainerID = ns.ContainerID
+					changed = true
+				}
+				if ns.VolumeSizeBytes > 0 && ns.VolumeSizeBytes != svc.VolumeSizeBytes {
+					svc.VolumeSizeBytes = ns.VolumeSizeBytes
+					changed = true
+				}
+				if changed {
+					if err := s.serviceRepo.Update(ctx, svc); err != nil {
+						s.log.Warn("failed to update synced service in DB",
+							slog.Int64("service_id", svc.ID),
+							slog.String("name", svc.Name),
+							slog.String("error", err.Error()),
+						)
+					}
+				}
+			}
+		} else {
+			s.log.Debug("could not sync managed services from node",
+				slog.Int64("node_id", nodeID),
+				slog.String("error", err.Error()),
+			)
+		}
 	}
 
 	if gameID == nil {
@@ -701,5 +766,22 @@ func (s *NodeService) DeleteService(ctx context.Context, ownerID string, nodeID,
 		slog.Bool("delete_volume", deleteVolume),
 	)
 	return nil
+}
+
+// replacePortInURI заменяет порт в URI подключения, сохраняя остальные части URL.
+func replacePortInURI(rawURI string, newPort uint32) string {
+	if rawURI == "" || newPort == 0 {
+		return rawURI
+	}
+	u, err := url.Parse(rawURI)
+	if err != nil {
+		return rawURI
+	}
+	host := u.Hostname()
+	if host == "" {
+		return rawURI
+	}
+	u.Host = net.JoinHostPort(host, strconv.Itoa(int(newPort)))
+	return u.String()
 }
 

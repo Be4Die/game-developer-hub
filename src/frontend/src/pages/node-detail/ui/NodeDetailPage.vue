@@ -177,7 +177,7 @@
             <div>
               <h2>
                 Хранение данных
-                <span class="count-badge">{{ services.length }}</span>
+                <span class="count-badge">{{ storageServices.length }}</span>
               </h2>
             </div>
             <button
@@ -185,8 +185,67 @@
               @click="showCreateServiceModal = true"
             >
               <Plus class="icon-xs" />
-              <span>Развернуть сервис / том</span>
+              <span>Развернуть базу данных / том</span>
             </button>
+          </div>
+
+          <!-- Веб-панель управления БД (AdminerEvo): компактная строка -->
+          <div class="web-ui-row-container">
+            <div class="web-ui-row">
+              <div class="web-ui-cell-title">
+                <div class="service-type-icon-box" style="background-color: rgba(88, 166, 255, 0.15)">
+                  <LayoutDashboard class="service-icon" style="color: #58a6ff" />
+                </div>
+                <div class="service-name-text">
+                  <span class="service-name">Панель управления — AdminerEvo</span>
+                  <span class="service-subtext">Веб-консоль управления БД</span>
+                </div>
+              </div>
+
+              <div class="web-ui-cell-status">
+                <span v-if="adminerService" class="status-badge success">
+                  <span class="status-dot"></span>
+                  {{ adminerService.status === 'running' ? 'Работает' : adminerService.status }}
+                </span>
+                <span v-else class="status-badge muted">
+                  <span class="status-dot"></span>
+                  Отключена
+                </span>
+              </div>
+
+              <div class="web-ui-cell-link">
+                <a
+                  v-if="adminerService && adminerService.status === 'running'"
+                  :href="getAdminerUrl(adminerService)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="adminer-link"
+                >
+                  <span>Перейти</span>
+                  <ExternalLink class="icon-xs" />
+                </a>
+                <span v-else class="text-muted-link">Недоступно</span>
+              </div>
+
+              <div class="web-ui-cell-action">
+                <button
+                  v-if="adminerService"
+                  class="btn-outline btn-sm btn-danger-outline"
+                  :disabled="togglingAdminer"
+                  @click="toggleAdminer"
+                >
+                  {{ togglingAdminer ? 'Отключение...' : 'Отключить' }}
+                </button>
+                <button
+                  v-else
+                  class="btn-primary btn-sm"
+                  :disabled="togglingAdminer"
+                  @click="toggleAdminer"
+                >
+                  {{ togglingAdminer ? 'Подключение...' : 'Подключить' }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-if="servicesLoading" class="loading-state">
@@ -194,7 +253,7 @@
             <span>Загрузка сервисов...</span>
           </div>
 
-          <div v-else-if="services.length" class="table-container">
+          <div v-else-if="storageServices.length" class="table-container">
             <table class="data-table">
               <thead>
                 <tr>
@@ -204,11 +263,12 @@
                   <th>Подключение / Путь</th>
                   <th>Объем на диске</th>
                   <th>Доступ к играм</th>
+                  <th v-if="adminerService && adminerService.status === 'running'">Веб-панель</th>
                   <th class="col-actions"></th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="svc in services" :key="svc.id">
+                <tr v-for="svc in storageServices" :key="svc.id">
                   <!-- Имя сервиса -->
                   <td class="cell-service-name">
                     <div class="service-identity">
@@ -225,7 +285,6 @@
                       <div class="service-name-text">
                         <span class="service-name">{{ svc.name }}</span>
                         <span v-if="svc.service_type === 'volume'" class="service-subtext">Том на хосте</span>
-                        <span v-else-if="svc.service_type === 'adminer'" class="service-subtext">Веб-панель</span>
                         <span v-else class="service-subtext">Docker-контейнер</span>
                       </div>
                     </div>
@@ -256,20 +315,6 @@
                         <Check v-if="copiedServiceId === svc.id" class="icon-xs text-success" />
                         <Copy v-else class="icon-xs" />
                       </button>
-                    </div>
-
-                    <!-- Для Adminer веб-интерфейса -->
-                    <div v-else-if="svc.service_type === 'adminer'" class="connection-cell">
-                      <a
-                        :href="getAdminerUrl(svc)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="adminer-link"
-                      >
-                        <span>Открыть панель</span>
-                        <ExternalLink class="icon-xs" />
-                      </a>
-                      <span class="host-port-hint">:{{ svc.host_port || 8080 }}</span>
                     </div>
 
                     <!-- Для баз данных и кэшей -->
@@ -325,19 +370,25 @@
                     </div>
                   </td>
 
+                  <!-- Веб-панель (Adminer) -->
+                  <td v-if="adminerService && adminerService.status === 'running'">
+                    <a
+                      v-if="isAdminerSupported(svc) && svc.status === 'running'"
+                      :href="getAdminerDbUrl(svc)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="btn-adminer-open"
+                      title="Открыть базу данных в панели управления AdminerEvo"
+                    >
+                      <ExternalLink class="icon-xs" />
+                      <span>Открыть в панели</span>
+                    </a>
+                    <span v-else class="text-muted">—</span>
+                  </td>
+
                   <!-- Действия -->
                   <td class="col-actions">
                     <div class="actions-cell">
-                      <a
-                        v-if="svc.service_type === 'adminer'"
-                        :href="getAdminerUrl(svc)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn-icon-action"
-                        title="Открыть веб-панель Adminer"
-                      >
-                        <ExternalLink class="icon-xs" />
-                      </a>
                       <button
                         class="btn-icon-danger"
                         title="Удалить сервис"
@@ -354,13 +405,13 @@
 
           <div v-else class="empty-state-card">
             <FolderPlus class="empty-icon" />
-            <p class="empty-title">На этой ноде нет развернутых сервисов или томов данных</p>
+            <p class="empty-title">На этой ноде нет развернутых баз данных или томов</p>
             <p class="empty-desc">
-              Вы можете развернуть PostgreSQL, Redis, MySQL, MinIO, персистентный том для файлов игры или веб-интерфейс Adminer.
+              Вы можете развернуть PostgreSQL, Redis, MySQL или персистентный том для файлов игры.
             </p>
             <button class="btn-primary btn-sm" @click="showCreateServiceModal = true">
               <Plus class="icon-xs" />
-              <span>Развернуть первый сервис</span>
+              <span>Развернуть базу данных</span>
             </button>
           </div>
         </div>
@@ -503,7 +554,6 @@ import {
   Database,
   Layers,
   Server,
-  HardDrive,
   FolderPlus,
   LayoutDashboard,
   ExternalLink,
@@ -519,6 +569,7 @@ import {
   updateNodeRole,
   listNodeServices,
   deleteNodeService,
+  createNodeService,
 } from '@/entities/node';
 import { listProjects } from '@/entities/project';
 import { CreateServiceModal } from '@/features/manage-nodes';
@@ -551,6 +602,7 @@ const authorizing = ref(false);
 
 const updatingRole = ref(false);
 const showCreateServiceModal = ref(false);
+const togglingAdminer = ref(false);
 const showDeleteServiceConfirm = ref(false);
 const serviceToDelete = ref(null);
 const deleteVolumeOnService = ref(true);
@@ -567,6 +619,17 @@ const currentRole = computed(() => {
   return 'mixed';
 });
 const activeCount = computed(() => usage.value.active_instance_count ?? 0);
+
+// Отделяем сервисы баз данных и томов от веб-панели управления
+const isAdminer = (s) =>
+  s.service_type === 'adminer' || s.type === 'adminer' || s.name === 'adminer';
+
+const storageServices = computed(() =>
+  services.value.filter((s) => !isAdminer(s)),
+);
+const adminerService = computed(() =>
+  services.value.find((s) => isAdminer(s)),
+);
 
 let usageInterval = null;
 
@@ -655,6 +718,43 @@ function onServiceCreated(newService) {
   }
 }
 
+async function toggleAdminer() {
+  if (togglingAdminer.value) return;
+  togglingAdminer.value = true;
+
+  if (adminerService.value) {
+    // Отключение
+    try {
+      const targetId = adminerService.value.id;
+      await deleteNodeService(props.nodeId, targetId, false);
+      showToast('Веб-панель AdminerEvo отключена', 'success');
+      services.value = services.value.filter((s) => s.id !== targetId);
+      await fetchServices();
+    } catch (e) {
+      showToast(e.response?.data?.message || e.message || 'Ошибка отключения веб-панели', 'error');
+    } finally {
+      togglingAdminer.value = false;
+    }
+  } else {
+    // Подключение
+    try {
+      const payload = {
+        service_type: 'adminer',
+        name: 'adminer',
+        port: 0,
+        allowed_game_ids: [],
+      };
+      await createNodeService(props.nodeId, payload);
+      showToast('Веб-панель AdminerEvo успешно подключена', 'success');
+      await fetchServices();
+    } catch (e) {
+      showToast(e.response?.data?.message || e.message || 'Ошибка подключения веб-панели', 'error');
+    } finally {
+      togglingAdminer.value = false;
+    }
+  }
+}
+
 function confirmDeleteService(svc) {
   serviceToDelete.value = svc;
   deleteVolumeOnService.value = true;
@@ -697,8 +797,6 @@ function getServiceIcon(type) {
       return Layers;
     case 'mysql':
       return Server;
-    case 'minio':
-      return HardDrive;
     case 'volume':
       return FolderPlus;
     case 'adminer':
@@ -716,12 +814,10 @@ function getServiceColor(type) {
       return '#dc382d';
     case 'mysql':
       return '#00758f';
-    case 'minio':
-      return '#c72c48';
     case 'volume':
       return '#10b981';
     case 'adminer':
-      return '#f59e0b';
+      return '#58a6ff';
     default:
       return '#58a6ff';
   }
@@ -735,12 +831,10 @@ function getServiceBgColor(type) {
       return 'rgba(220, 56, 45, 0.15)';
     case 'mysql':
       return 'rgba(0, 117, 143, 0.15)';
-    case 'minio':
-      return 'rgba(199, 44, 72, 0.15)';
     case 'volume':
       return 'rgba(16, 185, 129, 0.15)';
     case 'adminer':
-      return 'rgba(245, 158, 11, 0.15)';
+      return 'rgba(88, 166, 255, 0.15)';
     default:
       return 'rgba(88, 166, 255, 0.15)';
   }
@@ -754,22 +848,105 @@ function formatServiceType(type) {
       return 'Redis 7';
     case 'mysql':
       return 'MySQL 8.0';
-    case 'minio':
-      return 'MinIO (S3)';
     case 'volume':
       return 'Персистентный том';
     case 'adminer':
-      return 'Adminer (Web UI)';
+      return 'AdminerEvo (Web UI)';
     default:
       return type || 'Service';
   }
 }
 
 function getAdminerUrl(svc) {
-  const addr = node.value.address || 'localhost';
-  const host = addr.split(':')[0] || 'localhost';
-  const port = svc.host_port || 8080;
+  if (!svc) return '#';
+  let host = window.location.hostname || 'localhost';
+  if (node.value && node.value.address) {
+    const nodeHost = node.value.address.split(':')[0];
+    if (
+      nodeHost &&
+      nodeHost !== '0.0.0.0' &&
+      nodeHost !== '127.0.0.1' &&
+      nodeHost !== 'localhost' &&
+      nodeHost !== 'host.docker.internal'
+    ) {
+      host = nodeHost;
+    }
+  }
+
+  let port = svc.host_port;
+  if (!port && svc.connection_uri) {
+    try {
+      const parsed = new URL(svc.connection_uri);
+      if (parsed.port) port = Number(parsed.port);
+    } catch {}
+  }
+  if (!port) port = 8080;
+
   return `http://${host}:${port}`;
+}
+
+function isAdminerSupported(svc) {
+  if (!svc) return false;
+  const type = String(svc.service_type || svc.type || '').toLowerCase();
+  return type === 'postgres' || type === 'postgresql' || type === 'mysql' || type === 'mariadb';
+}
+
+function parseDbCredentials(svc) {
+  if (!svc) return { username: '', password: '', database: '' };
+  const uri = svc.connection_uri || '';
+  let username = '';
+  let password = '';
+  let database = '';
+
+  if (uri) {
+    try {
+      const normalized = uri.replace(/^[a-zA-Z0-9+.-]+:\/\//, 'http://');
+      const u = new URL(normalized);
+      if (u.username) username = decodeURIComponent(u.username);
+      if (u.password) password = decodeURIComponent(u.password);
+      if (u.pathname && u.pathname.length > 1) {
+        database = decodeURIComponent(u.pathname.slice(1));
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  const type = String(svc.service_type || svc.type || '').toLowerCase();
+  if (!username) {
+    if (type.includes('postgres')) username = 'postgres';
+    else if (type.includes('mysql')) username = 'root';
+  }
+  if (!database) {
+    database = 'game_db';
+  }
+
+  return { username, password, database };
+}
+
+function getAdminerDbUrl(svc) {
+  if (!adminerService.value) return '#';
+  const baseUrl = getAdminerUrl(adminerService.value);
+  if (!baseUrl || baseUrl === '#') return '#';
+
+  const creds = parseDbCredentials(svc);
+  const type = String(svc.service_type || svc.type || '').toLowerCase();
+  const params = new URLSearchParams();
+
+  // Внутри Docker-сети gdh-network имя контейнера базы данных формируется как gdh-svc-<name>
+  const serverHost = `gdh-svc-${svc.name}`;
+
+  if (type.includes('postgres')) {
+    params.set('pgsql', serverHost);
+  } else {
+    params.set('server', serverHost);
+  }
+
+  if (creds.username) params.set('username', creds.username);
+  if (creds.database) params.set('db', creds.database);
+  if (creds.password) params.set('password', creds.password);
+
+  return `${baseUrl}/?${params.toString()}`;
 }
 
 async function submitAuthorize() {
@@ -1276,6 +1453,70 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
+/* ─── Web UI Row (AdminerEvo Singleton) ─────────────────────────────────── */
+.web-ui-row-container {
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.web-ui-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  gap: 16px;
+  background: var(--bg-card, #161b22);
+  transition: background 0.15s ease;
+}
+
+.web-ui-row:hover {
+  background: var(--bg-secondary, #1c2128);
+}
+
+.web-ui-cell-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 2;
+  min-width: 250px;
+}
+
+.web-ui-cell-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.web-ui-cell-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.text-muted-link {
+  font-size: 0.85rem;
+  color: var(--text-tertiary, #6e7681);
+}
+
+.web-ui-cell-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn-danger-outline {
+  border-color: rgba(248, 81, 73, 0.4);
+  color: var(--danger, #f85149);
+}
+
+.btn-danger-outline:hover {
+  background: rgba(248, 81, 73, 0.15);
+  border-color: var(--danger, #f85149);
+}
+
 .adminer-link {
   display: inline-flex;
   align-items: center;
@@ -1288,6 +1529,28 @@ onUnmounted(() => {
 
 .adminer-link:hover {
   text-decoration: underline;
+}
+
+.btn-adminer-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  border-radius: 6px;
+  color: var(--primary, #58a6ff);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-adminer-open:hover {
+  background: rgba(88, 166, 255, 0.2);
+  border-color: var(--primary, #58a6ff);
+  color: #fff;
 }
 
 .host-port-hint {

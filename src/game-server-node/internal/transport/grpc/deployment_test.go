@@ -60,6 +60,24 @@ func (f *fakeRuntime) ListContainers(ctx context.Context) ([]domain.ContainerInf
 func (f *fakeRuntime) PullImage(ctx context.Context, imageTag string) error       { return nil }
 func (f *fakeRuntime) EnsureNetwork(ctx context.Context, networkName string) error { return nil }
 func (f *fakeRuntime) RemoveVolume(ctx context.Context, name string) error          { return nil }
+func (f *fakeRuntime) ImageExists(ctx context.Context, imageTag string) bool         { return true }
+func (f *fakeRuntime) CopyToContainer(ctx context.Context, containerID, targetDir, filename string, content []byte) error {
+	return nil
+}
+
+func (f *fakeRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
+	return &domain.ContainerDetails{
+		ID:            containerID,
+		Name:          "fake-container",
+		Running:       true,
+		RestartPolicy: "unless-stopped",
+		Ports:         map[uint32]uint32{8080: f.hostPort},
+	}, nil
+}
+
+func (f *fakeRuntime) UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error {
+	return nil
+}
 
 func TestDeploymentHandler_StartInstance(t *testing.T) {
 	// Arrange

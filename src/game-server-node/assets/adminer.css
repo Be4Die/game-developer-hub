@@ -1,0 +1,543 @@
+/* ==========================================================================
+   AdminerEvo Modern Dark Theme — Game Developer Hub Palette
+   ========================================================================== */
+
+/* 1. Global CSS Variables and System Colors */
+html {
+  --bg: #0d1117 !important;
+  --fg: #f0f6fc !important;
+  --dim: #161b22 !important;
+  --lit: #21262d !important;
+  background-color: #0d1117 !important;
+  color-scheme: dark !important;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: #f0f6fc !important;
+  background-color: #0d1117 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* 2. Links */
+a, a:visited {
+  color: #58a6ff !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease;
+}
+a:hover, a:visited:hover {
+  color: #79c0ff !important;
+  text-decoration: underline !important;
+}
+
+/* 3. Top Language Switcher */
+#lang {
+  position: fixed !important;
+  top: 14px !important;
+  right: 24px !important;
+  left: auto !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+#lang label {
+  color: #8b949e !important;
+  font-size: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+#lang select {
+  background-color: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  color: #c9d1d9 !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  outline: none !important;
+  cursor: pointer !important;
+}
+#lang select:focus {
+  border-color: #58a6ff !important;
+}
+
+/* 4. Left Sidebar Menu (#menu & #foot) */
+#foot {
+  background: transparent !important;
+}
+
+#menu {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 280px !important;
+  background-color: #161b22 !important;
+  border-right: 1px solid #30363d !important;
+  margin: 0 !important;
+  padding: 20px 16px !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  z-index: 100 !important;
+}
+
+#menu h1 {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 0 16px 0 !important;
+  margin: 0 0 16px 0 !important;
+  border-bottom: 1px solid #30363d !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #f0f6fc !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+#menu h1 a#h1 {
+  color: #f0f6fc !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#menu h1 #logo {
+  vertical-align: middle !important;
+  margin: 0 !important;
+}
+
+#menu h1 .version {
+  color: #8b949e !important;
+  font-size: 12px !important;
+  font-weight: normal !important;
+}
+
+#menu h1 .version a {
+  display: none !important;
+}
+
+#menu p, #menu #logins, #menu #tables, #menu #dbs {
+  border-color: #30363d !important;
+  background: transparent !important;
+}
+
+#menu #dbs {
+  padding: 10px 0 !important;
+  border-bottom: 1px solid #30363d !important;
+  margin-bottom: 12px !important;
+}
+#menu #dbs select {
+  width: 100% !important;
+}
+
+#menu p.links {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px solid #30363d !important;
+  margin: 0 0 12px 0 !important;
+}
+
+#menu p.links a {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  background: #21262d !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  color: #c9d1d9 !important;
+}
+#menu p.links a:hover, #menu p.links a.active {
+  background: #30363d !important;
+  color: #58a6ff !important;
+  text-decoration: none !important;
+}
+
+#tables {
+  padding: 4px 0 !important;
+  margin: 0 !important;
+}
+
+#tables li {
+  margin: 2px 0 !important;
+}
+
+#tables a, #logins a, #tables span {
+  background: transparent !important;
+  color: #c9d1d9 !important;
+  padding: 3px 6px !important;
+  border-radius: 4px !important;
+  display: inline-block !important;
+}
+
+#tables a:hover, #logins a:hover {
+  background-color: #21262d !important;
+  color: #58a6ff !important;
+  text-decoration: none !important;
+}
+
+#tables a.active {
+  background-color: #21262d !important;
+  color: #58a6ff !important;
+  font-weight: 600 !important;
+}
+
+/* 5. Main Content Area */
+#content {
+  margin: 24px 32px 32px 304px !important;
+  padding: 28px 32px !important;
+  background-color: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  min-height: calc(100vh - 48px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Breadcrumbs bar */
+#breadcrumb {
+  position: static !important;
+  background: transparent !important;
+  height: auto !important;
+  line-height: normal !important;
+  padding: 0 0 16px 0 !important;
+  margin: 0 0 20px 0 !important;
+  border-bottom: 1px solid #30363d !important;
+  font-size: 13px !important;
+  color: #8b949e !important;
+}
+#breadcrumb a {
+  color: #58a6ff !important;
+}
+
+/* Logout button */
+.logout {
+  position: absolute !important;
+  top: 14px !important;
+  right: 180px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.logout input[type=submit] {
+  background-color: #21262d !important;
+  border: 1px solid #30363d !important;
+  color: #f85149 !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+}
+.logout input[type=submit]:hover {
+  background-color: #b62324 !important;
+  color: #ffffff !important;
+  border-color: #b62324 !important;
+}
+
+/* 6. Headers */
+h2 {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #f0f6fc !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid #30363d !important;
+  padding: 0 0 14px 0 !important;
+  margin: 0 0 24px 0 !important;
+}
+
+h3 {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #f0f6fc !important;
+  margin: 20px 0 10px 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* 7. Forms, Inputs, Buttons */
+fieldset {
+  border: 1px solid #30363d !important;
+  background-color: #0d1117 !important;
+  border-radius: 6px !important;
+  padding: 14px 18px !important;
+  margin: 16px 0 !important;
+}
+
+legend {
+  color: #58a6ff !important;
+  font-weight: 600 !important;
+  padding: 0 8px !important;
+  background: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 4px !important;
+}
+
+input:not([type]),
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="search"],
+select,
+textarea {
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  color: #f0f6fc !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  border-color: #58a6ff !important;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2) !important;
+}
+
+textarea {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+input[type="submit"],
+input[type="button"],
+button,
+.button {
+  background-color: #238636 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(240, 246, 252, 0.1) !important;
+  border-radius: 6px !important;
+  padding: 8px 18px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+  outline: none !important;
+}
+
+input[type="submit"]:hover,
+input[type="button"]:hover,
+button:hover,
+.button:hover {
+  background-color: #2ea043 !important;
+}
+
+input[type="submit"][name="cancel"],
+input[type="submit"].secondary {
+  background-color: #21262d !important;
+  color: #c9d1d9 !important;
+  border: 1px solid #30363d !important;
+}
+input[type="submit"][name="cancel"]:hover,
+input[type="submit"].secondary:hover {
+  background-color: #30363d !important;
+  color: #f0f6fc !important;
+}
+
+label {
+  color: #c9d1d9 !important;
+  cursor: pointer !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #58a6ff !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+}
+
+/* 8. Login & Form Tables (.layout) */
+table.layout {
+  width: 100% !important;
+  max-width: 600px !important;
+  margin: 0 0 20px 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+table.layout th, table.layout td {
+  border: none !important;
+  padding: 8px 6px !important;
+  background: transparent !important;
+}
+
+table.layout th {
+  color: #8b949e !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  width: 140px !important;
+  vertical-align: middle !important;
+}
+
+table.layout td input,
+table.layout td select {
+  width: 100% !important;
+  max-width: 440px !important;
+}
+
+/* 9. Data Tables */
+table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  margin: 16px 0 !important;
+  background-color: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+}
+
+th, td {
+  padding: 8px 12px !important;
+  border: none !important;
+  border-bottom: 1px solid #21262d !important;
+  text-align: left !important;
+  color: #f0f6fc !important;
+}
+
+th {
+  background-color: #161b22 !important;
+  color: #8b949e !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid #30363d !important;
+}
+
+th a {
+  color: #8b949e !important;
+}
+th a:hover {
+  color: #58a6ff !important;
+}
+
+tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+tbody tr:hover td,
+tbody tr:hover th {
+  background-color: #1c2128 !important;
+}
+
+.odds tbody tr:nth-child(2n) td,
+tbody tr:nth-child(2n) td {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.js .checkable .checked td,
+.js .checkable .checked th {
+  background-color: #1b324b !important;
+}
+
+/* 10. Messages & Errors */
+.message, .error, p.message {
+  padding: 10px 16px !important;
+  border-radius: 6px !important;
+  margin: 14px 0 !important;
+  font-size: 13px !important;
+}
+
+.message {
+  background-color: #0d281e !important;
+  border: 1px solid #238636 !important;
+  color: #3fb950 !important;
+}
+
+.error {
+  background-color: #3b1219 !important;
+  border: 1px solid #da3633 !important;
+  color: #f85149 !important;
+}
+
+/* 11. Code and JUSH SQL Editor */
+pre, code, pre.jush, [contenteditable].jush {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace !important;
+  background-color: #0d1117 !important;
+  border-radius: 6px !important;
+}
+
+code {
+  padding: 2px 6px !important;
+  font-size: 85% !important;
+  border: 1px solid #30363d !important;
+  color: #79c0ff !important;
+}
+
+pre, [contenteditable].jush {
+  padding: 12px 16px !important;
+  border: 1px solid #30363d !important;
+  overflow-x: auto !important;
+  color: #f0f6fc !important;
+}
+
+.jush {
+  --text-color: #f0f6fc !important;
+  --bg-color: #0d1117 !important;
+  --border-color: #30363d !important;
+  color: #f0f6fc !important;
+}
+
+.jush a {
+  color: #58a6ff !important;
+}
+
+.jush-sql a,
+.jush-sql_code a,
+.jush-sqlite a,
+.jush-pgsql a,
+.jush-mssql a,
+.jush-oracle a {
+  color: #79c0ff !important;
+  font-weight: 600 !important;
+}
+
+.jush-bac,
+.jush-php_bac,
+.jush-bra,
+.jush-mssql_bra,
+.jush-sqlite_quo {
+  color: #e3b341 !important;
+}
+
+.jush-php_quo,
+.jush-quo,
+.jush-quo_one,
+.jush-apo,
+.jush-sql_apo,
+.jush-sqlite_apo,
+.jush-sql_quo,
+.jush-sql_eot {
+  color: #a5d6ff !important;
+}
+
+.jush-num,
+.jush-clr {
+  color: #ff7b72 !important;
+}

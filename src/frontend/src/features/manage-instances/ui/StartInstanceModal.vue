@@ -36,7 +36,7 @@
           <label>Environment Variables</label>
           <div class="env-storage-hint">
             <Database class="icon-xs" />
-            <span>Базы данных и кэши (PostgreSQL, Redis, MySQL, MinIO), развернутые на нодах, автоматически инжектируются (<code>DATABASE_URL</code>, <code>REDIS_URL</code>, <code>S3_ENDPOINT</code>).</span>
+            <span>Базы данных и кэши (PostgreSQL, Redis, MySQL), развернутые на нодах, автоматически инжектируются (<code>DATABASE_URL</code>, <code>REDIS_URL</code>).</span>
           </div>
           <KeyValueEditor v-model="startForm.env_vars" />
         </div>

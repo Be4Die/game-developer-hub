@@ -50,6 +50,9 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.NodeServiceRegisterR
 // List возвращает список всех нод пользователя.
 func (h *NodeHandler) List(ctx context.Context, req *pb.NodeServiceListRequest) (*pb.NodeServiceListResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	var statusFilter *domain.NodeStatus
 	if req.Status != nil {
@@ -73,6 +76,9 @@ func (h *NodeHandler) List(ctx context.Context, req *pb.NodeServiceListRequest) 
 // Get возвращает информацию о ноде.
 func (h *NodeHandler) Get(ctx context.Context, req *pb.NodeServiceGetRequest) (*pb.NodeServiceGetResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	node, err := h.nodeService.GetNode(ctx, ownerID, req.GetNodeId())
 	if err != nil {
@@ -85,6 +91,9 @@ func (h *NodeHandler) Get(ctx context.Context, req *pb.NodeServiceGetRequest) (*
 // Delete удаляет ноду.
 func (h *NodeHandler) Delete(ctx context.Context, req *pb.NodeServiceDeleteRequest) (*pb.NodeServiceDeleteResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	err := h.nodeService.DeleteNode(ctx, ownerID, req.GetNodeId())
 	if err != nil {
@@ -97,6 +106,9 @@ func (h *NodeHandler) Delete(ctx context.Context, req *pb.NodeServiceDeleteReque
 // GetUsage возвращает потребление ресурсов ноды.
 func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.NodeServiceGetUsageRequest) (*pb.NodeServiceGetUsageResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	usage, err := h.nodeService.GetNodeUsage(ctx, ownerID, req.GetNodeId())
 	if err != nil {
@@ -113,6 +125,9 @@ func (h *NodeHandler) GetUsage(ctx context.Context, req *pb.NodeServiceGetUsageR
 // ListInstances возвращает список инстансов на ноде.
 func (h *NodeHandler) ListInstances(ctx context.Context, req *pb.NodeServiceListInstancesRequest) (*pb.NodeServiceListInstancesResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	instances, err := h.nodeService.ListNodeInstances(ctx, ownerID, req.GetNodeId())
 	if err != nil {
@@ -156,6 +171,9 @@ func (h *NodeHandler) Announce(ctx context.Context, req *pb.NodeServiceAnnounceR
 // UpdateRole изменяет роль ноды (Mixed, Compute, Storage).
 func (h *NodeHandler) UpdateRole(ctx context.Context, req *pb.NodeServiceUpdateRoleRequest) (*pb.NodeServiceUpdateRoleResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	node, err := h.nodeService.UpdateRole(ctx, ownerID, req.GetNodeId(), nodeRoleFromProto(req.GetRole()))
 	if err != nil {
@@ -168,6 +186,9 @@ func (h *NodeHandler) UpdateRole(ctx context.Context, req *pb.NodeServiceUpdateR
 // CreateService разворачивает управляемый сервис хранения данных на ноде.
 func (h *NodeHandler) CreateService(ctx context.Context, req *pb.NodeServiceCreateServiceRequest) (*pb.NodeServiceCreateServiceResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	params := service.CreateServiceParams{
 		ServiceType:    serviceTypeFromProto(req.GetType()),
@@ -189,6 +210,9 @@ func (h *NodeHandler) CreateService(ctx context.Context, req *pb.NodeServiceCrea
 // ListServices возвращает список управляемых сервисов на ноде.
 func (h *NodeHandler) ListServices(ctx context.Context, req *pb.NodeServiceListServicesRequest) (*pb.NodeServiceListServicesResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	var gameID *int64
 	if req.GameId != nil {
@@ -211,6 +235,9 @@ func (h *NodeHandler) ListServices(ctx context.Context, req *pb.NodeServiceListS
 // DeleteService удаляет управляемый сервис.
 func (h *NodeHandler) DeleteService(ctx context.Context, req *pb.NodeServiceDeleteServiceRequest) (*pb.NodeServiceDeleteServiceResponse, error) {
 	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
 
 	if err := h.nodeService.DeleteService(ctx, ownerID, req.GetNodeId(), req.GetServiceId(), req.GetDeleteVolume()); err != nil {
 		return nil, domainError(err, "delete managed service")
@@ -220,6 +247,11 @@ func (h *NodeHandler) DeleteService(ctx context.Context, req *pb.NodeServiceDele
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+func isSuperuser(ctx context.Context) bool {
+	role, ok := GetUserRole(ctx)
+	return ok && role == 3
+}
 
 func nodeStatusFromProto(s pb.NodeStatus) domain.NodeStatus {
 	switch s {
