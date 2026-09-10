@@ -21,7 +21,7 @@ export function listNodes(status) {
 }
 
 export function getNode(nodeId) {
-  return http.get(`/nodes/${nodeId}`).then((r) => normalizeNode(r.data));
+  return http.get(`/nodes/${nodeId}`).then((r) => normalizeNode(r.data.node || r.data));
 }
 
 export function registerNode(payload) {
@@ -169,11 +169,11 @@ export function uploadServiceBackup(nodeId, serviceName, file, restoreImmediatel
 export function toggleNodeBackups(nodeId, enabled) {
   return http
     .put(`/nodes/${nodeId}/backups/toggle`, { enabled })
-    .then((r) => normalizeNode(r.data.node));
+    .then((r) => normalizeNode(r.data.node || r.data));
 }
 
 export function toggleServiceAutoBackup(nodeId, serviceName, enabled) {
   return http
     .put(`/nodes/${nodeId}/services/${serviceName}/auto-backup/toggle`, { enabled })
-    .then((r) => normalizeService(r.data.service));
+    .then((r) => normalizeService(r.data.service || r.data));
 }

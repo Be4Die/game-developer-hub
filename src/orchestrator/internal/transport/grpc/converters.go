@@ -92,6 +92,9 @@ func enrichedInstanceToProto(inst *service.EnrichedInstance) *pb.Instance {
 }
 
 func nodeToProto(n *domain.Node) *pb.Node {
+	if n == nil {
+		return nil
+	}
 	return &pb.Node{
 		Id:               n.ID,
 		OwnerId:          n.OwnerID,
@@ -105,25 +108,15 @@ func nodeToProto(n *domain.Node) *pb.Node {
 		AgentVersion:     n.AgentVersion,
 		CreatedAt:        timestamppb.New(n.CreatedAt),
 		UpdatedAt:        timestamppb.New(n.UpdatedAt),
+		BackupsEnabled:   n.BackupsEnabled,
 	}
 }
 
 func enrichedNodeToProto(n *service.EnrichedNode) *pb.Node {
-	node := nodeToProto(&domain.Node{
-		ID:           n.ID,
-		OwnerID:      n.OwnerID,
-		Address:      n.Address,
-		Region:       n.Region,
-		Status:       n.Status,
-		Role:         n.Role,
-		CPUCores:     n.CPUCores,
-		TotalMemory:  n.TotalMemory,
-		TotalDisk:    n.TotalDisk,
-		AgentVersion: n.AgentVersion,
-		LastPingAt:   n.LastPingAt,
-		CreatedAt:    n.CreatedAt,
-		UpdatedAt:    n.UpdatedAt,
-	})
+	if n == nil {
+		return nil
+	}
+	node := nodeToProto(n.Node)
 	if !n.LastPingAt.IsZero() {
 		node.LastPingAt = timestamppb.New(n.LastPingAt)
 	}
@@ -210,19 +203,23 @@ func serviceStatusToProto(s domain.ServiceStatus) pb.ServiceStatus {
 }
 
 func managedServiceToProto(s *domain.ManagedService) *pb.ManagedService {
+	if s == nil {
+		return nil
+	}
 	return &pb.ManagedService{
-		Id:              s.ID,
-		NodeId:          s.NodeID,
-		OwnerId:         s.OwnerID,
-		AllowedGameIds:  s.AllowedGameIDs,
-		Type:            serviceTypeToProto(s.ServiceType),
-		Name:            s.Name,
-		Status:          serviceStatusToProto(s.Status),
-		Port:            s.HostPort,
-		ConnectionUri:   s.ConnectionURI,
-		VolumeSizeBytes: s.VolumeSizeBytes,
-		CreatedAt:       timestamppb.New(s.CreatedAt),
-		UpdatedAt:       timestamppb.New(s.UpdatedAt),
+		Id:                s.ID,
+		NodeId:            s.NodeID,
+		OwnerId:           s.OwnerID,
+		AllowedGameIds:    s.AllowedGameIDs,
+		Type:              serviceTypeToProto(s.ServiceType),
+		Name:              s.Name,
+		Status:            serviceStatusToProto(s.Status),
+		Port:              s.HostPort,
+		ConnectionUri:     s.ConnectionURI,
+		VolumeSizeBytes:   s.VolumeSizeBytes,
+		CreatedAt:         timestamppb.New(s.CreatedAt),
+		UpdatedAt:         timestamppb.New(s.UpdatedAt),
+		AutoBackupEnabled: s.AutoBackupEnabled,
 	}
 }
 

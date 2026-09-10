@@ -1548,17 +1548,19 @@ onUnmounted(() => {
 
 /* ─── Tools Grid & Cards ─────────────────────────────────── */
 .tools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .tool-card {
+  width: 360px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 14px 18px;
   gap: 16px;
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
@@ -1574,15 +1576,15 @@ onUnmounted(() => {
 .tool-card-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
 .tool-info {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .tool-name {
@@ -1595,7 +1597,7 @@ onUnmounted(() => {
 .tool-card-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 

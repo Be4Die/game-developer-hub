@@ -84,25 +84,29 @@ export function normalizeNodeRole(role) {
 
 export function normalizeService(raw) {
   if (!raw) return raw;
-  const rawType = raw.type ?? raw.service_type;
+  const data = raw.service ? { ...raw.service } : { ...raw };
+  const rawType = data.type ?? data.service_type;
   return {
-    ...raw,
+    ...data,
     service_type: serviceTypeMap[rawType] || (rawType ? String(rawType).toLowerCase() : 'postgres'),
-    status: serviceStatusMap[raw.status] || (raw.status ? String(raw.status).toLowerCase() : 'unknown'),
-    allowed_game_ids: raw.allowed_game_ids ?? [],
-    credentials: raw.credentials ?? {},
-    volume_size_bytes: Number(raw.volume_size_bytes ?? 0),
-    host_port: Number(raw.host_port ?? raw.port ?? 0),
-    volume_path: raw.volume_path || '',
-    connection_uri: raw.connection_uri || '',
+    status: serviceStatusMap[data.status] || (data.status ? String(data.status).toLowerCase() : 'unknown'),
+    allowed_game_ids: data.allowed_game_ids ?? [],
+    credentials: data.credentials ?? {},
+    volume_size_bytes: Number(data.volume_size_bytes ?? 0),
+    host_port: Number(data.host_port ?? data.port ?? 0),
+    volume_path: data.volume_path || '',
+    connection_uri: data.connection_uri || '',
+    auto_backup_enabled: !!data.auto_backup_enabled,
   };
 }
 
 export function normalizeNode(raw) {
   if (!raw) return raw;
+  const data = raw.node ? { ...raw.node } : { ...raw };
   return {
-    ...raw,
-    status: normalizeNodeStatus(raw.status),
-    role: normalizeNodeRole(raw.role),
+    ...data,
+    status: normalizeNodeStatus(data.status),
+    role: normalizeNodeRole(data.role),
+    backups_enabled: !!data.backups_enabled,
   };
 }
