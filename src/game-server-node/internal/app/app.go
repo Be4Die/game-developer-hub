@@ -133,6 +133,7 @@ func (a *App) MustRun() {
 
 	// Start periodic background cleanup to remove dangling build artifacts.
 	a.deploymentSvc.StartPeriodicCleanup(5 * time.Minute)
+	a.deploymentSvc.StartAutoBackups(ctx)
 
 	// Запускаем HTTP-сервер отчётов (localhost only).
 	if a.reportServer != nil {

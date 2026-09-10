@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/timestamp.proto";
 
 package orchestrator.v1;
 
@@ -75,6 +76,65 @@ service NodeService {
   }
 
   // Удалить управляемый сервис на ноде.
+  // Создать бэкап управляемого сервиса.
+  rpc CreateServiceBackup(NodeServiceCreateServiceBackupRequest) returns (NodeServiceCreateServiceBackupResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services/{service_name}/backups"
+      body: "*"
+    };
+  }
+
+  // Получить список бэкапов.
+  rpc ListServiceBackups(NodeServiceListServiceBackupsRequest) returns (NodeServiceListServiceBackupsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/nodes/{node_id}/services/{service_name}/backups"
+    };
+  }
+
+  // Восстановить бэкап.
+  rpc RestoreServiceBackup(NodeServiceRestoreServiceBackupRequest) returns (NodeServiceRestoreServiceBackupResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/restore"
+      body: "*"
+    };
+  }
+
+  // Удалить бэкап управляемого сервиса.
+  rpc DeleteServiceBackup(NodeServiceDeleteServiceBackupRequest) returns (NodeServiceDeleteServiceBackupResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}"
+    };
+  }
+
+  // Сгенерировать одноразовый тикет для защищенного скачивания бэкапа.
+  rpc GetBackupTicket(NodeServiceGetBackupTicketRequest) returns (NodeServiceGetBackupTicketResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/ticket"
+      body: "*"
+    };
+  }
+
+  // Скачать бэкап управляемого сервиса (стриминг чанков).
+  rpc DownloadServiceBackup(NodeServiceDownloadServiceBackupRequest) returns (stream NodeServiceBackupChunk);
+
+  // Загрузить бэкап управляемого сервиса (стриминг чанков).
+  rpc UploadServiceBackup(stream NodeServiceUploadBackupChunk) returns (NodeServiceUploadBackupResponse);
+
+  // Переключить статус бэкапов на ноде.
+  rpc ToggleBackups(NodeServiceToggleBackupsRequest) returns (NodeServiceToggleBackupsResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/nodes/{node_id}/backups/toggle"
+      body: "*"
+    };
+  }
+
+  // Переключить статус автобэкапов сервиса.
+  rpc ToggleServiceAutoBackup(NodeServiceToggleServiceAutoBackupRequest) returns (NodeServiceToggleServiceAutoBackupResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/nodes/{node_id}/services/{service_name}/auto-backup/toggle"
+      body: "*"
+    };
+  }
   rpc DeleteService(NodeServiceDeleteServiceRequest) returns (NodeServiceDeleteServiceResponse) {
     option (google.api.http) = {delete: "/api/v1/nodes/{node_id}/services/{service_id}"};
   }
@@ -225,3 +285,123 @@ message NodeServiceDeleteServiceRequest {
 
 message NodeServiceDeleteServiceResponse {}
 
+
+message NodeServiceToggleBackupsRequest {
+  int64 node_id = 1;
+  bool enabled = 2;
+}
+
+message NodeServiceToggleBackupsResponse {
+  Node node = 1;
+}
+
+message NodeServiceToggleServiceAutoBackupRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+  bool enabled = 3;
+}
+
+message NodeServiceToggleServiceAutoBackupResponse {
+  ManagedService service = 1;
+}
+
+// ─── Service Backups ─────────────────────────────────────────────────────────
+
+enum BackupType {
+  BACKUP_TYPE_UNSPECIFIED = 0;
+  BACKUP_TYPE_MANUAL = 1;
+  BACKUP_TYPE_UPLOADED = 2;
+  BACKUP_TYPE_SCHEDULED = 3;
+}
+
+enum BackupStatus {
+  BACKUP_STATUS_UNSPECIFIED = 0;
+  BACKUP_STATUS_CREATING = 1;
+  BACKUP_STATUS_READY = 2;
+  BACKUP_STATUS_FAILED = 3;
+  BACKUP_STATUS_RESTORING = 4;
+}
+
+message ServiceBackup {
+  int64 id = 1;
+  string backup_id = 2;
+  int64 node_id = 3;
+  int64 service_id = 4;
+  string service_name = 5;
+  ServiceType service_type = 6;
+  string file_name = 7;
+  int64 size_bytes = 8;
+  string checksum = 9;
+  BackupType backup_type = 10;
+  BackupStatus status = 11;
+  google.protobuf.Timestamp created_at = 12;
+}
+
+message NodeServiceCreateServiceBackupRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+}
+message NodeServiceCreateServiceBackupResponse {
+  ServiceBackup backup = 1;
+}
+
+message NodeServiceListServiceBackupsRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+}
+message NodeServiceListServiceBackupsResponse {
+  repeated ServiceBackup backups = 1;
+}
+
+message NodeServiceRestoreServiceBackupRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+  string backup_id = 3;
+}
+message NodeServiceRestoreServiceBackupResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message NodeServiceDeleteServiceBackupRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+  string backup_id = 3;
+}
+message NodeServiceDeleteServiceBackupResponse {}
+
+message NodeServiceGetBackupTicketRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+  string backup_id = 3;
+}
+message NodeServiceGetBackupTicketResponse {
+  string ticket = 1;
+  int64 expires_in_seconds = 2;
+}
+
+message NodeServiceDownloadServiceBackupRequest {
+  int64 node_id = 1;
+  string service_name = 2;
+  string backup_id = 3;
+}
+message NodeServiceBackupChunk {
+  bytes chunk = 1;
+}
+
+message NodeServiceUploadBackupChunk {
+  oneof payload {
+    NodeServiceUploadBackupMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+message NodeServiceUploadBackupMetadata {
+  int64 node_id = 1;
+  string service_name = 2;
+  string file_name = 3;
+  bool restore_immediately = 4;
+}
+message NodeServiceUploadBackupResponse {
+  ServiceBackup backup = 1;
+  bool restored = 2;
+}

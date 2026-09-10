@@ -124,6 +124,8 @@ func run(ctx context.Context) error {
 	mux.HandleFunc("GET /api/v1/projects/{project_id}/media/{type}", handleProjectMediaServe(projectsBasePath))
 	mux.HandleFunc("GET /api/v1/media/{path...}", handleProjectMediaServe(projectsBasePath))
 	mux.HandleFunc("GET /media/{path...}", handleProjectMediaServe(projectsBasePath))
+	mux.HandleFunc("GET /api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/download", handleBackupDownload(gwpb.NewNodeServiceClient(orchConn)))
+	mux.HandleFunc("POST /api/v1/nodes/{node_id}/services/{service_name}/backups/upload", handleBackupUpload(gwpb.NewNodeServiceClient(orchConn)))
 
 	// Все остальные запросы проксируются в gRPC-Gateway
 	mux.Handle("/", gwMux)

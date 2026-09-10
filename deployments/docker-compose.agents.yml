@@ -27,6 +27,7 @@ services:
       CONFIG_PATH: /app/config/docker.yaml
       NODE_API_KEY: ${NODE_API_KEY:-dev-api-key-for-local-testing}
       ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
+      GDH_BACKUPS_DIR: /app/data/backups
     ports:
       - "44044:44044"
       - "44045:44045"

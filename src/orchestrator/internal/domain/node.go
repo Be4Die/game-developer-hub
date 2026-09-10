@@ -11,7 +11,8 @@ type Node struct {
 	APIToken     string // plaintext токен (для gRPC-запросов к ноде)
 	Region       string // опционально
 	Status       NodeStatus
-	Role         NodeRole  // роль ноды: mixed, compute, storage
+	Role         NodeRole
+	BackupsEnabled bool  // роль ноды: mixed, compute, storage
 	CPUCores     uint32    // получено из NodeInfo
 	TotalMemory  uint64    // получено из NodeInfo
 	TotalDisk    uint64    // получено из NodeInfo

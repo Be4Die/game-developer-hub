@@ -334,6 +334,7 @@ func (h *DeploymentHandler) ListServices(ctx context.Context, _ *pb.ListServices
 			HostPort:        s.HostPort,
 			VolumePath:      s.VolumePath,
 			VolumeSizeBytes: s.VolumeSizeBytes,
+			AutoBackupEnabled: s.AutoBackupEnabled,
 		})
 	}
 
@@ -378,3 +379,152 @@ func domainToProtoServiceType(t domain.ServiceType) pb.ServiceType {
 	}
 }
 
+// CreateBackup создает снимок данных сервиса.
+func (h *DeploymentHandler) CreateBackup(ctx context.Context, req *pb.CreateBackupRequest) (*pb.CreateBackupResponse, error) {
+	backup, err := h.svc.CreateBackup(ctx, req.GetServiceName())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "create backup: %v", err)
+	}
+
+	return &pb.CreateBackupResponse{
+		Backup: backupToProto(backup),
+	}, nil
+}
+
+// ListBackups возвращает список бэкапов сервиса.
+func (h *DeploymentHandler) ListBackups(ctx context.Context, req *pb.ListBackupsRequest) (*pb.ListBackupsResponse, error) {
+	backups, err := h.svc.ListBackups(ctx, req.GetServiceName())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "list backups: %v", err)
+	}
+
+	pbBackups := make([]*pb.BackupInfo, 0, len(backups))
+	for _, b := range backups {
+		pbBackups = append(pbBackups, backupToProto(&b))
+	}
+
+	return &pb.ListBackupsResponse{Backups: pbBackups}, nil
+}
+
+// RestoreBackup восстанавливает состояние сервиса из бэкапа.
+func (h *DeploymentHandler) RestoreBackup(ctx context.Context, req *pb.RestoreBackupRequest) (*pb.RestoreBackupResponse, error) {
+	if err := h.svc.RestoreBackup(ctx, req.GetServiceName(), req.GetBackupId()); err != nil {
+		return nil, status.Errorf(codes.Internal, "restore backup: %v", err)
+	}
+
+	return &pb.RestoreBackupResponse{
+		Success: true,
+		Message: "Backup restored successfully",
+	}, nil
+}
+
+// DeleteBackup удаляет файл бэкапа.
+func (h *DeploymentHandler) DeleteBackup(ctx context.Context, req *pb.DeleteBackupRequest) (*pb.DeleteBackupResponse, error) {
+	if err := h.svc.DeleteBackup(ctx, req.GetServiceName(), req.GetBackupId()); err != nil {
+		return nil, status.Errorf(codes.Internal, "delete backup: %v", err)
+	}
+
+	return &pb.DeleteBackupResponse{}, nil
+}
+
+// DownloadBackup стримит файл бэкапа чанками по 64 КБ.
+func (h *DeploymentHandler) DownloadBackup(req *pb.DownloadBackupRequest, stream pb.DeploymentService_DownloadBackupServer) error {
+	r, _, _, err := h.svc.OpenBackup(stream.Context(), req.GetServiceName(), req.GetBackupId())
+	if err != nil {
+		return status.Errorf(codes.NotFound, "open backup: %v", err)
+	}
+	defer r.Close()
+
+	buf := make([]byte, 64*1024)
+	for {
+		n, readErr := r.Read(buf)
+		if n > 0 {
+			if err := stream.Send(&pb.BackupChunk{Chunk: buf[:n]}); err != nil {
+				return status.Errorf(codes.Internal, "stream backup chunk: %v", err)
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return status.Errorf(codes.Internal, "read backup file: %v", readErr)
+		}
+	}
+
+	return nil
+}
+
+// UploadBackup принимает файл бэкапа стримом чанков.
+func (h *DeploymentHandler) UploadBackup(stream pb.DeploymentService_UploadBackupServer) error {
+	first, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "receive metadata: %v", err)
+	}
+
+	meta := first.GetMetadata()
+	if meta == nil {
+		return status.Errorf(codes.InvalidArgument, "first chunk must contain metadata")
+	}
+
+	pipeReader, pipeWriter := io.Pipe()
+	go func() {
+		defer pipeWriter.Close()
+		for {
+			chunk, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				_ = pipeWriter.CloseWithError(err)
+				return
+			}
+			if data := chunk.GetChunk(); len(data) > 0 {
+				if _, err := pipeWriter.Write(data); err != nil {
+					return
+				}
+			}
+		}
+	}()
+
+	info, err := h.svc.UploadBackup(stream.Context(), meta.GetServiceName(), meta.GetFileName(), meta.GetRestoreImmediately(), pipeReader)
+	if err != nil {
+		return status.Errorf(codes.Internal, "upload backup: %v", err)
+	}
+
+	return stream.SendAndClose(&pb.UploadBackupResponse{
+		Backup:   backupToProto(info),
+		Restored: meta.GetRestoreImmediately(),
+	})
+}
+
+func backupToProto(b *domain.BackupInfo) *pb.BackupInfo {
+	if b == nil {
+		return nil
+	}
+	return &pb.BackupInfo{
+		BackupId:    b.BackupID,
+		ServiceName: b.ServiceName,
+		FileName:    b.FileName,
+		SizeBytes:   b.SizeBytes,
+		BackupType:  pb.BackupType(b.BackupType),
+		Status:      pb.BackupStatus(b.Status),
+		Checksum:    b.Checksum,
+		CreatedAt:   timestamppb.New(b.CreatedAt),
+	}
+}
+
+
+
+// ToggleServiceAutoBackup включает или выключает авторасписание для сервиса.
+func (h *DeploymentHandler) ToggleServiceAutoBackup(ctx context.Context, req *pb.ToggleServiceAutoBackupRequest) (*pb.ToggleServiceAutoBackupResponse, error) {
+	if req.ServiceName == "" {
+		return nil, status.Error(codes.InvalidArgument, "service_name required")
+	}
+
+	err := h.svc.ToggleServiceAutoBackup(req.ServiceName, req.Enabled)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "toggle auto backup: %v", err)
+	}
+
+	return &pb.ToggleServiceAutoBackupResponse{Success: true}, nil
+}

@@ -215,6 +215,10 @@ func (m *mockRuntime) CopyToContainer(ctx context.Context, containerID, targetDi
 	return nil
 }
 
+func (m *mockRuntime) Exec(ctx context.Context, containerID string, cmd []string, stdin io.Reader, stdout, stderr io.Writer, env []string) (int, error) {
+	return 0, nil
+}
+
 func (m *mockRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
 	return &domain.ContainerDetails{
 		ID:            containerID,

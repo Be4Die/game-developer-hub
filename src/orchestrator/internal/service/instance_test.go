@@ -404,6 +404,24 @@ func (m *instMockNodeClient) RemoveService(ctx context.Context, nodeAddress, api
 func (m *instMockNodeClient) ListServices(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
 	return nil, nil
 }
+func (m *instMockNodeClient) CreateServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName string) (*domain.ServiceBackup, error) {
+	return &domain.ServiceBackup{}, nil
+}
+func (m *instMockNodeClient) ListServiceBackups(ctx context.Context, nodeAddress, apiKey, serviceName string) ([]*domain.ServiceBackup, error) {
+	return nil, nil
+}
+func (m *instMockNodeClient) RestoreServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error {
+	return nil
+}
+func (m *instMockNodeClient) DeleteServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error {
+	return nil
+}
+func (m *instMockNodeClient) DownloadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) (io.ReadCloser, error) {
+	return nil, nil
+}
+func (m *instMockNodeClient) UploadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) {
+	return &domain.ServiceBackup{}, nil
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -1264,3 +1282,5 @@ func TestInstanceService_StartInstance_InjectsDatabaseEnv(t *testing.T) {
 		t.Errorf("expected REDIS_URL to be injected, got %s", capturedEnvVars["REDIS_URL"])
 	}
 }
+
+func (m *instMockNodeClient) ToggleServiceAutoBackup(ctx context.Context, address, apiKey, serviceName string, enabled bool) error { return nil }

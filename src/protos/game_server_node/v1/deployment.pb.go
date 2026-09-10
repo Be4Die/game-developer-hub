@@ -133,6 +133,113 @@ func (ServiceType) EnumDescriptor() ([]byte, []int) {
 	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{1}
 }
 
+type BackupType int32
+
+const (
+	BackupType_BACKUP_TYPE_UNSPECIFIED BackupType = 0
+	BackupType_BACKUP_TYPE_MANUAL      BackupType = 1
+	BackupType_BACKUP_TYPE_UPLOADED    BackupType = 2
+	BackupType_BACKUP_TYPE_SCHEDULED   BackupType = 3
+)
+
+// Enum value maps for BackupType.
+var (
+	BackupType_name = map[int32]string{
+		0: "BACKUP_TYPE_UNSPECIFIED",
+		1: "BACKUP_TYPE_MANUAL",
+		2: "BACKUP_TYPE_UPLOADED",
+		3: "BACKUP_TYPE_SCHEDULED",
+	}
+	BackupType_value = map[string]int32{
+		"BACKUP_TYPE_UNSPECIFIED": 0,
+		"BACKUP_TYPE_MANUAL":      1,
+		"BACKUP_TYPE_UPLOADED":    2,
+		"BACKUP_TYPE_SCHEDULED":   3,
+	}
+)
+
+func (x BackupType) Enum() *BackupType {
+	p := new(BackupType)
+	*p = x
+	return p
+}
+
+func (x BackupType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BackupType) Descriptor() protoreflect.EnumDescriptor {
+	return file_game_server_node_v1_deployment_proto_enumTypes[2].Descriptor()
+}
+
+func (BackupType) Type() protoreflect.EnumType {
+	return &file_game_server_node_v1_deployment_proto_enumTypes[2]
+}
+
+func (x BackupType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BackupType.Descriptor instead.
+func (BackupType) EnumDescriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{2}
+}
+
+type BackupStatus int32
+
+const (
+	BackupStatus_BACKUP_STATUS_UNSPECIFIED BackupStatus = 0
+	BackupStatus_BACKUP_STATUS_CREATING    BackupStatus = 1
+	BackupStatus_BACKUP_STATUS_READY       BackupStatus = 2
+	BackupStatus_BACKUP_STATUS_FAILED      BackupStatus = 3
+	BackupStatus_BACKUP_STATUS_RESTORING   BackupStatus = 4
+)
+
+// Enum value maps for BackupStatus.
+var (
+	BackupStatus_name = map[int32]string{
+		0: "BACKUP_STATUS_UNSPECIFIED",
+		1: "BACKUP_STATUS_CREATING",
+		2: "BACKUP_STATUS_READY",
+		3: "BACKUP_STATUS_FAILED",
+		4: "BACKUP_STATUS_RESTORING",
+	}
+	BackupStatus_value = map[string]int32{
+		"BACKUP_STATUS_UNSPECIFIED": 0,
+		"BACKUP_STATUS_CREATING":    1,
+		"BACKUP_STATUS_READY":       2,
+		"BACKUP_STATUS_FAILED":      3,
+		"BACKUP_STATUS_RESTORING":   4,
+	}
+)
+
+func (x BackupStatus) Enum() *BackupStatus {
+	p := new(BackupStatus)
+	*p = x
+	return p
+}
+
+func (x BackupStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BackupStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_game_server_node_v1_deployment_proto_enumTypes[3].Descriptor()
+}
+
+func (BackupStatus) Type() protoreflect.EnumType {
+	return &file_game_server_node_v1_deployment_proto_enumTypes[3]
+}
+
+func (x BackupStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BackupStatus.Descriptor instead.
+func (BackupStatus) EnumDescriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{3}
+}
+
 type LoadImageRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Payload:
@@ -1613,16 +1720,17 @@ func (*RemoveServiceResponse) Descriptor() ([]byte, []int) {
 }
 
 type ServiceInfo struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Name            string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ServiceType     ServiceType            `protobuf:"varint,2,opt,name=service_type,json=serviceType,proto3,enum=game_server_node.v1.ServiceType" json:"service_type,omitempty"`
-	ContainerId     string                 `protobuf:"bytes,3,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
-	Status          string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	HostPort        uint32                 `protobuf:"varint,5,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
-	VolumePath      string                 `protobuf:"bytes,6,opt,name=volume_path,json=volumePath,proto3" json:"volume_path,omitempty"`
-	VolumeSizeBytes uint64                 `protobuf:"varint,7,opt,name=volume_size_bytes,json=volumeSizeBytes,proto3" json:"volume_size_bytes,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ServiceType       ServiceType            `protobuf:"varint,2,opt,name=service_type,json=serviceType,proto3,enum=game_server_node.v1.ServiceType" json:"service_type,omitempty"`
+	ContainerId       string                 `protobuf:"bytes,3,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
+	Status            string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	HostPort          uint32                 `protobuf:"varint,5,opt,name=host_port,json=hostPort,proto3" json:"host_port,omitempty"`
+	VolumePath        string                 `protobuf:"bytes,6,opt,name=volume_path,json=volumePath,proto3" json:"volume_path,omitempty"`
+	VolumeSizeBytes   uint64                 `protobuf:"varint,7,opt,name=volume_size_bytes,json=volumeSizeBytes,proto3" json:"volume_size_bytes,omitempty"`
+	AutoBackupEnabled bool                   `protobuf:"varint,8,opt,name=auto_backup_enabled,json=autoBackupEnabled,proto3" json:"auto_backup_enabled,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ServiceInfo) Reset() {
@@ -1704,6 +1812,13 @@ func (x *ServiceInfo) GetVolumeSizeBytes() uint64 {
 	return 0
 }
 
+func (x *ServiceInfo) GetAutoBackupEnabled() bool {
+	if x != nil {
+		return x.AutoBackupEnabled
+	}
+	return false
+}
+
 type ListServicesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1782,6 +1897,860 @@ func (x *ListServicesResponse) GetServices() []*ServiceInfo {
 		return x.Services
 	}
 	return nil
+}
+
+type BackupInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BackupId      string                 `protobuf:"bytes,1,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	FileName      string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	SizeBytes     uint64                 `protobuf:"varint,4,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	BackupType    BackupType             `protobuf:"varint,5,opt,name=backup_type,json=backupType,proto3,enum=game_server_node.v1.BackupType" json:"backup_type,omitempty"`
+	Status        BackupStatus           `protobuf:"varint,6,opt,name=status,proto3,enum=game_server_node.v1.BackupStatus" json:"status,omitempty"`
+	Checksum      string                 `protobuf:"bytes,7,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BackupInfo) Reset() {
+	*x = BackupInfo{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BackupInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BackupInfo) ProtoMessage() {}
+
+func (x *BackupInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BackupInfo.ProtoReflect.Descriptor instead.
+func (*BackupInfo) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *BackupInfo) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+func (x *BackupInfo) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *BackupInfo) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *BackupInfo) GetSizeBytes() uint64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *BackupInfo) GetBackupType() BackupType {
+	if x != nil {
+		return x.BackupType
+	}
+	return BackupType_BACKUP_TYPE_UNSPECIFIED
+}
+
+func (x *BackupInfo) GetStatus() BackupStatus {
+	if x != nil {
+		return x.Status
+	}
+	return BackupStatus_BACKUP_STATUS_UNSPECIFIED
+}
+
+func (x *BackupInfo) GetChecksum() string {
+	if x != nil {
+		return x.Checksum
+	}
+	return ""
+}
+
+func (x *BackupInfo) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type CreateBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBackupRequest) Reset() {
+	*x = CreateBackupRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBackupRequest) ProtoMessage() {}
+
+func (x *CreateBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBackupRequest.ProtoReflect.Descriptor instead.
+func (*CreateBackupRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *CreateBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+type CreateBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backup        *BackupInfo            `protobuf:"bytes,1,opt,name=backup,proto3" json:"backup,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBackupResponse) Reset() {
+	*x = CreateBackupResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBackupResponse) ProtoMessage() {}
+
+func (x *CreateBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBackupResponse.ProtoReflect.Descriptor instead.
+func (*CreateBackupResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *CreateBackupResponse) GetBackup() *BackupInfo {
+	if x != nil {
+		return x.Backup
+	}
+	return nil
+}
+
+type ListBackupsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBackupsRequest) Reset() {
+	*x = ListBackupsRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBackupsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBackupsRequest) ProtoMessage() {}
+
+func (x *ListBackupsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBackupsRequest.ProtoReflect.Descriptor instead.
+func (*ListBackupsRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ListBackupsRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+type ListBackupsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backups       []*BackupInfo          `protobuf:"bytes,1,rep,name=backups,proto3" json:"backups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBackupsResponse) Reset() {
+	*x = ListBackupsResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBackupsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBackupsResponse) ProtoMessage() {}
+
+func (x *ListBackupsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBackupsResponse.ProtoReflect.Descriptor instead.
+func (*ListBackupsResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *ListBackupsResponse) GetBackups() []*BackupInfo {
+	if x != nil {
+		return x.Backups
+	}
+	return nil
+}
+
+type RestoreBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,2,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreBackupRequest) Reset() {
+	*x = RestoreBackupRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreBackupRequest) ProtoMessage() {}
+
+func (x *RestoreBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreBackupRequest.ProtoReflect.Descriptor instead.
+func (*RestoreBackupRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *RestoreBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *RestoreBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type RestoreBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RestoreBackupResponse) Reset() {
+	*x = RestoreBackupResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RestoreBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RestoreBackupResponse) ProtoMessage() {}
+
+func (x *RestoreBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RestoreBackupResponse.ProtoReflect.Descriptor instead.
+func (*RestoreBackupResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *RestoreBackupResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *RestoreBackupResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type DeleteBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,2,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteBackupRequest) Reset() {
+	*x = DeleteBackupRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteBackupRequest) ProtoMessage() {}
+
+func (x *DeleteBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteBackupRequest.ProtoReflect.Descriptor instead.
+func (*DeleteBackupRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *DeleteBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *DeleteBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type DeleteBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteBackupResponse) Reset() {
+	*x = DeleteBackupResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteBackupResponse) ProtoMessage() {}
+
+func (x *DeleteBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteBackupResponse.ProtoReflect.Descriptor instead.
+func (*DeleteBackupResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{36}
+}
+
+type DownloadBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,2,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DownloadBackupRequest) Reset() {
+	*x = DownloadBackupRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DownloadBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DownloadBackupRequest) ProtoMessage() {}
+
+func (x *DownloadBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DownloadBackupRequest.ProtoReflect.Descriptor instead.
+func (*DownloadBackupRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *DownloadBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *DownloadBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type BackupChunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chunk         []byte                 `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BackupChunk) Reset() {
+	*x = BackupChunk{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BackupChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BackupChunk) ProtoMessage() {}
+
+func (x *BackupChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BackupChunk.ProtoReflect.Descriptor instead.
+func (*BackupChunk) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *BackupChunk) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+type UploadBackupChunk struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*UploadBackupChunk_Metadata
+	//	*UploadBackupChunk_Chunk
+	Payload       isUploadBackupChunk_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadBackupChunk) Reset() {
+	*x = UploadBackupChunk{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadBackupChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadBackupChunk) ProtoMessage() {}
+
+func (x *UploadBackupChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadBackupChunk.ProtoReflect.Descriptor instead.
+func (*UploadBackupChunk) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *UploadBackupChunk) GetPayload() isUploadBackupChunk_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *UploadBackupChunk) GetMetadata() *UploadBackupMetadata {
+	if x != nil {
+		if x, ok := x.Payload.(*UploadBackupChunk_Metadata); ok {
+			return x.Metadata
+		}
+	}
+	return nil
+}
+
+func (x *UploadBackupChunk) GetChunk() []byte {
+	if x != nil {
+		if x, ok := x.Payload.(*UploadBackupChunk_Chunk); ok {
+			return x.Chunk
+		}
+	}
+	return nil
+}
+
+type isUploadBackupChunk_Payload interface {
+	isUploadBackupChunk_Payload()
+}
+
+type UploadBackupChunk_Metadata struct {
+	Metadata *UploadBackupMetadata `protobuf:"bytes,1,opt,name=metadata,proto3,oneof"`
+}
+
+type UploadBackupChunk_Chunk struct {
+	Chunk []byte `protobuf:"bytes,2,opt,name=chunk,proto3,oneof"`
+}
+
+func (*UploadBackupChunk_Metadata) isUploadBackupChunk_Payload() {}
+
+func (*UploadBackupChunk_Chunk) isUploadBackupChunk_Payload() {}
+
+type UploadBackupMetadata struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName        string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	FileName           string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	RestoreImmediately bool                   `protobuf:"varint,3,opt,name=restore_immediately,json=restoreImmediately,proto3" json:"restore_immediately,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *UploadBackupMetadata) Reset() {
+	*x = UploadBackupMetadata{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadBackupMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadBackupMetadata) ProtoMessage() {}
+
+func (x *UploadBackupMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadBackupMetadata.ProtoReflect.Descriptor instead.
+func (*UploadBackupMetadata) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *UploadBackupMetadata) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *UploadBackupMetadata) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *UploadBackupMetadata) GetRestoreImmediately() bool {
+	if x != nil {
+		return x.RestoreImmediately
+	}
+	return false
+}
+
+type UploadBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backup        *BackupInfo            `protobuf:"bytes,1,opt,name=backup,proto3" json:"backup,omitempty"`
+	Restored      bool                   `protobuf:"varint,2,opt,name=restored,proto3" json:"restored,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UploadBackupResponse) Reset() {
+	*x = UploadBackupResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UploadBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadBackupResponse) ProtoMessage() {}
+
+func (x *UploadBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadBackupResponse.ProtoReflect.Descriptor instead.
+func (*UploadBackupResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *UploadBackupResponse) GetBackup() *BackupInfo {
+	if x != nil {
+		return x.Backup
+	}
+	return nil
+}
+
+func (x *UploadBackupResponse) GetRestored() bool {
+	if x != nil {
+		return x.Restored
+	}
+	return false
+}
+
+type ToggleServiceAutoBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName   string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleServiceAutoBackupRequest) Reset() {
+	*x = ToggleServiceAutoBackupRequest{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleServiceAutoBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleServiceAutoBackupRequest) ProtoMessage() {}
+
+func (x *ToggleServiceAutoBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleServiceAutoBackupRequest.ProtoReflect.Descriptor instead.
+func (*ToggleServiceAutoBackupRequest) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ToggleServiceAutoBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *ToggleServiceAutoBackupRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type ToggleServiceAutoBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleServiceAutoBackupResponse) Reset() {
+	*x = ToggleServiceAutoBackupResponse{}
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleServiceAutoBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleServiceAutoBackupResponse) ProtoMessage() {}
+
+func (x *ToggleServiceAutoBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_server_node_v1_deployment_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleServiceAutoBackupResponse.ProtoReflect.Descriptor instead.
+func (*ToggleServiceAutoBackupResponse) Descriptor() ([]byte, []int) {
+	return file_game_server_node_v1_deployment_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ToggleServiceAutoBackupResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
 }
 
 var File_game_server_node_v1_deployment_proto protoreflect.FileDescriptor
@@ -1902,7 +2871,7 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\x14RemoveServiceRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
 	"\rdelete_volume\x18\x02 \x01(\bR\fdeleteVolume\"\x17\n" +
-	"\x15RemoveServiceResponse\"\x8b\x02\n" +
+	"\x15RemoveServiceResponse\"\xbb\x02\n" +
 	"\vServiceInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12C\n" +
 	"\fservice_type\x18\x02 \x01(\x0e2 .game_server_node.v1.ServiceTypeR\vserviceType\x12!\n" +
@@ -1911,10 +2880,63 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\thost_port\x18\x05 \x01(\rR\bhostPort\x12\x1f\n" +
 	"\vvolume_path\x18\x06 \x01(\tR\n" +
 	"volumePath\x12*\n" +
-	"\x11volume_size_bytes\x18\a \x01(\x04R\x0fvolumeSizeBytes\"\x15\n" +
+	"\x11volume_size_bytes\x18\a \x01(\x04R\x0fvolumeSizeBytes\x12.\n" +
+	"\x13auto_backup_enabled\x18\b \x01(\bR\x11autoBackupEnabled\"\x15\n" +
 	"\x13ListServicesRequest\"T\n" +
 	"\x14ListServicesResponse\x12<\n" +
-	"\bservices\x18\x01 \x03(\v2 .game_server_node.v1.ServiceInfoR\bservices*U\n" +
+	"\bservices\x18\x01 \x03(\v2 .game_server_node.v1.ServiceInfoR\bservices\"\xdc\x02\n" +
+	"\n" +
+	"BackupInfo\x12\x1b\n" +
+	"\tbackup_id\x18\x01 \x01(\tR\bbackupId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x04 \x01(\x04R\tsizeBytes\x12@\n" +
+	"\vbackup_type\x18\x05 \x01(\x0e2\x1f.game_server_node.v1.BackupTypeR\n" +
+	"backupType\x129\n" +
+	"\x06status\x18\x06 \x01(\x0e2!.game_server_node.v1.BackupStatusR\x06status\x12\x1a\n" +
+	"\bchecksum\x18\a \x01(\tR\bchecksum\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"8\n" +
+	"\x13CreateBackupRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\"O\n" +
+	"\x14CreateBackupResponse\x127\n" +
+	"\x06backup\x18\x01 \x01(\v2\x1f.game_server_node.v1.BackupInfoR\x06backup\"7\n" +
+	"\x12ListBackupsRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\"P\n" +
+	"\x13ListBackupsResponse\x129\n" +
+	"\abackups\x18\x01 \x03(\v2\x1f.game_server_node.v1.BackupInfoR\abackups\"V\n" +
+	"\x14RestoreBackupRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x02 \x01(\tR\bbackupId\"K\n" +
+	"\x15RestoreBackupResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"U\n" +
+	"\x13DeleteBackupRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x02 \x01(\tR\bbackupId\"\x16\n" +
+	"\x14DeleteBackupResponse\"W\n" +
+	"\x15DownloadBackupRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x02 \x01(\tR\bbackupId\"#\n" +
+	"\vBackupChunk\x12\x14\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\"\x7f\n" +
+	"\x11UploadBackupChunk\x12G\n" +
+	"\bmetadata\x18\x01 \x01(\v2).game_server_node.v1.UploadBackupMetadataH\x00R\bmetadata\x12\x16\n" +
+	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\t\n" +
+	"\apayload\"\x87\x01\n" +
+	"\x14UploadBackupMetadata\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12/\n" +
+	"\x13restore_immediately\x18\x03 \x01(\bR\x12restoreImmediately\"k\n" +
+	"\x14UploadBackupResponse\x127\n" +
+	"\x06backup\x18\x01 \x01(\v2\x1f.game_server_node.v1.BackupInfoR\x06backup\x12\x1a\n" +
+	"\brestored\x18\x02 \x01(\bR\brestored\"]\n" +
+	"\x1eToggleServiceAutoBackupRequest\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\";\n" +
+	"\x1fToggleServiceAutoBackupResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess*U\n" +
 	"\tLogSource\x12\x1a\n" +
 	"\x16LOG_SOURCE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11LOG_SOURCE_STDOUT\x10\x01\x12\x15\n" +
@@ -1926,7 +2948,19 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"\x12SERVICE_TYPE_MYSQL\x10\x03\x12\x17\n" +
 	"\x13SERVICE_TYPE_VOLUME\x10\x05\x12\x18\n" +
 	"\x14SERVICE_TYPE_ADMINER\x10\x06\x12\x18\n" +
-	"\x14SERVICE_TYPE_PGADMIN\x10\a\"\x04\b\x04\x10\x042\x8b\t\n" +
+	"\x14SERVICE_TYPE_PGADMIN\x10\a\"\x04\b\x04\x10\x04*v\n" +
+	"\n" +
+	"BackupType\x12\x1b\n" +
+	"\x17BACKUP_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12BACKUP_TYPE_MANUAL\x10\x01\x12\x18\n" +
+	"\x14BACKUP_TYPE_UPLOADED\x10\x02\x12\x19\n" +
+	"\x15BACKUP_TYPE_SCHEDULED\x10\x03*\x99\x01\n" +
+	"\fBackupStatus\x12\x1d\n" +
+	"\x19BACKUP_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16BACKUP_STATUS_CREATING\x10\x01\x12\x17\n" +
+	"\x13BACKUP_STATUS_READY\x10\x02\x12\x18\n" +
+	"\x14BACKUP_STATUS_FAILED\x10\x03\x12\x1b\n" +
+	"\x17BACKUP_STATUS_RESTORING\x10\x042\xed\x0e\n" +
 	"\x11DeploymentService\x12\\\n" +
 	"\tLoadImage\x12%.game_server_node.v1.LoadImageRequest\x1a&.game_server_node.v1.LoadImageResponse(\x01\x12_\n" +
 	"\n" +
@@ -1940,7 +2974,14 @@ const file_game_server_node_v1_deployment_proto_rawDesc = "" +
 	"StreamLogs\x12&.game_server_node.v1.StreamLogsRequest\x1a'.game_server_node.v1.StreamLogsResponse0\x01\x12f\n" +
 	"\rDeployService\x12).game_server_node.v1.DeployServiceRequest\x1a*.game_server_node.v1.DeployServiceResponse\x12f\n" +
 	"\rRemoveService\x12).game_server_node.v1.RemoveServiceRequest\x1a*.game_server_node.v1.RemoveServiceResponse\x12c\n" +
-	"\fListServices\x12(.game_server_node.v1.ListServicesRequest\x1a).game_server_node.v1.ListServicesResponseB\xe3\x01\n" +
+	"\fListServices\x12(.game_server_node.v1.ListServicesRequest\x1a).game_server_node.v1.ListServicesResponse\x12c\n" +
+	"\fCreateBackup\x12(.game_server_node.v1.CreateBackupRequest\x1a).game_server_node.v1.CreateBackupResponse\x12`\n" +
+	"\vListBackups\x12'.game_server_node.v1.ListBackupsRequest\x1a(.game_server_node.v1.ListBackupsResponse\x12f\n" +
+	"\rRestoreBackup\x12).game_server_node.v1.RestoreBackupRequest\x1a*.game_server_node.v1.RestoreBackupResponse\x12c\n" +
+	"\fDeleteBackup\x12(.game_server_node.v1.DeleteBackupRequest\x1a).game_server_node.v1.DeleteBackupResponse\x12`\n" +
+	"\x0eDownloadBackup\x12*.game_server_node.v1.DownloadBackupRequest\x1a .game_server_node.v1.BackupChunk0\x01\x12c\n" +
+	"\fUploadBackup\x12&.game_server_node.v1.UploadBackupChunk\x1a).game_server_node.v1.UploadBackupResponse(\x01\x12\x84\x01\n" +
+	"\x17ToggleServiceAutoBackup\x123.game_server_node.v1.ToggleServiceAutoBackupRequest\x1a4.game_server_node.v1.ToggleServiceAutoBackupResponseB\xe3\x01\n" +
 	"\x17com.game_server_node.v1B\x0fDeploymentProtoP\x01ZRgithub.com/Be4Die/game-developer-hub/protos/game_server_node/v1;game_server_nodev1\xa2\x02\x03GXX\xaa\x02\x11GameServerNode.V1\xca\x02\x11GameServerNode\\V1\xe2\x02\x1dGameServerNode\\V1\\GPBMetadata\xea\x02\x12GameServerNode::V1b\x06proto3"
 
 var (
@@ -1955,88 +2996,127 @@ func file_game_server_node_v1_deployment_proto_rawDescGZIP() []byte {
 	return file_game_server_node_v1_deployment_proto_rawDescData
 }
 
-var file_game_server_node_v1_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_game_server_node_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_game_server_node_v1_deployment_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_game_server_node_v1_deployment_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
 var file_game_server_node_v1_deployment_proto_goTypes = []any{
-	(LogSource)(0),                       // 0: game_server_node.v1.LogSource
-	(ServiceType)(0),                     // 1: game_server_node.v1.ServiceType
-	(*LoadImageRequest)(nil),             // 2: game_server_node.v1.LoadImageRequest
-	(*ImageMetadata)(nil),                // 3: game_server_node.v1.ImageMetadata
-	(*LoadImageResponse)(nil),            // 4: game_server_node.v1.LoadImageResponse
-	(*BuildImageRequest)(nil),            // 5: game_server_node.v1.BuildImageRequest
-	(*BuildImageMetadata)(nil),           // 6: game_server_node.v1.BuildImageMetadata
-	(*BuildImageResponse)(nil),           // 7: game_server_node.v1.BuildImageResponse
-	(*PortAllocation)(nil),               // 8: game_server_node.v1.PortAllocation
-	(*PortRange)(nil),                    // 9: game_server_node.v1.PortRange
-	(*ResourceLimits)(nil),               // 10: game_server_node.v1.ResourceLimits
-	(*StartInstanceRequest)(nil),         // 11: game_server_node.v1.StartInstanceRequest
-	(*StartInstanceResponse)(nil),        // 12: game_server_node.v1.StartInstanceResponse
-	(*StopInstanceRequest)(nil),          // 13: game_server_node.v1.StopInstanceRequest
-	(*StopInstanceResponse)(nil),         // 14: game_server_node.v1.StopInstanceResponse
-	(*DeleteInstanceRequest)(nil),        // 15: game_server_node.v1.DeleteInstanceRequest
-	(*DeleteInstanceResponse)(nil),       // 16: game_server_node.v1.DeleteInstanceResponse
-	(*StreamLogsRequest)(nil),            // 17: game_server_node.v1.StreamLogsRequest
-	(*RestartInstanceRequest)(nil),       // 18: game_server_node.v1.RestartInstanceRequest
-	(*RestartInstanceResponse)(nil),      // 19: game_server_node.v1.RestartInstanceResponse
-	(*StartStoppedInstanceRequest)(nil),  // 20: game_server_node.v1.StartStoppedInstanceRequest
-	(*StartStoppedInstanceResponse)(nil), // 21: game_server_node.v1.StartStoppedInstanceResponse
-	(*StreamLogsResponse)(nil),           // 22: game_server_node.v1.StreamLogsResponse
-	(*DeployServiceRequest)(nil),         // 23: game_server_node.v1.DeployServiceRequest
-	(*DeployServiceResponse)(nil),        // 24: game_server_node.v1.DeployServiceResponse
-	(*RemoveServiceRequest)(nil),         // 25: game_server_node.v1.RemoveServiceRequest
-	(*RemoveServiceResponse)(nil),        // 26: game_server_node.v1.RemoveServiceResponse
-	(*ServiceInfo)(nil),                  // 27: game_server_node.v1.ServiceInfo
-	(*ListServicesRequest)(nil),          // 28: game_server_node.v1.ListServicesRequest
-	(*ListServicesResponse)(nil),         // 29: game_server_node.v1.ListServicesResponse
-	nil,                                  // 30: game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
-	nil,                                  // 31: game_server_node.v1.StartInstanceRequest.EnvVarsEntry
-	nil,                                  // 32: game_server_node.v1.DeployServiceRequest.EnvVarsEntry
-	(Protocol)(0),                        // 33: game_server_node.v1.Protocol
-	(*timestamppb.Timestamp)(nil),        // 34: google.protobuf.Timestamp
+	(LogSource)(0),                          // 0: game_server_node.v1.LogSource
+	(ServiceType)(0),                        // 1: game_server_node.v1.ServiceType
+	(BackupType)(0),                         // 2: game_server_node.v1.BackupType
+	(BackupStatus)(0),                       // 3: game_server_node.v1.BackupStatus
+	(*LoadImageRequest)(nil),                // 4: game_server_node.v1.LoadImageRequest
+	(*ImageMetadata)(nil),                   // 5: game_server_node.v1.ImageMetadata
+	(*LoadImageResponse)(nil),               // 6: game_server_node.v1.LoadImageResponse
+	(*BuildImageRequest)(nil),               // 7: game_server_node.v1.BuildImageRequest
+	(*BuildImageMetadata)(nil),              // 8: game_server_node.v1.BuildImageMetadata
+	(*BuildImageResponse)(nil),              // 9: game_server_node.v1.BuildImageResponse
+	(*PortAllocation)(nil),                  // 10: game_server_node.v1.PortAllocation
+	(*PortRange)(nil),                       // 11: game_server_node.v1.PortRange
+	(*ResourceLimits)(nil),                  // 12: game_server_node.v1.ResourceLimits
+	(*StartInstanceRequest)(nil),            // 13: game_server_node.v1.StartInstanceRequest
+	(*StartInstanceResponse)(nil),           // 14: game_server_node.v1.StartInstanceResponse
+	(*StopInstanceRequest)(nil),             // 15: game_server_node.v1.StopInstanceRequest
+	(*StopInstanceResponse)(nil),            // 16: game_server_node.v1.StopInstanceResponse
+	(*DeleteInstanceRequest)(nil),           // 17: game_server_node.v1.DeleteInstanceRequest
+	(*DeleteInstanceResponse)(nil),          // 18: game_server_node.v1.DeleteInstanceResponse
+	(*StreamLogsRequest)(nil),               // 19: game_server_node.v1.StreamLogsRequest
+	(*RestartInstanceRequest)(nil),          // 20: game_server_node.v1.RestartInstanceRequest
+	(*RestartInstanceResponse)(nil),         // 21: game_server_node.v1.RestartInstanceResponse
+	(*StartStoppedInstanceRequest)(nil),     // 22: game_server_node.v1.StartStoppedInstanceRequest
+	(*StartStoppedInstanceResponse)(nil),    // 23: game_server_node.v1.StartStoppedInstanceResponse
+	(*StreamLogsResponse)(nil),              // 24: game_server_node.v1.StreamLogsResponse
+	(*DeployServiceRequest)(nil),            // 25: game_server_node.v1.DeployServiceRequest
+	(*DeployServiceResponse)(nil),           // 26: game_server_node.v1.DeployServiceResponse
+	(*RemoveServiceRequest)(nil),            // 27: game_server_node.v1.RemoveServiceRequest
+	(*RemoveServiceResponse)(nil),           // 28: game_server_node.v1.RemoveServiceResponse
+	(*ServiceInfo)(nil),                     // 29: game_server_node.v1.ServiceInfo
+	(*ListServicesRequest)(nil),             // 30: game_server_node.v1.ListServicesRequest
+	(*ListServicesResponse)(nil),            // 31: game_server_node.v1.ListServicesResponse
+	(*BackupInfo)(nil),                      // 32: game_server_node.v1.BackupInfo
+	(*CreateBackupRequest)(nil),             // 33: game_server_node.v1.CreateBackupRequest
+	(*CreateBackupResponse)(nil),            // 34: game_server_node.v1.CreateBackupResponse
+	(*ListBackupsRequest)(nil),              // 35: game_server_node.v1.ListBackupsRequest
+	(*ListBackupsResponse)(nil),             // 36: game_server_node.v1.ListBackupsResponse
+	(*RestoreBackupRequest)(nil),            // 37: game_server_node.v1.RestoreBackupRequest
+	(*RestoreBackupResponse)(nil),           // 38: game_server_node.v1.RestoreBackupResponse
+	(*DeleteBackupRequest)(nil),             // 39: game_server_node.v1.DeleteBackupRequest
+	(*DeleteBackupResponse)(nil),            // 40: game_server_node.v1.DeleteBackupResponse
+	(*DownloadBackupRequest)(nil),           // 41: game_server_node.v1.DownloadBackupRequest
+	(*BackupChunk)(nil),                     // 42: game_server_node.v1.BackupChunk
+	(*UploadBackupChunk)(nil),               // 43: game_server_node.v1.UploadBackupChunk
+	(*UploadBackupMetadata)(nil),            // 44: game_server_node.v1.UploadBackupMetadata
+	(*UploadBackupResponse)(nil),            // 45: game_server_node.v1.UploadBackupResponse
+	(*ToggleServiceAutoBackupRequest)(nil),  // 46: game_server_node.v1.ToggleServiceAutoBackupRequest
+	(*ToggleServiceAutoBackupResponse)(nil), // 47: game_server_node.v1.ToggleServiceAutoBackupResponse
+	nil,                                     // 48: game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
+	nil,                                     // 49: game_server_node.v1.StartInstanceRequest.EnvVarsEntry
+	nil,                                     // 50: game_server_node.v1.DeployServiceRequest.EnvVarsEntry
+	(Protocol)(0),                           // 51: game_server_node.v1.Protocol
+	(*timestamppb.Timestamp)(nil),           // 52: google.protobuf.Timestamp
 }
 var file_game_server_node_v1_deployment_proto_depIdxs = []int32{
-	3,  // 0: game_server_node.v1.LoadImageRequest.metadata:type_name -> game_server_node.v1.ImageMetadata
-	6,  // 1: game_server_node.v1.BuildImageRequest.metadata:type_name -> game_server_node.v1.BuildImageMetadata
-	9,  // 2: game_server_node.v1.PortAllocation.range:type_name -> game_server_node.v1.PortRange
-	33, // 3: game_server_node.v1.StartInstanceRequest.protocol:type_name -> game_server_node.v1.Protocol
-	8,  // 4: game_server_node.v1.StartInstanceRequest.port_allocation:type_name -> game_server_node.v1.PortAllocation
-	30, // 5: game_server_node.v1.StartInstanceRequest.developer_payload:type_name -> game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
-	31, // 6: game_server_node.v1.StartInstanceRequest.env_vars:type_name -> game_server_node.v1.StartInstanceRequest.EnvVarsEntry
-	10, // 7: game_server_node.v1.StartInstanceRequest.resource_limits:type_name -> game_server_node.v1.ResourceLimits
-	34, // 8: game_server_node.v1.StreamLogsRequest.since:type_name -> google.protobuf.Timestamp
-	34, // 9: game_server_node.v1.StreamLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
+	5,  // 0: game_server_node.v1.LoadImageRequest.metadata:type_name -> game_server_node.v1.ImageMetadata
+	8,  // 1: game_server_node.v1.BuildImageRequest.metadata:type_name -> game_server_node.v1.BuildImageMetadata
+	11, // 2: game_server_node.v1.PortAllocation.range:type_name -> game_server_node.v1.PortRange
+	51, // 3: game_server_node.v1.StartInstanceRequest.protocol:type_name -> game_server_node.v1.Protocol
+	10, // 4: game_server_node.v1.StartInstanceRequest.port_allocation:type_name -> game_server_node.v1.PortAllocation
+	48, // 5: game_server_node.v1.StartInstanceRequest.developer_payload:type_name -> game_server_node.v1.StartInstanceRequest.DeveloperPayloadEntry
+	49, // 6: game_server_node.v1.StartInstanceRequest.env_vars:type_name -> game_server_node.v1.StartInstanceRequest.EnvVarsEntry
+	12, // 7: game_server_node.v1.StartInstanceRequest.resource_limits:type_name -> game_server_node.v1.ResourceLimits
+	52, // 8: game_server_node.v1.StreamLogsRequest.since:type_name -> google.protobuf.Timestamp
+	52, // 9: game_server_node.v1.StreamLogsResponse.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 10: game_server_node.v1.StreamLogsResponse.source:type_name -> game_server_node.v1.LogSource
 	1,  // 11: game_server_node.v1.DeployServiceRequest.service_type:type_name -> game_server_node.v1.ServiceType
-	32, // 12: game_server_node.v1.DeployServiceRequest.env_vars:type_name -> game_server_node.v1.DeployServiceRequest.EnvVarsEntry
+	50, // 12: game_server_node.v1.DeployServiceRequest.env_vars:type_name -> game_server_node.v1.DeployServiceRequest.EnvVarsEntry
 	1,  // 13: game_server_node.v1.ServiceInfo.service_type:type_name -> game_server_node.v1.ServiceType
-	27, // 14: game_server_node.v1.ListServicesResponse.services:type_name -> game_server_node.v1.ServiceInfo
-	2,  // 15: game_server_node.v1.DeploymentService.LoadImage:input_type -> game_server_node.v1.LoadImageRequest
-	5,  // 16: game_server_node.v1.DeploymentService.BuildImage:input_type -> game_server_node.v1.BuildImageRequest
-	11, // 17: game_server_node.v1.DeploymentService.StartInstance:input_type -> game_server_node.v1.StartInstanceRequest
-	13, // 18: game_server_node.v1.DeploymentService.StopInstance:input_type -> game_server_node.v1.StopInstanceRequest
-	18, // 19: game_server_node.v1.DeploymentService.RestartInstance:input_type -> game_server_node.v1.RestartInstanceRequest
-	20, // 20: game_server_node.v1.DeploymentService.StartStoppedInstance:input_type -> game_server_node.v1.StartStoppedInstanceRequest
-	15, // 21: game_server_node.v1.DeploymentService.DeleteInstance:input_type -> game_server_node.v1.DeleteInstanceRequest
-	17, // 22: game_server_node.v1.DeploymentService.StreamLogs:input_type -> game_server_node.v1.StreamLogsRequest
-	23, // 23: game_server_node.v1.DeploymentService.DeployService:input_type -> game_server_node.v1.DeployServiceRequest
-	25, // 24: game_server_node.v1.DeploymentService.RemoveService:input_type -> game_server_node.v1.RemoveServiceRequest
-	28, // 25: game_server_node.v1.DeploymentService.ListServices:input_type -> game_server_node.v1.ListServicesRequest
-	4,  // 26: game_server_node.v1.DeploymentService.LoadImage:output_type -> game_server_node.v1.LoadImageResponse
-	7,  // 27: game_server_node.v1.DeploymentService.BuildImage:output_type -> game_server_node.v1.BuildImageResponse
-	12, // 28: game_server_node.v1.DeploymentService.StartInstance:output_type -> game_server_node.v1.StartInstanceResponse
-	14, // 29: game_server_node.v1.DeploymentService.StopInstance:output_type -> game_server_node.v1.StopInstanceResponse
-	19, // 30: game_server_node.v1.DeploymentService.RestartInstance:output_type -> game_server_node.v1.RestartInstanceResponse
-	21, // 31: game_server_node.v1.DeploymentService.StartStoppedInstance:output_type -> game_server_node.v1.StartStoppedInstanceResponse
-	16, // 32: game_server_node.v1.DeploymentService.DeleteInstance:output_type -> game_server_node.v1.DeleteInstanceResponse
-	22, // 33: game_server_node.v1.DeploymentService.StreamLogs:output_type -> game_server_node.v1.StreamLogsResponse
-	24, // 34: game_server_node.v1.DeploymentService.DeployService:output_type -> game_server_node.v1.DeployServiceResponse
-	26, // 35: game_server_node.v1.DeploymentService.RemoveService:output_type -> game_server_node.v1.RemoveServiceResponse
-	29, // 36: game_server_node.v1.DeploymentService.ListServices:output_type -> game_server_node.v1.ListServicesResponse
-	26, // [26:37] is the sub-list for method output_type
-	15, // [15:26] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	29, // 14: game_server_node.v1.ListServicesResponse.services:type_name -> game_server_node.v1.ServiceInfo
+	2,  // 15: game_server_node.v1.BackupInfo.backup_type:type_name -> game_server_node.v1.BackupType
+	3,  // 16: game_server_node.v1.BackupInfo.status:type_name -> game_server_node.v1.BackupStatus
+	52, // 17: game_server_node.v1.BackupInfo.created_at:type_name -> google.protobuf.Timestamp
+	32, // 18: game_server_node.v1.CreateBackupResponse.backup:type_name -> game_server_node.v1.BackupInfo
+	32, // 19: game_server_node.v1.ListBackupsResponse.backups:type_name -> game_server_node.v1.BackupInfo
+	44, // 20: game_server_node.v1.UploadBackupChunk.metadata:type_name -> game_server_node.v1.UploadBackupMetadata
+	32, // 21: game_server_node.v1.UploadBackupResponse.backup:type_name -> game_server_node.v1.BackupInfo
+	4,  // 22: game_server_node.v1.DeploymentService.LoadImage:input_type -> game_server_node.v1.LoadImageRequest
+	7,  // 23: game_server_node.v1.DeploymentService.BuildImage:input_type -> game_server_node.v1.BuildImageRequest
+	13, // 24: game_server_node.v1.DeploymentService.StartInstance:input_type -> game_server_node.v1.StartInstanceRequest
+	15, // 25: game_server_node.v1.DeploymentService.StopInstance:input_type -> game_server_node.v1.StopInstanceRequest
+	20, // 26: game_server_node.v1.DeploymentService.RestartInstance:input_type -> game_server_node.v1.RestartInstanceRequest
+	22, // 27: game_server_node.v1.DeploymentService.StartStoppedInstance:input_type -> game_server_node.v1.StartStoppedInstanceRequest
+	17, // 28: game_server_node.v1.DeploymentService.DeleteInstance:input_type -> game_server_node.v1.DeleteInstanceRequest
+	19, // 29: game_server_node.v1.DeploymentService.StreamLogs:input_type -> game_server_node.v1.StreamLogsRequest
+	25, // 30: game_server_node.v1.DeploymentService.DeployService:input_type -> game_server_node.v1.DeployServiceRequest
+	27, // 31: game_server_node.v1.DeploymentService.RemoveService:input_type -> game_server_node.v1.RemoveServiceRequest
+	30, // 32: game_server_node.v1.DeploymentService.ListServices:input_type -> game_server_node.v1.ListServicesRequest
+	33, // 33: game_server_node.v1.DeploymentService.CreateBackup:input_type -> game_server_node.v1.CreateBackupRequest
+	35, // 34: game_server_node.v1.DeploymentService.ListBackups:input_type -> game_server_node.v1.ListBackupsRequest
+	37, // 35: game_server_node.v1.DeploymentService.RestoreBackup:input_type -> game_server_node.v1.RestoreBackupRequest
+	39, // 36: game_server_node.v1.DeploymentService.DeleteBackup:input_type -> game_server_node.v1.DeleteBackupRequest
+	41, // 37: game_server_node.v1.DeploymentService.DownloadBackup:input_type -> game_server_node.v1.DownloadBackupRequest
+	43, // 38: game_server_node.v1.DeploymentService.UploadBackup:input_type -> game_server_node.v1.UploadBackupChunk
+	46, // 39: game_server_node.v1.DeploymentService.ToggleServiceAutoBackup:input_type -> game_server_node.v1.ToggleServiceAutoBackupRequest
+	6,  // 40: game_server_node.v1.DeploymentService.LoadImage:output_type -> game_server_node.v1.LoadImageResponse
+	9,  // 41: game_server_node.v1.DeploymentService.BuildImage:output_type -> game_server_node.v1.BuildImageResponse
+	14, // 42: game_server_node.v1.DeploymentService.StartInstance:output_type -> game_server_node.v1.StartInstanceResponse
+	16, // 43: game_server_node.v1.DeploymentService.StopInstance:output_type -> game_server_node.v1.StopInstanceResponse
+	21, // 44: game_server_node.v1.DeploymentService.RestartInstance:output_type -> game_server_node.v1.RestartInstanceResponse
+	23, // 45: game_server_node.v1.DeploymentService.StartStoppedInstance:output_type -> game_server_node.v1.StartStoppedInstanceResponse
+	18, // 46: game_server_node.v1.DeploymentService.DeleteInstance:output_type -> game_server_node.v1.DeleteInstanceResponse
+	24, // 47: game_server_node.v1.DeploymentService.StreamLogs:output_type -> game_server_node.v1.StreamLogsResponse
+	26, // 48: game_server_node.v1.DeploymentService.DeployService:output_type -> game_server_node.v1.DeployServiceResponse
+	28, // 49: game_server_node.v1.DeploymentService.RemoveService:output_type -> game_server_node.v1.RemoveServiceResponse
+	31, // 50: game_server_node.v1.DeploymentService.ListServices:output_type -> game_server_node.v1.ListServicesResponse
+	34, // 51: game_server_node.v1.DeploymentService.CreateBackup:output_type -> game_server_node.v1.CreateBackupResponse
+	36, // 52: game_server_node.v1.DeploymentService.ListBackups:output_type -> game_server_node.v1.ListBackupsResponse
+	38, // 53: game_server_node.v1.DeploymentService.RestoreBackup:output_type -> game_server_node.v1.RestoreBackupResponse
+	40, // 54: game_server_node.v1.DeploymentService.DeleteBackup:output_type -> game_server_node.v1.DeleteBackupResponse
+	42, // 55: game_server_node.v1.DeploymentService.DownloadBackup:output_type -> game_server_node.v1.BackupChunk
+	45, // 56: game_server_node.v1.DeploymentService.UploadBackup:output_type -> game_server_node.v1.UploadBackupResponse
+	47, // 57: game_server_node.v1.DeploymentService.ToggleServiceAutoBackup:output_type -> game_server_node.v1.ToggleServiceAutoBackupResponse
+	40, // [40:58] is the sub-list for method output_type
+	22, // [22:40] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_game_server_node_v1_deployment_proto_init() }
@@ -2061,13 +3141,17 @@ func file_game_server_node_v1_deployment_proto_init() {
 	file_game_server_node_v1_deployment_proto_msgTypes[8].OneofWrappers = []any{}
 	file_game_server_node_v1_deployment_proto_msgTypes[9].OneofWrappers = []any{}
 	file_game_server_node_v1_deployment_proto_msgTypes[15].OneofWrappers = []any{}
+	file_game_server_node_v1_deployment_proto_msgTypes[39].OneofWrappers = []any{
+		(*UploadBackupChunk_Metadata)(nil),
+		(*UploadBackupChunk_Chunk)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_server_node_v1_deployment_proto_rawDesc), len(file_game_server_node_v1_deployment_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   31,
+			NumEnums:      4,
+			NumMessages:   47,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

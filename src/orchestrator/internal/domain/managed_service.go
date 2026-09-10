@@ -20,6 +20,7 @@ type ManagedService struct {
 	Status          ServiceStatus
 	VolumePath      string
 	VolumeSizeBytes uint64
+	AutoBackupEnabled bool
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

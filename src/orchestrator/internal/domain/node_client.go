@@ -59,6 +59,27 @@ type NodeClient interface {
 
 	// ListServices возвращает список управляемых сервисов на ноде.
 	ListServices(ctx context.Context, nodeAddress, apiKey string) ([]ServiceInfo, error)
+	
+	// ToggleServiceAutoBackup включает или отключает авторасписание для сервиса.
+	ToggleServiceAutoBackup(ctx context.Context, nodeAddress, apiKey, serviceName string, enabled bool) error
+
+	// CreateServiceBackup инициирует создание бэкапа сервиса на ноде.
+	CreateServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName string) (*ServiceBackup, error)
+
+	// ListServiceBackups возвращает список бэкапов сервиса с ноды.
+	ListServiceBackups(ctx context.Context, nodeAddress, apiKey, serviceName string) ([]*ServiceBackup, error)
+
+	// RestoreServiceBackup восстанавливает сервис из бэкапа на ноде.
+	RestoreServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error
+
+	// DeleteServiceBackup удаляет бэкап на ноде.
+	DeleteServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error
+
+	// DownloadServiceBackup открывает поток скачивания бэкапа с ноды.
+	DownloadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) (io.ReadCloser, error)
+
+	// UploadServiceBackup загружает бэкап на ноду через стрим.
+	UploadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*ServiceBackup, error)
 }
 
 // LogStream представляет поток журнальных записей от ноды.

@@ -19,17 +19,24 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DeploymentService_LoadImage_FullMethodName            = "/game_server_node.v1.DeploymentService/LoadImage"
-	DeploymentService_BuildImage_FullMethodName           = "/game_server_node.v1.DeploymentService/BuildImage"
-	DeploymentService_StartInstance_FullMethodName        = "/game_server_node.v1.DeploymentService/StartInstance"
-	DeploymentService_StopInstance_FullMethodName         = "/game_server_node.v1.DeploymentService/StopInstance"
-	DeploymentService_RestartInstance_FullMethodName      = "/game_server_node.v1.DeploymentService/RestartInstance"
-	DeploymentService_StartStoppedInstance_FullMethodName = "/game_server_node.v1.DeploymentService/StartStoppedInstance"
-	DeploymentService_DeleteInstance_FullMethodName       = "/game_server_node.v1.DeploymentService/DeleteInstance"
-	DeploymentService_StreamLogs_FullMethodName           = "/game_server_node.v1.DeploymentService/StreamLogs"
-	DeploymentService_DeployService_FullMethodName        = "/game_server_node.v1.DeploymentService/DeployService"
-	DeploymentService_RemoveService_FullMethodName        = "/game_server_node.v1.DeploymentService/RemoveService"
-	DeploymentService_ListServices_FullMethodName         = "/game_server_node.v1.DeploymentService/ListServices"
+	DeploymentService_LoadImage_FullMethodName               = "/game_server_node.v1.DeploymentService/LoadImage"
+	DeploymentService_BuildImage_FullMethodName              = "/game_server_node.v1.DeploymentService/BuildImage"
+	DeploymentService_StartInstance_FullMethodName           = "/game_server_node.v1.DeploymentService/StartInstance"
+	DeploymentService_StopInstance_FullMethodName            = "/game_server_node.v1.DeploymentService/StopInstance"
+	DeploymentService_RestartInstance_FullMethodName         = "/game_server_node.v1.DeploymentService/RestartInstance"
+	DeploymentService_StartStoppedInstance_FullMethodName    = "/game_server_node.v1.DeploymentService/StartStoppedInstance"
+	DeploymentService_DeleteInstance_FullMethodName          = "/game_server_node.v1.DeploymentService/DeleteInstance"
+	DeploymentService_StreamLogs_FullMethodName              = "/game_server_node.v1.DeploymentService/StreamLogs"
+	DeploymentService_DeployService_FullMethodName           = "/game_server_node.v1.DeploymentService/DeployService"
+	DeploymentService_RemoveService_FullMethodName           = "/game_server_node.v1.DeploymentService/RemoveService"
+	DeploymentService_ListServices_FullMethodName            = "/game_server_node.v1.DeploymentService/ListServices"
+	DeploymentService_CreateBackup_FullMethodName            = "/game_server_node.v1.DeploymentService/CreateBackup"
+	DeploymentService_ListBackups_FullMethodName             = "/game_server_node.v1.DeploymentService/ListBackups"
+	DeploymentService_RestoreBackup_FullMethodName           = "/game_server_node.v1.DeploymentService/RestoreBackup"
+	DeploymentService_DeleteBackup_FullMethodName            = "/game_server_node.v1.DeploymentService/DeleteBackup"
+	DeploymentService_DownloadBackup_FullMethodName          = "/game_server_node.v1.DeploymentService/DownloadBackup"
+	DeploymentService_UploadBackup_FullMethodName            = "/game_server_node.v1.DeploymentService/UploadBackup"
+	DeploymentService_ToggleServiceAutoBackup_FullMethodName = "/game_server_node.v1.DeploymentService/ToggleServiceAutoBackup"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -63,6 +70,19 @@ type DeploymentServiceClient interface {
 	RemoveService(ctx context.Context, in *RemoveServiceRequest, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
 	// Список развернутых сервисов на ноде.
 	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
+	// Создание резервной копии сервиса (Postgres, MySQL, Redis, Volume).
+	CreateBackup(ctx context.Context, in *CreateBackupRequest, opts ...grpc.CallOption) (*CreateBackupResponse, error)
+	// Список резервных копий сервиса.
+	ListBackups(ctx context.Context, in *ListBackupsRequest, opts ...grpc.CallOption) (*ListBackupsResponse, error)
+	// Восстановление сервиса из резервной копии.
+	RestoreBackup(ctx context.Context, in *RestoreBackupRequest, opts ...grpc.CallOption) (*RestoreBackupResponse, error)
+	// Удаление резервной копии с ноды.
+	DeleteBackup(ctx context.Context, in *DeleteBackupRequest, opts ...grpc.CallOption) (*DeleteBackupResponse, error)
+	// Скачивание резервной копии (стриминг чанков).
+	DownloadBackup(ctx context.Context, in *DownloadBackupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BackupChunk], error)
+	// Загрузка резервной копии на ноду (стриминг чанков).
+	UploadBackup(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadBackupChunk, UploadBackupResponse], error)
+	ToggleServiceAutoBackup(ctx context.Context, in *ToggleServiceAutoBackupRequest, opts ...grpc.CallOption) (*ToggleServiceAutoBackupResponse, error)
 }
 
 type deploymentServiceClient struct {
@@ -198,6 +218,88 @@ func (c *deploymentServiceClient) ListServices(ctx context.Context, in *ListServ
 	return out, nil
 }
 
+func (c *deploymentServiceClient) CreateBackup(ctx context.Context, in *CreateBackupRequest, opts ...grpc.CallOption) (*CreateBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateBackupResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_CreateBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) ListBackups(ctx context.Context, in *ListBackupsRequest, opts ...grpc.CallOption) (*ListBackupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBackupsResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_ListBackups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) RestoreBackup(ctx context.Context, in *RestoreBackupRequest, opts ...grpc.CallOption) (*RestoreBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RestoreBackupResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_RestoreBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) DeleteBackup(ctx context.Context, in *DeleteBackupRequest, opts ...grpc.CallOption) (*DeleteBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteBackupResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_DeleteBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) DownloadBackup(ctx context.Context, in *DownloadBackupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[BackupChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[3], DeploymentService_DownloadBackup_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DownloadBackupRequest, BackupChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_DownloadBackupClient = grpc.ServerStreamingClient[BackupChunk]
+
+func (c *deploymentServiceClient) UploadBackup(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[UploadBackupChunk, UploadBackupResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &DeploymentService_ServiceDesc.Streams[4], DeploymentService_UploadBackup_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[UploadBackupChunk, UploadBackupResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_UploadBackupClient = grpc.ClientStreamingClient[UploadBackupChunk, UploadBackupResponse]
+
+func (c *deploymentServiceClient) ToggleServiceAutoBackup(ctx context.Context, in *ToggleServiceAutoBackupRequest, opts ...grpc.CallOption) (*ToggleServiceAutoBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ToggleServiceAutoBackupResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_ToggleServiceAutoBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeploymentServiceServer is the server API for DeploymentService service.
 // All implementations must embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
@@ -229,6 +331,19 @@ type DeploymentServiceServer interface {
 	RemoveService(context.Context, *RemoveServiceRequest) (*RemoveServiceResponse, error)
 	// Список развернутых сервисов на ноде.
 	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
+	// Создание резервной копии сервиса (Postgres, MySQL, Redis, Volume).
+	CreateBackup(context.Context, *CreateBackupRequest) (*CreateBackupResponse, error)
+	// Список резервных копий сервиса.
+	ListBackups(context.Context, *ListBackupsRequest) (*ListBackupsResponse, error)
+	// Восстановление сервиса из резервной копии.
+	RestoreBackup(context.Context, *RestoreBackupRequest) (*RestoreBackupResponse, error)
+	// Удаление резервной копии с ноды.
+	DeleteBackup(context.Context, *DeleteBackupRequest) (*DeleteBackupResponse, error)
+	// Скачивание резервной копии (стриминг чанков).
+	DownloadBackup(*DownloadBackupRequest, grpc.ServerStreamingServer[BackupChunk]) error
+	// Загрузка резервной копии на ноду (стриминг чанков).
+	UploadBackup(grpc.ClientStreamingServer[UploadBackupChunk, UploadBackupResponse]) error
+	ToggleServiceAutoBackup(context.Context, *ToggleServiceAutoBackupRequest) (*ToggleServiceAutoBackupResponse, error)
 	mustEmbedUnimplementedDeploymentServiceServer()
 }
 
@@ -271,6 +386,27 @@ func (UnimplementedDeploymentServiceServer) RemoveService(context.Context, *Remo
 }
 func (UnimplementedDeploymentServiceServer) ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListServices not implemented")
+}
+func (UnimplementedDeploymentServiceServer) CreateBackup(context.Context, *CreateBackupRequest) (*CreateBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateBackup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) ListBackups(context.Context, *ListBackupsRequest) (*ListBackupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBackups not implemented")
+}
+func (UnimplementedDeploymentServiceServer) RestoreBackup(context.Context, *RestoreBackupRequest) (*RestoreBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestoreBackup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) DeleteBackup(context.Context, *DeleteBackupRequest) (*DeleteBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteBackup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) DownloadBackup(*DownloadBackupRequest, grpc.ServerStreamingServer[BackupChunk]) error {
+	return status.Error(codes.Unimplemented, "method DownloadBackup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) UploadBackup(grpc.ClientStreamingServer[UploadBackupChunk, UploadBackupResponse]) error {
+	return status.Error(codes.Unimplemented, "method UploadBackup not implemented")
+}
+func (UnimplementedDeploymentServiceServer) ToggleServiceAutoBackup(context.Context, *ToggleServiceAutoBackupRequest) (*ToggleServiceAutoBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleServiceAutoBackup not implemented")
 }
 func (UnimplementedDeploymentServiceServer) mustEmbedUnimplementedDeploymentServiceServer() {}
 func (UnimplementedDeploymentServiceServer) testEmbeddedByValue()                           {}
@@ -462,6 +598,114 @@ func _DeploymentService_ListServices_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeploymentService_CreateBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).CreateBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_CreateBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).CreateBackup(ctx, req.(*CreateBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_ListBackups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBackupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).ListBackups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_ListBackups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).ListBackups(ctx, req.(*ListBackupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_RestoreBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).RestoreBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_RestoreBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).RestoreBackup(ctx, req.(*RestoreBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_DeleteBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).DeleteBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_DeleteBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).DeleteBackup(ctx, req.(*DeleteBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_DownloadBackup_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadBackupRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DeploymentServiceServer).DownloadBackup(m, &grpc.GenericServerStream[DownloadBackupRequest, BackupChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_DownloadBackupServer = grpc.ServerStreamingServer[BackupChunk]
+
+func _DeploymentService_UploadBackup_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(DeploymentServiceServer).UploadBackup(&grpc.GenericServerStream[UploadBackupChunk, UploadBackupResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type DeploymentService_UploadBackupServer = grpc.ClientStreamingServer[UploadBackupChunk, UploadBackupResponse]
+
+func _DeploymentService_ToggleServiceAutoBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleServiceAutoBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).ToggleServiceAutoBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_ToggleServiceAutoBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).ToggleServiceAutoBackup(ctx, req.(*ToggleServiceAutoBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeploymentService_ServiceDesc is the grpc.ServiceDesc for DeploymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -501,6 +745,26 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "ListServices",
 			Handler:    _DeploymentService_ListServices_Handler,
 		},
+		{
+			MethodName: "CreateBackup",
+			Handler:    _DeploymentService_CreateBackup_Handler,
+		},
+		{
+			MethodName: "ListBackups",
+			Handler:    _DeploymentService_ListBackups_Handler,
+		},
+		{
+			MethodName: "RestoreBackup",
+			Handler:    _DeploymentService_RestoreBackup_Handler,
+		},
+		{
+			MethodName: "DeleteBackup",
+			Handler:    _DeploymentService_DeleteBackup_Handler,
+		},
+		{
+			MethodName: "ToggleServiceAutoBackup",
+			Handler:    _DeploymentService_ToggleServiceAutoBackup_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -517,6 +781,16 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "StreamLogs",
 			Handler:       _DeploymentService_StreamLogs_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "DownloadBackup",
+			Handler:       _DeploymentService_DownloadBackup_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadBackup",
+			Handler:       _DeploymentService_UploadBackup_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "game_server_node/v1/deployment.proto",

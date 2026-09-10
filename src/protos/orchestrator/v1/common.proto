@@ -126,6 +126,7 @@ message Node {
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
   NodeRole role = 13;
+  bool backups_enabled = 14;
 }
 
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).
@@ -142,6 +143,7 @@ message ManagedService {
   uint64 volume_size_bytes = 10;
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
+  bool auto_backup_enabled = 13;
 }
 
 // Потребление ресурсов.

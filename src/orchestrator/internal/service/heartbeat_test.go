@@ -1264,3 +1264,11 @@ func TestHeartbeatService_EnforceScaleUp_DoesNothingWhenQueue(t *testing.T) {
 		t.Errorf("expected 0 starts for queue behavior, got %d", startedCount.Load())
 	}
 }
+
+func (m *hbMockNodeClient) ToggleServiceAutoBackup(ctx context.Context, address, apiKey, serviceName string, enabled bool) error { return nil }
+func (m *hbMockNodeClient) CreateServiceBackup(ctx context.Context, address, apiKey, serviceName string) (*domain.ServiceBackup, error) { return nil, nil }
+func (m *hbMockNodeClient) ListServiceBackups(ctx context.Context, address, apiKey, serviceName string) ([]*domain.ServiceBackup, error) { return nil, nil }
+func (m *hbMockNodeClient) RestoreServiceBackup(ctx context.Context, address, apiKey, serviceName, backupID string) error { return nil }
+func (m *hbMockNodeClient) DeleteServiceBackup(ctx context.Context, address, apiKey, serviceName, backupID string) error { return nil }
+func (m *hbMockNodeClient) DownloadServiceBackup(ctx context.Context, address, apiKey, serviceName, backupID string) (io.ReadCloser, error) { return nil, nil }
+func (m *hbMockNodeClient) UploadServiceBackup(ctx context.Context, address, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) { return nil, nil }

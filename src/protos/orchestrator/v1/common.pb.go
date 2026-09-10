@@ -838,6 +838,7 @@ type Node struct {
 	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Role             NodeRole               `protobuf:"varint,13,opt,name=role,proto3,enum=orchestrator.v1.NodeRole" json:"role,omitempty"`
+	BackupsEnabled   bool                   `protobuf:"varint,14,opt,name=backups_enabled,json=backupsEnabled,proto3" json:"backups_enabled,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -963,23 +964,31 @@ func (x *Node) GetRole() NodeRole {
 	return NodeRole_NODE_ROLE_UNSPECIFIED
 }
 
+func (x *Node) GetBackupsEnabled() bool {
+	if x != nil {
+		return x.BackupsEnabled
+	}
+	return false
+}
+
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).
 type ManagedService struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	NodeId          int64                  `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	OwnerId         string                 `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	AllowedGameIds  []int64                `protobuf:"varint,4,rep,packed,name=allowed_game_ids,json=allowedGameIds,proto3" json:"allowed_game_ids,omitempty"`
-	Type            ServiceType            `protobuf:"varint,5,opt,name=type,proto3,enum=orchestrator.v1.ServiceType" json:"type,omitempty"`
-	Name            string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
-	Status          ServiceStatus          `protobuf:"varint,7,opt,name=status,proto3,enum=orchestrator.v1.ServiceStatus" json:"status,omitempty"`
-	Port            uint32                 `protobuf:"varint,8,opt,name=port,proto3" json:"port,omitempty"`
-	ConnectionUri   string                 `protobuf:"bytes,9,opt,name=connection_uri,json=connectionUri,proto3" json:"connection_uri,omitempty"`
-	VolumeSizeBytes uint64                 `protobuf:"varint,10,opt,name=volume_size_bytes,json=volumeSizeBytes,proto3" json:"volume_size_bytes,omitempty"`
-	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	NodeId            int64                  `protobuf:"varint,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	OwnerId           string                 `protobuf:"bytes,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	AllowedGameIds    []int64                `protobuf:"varint,4,rep,packed,name=allowed_game_ids,json=allowedGameIds,proto3" json:"allowed_game_ids,omitempty"`
+	Type              ServiceType            `protobuf:"varint,5,opt,name=type,proto3,enum=orchestrator.v1.ServiceType" json:"type,omitempty"`
+	Name              string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	Status            ServiceStatus          `protobuf:"varint,7,opt,name=status,proto3,enum=orchestrator.v1.ServiceStatus" json:"status,omitempty"`
+	Port              uint32                 `protobuf:"varint,8,opt,name=port,proto3" json:"port,omitempty"`
+	ConnectionUri     string                 `protobuf:"bytes,9,opt,name=connection_uri,json=connectionUri,proto3" json:"connection_uri,omitempty"`
+	VolumeSizeBytes   uint64                 `protobuf:"varint,10,opt,name=volume_size_bytes,json=volumeSizeBytes,proto3" json:"volume_size_bytes,omitempty"`
+	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt         *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	AutoBackupEnabled bool                   `protobuf:"varint,13,opt,name=auto_backup_enabled,json=autoBackupEnabled,proto3" json:"auto_backup_enabled,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ManagedService) Reset() {
@@ -1094,6 +1103,13 @@ func (x *ManagedService) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *ManagedService) GetAutoBackupEnabled() bool {
+	if x != nil {
+		return x.AutoBackupEnabled
+	}
+	return false
 }
 
 // Потребление ресурсов.
@@ -1720,7 +1736,7 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\x95\x04\n" +
+	"\r_player_count\"\xbe\x04\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x18\n" +
@@ -1738,7 +1754,8 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12-\n" +
-	"\x04role\x18\r \x01(\x0e2\x19.orchestrator.v1.NodeRoleR\x04role\"\xd9\x03\n" +
+	"\x04role\x18\r \x01(\x0e2\x19.orchestrator.v1.NodeRoleR\x04role\x12'\n" +
+	"\x0fbackups_enabled\x18\x0e \x01(\bR\x0ebackupsEnabled\"\x89\x04\n" +
 	"\x0eManagedService\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x03R\x06nodeId\x12\x19\n" +
@@ -1754,7 +1771,8 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc2\x01\n" +
+	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12.\n" +
+	"\x13auto_backup_enabled\x18\r \x01(\bR\x11autoBackupEnabled\"\xc2\x01\n" +
 	"\rResourceUsage\x12*\n" +
 	"\x11cpu_usage_percent\x18\x01 \x01(\x01R\x0fcpuUsagePercent\x12*\n" +
 	"\x11memory_used_bytes\x18\x02 \x01(\x04R\x0fmemoryUsedBytes\x12&\n" +

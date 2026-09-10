@@ -39,15 +39,15 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 	const q = `
 		INSERT INTO nodes (owner_id, address, token_hash, api_token, region, status, role,
 		                   cpu_cores, total_memory, total_disk, agent_version,
-		                   last_ping_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+		                   last_ping_at, created_at, updated_at, backups_enabled)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
 		RETURNING id
 	`
 
 	err := r.pool.QueryRow(ctx, q,
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk, node.AgentVersion,
-		node.LastPingAt, node.CreatedAt, node.UpdatedAt,
+		node.LastPingAt, node.CreatedAt, node.UpdatedAt, node.BackupsEnabled,
 	).Scan(&node.ID)
 	if err != nil {
 		if isPgUniqueViolation(err) {
@@ -70,14 +70,14 @@ func (r *NodeRepo) Update(ctx context.Context, node *domain.Node) error {
 	const q = `
 		UPDATE nodes SET owner_id=$1, address=$2, token_hash=$3, api_token=$4, region=$5, status=$6, role=$7,
 		                 cpu_cores=$8, total_memory=$9, total_disk=$10,
-		                 agent_version=$11, last_ping_at=$12, updated_at=$13
-		WHERE id=$14
+		                 agent_version=$11, last_ping_at=$12, updated_at=$13, backups_enabled=$14
+		WHERE id=$15
 	`
 
 	tag, err := r.pool.Exec(ctx, q,
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk,
-		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.ID,
+		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.BackupsEnabled, node.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.NodeRepo.Update: %w", err)
@@ -94,7 +94,7 @@ func (r *NodeRepo) GetByID(ctx context.Context, id int64) (*domain.Node, error) 
 	const q = `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at
+		       last_ping_at, created_at, updated_at, backups_enabled
 		FROM nodes WHERE id = $1
 	`
 
@@ -107,7 +107,7 @@ func (r *NodeRepo) GetByAddress(ctx context.Context, address string) (*domain.No
 	const q = `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at
+		       last_ping_at, created_at, updated_at, backups_enabled
 		FROM nodes WHERE address = $1
 	`
 
@@ -120,7 +120,7 @@ func (r *NodeRepo) List(ctx context.Context, status *domain.NodeStatus) ([]*doma
 	q := `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at
+		       last_ping_at, created_at, updated_at, backups_enabled
 		FROM nodes
 	`
 
@@ -205,9 +205,9 @@ type nodeScanner interface {
 func scanNode(s nodeScanner) (*domain.Node, error) {
 	n := &domain.Node{}
 	err := s.Scan(
-		&n.ID, &n.OwnerID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status, &n.Role,
-		&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
-		&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt,
+			&n.ID, &n.OwnerID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status, &n.Role,
+			&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
+			&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt, &n.BackupsEnabled,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

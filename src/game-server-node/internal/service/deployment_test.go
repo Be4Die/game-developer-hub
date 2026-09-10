@@ -116,6 +116,10 @@ func (s *stubRuntime) CopyToContainer(ctx context.Context, containerID, targetDi
 	return nil
 }
 
+func (s *stubRuntime) Exec(ctx context.Context, containerID string, cmd []string, stdin io.Reader, stdout, stderr io.Writer, env []string) (int, error) {
+	return 0, nil
+}
+
 func (s *stubRuntime) InspectContainer(ctx context.Context, containerID string) (*domain.ContainerDetails, error) {
 	return &domain.ContainerDetails{
 		ID:            containerID,

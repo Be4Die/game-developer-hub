@@ -132,8 +132,14 @@ func isPublicMethod(method string) bool {
 }
 
 // isPublicStream возвращает true для streaming методов без аутентификации.
-func isPublicStream(_ string) bool {
-	return false
+func isPublicStream(method string) bool {
+	switch method {
+	// DownloadServiceBackup авторизуется через HMAC-тикет внутри обработчика
+	case "/orchestrator.v1.NodeService/DownloadServiceBackup":
+		return true
+	default:
+		return false
+	}
 }
 
 // wrappedServerStream оборачивает ServerStream с аутентифицированным контекстом.

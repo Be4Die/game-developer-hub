@@ -1,0 +1,704 @@
+package service
+
+import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Be4Die/game-developer-hub/game-server-node/internal/domain"
+)
+
+// BackupManager управляет созданием, хранением, скачиванием и восстановлением бэкапов на ноде.
+type BackupManager struct {
+	mu           sync.RWMutex
+	log          *slog.Logger
+	runtime      domain.ContainerRuntime
+	managedState *ManagedServiceState
+	backupsDir   string
+}
+
+// NewBackupManager инициализирует менеджер резервного копирования.
+func NewBackupManager(log *slog.Logger, runtime domain.ContainerRuntime, managedState *ManagedServiceState, backupsDir string) *BackupManager {
+	if backupsDir == "" {
+		backupsDir = os.Getenv("GDH_BACKUPS_DIR")
+		if backupsDir == "" {
+			if _, err := os.Stat("/app/data"); err == nil {
+				backupsDir = "/app/data/backups"
+			} else if _, err := os.Stat("/var/lib/gdh"); err == nil {
+				backupsDir = "/var/lib/gdh/backups"
+			} else {
+				backupsDir = filepath.Join(os.TempDir(), "gdh-backups")
+			}
+		}
+	}
+	_ = os.MkdirAll(backupsDir, 0755)
+
+	return &BackupManager{
+		log:          log,
+		runtime:      runtime,
+		managedState: managedState,
+		backupsDir:   backupsDir,
+	}
+}
+
+// StartAutoBackupsLoop запускает фоновую рутину для авто-бэкапов.
+func (m *BackupManager) StartAutoBackupsLoop(ctx context.Context) {
+	// Проверяем бэкапы каждые 6 часов (можно вынести в конфиг)
+	ticker := time.NewTicker(6 * time.Hour)
+	go func() {
+		m.log.Info("starting backup manager auto-backup loop", slog.String("interval", "6h"))
+		for {
+			select {
+			case <-ctx.Done():
+				m.log.Info("stopping backup manager auto-backup loop")
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				m.runAutoBackups(ctx)
+			}
+		}
+	}()
+}
+
+func (m *BackupManager) runAutoBackups(ctx context.Context) {
+	services, err := m.managedState.ListServices(ctx)
+	if err != nil {
+		m.log.Warn("failed to list services for auto backup", slog.Any("err", err))
+		return
+	}
+
+	for _, svc := range services {
+		if svc.AutoBackupEnabled {
+			m.log.Info("running scheduled auto backup", slog.String("service", svc.Name))
+			if _, err := m.CreateBackup(ctx, svc.Name, domain.BackupTypeScheduled); err != nil {
+				m.log.Error("scheduled auto backup failed", slog.String("service", svc.Name), slog.Any("err", err))
+			}
+		}
+	}
+}
+
+// sanitizeIdent очищает имя сервиса или ID бэкапа от потенциального path traversal.
+func sanitizeIdent(ident string) (string, error) {
+	cleaned := filepath.Base(filepath.Clean(ident))
+	if cleaned == "." || cleaned == ".." || cleaned == "/" || strings.Contains(cleaned, "..") || strings.Contains(cleaned, "/") || strings.Contains(cleaned, "\\") {
+		return "", errors.New("invalid identifier")
+	}
+	return cleaned, nil
+}
+
+func (m *BackupManager) getServiceDir(serviceName string) (string, error) {
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return "", fmt.Errorf("invalid service name: %w", err)
+	}
+	dir := filepath.Join(m.backupsDir, safeName)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
+func (m *BackupManager) manifestPath(serviceName string) (string, error) {
+	dir, err := m.getServiceDir(serviceName)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "manifest.json"), nil
+}
+
+func (m *BackupManager) loadManifest(serviceName string) (map[string]domain.BackupInfo, error) {
+	path, err := m.manifestPath(serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]domain.BackupInfo), nil
+		}
+		return nil, err
+	}
+
+	var manifest map[string]domain.BackupInfo
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return make(map[string]domain.BackupInfo), nil
+	}
+	return manifest, nil
+}
+
+func (m *BackupManager) saveManifest(serviceName string, manifest map[string]domain.BackupInfo) error {
+	path, err := m.manifestPath(serviceName)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// CreateBackup создает снимок данных сервиса.
+func (m *BackupManager) CreateBackup(ctx context.Context, serviceName string, backupType domain.BackupType) (*domain.BackupInfo, error) {
+	const op = "BackupManager.CreateBackup"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	svc, ok := m.managedState.GetService(safeName)
+	if !ok {
+		return nil, fmt.Errorf("%s: service '%s' not found", op, safeName)
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: get service dir: %w", op, err)
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	backupID := fmt.Sprintf("bkp_%s_%s", safeName, timestamp)
+
+	var (
+		fileName string
+		ext      string
+	)
+
+	switch svc.ServiceType {
+	case domain.ServiceTypePostgres, domain.ServiceTypeMySQL:
+		ext = ".sql.gz"
+	case domain.ServiceTypeRedis:
+		ext = ".rdb.gz"
+	case domain.ServiceTypeVolume:
+		ext = ".tar.gz"
+	default:
+		return nil, fmt.Errorf("%s: service type %d does not support backups", op, svc.ServiceType)
+	}
+
+	fileName = backupID + ext
+	filePath := filepath.Join(targetDir, fileName)
+
+	destFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("%s: create file: %w", op, err)
+	}
+
+	hasher := sha256.New()
+	multiWriter := io.MultiWriter(destFile, hasher)
+
+	var createErr error
+
+	switch svc.ServiceType {
+	case domain.ServiceTypePostgres:
+		cmd := []string{"sh", "-c", `PGPASSWORD="$POSTGRES_PASSWORD" pg_dump --clean --if-exists -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip -c`}
+		var stderr bytes.Buffer
+		exitCode, err := m.runtime.Exec(ctx, svc.ContainerID, cmd, nil, multiWriter, &stderr, nil)
+		if err != nil {
+			createErr = fmt.Errorf("exec pg_dump: %w (stderr: %s)", err, stderr.String())
+		} else if exitCode != 0 {
+			createErr = fmt.Errorf("pg_dump exited with code %d: %s", exitCode, stderr.String())
+		}
+
+	case domain.ServiceTypeMySQL:
+		cmd := []string{"sh", "-c", `mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" | gzip -c`}
+		var stderr bytes.Buffer
+		exitCode, err := m.runtime.Exec(ctx, svc.ContainerID, cmd, nil, multiWriter, &stderr, nil)
+		if err != nil {
+			createErr = fmt.Errorf("exec mariadb-dump: %w (stderr: %s)", err, stderr.String())
+		} else if exitCode != 0 {
+			createErr = fmt.Errorf("mariadb-dump exited with code %d: %s", exitCode, stderr.String())
+		}
+
+	case domain.ServiceTypeRedis:
+		// Trigger BGSAVE
+		var bgsaveErr bytes.Buffer
+		_, _ = m.runtime.Exec(ctx, svc.ContainerID, []string{"sh", "-c", `redis-cli bgsave`}, nil, io.Discard, &bgsaveErr, nil)
+		time.Sleep(1 * time.Second)
+
+		cmd := []string{"sh", "-c", `cat /data/dump.rdb | gzip -c`}
+		var stderr bytes.Buffer
+		exitCode, err := m.runtime.Exec(ctx, svc.ContainerID, cmd, nil, multiWriter, &stderr, nil)
+		if err != nil {
+			createErr = fmt.Errorf("exec read redis dump: %w", err)
+		} else if exitCode != 0 {
+			createErr = fmt.Errorf("read dump.rdb exited with code %d: %s", exitCode, stderr.String())
+		}
+
+	case domain.ServiceTypeVolume:
+		gw := gzip.NewWriter(multiWriter)
+		tw := tar.NewWriter(gw)
+		createErr = tarFolder(svc.VolumePath, tw)
+		_ = tw.Close()
+		_ = gw.Close()
+	}
+
+	_ = destFile.Close()
+
+	if createErr != nil {
+		_ = os.Remove(filePath)
+		return nil, fmt.Errorf("%s: %w", op, createErr)
+	}
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("%s: stat file: %w", op, err)
+	}
+
+	checksum := hex.EncodeToString(hasher.Sum(nil))
+
+	info := domain.BackupInfo{
+		BackupID:    backupID,
+		ServiceName: safeName,
+		FileName:    fileName,
+		SizeBytes:   uint64(fileInfo.Size()),
+		BackupType:  backupType,
+		Status:      domain.BackupStatusReady,
+		Checksum:    checksum,
+		CreatedAt:   time.Now(),
+	}
+
+	m.mu.Lock()
+	manifest, _ := m.loadManifest(safeName)
+	manifest[backupID] = info
+	_ = m.saveManifest(safeName, manifest)
+	m.mu.Unlock()
+
+	m.log.Info("backup created successfully",
+		slog.String("service", safeName),
+		slog.String("backup_id", backupID),
+		slog.Uint64("size", info.SizeBytes),
+	)
+
+	return &info, nil
+}
+
+// ListBackups возвращает список бэкапов сервиса.
+func (m *BackupManager) ListBackups(ctx context.Context, serviceName string) ([]domain.BackupInfo, error) {
+	const op = "BackupManager.ListBackups"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	manifest, err := m.loadManifest(safeName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: load manifest: %w", op, err)
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]domain.BackupInfo, 0, len(manifest))
+	for id, info := range manifest {
+		// Проверяем, существует ли файл на диске
+		fullPath := filepath.Join(targetDir, info.FileName)
+		fi, err := os.Stat(fullPath)
+		if err != nil {
+			continue // файл удален вручную
+		}
+		info.SizeBytes = uint64(fi.Size())
+		manifest[id] = info
+		result = append(result, info)
+	}
+
+	return result, nil
+}
+
+// RestoreBackup восстанавливает состояние сервиса из бэкапа.
+func (m *BackupManager) RestoreBackup(ctx context.Context, serviceName, backupID string) error {
+	const op = "BackupManager.RestoreBackup"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	safeBackupID, err := sanitizeIdent(backupID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	svc, ok := m.managedState.GetService(safeName)
+	if !ok {
+		return fmt.Errorf("%s: service '%s' not found", op, safeName)
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return fmt.Errorf("%s: get service dir: %w", op, err)
+	}
+
+	m.mu.RLock()
+	manifest, err := m.loadManifest(safeName)
+	m.mu.RUnlock()
+	if err != nil {
+		return fmt.Errorf("%s: load manifest: %w", op, err)
+	}
+
+	info, ok := manifest[safeBackupID]
+	if !ok {
+		// Fallback: попытаемся найти файл с совпадающим префиксом
+		entries, _ := os.ReadDir(targetDir)
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), safeBackupID) {
+				info = domain.BackupInfo{
+					BackupID: safeBackupID,
+					FileName: e.Name(),
+				}
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return fmt.Errorf("%s: backup '%s' not found", op, safeBackupID)
+		}
+	}
+
+	filePath := filepath.Join(targetDir, info.FileName)
+	srcFile, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("%s: open backup file: %w", op, err)
+	}
+	defer srcFile.Close()
+
+	switch svc.ServiceType {
+	case domain.ServiceTypePostgres:
+		cmd := []string{"sh", "-c", `PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO \"$POSTGRES_USER\"; GRANT ALL ON SCHEMA public TO public;" && gunzip -c | PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"`}
+		var stderr bytes.Buffer
+		exitCode, err := m.runtime.Exec(ctx, svc.ContainerID, cmd, srcFile, io.Discard, &stderr, nil)
+		if err != nil {
+			return fmt.Errorf("%s: psql restore exec: %w (stderr: %s)", op, err, stderr.String())
+		}
+		if exitCode != 0 {
+			return fmt.Errorf("%s: psql restore failed with code %d: %s", op, exitCode, stderr.String())
+		}
+
+	case domain.ServiceTypeMySQL:
+		cmd := []string{"sh", "-c", "mariadb -u root -p\"$MYSQL_ROOT_PASSWORD\" -e \"DROP DATABASE IF EXISTS \\`$MYSQL_DATABASE\\`; CREATE DATABASE \\`$MYSQL_DATABASE\\`;\" && gunzip -c | mariadb -u root -p\"$MYSQL_ROOT_PASSWORD\" \"$MYSQL_DATABASE\""}
+		var stderr bytes.Buffer
+		exitCode, err := m.runtime.Exec(ctx, svc.ContainerID, cmd, srcFile, io.Discard, &stderr, nil)
+		if err != nil {
+			return fmt.Errorf("%s: mariadb restore exec: %w (stderr: %s)", op, err, stderr.String())
+		}
+		if exitCode != 0 {
+			return fmt.Errorf("%s: mariadb restore failed with code %d: %s", op, exitCode, stderr.String())
+		}
+
+	case domain.ServiceTypeRedis:
+		// Stop container
+		_ = m.runtime.StopContainer(ctx, svc.ContainerID, 5*time.Second)
+
+		// Uncompress rdb
+		gr, err := gzip.NewReader(srcFile)
+		if err != nil {
+			_ = m.runtime.StartContainer(ctx, svc.ContainerID)
+			return fmt.Errorf("%s: gzip read: %w", op, err)
+		}
+		rdbBytes, err := io.ReadAll(gr)
+		_ = gr.Close()
+		if err != nil {
+			_ = m.runtime.StartContainer(ctx, svc.ContainerID)
+			return fmt.Errorf("%s: read rdb data: %w", op, err)
+		}
+
+		// Copy directly to container /data/dump.rdb
+		if err := m.runtime.CopyToContainer(ctx, svc.ContainerID, "/data", "dump.rdb", rdbBytes); err != nil {
+			m.log.Warn("copy to container failed, trying host path", slog.String("err", err.Error()))
+			if svc.VolumePath != "" {
+				_ = os.WriteFile(filepath.Join(svc.VolumePath, "dump.rdb"), rdbBytes, 0644)
+			}
+		}
+
+		if err := m.runtime.StartContainer(ctx, svc.ContainerID); err != nil {
+			return fmt.Errorf("%s: restart redis container: %w", op, err)
+		}
+
+	case domain.ServiceTypeVolume:
+		if svc.VolumePath == "" {
+			return fmt.Errorf("%s: volume path is empty", op)
+		}
+		gr, err := gzip.NewReader(srcFile)
+		if err != nil {
+			return fmt.Errorf("%s: gzip read: %w", op, err)
+		}
+		defer gr.Close()
+		tr := tar.NewReader(gr)
+		if err := untarFolder(tr, svc.VolumePath); err != nil {
+			return fmt.Errorf("%s: untar: %w", op, err)
+		}
+
+	default:
+		return fmt.Errorf("%s: unsupported service type for restore", op)
+	}
+
+	m.log.Info("backup restored successfully",
+		slog.String("service", safeName),
+		slog.String("backup_id", safeBackupID),
+	)
+
+	return nil
+}
+
+// DeleteBackup удаляет файл бэкапа и обновляет реестр.
+func (m *BackupManager) DeleteBackup(ctx context.Context, serviceName, backupID string) error {
+	const op = "BackupManager.DeleteBackup"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	safeBackupID, err := sanitizeIdent(backupID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return fmt.Errorf("%s: get service dir: %w", op, err)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	manifest, err := m.loadManifest(safeName)
+	if err != nil {
+		return fmt.Errorf("%s: load manifest: %w", op, err)
+	}
+
+	info, ok := manifest[safeBackupID]
+	if ok {
+		_ = os.Remove(filepath.Join(targetDir, info.FileName))
+		delete(manifest, safeBackupID)
+		_ = m.saveManifest(safeName, manifest)
+	} else {
+		// Поиск по префиксу
+		entries, _ := os.ReadDir(targetDir)
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), safeBackupID) {
+				_ = os.Remove(filepath.Join(targetDir, e.Name()))
+			}
+		}
+	}
+
+	m.log.Info("backup deleted", slog.String("service", safeName), slog.String("backup_id", safeBackupID))
+	return nil
+}
+
+// OpenBackup открывает файл бэкапа для чтения/скачивания.
+func (m *BackupManager) OpenBackup(ctx context.Context, serviceName, backupID string) (io.ReadCloser, int64, string, error) {
+	const op = "BackupManager.OpenBackup"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("%s: %w", op, err)
+	}
+	safeBackupID, err := sanitizeIdent(backupID)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return nil, 0, "", err
+	}
+
+	m.mu.RLock()
+	manifest, _ := m.loadManifest(safeName)
+	m.mu.RUnlock()
+
+	var fileName string
+	if info, ok := manifest[safeBackupID]; ok {
+		fileName = info.FileName
+	} else {
+		entries, _ := os.ReadDir(targetDir)
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), safeBackupID) {
+				fileName = e.Name()
+				break
+			}
+		}
+	}
+
+	if fileName == "" {
+		return nil, 0, "", fmt.Errorf("%s: backup '%s' not found", op, safeBackupID)
+	}
+
+	filePath := filepath.Join(targetDir, fileName)
+	fi, err := os.Stat(filePath)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("%s: stat file: %w", op, err)
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, 0, "", fmt.Errorf("%s: open file: %w", op, err)
+	}
+
+	return f, fi.Size(), fileName, nil
+}
+
+// UploadBackup сохраняет переданный бэкап на ноде и опционально восстанавливает его.
+func (m *BackupManager) UploadBackup(ctx context.Context, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.BackupInfo, error) {
+	const op = "BackupManager.UploadBackup"
+
+	safeName, err := sanitizeIdent(serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	safeFileName, err := sanitizeIdent(fileName)
+	if err != nil {
+		safeFileName = fmt.Sprintf("upload_%d.bin", time.Now().Unix())
+	}
+
+	targetDir, err := m.getServiceDir(safeName)
+	if err != nil {
+		return nil, fmt.Errorf("%s: get service dir: %w", op, err)
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	backupID := fmt.Sprintf("bkp_%s_%s_up", safeName, timestamp)
+	destFileName := fmt.Sprintf("%s_%s", backupID, safeFileName)
+	filePath := filepath.Join(targetDir, destFileName)
+
+	destFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("%s: create file: %w", op, err)
+	}
+
+	hasher := sha256.New()
+	multiWriter := io.MultiWriter(destFile, hasher)
+
+	written, err := io.Copy(multiWriter, r)
+	_ = destFile.Close()
+	if err != nil {
+		_ = os.Remove(filePath)
+		return nil, fmt.Errorf("%s: save uploaded file: %w", op, err)
+	}
+
+	checksum := hex.EncodeToString(hasher.Sum(nil))
+
+	info := domain.BackupInfo{
+		BackupID:    backupID,
+		ServiceName: safeName,
+		FileName:    destFileName,
+		SizeBytes:   uint64(written),
+		BackupType:  domain.BackupTypeUploaded,
+		Status:      domain.BackupStatusReady,
+		Checksum:    checksum,
+		CreatedAt:   time.Now(),
+	}
+
+	m.mu.Lock()
+	manifest, _ := m.loadManifest(safeName)
+	manifest[backupID] = info
+	_ = m.saveManifest(safeName, manifest)
+	m.mu.Unlock()
+
+	m.log.Info("custom backup uploaded",
+		slog.String("service", safeName),
+		slog.String("backup_id", backupID),
+		slog.Uint64("size", info.SizeBytes),
+	)
+
+	if restoreImmediately {
+		if err := m.RestoreBackup(ctx, safeName, backupID); err != nil {
+			return &info, fmt.Errorf("backup saved but restore failed: %w", err)
+		}
+	}
+
+	return &info, nil
+}
+
+// ─── Вспомогательные функции для томов (tar/gzip) ──────────────────────────
+
+func tarFolder(srcDir string, tw *tar.Writer) error {
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+		if relPath == "." {
+			return nil
+		}
+
+		header, err := tar.FileInfoHeader(info, info.Name())
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.ToSlash(relPath)
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(tw, f)
+		return err
+	})
+}
+
+func untarFolder(tr *tar.Reader, destDir string) error {
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		cleanPath := filepath.Clean(hdr.Name)
+		if strings.Contains(cleanPath, "..") || strings.HasPrefix(cleanPath, "/") {
+			continue // skip insecure paths
+		}
+
+		target := filepath.Join(destDir, cleanPath)
+		if hdr.Typeflag == tar.TypeDir {
+			_ = os.MkdirAll(target, 0755)
+			continue
+		}
+
+		_ = os.MkdirAll(filepath.Dir(target), 0755)
+		f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, hdr.FileInfo().Mode())
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(f, tr); err != nil {
+			_ = f.Close()
+			return err
+		}
+		_ = f.Close()
+	}
+	return nil
+}

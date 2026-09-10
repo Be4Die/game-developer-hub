@@ -770,4 +770,236 @@ func (c *Client) ListServices(ctx context.Context, nodeAddress, apiKey string) (
 	return res, nil
 }
 
+func (c *Client) ToggleServiceAutoBackup(ctx context.Context, nodeAddress, apiKey, serviceName string, enabled bool) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("Client.ToggleServiceAutoBackup: connect to %s: %w", nodeAddress, err)
+	}
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+	_, err = client.ToggleServiceAutoBackup(ctx, &pb.ToggleServiceAutoBackupRequest{ServiceName: serviceName, Enabled: enabled})
+	if err != nil {
+		return fmt.Errorf("Client.ToggleServiceAutoBackup: %w", err)
+	}
+	return nil
+}
+
+// CreateServiceBackup инициирует создание бэкапа сервиса на ноде через gRPC.
+func (c *Client) CreateServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName string) (*domain.ServiceBackup, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.CreateServiceBackup: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	resp, err := client.CreateBackup(ctx, &pb.CreateBackupRequest{
+		ServiceName: serviceName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Client.CreateServiceBackup: %w", err)
+	}
+
+	b := resp.GetBackup()
+	if b == nil {
+		return nil, errors.New("empty backup in response")
+	}
+
+	return &domain.ServiceBackup{
+		BackupID:    b.GetBackupId(),
+		ServiceName: b.GetServiceName(),
+		FileName:    b.GetFileName(),
+		SizeBytes:   b.GetSizeBytes(),
+		BackupType:  domain.BackupType(b.GetBackupType()),
+		Status:      domain.BackupStatus(b.GetStatus()),
+		Checksum:    b.GetChecksum(),
+		CreatedAt:   b.GetCreatedAt().AsTime(),
+	}, nil
+}
+
+// ListServiceBackups запрашивает список бэкапов сервиса на ноде через gRPC.
+func (c *Client) ListServiceBackups(ctx context.Context, nodeAddress, apiKey, serviceName string) ([]*domain.ServiceBackup, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.ListServiceBackups: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	resp, err := client.ListBackups(ctx, &pb.ListBackupsRequest{
+		ServiceName: serviceName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Client.ListServiceBackups: %w", err)
+	}
+
+	res := make([]*domain.ServiceBackup, 0, len(resp.GetBackups()))
+	for _, b := range resp.GetBackups() {
+		res = append(res, &domain.ServiceBackup{
+			BackupID:    b.GetBackupId(),
+			ServiceName: b.GetServiceName(),
+			FileName:    b.GetFileName(),
+			SizeBytes:   b.GetSizeBytes(),
+			BackupType:  domain.BackupType(b.GetBackupType()),
+			Status:      domain.BackupStatus(b.GetStatus()),
+			Checksum:    b.GetChecksum(),
+			CreatedAt:   b.GetCreatedAt().AsTime(),
+		})
+	}
+	return res, nil
+}
+
+// RestoreServiceBackup восстанавливает сервис из бэкапа на ноде через gRPC.
+func (c *Client) RestoreServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("Client.RestoreServiceBackup: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	_, err = client.RestoreBackup(ctx, &pb.RestoreBackupRequest{
+		ServiceName: serviceName,
+		BackupId:    backupID,
+	})
+	if err != nil {
+		return fmt.Errorf("Client.RestoreServiceBackup: %w", err)
+	}
+	return nil
+}
+
+// DeleteServiceBackup удаляет бэкап на ноде через gRPC.
+func (c *Client) DeleteServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("Client.DeleteServiceBackup: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	_, err = client.DeleteBackup(ctx, &pb.DeleteBackupRequest{
+		ServiceName: serviceName,
+		BackupId:    backupID,
+	})
+	if err != nil {
+		return fmt.Errorf("Client.DeleteServiceBackup: %w", err)
+	}
+	return nil
+}
+
+// DownloadServiceBackup открывает поток скачивания бэкапа с ноды через gRPC.
+func (c *Client) DownloadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, backupID string) (io.ReadCloser, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.DownloadServiceBackup: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	stream, err := client.DownloadBackup(ctx, &pb.DownloadBackupRequest{
+		ServiceName: serviceName,
+		BackupId:    backupID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Client.DownloadServiceBackup: %w", err)
+	}
+
+	pr, pw := io.Pipe()
+	go func() {
+		defer pw.Close()
+		for {
+			chunk, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				_ = pw.CloseWithError(err)
+				return
+			}
+			if len(chunk.GetChunk()) > 0 {
+				if _, err := pw.Write(chunk.GetChunk()); err != nil {
+					return
+				}
+			}
+		}
+	}()
+
+	return pr, nil
+}
+
+// UploadServiceBackup передает поток файла бэкапа на ноду через gRPC.
+func (c *Client) UploadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return nil, fmt.Errorf("Client.UploadServiceBackup: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	stream, err := client.UploadBackup(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Client.UploadServiceBackup: %w", err)
+	}
+
+	if err := stream.Send(&pb.UploadBackupChunk{
+		Payload: &pb.UploadBackupChunk_Metadata{
+			Metadata: &pb.UploadBackupMetadata{
+				ServiceName:        serviceName,
+				FileName:           fileName,
+				RestoreImmediately: restoreImmediately,
+			},
+		},
+	}); err != nil {
+		return nil, fmt.Errorf("Client.UploadServiceBackup send metadata: %w", err)
+	}
+
+	buf := make([]byte, 64*1024)
+	for {
+		n, err := r.Read(buf)
+		if n > 0 {
+			if sendErr := stream.Send(&pb.UploadBackupChunk{
+				Payload: &pb.UploadBackupChunk_Chunk{
+					Chunk: buf[:n],
+				},
+			}); sendErr != nil {
+				return nil, fmt.Errorf("Client.UploadServiceBackup send chunk: %w", sendErr)
+			}
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("Client.UploadServiceBackup read: %w", err)
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, fmt.Errorf("Client.UploadServiceBackup close: %w", err)
+	}
+
+	b := resp.GetBackup()
+	if b == nil {
+		return nil, errors.New("empty backup in upload response")
+	}
+
+	return &domain.ServiceBackup{
+		BackupID:    b.GetBackupId(),
+		ServiceName: b.GetServiceName(),
+		FileName:    b.GetFileName(),
+		SizeBytes:   b.GetSizeBytes(),
+		BackupType:  domain.BackupType(b.GetBackupType()),
+		Status:      domain.BackupStatus(b.GetStatus()),
+		Checksum:    b.GetChecksum(),
+		CreatedAt:   b.GetCreatedAt().AsTime(),
+	}, nil
+}
+
 var _ domain.NodeClient = (*Client)(nil)
+

@@ -1,0 +1,14 @@
+--- src/orchestrator/internal/service/node.go
++++ src/orchestrator/internal/service/node.go
+@@ -53,6 +53,12 @@
+ 	return s
+ }
+ 
++// WithBackupRepo задает репозиторий бэкапов.
++func (s *NodeService) WithBackupRepo(r domain.BackupRepo) *NodeService {
++	s.backupRepo = r
++	return s
++}
++
+ // RegisterNodeParams содержит параметры подключения ноды.
+ type RegisterNodeParams struct {

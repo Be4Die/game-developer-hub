@@ -19,17 +19,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NodeService_Register_FullMethodName      = "/orchestrator.v1.NodeService/Register"
-	NodeService_List_FullMethodName          = "/orchestrator.v1.NodeService/List"
-	NodeService_Get_FullMethodName           = "/orchestrator.v1.NodeService/Get"
-	NodeService_Delete_FullMethodName        = "/orchestrator.v1.NodeService/Delete"
-	NodeService_GetUsage_FullMethodName      = "/orchestrator.v1.NodeService/GetUsage"
-	NodeService_ListInstances_FullMethodName = "/orchestrator.v1.NodeService/ListInstances"
-	NodeService_Announce_FullMethodName      = "/orchestrator.v1.NodeService/Announce"
-	NodeService_UpdateRole_FullMethodName    = "/orchestrator.v1.NodeService/UpdateRole"
-	NodeService_CreateService_FullMethodName = "/orchestrator.v1.NodeService/CreateService"
-	NodeService_ListServices_FullMethodName  = "/orchestrator.v1.NodeService/ListServices"
-	NodeService_DeleteService_FullMethodName = "/orchestrator.v1.NodeService/DeleteService"
+	NodeService_Register_FullMethodName                = "/orchestrator.v1.NodeService/Register"
+	NodeService_List_FullMethodName                    = "/orchestrator.v1.NodeService/List"
+	NodeService_Get_FullMethodName                     = "/orchestrator.v1.NodeService/Get"
+	NodeService_Delete_FullMethodName                  = "/orchestrator.v1.NodeService/Delete"
+	NodeService_GetUsage_FullMethodName                = "/orchestrator.v1.NodeService/GetUsage"
+	NodeService_ListInstances_FullMethodName           = "/orchestrator.v1.NodeService/ListInstances"
+	NodeService_Announce_FullMethodName                = "/orchestrator.v1.NodeService/Announce"
+	NodeService_UpdateRole_FullMethodName              = "/orchestrator.v1.NodeService/UpdateRole"
+	NodeService_CreateService_FullMethodName           = "/orchestrator.v1.NodeService/CreateService"
+	NodeService_ListServices_FullMethodName            = "/orchestrator.v1.NodeService/ListServices"
+	NodeService_CreateServiceBackup_FullMethodName     = "/orchestrator.v1.NodeService/CreateServiceBackup"
+	NodeService_ListServiceBackups_FullMethodName      = "/orchestrator.v1.NodeService/ListServiceBackups"
+	NodeService_RestoreServiceBackup_FullMethodName    = "/orchestrator.v1.NodeService/RestoreServiceBackup"
+	NodeService_DeleteServiceBackup_FullMethodName     = "/orchestrator.v1.NodeService/DeleteServiceBackup"
+	NodeService_GetBackupTicket_FullMethodName         = "/orchestrator.v1.NodeService/GetBackupTicket"
+	NodeService_DownloadServiceBackup_FullMethodName   = "/orchestrator.v1.NodeService/DownloadServiceBackup"
+	NodeService_UploadServiceBackup_FullMethodName     = "/orchestrator.v1.NodeService/UploadServiceBackup"
+	NodeService_ToggleBackups_FullMethodName           = "/orchestrator.v1.NodeService/ToggleBackups"
+	NodeService_ToggleServiceAutoBackup_FullMethodName = "/orchestrator.v1.NodeService/ToggleServiceAutoBackup"
+	NodeService_DeleteService_FullMethodName           = "/orchestrator.v1.NodeService/DeleteService"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -60,6 +69,24 @@ type NodeServiceClient interface {
 	// Список управляемых сервисов на ноде.
 	ListServices(ctx context.Context, in *NodeServiceListServicesRequest, opts ...grpc.CallOption) (*NodeServiceListServicesResponse, error)
 	// Удалить управляемый сервис на ноде.
+	// Создать бэкап управляемого сервиса.
+	CreateServiceBackup(ctx context.Context, in *NodeServiceCreateServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceCreateServiceBackupResponse, error)
+	// Получить список бэкапов.
+	ListServiceBackups(ctx context.Context, in *NodeServiceListServiceBackupsRequest, opts ...grpc.CallOption) (*NodeServiceListServiceBackupsResponse, error)
+	// Восстановить бэкап.
+	RestoreServiceBackup(ctx context.Context, in *NodeServiceRestoreServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceRestoreServiceBackupResponse, error)
+	// Удалить бэкап управляемого сервиса.
+	DeleteServiceBackup(ctx context.Context, in *NodeServiceDeleteServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceBackupResponse, error)
+	// Сгенерировать одноразовый тикет для защищенного скачивания бэкапа.
+	GetBackupTicket(ctx context.Context, in *NodeServiceGetBackupTicketRequest, opts ...grpc.CallOption) (*NodeServiceGetBackupTicketResponse, error)
+	// Скачать бэкап управляемого сервиса (стриминг чанков).
+	DownloadServiceBackup(ctx context.Context, in *NodeServiceDownloadServiceBackupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NodeServiceBackupChunk], error)
+	// Загрузить бэкап управляемого сервиса (стриминг чанков).
+	UploadServiceBackup(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse], error)
+	// Переключить статус бэкапов на ноде.
+	ToggleBackups(ctx context.Context, in *NodeServiceToggleBackupsRequest, opts ...grpc.CallOption) (*NodeServiceToggleBackupsResponse, error)
+	// Переключить статус автобэкапов сервиса.
+	ToggleServiceAutoBackup(ctx context.Context, in *NodeServiceToggleServiceAutoBackupRequest, opts ...grpc.CallOption) (*NodeServiceToggleServiceAutoBackupResponse, error)
 	DeleteService(ctx context.Context, in *NodeServiceDeleteServiceRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceResponse, error)
 }
 
@@ -171,6 +198,108 @@ func (c *nodeServiceClient) ListServices(ctx context.Context, in *NodeServiceLis
 	return out, nil
 }
 
+func (c *nodeServiceClient) CreateServiceBackup(ctx context.Context, in *NodeServiceCreateServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceCreateServiceBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceCreateServiceBackupResponse)
+	err := c.cc.Invoke(ctx, NodeService_CreateServiceBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) ListServiceBackups(ctx context.Context, in *NodeServiceListServiceBackupsRequest, opts ...grpc.CallOption) (*NodeServiceListServiceBackupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceListServiceBackupsResponse)
+	err := c.cc.Invoke(ctx, NodeService_ListServiceBackups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) RestoreServiceBackup(ctx context.Context, in *NodeServiceRestoreServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceRestoreServiceBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceRestoreServiceBackupResponse)
+	err := c.cc.Invoke(ctx, NodeService_RestoreServiceBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) DeleteServiceBackup(ctx context.Context, in *NodeServiceDeleteServiceBackupRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceDeleteServiceBackupResponse)
+	err := c.cc.Invoke(ctx, NodeService_DeleteServiceBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) GetBackupTicket(ctx context.Context, in *NodeServiceGetBackupTicketRequest, opts ...grpc.CallOption) (*NodeServiceGetBackupTicketResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceGetBackupTicketResponse)
+	err := c.cc.Invoke(ctx, NodeService_GetBackupTicket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) DownloadServiceBackup(ctx context.Context, in *NodeServiceDownloadServiceBackupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NodeServiceBackupChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NodeService_ServiceDesc.Streams[0], NodeService_DownloadServiceBackup_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[NodeServiceDownloadServiceBackupRequest, NodeServiceBackupChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_DownloadServiceBackupClient = grpc.ServerStreamingClient[NodeServiceBackupChunk]
+
+func (c *nodeServiceClient) UploadServiceBackup(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NodeService_ServiceDesc.Streams[1], NodeService_UploadServiceBackup_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_UploadServiceBackupClient = grpc.ClientStreamingClient[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]
+
+func (c *nodeServiceClient) ToggleBackups(ctx context.Context, in *NodeServiceToggleBackupsRequest, opts ...grpc.CallOption) (*NodeServiceToggleBackupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceToggleBackupsResponse)
+	err := c.cc.Invoke(ctx, NodeService_ToggleBackups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) ToggleServiceAutoBackup(ctx context.Context, in *NodeServiceToggleServiceAutoBackupRequest, opts ...grpc.CallOption) (*NodeServiceToggleServiceAutoBackupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceToggleServiceAutoBackupResponse)
+	err := c.cc.Invoke(ctx, NodeService_ToggleServiceAutoBackup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *nodeServiceClient) DeleteService(ctx context.Context, in *NodeServiceDeleteServiceRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NodeServiceDeleteServiceResponse)
@@ -209,6 +338,24 @@ type NodeServiceServer interface {
 	// Список управляемых сервисов на ноде.
 	ListServices(context.Context, *NodeServiceListServicesRequest) (*NodeServiceListServicesResponse, error)
 	// Удалить управляемый сервис на ноде.
+	// Создать бэкап управляемого сервиса.
+	CreateServiceBackup(context.Context, *NodeServiceCreateServiceBackupRequest) (*NodeServiceCreateServiceBackupResponse, error)
+	// Получить список бэкапов.
+	ListServiceBackups(context.Context, *NodeServiceListServiceBackupsRequest) (*NodeServiceListServiceBackupsResponse, error)
+	// Восстановить бэкап.
+	RestoreServiceBackup(context.Context, *NodeServiceRestoreServiceBackupRequest) (*NodeServiceRestoreServiceBackupResponse, error)
+	// Удалить бэкап управляемого сервиса.
+	DeleteServiceBackup(context.Context, *NodeServiceDeleteServiceBackupRequest) (*NodeServiceDeleteServiceBackupResponse, error)
+	// Сгенерировать одноразовый тикет для защищенного скачивания бэкапа.
+	GetBackupTicket(context.Context, *NodeServiceGetBackupTicketRequest) (*NodeServiceGetBackupTicketResponse, error)
+	// Скачать бэкап управляемого сервиса (стриминг чанков).
+	DownloadServiceBackup(*NodeServiceDownloadServiceBackupRequest, grpc.ServerStreamingServer[NodeServiceBackupChunk]) error
+	// Загрузить бэкап управляемого сервиса (стриминг чанков).
+	UploadServiceBackup(grpc.ClientStreamingServer[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]) error
+	// Переключить статус бэкапов на ноде.
+	ToggleBackups(context.Context, *NodeServiceToggleBackupsRequest) (*NodeServiceToggleBackupsResponse, error)
+	// Переключить статус автобэкапов сервиса.
+	ToggleServiceAutoBackup(context.Context, *NodeServiceToggleServiceAutoBackupRequest) (*NodeServiceToggleServiceAutoBackupResponse, error)
 	DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
@@ -249,6 +396,33 @@ func (UnimplementedNodeServiceServer) CreateService(context.Context, *NodeServic
 }
 func (UnimplementedNodeServiceServer) ListServices(context.Context, *NodeServiceListServicesRequest) (*NodeServiceListServicesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListServices not implemented")
+}
+func (UnimplementedNodeServiceServer) CreateServiceBackup(context.Context, *NodeServiceCreateServiceBackupRequest) (*NodeServiceCreateServiceBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateServiceBackup not implemented")
+}
+func (UnimplementedNodeServiceServer) ListServiceBackups(context.Context, *NodeServiceListServiceBackupsRequest) (*NodeServiceListServiceBackupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListServiceBackups not implemented")
+}
+func (UnimplementedNodeServiceServer) RestoreServiceBackup(context.Context, *NodeServiceRestoreServiceBackupRequest) (*NodeServiceRestoreServiceBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestoreServiceBackup not implemented")
+}
+func (UnimplementedNodeServiceServer) DeleteServiceBackup(context.Context, *NodeServiceDeleteServiceBackupRequest) (*NodeServiceDeleteServiceBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteServiceBackup not implemented")
+}
+func (UnimplementedNodeServiceServer) GetBackupTicket(context.Context, *NodeServiceGetBackupTicketRequest) (*NodeServiceGetBackupTicketResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBackupTicket not implemented")
+}
+func (UnimplementedNodeServiceServer) DownloadServiceBackup(*NodeServiceDownloadServiceBackupRequest, grpc.ServerStreamingServer[NodeServiceBackupChunk]) error {
+	return status.Error(codes.Unimplemented, "method DownloadServiceBackup not implemented")
+}
+func (UnimplementedNodeServiceServer) UploadServiceBackup(grpc.ClientStreamingServer[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]) error {
+	return status.Error(codes.Unimplemented, "method UploadServiceBackup not implemented")
+}
+func (UnimplementedNodeServiceServer) ToggleBackups(context.Context, *NodeServiceToggleBackupsRequest) (*NodeServiceToggleBackupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleBackups not implemented")
+}
+func (UnimplementedNodeServiceServer) ToggleServiceAutoBackup(context.Context, *NodeServiceToggleServiceAutoBackupRequest) (*NodeServiceToggleServiceAutoBackupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleServiceAutoBackup not implemented")
 }
 func (UnimplementedNodeServiceServer) DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteService not implemented")
@@ -454,6 +628,150 @@ func _NodeService_ListServices_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_CreateServiceBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceCreateServiceBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).CreateServiceBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_CreateServiceBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).CreateServiceBackup(ctx, req.(*NodeServiceCreateServiceBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_ListServiceBackups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceListServiceBackupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ListServiceBackups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_ListServiceBackups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ListServiceBackups(ctx, req.(*NodeServiceListServiceBackupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_RestoreServiceBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceRestoreServiceBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).RestoreServiceBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_RestoreServiceBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).RestoreServiceBackup(ctx, req.(*NodeServiceRestoreServiceBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_DeleteServiceBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceDeleteServiceBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).DeleteServiceBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_DeleteServiceBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).DeleteServiceBackup(ctx, req.(*NodeServiceDeleteServiceBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_GetBackupTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceGetBackupTicketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).GetBackupTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_GetBackupTicket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).GetBackupTicket(ctx, req.(*NodeServiceGetBackupTicketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_DownloadServiceBackup_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(NodeServiceDownloadServiceBackupRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(NodeServiceServer).DownloadServiceBackup(m, &grpc.GenericServerStream[NodeServiceDownloadServiceBackupRequest, NodeServiceBackupChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_DownloadServiceBackupServer = grpc.ServerStreamingServer[NodeServiceBackupChunk]
+
+func _NodeService_UploadServiceBackup_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(NodeServiceServer).UploadServiceBackup(&grpc.GenericServerStream[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_UploadServiceBackupServer = grpc.ClientStreamingServer[NodeServiceUploadBackupChunk, NodeServiceUploadBackupResponse]
+
+func _NodeService_ToggleBackups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceToggleBackupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ToggleBackups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_ToggleBackups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ToggleBackups(ctx, req.(*NodeServiceToggleBackupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_ToggleServiceAutoBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceToggleServiceAutoBackupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).ToggleServiceAutoBackup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_ToggleServiceAutoBackup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).ToggleServiceAutoBackup(ctx, req.(*NodeServiceToggleServiceAutoBackupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NodeService_DeleteService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NodeServiceDeleteServiceRequest)
 	if err := dec(in); err != nil {
@@ -520,10 +838,49 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NodeService_ListServices_Handler,
 		},
 		{
+			MethodName: "CreateServiceBackup",
+			Handler:    _NodeService_CreateServiceBackup_Handler,
+		},
+		{
+			MethodName: "ListServiceBackups",
+			Handler:    _NodeService_ListServiceBackups_Handler,
+		},
+		{
+			MethodName: "RestoreServiceBackup",
+			Handler:    _NodeService_RestoreServiceBackup_Handler,
+		},
+		{
+			MethodName: "DeleteServiceBackup",
+			Handler:    _NodeService_DeleteServiceBackup_Handler,
+		},
+		{
+			MethodName: "GetBackupTicket",
+			Handler:    _NodeService_GetBackupTicket_Handler,
+		},
+		{
+			MethodName: "ToggleBackups",
+			Handler:    _NodeService_ToggleBackups_Handler,
+		},
+		{
+			MethodName: "ToggleServiceAutoBackup",
+			Handler:    _NodeService_ToggleServiceAutoBackup_Handler,
+		},
+		{
 			MethodName: "DeleteService",
 			Handler:    _NodeService_DeleteService_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "DownloadServiceBackup",
+			Handler:       _NodeService_DownloadServiceBackup_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadServiceBackup",
+			Handler:       _NodeService_UploadServiceBackup_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "orchestrator/v1/node.proto",
 }

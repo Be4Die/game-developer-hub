@@ -10,6 +10,7 @@ import (
 	_ "github.com/Be4Die/game-developer-hub/protos/google/api"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -21,6 +22,113 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type BackupType int32
+
+const (
+	BackupType_BACKUP_TYPE_UNSPECIFIED BackupType = 0
+	BackupType_BACKUP_TYPE_MANUAL      BackupType = 1
+	BackupType_BACKUP_TYPE_UPLOADED    BackupType = 2
+	BackupType_BACKUP_TYPE_SCHEDULED   BackupType = 3
+)
+
+// Enum value maps for BackupType.
+var (
+	BackupType_name = map[int32]string{
+		0: "BACKUP_TYPE_UNSPECIFIED",
+		1: "BACKUP_TYPE_MANUAL",
+		2: "BACKUP_TYPE_UPLOADED",
+		3: "BACKUP_TYPE_SCHEDULED",
+	}
+	BackupType_value = map[string]int32{
+		"BACKUP_TYPE_UNSPECIFIED": 0,
+		"BACKUP_TYPE_MANUAL":      1,
+		"BACKUP_TYPE_UPLOADED":    2,
+		"BACKUP_TYPE_SCHEDULED":   3,
+	}
+)
+
+func (x BackupType) Enum() *BackupType {
+	p := new(BackupType)
+	*p = x
+	return p
+}
+
+func (x BackupType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BackupType) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_node_proto_enumTypes[0].Descriptor()
+}
+
+func (BackupType) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_node_proto_enumTypes[0]
+}
+
+func (x BackupType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BackupType.Descriptor instead.
+func (BackupType) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{0}
+}
+
+type BackupStatus int32
+
+const (
+	BackupStatus_BACKUP_STATUS_UNSPECIFIED BackupStatus = 0
+	BackupStatus_BACKUP_STATUS_CREATING    BackupStatus = 1
+	BackupStatus_BACKUP_STATUS_READY       BackupStatus = 2
+	BackupStatus_BACKUP_STATUS_FAILED      BackupStatus = 3
+	BackupStatus_BACKUP_STATUS_RESTORING   BackupStatus = 4
+)
+
+// Enum value maps for BackupStatus.
+var (
+	BackupStatus_name = map[int32]string{
+		0: "BACKUP_STATUS_UNSPECIFIED",
+		1: "BACKUP_STATUS_CREATING",
+		2: "BACKUP_STATUS_READY",
+		3: "BACKUP_STATUS_FAILED",
+		4: "BACKUP_STATUS_RESTORING",
+	}
+	BackupStatus_value = map[string]int32{
+		"BACKUP_STATUS_UNSPECIFIED": 0,
+		"BACKUP_STATUS_CREATING":    1,
+		"BACKUP_STATUS_READY":       2,
+		"BACKUP_STATUS_FAILED":      3,
+		"BACKUP_STATUS_RESTORING":   4,
+	}
+)
+
+func (x BackupStatus) Enum() *BackupStatus {
+	p := new(BackupStatus)
+	*p = x
+	return p
+}
+
+func (x BackupStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (BackupStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_node_proto_enumTypes[1].Descriptor()
+}
+
+func (BackupStatus) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_node_proto_enumTypes[1]
+}
+
+func (x BackupStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use BackupStatus.Descriptor instead.
+func (BackupStatus) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{1}
+}
 
 type RegisterNodeManual struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1284,11 +1392,1161 @@ func (*NodeServiceDeleteServiceResponse) Descriptor() ([]byte, []int) {
 	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{23}
 }
 
+type NodeServiceToggleBackupsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceToggleBackupsRequest) Reset() {
+	*x = NodeServiceToggleBackupsRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceToggleBackupsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceToggleBackupsRequest) ProtoMessage() {}
+
+func (x *NodeServiceToggleBackupsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceToggleBackupsRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceToggleBackupsRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *NodeServiceToggleBackupsRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceToggleBackupsRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type NodeServiceToggleBackupsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Node          *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceToggleBackupsResponse) Reset() {
+	*x = NodeServiceToggleBackupsResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceToggleBackupsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceToggleBackupsResponse) ProtoMessage() {}
+
+func (x *NodeServiceToggleBackupsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceToggleBackupsResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceToggleBackupsResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *NodeServiceToggleBackupsResponse) GetNode() *Node {
+	if x != nil {
+		return x.Node
+	}
+	return nil
+}
+
+type NodeServiceToggleServiceAutoBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) Reset() {
+	*x = NodeServiceToggleServiceAutoBackupRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceToggleServiceAutoBackupRequest) ProtoMessage() {}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceToggleServiceAutoBackupRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceToggleServiceAutoBackupRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceToggleServiceAutoBackupRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type NodeServiceToggleServiceAutoBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Service       *ManagedService        `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceToggleServiceAutoBackupResponse) Reset() {
+	*x = NodeServiceToggleServiceAutoBackupResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceToggleServiceAutoBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceToggleServiceAutoBackupResponse) ProtoMessage() {}
+
+func (x *NodeServiceToggleServiceAutoBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceToggleServiceAutoBackupResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceToggleServiceAutoBackupResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *NodeServiceToggleServiceAutoBackupResponse) GetService() *ManagedService {
+	if x != nil {
+		return x.Service
+	}
+	return nil
+}
+
+type ServiceBackup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	BackupId      string                 `protobuf:"bytes,2,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	NodeId        int64                  `protobuf:"varint,3,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceId     int64                  `protobuf:"varint,4,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,5,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	ServiceType   ServiceType            `protobuf:"varint,6,opt,name=service_type,json=serviceType,proto3,enum=orchestrator.v1.ServiceType" json:"service_type,omitempty"`
+	FileName      string                 `protobuf:"bytes,7,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,8,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	Checksum      string                 `protobuf:"bytes,9,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	BackupType    BackupType             `protobuf:"varint,10,opt,name=backup_type,json=backupType,proto3,enum=orchestrator.v1.BackupType" json:"backup_type,omitempty"`
+	Status        BackupStatus           `protobuf:"varint,11,opt,name=status,proto3,enum=orchestrator.v1.BackupStatus" json:"status,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ServiceBackup) Reset() {
+	*x = ServiceBackup{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServiceBackup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceBackup) ProtoMessage() {}
+
+func (x *ServiceBackup) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceBackup.ProtoReflect.Descriptor instead.
+func (*ServiceBackup) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ServiceBackup) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ServiceBackup) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+func (x *ServiceBackup) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *ServiceBackup) GetServiceId() int64 {
+	if x != nil {
+		return x.ServiceId
+	}
+	return 0
+}
+
+func (x *ServiceBackup) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *ServiceBackup) GetServiceType() ServiceType {
+	if x != nil {
+		return x.ServiceType
+	}
+	return ServiceType_SERVICE_TYPE_UNSPECIFIED
+}
+
+func (x *ServiceBackup) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *ServiceBackup) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *ServiceBackup) GetChecksum() string {
+	if x != nil {
+		return x.Checksum
+	}
+	return ""
+}
+
+func (x *ServiceBackup) GetBackupType() BackupType {
+	if x != nil {
+		return x.BackupType
+	}
+	return BackupType_BACKUP_TYPE_UNSPECIFIED
+}
+
+func (x *ServiceBackup) GetStatus() BackupStatus {
+	if x != nil {
+		return x.Status
+	}
+	return BackupStatus_BACKUP_STATUS_UNSPECIFIED
+}
+
+func (x *ServiceBackup) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+type NodeServiceCreateServiceBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceCreateServiceBackupRequest) Reset() {
+	*x = NodeServiceCreateServiceBackupRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceCreateServiceBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceCreateServiceBackupRequest) ProtoMessage() {}
+
+func (x *NodeServiceCreateServiceBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceCreateServiceBackupRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceCreateServiceBackupRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *NodeServiceCreateServiceBackupRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceCreateServiceBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+type NodeServiceCreateServiceBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backup        *ServiceBackup         `protobuf:"bytes,1,opt,name=backup,proto3" json:"backup,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceCreateServiceBackupResponse) Reset() {
+	*x = NodeServiceCreateServiceBackupResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceCreateServiceBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceCreateServiceBackupResponse) ProtoMessage() {}
+
+func (x *NodeServiceCreateServiceBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceCreateServiceBackupResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceCreateServiceBackupResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *NodeServiceCreateServiceBackupResponse) GetBackup() *ServiceBackup {
+	if x != nil {
+		return x.Backup
+	}
+	return nil
+}
+
+type NodeServiceListServiceBackupsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceListServiceBackupsRequest) Reset() {
+	*x = NodeServiceListServiceBackupsRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceListServiceBackupsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceListServiceBackupsRequest) ProtoMessage() {}
+
+func (x *NodeServiceListServiceBackupsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceListServiceBackupsRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceListServiceBackupsRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *NodeServiceListServiceBackupsRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceListServiceBackupsRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+type NodeServiceListServiceBackupsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backups       []*ServiceBackup       `protobuf:"bytes,1,rep,name=backups,proto3" json:"backups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceListServiceBackupsResponse) Reset() {
+	*x = NodeServiceListServiceBackupsResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceListServiceBackupsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceListServiceBackupsResponse) ProtoMessage() {}
+
+func (x *NodeServiceListServiceBackupsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceListServiceBackupsResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceListServiceBackupsResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *NodeServiceListServiceBackupsResponse) GetBackups() []*ServiceBackup {
+	if x != nil {
+		return x.Backups
+	}
+	return nil
+}
+
+type NodeServiceRestoreServiceBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,3,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceRestoreServiceBackupRequest) Reset() {
+	*x = NodeServiceRestoreServiceBackupRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceRestoreServiceBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceRestoreServiceBackupRequest) ProtoMessage() {}
+
+func (x *NodeServiceRestoreServiceBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceRestoreServiceBackupRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceRestoreServiceBackupRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *NodeServiceRestoreServiceBackupRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceRestoreServiceBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceRestoreServiceBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type NodeServiceRestoreServiceBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceRestoreServiceBackupResponse) Reset() {
+	*x = NodeServiceRestoreServiceBackupResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceRestoreServiceBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceRestoreServiceBackupResponse) ProtoMessage() {}
+
+func (x *NodeServiceRestoreServiceBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceRestoreServiceBackupResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceRestoreServiceBackupResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *NodeServiceRestoreServiceBackupResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *NodeServiceRestoreServiceBackupResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type NodeServiceDeleteServiceBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,3,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceDeleteServiceBackupRequest) Reset() {
+	*x = NodeServiceDeleteServiceBackupRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceDeleteServiceBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceDeleteServiceBackupRequest) ProtoMessage() {}
+
+func (x *NodeServiceDeleteServiceBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceDeleteServiceBackupRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceDeleteServiceBackupRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *NodeServiceDeleteServiceBackupRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceDeleteServiceBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceDeleteServiceBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type NodeServiceDeleteServiceBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceDeleteServiceBackupResponse) Reset() {
+	*x = NodeServiceDeleteServiceBackupResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceDeleteServiceBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceDeleteServiceBackupResponse) ProtoMessage() {}
+
+func (x *NodeServiceDeleteServiceBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceDeleteServiceBackupResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceDeleteServiceBackupResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{36}
+}
+
+type NodeServiceGetBackupTicketRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,3,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceGetBackupTicketRequest) Reset() {
+	*x = NodeServiceGetBackupTicketRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceGetBackupTicketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceGetBackupTicketRequest) ProtoMessage() {}
+
+func (x *NodeServiceGetBackupTicketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceGetBackupTicketRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetBackupTicketRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *NodeServiceGetBackupTicketRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceGetBackupTicketRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceGetBackupTicketRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type NodeServiceGetBackupTicketResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Ticket           string                 `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	ExpiresInSeconds int64                  `protobuf:"varint,2,opt,name=expires_in_seconds,json=expiresInSeconds,proto3" json:"expires_in_seconds,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *NodeServiceGetBackupTicketResponse) Reset() {
+	*x = NodeServiceGetBackupTicketResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceGetBackupTicketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceGetBackupTicketResponse) ProtoMessage() {}
+
+func (x *NodeServiceGetBackupTicketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceGetBackupTicketResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceGetBackupTicketResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *NodeServiceGetBackupTicketResponse) GetTicket() string {
+	if x != nil {
+		return x.Ticket
+	}
+	return ""
+}
+
+func (x *NodeServiceGetBackupTicketResponse) GetExpiresInSeconds() int64 {
+	if x != nil {
+		return x.ExpiresInSeconds
+	}
+	return 0
+}
+
+type NodeServiceDownloadServiceBackupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName   string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	BackupId      string                 `protobuf:"bytes,3,opt,name=backup_id,json=backupId,proto3" json:"backup_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceDownloadServiceBackupRequest) Reset() {
+	*x = NodeServiceDownloadServiceBackupRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceDownloadServiceBackupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceDownloadServiceBackupRequest) ProtoMessage() {}
+
+func (x *NodeServiceDownloadServiceBackupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceDownloadServiceBackupRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceDownloadServiceBackupRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *NodeServiceDownloadServiceBackupRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceDownloadServiceBackupRequest) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceDownloadServiceBackupRequest) GetBackupId() string {
+	if x != nil {
+		return x.BackupId
+	}
+	return ""
+}
+
+type NodeServiceBackupChunk struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chunk         []byte                 `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceBackupChunk) Reset() {
+	*x = NodeServiceBackupChunk{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceBackupChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceBackupChunk) ProtoMessage() {}
+
+func (x *NodeServiceBackupChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceBackupChunk.ProtoReflect.Descriptor instead.
+func (*NodeServiceBackupChunk) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *NodeServiceBackupChunk) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+type NodeServiceUploadBackupChunk struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*NodeServiceUploadBackupChunk_Metadata
+	//	*NodeServiceUploadBackupChunk_Chunk
+	Payload       isNodeServiceUploadBackupChunk_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceUploadBackupChunk) Reset() {
+	*x = NodeServiceUploadBackupChunk{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceUploadBackupChunk) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceUploadBackupChunk) ProtoMessage() {}
+
+func (x *NodeServiceUploadBackupChunk) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceUploadBackupChunk.ProtoReflect.Descriptor instead.
+func (*NodeServiceUploadBackupChunk) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *NodeServiceUploadBackupChunk) GetPayload() isNodeServiceUploadBackupChunk_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *NodeServiceUploadBackupChunk) GetMetadata() *NodeServiceUploadBackupMetadata {
+	if x != nil {
+		if x, ok := x.Payload.(*NodeServiceUploadBackupChunk_Metadata); ok {
+			return x.Metadata
+		}
+	}
+	return nil
+}
+
+func (x *NodeServiceUploadBackupChunk) GetChunk() []byte {
+	if x != nil {
+		if x, ok := x.Payload.(*NodeServiceUploadBackupChunk_Chunk); ok {
+			return x.Chunk
+		}
+	}
+	return nil
+}
+
+type isNodeServiceUploadBackupChunk_Payload interface {
+	isNodeServiceUploadBackupChunk_Payload()
+}
+
+type NodeServiceUploadBackupChunk_Metadata struct {
+	Metadata *NodeServiceUploadBackupMetadata `protobuf:"bytes,1,opt,name=metadata,proto3,oneof"`
+}
+
+type NodeServiceUploadBackupChunk_Chunk struct {
+	Chunk []byte `protobuf:"bytes,2,opt,name=chunk,proto3,oneof"`
+}
+
+func (*NodeServiceUploadBackupChunk_Metadata) isNodeServiceUploadBackupChunk_Payload() {}
+
+func (*NodeServiceUploadBackupChunk_Chunk) isNodeServiceUploadBackupChunk_Payload() {}
+
+type NodeServiceUploadBackupMetadata struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	NodeId             int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ServiceName        string                 `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	FileName           string                 `protobuf:"bytes,3,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	RestoreImmediately bool                   `protobuf:"varint,4,opt,name=restore_immediately,json=restoreImmediately,proto3" json:"restore_immediately,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *NodeServiceUploadBackupMetadata) Reset() {
+	*x = NodeServiceUploadBackupMetadata{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceUploadBackupMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceUploadBackupMetadata) ProtoMessage() {}
+
+func (x *NodeServiceUploadBackupMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceUploadBackupMetadata.ProtoReflect.Descriptor instead.
+func (*NodeServiceUploadBackupMetadata) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *NodeServiceUploadBackupMetadata) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceUploadBackupMetadata) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *NodeServiceUploadBackupMetadata) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *NodeServiceUploadBackupMetadata) GetRestoreImmediately() bool {
+	if x != nil {
+		return x.RestoreImmediately
+	}
+	return false
+}
+
+type NodeServiceUploadBackupResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Backup        *ServiceBackup         `protobuf:"bytes,1,opt,name=backup,proto3" json:"backup,omitempty"`
+	Restored      bool                   `protobuf:"varint,2,opt,name=restored,proto3" json:"restored,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceUploadBackupResponse) Reset() {
+	*x = NodeServiceUploadBackupResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceUploadBackupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceUploadBackupResponse) ProtoMessage() {}
+
+func (x *NodeServiceUploadBackupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceUploadBackupResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceUploadBackupResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *NodeServiceUploadBackupResponse) GetBackup() *ServiceBackup {
+	if x != nil {
+		return x.Backup
+	}
+	return nil
+}
+
+func (x *NodeServiceUploadBackupResponse) GetRestored() bool {
+	if x != nil {
+		return x.Restored
+	}
+	return false
+}
+
 var File_orchestrator_v1_node_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\n" +
-	"\x1aorchestrator/v1/node.proto\x12\x0forchestrator.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"l\n" +
+	"\x1aorchestrator/v1/node.proto\x12\x0forchestrator.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1corchestrator/v1/common.proto\"l\n" +
 	"\x12RegisterNodeManual\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x1b\n" +
@@ -1367,7 +2625,95 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\n" +
 	"service_id\x18\x02 \x01(\x03R\tserviceId\x12#\n" +
 	"\rdelete_volume\x18\x03 \x01(\bR\fdeleteVolume\"\"\n" +
-	" NodeServiceDeleteServiceResponse2\xe2\f\n" +
+	" NodeServiceDeleteServiceResponse\"T\n" +
+	"\x1fNodeServiceToggleBackupsRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"M\n" +
+	" NodeServiceToggleBackupsResponse\x12)\n" +
+	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"\x81\x01\n" +
+	")NodeServiceToggleServiceAutoBackupRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x18\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabled\"g\n" +
+	"*NodeServiceToggleServiceAutoBackupResponse\x129\n" +
+	"\aservice\x18\x01 \x01(\v2\x1f.orchestrator.v1.ManagedServiceR\aservice\"\xe0\x03\n" +
+	"\rServiceBackup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
+	"\tbackup_id\x18\x02 \x01(\tR\bbackupId\x12\x17\n" +
+	"\anode_id\x18\x03 \x01(\x03R\x06nodeId\x12\x1d\n" +
+	"\n" +
+	"service_id\x18\x04 \x01(\x03R\tserviceId\x12!\n" +
+	"\fservice_name\x18\x05 \x01(\tR\vserviceName\x12?\n" +
+	"\fservice_type\x18\x06 \x01(\x0e2\x1c.orchestrator.v1.ServiceTypeR\vserviceType\x12\x1b\n" +
+	"\tfile_name\x18\a \x01(\tR\bfileName\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\b \x01(\x03R\tsizeBytes\x12\x1a\n" +
+	"\bchecksum\x18\t \x01(\tR\bchecksum\x12<\n" +
+	"\vbackup_type\x18\n" +
+	" \x01(\x0e2\x1b.orchestrator.v1.BackupTypeR\n" +
+	"backupType\x125\n" +
+	"\x06status\x18\v \x01(\x0e2\x1d.orchestrator.v1.BackupStatusR\x06status\x129\n" +
+	"\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"c\n" +
+	"%NodeServiceCreateServiceBackupRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\"`\n" +
+	"&NodeServiceCreateServiceBackupResponse\x126\n" +
+	"\x06backup\x18\x01 \x01(\v2\x1e.orchestrator.v1.ServiceBackupR\x06backup\"b\n" +
+	"$NodeServiceListServiceBackupsRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\"a\n" +
+	"%NodeServiceListServiceBackupsResponse\x128\n" +
+	"\abackups\x18\x01 \x03(\v2\x1e.orchestrator.v1.ServiceBackupR\abackups\"\x81\x01\n" +
+	"&NodeServiceRestoreServiceBackupRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x03 \x01(\tR\bbackupId\"]\n" +
+	"'NodeServiceRestoreServiceBackupResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x80\x01\n" +
+	"%NodeServiceDeleteServiceBackupRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x03 \x01(\tR\bbackupId\"(\n" +
+	"&NodeServiceDeleteServiceBackupResponse\"|\n" +
+	"!NodeServiceGetBackupTicketRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x03 \x01(\tR\bbackupId\"j\n" +
+	"\"NodeServiceGetBackupTicketResponse\x12\x16\n" +
+	"\x06ticket\x18\x01 \x01(\tR\x06ticket\x12,\n" +
+	"\x12expires_in_seconds\x18\x02 \x01(\x03R\x10expiresInSeconds\"\x82\x01\n" +
+	"'NodeServiceDownloadServiceBackupRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tbackup_id\x18\x03 \x01(\tR\bbackupId\".\n" +
+	"\x16NodeServiceBackupChunk\x12\x14\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\"\x91\x01\n" +
+	"\x1cNodeServiceUploadBackupChunk\x12N\n" +
+	"\bmetadata\x18\x01 \x01(\v20.orchestrator.v1.NodeServiceUploadBackupMetadataH\x00R\bmetadata\x12\x16\n" +
+	"\x05chunk\x18\x02 \x01(\fH\x00R\x05chunkB\t\n" +
+	"\apayload\"\xab\x01\n" +
+	"\x1fNodeServiceUploadBackupMetadata\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12!\n" +
+	"\fservice_name\x18\x02 \x01(\tR\vserviceName\x12\x1b\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\x12/\n" +
+	"\x13restore_immediately\x18\x04 \x01(\bR\x12restoreImmediately\"u\n" +
+	"\x1fNodeServiceUploadBackupResponse\x126\n" +
+	"\x06backup\x18\x01 \x01(\v2\x1e.orchestrator.v1.ServiceBackupR\x06backup\x12\x1a\n" +
+	"\brestored\x18\x02 \x01(\bR\brestored*v\n" +
+	"\n" +
+	"BackupType\x12\x1b\n" +
+	"\x17BACKUP_TYPE_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12BACKUP_TYPE_MANUAL\x10\x01\x12\x18\n" +
+	"\x14BACKUP_TYPE_UPLOADED\x10\x02\x12\x19\n" +
+	"\x15BACKUP_TYPE_SCHEDULED\x10\x03*\x99\x01\n" +
+	"\fBackupStatus\x12\x1d\n" +
+	"\x19BACKUP_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16BACKUP_STATUS_CREATING\x10\x01\x12\x17\n" +
+	"\x13BACKUP_STATUS_READY\x10\x02\x12\x18\n" +
+	"\x14BACKUP_STATUS_FAILED\x10\x03\x12\x1b\n" +
+	"\x17BACKUP_STATUS_RESTORING\x10\x042\x8a\x1a\n" +
 	"\vNodeService\x12\x7f\n" +
 	"\bRegister\x12+.orchestrator.v1.NodeServiceRegisterRequest\x1a,.orchestrator.v1.NodeServiceRegisterResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/nodes\x12p\n" +
 	"\x04List\x12'.orchestrator.v1.NodeServiceListRequest\x1a(.orchestrator.v1.NodeServiceListResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/nodes\x12w\n" +
@@ -1379,7 +2725,16 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\n" +
 	"UpdateRole\x12-.orchestrator.v1.NodeServiceUpdateRoleRequest\x1a..orchestrator.v1.NodeServiceUpdateRoleResponse\"J\x82\xd3\xe4\x93\x02D:\x01*Z!:\x01*\x1a\x1c/api/v1/nodes/{node_id}/role2\x1c/api/v1/nodes/{node_id}/role\x12\xa1\x01\n" +
 	"\rCreateService\x120.orchestrator.v1.NodeServiceCreateServiceRequest\x1a1.orchestrator.v1.NodeServiceCreateServiceResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/nodes/{node_id}/services\x12\x9b\x01\n" +
-	"\fListServices\x12/.orchestrator.v1.NodeServiceListServicesRequest\x1a0.orchestrator.v1.NodeServiceListServicesResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/nodes/{node_id}/services\x12\xab\x01\n" +
+	"\fListServices\x12/.orchestrator.v1.NodeServiceListServicesRequest\x1a0.orchestrator.v1.NodeServiceListServicesResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/nodes/{node_id}/services\x12\xca\x01\n" +
+	"\x13CreateServiceBackup\x126.orchestrator.v1.NodeServiceCreateServiceBackupRequest\x1a7.orchestrator.v1.NodeServiceCreateServiceBackupResponse\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/nodes/{node_id}/services/{service_name}/backups\x12\xc4\x01\n" +
+	"\x12ListServiceBackups\x125.orchestrator.v1.NodeServiceListServiceBackupsRequest\x1a6.orchestrator.v1.NodeServiceListServiceBackupsResponse\"?\x82\xd3\xe4\x93\x029\x127/api/v1/nodes/{node_id}/services/{service_name}/backups\x12\xe1\x01\n" +
+	"\x14RestoreServiceBackup\x127.orchestrator.v1.NodeServiceRestoreServiceBackupRequest\x1a8.orchestrator.v1.NodeServiceRestoreServiceBackupResponse\"V\x82\xd3\xe4\x93\x02P:\x01*\"K/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/restore\x12\xd3\x01\n" +
+	"\x13DeleteServiceBackup\x126.orchestrator.v1.NodeServiceDeleteServiceBackupRequest\x1a7.orchestrator.v1.NodeServiceDeleteServiceBackupResponse\"K\x82\xd3\xe4\x93\x02E*C/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}\x12\xd1\x01\n" +
+	"\x0fGetBackupTicket\x122.orchestrator.v1.NodeServiceGetBackupTicketRequest\x1a3.orchestrator.v1.NodeServiceGetBackupTicketResponse\"U\x82\xd3\xe4\x93\x02O:\x01*\"J/api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/ticket\x12|\n" +
+	"\x15DownloadServiceBackup\x128.orchestrator.v1.NodeServiceDownloadServiceBackupRequest\x1a'.orchestrator.v1.NodeServiceBackupChunk0\x01\x12x\n" +
+	"\x13UploadServiceBackup\x12-.orchestrator.v1.NodeServiceUploadBackupChunk\x1a0.orchestrator.v1.NodeServiceUploadBackupResponse(\x01\x12\xa7\x01\n" +
+	"\rToggleBackups\x120.orchestrator.v1.NodeServiceToggleBackupsRequest\x1a1.orchestrator.v1.NodeServiceToggleBackupsResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\x1a&/api/v1/nodes/{node_id}/backups/toggle\x12\xe1\x01\n" +
+	"\x17ToggleServiceAutoBackup\x12:.orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest\x1a;.orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse\"M\x82\xd3\xe4\x93\x02G:\x01*\x1aB/api/v1/nodes/{node_id}/services/{service_name}/auto-backup/toggle\x12\xab\x01\n" +
 	"\rDeleteService\x120.orchestrator.v1.NodeServiceDeleteServiceRequest\x1a1.orchestrator.v1.NodeServiceDeleteServiceResponse\"5\x82\xd3\xe4\x93\x02/*-/api/v1/nodes/{node_id}/services/{service_id}B\xc9\x01\n" +
 	"\x13com.orchestrator.v1B\tNodeProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
@@ -1395,81 +2750,133 @@ func file_orchestrator_v1_node_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_node_proto_rawDescData
 }
 
-var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_orchestrator_v1_node_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_orchestrator_v1_node_proto_goTypes = []any{
-	(*RegisterNodeManual)(nil),               // 0: orchestrator.v1.RegisterNodeManual
-	(*RegisterNodeAuthorize)(nil),            // 1: orchestrator.v1.RegisterNodeAuthorize
-	(*NodeServiceRegisterRequest)(nil),       // 2: orchestrator.v1.NodeServiceRegisterRequest
-	(*NodeServiceRegisterResponse)(nil),      // 3: orchestrator.v1.NodeServiceRegisterResponse
-	(*NodeServiceListRequest)(nil),           // 4: orchestrator.v1.NodeServiceListRequest
-	(*NodeServiceListResponse)(nil),          // 5: orchestrator.v1.NodeServiceListResponse
-	(*NodeServiceGetRequest)(nil),            // 6: orchestrator.v1.NodeServiceGetRequest
-	(*NodeServiceGetResponse)(nil),           // 7: orchestrator.v1.NodeServiceGetResponse
-	(*NodeServiceDeleteRequest)(nil),         // 8: orchestrator.v1.NodeServiceDeleteRequest
-	(*NodeServiceDeleteResponse)(nil),        // 9: orchestrator.v1.NodeServiceDeleteResponse
-	(*NodeServiceGetUsageRequest)(nil),       // 10: orchestrator.v1.NodeServiceGetUsageRequest
-	(*NodeServiceGetUsageResponse)(nil),      // 11: orchestrator.v1.NodeServiceGetUsageResponse
-	(*NodeServiceListInstancesRequest)(nil),  // 12: orchestrator.v1.NodeServiceListInstancesRequest
-	(*NodeServiceListInstancesResponse)(nil), // 13: orchestrator.v1.NodeServiceListInstancesResponse
-	(*NodeServiceAnnounceRequest)(nil),       // 14: orchestrator.v1.NodeServiceAnnounceRequest
-	(*NodeServiceAnnounceResponse)(nil),      // 15: orchestrator.v1.NodeServiceAnnounceResponse
-	(*NodeServiceUpdateRoleRequest)(nil),     // 16: orchestrator.v1.NodeServiceUpdateRoleRequest
-	(*NodeServiceUpdateRoleResponse)(nil),    // 17: orchestrator.v1.NodeServiceUpdateRoleResponse
-	(*NodeServiceCreateServiceRequest)(nil),  // 18: orchestrator.v1.NodeServiceCreateServiceRequest
-	(*NodeServiceCreateServiceResponse)(nil), // 19: orchestrator.v1.NodeServiceCreateServiceResponse
-	(*NodeServiceListServicesRequest)(nil),   // 20: orchestrator.v1.NodeServiceListServicesRequest
-	(*NodeServiceListServicesResponse)(nil),  // 21: orchestrator.v1.NodeServiceListServicesResponse
-	(*NodeServiceDeleteServiceRequest)(nil),  // 22: orchestrator.v1.NodeServiceDeleteServiceRequest
-	(*NodeServiceDeleteServiceResponse)(nil), // 23: orchestrator.v1.NodeServiceDeleteServiceResponse
-	(*Node)(nil),                             // 24: orchestrator.v1.Node
-	(NodeStatus)(0),                          // 25: orchestrator.v1.NodeStatus
-	(*ResourceUsage)(nil),                    // 26: orchestrator.v1.ResourceUsage
-	(*Instance)(nil),                         // 27: orchestrator.v1.Instance
-	(NodeRole)(0),                            // 28: orchestrator.v1.NodeRole
-	(ServiceType)(0),                         // 29: orchestrator.v1.ServiceType
-	(*ManagedService)(nil),                   // 30: orchestrator.v1.ManagedService
+	(BackupType)(0),                                    // 0: orchestrator.v1.BackupType
+	(BackupStatus)(0),                                  // 1: orchestrator.v1.BackupStatus
+	(*RegisterNodeManual)(nil),                         // 2: orchestrator.v1.RegisterNodeManual
+	(*RegisterNodeAuthorize)(nil),                      // 3: orchestrator.v1.RegisterNodeAuthorize
+	(*NodeServiceRegisterRequest)(nil),                 // 4: orchestrator.v1.NodeServiceRegisterRequest
+	(*NodeServiceRegisterResponse)(nil),                // 5: orchestrator.v1.NodeServiceRegisterResponse
+	(*NodeServiceListRequest)(nil),                     // 6: orchestrator.v1.NodeServiceListRequest
+	(*NodeServiceListResponse)(nil),                    // 7: orchestrator.v1.NodeServiceListResponse
+	(*NodeServiceGetRequest)(nil),                      // 8: orchestrator.v1.NodeServiceGetRequest
+	(*NodeServiceGetResponse)(nil),                     // 9: orchestrator.v1.NodeServiceGetResponse
+	(*NodeServiceDeleteRequest)(nil),                   // 10: orchestrator.v1.NodeServiceDeleteRequest
+	(*NodeServiceDeleteResponse)(nil),                  // 11: orchestrator.v1.NodeServiceDeleteResponse
+	(*NodeServiceGetUsageRequest)(nil),                 // 12: orchestrator.v1.NodeServiceGetUsageRequest
+	(*NodeServiceGetUsageResponse)(nil),                // 13: orchestrator.v1.NodeServiceGetUsageResponse
+	(*NodeServiceListInstancesRequest)(nil),            // 14: orchestrator.v1.NodeServiceListInstancesRequest
+	(*NodeServiceListInstancesResponse)(nil),           // 15: orchestrator.v1.NodeServiceListInstancesResponse
+	(*NodeServiceAnnounceRequest)(nil),                 // 16: orchestrator.v1.NodeServiceAnnounceRequest
+	(*NodeServiceAnnounceResponse)(nil),                // 17: orchestrator.v1.NodeServiceAnnounceResponse
+	(*NodeServiceUpdateRoleRequest)(nil),               // 18: orchestrator.v1.NodeServiceUpdateRoleRequest
+	(*NodeServiceUpdateRoleResponse)(nil),              // 19: orchestrator.v1.NodeServiceUpdateRoleResponse
+	(*NodeServiceCreateServiceRequest)(nil),            // 20: orchestrator.v1.NodeServiceCreateServiceRequest
+	(*NodeServiceCreateServiceResponse)(nil),           // 21: orchestrator.v1.NodeServiceCreateServiceResponse
+	(*NodeServiceListServicesRequest)(nil),             // 22: orchestrator.v1.NodeServiceListServicesRequest
+	(*NodeServiceListServicesResponse)(nil),            // 23: orchestrator.v1.NodeServiceListServicesResponse
+	(*NodeServiceDeleteServiceRequest)(nil),            // 24: orchestrator.v1.NodeServiceDeleteServiceRequest
+	(*NodeServiceDeleteServiceResponse)(nil),           // 25: orchestrator.v1.NodeServiceDeleteServiceResponse
+	(*NodeServiceToggleBackupsRequest)(nil),            // 26: orchestrator.v1.NodeServiceToggleBackupsRequest
+	(*NodeServiceToggleBackupsResponse)(nil),           // 27: orchestrator.v1.NodeServiceToggleBackupsResponse
+	(*NodeServiceToggleServiceAutoBackupRequest)(nil),  // 28: orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest
+	(*NodeServiceToggleServiceAutoBackupResponse)(nil), // 29: orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse
+	(*ServiceBackup)(nil),                              // 30: orchestrator.v1.ServiceBackup
+	(*NodeServiceCreateServiceBackupRequest)(nil),      // 31: orchestrator.v1.NodeServiceCreateServiceBackupRequest
+	(*NodeServiceCreateServiceBackupResponse)(nil),     // 32: orchestrator.v1.NodeServiceCreateServiceBackupResponse
+	(*NodeServiceListServiceBackupsRequest)(nil),       // 33: orchestrator.v1.NodeServiceListServiceBackupsRequest
+	(*NodeServiceListServiceBackupsResponse)(nil),      // 34: orchestrator.v1.NodeServiceListServiceBackupsResponse
+	(*NodeServiceRestoreServiceBackupRequest)(nil),     // 35: orchestrator.v1.NodeServiceRestoreServiceBackupRequest
+	(*NodeServiceRestoreServiceBackupResponse)(nil),    // 36: orchestrator.v1.NodeServiceRestoreServiceBackupResponse
+	(*NodeServiceDeleteServiceBackupRequest)(nil),      // 37: orchestrator.v1.NodeServiceDeleteServiceBackupRequest
+	(*NodeServiceDeleteServiceBackupResponse)(nil),     // 38: orchestrator.v1.NodeServiceDeleteServiceBackupResponse
+	(*NodeServiceGetBackupTicketRequest)(nil),          // 39: orchestrator.v1.NodeServiceGetBackupTicketRequest
+	(*NodeServiceGetBackupTicketResponse)(nil),         // 40: orchestrator.v1.NodeServiceGetBackupTicketResponse
+	(*NodeServiceDownloadServiceBackupRequest)(nil),    // 41: orchestrator.v1.NodeServiceDownloadServiceBackupRequest
+	(*NodeServiceBackupChunk)(nil),                     // 42: orchestrator.v1.NodeServiceBackupChunk
+	(*NodeServiceUploadBackupChunk)(nil),               // 43: orchestrator.v1.NodeServiceUploadBackupChunk
+	(*NodeServiceUploadBackupMetadata)(nil),            // 44: orchestrator.v1.NodeServiceUploadBackupMetadata
+	(*NodeServiceUploadBackupResponse)(nil),            // 45: orchestrator.v1.NodeServiceUploadBackupResponse
+	(*Node)(nil),                                       // 46: orchestrator.v1.Node
+	(NodeStatus)(0),                                    // 47: orchestrator.v1.NodeStatus
+	(*ResourceUsage)(nil),                              // 48: orchestrator.v1.ResourceUsage
+	(*Instance)(nil),                                   // 49: orchestrator.v1.Instance
+	(NodeRole)(0),                                      // 50: orchestrator.v1.NodeRole
+	(ServiceType)(0),                                   // 51: orchestrator.v1.ServiceType
+	(*ManagedService)(nil),                             // 52: orchestrator.v1.ManagedService
+	(*timestamppb.Timestamp)(nil),                      // 53: google.protobuf.Timestamp
 }
 var file_orchestrator_v1_node_proto_depIdxs = []int32{
-	0,  // 0: orchestrator.v1.NodeServiceRegisterRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
-	1,  // 1: orchestrator.v1.NodeServiceRegisterRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
-	24, // 2: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
-	25, // 3: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
-	24, // 4: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
-	24, // 5: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
-	26, // 6: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	27, // 7: orchestrator.v1.NodeServiceListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
-	28, // 8: orchestrator.v1.NodeServiceUpdateRoleRequest.role:type_name -> orchestrator.v1.NodeRole
-	24, // 9: orchestrator.v1.NodeServiceUpdateRoleResponse.node:type_name -> orchestrator.v1.Node
-	29, // 10: orchestrator.v1.NodeServiceCreateServiceRequest.type:type_name -> orchestrator.v1.ServiceType
-	30, // 11: orchestrator.v1.NodeServiceCreateServiceResponse.service:type_name -> orchestrator.v1.ManagedService
-	30, // 12: orchestrator.v1.NodeServiceListServicesResponse.services:type_name -> orchestrator.v1.ManagedService
-	2,  // 13: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
-	4,  // 14: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
-	6,  // 15: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
-	8,  // 16: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
-	10, // 17: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
-	12, // 18: orchestrator.v1.NodeService.ListInstances:input_type -> orchestrator.v1.NodeServiceListInstancesRequest
-	14, // 19: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
-	16, // 20: orchestrator.v1.NodeService.UpdateRole:input_type -> orchestrator.v1.NodeServiceUpdateRoleRequest
-	18, // 21: orchestrator.v1.NodeService.CreateService:input_type -> orchestrator.v1.NodeServiceCreateServiceRequest
-	20, // 22: orchestrator.v1.NodeService.ListServices:input_type -> orchestrator.v1.NodeServiceListServicesRequest
-	22, // 23: orchestrator.v1.NodeService.DeleteService:input_type -> orchestrator.v1.NodeServiceDeleteServiceRequest
-	3,  // 24: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
-	5,  // 25: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
-	7,  // 26: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
-	9,  // 27: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
-	11, // 28: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
-	13, // 29: orchestrator.v1.NodeService.ListInstances:output_type -> orchestrator.v1.NodeServiceListInstancesResponse
-	15, // 30: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
-	17, // 31: orchestrator.v1.NodeService.UpdateRole:output_type -> orchestrator.v1.NodeServiceUpdateRoleResponse
-	19, // 32: orchestrator.v1.NodeService.CreateService:output_type -> orchestrator.v1.NodeServiceCreateServiceResponse
-	21, // 33: orchestrator.v1.NodeService.ListServices:output_type -> orchestrator.v1.NodeServiceListServicesResponse
-	23, // 34: orchestrator.v1.NodeService.DeleteService:output_type -> orchestrator.v1.NodeServiceDeleteServiceResponse
-	24, // [24:35] is the sub-list for method output_type
-	13, // [13:24] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	2,  // 0: orchestrator.v1.NodeServiceRegisterRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
+	3,  // 1: orchestrator.v1.NodeServiceRegisterRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
+	46, // 2: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
+	47, // 3: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
+	46, // 4: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
+	46, // 5: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
+	48, // 6: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	49, // 7: orchestrator.v1.NodeServiceListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
+	50, // 8: orchestrator.v1.NodeServiceUpdateRoleRequest.role:type_name -> orchestrator.v1.NodeRole
+	46, // 9: orchestrator.v1.NodeServiceUpdateRoleResponse.node:type_name -> orchestrator.v1.Node
+	51, // 10: orchestrator.v1.NodeServiceCreateServiceRequest.type:type_name -> orchestrator.v1.ServiceType
+	52, // 11: orchestrator.v1.NodeServiceCreateServiceResponse.service:type_name -> orchestrator.v1.ManagedService
+	52, // 12: orchestrator.v1.NodeServiceListServicesResponse.services:type_name -> orchestrator.v1.ManagedService
+	46, // 13: orchestrator.v1.NodeServiceToggleBackupsResponse.node:type_name -> orchestrator.v1.Node
+	52, // 14: orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse.service:type_name -> orchestrator.v1.ManagedService
+	51, // 15: orchestrator.v1.ServiceBackup.service_type:type_name -> orchestrator.v1.ServiceType
+	0,  // 16: orchestrator.v1.ServiceBackup.backup_type:type_name -> orchestrator.v1.BackupType
+	1,  // 17: orchestrator.v1.ServiceBackup.status:type_name -> orchestrator.v1.BackupStatus
+	53, // 18: orchestrator.v1.ServiceBackup.created_at:type_name -> google.protobuf.Timestamp
+	30, // 19: orchestrator.v1.NodeServiceCreateServiceBackupResponse.backup:type_name -> orchestrator.v1.ServiceBackup
+	30, // 20: orchestrator.v1.NodeServiceListServiceBackupsResponse.backups:type_name -> orchestrator.v1.ServiceBackup
+	44, // 21: orchestrator.v1.NodeServiceUploadBackupChunk.metadata:type_name -> orchestrator.v1.NodeServiceUploadBackupMetadata
+	30, // 22: orchestrator.v1.NodeServiceUploadBackupResponse.backup:type_name -> orchestrator.v1.ServiceBackup
+	4,  // 23: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
+	6,  // 24: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
+	8,  // 25: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
+	10, // 26: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
+	12, // 27: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
+	14, // 28: orchestrator.v1.NodeService.ListInstances:input_type -> orchestrator.v1.NodeServiceListInstancesRequest
+	16, // 29: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
+	18, // 30: orchestrator.v1.NodeService.UpdateRole:input_type -> orchestrator.v1.NodeServiceUpdateRoleRequest
+	20, // 31: orchestrator.v1.NodeService.CreateService:input_type -> orchestrator.v1.NodeServiceCreateServiceRequest
+	22, // 32: orchestrator.v1.NodeService.ListServices:input_type -> orchestrator.v1.NodeServiceListServicesRequest
+	31, // 33: orchestrator.v1.NodeService.CreateServiceBackup:input_type -> orchestrator.v1.NodeServiceCreateServiceBackupRequest
+	33, // 34: orchestrator.v1.NodeService.ListServiceBackups:input_type -> orchestrator.v1.NodeServiceListServiceBackupsRequest
+	35, // 35: orchestrator.v1.NodeService.RestoreServiceBackup:input_type -> orchestrator.v1.NodeServiceRestoreServiceBackupRequest
+	37, // 36: orchestrator.v1.NodeService.DeleteServiceBackup:input_type -> orchestrator.v1.NodeServiceDeleteServiceBackupRequest
+	39, // 37: orchestrator.v1.NodeService.GetBackupTicket:input_type -> orchestrator.v1.NodeServiceGetBackupTicketRequest
+	41, // 38: orchestrator.v1.NodeService.DownloadServiceBackup:input_type -> orchestrator.v1.NodeServiceDownloadServiceBackupRequest
+	43, // 39: orchestrator.v1.NodeService.UploadServiceBackup:input_type -> orchestrator.v1.NodeServiceUploadBackupChunk
+	26, // 40: orchestrator.v1.NodeService.ToggleBackups:input_type -> orchestrator.v1.NodeServiceToggleBackupsRequest
+	28, // 41: orchestrator.v1.NodeService.ToggleServiceAutoBackup:input_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest
+	24, // 42: orchestrator.v1.NodeService.DeleteService:input_type -> orchestrator.v1.NodeServiceDeleteServiceRequest
+	5,  // 43: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
+	7,  // 44: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
+	9,  // 45: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
+	11, // 46: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
+	13, // 47: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
+	15, // 48: orchestrator.v1.NodeService.ListInstances:output_type -> orchestrator.v1.NodeServiceListInstancesResponse
+	17, // 49: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
+	19, // 50: orchestrator.v1.NodeService.UpdateRole:output_type -> orchestrator.v1.NodeServiceUpdateRoleResponse
+	21, // 51: orchestrator.v1.NodeService.CreateService:output_type -> orchestrator.v1.NodeServiceCreateServiceResponse
+	23, // 52: orchestrator.v1.NodeService.ListServices:output_type -> orchestrator.v1.NodeServiceListServicesResponse
+	32, // 53: orchestrator.v1.NodeService.CreateServiceBackup:output_type -> orchestrator.v1.NodeServiceCreateServiceBackupResponse
+	34, // 54: orchestrator.v1.NodeService.ListServiceBackups:output_type -> orchestrator.v1.NodeServiceListServiceBackupsResponse
+	36, // 55: orchestrator.v1.NodeService.RestoreServiceBackup:output_type -> orchestrator.v1.NodeServiceRestoreServiceBackupResponse
+	38, // 56: orchestrator.v1.NodeService.DeleteServiceBackup:output_type -> orchestrator.v1.NodeServiceDeleteServiceBackupResponse
+	40, // 57: orchestrator.v1.NodeService.GetBackupTicket:output_type -> orchestrator.v1.NodeServiceGetBackupTicketResponse
+	42, // 58: orchestrator.v1.NodeService.DownloadServiceBackup:output_type -> orchestrator.v1.NodeServiceBackupChunk
+	45, // 59: orchestrator.v1.NodeService.UploadServiceBackup:output_type -> orchestrator.v1.NodeServiceUploadBackupResponse
+	27, // 60: orchestrator.v1.NodeService.ToggleBackups:output_type -> orchestrator.v1.NodeServiceToggleBackupsResponse
+	29, // 61: orchestrator.v1.NodeService.ToggleServiceAutoBackup:output_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse
+	25, // 62: orchestrator.v1.NodeService.DeleteService:output_type -> orchestrator.v1.NodeServiceDeleteServiceResponse
+	43, // [43:63] is the sub-list for method output_type
+	23, // [23:43] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_node_proto_init() }
@@ -1487,18 +2894,23 @@ func file_orchestrator_v1_node_proto_init() {
 	file_orchestrator_v1_node_proto_msgTypes[14].OneofWrappers = []any{}
 	file_orchestrator_v1_node_proto_msgTypes[18].OneofWrappers = []any{}
 	file_orchestrator_v1_node_proto_msgTypes[20].OneofWrappers = []any{}
+	file_orchestrator_v1_node_proto_msgTypes[41].OneofWrappers = []any{
+		(*NodeServiceUploadBackupChunk_Metadata)(nil),
+		(*NodeServiceUploadBackupChunk_Chunk)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_node_proto_rawDesc), len(file_orchestrator_v1_node_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   24,
+			NumEnums:      2,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_orchestrator_v1_node_proto_goTypes,
 		DependencyIndexes: file_orchestrator_v1_node_proto_depIdxs,
+		EnumInfos:         file_orchestrator_v1_node_proto_enumTypes,
 		MessageInfos:      file_orchestrator_v1_node_proto_msgTypes,
 	}.Build()
 	File_orchestrator_v1_node_proto = out.File

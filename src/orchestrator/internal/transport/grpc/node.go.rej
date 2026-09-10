@@ -1,0 +1,45 @@
+--- node.go
++++ node.go
+@@ -524,25 +524,26 @@
+ 	return &pb.NodeServiceUploadServiceBackupResponse{Backup: mapServiceBackupToProto(b), Restored: restored}, nil
+ }
+ 
+-func (s *NodeHandler) ToggleBackups(ctx context.Context, req *pb.NodeServiceToggleBackupsRequest) (*pb.NodeServiceToggleBackupsResponse, error) {
+-	callerID, err := GetUserID(ctx)
+-	if err != nil {
+-		return nil, status.Error(codes.Unauthenticated, err.Error())
++func (h *NodeHandler) ToggleBackups(ctx context.Context, req *pb.NodeServiceToggleBackupsRequest) (*pb.NodeServiceToggleBackupsResponse, error) {
++	callerID, ok := GetUserID(ctx)
++	if !ok {
++		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
+ 	}
+-	node, err := h.nodeService.ToggleBackups(ctx, callerID, req.GetNodeId(), req.GetEnabled())
++	if isSuperuser(ctx) { callerID = "" }
++	node, err := h.nodeService.ToggleBackups(ctx, callerID, req.GetNodeId(), req.GetEnabled())
+ 	if err != nil {
+-		if errors.Is(err, domain.ErrNotFound) {
+-			return nil, status.Error(codes.NotFound, "node not found")
+-		}
+-		if errors.Is(err, domain.ErrForbidden) {
+-			return nil, status.Error(codes.PermissionDenied, "forbidden")
+-		}
+-		h.nodeService.log.Error("ToggleBackups failed", slog.Any("err", err))
+-		return nil, status.Error(codes.Internal, "internal error")
++		return nil, domainError(err, "toggle backups")
+ 	}
+ 	return &pb.NodeServiceToggleBackupsResponse{Node: mapNodeToProto(node)}, nil
+ }
+ 
+-func (s *NodeHandler) ToggleServiceAutoBackup(ctx context.Context, req *pb.NodeServiceToggleServiceAutoBackupRequest) (*pb.NodeServiceToggleServiceAutoBackupResponse, error) {
+-	callerID, err := GetUserID(ctx)
+-	if err != nil {
++func (h *NodeHandler) ToggleServiceAutoBackup(ctx context.Context, req *pb.NodeServiceToggleServiceAutoBackupRequest) (*pb.NodeServiceToggleServiceAutoBackupResponse, error) {
++	callerID, ok := GetUserID(ctx)
++	if !ok {
++		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
++	}
++	if isSuperuser(ctx) { callerID = "" }
++	svc, err := h.nodeService.ToggleServiceAutoBackup(ctx, callerID, req.GetNodeId(), req.GetServiceName(), req.GetEnabled())
++	if err != nil {
++		return nil, domainError(err, "toggle auto backup")
++	}

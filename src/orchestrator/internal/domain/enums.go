@@ -238,3 +238,27 @@ func (s ServiceStatus) String() string {
 	}
 }
 
+// ─── BackupType & BackupStatus ─────────────────────────────────────────────
+
+// BackupType определяет способ создания бэкапа.
+type BackupType uint8
+
+const (
+	BackupTypeUnspecified BackupType = iota
+	BackupTypeManual
+	BackupTypeUploaded
+	BackupTypeScheduled
+)
+
+// BackupStatus определяет статус создания/восстановления бэкапа.
+type BackupStatus uint8
+
+const (
+	BackupStatusUnspecified BackupStatus = iota
+	BackupStatusCreating
+	BackupStatusReady
+	BackupStatusFailed
+	BackupStatusRestoring
+)
+
+

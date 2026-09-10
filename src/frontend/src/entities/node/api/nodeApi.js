@@ -102,3 +102,78 @@ export function deleteNodeService(nodeId, serviceId, deleteVolume = false) {
   });
 }
 
+// ─── Managed Service Backups ───────────────────────────────────────────────
+
+export function listServiceBackups(nodeId, serviceName) {
+  return http
+    .get(`/nodes/${nodeId}/services/${serviceName}/backups`)
+    .then((r) => r.data.backups ?? []);
+}
+
+export function createServiceBackup(nodeId, serviceName) {
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceName}/backups`, {})
+    .then((r) => r.data.backup);
+}
+
+export function restoreServiceBackup(nodeId, serviceName, backupId) {
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceName}/backups/${backupId}/restore`, {})
+    .then((r) => r.data);
+}
+
+export function deleteServiceBackup(nodeId, serviceName, backupId) {
+  return http.delete(`/nodes/${nodeId}/services/${serviceName}/backups/${backupId}`);
+}
+
+export function getServiceBackupTicket(nodeId, serviceName, backupId) {
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceName}/backups/${backupId}/ticket`, {})
+    .then((r) => r.data.ticket);
+}
+
+export async function downloadServiceBackup(nodeId, serviceName, backupId, fileName) {
+  const ticket = await getServiceBackupTicket(nodeId, serviceName, backupId);
+  const downloadUrl = `/api/v1/nodes/${nodeId}/services/${serviceName}/backups/${backupId}/download?ticket=${encodeURIComponent(ticket)}`;
+
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.setAttribute('download', fileName || `${backupId}.archive`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export function uploadServiceBackup(nodeId, serviceName, file, restoreImmediately = false, onProgress = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('restore_immediately', restoreImmediately ? 'true' : 'false');
+
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceName}/backups/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percent);
+        }
+      },
+    })
+    .then((r) => r.data.backup);
+}
+
+
+
+export function toggleNodeBackups(nodeId, enabled) {
+  return http
+    .put(`/nodes/${nodeId}/backups/toggle`, { enabled })
+    .then((r) => normalizeNode(r.data.node));
+}
+
+export function toggleServiceAutoBackup(nodeId, serviceName, enabled) {
+  return http
+    .put(`/nodes/${nodeId}/services/${serviceName}/auto-backup/toggle`, { enabled })
+    .then((r) => normalizeService(r.data.service));
+}

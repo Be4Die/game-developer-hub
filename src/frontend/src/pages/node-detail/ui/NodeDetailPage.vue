@@ -189,7 +189,7 @@
             </button>
           </div>
 
-          <!-- Веб-панель управления БД (AdminerEvo): компактная строка -->
+          <!-- Веб-панель управления БД (AdminerEvo) и Backup Manager -->
           <div class="web-ui-row-container">
             <div class="web-ui-row">
               <div class="web-ui-cell-title">
@@ -246,6 +246,60 @@
                 </button>
               </div>
             </div>
+
+            <!-- Резервное копирование (Backup Manager) -->
+            <div class="web-ui-row">
+              <div class="web-ui-cell-title">
+                <div class="service-type-icon-box" style="background-color: rgba(63, 185, 80, 0.15)">
+                  <HardDrive class="service-icon" style="color: #3fb950" />
+                </div>
+                <div class="service-name-text">
+                  <span class="service-name">Резервное копирование — Backup Manager</span>
+                  <span class="service-subtext">Снимки данных, дампы на ПК и откат баз</span>
+                </div>
+              </div>
+
+              <div class="web-ui-cell-status">
+                <span v-if="backupsEnabled" class="status-badge success">
+                  <span class="status-dot"></span>
+                  Работает
+                </span>
+                <span v-else class="status-badge muted">
+                  <span class="status-dot"></span>
+                  Отключено
+                </span>
+              </div>
+
+              <div class="web-ui-cell-link">
+                <button
+                  v-if="backupsEnabled && storageServices.length"
+                  class="adminer-link btn-link-text"
+                  title="Открыть управление снимками данных"
+                  @click="openBackupsForFirstService"
+                >
+                  <span>Управление</span>
+                  <HardDrive class="icon-xs" />
+                </button>
+                <span v-else class="text-muted-link">Недоступно</span>
+              </div>
+
+              <div class="web-ui-cell-action">
+                <button
+                  v-if="backupsEnabled"
+                  class="btn-outline btn-sm btn-danger-outline"
+                  @click="toggleBackups"
+                >
+                  Отключить
+                </button>
+                <button
+                  v-else
+                  class="btn-primary btn-sm"
+                  @click="toggleBackups"
+                >
+                  Подключить
+                </button>
+              </div>
+            </div>
           </div>
 
           <div v-if="servicesLoading" class="loading-state">
@@ -264,6 +318,7 @@
                   <th>Объем на диске</th>
                   <th>Доступ к играм</th>
                   <th v-if="adminerService && adminerService.status === 'running'">Веб-панель</th>
+                  <th v-if="backupsEnabled">Бэкапы</th>
                   <th class="col-actions"></th>
                 </tr>
               </thead>
@@ -383,6 +438,20 @@
                       <ExternalLink class="icon-xs" />
                       <span>Открыть в панели</span>
                     </a>
+                    <span v-else class="text-muted">—</span>
+                  </td>
+
+                  <!-- Бэкапы -->
+                  <td v-if="backupsEnabled">
+                    <button
+                      v-if="isBackupSupported(svc) && svc.status === 'running'"
+                      class="btn-backup-open"
+                      title="Управление снимками и восстановление"
+                      @click="openBackupsModal(svc)"
+                    >
+                      <HardDrive class="icon-xs" />
+                      <span>Бэкапы</span>
+                    </button>
                     <span v-else class="text-muted">—</span>
                   </td>
 
@@ -523,6 +592,14 @@
       @cancel="showCreateServiceModal = false"
     />
 
+    <!-- Модальное окно резервных копий сервиса -->
+    <ServiceBackupsModal
+      v-if="showBackupsModal && selectedBackupService"
+      :node-id="node.id"
+      :service="selectedBackupService"
+      @close="closeBackupsModal"
+    />
+
     <!-- Подтверждение удаления ноды -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
       <div class="modal card delete-modal">
@@ -558,12 +635,14 @@ import {
   LayoutDashboard,
   ExternalLink,
   Globe,
+  HardDrive,
 } from 'lucide-vue-next';
 import { StatusBadge, ResourceUsageCard } from '@/shared/ui';
 import {
   getNode,
   getNodeUsage,
   deleteNode,
+  toggleNodeBackups,
   registerNode,
   listNodeInstances,
   updateNodeRole,
@@ -572,7 +651,7 @@ import {
   createNodeService,
 } from '@/entities/node';
 import { listProjects } from '@/entities/project';
-import { CreateServiceModal } from '@/features/manage-nodes';
+import { CreateServiceModal, ServiceBackupsModal } from '@/features/manage-nodes';
 import { formatBytes, formatDateTime, showToast } from '@/shared/lib';
 
 const props = defineProps({
@@ -608,6 +687,48 @@ const serviceToDelete = ref(null);
 const deleteVolumeOnService = ref(true);
 const deletingService = ref(false);
 const copiedServiceId = ref(null);
+
+const showBackupsModal = ref(false);
+const selectedBackupService = ref(null);
+const backupsEnabled = computed(() => !!node.value?.backups_enabled);
+
+async function toggleBackups() {
+  try {
+    const newValue = !backupsEnabled.value;
+    node.value = await toggleNodeBackups(props.nodeId, newValue);
+    if (newValue) {
+      showToast('Система резервного копирования включена', 'success');
+    } else {
+      showToast('Система резервного копирования отключена', 'info');
+    }
+  } catch (err) {
+    showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'error');
+  }
+}
+
+function openBackupsForFirstService() {
+  const target = storageServices.value.find((s) => isBackupSupported(s));
+  if (target) {
+    openBackupsModal(target);
+  } else {
+    showToast('Нет доступных баз данных или томов для создания бэкапов', 'info');
+  }
+}
+
+function isBackupSupported(svc) {
+  if (!svc) return false;
+  return svc.service_type !== 'adminer' && svc.service_type !== 'pgadmin';
+}
+
+function openBackupsModal(svc) {
+  selectedBackupService.value = svc;
+  showBackupsModal.value = true;
+}
+
+function closeBackupsModal() {
+  showBackupsModal.value = false;
+  selectedBackupService.value = null;
+}
 
 const isUnauthorized = computed(
   () => node.value.status === 'NODE_STATUS_UNAUTHORIZED' || node.value.status === 'unauthorized',
@@ -1550,6 +1671,41 @@ onUnmounted(() => {
 .btn-adminer-open:hover {
   background: rgba(88, 166, 255, 0.2);
   border-color: var(--primary, #58a6ff);
+  color: #fff;
+}
+
+.web-ui-row + .web-ui-row {
+  border-top: 1px solid var(--border, #30363d);
+}
+
+.btn-link-text {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-backup-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(63, 185, 80, 0.1);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  border-radius: 6px;
+  color: #3fb950;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-backup-open:hover {
+  background: rgba(63, 185, 80, 0.2);
+  border-color: #3fb950;
   color: #fff;
 }
 

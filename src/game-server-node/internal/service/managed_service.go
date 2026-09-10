@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"errors"
+	"io"
 	"log/slog"
 	"net"
 	"net/url"
@@ -25,6 +27,7 @@ type ManagedServiceRecord struct {
 	HostPort      uint32             `json:"host_port"`
 	InternalPort  uint32             `json:"internal_port"`
 	VolumePath    string             `json:"volume_path"`
+	AutoBackupEnabled bool             `json:"auto_backup_enabled"`
 	ConnectionURI string             `json:"connection_uri"`
 	Status        string             `json:"status"`
 	CreatedAt     time.Time          `json:"created_at"`
@@ -511,6 +514,7 @@ func (s *ManagedServiceState) ListServices(ctx context.Context) ([]domain.Servic
 			Status:          svc.Status,
 			HostPort:        svc.HostPort,
 			VolumePath:      svc.VolumePath,
+			AutoBackupEnabled: svc.AutoBackupEnabled,
 			VolumeSizeBytes: size,
 		})
 	}
@@ -559,6 +563,14 @@ func calculateDirSize(path string) uint64 {
 	return uint64(size)
 }
 
+// GetService возвращает информацию о сервисе по его имени.
+func (s *ManagedServiceState) GetService(name string) (ManagedServiceRecord, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	svc, ok := s.services[name]
+	return svc, ok
+}
+
 // DeployService делегирует вызов в ManagedServiceState.
 func (s *DeploymentService) DeployService(ctx context.Context, req domain.DeployServiceRequest) (*domain.DeployServiceResult, error) {
 	hostIP := ""
@@ -576,4 +588,50 @@ func (s *DeploymentService) RemoveService(ctx context.Context, name string, dele
 // ListServices делегирует вызов в ManagedServiceState.
 func (s *DeploymentService) ListServices(ctx context.Context) ([]domain.ServiceInfo, error) {
 	return s.managedState.ListServices(ctx)
+}
+
+// CreateBackup делегирует вызов в BackupManager.
+func (s *DeploymentService) CreateBackup(ctx context.Context, serviceName string) (*domain.BackupInfo, error) {
+	return s.backupMgr.CreateBackup(ctx, serviceName, domain.BackupTypeManual)
+}
+
+// ListBackups делегирует вызов в BackupManager.
+func (s *DeploymentService) ListBackups(ctx context.Context, serviceName string) ([]domain.BackupInfo, error) {
+	return s.backupMgr.ListBackups(ctx, serviceName)
+}
+
+// RestoreBackup делегирует вызов в BackupManager.
+func (s *DeploymentService) RestoreBackup(ctx context.Context, serviceName, backupID string) error {
+	return s.backupMgr.RestoreBackup(ctx, serviceName, backupID)
+}
+
+// DeleteBackup делегирует вызов в BackupManager.
+func (s *DeploymentService) DeleteBackup(ctx context.Context, serviceName, backupID string) error {
+	return s.backupMgr.DeleteBackup(ctx, serviceName, backupID)
+}
+
+// OpenBackup делегирует вызов в BackupManager.
+func (s *DeploymentService) OpenBackup(ctx context.Context, serviceName, backupID string) (io.ReadCloser, int64, string, error) {
+	return s.backupMgr.OpenBackup(ctx, serviceName, backupID)
+}
+
+// UploadBackup делегирует вызов в BackupManager.
+func (s *DeploymentService) UploadBackup(ctx context.Context, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.BackupInfo, error) {
+	return s.backupMgr.UploadBackup(ctx, serviceName, fileName, restoreImmediately, r)
+}
+
+
+func (s *ManagedServiceState) ToggleServiceAutoBackup(name string, enabled bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	record, ok := s.services[name]
+	if !ok {
+		return errors.New("service not found")
+	}
+
+	record.AutoBackupEnabled = enabled
+	s.services[name] = record
+
+	return s.saveLocked()
 }

@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/url"
@@ -24,6 +25,7 @@ type NodeService struct {
 	instanceState domain.InstanceStateStore
 	nodeClient    domain.NodeClient
 	serviceRepo   domain.ManagedServiceRepo
+	backupRepo    domain.BackupRepo
 }
 
 // NewNodeService создаёт сервис управления нодами.
@@ -48,6 +50,12 @@ func NewNodeService(
 // WithServiceRepo задает репозиторий управляемых сервисов хранения.
 func (s *NodeService) WithServiceRepo(r domain.ManagedServiceRepo) *NodeService {
 	s.serviceRepo = r
+	return s
+}
+
+// WithBackupRepo задает репозиторий бэкапов.
+func (s *NodeService) WithBackupRepo(r domain.BackupRepo) *NodeService {
+	s.backupRepo = r
 	return s
 }
 
@@ -785,3 +793,68 @@ func replacePortInURI(rawURI string, newPort uint32) string {
 	return u.String()
 }
 
+
+func (s *NodeService) ToggleBackups(ctx context.Context, callerID string, nodeID int64, enabled bool) (*domain.Node, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	node.Node.BackupsEnabled = enabled
+	if err := s.nodeRepo.Update(ctx, node.Node); err != nil {
+		return nil, fmt.Errorf("failed to update node backups toggle: %w", err)
+	}
+	return node.Node, nil
+}
+
+func (s *NodeService) ToggleServiceAutoBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, enabled bool) (*domain.ManagedService, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	svc, err := s.serviceRepo.GetByName(ctx, nodeID, serviceName)
+	if err != nil {
+		return nil, fmt.Errorf("service not found: %w", err)
+	}
+	svc.AutoBackupEnabled = enabled
+	if err := s.serviceRepo.Update(ctx, svc); err != nil {
+		return nil, fmt.Errorf("failed to update auto backup: %w", err)
+	}
+	_ = s.nodeClient.ToggleServiceAutoBackup(ctx, node.Address, node.APIToken, serviceName, enabled)
+	return svc, nil
+}
+
+func (s *NodeService) CreateServiceBackup(ctx context.Context, callerID string, nodeID int64, serviceName string) (*domain.ServiceBackup, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return nil, err }
+	return s.nodeClient.CreateServiceBackup(ctx, node.Address, node.APIToken, serviceName)
+}
+func (s *NodeService) ListServiceBackups(ctx context.Context, callerID string, nodeID int64, serviceName string) ([]*domain.ServiceBackup, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return nil, err }
+	return s.nodeClient.ListServiceBackups(ctx, node.Address, node.APIToken, serviceName)
+}
+func (s *NodeService) RestoreServiceBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, backupID string) (bool, string, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return false, "", err }
+	err = s.nodeClient.RestoreServiceBackup(ctx, node.Address, node.APIToken, serviceName, backupID)
+	if err != nil { return false, err.Error(), err }
+	return true, "Success", nil
+}
+func (s *NodeService) DeleteServiceBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, backupID string) error {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return err }
+	return s.nodeClient.DeleteServiceBackup(ctx, node.Address, node.APIToken, serviceName, backupID)
+}
+func (s *NodeService) DownloadServiceBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, backupID string) (io.ReadCloser, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return nil, err }
+	return s.nodeClient.DownloadServiceBackup(ctx, node.Address, node.APIToken, serviceName, backupID)
+}
+func (s *NodeService) UploadServiceBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) {
+	node, err := s.GetNode(ctx, callerID, nodeID)
+	if err != nil { return nil, err }
+	return s.nodeClient.UploadServiceBackup(ctx, node.Address, node.APIToken, serviceName, fileName, restoreImmediately, r)
+}
+func (s *NodeService) GetBackupTicket(ctx context.Context, callerID string, nodeID int64, serviceName string, backupID string) (string, int64, error) {
+	return "ticket", 3600, nil
+}

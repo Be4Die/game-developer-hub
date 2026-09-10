@@ -42,6 +42,26 @@ service DeploymentService {
 
   // Список развернутых сервисов на ноде.
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+
+  // Создание резервной копии сервиса (Postgres, MySQL, Redis, Volume).
+  rpc CreateBackup(CreateBackupRequest) returns (CreateBackupResponse);
+
+  // Список резервных копий сервиса.
+  rpc ListBackups(ListBackupsRequest) returns (ListBackupsResponse);
+
+  // Восстановление сервиса из резервной копии.
+  rpc RestoreBackup(RestoreBackupRequest) returns (RestoreBackupResponse);
+
+  // Удаление резервной копии с ноды.
+  rpc DeleteBackup(DeleteBackupRequest) returns (DeleteBackupResponse);
+
+  // Скачивание резервной копии (стриминг чанков).
+  rpc DownloadBackup(DownloadBackupRequest) returns (stream BackupChunk);
+
+  // Загрузка резервной копии на ноду (стриминг чанков).
+  rpc UploadBackup(stream UploadBackupChunk) returns (UploadBackupResponse);
+ 
+  rpc ToggleServiceAutoBackup(ToggleServiceAutoBackupRequest) returns (ToggleServiceAutoBackupResponse);
 }
 
 // Источник строки журнала.
@@ -223,6 +243,7 @@ message ServiceInfo {
   uint32 host_port = 5;
   string volume_path = 6;
   uint64 volume_size_bytes = 7;
+  bool auto_backup_enabled = 8;
 }
 
 message ListServicesRequest {}
@@ -231,3 +252,101 @@ message ListServicesResponse {
   repeated ServiceInfo services = 1;
 }
 
+// ─── Managed Service Backups ───────────────────────────────────────────────
+
+enum BackupType {
+  BACKUP_TYPE_UNSPECIFIED = 0;
+  BACKUP_TYPE_MANUAL = 1;
+  BACKUP_TYPE_UPLOADED = 2;
+  BACKUP_TYPE_SCHEDULED = 3;
+}
+
+enum BackupStatus {
+  BACKUP_STATUS_UNSPECIFIED = 0;
+  BACKUP_STATUS_CREATING = 1;
+  BACKUP_STATUS_READY = 2;
+  BACKUP_STATUS_FAILED = 3;
+  BACKUP_STATUS_RESTORING = 4;
+}
+
+message BackupInfo {
+  string backup_id = 1;
+  string service_name = 2;
+  string file_name = 3;
+  uint64 size_bytes = 4;
+  BackupType backup_type = 5;
+  BackupStatus status = 6;
+  string checksum = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+message CreateBackupRequest {
+  string service_name = 1;
+}
+
+message CreateBackupResponse {
+  BackupInfo backup = 1;
+}
+
+message ListBackupsRequest {
+  string service_name = 1;
+}
+
+message ListBackupsResponse {
+  repeated BackupInfo backups = 1;
+}
+
+message RestoreBackupRequest {
+  string service_name = 1;
+  string backup_id = 2;
+}
+
+message RestoreBackupResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DeleteBackupRequest {
+  string service_name = 1;
+  string backup_id = 2;
+}
+
+message DeleteBackupResponse {}
+
+message DownloadBackupRequest {
+  string service_name = 1;
+  string backup_id = 2;
+}
+
+message BackupChunk {
+  bytes chunk = 1;
+}
+
+message UploadBackupChunk {
+  oneof payload {
+    UploadBackupMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+message UploadBackupMetadata {
+  string service_name = 1;
+  string file_name = 2;
+  bool restore_immediately = 3;
+}
+
+message UploadBackupResponse {
+  BackupInfo backup = 1;
+  bool restored = 2;
+}
+
+
+
+message ToggleServiceAutoBackupRequest {
+  string service_name = 1;
+  bool enabled = 2;
+}
+
+message ToggleServiceAutoBackupResponse {
+  bool success = 1;
+}

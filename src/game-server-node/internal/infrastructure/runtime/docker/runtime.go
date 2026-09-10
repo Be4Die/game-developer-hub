@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	cerrdefs "github.com/containerd/errdefs"
@@ -848,4 +849,60 @@ func (r *Runtime) CopyToContainer(ctx context.Context, containerID, targetDir, f
 	}
 	return nil
 }
+
+// Exec выполняет команду внутри запущенного контейнера.
+func (r *Runtime) Exec(ctx context.Context, containerID string, cmd []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, env []string) (int, error) {
+	const op = "DockerRuntime.Exec"
+
+	execConfig := container.ExecOptions{
+		Cmd:          cmd,
+		Env:          env,
+		AttachStdin:  stdin != nil,
+		AttachStdout: stdout != nil,
+		AttachStderr: stderr != nil,
+	}
+
+	execCreateResp, err := r.cli.ContainerExecCreate(ctx, containerID, execConfig)
+	if err != nil {
+		return -1, fmt.Errorf("%s: ContainerExecCreate: %w", op, err)
+	}
+
+	attachResp, err := r.cli.ContainerExecAttach(ctx, execCreateResp.ID, container.ExecAttachOptions{})
+	if err != nil {
+		return -1, fmt.Errorf("%s: ContainerExecAttach: %w", op, err)
+	}
+	defer attachResp.Close()
+
+	var eg sync.WaitGroup
+	if stdin != nil {
+		eg.Add(1)
+		go func() {
+			defer eg.Done()
+			defer attachResp.CloseWrite()
+			_, _ = io.Copy(attachResp.Conn, stdin)
+		}()
+	}
+
+	if stdout != nil || stderr != nil {
+		outWriter := stdout
+		if outWriter == nil {
+			outWriter = io.Discard
+		}
+		errWriter := stderr
+		if errWriter == nil {
+			errWriter = io.Discard
+		}
+		_, _ = stdcopy.StdCopy(outWriter, errWriter, attachResp.Reader)
+	}
+
+	eg.Wait()
+
+	inspectResp, err := r.cli.ContainerExecInspect(ctx, execCreateResp.ID)
+	if err != nil {
+		return -1, fmt.Errorf("%s: ContainerExecInspect: %w", op, err)
+	}
+
+	return inspectResp.ExitCode, nil
+}
+
 

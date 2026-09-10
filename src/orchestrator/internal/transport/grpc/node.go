@@ -2,10 +2,22 @@ package grpc
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NodeHandler реализует NodeService.
@@ -246,6 +258,247 @@ func (h *NodeHandler) DeleteService(ctx context.Context, req *pb.NodeServiceDele
 	return &pb.NodeServiceDeleteServiceResponse{}, nil
 }
 
+// ─── Managed Service Backups ───────────────────────────────────────────────
+
+// CreateServiceBackup инициирует создание резервной копии.
+func (h *NodeHandler) CreateServiceBackup(ctx context.Context, req *pb.NodeServiceCreateServiceBackupRequest) (*pb.NodeServiceCreateServiceBackupResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	backup, err := h.nodeService.CreateServiceBackup(ctx, ownerID, req.GetNodeId(), req.GetServiceName())
+	if err != nil {
+		return nil, domainError(err, "create service backup")
+	}
+
+	return &pb.NodeServiceCreateServiceBackupResponse{Backup: serviceBackupToProto(backup)}, nil
+}
+
+// ListServiceBackups возвращает список резервных копий.
+func (h *NodeHandler) ListServiceBackups(ctx context.Context, req *pb.NodeServiceListServiceBackupsRequest) (*pb.NodeServiceListServiceBackupsResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	backups, err := h.nodeService.ListServiceBackups(ctx, ownerID, req.GetNodeId(), req.GetServiceName())
+	if err != nil {
+		return nil, domainError(err, "list service backups")
+	}
+
+	protoBackups := make([]*pb.ServiceBackup, 0, len(backups))
+	for _, b := range backups {
+		protoBackups = append(protoBackups, serviceBackupToProto(b))
+	}
+
+	return &pb.NodeServiceListServiceBackupsResponse{Backups: protoBackups}, nil
+}
+
+// RestoreServiceBackup восстанавливает сервис из бэкапа.
+func (h *NodeHandler) RestoreServiceBackup(ctx context.Context, req *pb.NodeServiceRestoreServiceBackupRequest) (*pb.NodeServiceRestoreServiceBackupResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	success, msg, err := h.nodeService.RestoreServiceBackup(ctx, ownerID, req.GetNodeId(), req.GetServiceName(), req.GetBackupId())
+	if err != nil {
+		return nil, domainError(err, "restore service backup")
+	}
+
+	return &pb.NodeServiceRestoreServiceBackupResponse{
+		Success: success,
+		Message: msg,
+	}, nil
+}
+
+// DeleteServiceBackup удаляет бэкап.
+func (h *NodeHandler) DeleteServiceBackup(ctx context.Context, req *pb.NodeServiceDeleteServiceBackupRequest) (*pb.NodeServiceDeleteServiceBackupResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	if err := h.nodeService.DeleteServiceBackup(ctx, ownerID, req.GetNodeId(), req.GetServiceName(), req.GetBackupId()); err != nil {
+		return nil, domainError(err, "delete service backup")
+	}
+
+	return &pb.NodeServiceDeleteServiceBackupResponse{}, nil
+}
+
+// GetServiceBackupTicket генерирует одноразовый защищенный тикет для скачивания бэкапа.
+func (h *NodeHandler) GetServiceBackupTicket(ctx context.Context, req *pb.NodeServiceGetBackupTicketRequest) (*pb.NodeServiceGetBackupTicketResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	_, err := h.nodeService.ListServiceBackups(ctx, ownerID, req.GetNodeId(), req.GetServiceName())
+	if err != nil {
+		return nil, domainError(err, "get backup ticket authorization")
+	}
+
+	ticket := generateBackupTicket(req.GetNodeId(), req.GetServiceName(), req.GetBackupId(), 60*time.Second)
+	return &pb.NodeServiceGetBackupTicketResponse{
+		Ticket:           ticket,
+		ExpiresInSeconds: 60,
+	}, nil
+}
+
+// DownloadServiceBackup стримит файл бэкапа клиенту.
+func (h *NodeHandler) DownloadServiceBackup(req *pb.NodeServiceDownloadServiceBackupRequest, stream pb.NodeService_DownloadServiceBackupServer) error {
+	ctx := stream.Context()
+	ownerID, hasUser := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	} else if !hasUser {
+		// Проверяем тикет из метаданных контекста
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return status.Errorf(codes.Unauthenticated, "authentication or ticket required")
+		}
+		tickets := md.Get("x-backup-ticket")
+		if len(tickets) == 0 || !ValidateBackupTicket(tickets[0], req.GetNodeId(), req.GetServiceName(), req.GetBackupId()) {
+			return status.Errorf(codes.PermissionDenied, "valid backup ticket or bearer token required")
+		}
+		// Тикет проверен, владелец был авторизован при генерации тикета
+		ownerID = ""
+	}
+
+	reader, err := h.nodeService.DownloadServiceBackup(ctx, ownerID, req.GetNodeId(), req.GetServiceName(), req.GetBackupId())
+	if err != nil {
+		return domainError(err, "download service backup")
+	}
+	defer reader.Close()
+
+	buf := make([]byte, 64*1024)
+	for {
+		n, readErr := reader.Read(buf)
+		if n > 0 {
+			if err := stream.Send(&pb.NodeServiceBackupChunk{Chunk: buf[:n]}); err != nil {
+				return status.Errorf(codes.Internal, "stream backup chunk: %v", err)
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return status.Errorf(codes.Internal, "read backup stream: %v", readErr)
+		}
+	}
+
+	return nil
+}
+
+// UploadServiceBackup принимает стрим чанков бэкапа и сохраняет на ноде.
+func (h *NodeHandler) UploadServiceBackup(stream pb.NodeService_UploadServiceBackupServer) error {
+	ctx := stream.Context()
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	first, err := stream.Recv()
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "receive metadata: %v", err)
+	}
+
+	meta := first.GetMetadata()
+	if meta == nil {
+		return status.Errorf(codes.InvalidArgument, "first chunk must contain metadata")
+	}
+
+	pr, pw := io.Pipe()
+	go func() {
+		defer pw.Close()
+		for {
+			chunk, err := stream.Recv()
+			if err == io.EOF {
+				return
+			}
+			if err != nil {
+				_ = pw.CloseWithError(err)
+				return
+			}
+			if data := chunk.GetChunk(); len(data) > 0 {
+				if _, err := pw.Write(data); err != nil {
+					return
+				}
+			}
+		}
+	}()
+
+	backup, err := h.nodeService.UploadServiceBackup(ctx, ownerID, meta.GetNodeId(), meta.GetServiceName(), meta.GetFileName(), meta.GetRestoreImmediately(), pr)
+	if err != nil {
+		return domainError(err, "upload service backup")
+	}
+
+	return stream.SendAndClose(&pb.NodeServiceUploadBackupResponse{
+		Backup:   serviceBackupToProto(backup),
+		Restored: meta.GetRestoreImmediately(),
+	})
+}
+
+const backupTicketSecret = "gdh-backup-secret-key-2026"
+
+func generateBackupTicket(nodeID int64, serviceName, backupID string, ttl time.Duration) string {
+	exp := time.Now().Add(ttl).Unix()
+	payload := fmt.Sprintf("%d:%s:%s:%d", nodeID, serviceName, backupID, exp)
+	mac := hmac.New(sha256.New, []byte(backupTicketSecret))
+	mac.Write([]byte(payload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	return fmt.Sprintf("%s:%s", payload, sig)
+}
+
+// ValidateBackupTicket проверяет подпись и срок действия тикета на скачивание.
+func ValidateBackupTicket(ticket string, nodeID int64, serviceName, backupID string) bool {
+	parts := strings.Split(ticket, ":")
+	if len(parts) != 5 {
+		return false
+	}
+	tNodeID, _ := strconv.ParseInt(parts[0], 10, 64)
+	tServiceName := parts[1]
+	tBackupID := parts[2]
+	exp, _ := strconv.ParseInt(parts[3], 10, 64)
+	sig := parts[4]
+
+	if tNodeID != nodeID || tServiceName != serviceName || tBackupID != backupID {
+		return false
+	}
+	if time.Now().Unix() > exp {
+		return false
+	}
+
+	payload := fmt.Sprintf("%d:%s:%s:%d", tNodeID, tServiceName, tBackupID, exp)
+	mac := hmac.New(sha256.New, []byte(backupTicketSecret))
+	mac.Write([]byte(payload))
+	expectedSig := hex.EncodeToString(mac.Sum(nil))
+
+	return hmac.Equal([]byte(sig), []byte(expectedSig))
+}
+
+func serviceBackupToProto(b *domain.ServiceBackup) *pb.ServiceBackup {
+	if b == nil {
+		return nil
+	}
+	return &pb.ServiceBackup{
+		Id:          b.ID,
+		BackupId:    b.BackupID,
+		NodeId:      b.NodeID,
+		ServiceId:   b.ServiceID,
+		ServiceName: b.ServiceName,
+		ServiceType: pb.ServiceType(b.ServiceType),
+		FileName:    b.FileName,
+		SizeBytes:   int64(b.SizeBytes),
+		Checksum:    b.Checksum,
+		BackupType:  pb.BackupType(b.BackupType),
+		Status:      pb.BackupStatus(b.Status),
+		CreatedAt:   timestamppb.New(b.CreatedAt),
+	}
+}
+
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 func isSuperuser(ctx context.Context) bool {
@@ -270,4 +523,30 @@ func nodeStatusFromProto(s pb.NodeStatus) domain.NodeStatus {
 
 func ptrInt64(v int64) *int64 {
 	return &v
+}
+
+func (h *NodeHandler) ToggleBackups(ctx context.Context, req *pb.NodeServiceToggleBackupsRequest) (*pb.NodeServiceToggleBackupsResponse, error) {
+	callerID, ok := GetUserID(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+	if isSuperuser(ctx) { callerID = "" }
+	node, err := h.nodeService.ToggleBackups(ctx, callerID, req.GetNodeId(), req.GetEnabled())
+	if err != nil {
+		return nil, domainError(err, "toggle backups")
+	}
+	return &pb.NodeServiceToggleBackupsResponse{Node: nodeToProto(node)}, nil
+}
+
+func (h *NodeHandler) ToggleServiceAutoBackup(ctx context.Context, req *pb.NodeServiceToggleServiceAutoBackupRequest) (*pb.NodeServiceToggleServiceAutoBackupResponse, error) {
+	callerID, ok := GetUserID(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "unauthenticated")
+	}
+	if isSuperuser(ctx) { callerID = "" }
+	svc, err := h.nodeService.ToggleServiceAutoBackup(ctx, callerID, req.GetNodeId(), req.GetServiceName(), req.GetEnabled())
+	if err != nil {
+		return nil, domainError(err, "toggle auto backup")
+	}
+	return &pb.NodeServiceToggleServiceAutoBackupResponse{Service: managedServiceToProto(svc)}, nil
 }

@@ -65,6 +65,9 @@ type ContainerRuntime interface {
 
 	// UpdateRestartPolicy обновляет политику рестарта существующего контейнера.
 	UpdateRestartPolicy(ctx context.Context, containerID string, policy string) error
+
+	// Exec выполняет команду внутри запущенного контейнера.
+	Exec(ctx context.Context, containerID string, cmd []string, stdin io.Reader, stdout io.Writer, stderr io.Writer, env []string) (int, error)
 }
 
 // ContainerDetails содержит расширенную информацию о состоянии контейнера.

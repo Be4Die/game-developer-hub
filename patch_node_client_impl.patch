@@ -1,0 +1,19 @@
+--- src/orchestrator/internal/infrastructure/client/grpcnode/node_client.go
++++ src/orchestrator/internal/infrastructure/client/grpcnode/node_client.go
+@@ -370,6 +370,16 @@
+ 	return res, nil
+ }
+ 
++func (c *NodeClient) ToggleServiceAutoBackup(ctx context.Context, nodeAddress, apiKey, serviceName string, enabled bool) error {
++	conn, err := c.getConnection(nodeAddress)
++	if err != nil {
++		return err
++	}
++	client := deployment_v1.NewDeploymentServiceClient(conn)
++	_, err = client.ToggleServiceAutoBackup(ctx, &deployment_v1.ToggleServiceAutoBackupRequest{ServiceName: serviceName, Enabled: enabled}, grpc.WaitForReady(true))
++	return err
++}
++
+ func (c *NodeClient) CreateServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName string) (*domain.ServiceBackup, error) {
+ 	conn, err := c.getConnection(nodeAddress)
+ 	if err != nil {

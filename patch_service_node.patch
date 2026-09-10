@@ -1,0 +1,20 @@
+--- src/orchestrator/internal/service/node.go
++++ src/orchestrator/internal/service/node.go
+@@ -987,7 +987,7 @@
+ 
+ func (s *NodeService) ToggleServiceAutoBackup(ctx context.Context, callerID string, nodeID int64, serviceName string, enabled bool) (*domain.ManagedService, error) {
+ 	// 1. Проверяем права на ноду (должен быть владелец или админ)
+-	_, err := s.GetNode(ctx, callerID, nodeID)
++	node, err := s.GetNode(ctx, callerID, nodeID)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -1003,7 +1003,7 @@
+ 	}
+ 	
+ 	// Проксируем вызов агенту ноды, чтобы он обновил свой services.json
+-	err = s.nodeClient.ToggleServiceAutoBackup(ctx, nodeID, serviceName, enabled)
++	err = s.nodeClient.ToggleServiceAutoBackup(ctx, node.Address, node.APIToken, serviceName, enabled)
+ 	if err != nil {
+ 		s.log.Warn("failed to toggle auto backup on node agent, state might be out of sync", slog.Int64("node_id", nodeID), slog.String("service", serviceName), slog.Any("err", err))
+ 	}

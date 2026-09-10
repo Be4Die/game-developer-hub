@@ -40,6 +40,7 @@ type DeploymentService struct {
 	nodeID           string
 	reportPort       int // порт HTTP-сервера отчётов, 0 = отключён
 	managedState     *ManagedServiceState
+	backupMgr        *BackupManager
 
 	// Simple ID generator. In production — use UUID or database sequence.
 	nextID atomic.Int64
@@ -67,6 +68,7 @@ func NewDeploymentService(
 		servicesRegistryPath = filepath.Join(filepath.Dir(containerMapPath), "services.json")
 	}
 
+	managedState := NewManagedServiceState(log, runtime, servicesRegistryPath, "")
 	svc := &DeploymentService{
 		log:              log,
 		storage:          storage,
@@ -75,7 +77,8 @@ func NewDeploymentService(
 		containerMapPath: containerMapPath,
 		nodeID:           nodeID,
 		images:           make(map[int64]string),
-		managedState:     NewManagedServiceState(log, runtime, servicesRegistryPath, ""),
+		managedState:     managedState,
+		backupMgr:        NewBackupManager(log, runtime, managedState, ""),
 	}
 
 	// Load persisted image registry (if any).
@@ -827,4 +830,14 @@ func (s *DeploymentService) StopPeriodicCleanup() {
 		close(s.stopCleanup)
 		s.cleanupTicker = nil
 	}
+}
+
+// ToggleServiceAutoBackup включает или отключает авторасписание для управляемого сервиса.
+func (s *DeploymentService) ToggleServiceAutoBackup(name string, enabled bool) error {
+	return s.managedState.ToggleServiceAutoBackup(name, enabled)
+}
+
+// StartAutoBackups запускает фоновый процесс для создания запланированных бэкапов.
+func (s *DeploymentService) StartAutoBackups(ctx context.Context) {
+	s.backupMgr.StartAutoBackupsLoop(ctx)
 }

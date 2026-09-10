@@ -26,8 +26,8 @@ func (r *ManagedServiceRepo) Create(ctx context.Context, s *domain.ManagedServic
 	const q = `
 		INSERT INTO node_services (node_id, owner_id, allowed_game_ids, service_type, name,
 		                           container_id, host_port, connection_uri, credentials, status,
-		                           volume_path, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		                           volume_path, created_at, updated_at, auto_backup_enabled)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id
 	`
 
@@ -44,8 +44,8 @@ func (r *ManagedServiceRepo) Create(ctx context.Context, s *domain.ManagedServic
 	err = r.pool.QueryRow(ctx, q,
 		s.NodeID, s.OwnerID, allowedGames, s.ServiceType, s.Name,
 		s.ContainerID, s.HostPort, s.ConnectionURI, credsJSON, s.Status,
-		s.VolumePath, s.CreatedAt, s.UpdatedAt,
-	).Scan(&s.ID)
+		s.VolumePath, s.CreatedAt, s.UpdatedAt, s.AutoBackupEnabled,
+		).Scan(&s.ID)
 	if err != nil {
 		if isPgUniqueViolation(err) {
 			return domain.ErrAlreadyExists
@@ -61,7 +61,7 @@ func (r *ManagedServiceRepo) GetByID(ctx context.Context, id int64) (*domain.Man
 	const q = `
 		SELECT id, node_id, owner_id, allowed_game_ids, service_type, name,
 		       container_id, host_port, connection_uri, credentials, status,
-		       volume_path, created_at, updated_at
+		       volume_path, created_at, updated_at, auto_backup_enabled
 		FROM node_services WHERE id = $1
 	`
 	row := r.pool.QueryRow(ctx, q, id)
@@ -73,7 +73,7 @@ func (r *ManagedServiceRepo) GetByName(ctx context.Context, nodeID int64, name s
 	const q = `
 		SELECT id, node_id, owner_id, allowed_game_ids, service_type, name,
 		       container_id, host_port, connection_uri, credentials, status,
-		       volume_path, created_at, updated_at
+		       volume_path, created_at, updated_at, auto_backup_enabled
 		FROM node_services WHERE node_id = $1 AND name = $2
 	`
 	row := r.pool.QueryRow(ctx, q, nodeID, name)
@@ -85,7 +85,7 @@ func (r *ManagedServiceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*d
 	const q = `
 		SELECT id, node_id, owner_id, allowed_game_ids, service_type, name,
 		       container_id, host_port, connection_uri, credentials, status,
-		       volume_path, created_at, updated_at
+		       volume_path, created_at, updated_at, auto_backup_enabled
 		FROM node_services WHERE node_id = $1
 		ORDER BY created_at DESC
 	`
@@ -103,7 +103,7 @@ func (r *ManagedServiceRepo) ListByOwner(ctx context.Context, ownerID string) ([
 	const q = `
 		SELECT id, node_id, owner_id, allowed_game_ids, service_type, name,
 		       container_id, host_port, connection_uri, credentials, status,
-		       volume_path, created_at, updated_at
+		       volume_path, created_at, updated_at, auto_backup_enabled
 		FROM node_services WHERE owner_id = $1
 		ORDER BY created_at DESC
 	`
@@ -121,7 +121,7 @@ func (r *ManagedServiceRepo) ListByGame(ctx context.Context, gameID int64) ([]*d
 	const q = `
 		SELECT id, node_id, owner_id, allowed_game_ids, service_type, name,
 		       container_id, host_port, connection_uri, credentials, status,
-		       volume_path, created_at, updated_at
+		       volume_path, created_at, updated_at, auto_backup_enabled
 		FROM node_services
 		WHERE cardinality(allowed_game_ids) = 0 OR $1 = ANY(allowed_game_ids)
 		ORDER BY created_at DESC
@@ -140,12 +140,12 @@ func (r *ManagedServiceRepo) Update(ctx context.Context, s *domain.ManagedServic
 	const q = `
 		UPDATE node_services
 		SET allowed_game_ids = $1, container_id = $2, host_port = $3,
-		    connection_uri = $4, status = $5, volume_path = $6, updated_at = NOW()
-		WHERE id = $7
+		    connection_uri = $4, status = $5, volume_path = $6, auto_backup_enabled = $7, updated_at = NOW()
+		WHERE id = $8
 	`
 	tag, err := r.pool.Exec(ctx, q,
-		s.AllowedGameIDs, s.ContainerID, s.HostPort, s.ConnectionURI, s.Status, s.VolumePath, s.ID,
-	)
+		s.AllowedGameIDs, s.ContainerID, s.HostPort, s.ConnectionURI, s.Status, s.VolumePath, s.AutoBackupEnabled, s.ID,
+		)
 	if err != nil {
 		return fmt.Errorf("postgres.ManagedServiceRepo.Update: %w", err)
 	}
@@ -172,11 +172,11 @@ func scanManagedService(row pgx.Row) (*domain.ManagedService, error) {
 	s := &domain.ManagedService{}
 	var credsRaw []byte
 
-	err := row.Scan(
-		&s.ID, &s.NodeID, &s.OwnerID, &s.AllowedGameIDs, &s.ServiceType, &s.Name,
-		&s.ContainerID, &s.HostPort, &s.ConnectionURI, &credsRaw, &s.Status,
-		&s.VolumePath, &s.CreatedAt, &s.UpdatedAt,
-	)
+		err := row.Scan(
+			&s.ID, &s.NodeID, &s.OwnerID, &s.AllowedGameIDs, &s.ServiceType, &s.Name,
+			&s.ContainerID, &s.HostPort, &s.ConnectionURI, &credsRaw, &s.Status,
+			&s.VolumePath, &s.CreatedAt, &s.UpdatedAt, &s.AutoBackupEnabled,
+		)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrNotFound
