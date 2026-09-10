@@ -327,8 +327,8 @@ func (h *NodeHandler) DeleteServiceBackup(ctx context.Context, req *pb.NodeServi
 	return &pb.NodeServiceDeleteServiceBackupResponse{}, nil
 }
 
-// GetServiceBackupTicket генерирует одноразовый защищенный тикет для скачивания бэкапа.
-func (h *NodeHandler) GetServiceBackupTicket(ctx context.Context, req *pb.NodeServiceGetBackupTicketRequest) (*pb.NodeServiceGetBackupTicketResponse, error) {
+// GetBackupTicket генерирует одноразовый защищенный тикет для скачивания бэкапа.
+func (h *NodeHandler) GetBackupTicket(ctx context.Context, req *pb.NodeServiceGetBackupTicketRequest) (*pb.NodeServiceGetBackupTicketResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 	if isSuperuser(ctx) {
 		ownerID = ""

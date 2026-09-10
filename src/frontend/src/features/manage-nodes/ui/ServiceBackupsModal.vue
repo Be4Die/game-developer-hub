@@ -4,7 +4,15 @@
       <div class="modal card backups-modal">
         <!-- Заголовок модального окна -->
         <div class="modal-header">
-          <h3>Резервные копии | {{ service.name }}</h3>
+          <div class="modal-header-info">
+            <div class="service-badge-icon" :style="{ backgroundColor: getServiceBgColor(service.service_type) }">
+              <component :is="getServiceIcon(service.service_type)" class="icon-sm" :style="{ color: getServiceColor(service.service_type) }" />
+            </div>
+            <div class="title-with-badge">
+              <h3>Резервные копии</h3>
+              <span class="service-name-tag">{{ service.name }}</span>
+            </div>
+          </div>
           <button class="close-btn" @click="$emit('close')">&times;</button>
         </div>
 
@@ -40,8 +48,8 @@
 
           <div class="actions-right">
             <div class="auto-backup-control">
-              <span class="auto-backup-label">Автобэкапы</span>
-              <label class="switch-toggle" title="Включить / отключить автобэкапы">
+              <span class="auto-backup-label">Авторезервирование</span>
+              <label class="switch-toggle" title="Включить / отключить авторезервирование">
                 <input
                   type="checkbox"
                   v-model="autoBackupEnabled"
@@ -299,9 +307,9 @@ async function handleToggleAutoBackup() {
   try {
     await toggleServiceAutoBackup(props.nodeId, props.service.name, autoBackupEnabled.value);
     if (autoBackupEnabled.value) {
-      showToast('Автобэкапы включены. Ежедневный снимок в 03:00 UTC (глубина хранения — 7 последних копий)', 'success');
+      showToast('Авторезервирование включено. Ежедневный снимок в 03:00 UTC (глубина хранения — 7 последних копий)', 'success');
     } else {
-      showToast('Автоматические бэкапы отключены', 'info');
+      showToast('Авторезервирование отключено', 'info');
     }
   } catch (err) {
     showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'error');
@@ -586,11 +594,43 @@ onMounted(() => {
   border-bottom: 1px solid var(--border-color, #30363d);
 }
 
-.modal-header h3 {
+.modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.service-badge-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-with-badge h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-color, #c9d1d9);
+}
+
+.service-name-tag {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background-color: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border-color, #30363d);
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #58a6ff;
 }
 
 .close-btn {
