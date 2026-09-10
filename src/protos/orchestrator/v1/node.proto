@@ -138,6 +138,22 @@ service NodeService {
   rpc DeleteService(NodeServiceDeleteServiceRequest) returns (NodeServiceDeleteServiceResponse) {
     option (google.api.http) = {delete: "/api/v1/nodes/{node_id}/services/{service_id}"};
   }
+
+  // Запустить остановленный управляемый сервис.
+  rpc StartService(NodeServiceStartServiceRequest) returns (NodeServiceStartServiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services/{service_id}/start"
+      body: "*"
+    };
+  }
+
+  // Остановить работающий управляемый сервис.
+  rpc StopService(NodeServiceStopServiceRequest) returns (NodeServiceStopServiceResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/nodes/{node_id}/services/{service_id}/stop"
+      body: "*"
+    };
+  }
 }
 
 // ─── Register ───────────────────────────────────────────────────────────────
@@ -243,9 +259,25 @@ message NodeServiceAnnounceResponse {
 
 // ─── UpdateRole ─────────────────────────────────────────────────────────────
 
+enum StorageTransitionAction {
+  STORAGE_TRANSITION_ACTION_UNSPECIFIED = 0;
+  // Безопасная остановка: создание 100% бэкапа -> остановка контейнеров -> тома сохранены на диске
+  STORAGE_TRANSITION_ACTION_STOP = 1;
+  // Полная очистка: создание 100% бэкапа -> остановка -> удаление контейнеров и томов с диска
+  STORAGE_TRANSITION_ACTION_DELETE = 2;
+}
+
+enum ComputeTransitionAction {
+  COMPUTE_TRANSITION_ACTION_UNSPECIFIED = 0;
+  // Остановка и удаление всех игровых серверов на ноде
+  COMPUTE_TRANSITION_ACTION_TERMINATE = 1;
+}
+
 message NodeServiceUpdateRoleRequest {
   int64 node_id = 1;
   NodeRole role = 2;
+  StorageTransitionAction storage_action = 3;
+  ComputeTransitionAction compute_action = 4;
 }
 
 message NodeServiceUpdateRoleResponse {
@@ -404,4 +436,22 @@ message NodeServiceUploadBackupMetadata {
 message NodeServiceUploadBackupResponse {
   ServiceBackup backup = 1;
   bool restored = 2;
+}
+
+message NodeServiceStartServiceRequest {
+  int64 node_id = 1;
+  int64 service_id = 2;
+}
+
+message NodeServiceStartServiceResponse {
+  ManagedService service = 1;
+}
+
+message NodeServiceStopServiceRequest {
+  int64 node_id = 1;
+  int64 service_id = 2;
+}
+
+message NodeServiceStopServiceResponse {
+  ManagedService service = 1;
 }

@@ -724,6 +724,44 @@ func (c *Client) RemoveService(ctx context.Context, nodeAddress, apiKey string, 
 	return nil
 }
 
+// StopService останавливает контейнер сервиса на ноде через gRPC.
+func (c *Client) StopService(ctx context.Context, nodeAddress, apiKey, name string) error {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return fmt.Errorf("Client.StopService: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	_, err = client.StopService(ctx, &pb.StopServiceRequest{
+		Name: name,
+	})
+	if err != nil {
+		return fmt.Errorf("Client.StopService: %w", err)
+	}
+	return nil
+}
+
+// StartService запускает ранее остановленный сервис на ноде через gRPC.
+func (c *Client) StartService(ctx context.Context, nodeAddress, apiKey, name string) (uint32, string, error) {
+	conn, err := c.getConn(ctx, nodeAddress)
+	if err != nil {
+		return 0, "", fmt.Errorf("Client.StartService: connect to %s: %w", nodeAddress, err)
+	}
+
+	client := pb.NewDeploymentServiceClient(conn)
+	ctx = authContext(ctx, apiKey)
+
+	resp, err := client.StartService(ctx, &pb.StartServiceRequest{
+		Name: name,
+	})
+	if err != nil {
+		return 0, "", fmt.Errorf("Client.StartService: %w", err)
+	}
+	return resp.GetHostPort(), resp.GetConnectionUri(), nil
+}
+
 // ListServices запрашивает список сервисов на ноде через gRPC.
 func (c *Client) ListServices(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
 	conn, err := c.getConn(ctx, nodeAddress)

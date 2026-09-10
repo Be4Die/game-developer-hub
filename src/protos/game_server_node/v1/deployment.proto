@@ -40,6 +40,12 @@ service DeploymentService {
   // Остановка и удаление управляемого сервиса.
   rpc RemoveService(RemoveServiceRequest) returns (RemoveServiceResponse);
 
+  // Остановка управляемого сервиса без удаления тома и данных.
+  rpc StopService(StopServiceRequest) returns (StopServiceResponse);
+
+  // Запуск остановленного управляемого сервиса.
+  rpc StartService(StartServiceRequest) returns (StartServiceResponse);
+
   // Список развернутых сервисов на ноде.
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
 
@@ -234,6 +240,21 @@ message RemoveServiceRequest {
 }
 
 message RemoveServiceResponse {}
+
+message StopServiceRequest {
+  string name = 1;
+}
+
+message StopServiceResponse {}
+
+message StartServiceRequest {
+  string name = 1;
+}
+
+message StartServiceResponse {
+  uint32 host_port = 1;
+  string connection_uri = 2;
+}
 
 message ServiceInfo {
   string name = 1;

@@ -475,8 +475,15 @@ func (s *NodeService) SyncInstances(ctx context.Context, nodeID int64, activeCon
 	return nil
 }
 
-// UpdateRole изменяет роль вычислительной ноды (Mixed, Compute, Storage).
-func (s *NodeService) UpdateRole(ctx context.Context, ownerID string, nodeID int64, role domain.NodeRole) (*domain.Node, error) {
+// UpdateRole изменяет роль вычислительной ноды (Mixed, Compute, Storage) с учетом политик вытеснения.
+func (s *NodeService) UpdateRole(
+	ctx context.Context,
+	ownerID string,
+	nodeID int64,
+	role domain.NodeRole,
+	storageAction domain.StorageTransitionAction,
+	computeAction domain.ComputeTransitionAction,
+) (*domain.Node, error) {
 	node, err := s.nodeRepo.GetByID(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.UpdateRole: get node: %w", err)
@@ -485,6 +492,95 @@ func (s *NodeService) UpdateRole(ctx context.Context, ownerID string, nodeID int
 		return nil, domain.ErrForbidden
 	}
 
+	if node.Role == role {
+		return node, nil
+	}
+
+	// ─── Политика перехода в Storage (вытеснение игровых серверов) ─────────────
+	if role == domain.NodeRoleStorage && s.instanceRepo != nil {
+		instances, err := s.instanceRepo.ListByNode(ctx, nodeID)
+		if err == nil && len(instances) > 0 {
+			if computeAction != domain.ComputeTransitionActionTerminate {
+				return nil, fmt.Errorf("node has %d game servers: confirmation required to terminate them before switching to Storage", len(instances))
+			}
+
+			s.log.Info("terminating game servers for role transition to storage",
+				slog.Int64("node_id", nodeID),
+				slog.Int("count", len(instances)),
+			)
+			for _, inst := range instances {
+				if node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+					if inst.Status == domain.InstanceStatusRunning || inst.Status == domain.InstanceStatusStarting || inst.Status == domain.InstanceStatusStopping {
+						_ = s.nodeClient.StopInstance(ctx, node.Address, node.APIToken, inst.ID, 5)
+					}
+					_ = s.nodeClient.DeleteInstance(ctx, node.Address, node.APIToken, inst.ID)
+				}
+				_ = s.instanceRepo.Delete(ctx, inst.ID)
+				if s.instanceState != nil {
+					_ = s.instanceState.Delete(ctx, inst.ID)
+				}
+			}
+			if s.nodeState != nil {
+				_ = s.nodeState.SetActiveInstanceCount(ctx, nodeID, 0)
+			}
+		}
+	}
+
+	// ─── Политика перехода в Compute (вытеснение сервисов хранения) ────────────
+	if role == domain.NodeRoleCompute && s.serviceRepo != nil {
+		services, err := s.serviceRepo.ListByNode(ctx, nodeID)
+		if err == nil && len(services) > 0 {
+			if storageAction == domain.StorageTransitionActionUnspecified {
+				return nil, fmt.Errorf("node has %d storage services: confirmation required (stop or delete) before switching to Compute", len(services))
+			}
+
+			// 100% Создание контрольного бэкапа перед любым действием (stop или delete)
+			for _, svc := range services {
+				if svc.ServiceType == domain.ServiceTypePostgres || svc.ServiceType == domain.ServiceTypeMySQL || svc.ServiceType == domain.ServiceTypeRedis {
+					if node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+						s.log.Info("creating safety snapshot before role transition to compute",
+							slog.String("service", svc.Name),
+						)
+						_, backupErr := s.CreateServiceBackup(ctx, ownerID, nodeID, svc.Name)
+						if backupErr != nil {
+							s.log.Warn("safety snapshot failed before transition",
+								slog.String("service", svc.Name),
+								slog.Any("err", backupErr),
+							)
+						}
+					}
+				}
+			}
+
+			if storageAction == domain.StorageTransitionActionStop {
+				s.log.Info("stopping storage services for role transition to compute",
+					slog.Int64("node_id", nodeID),
+					slog.Int("count", len(services)),
+				)
+				for _, svc := range services {
+					if node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+						_ = s.nodeClient.StopService(ctx, node.Address, node.APIToken, svc.Name)
+					}
+					svc.Status = domain.ServiceStatusStopped
+					svc.UpdatedAt = time.Now()
+					_ = s.serviceRepo.Update(ctx, svc)
+				}
+			} else if storageAction == domain.StorageTransitionActionDelete {
+				s.log.Info("deleting storage services for role transition to compute",
+					slog.Int64("node_id", nodeID),
+					slog.Int("count", len(services)),
+				)
+				for _, svc := range services {
+					if node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+						_ = s.nodeClient.RemoveService(ctx, node.Address, node.APIToken, svc.Name, true)
+					}
+					_ = s.serviceRepo.Delete(ctx, svc.ID)
+				}
+			}
+		}
+	}
+
+	// ─── Сохранение новой роли ────────────────────────────────────────────────
 	if err := s.nodeRepo.UpdateRole(ctx, nodeID, role); err != nil {
 		return nil, fmt.Errorf("NodeService.UpdateRole: update role: %w", err)
 	}
@@ -496,6 +592,84 @@ func (s *NodeService) UpdateRole(ctx context.Context, ownerID string, nodeID int
 		slog.String("role", role.String()),
 	)
 	return node, nil
+}
+
+// StartService запускает ранее остановленный управляемый сервис.
+func (s *NodeService) StartService(ctx context.Context, ownerID string, nodeID, serviceID int64) (*domain.ManagedService, error) {
+	if s.serviceRepo == nil {
+		return nil, fmt.Errorf("NodeService.StartService: service repository is not configured")
+	}
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.StartService: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+	if node.Role == domain.NodeRoleCompute {
+		return nil, fmt.Errorf("NodeService.StartService: cannot start storage service on compute-only node")
+	}
+
+	svc, err := s.serviceRepo.GetByID(ctx, serviceID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.StartService: get service: %w", err)
+	}
+	if svc.NodeID != nodeID {
+		return nil, fmt.Errorf("NodeService.StartService: service does not belong to node %d", nodeID)
+	}
+
+	port, uri, err := s.nodeClient.StartService(ctx, node.Address, node.APIToken, svc.Name)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.StartService: %w", err)
+	}
+
+	if port > 0 {
+		svc.HostPort = port
+		svc.ConnectionURI = uri
+	}
+	svc.Status = domain.ServiceStatusRunning
+	svc.UpdatedAt = time.Now()
+	if err := s.serviceRepo.Update(ctx, svc); err != nil {
+		return nil, fmt.Errorf("NodeService.StartService: update record: %w", err)
+	}
+
+	s.log.Info("managed service started", slog.Int64("service_id", serviceID), slog.String("name", svc.Name))
+	return svc, nil
+}
+
+// StopService останавливает управляемый сервис без удаления данных.
+func (s *NodeService) StopService(ctx context.Context, ownerID string, nodeID, serviceID int64) (*domain.ManagedService, error) {
+	if s.serviceRepo == nil {
+		return nil, fmt.Errorf("NodeService.StopService: service repository is not configured")
+	}
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.StopService: get node: %w", err)
+	}
+	if ownerID != "" && node.OwnerID != ownerID {
+		return nil, domain.ErrForbidden
+	}
+
+	svc, err := s.serviceRepo.GetByID(ctx, serviceID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.StopService: get service: %w", err)
+	}
+	if svc.NodeID != nodeID {
+		return nil, fmt.Errorf("NodeService.StopService: service does not belong to node %d", nodeID)
+	}
+
+	if err := s.nodeClient.StopService(ctx, node.Address, node.APIToken, svc.Name); err != nil {
+		return nil, fmt.Errorf("NodeService.StopService: %w", err)
+	}
+
+	svc.Status = domain.ServiceStatusStopped
+	svc.UpdatedAt = time.Now()
+	if err := s.serviceRepo.Update(ctx, svc); err != nil {
+		return nil, fmt.Errorf("NodeService.StopService: update record: %w", err)
+	}
+
+	s.log.Info("managed service stopped", slog.Int64("service_id", serviceID), slog.String("name", svc.Name))
+	return svc, nil
 }
 
 // CreateServiceParams задает параметры для создания сервиса данных на ноде.

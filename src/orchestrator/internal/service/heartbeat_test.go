@@ -1272,3 +1272,5 @@ func (m *hbMockNodeClient) RestoreServiceBackup(ctx context.Context, address, ap
 func (m *hbMockNodeClient) DeleteServiceBackup(ctx context.Context, address, apiKey, serviceName, backupID string) error { return nil }
 func (m *hbMockNodeClient) DownloadServiceBackup(ctx context.Context, address, apiKey, serviceName, backupID string) (io.ReadCloser, error) { return nil, nil }
 func (m *hbMockNodeClient) UploadServiceBackup(ctx context.Context, address, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) { return nil, nil }
+func (m *hbMockNodeClient) StopService(ctx context.Context, address, apiKey, name string) error { return nil }
+func (m *hbMockNodeClient) StartService(ctx context.Context, address, apiKey, name string) (uint32, string, error) { return 0, "", nil }

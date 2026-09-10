@@ -39,6 +39,8 @@ const (
 	NodeService_ToggleBackups_FullMethodName           = "/orchestrator.v1.NodeService/ToggleBackups"
 	NodeService_ToggleServiceAutoBackup_FullMethodName = "/orchestrator.v1.NodeService/ToggleServiceAutoBackup"
 	NodeService_DeleteService_FullMethodName           = "/orchestrator.v1.NodeService/DeleteService"
+	NodeService_StartService_FullMethodName            = "/orchestrator.v1.NodeService/StartService"
+	NodeService_StopService_FullMethodName             = "/orchestrator.v1.NodeService/StopService"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -88,6 +90,10 @@ type NodeServiceClient interface {
 	// Переключить статус автобэкапов сервиса.
 	ToggleServiceAutoBackup(ctx context.Context, in *NodeServiceToggleServiceAutoBackupRequest, opts ...grpc.CallOption) (*NodeServiceToggleServiceAutoBackupResponse, error)
 	DeleteService(ctx context.Context, in *NodeServiceDeleteServiceRequest, opts ...grpc.CallOption) (*NodeServiceDeleteServiceResponse, error)
+	// Запустить остановленный управляемый сервис.
+	StartService(ctx context.Context, in *NodeServiceStartServiceRequest, opts ...grpc.CallOption) (*NodeServiceStartServiceResponse, error)
+	// Остановить работающий управляемый сервис.
+	StopService(ctx context.Context, in *NodeServiceStopServiceRequest, opts ...grpc.CallOption) (*NodeServiceStopServiceResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -310,6 +316,26 @@ func (c *nodeServiceClient) DeleteService(ctx context.Context, in *NodeServiceDe
 	return out, nil
 }
 
+func (c *nodeServiceClient) StartService(ctx context.Context, in *NodeServiceStartServiceRequest, opts ...grpc.CallOption) (*NodeServiceStartServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceStartServiceResponse)
+	err := c.cc.Invoke(ctx, NodeService_StartService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) StopService(ctx context.Context, in *NodeServiceStopServiceRequest, opts ...grpc.CallOption) (*NodeServiceStopServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceStopServiceResponse)
+	err := c.cc.Invoke(ctx, NodeService_StopService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -357,6 +383,10 @@ type NodeServiceServer interface {
 	// Переключить статус автобэкапов сервиса.
 	ToggleServiceAutoBackup(context.Context, *NodeServiceToggleServiceAutoBackupRequest) (*NodeServiceToggleServiceAutoBackupResponse, error)
 	DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error)
+	// Запустить остановленный управляемый сервис.
+	StartService(context.Context, *NodeServiceStartServiceRequest) (*NodeServiceStartServiceResponse, error)
+	// Остановить работающий управляемый сервис.
+	StopService(context.Context, *NodeServiceStopServiceRequest) (*NodeServiceStopServiceResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -426,6 +456,12 @@ func (UnimplementedNodeServiceServer) ToggleServiceAutoBackup(context.Context, *
 }
 func (UnimplementedNodeServiceServer) DeleteService(context.Context, *NodeServiceDeleteServiceRequest) (*NodeServiceDeleteServiceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteService not implemented")
+}
+func (UnimplementedNodeServiceServer) StartService(context.Context, *NodeServiceStartServiceRequest) (*NodeServiceStartServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartService not implemented")
+}
+func (UnimplementedNodeServiceServer) StopService(context.Context, *NodeServiceStopServiceRequest) (*NodeServiceStopServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StopService not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -790,6 +826,42 @@ func _NodeService_DeleteService_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_StartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceStartServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).StartService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_StartService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).StartService(ctx, req.(*NodeServiceStartServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_StopService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceStopServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).StopService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_StopService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).StopService(ctx, req.(*NodeServiceStopServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -868,6 +940,14 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteService",
 			Handler:    _NodeService_DeleteService_Handler,
+		},
+		{
+			MethodName: "StartService",
+			Handler:    _NodeService_StartService_Handler,
+		},
+		{
+			MethodName: "StopService",
+			Handler:    _NodeService_StopService_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

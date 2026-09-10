@@ -68,9 +68,20 @@ export function listNodeInstances(nodeId) {
   return http.get(`/nodes/${nodeId}/instances`).then((r) => r.data.instances ?? []);
 }
 
-export function updateNodeRole(nodeId, role) {
+export const STORAGE_TRANSITION_STOP = 'STORAGE_TRANSITION_ACTION_STOP';
+export const STORAGE_TRANSITION_DELETE = 'STORAGE_TRANSITION_ACTION_DELETE';
+export const COMPUTE_TRANSITION_TERMINATE = 'COMPUTE_TRANSITION_ACTION_TERMINATE';
+
+export function updateNodeRole(nodeId, role, options = {}) {
   const protoRole = nodeRoleToProto[role] || role;
-  return http.patch(`/nodes/${nodeId}/role`, { role: protoRole }).then((r) => normalizeNode(r.data.node));
+  const payload = { role: protoRole };
+  if (options.storage_action !== undefined) {
+    payload.storage_action = options.storage_action;
+  }
+  if (options.compute_action !== undefined) {
+    payload.compute_action = options.compute_action;
+  }
+  return http.patch(`/nodes/${nodeId}/role`, payload).then((r) => normalizeNode(r.data.node));
 }
 
 export function listNodeServices(nodeId, gameId = null) {
@@ -100,6 +111,18 @@ export function deleteNodeService(nodeId, serviceId, deleteVolume = false) {
   return http.delete(`/nodes/${nodeId}/services/${serviceId}`, {
     params: { delete_volume: deleteVolume },
   });
+}
+
+export function startManagedService(nodeId, serviceId) {
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceId}/start`, {})
+    .then((r) => normalizeService(r.data.service || r.data));
+}
+
+export function stopManagedService(nodeId, serviceId) {
+  return http
+    .post(`/nodes/${nodeId}/services/${serviceId}/stop`, {})
+    .then((r) => normalizeService(r.data.service || r.data));
 }
 
 // ─── Managed Service Backups ───────────────────────────────────────────────

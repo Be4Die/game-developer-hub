@@ -422,6 +422,12 @@ func (m *instMockNodeClient) DownloadServiceBackup(ctx context.Context, nodeAddr
 func (m *instMockNodeClient) UploadServiceBackup(ctx context.Context, nodeAddress, apiKey, serviceName, fileName string, restoreImmediately bool, r io.Reader) (*domain.ServiceBackup, error) {
 	return &domain.ServiceBackup{}, nil
 }
+func (m *instMockNodeClient) StopService(ctx context.Context, nodeAddress, apiKey, name string) error {
+	return nil
+}
+func (m *instMockNodeClient) StartService(ctx context.Context, nodeAddress, apiKey, name string) (uint32, string, error) {
+	return 0, "", nil
+}
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 

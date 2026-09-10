@@ -438,6 +438,30 @@
                   <!-- Действия -->
                   <td class="col-actions">
                     <div class="actions-cell">
+                      <!-- Запустить остановленный сервис -->
+                      <button
+                        v-if="svc.status === 'stopped'"
+                        class="btn-icon-action"
+                        :disabled="actionServiceId === svc.id"
+                        title="Запустить сервис"
+                        @click="handleStartService(svc)"
+                      >
+                        <div v-if="actionServiceId === svc.id" class="spinner-sm"></div>
+                        <Play v-else class="icon-xs text-success" />
+                      </button>
+
+                      <!-- Остановить работающий сервис -->
+                      <button
+                        v-else-if="svc.status === 'running' && svc.service_type !== 'volume'"
+                        class="btn-icon-action"
+                        :disabled="actionServiceId === svc.id"
+                        title="Остановить сервис"
+                        @click="handleStopService(svc)"
+                      >
+                        <div v-if="actionServiceId === svc.id" class="spinner-sm"></div>
+                        <Square v-else class="icon-xs text-warning" />
+                      </button>
+
                       <button
                         class="btn-icon-danger"
                         title="Удалить сервис"
@@ -580,6 +604,19 @@
       @close="closeBackupsModal"
     />
 
+    <!-- Модальное окно безопасного перехода роли ноды -->
+    <RoleTransitionModal
+      v-if="showTransitionModal"
+      :node="node"
+      :target-role="pendingTargetRole"
+      :instances="nodeInstances"
+      :services="storageServices"
+      :projects-map="projectsMap"
+      :processing="transitionProcessing"
+      @close="closeTransitionModal"
+      @confirm="handleConfirmRoleTransition"
+    />
+
     <!-- Подтверждение удаления ноды -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
       <div class="modal card delete-modal">
@@ -616,6 +653,8 @@ import {
   ExternalLink,
   Globe,
   HardDrive,
+  Play,
+  Square,
 } from 'lucide-vue-next';
 import { StatusBadge, ResourceUsageCard } from '@/shared/ui';
 import {
@@ -629,9 +668,11 @@ import {
   listNodeServices,
   deleteNodeService,
   createNodeService,
+  startManagedService,
+  stopManagedService,
 } from '@/entities/node';
 import { listProjects } from '@/entities/project';
-import { CreateServiceModal, ServiceBackupsModal } from '@/features/manage-nodes';
+import { CreateServiceModal, ServiceBackupsModal, RoleTransitionModal } from '@/features/manage-nodes';
 import { formatBytes, formatDateTime, showToast } from '@/shared/lib';
 
 const props = defineProps({
@@ -660,6 +701,10 @@ const authError = ref(null);
 const authorizing = ref(false);
 
 const updatingRole = ref(false);
+const showTransitionModal = ref(false);
+const pendingTargetRole = ref('');
+const transitionProcessing = ref(false);
+const actionServiceId = ref(null);
 const showCreateServiceModal = ref(false);
 const togglingAdminer = ref(false);
 const showDeleteServiceConfirm = ref(false);
@@ -790,15 +835,90 @@ function getGameTitle(gid) {
 
 async function setRole(newRole) {
   if (currentRole.value === newRole || updatingRole.value) return;
+
+  // Если переключаемся в Storage, а на ноде есть игровые серверы -> требуем подтверждения вытеснения
+  if (newRole === 'storage' && nodeInstances.value && nodeInstances.value.length > 0) {
+    pendingTargetRole.value = 'storage';
+    showTransitionModal.value = true;
+    return;
+  }
+
+  // Если переключаемся в Compute, а на ноде есть сервисы хранения -> требуем решения по БД
+  if (newRole === 'compute' && storageServices.value && storageServices.value.length > 0) {
+    pendingTargetRole.value = 'compute';
+    showTransitionModal.value = true;
+    return;
+  }
+
+  // В остальных случаях (например, переход в Mixed или чистая нода) - прямой переход
+  await applyRoleChange(newRole);
+}
+
+async function applyRoleChange(newRole, options = {}) {
   updatingRole.value = true;
   try {
-    const updated = await updateNodeRole(props.nodeId, newRole);
+    const updated = await updateNodeRole(props.nodeId, newRole, options);
     node.value.role = updated.role || newRole;
     showToast(`Режим ноды переключен на ${newRole.toUpperCase()}`, 'success');
+    await Promise.all([fetchInstances(), fetchServices()]);
   } catch (e) {
     showToast(e.response?.data?.message || e.message || 'Ошибка обновления режима', 'error');
+    throw e;
   } finally {
     updatingRole.value = false;
+  }
+}
+
+function closeTransitionModal() {
+  if (transitionProcessing.value) return;
+  showTransitionModal.value = false;
+  pendingTargetRole.value = '';
+}
+
+async function handleConfirmRoleTransition(options) {
+  transitionProcessing.value = true;
+  try {
+    await applyRoleChange(pendingTargetRole.value, options);
+    showTransitionModal.value = false;
+    pendingTargetRole.value = '';
+  } catch (e) {
+    // Error notification handled in applyRoleChange
+  } finally {
+    transitionProcessing.value = false;
+  }
+}
+
+async function handleStartService(svc) {
+  if (actionServiceId.value === svc.id) return;
+  actionServiceId.value = svc.id;
+  try {
+    const updated = await startManagedService(props.nodeId, svc.id);
+    const idx = services.value.findIndex((s) => s.id === svc.id);
+    if (idx !== -1) {
+      services.value[idx] = updated;
+    }
+    showToast(`Сервис ${svc.name} успешно запущен`, 'success');
+  } catch (e) {
+    showToast(e.response?.data?.message || e.message || 'Ошибка запуска сервиса', 'error');
+  } finally {
+    actionServiceId.value = null;
+  }
+}
+
+async function handleStopService(svc) {
+  if (actionServiceId.value === svc.id) return;
+  actionServiceId.value = svc.id;
+  try {
+    const updated = await stopManagedService(props.nodeId, svc.id);
+    const idx = services.value.findIndex((s) => s.id === svc.id);
+    if (idx !== -1) {
+      services.value[idx] = updated;
+    }
+    showToast(`Сервис ${svc.name} остановлен`, 'success');
+  } catch (e) {
+    showToast(e.response?.data?.message || e.message || 'Ошибка остановки сервиса', 'error');
+  } finally {
+    actionServiceId.value = null;
   }
 }
 

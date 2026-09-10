@@ -187,7 +187,14 @@ func (h *NodeHandler) UpdateRole(ctx context.Context, req *pb.NodeServiceUpdateR
 		ownerID = ""
 	}
 
-	node, err := h.nodeService.UpdateRole(ctx, ownerID, req.GetNodeId(), nodeRoleFromProto(req.GetRole()))
+	node, err := h.nodeService.UpdateRole(
+		ctx,
+		ownerID,
+		req.GetNodeId(),
+		nodeRoleFromProto(req.GetRole()),
+		storageTransitionActionFromProto(req.GetStorageAction()),
+		computeTransitionActionFromProto(req.GetComputeAction()),
+	)
 	if err != nil {
 		return nil, domainError(err, "update node role")
 	}
@@ -256,6 +263,36 @@ func (h *NodeHandler) DeleteService(ctx context.Context, req *pb.NodeServiceDele
 	}
 
 	return &pb.NodeServiceDeleteServiceResponse{}, nil
+}
+
+// StartService запускает ранее остановленный управляемый сервис.
+func (h *NodeHandler) StartService(ctx context.Context, req *pb.NodeServiceStartServiceRequest) (*pb.NodeServiceStartServiceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	svc, err := h.nodeService.StartService(ctx, ownerID, req.GetNodeId(), req.GetServiceId())
+	if err != nil {
+		return nil, domainError(err, "start managed service")
+	}
+
+	return &pb.NodeServiceStartServiceResponse{Service: managedServiceToProto(svc)}, nil
+}
+
+// StopService останавливает управляемый сервис без удаления данных.
+func (h *NodeHandler) StopService(ctx context.Context, req *pb.NodeServiceStopServiceRequest) (*pb.NodeServiceStopServiceResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	svc, err := h.nodeService.StopService(ctx, ownerID, req.GetNodeId(), req.GetServiceId())
+	if err != nil {
+		return nil, domainError(err, "stop managed service")
+	}
+
+	return &pb.NodeServiceStopServiceResponse{Service: managedServiceToProto(svc)}, nil
 }
 
 // ─── Managed Service Backups ───────────────────────────────────────────────

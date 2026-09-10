@@ -149,6 +149,26 @@ func nodeRoleFromProto(r pb.NodeRole) domain.NodeRole {
 	}
 }
 
+func storageTransitionActionFromProto(a pb.StorageTransitionAction) domain.StorageTransitionAction {
+	switch a {
+	case pb.StorageTransitionAction_STORAGE_TRANSITION_ACTION_STOP:
+		return domain.StorageTransitionActionStop
+	case pb.StorageTransitionAction_STORAGE_TRANSITION_ACTION_DELETE:
+		return domain.StorageTransitionActionDelete
+	default:
+		return domain.StorageTransitionActionUnspecified
+	}
+}
+
+func computeTransitionActionFromProto(a pb.ComputeTransitionAction) domain.ComputeTransitionAction {
+	switch a {
+	case pb.ComputeTransitionAction_COMPUTE_TRANSITION_ACTION_TERMINATE:
+		return domain.ComputeTransitionActionTerminate
+	default:
+		return domain.ComputeTransitionActionUnspecified
+	}
+}
+
 func serviceTypeToProto(t domain.ServiceType) pb.ServiceType {
 	switch t {
 	case domain.ServiceTypePostgres:

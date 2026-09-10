@@ -763,7 +763,7 @@ func TestNodeService_UpdateRole(t *testing.T) {
 	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
 
 	ctx := context.Background()
-	updatedNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage)
+	updatedNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionUnspecified)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -772,7 +772,7 @@ func TestNodeService_UpdateRole(t *testing.T) {
 	}
 
 	// Test forbidden owner
-	_, err = svc.UpdateRole(ctx, "wrong-user", 10, domain.NodeRoleCompute)
+	_, err = svc.UpdateRole(ctx, "wrong-user", 10, domain.NodeRoleCompute, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionUnspecified)
 	if !errors.Is(err, domain.ErrForbidden) {
 		t.Errorf("expected ErrForbidden, got %v", err)
 	}
@@ -939,6 +939,199 @@ func TestNodeService_DeleteService(t *testing.T) {
 	}
 	if deletedID != 50 {
 		t.Errorf("expected repo.Delete called with 50, got %d", deletedID)
+	}
+}
+
+func TestNodeService_UpdateRole_TransitionToStorage(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleCompute,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+	var updatedRole domain.NodeRole
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+		updateRoleFn: func(ctx context.Context, id int64, role domain.NodeRole) error {
+			updatedRole = role
+			node.Role = role
+			return nil
+		},
+	}
+
+	deletedInstID := int64(0)
+	instRepo := &hbMockInstanceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.Instance, error) {
+			return []*domain.Instance{
+				{ID: 99, NodeID: 10, GameID: 1, Status: domain.InstanceStatusRunning},
+			}, nil
+		},
+		deleteFn: func(ctx context.Context, id int64) error {
+			deletedInstID = id
+			return nil
+		},
+	}
+	nodeClient := &hbMockNodeClient{
+		deleteInstanceFn: func(ctx context.Context, address, apiKey string, instanceID int64) error {
+			return nil
+		},
+		stopInstanceFn: func(ctx context.Context, address, apiKey string, instanceID int64, timeoutSec uint32) error {
+			return nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, instRepo, &hbMockInstanceState{}, nodeClient)
+
+	ctx := context.Background()
+	// 1. Without confirmation -> error
+	_, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionUnspecified)
+	if err == nil {
+		t.Fatal("expected error requiring confirmation when game servers exist, got nil")
+	}
+
+	// 2. With ComputeTransitionActionTerminate -> success, deletes instance, changes role
+	resNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionTerminate)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resNode.Role != domain.NodeRoleStorage || updatedRole != domain.NodeRoleStorage {
+		t.Errorf("expected role Storage, got resNode=%v updatedRole=%v", resNode.Role, updatedRole)
+	}
+	if deletedInstID != 99 {
+		t.Errorf("expected instance 99 to be deleted, got %d", deletedInstID)
+	}
+}
+
+func TestNodeService_UpdateRole_TransitionToCompute(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleStorage,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+	var updatedRole domain.NodeRole
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+		updateRoleFn: func(ctx context.Context, id int64, role domain.NodeRole) error {
+			updatedRole = role
+			node.Role = role
+			return nil
+		},
+	}
+
+	stoppedSvc := ""
+	nodeClient := &hbMockNodeClient{
+		RemoveServiceFn: func(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error {
+			return nil
+		},
+	}
+	// override StopServiceFn by mocking behavior
+	dbSvc := &domain.ManagedService{
+		ID:     101,
+		NodeID: 10,
+		Name:   "postgres-test",
+		ServiceType: domain.ServiceTypePostgres,
+		Status: domain.ServiceStatusRunning,
+	}
+
+	var updatedSvcStatus domain.ServiceStatus
+	svcRepo := &mockManagedServiceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+			return []*domain.ManagedService{dbSvc}, nil
+		},
+		updateFn: func(ctx context.Context, s *domain.ManagedService) error {
+			updatedSvcStatus = s.Status
+			return nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	// 1. Without action -> error
+	_, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleCompute, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionUnspecified)
+	if err == nil {
+		t.Fatal("expected error requiring confirmation when storage services exist, got nil")
+	}
+
+	// 2. With StorageTransitionActionStop -> marks stopped, changes role
+	resNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleCompute, domain.StorageTransitionActionStop, domain.ComputeTransitionActionUnspecified)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resNode.Role != domain.NodeRoleCompute || updatedRole != domain.NodeRoleCompute {
+		t.Errorf("expected role Compute, got resNode=%v updatedRole=%v", resNode.Role, updatedRole)
+	}
+	if updatedSvcStatus != domain.ServiceStatusStopped {
+		t.Errorf("expected service status Stopped, got %v", updatedSvcStatus)
+	}
+	_ = stoppedSvc
+}
+
+func TestNodeService_StartStopService(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleMixed,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+
+	dbSvc := &domain.ManagedService{
+		ID:     201,
+		NodeID: 10,
+		Name:   "redis-test",
+		ServiceType: domain.ServiceTypeRedis,
+		Status: domain.ServiceStatusRunning,
+	}
+
+	svcRepo := &mockManagedServiceRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.ManagedService, error) {
+			if id == 201 {
+				return dbSvc, nil
+			}
+			return nil, nil
+		},
+		updateFn: func(ctx context.Context, s *domain.ManagedService) error {
+			dbSvc.Status = s.Status
+			return nil
+		},
+	}
+
+	nodeClient := &hbMockNodeClient{}
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	// Stop
+	stopped, err := svc.StopService(ctx, "user-1", 10, 201)
+	if err != nil {
+		t.Fatalf("StopService failed: %v", err)
+	}
+	if stopped.Status != domain.ServiceStatusStopped {
+		t.Errorf("expected Stopped, got %v", stopped.Status)
+	}
+
+	// Start
+	started, err := svc.StartService(ctx, "user-1", 10, 201)
+	if err != nil {
+		t.Fatalf("StartService failed: %v", err)
+	}
+	if started.Status != domain.ServiceStatusRunning {
+		t.Errorf("expected Running, got %v", started.Status)
 	}
 }
 

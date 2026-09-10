@@ -57,6 +57,12 @@ type NodeClient interface {
 	// RemoveService удаляет управляемый сервис с ноды.
 	RemoveService(ctx context.Context, nodeAddress, apiKey string, name string, deleteVolume bool) error
 
+	// StopService останавливает контейнер управляемого сервиса без удаления тома.
+	StopService(ctx context.Context, nodeAddress, apiKey, name string) error
+
+	// StartService запускает ранее остановленный управляемый сервис.
+	StartService(ctx context.Context, nodeAddress, apiKey, name string) (uint32, string, error)
+
 	// ListServices возвращает список управляемых сервисов на ноде.
 	ListServices(ctx context.Context, nodeAddress, apiKey string) ([]ServiceInfo, error)
 	

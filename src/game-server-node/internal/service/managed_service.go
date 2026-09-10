@@ -157,8 +157,11 @@ func (s *ManagedServiceState) Reconcile(ctx context.Context) {
 			}
 		}
 
-		// Запускаем контейнер, если он остановлен
+		// Запускаем контейнер, если он остановлен (и не был намеренно остановлен пользователем)
 		if !details.Running {
+			if svc.Status == "stopped" {
+				continue
+			}
 			s.log.Info("starting stopped managed service container",
 				slog.String("service", name),
 				slog.String("container_id", details.ID),
@@ -497,6 +500,64 @@ func (s *ManagedServiceState) RemoveService(ctx context.Context, name string, de
 	return nil
 }
 
+// StopService останавливает контейнер сервиса без удаления тома и данных.
+func (s *ManagedServiceState) StopService(ctx context.Context, name string) error {
+	const op = "ManagedServiceState.StopService"
+
+	s.mu.Lock()
+	svc, ok := s.services[name]
+	if !ok {
+		s.mu.Unlock()
+		return fmt.Errorf("%s: service '%s' not found", op, name)
+	}
+	svc.Status = "stopped"
+	s.services[name] = svc
+	s.mu.Unlock()
+	_ = s.save()
+
+	if svc.ContainerID != "" {
+		_ = s.runtime.StopContainer(ctx, svc.ContainerID, 10*time.Second)
+	}
+
+	s.log.Info("managed service stopped", slog.String("name", name))
+	return nil
+}
+
+// StartService запускает ранее остановленный контейнер сервиса.
+func (s *ManagedServiceState) StartService(ctx context.Context, name string) (uint32, string, error) {
+	const op = "ManagedServiceState.StartService"
+
+	s.mu.Lock()
+	svc, ok := s.services[name]
+	if !ok {
+		s.mu.Unlock()
+		return 0, "", fmt.Errorf("%s: service '%s' not found", op, name)
+	}
+	s.mu.Unlock()
+
+	if svc.ContainerID != "" {
+		if err := s.runtime.StartContainer(ctx, svc.ContainerID); err != nil {
+			return 0, "", fmt.Errorf("%s: start container: %w", op, err)
+		}
+		if svc.InternalPort > 0 {
+			actualPort, err := s.runtime.GetHostPort(ctx, svc.ContainerID, svc.InternalPort)
+			if err == nil && actualPort > 0 {
+				svc.ConnectionURI = replacePortInURI(svc.ConnectionURI, actualPort)
+				svc.HostPort = actualPort
+			}
+		}
+	}
+
+	s.mu.Lock()
+	svc.Status = "running"
+	s.services[name] = svc
+	s.mu.Unlock()
+	_ = s.save()
+
+	s.log.Info("managed service started", slog.String("name", name), slog.Uint64("host_port", uint64(svc.HostPort)))
+	return svc.HostPort, svc.ConnectionURI, nil
+}
+
 // ListServices возвращает список всех управляемых сервисов и размер их томов.
 func (s *ManagedServiceState) ListServices(ctx context.Context) ([]domain.ServiceInfo, error) {
 	s.Reconcile(ctx)
@@ -583,6 +644,16 @@ func (s *DeploymentService) DeployService(ctx context.Context, req domain.Deploy
 // RemoveService делегирует вызов в ManagedServiceState.
 func (s *DeploymentService) RemoveService(ctx context.Context, name string, deleteVolume bool) error {
 	return s.managedState.RemoveService(ctx, name, deleteVolume)
+}
+
+// StopService делегирует остановку сервиса в ManagedServiceState.
+func (s *DeploymentService) StopService(ctx context.Context, name string) error {
+	return s.managedState.StopService(ctx, name)
+}
+
+// StartService делегирует запуск сервиса в ManagedServiceState.
+func (s *DeploymentService) StartService(ctx context.Context, name string) (uint32, string, error) {
+	return s.managedState.StartService(ctx, name)
 }
 
 // ListServices делегирует вызов в ManagedServiceState.

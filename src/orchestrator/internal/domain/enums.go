@@ -175,6 +175,25 @@ func (r NodeRole) String() string {
 	}
 }
 
+// ─── Role Transition Actions ──────────────────────────────────────────────────
+
+// StorageTransitionAction определяет действие над сервисами хранения при переходе в Compute.
+type StorageTransitionAction uint8
+
+const (
+	StorageTransitionActionUnspecified StorageTransitionAction = iota
+	StorageTransitionActionStop
+	StorageTransitionActionDelete
+)
+
+// ComputeTransitionAction определяет действие над игровыми серверами при переходе в Storage.
+type ComputeTransitionAction uint8
+
+const (
+	ComputeTransitionActionUnspecified ComputeTransitionAction = iota
+	ComputeTransitionActionTerminate
+)
+
 // ─── ServiceType ─────────────────────────────────────────────────────────────
 
 // ServiceType определяет тип управляемого сервиса хранения данных.

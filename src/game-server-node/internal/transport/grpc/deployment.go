@@ -317,6 +317,26 @@ func (h *DeploymentHandler) RemoveService(ctx context.Context, req *pb.RemoveSer
 	return &pb.RemoveServiceResponse{}, nil
 }
 
+// StopService останавливает контейнер сервиса без удаления тома.
+func (h *DeploymentHandler) StopService(ctx context.Context, req *pb.StopServiceRequest) (*pb.StopServiceResponse, error) {
+	if err := h.svc.StopService(ctx, req.GetName()); err != nil {
+		return nil, status.Errorf(codes.Internal, "stop service: %v", err)
+	}
+	return &pb.StopServiceResponse{}, nil
+}
+
+// StartService запускает ранее остановленный сервис.
+func (h *DeploymentHandler) StartService(ctx context.Context, req *pb.StartServiceRequest) (*pb.StartServiceResponse, error) {
+	port, uri, err := h.svc.StartService(ctx, req.GetName())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "start service: %v", err)
+	}
+	return &pb.StartServiceResponse{
+		HostPort:      port,
+		ConnectionUri: uri,
+	}, nil
+}
+
 // ListServices возвращает список развернутых управляемых сервисов.
 func (h *DeploymentHandler) ListServices(ctx context.Context, _ *pb.ListServicesRequest) (*pb.ListServicesResponse, error) {
 	services, err := h.svc.ListServices(ctx)

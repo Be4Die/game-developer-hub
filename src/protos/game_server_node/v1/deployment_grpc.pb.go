@@ -29,6 +29,8 @@ const (
 	DeploymentService_StreamLogs_FullMethodName              = "/game_server_node.v1.DeploymentService/StreamLogs"
 	DeploymentService_DeployService_FullMethodName           = "/game_server_node.v1.DeploymentService/DeployService"
 	DeploymentService_RemoveService_FullMethodName           = "/game_server_node.v1.DeploymentService/RemoveService"
+	DeploymentService_StopService_FullMethodName             = "/game_server_node.v1.DeploymentService/StopService"
+	DeploymentService_StartService_FullMethodName            = "/game_server_node.v1.DeploymentService/StartService"
 	DeploymentService_ListServices_FullMethodName            = "/game_server_node.v1.DeploymentService/ListServices"
 	DeploymentService_CreateBackup_FullMethodName            = "/game_server_node.v1.DeploymentService/CreateBackup"
 	DeploymentService_ListBackups_FullMethodName             = "/game_server_node.v1.DeploymentService/ListBackups"
@@ -68,6 +70,10 @@ type DeploymentServiceClient interface {
 	DeployService(ctx context.Context, in *DeployServiceRequest, opts ...grpc.CallOption) (*DeployServiceResponse, error)
 	// Остановка и удаление управляемого сервиса.
 	RemoveService(ctx context.Context, in *RemoveServiceRequest, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
+	// Остановка управляемого сервиса без удаления тома и данных.
+	StopService(ctx context.Context, in *StopServiceRequest, opts ...grpc.CallOption) (*StopServiceResponse, error)
+	// Запуск остановленного управляемого сервиса.
+	StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*StartServiceResponse, error)
 	// Список развернутых сервисов на ноде.
 	ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error)
 	// Создание резервной копии сервиса (Postgres, MySQL, Redis, Volume).
@@ -208,6 +214,26 @@ func (c *deploymentServiceClient) RemoveService(ctx context.Context, in *RemoveS
 	return out, nil
 }
 
+func (c *deploymentServiceClient) StopService(ctx context.Context, in *StopServiceRequest, opts ...grpc.CallOption) (*StopServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StopServiceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_StopService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *deploymentServiceClient) StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*StartServiceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StartServiceResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_StartService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *deploymentServiceClient) ListServices(ctx context.Context, in *ListServicesRequest, opts ...grpc.CallOption) (*ListServicesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListServicesResponse)
@@ -329,6 +355,10 @@ type DeploymentServiceServer interface {
 	DeployService(context.Context, *DeployServiceRequest) (*DeployServiceResponse, error)
 	// Остановка и удаление управляемого сервиса.
 	RemoveService(context.Context, *RemoveServiceRequest) (*RemoveServiceResponse, error)
+	// Остановка управляемого сервиса без удаления тома и данных.
+	StopService(context.Context, *StopServiceRequest) (*StopServiceResponse, error)
+	// Запуск остановленного управляемого сервиса.
+	StartService(context.Context, *StartServiceRequest) (*StartServiceResponse, error)
 	// Список развернутых сервисов на ноде.
 	ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error)
 	// Создание резервной копии сервиса (Postgres, MySQL, Redis, Volume).
@@ -383,6 +413,12 @@ func (UnimplementedDeploymentServiceServer) DeployService(context.Context, *Depl
 }
 func (UnimplementedDeploymentServiceServer) RemoveService(context.Context, *RemoveServiceRequest) (*RemoveServiceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveService not implemented")
+}
+func (UnimplementedDeploymentServiceServer) StopService(context.Context, *StopServiceRequest) (*StopServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StopService not implemented")
+}
+func (UnimplementedDeploymentServiceServer) StartService(context.Context, *StartServiceRequest) (*StartServiceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartService not implemented")
 }
 func (UnimplementedDeploymentServiceServer) ListServices(context.Context, *ListServicesRequest) (*ListServicesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListServices not implemented")
@@ -580,6 +616,42 @@ func _DeploymentService_RemoveService_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DeploymentService_StopService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).StopService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_StopService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).StopService(ctx, req.(*StopServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DeploymentService_StartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).StartService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_StartService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).StartService(ctx, req.(*StartServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _DeploymentService_ListServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListServicesRequest)
 	if err := dec(in); err != nil {
@@ -740,6 +812,14 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveService",
 			Handler:    _DeploymentService_RemoveService_Handler,
+		},
+		{
+			MethodName: "StopService",
+			Handler:    _DeploymentService_StopService_Handler,
+		},
+		{
+			MethodName: "StartService",
+			Handler:    _DeploymentService_StartService_Handler,
 		},
 		{
 			MethodName: "ListServices",
