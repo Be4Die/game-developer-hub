@@ -4,177 +4,141 @@
       <div class="modal card backups-modal">
         <!-- Заголовок модального окна -->
         <div class="modal-header">
-          <div class="modal-header-info">
-            <div class="service-badge-icon" :style="{ backgroundColor: getServiceBgColor(service.service_type) }">
-              <component :is="getServiceIcon(service.service_type)" class="icon-sm" :style="{ color: getServiceColor(service.service_type) }" />
-            </div>
-            <div>
-              <div class="title-with-badge">
-                <h3>Резервные копии (Бэкапы)</h3>
-                <span class="service-name-tag">{{ service.name }}</span>
-              </div>
-              <p class="modal-subtitle">
-                Управление снимками данных, скачивание дампов на ПК и восстановление сервиса
-              </p>
-            </div>
-          </div>
+          <h3>Резервные копии | {{ service.name }}</h3>
           <button class="close-btn" @click="$emit('close')">&times;</button>
         </div>
 
-        <!-- Полоса настройки авто-бэкапов сервиса -->
-        <div class="auto-backup-strip">
-          <div class="auto-backup-info">
-            <Clock class="icon-xs auto-backup-clock" />
-            <div>
-              <div class="auto-backup-title">Автоматическое расписание бэкапов</div>
-              <div class="auto-backup-desc">Ежедневный снимок в 03:00 UTC (глубина хранения — 7 последних копий)</div>
-            </div>
-          </div>
-          <div class="auto-backup-toggle">
-            <label class="switch-toggle" title="Включить / отключить авто-бэкапы">
-              <input
-                type="checkbox"
-                v-model="autoBackupEnabled"
-                @change="handleToggleAutoBackup"
-              />
-              <span class="switch-slider"></span>
-            </label>
-            <span class="switch-text" :class="autoBackupEnabled ? 'text-success' : 'text-muted'">
-              {{ autoBackupEnabled ? 'Включено' : 'Отключено' }}
-            </span>
-          </div>
+        <!-- Сообщения об ошибке -->
+        <div v-if="error" class="alert-banner alert-danger">
+          <AlertTriangle class="icon-xs" />
+          <span>{{ error }}</span>
+          <button class="alert-close" @click="error = null">&times;</button>
         </div>
 
-      <!-- Сообщения об ошибке / успехе -->
-      <div v-if="error" class="alert-banner alert-danger">
-        <AlertTriangle class="icon-xs" />
-        <span>{{ error }}</span>
-        <button class="alert-close" @click="error = null">&times;</button>
-      </div>
-      <div v-if="successMessage" class="alert-banner alert-success">
-        <Check class="icon-xs" />
-        <span>{{ successMessage }}</span>
-        <button class="alert-close" @click="successMessage = null">&times;</button>
-      </div>
-
-      <!-- Верхняя панель действий -->
-      <div class="actions-bar">
-        <div class="actions-left">
-          <button
-            class="btn-primary btn-sm"
-            :disabled="creating || loading || !isServiceOnline"
-            @click="handleCreateBackup"
-          >
-            <span v-if="creating" class="spinner-inline"></span>
-            <Plus v-else class="icon-xs" />
-            <span>{{ creating ? 'Создание снимка...' : 'Создать бэкап сейчас' }}</span>
-          </button>
-
-          <button
-            class="btn-outline btn-sm"
-            :disabled="uploading || loading || !isServiceOnline"
-            @click="showUploadForm = !showUploadForm"
-          >
-            <UploadCloud class="icon-xs" />
-            <span>{{ showUploadForm ? 'Скрыть загрузку' : 'Загрузить свой бэкап' }}</span>
-          </button>
-        </div>
-
-        <button class="icon-btn-secondary" title="Обновить список" :disabled="loading" @click="loadBackups">
-          <RotateCcw class="icon-xs" :class="{ 'spin-icon': loading }" />
-        </button>
-      </div>
-
-      <!-- Сворачиваемая форма загрузки кастомного бэкапа -->
-      <div v-if="showUploadForm" class="upload-section">
-        <div class="upload-dropzone" :class="{ 'has-file': !!uploadFile }" @dragover.prevent @drop.prevent="handleDrop">
-          <input
-            ref="fileInputRef"
-            type="file"
-            class="file-input-hidden"
-            accept=".sql,.sql.gz,.gz,.tar.gz,.rdb,.dump"
-            @change="handleFileChange"
-          />
-
-          <div v-if="!uploadFile" class="dropzone-content" @click="$refs.fileInputRef.click()">
-            <UploadCloud class="dropzone-icon" />
-            <p class="dropzone-title">Перетащите файл бэкапа сюда или <span>выберите на компьютере</span></p>
-            <p class="dropzone-hint">Поддерживаются: .sql, .sql.gz, .tar.gz, .rdb (до 2 ГБ)</p>
-          </div>
-
-          <div v-else class="dropzone-selected">
-            <FileArchive class="file-icon" />
-            <div class="selected-meta">
-              <span class="selected-name">{{ uploadFile.name }}</span>
-              <span class="selected-size">{{ formatBytes(uploadFile.size) }}</span>
-            </div>
-            <button class="remove-file-btn" :disabled="uploading" @click.stop="uploadFile = null">&times;</button>
-          </div>
-        </div>
-
-        <div v-if="uploadFile" class="upload-options">
-          <label class="checkbox-label">
-            <input v-model="restoreImmediately" type="checkbox" :disabled="uploading" />
-            <span>Автоматически восстановить базу сразу после загрузки</span>
-          </label>
-
-          <div v-if="uploading" class="progress-bar-wrap">
-            <div class="progress-track">
-              <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
-            </div>
-            <span class="progress-text">Загрузка: {{ uploadProgress }}%</span>
-          </div>
-
-          <div class="upload-buttons">
-            <button class="btn-primary btn-sm" :disabled="uploading" @click="submitUpload">
-              {{ uploading ? 'Загрузка архива...' : 'Начать загрузку' }}
+        <!-- Верхняя панель действий -->
+        <div class="actions-bar">
+          <div class="actions-left">
+            <button
+              class="btn-primary btn-sm"
+              :disabled="creating || loading || !isServiceOnline"
+              @click="handleCreateBackup"
+            >
+              <span v-if="creating" class="spinner-inline"></span>
+              <Plus v-else class="icon-xs" />
+              <span>{{ creating ? 'Создание...' : 'Создать' }}</span>
             </button>
-            <button class="btn-ghost btn-sm" :disabled="uploading" @click="cancelUpload">Отмена</button>
+
+            <button
+              class="btn-outline btn-sm"
+              :disabled="uploading || loading || !isServiceOnline"
+              @click="showUploadForm = !showUploadForm"
+            >
+              <UploadCloud class="icon-xs" />
+              <span>{{ showUploadForm ? 'Отмена' : 'Загрузить' }}</span>
+            </button>
+          </div>
+
+          <div class="actions-right">
+            <div class="auto-backup-control">
+              <span class="auto-backup-label">Автобэкапы</span>
+              <label class="switch-toggle" title="Включить / отключить автобэкапы">
+                <input
+                  type="checkbox"
+                  v-model="autoBackupEnabled"
+                  @change="handleToggleAutoBackup"
+                />
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <button class="icon-btn-secondary" title="Обновить список" :disabled="loading" @click="loadBackups">
+              <RotateCcw class="icon-xs" :class="{ 'spin-icon': loading }" />
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Список бэкапов -->
-      <div class="backups-content">
-        <div v-if="loading && !backups.length" class="loading-state">
-          <div class="spinner-sm"></div>
-          <span>Загрузка списка резервных копий...</span>
+        <!-- Сворачиваемая форма загрузки кастомного бэкапа -->
+        <div v-if="showUploadForm" class="upload-section">
+          <div class="upload-dropzone" :class="{ 'has-file': !!uploadFile }" @dragover.prevent @drop.prevent="handleDrop">
+            <input
+              ref="fileInputRef"
+              type="file"
+              class="file-input-hidden"
+              accept=".sql,.sql.gz,.gz,.tar.gz,.rdb,.dump"
+              @change="handleFileChange"
+            />
+
+            <div v-if="!uploadFile" class="dropzone-content" @click="$refs.fileInputRef.click()">
+              <UploadCloud class="dropzone-icon" />
+              <p class="dropzone-title">Перетащите файл бэкапа сюда или <span>выберите на компьютере</span></p>
+              <p class="dropzone-hint">Поддерживаются: .sql, .sql.gz, .tar.gz, .rdb (до 2 ГБ)</p>
+            </div>
+
+            <div v-else class="dropzone-selected">
+              <FileArchive class="file-icon" />
+              <div class="selected-meta">
+                <span class="selected-name">{{ uploadFile.name }}</span>
+                <span class="selected-size">{{ formatBytes(uploadFile.size) }}</span>
+              </div>
+              <button class="remove-file-btn" :disabled="uploading" @click.stop="uploadFile = null">&times;</button>
+            </div>
+          </div>
+
+          <div v-if="uploadFile" class="upload-options">
+            <label class="checkbox-label">
+              <input v-model="restoreImmediately" type="checkbox" :disabled="uploading" />
+              <span>Автоматически восстановить базу сразу после загрузки</span>
+            </label>
+
+            <div v-if="uploading" class="progress-bar-wrap">
+              <div class="progress-track">
+                <div class="progress-fill" :style="{ width: `${uploadProgress}%` }"></div>
+              </div>
+              <span class="progress-text">Загрузка: {{ uploadProgress }}%</span>
+            </div>
+
+            <div class="upload-buttons">
+              <button class="btn-primary btn-sm" :disabled="uploading" @click="submitUpload">
+                {{ uploading ? 'Загрузка...' : 'Начать загрузку' }}
+              </button>
+              <button class="btn-ghost btn-sm" :disabled="uploading" @click="cancelUpload">Отмена</button>
+            </div>
+          </div>
         </div>
 
-        <div v-else-if="!backups.length" class="empty-state">
-          <HardDrive class="empty-icon" />
-          <p class="empty-title">Резервных копий пока нет</p>
-          <p class="empty-desc">
-            Создайте первый снимок данных прямо сейчас или загрузите существующий дамп.
-          </p>
-        </div>
+        <!-- Список бэкапов -->
+        <div class="backups-content">
+          <div v-if="loading && !backups.length" class="loading-state">
+            <div class="spinner-sm"></div>
+            <span>Загрузка списка резервных копий...</span>
+          </div>
 
-        <div v-else class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Имя снимка / Файл</th>
-                <th>Тип</th>
-                <th>Размер</th>
-                <th>Создан</th>
-                <th>Статус</th>
-                <th class="col-actions">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="b in backups" :key="b.backup_id">
-                <!-- Файл -->
-                <td class="cell-file">
-                  <div class="file-name-wrap">
-                    <FileArchive class="icon-xs text-muted" />
-                    <div>
+          <div v-else-if="!backups.length" class="empty-state">
+            <HardDrive class="empty-icon" />
+            <p class="empty-title">Резервных копий пока нет</p>
+          </div>
+
+          <div v-else class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Имя снимка / Файл</th>
+                  <th>Тип</th>
+                  <th>Размер</th>
+                  <th>Создан</th>
+                  <th>Статус</th>
+                  <th class="col-actions">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="b in backups" :key="b.backup_id">
+                  <!-- Файл -->
+                  <td class="cell-file">
+                    <div class="file-name-wrap">
+                      <FileArchive class="icon-xs text-muted" />
                       <span class="file-name" :title="b.file_name">{{ b.file_name || b.backup_id }}</span>
-                      <span v-if="b.checksum" class="checksum-hint" :title="b.checksum">
-                        SHA256: {{ b.checksum.substring(0, 10) }}...
-                      </span>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
                 <!-- Тип -->
                 <td>
@@ -277,6 +241,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { showToast } from '@/shared/lib';
 import {
   Database,
   Layers,
@@ -289,7 +254,6 @@ import {
   AlertTriangle,
   Plus,
   FileArchive,
-  Clock,
 } from 'lucide-vue-next';
 import {
   listServiceBackups,
@@ -315,17 +279,32 @@ const props = defineProps({
 defineEmits(['close']);
 
 const autoBackupEnabled = ref(props.service.auto_backup_enabled || false);
+const backups = ref([]);
+const loading = ref(false);
+const creating = ref(false);
+const error = ref(null);
+const showUploadForm = ref(false);
+const uploadFile = ref(null);
+const uploading = ref(false);
+const uploadProgress = ref(0);
+const restoreImmediately = ref(false);
+const showRestoreConfirm = ref(false);
+const targetRestoreBackup = ref(null);
+const restoringBackupId = ref(null);
+const deletingBackupId = ref(null);
+const downloadingBackupId = ref(null);
+const isServiceOnline = computed(() => props.service?.status === 'running');
 
 async function handleToggleAutoBackup() {
   try {
     await toggleServiceAutoBackup(props.nodeId, props.service.name, autoBackupEnabled.value);
     if (autoBackupEnabled.value) {
-      successMessage.value = "Автоматическое регулярное резервное копирование включено";
+      showToast('Автобэкапы включены. Ежедневный снимок в 03:00 UTC (глубина хранения — 7 последних копий)', 'success');
     } else {
-      successMessage.value = "Автоматическое регулярное резервное копирование отключено";
+      showToast('Автоматические бэкапы отключены', 'info');
     }
   } catch (err) {
-    error.value = "Ошибка при переключении автобэкапов: " + (err.response?.data?.message || err.message);
+    showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'error');
     autoBackupEnabled.value = !autoBackupEnabled.value;
   }
 }
@@ -346,13 +325,12 @@ async function loadBackups() {
 async function handleCreateBackup() {
   creating.value = true;
   error.value = null;
-  successMessage.value = null;
   try {
     const backup = await createServiceBackup(props.nodeId, props.service.name);
-    successMessage.value = `Бэкап успешно создан (${formatBytes(backup?.size_bytes || 0)})`;
+    showToast(`Бэкап создан (${formatBytes(backup?.size_bytes || 0)})`, 'success');
     await loadBackups();
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Ошибка создания бэкапа';
+    showToast(err.response?.data?.message || err.message || 'Ошибка создания бэкапа', 'error');
   } finally {
     creating.value = false;
   }
@@ -368,13 +346,12 @@ async function confirmRestore() {
   const b = targetRestoreBackup.value;
   restoringBackupId.value = b.backup_id;
   error.value = null;
-  successMessage.value = null;
   try {
     await restoreServiceBackup(props.nodeId, props.service.name, b.backup_id);
-    successMessage.value = `Данные сервиса ${props.service.name} успешно восстановлены из бэкапа!`;
+    showToast(`Данные сервиса ${props.service.name} успешно восстановлены`, 'success');
     showRestoreConfirm.value = false;
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Ошибка восстановления';
+    showToast(err.response?.data?.message || err.message || 'Ошибка восстановления', 'error');
   } finally {
     restoringBackupId.value = null;
   }
@@ -389,8 +366,9 @@ async function handleDelete(b) {
   try {
     await deleteServiceBackup(props.nodeId, props.service.name, b.backup_id);
     backups.value = backups.value.filter((item) => item.backup_id !== b.backup_id);
+    showToast('Резервная копия удалена', 'success');
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Ошибка удаления бэкапа';
+    showToast(err.response?.data?.message || err.message || 'Ошибка удаления бэкапа', 'error');
   } finally {
     deletingBackupId.value = null;
   }
@@ -401,7 +379,7 @@ async function handleDownload(b) {
   try {
     await downloadServiceBackup(props.nodeId, props.service.name, b.backup_id, b.file_name);
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Ошибка скачивания';
+    showToast(err.response?.data?.message || err.message || 'Ошибка скачивания', 'error');
   } finally {
     downloadingBackupId.value = null;
   }
@@ -432,7 +410,6 @@ async function submitUpload() {
   uploading.value = true;
   uploadProgress.value = 0;
   error.value = null;
-  successMessage.value = null;
   try {
     const backup = await uploadServiceBackup(
       props.nodeId,
@@ -443,13 +420,16 @@ async function submitUpload() {
         uploadProgress.value = p;
       }
     );
-    successMessage.value = restoreImmediately.value
-      ? 'Бэкап успешно загружен и восстановлен в базе данных!'
-      : 'Бэкап успешно сохранен на ноде!';
+    showToast(
+      restoreImmediately.value
+        ? 'Бэкап загружен и восстановлен'
+        : 'Бэкап успешно загружен',
+      'success'
+    );
     cancelUpload();
     await loadBackups();
   } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Ошибка загрузки файла';
+    showToast(err.response?.data?.message || err.message || 'Ошибка загрузки файла', 'error');
   } finally {
     uploading.value = false;
   }
@@ -598,51 +578,39 @@ onMounted(() => {
   }
 }
 
-/* ─── Auto Backup Strip ─────────────────────────────────── */
-.auto-backup-strip {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 24px;
-  background: rgba(88, 166, 255, 0.05);
+  padding: 16px 24px;
   border-bottom: 1px solid var(--border-color, #30363d);
-  gap: 16px;
 }
 
-.auto-backup-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.auto-backup-clock {
-  color: var(--primary, #58a6ff);
-  flex-shrink: 0;
-}
-
-.auto-backup-title {
-  font-size: 0.85rem;
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-color, #c9d1d9);
 }
 
-.auto-backup-desc {
-  font-size: 0.75rem;
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
   color: var(--text-muted, #8b949e);
-  margin-top: 1px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
 }
 
-.auto-backup-toggle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+.close-btn:hover {
+  color: var(--text-color, #c9d1d9);
 }
 
 .switch-toggle {
   position: relative;
   display: inline-block;
-  width: 38px;
+  width: 36px;
   height: 20px;
   cursor: pointer;
 }
@@ -681,80 +649,7 @@ onMounted(() => {
 }
 
 .switch-toggle input:checked + .switch-slider:before {
-  transform: translateX(18px);
-}
-
-.switch-text {
-  font-size: 0.8rem;
-  font-weight: 600;
-  min-width: 68px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-color, #30363d);
-}
-
-.modal-header-info {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.service-badge-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.title-with-badge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.title-with-badge h3 {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text-color, #c9d1d9);
-}
-
-.service-name-tag {
-  font-family: monospace;
-  font-size: 0.8rem;
-  background-color: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border-color, #30363d);
-  padding: 2px 8px;
-  border-radius: 6px;
-  color: #58a6ff;
-}
-
-.modal-subtitle {
-  margin: 4px 0 0 0;
-  font-size: 0.82rem;
-  color: var(--text-muted, #8b949e);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-muted, #8b949e);
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.close-btn:hover {
-  color: var(--text-color, #c9d1d9);
+  transform: translateX(16px);
 }
 
 /* Оповещения */
@@ -772,12 +667,6 @@ onMounted(() => {
   background-color: rgba(248, 81, 73, 0.15);
   border: 1px solid rgba(248, 81, 73, 0.4);
   color: #f85149;
-}
-
-.alert-success {
-  background-color: rgba(46, 160, 67, 0.15);
-  border: 1px solid rgba(46, 160, 67, 0.4);
-  color: #3fb950;
 }
 
 .alert-close {
@@ -802,6 +691,24 @@ onMounted(() => {
 .actions-left {
   display: flex;
   gap: 10px;
+}
+
+.actions-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.auto-backup-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auto-backup-label {
+  font-size: 0.85rem;
+  color: var(--text-color, #c9d1d9);
+  font-weight: 500;
 }
 
 .icon-btn-secondary {

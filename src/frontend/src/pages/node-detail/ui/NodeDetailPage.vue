@@ -171,49 +171,33 @@
 
       <!-- Секции авторизованной ноды -->
       <template v-if="!isUnauthorized">
-        <!-- Управляемые сервисы хранения и тома данных (Хранение данных) -->
+        <!-- Инструменты -->
         <div v-if="currentRole !== 'compute'" class="section-block">
           <div class="section-title-wrap">
-            <div>
-              <h2>
-                Хранение данных
-                <span class="count-badge">{{ storageServices.length }}</span>
-              </h2>
-            </div>
-            <button
-              class="btn-primary btn-sm"
-              @click="showCreateServiceModal = true"
-            >
-              <Plus class="icon-xs" />
-              <span>Развернуть базу данных / том</span>
-            </button>
+            <h2>Инструменты</h2>
           </div>
 
-          <!-- Веб-панель управления БД (AdminerEvo) и Backup Manager -->
-          <div class="web-ui-row-container">
-            <div class="web-ui-row">
-              <div class="web-ui-cell-title">
+          <div class="tools-grid">
+            <!-- Панель управления — AdminerEvo -->
+            <div class="tool-card">
+              <div class="tool-card-left">
                 <div class="service-type-icon-box" style="background-color: rgba(88, 166, 255, 0.15)">
                   <LayoutDashboard class="service-icon" style="color: #58a6ff" />
                 </div>
-                <div class="service-name-text">
-                  <span class="service-name">Панель управления — AdminerEvo</span>
-                  <span class="service-subtext">Веб-консоль управления БД</span>
+                <div class="tool-info">
+                  <span class="tool-name">AdminerEvo</span>
+                  <span v-if="adminerService && adminerService.status === 'running'" class="status-badge success">
+                    <span class="status-dot"></span>
+                    Работает
+                  </span>
+                  <span v-else class="status-badge muted">
+                    <span class="status-dot"></span>
+                    Отключена
+                  </span>
                 </div>
               </div>
 
-              <div class="web-ui-cell-status">
-                <span v-if="adminerService" class="status-badge success">
-                  <span class="status-dot"></span>
-                  {{ adminerService.status === 'running' ? 'Работает' : adminerService.status }}
-                </span>
-                <span v-else class="status-badge muted">
-                  <span class="status-dot"></span>
-                  Отключена
-                </span>
-              </div>
-
-              <div class="web-ui-cell-link">
+              <div class="tool-card-right">
                 <a
                   v-if="adminerService && adminerService.status === 'running'"
                   :href="getAdminerUrl(adminerService)"
@@ -224,10 +208,6 @@
                   <span>Перейти</span>
                   <ExternalLink class="icon-xs" />
                 </a>
-                <span v-else class="text-muted-link">Недоступно</span>
-              </div>
-
-              <div class="web-ui-cell-action">
                 <button
                   v-if="adminerService"
                   class="btn-outline btn-sm btn-danger-outline"
@@ -247,43 +227,26 @@
               </div>
             </div>
 
-            <!-- Резервное копирование (Backup Manager) -->
-            <div class="web-ui-row">
-              <div class="web-ui-cell-title">
+            <!-- Резервное копирование — Backup Manager -->
+            <div class="tool-card">
+              <div class="tool-card-left">
                 <div class="service-type-icon-box" style="background-color: rgba(63, 185, 80, 0.15)">
                   <HardDrive class="service-icon" style="color: #3fb950" />
                 </div>
-                <div class="service-name-text">
-                  <span class="service-name">Резервное копирование — Backup Manager</span>
-                  <span class="service-subtext">Снимки данных, дампы на ПК и откат баз</span>
+                <div class="tool-info">
+                  <span class="tool-name">Резервное копирование</span>
+                  <span v-if="backupsEnabled" class="status-badge success">
+                    <span class="status-dot"></span>
+                    Работает
+                  </span>
+                  <span v-else class="status-badge muted">
+                    <span class="status-dot"></span>
+                    Отключено
+                  </span>
                 </div>
               </div>
 
-              <div class="web-ui-cell-status">
-                <span v-if="backupsEnabled" class="status-badge success">
-                  <span class="status-dot"></span>
-                  Работает
-                </span>
-                <span v-else class="status-badge muted">
-                  <span class="status-dot"></span>
-                  Отключено
-                </span>
-              </div>
-
-              <div class="web-ui-cell-link">
-                <button
-                  v-if="backupsEnabled && storageServices.length"
-                  class="adminer-link btn-link-text"
-                  title="Открыть управление снимками данных"
-                  @click="openBackupsForFirstService"
-                >
-                  <span>Управление</span>
-                  <HardDrive class="icon-xs" />
-                </button>
-                <span v-else class="text-muted-link">Недоступно</span>
-              </div>
-
-              <div class="web-ui-cell-action">
+              <div class="tool-card-right">
                 <button
                   v-if="backupsEnabled"
                   class="btn-outline btn-sm btn-danger-outline"
@@ -300,6 +263,25 @@
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Управляемые сервисы хранения и тома данных (Хранилища) -->
+        <div v-if="currentRole !== 'compute'" class="section-block">
+          <div class="section-title-wrap">
+            <div>
+              <h2>
+                Хранилища
+                <span class="count-badge">{{ storageServices.length }}</span>
+              </h2>
+            </div>
+            <button
+              class="btn-primary btn-sm"
+              @click="showCreateServiceModal = true"
+            >
+              <Plus class="icon-xs" />
+              <span>Развернуть базу данных / том</span>
+            </button>
           </div>
 
           <div v-if="servicesLoading" class="loading-state">
@@ -339,8 +321,6 @@
                       </div>
                       <div class="service-name-text">
                         <span class="service-name">{{ svc.name }}</span>
-                        <span v-if="svc.service_type === 'volume'" class="service-subtext">Том на хосте</span>
-                        <span v-else class="service-subtext">Docker-контейнер</span>
                       </div>
                     </div>
                   </td>
@@ -706,14 +686,6 @@ async function toggleBackups() {
   }
 }
 
-function openBackupsForFirstService() {
-  const target = storageServices.value.find((s) => isBackupSupported(s));
-  if (target) {
-    openBackupsModal(target);
-  } else {
-    showToast('Нет доступных баз данных или томов для создания бэкапов', 'info');
-  }
-}
 
 function isBackupSupported(svc) {
   if (!svc) return false;
@@ -1574,58 +1546,57 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
-/* ─── Web UI Row (AdminerEvo Singleton) ─────────────────────────────────── */
-.web-ui-row-container {
-  background: var(--bg-card, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-md, 8px);
-  margin-bottom: 20px;
-  overflow: hidden;
+/* ─── Tools Grid & Cards ─────────────────────────────────── */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.web-ui-row {
+.tool-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 14px 20px;
   gap: 16px;
   background: var(--bg-card, #161b22);
-  transition: background 0.15s ease;
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.web-ui-row:hover {
+.tool-card:hover {
   background: var(--bg-secondary, #1c2128);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.web-ui-cell-title {
+.tool-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tool-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 2;
-  min-width: 250px;
+  flex-wrap: wrap;
 }
 
-.web-ui-cell-status {
-  flex: 1;
+.tool-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #f0f6fc);
+  white-space: nowrap;
+}
+
+.tool-card-right {
   display: flex;
   align-items: center;
-}
-
-.web-ui-cell-link {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-.text-muted-link {
-  font-size: 0.85rem;
-  color: var(--text-tertiary, #6e7681);
-}
-
-.web-ui-cell-action {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .btn-danger-outline {
