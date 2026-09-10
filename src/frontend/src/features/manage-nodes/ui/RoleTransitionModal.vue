@@ -3,41 +3,40 @@
     <div class="modal-overlay" @click.self="handleCancel">
       <div class="modal card role-modal">
         <div class="modal-header">
-          <h3>{{ targetRole === 'storage' ? 'Переход в режим Storage' : 'Переход в режим Compute' }}</h3>
+          <h3>{{ targetRole === 'storage' ? t('servers.nodeRoles.transitionToStorageTitle') : t('servers.nodeRoles.transitionToComputeTitle') }}</h3>
           <button class="close-btn" :disabled="processing" @click="handleCancel">&times;</button>
         </div>
 
         <!-- Переход в Storage -->
         <div v-if="targetRole === 'storage'" class="modal-body">
           <p class="modal-desc">
-            На ноде запущены игровые серверы ({{ instances.length }} шт.). В режиме <strong>Storage</strong> игровые комнаты не поддерживаются.
+            {{ t('servers.nodeRoles.storageDescModal', { count: instances.length }) }}
           </p>
           <p class="danger-hint">
-            Все активные серверы на этой ноде будут остановлены и удалены.
+            {{ t('servers.nodeRoles.storageDangerHint') }}
           </p>
         </div>
 
         <!-- Переход в Compute -->
         <div v-else-if="targetRole === 'compute'" class="modal-body">
           <p class="modal-desc">
-            На ноде есть сервисы хранения: <strong>{{ servicesList }}</strong>.
-            Перед переключением будет автоматически создан бэкап.
+            {{ t('servers.nodeRoles.computeDescModal', { services: servicesList }) }}
           </p>
 
           <div class="options-list">
             <label class="option-item" :class="{ selected: selectedAction === 'stop' }">
               <input type="radio" v-model="selectedAction" value="stop" :disabled="processing" />
               <div class="option-content">
-                <span class="option-title">Остановить базы данных</span>
-                <span class="option-subtitle">Данные сохранятся на диске, сервисы можно включить позже</span>
+                <span class="option-title">{{ t('servers.nodeRoles.stopDbs') }}</span>
+                <span class="option-subtitle">{{ t('servers.nodeRoles.stopDbsSub') }}</span>
               </div>
             </label>
 
             <label class="option-item" :class="{ selected: selectedAction === 'delete' }">
               <input type="radio" v-model="selectedAction" value="delete" :disabled="processing" />
               <div class="option-content">
-                <span class="option-title text-danger">Удалить базы данных</span>
-                <span class="option-subtitle">Контейнеры и файлы данных будут удалены с диска</span>
+                <span class="option-title text-danger">{{ t('servers.nodeRoles.deleteDbs') }}</span>
+                <span class="option-subtitle">{{ t('servers.nodeRoles.deleteDbsSub') }}</span>
               </div>
             </label>
           </div>
@@ -45,7 +44,7 @@
 
         <div class="modal-actions">
           <button class="btn-outline" :disabled="processing" @click="handleCancel">
-            Отмена
+            {{ t('common.cancel') || 'Отмена' }}
           </button>
 
           <button
@@ -54,7 +53,7 @@
             :disabled="processing"
             @click="confirmStorage"
           >
-            {{ processing ? 'Завершение...' : 'Завершить серверы и перейти' }}
+            {{ processing ? 'Завершение...' : t('servers.nodeRoles.terminateAndSwitch') }}
           </button>
 
           <button
@@ -63,7 +62,7 @@
             :disabled="processing"
             @click="confirmCompute"
           >
-            {{ processing ? 'Выполняется...' : (selectedAction === 'delete' ? 'Удалить БД и перейти' : 'Остановить БД и перейти') }}
+            {{ processing ? 'Применение...' : (selectedAction === 'delete' ? t('servers.nodeRoles.deleteDbs') + ' и перейти' : t('servers.nodeRoles.stopDbs') + ' и перейти') }}
           </button>
         </div>
       </div>
@@ -73,6 +72,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 import {
   STORAGE_TRANSITION_STOP,
   STORAGE_TRANSITION_DELETE,

@@ -10,34 +10,34 @@
       <div v-if="!isUnauthorized" class="header-actions">
         <!-- Переключатель режима ноды -->
         <div class="role-selector-container">
-          <span class="role-selector-label">Режим:</span>
+          <span class="role-selector-label">{{ t('servers.policyMode') ? 'Режим:' : 'Режим:' }}</span>
           <div class="role-segmented-control">
             <button
               class="role-pill-btn"
               :class="{ active: currentRole === 'mixed' }"
               :disabled="updatingRole || isUnauthorized"
-              title="Compute + Storage (Игровые комнаты и базы данных)"
+              :title="t('servers.nodeRoles.mixedTitle')"
               @click="setRole('mixed')"
             >
-              Mixed
+              {{ t('servers.nodeRoles.mixed') }}
             </button>
             <button
               class="role-pill-btn"
               :class="{ active: currentRole === 'compute' }"
               :disabled="updatingRole || isUnauthorized"
-              title="Только игровые комнаты (вычисления)"
+              :title="t('servers.nodeRoles.computeTitle')"
               @click="setRole('compute')"
             >
-              Compute
+              {{ t('servers.nodeRoles.compute') }}
             </button>
             <button
               class="role-pill-btn"
               :class="{ active: currentRole === 'storage' }"
               :disabled="updatingRole || isUnauthorized"
-              title="Выделенное хранилище (БД, кэш, тома)"
+              :title="t('servers.nodeRoles.storageTitle')"
               @click="setRole('storage')"
             >
-              Storage
+              {{ t('servers.nodeRoles.storage') }}
             </button>
           </div>
         </div>
@@ -661,6 +661,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import {
   Trash2,
   AlertCircle,
@@ -701,6 +702,7 @@ const props = defineProps({
   nodeId: { type: [String, Number], required: true },
 });
 const router = useRouter();
+const { t } = useI18n();
 
 const node = ref({});
 const projectsMap = ref({});
@@ -881,7 +883,8 @@ async function applyRoleChange(newRole, options = {}) {
   try {
     const updated = await updateNodeRole(props.nodeId, newRole, options);
     node.value.role = updated.role || newRole;
-    showToast(`Режим ноды переключен на ${newRole.toUpperCase()}`, 'success');
+    const localizedRoleName = t(`servers.nodeRoles.${newRole}`) || newRole;
+    showToast(`Режим узла изменен на «${localizedRoleName}»`, 'success');
     await Promise.all([fetchInstances(), fetchServices()]);
   } catch (e) {
     showToast(e.response?.data?.message || e.message || 'Ошибка обновления режима', 'error');

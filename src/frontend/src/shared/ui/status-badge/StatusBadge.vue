@@ -4,6 +4,9 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t, te } = useI18n();
 
 const props = defineProps({
   status: { type: [String, Number], required: true },
@@ -42,15 +45,21 @@ const nodeMap = {
   NODE_STATUS_MAINTENANCE: { label: 'Обслуживание', cls: 'warning' },
 };
 
-const roleMap = {
-  mixed: { label: 'Mixed', cls: 'primary' },
-  compute: { label: 'Compute', cls: 'neutral' },
-  storage: { label: 'Storage', cls: 'warning' },
-  NODE_ROLE_UNSPECIFIED: { label: 'Mixed', cls: 'primary' },
-  NODE_ROLE_MIXED: { label: 'Mixed', cls: 'primary' },
-  NODE_ROLE_COMPUTE: { label: 'Compute', cls: 'neutral' },
-  NODE_ROLE_STORAGE: { label: 'Storage', cls: 'warning' },
-};
+const roleLabels = computed(() => ({
+  mixed: te('servers.nodeRoles.mixed') ? t('servers.nodeRoles.mixed') : 'Mixed',
+  compute: te('servers.nodeRoles.compute') ? t('servers.nodeRoles.compute') : 'Compute',
+  storage: te('servers.nodeRoles.storage') ? t('servers.nodeRoles.storage') : 'Storage',
+}));
+
+const roleMap = computed(() => ({
+  mixed: { label: roleLabels.value.mixed, cls: 'primary' },
+  compute: { label: roleLabels.value.compute, cls: 'neutral' },
+  storage: { label: roleLabels.value.storage, cls: 'warning' },
+  NODE_ROLE_UNSPECIFIED: { label: roleLabels.value.mixed, cls: 'primary' },
+  NODE_ROLE_MIXED: { label: roleLabels.value.mixed, cls: 'primary' },
+  NODE_ROLE_COMPUTE: { label: roleLabels.value.compute, cls: 'neutral' },
+  NODE_ROLE_STORAGE: { label: roleLabels.value.storage, cls: 'warning' },
+}));
 
 const serviceMap = {
   running: { label: 'Работает', cls: 'success' },
@@ -67,7 +76,7 @@ const serviceMap = {
 
 const map = computed(() => {
   if (props.type === 'node') return nodeMap;
-  if (props.type === 'role') return roleMap;
+  if (props.type === 'role') return roleMap.value;
   if (props.type === 'service') return serviceMap;
   return instanceMap;
 });
