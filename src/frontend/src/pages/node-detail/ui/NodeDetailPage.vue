@@ -190,6 +190,10 @@
                     <span class="status-dot"></span>
                     Работает
                   </span>
+                  <span v-else-if="adminerService && adminerService.status === 'stopped'" class="status-badge warning">
+                    <span class="status-dot"></span>
+                    Остановлена
+                  </span>
                   <span v-else class="status-badge muted">
                     <span class="status-dot"></span>
                     Отключена
@@ -198,32 +202,50 @@
               </div>
 
               <div class="tool-card-right">
-                <a
-                  v-if="adminerService && adminerService.status === 'running'"
-                  :href="getAdminerUrl(adminerService)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="adminer-link"
-                >
-                  <span>Перейти</span>
-                  <ExternalLink class="icon-xs" />
-                </a>
-                <button
-                  v-if="adminerService"
-                  class="btn-outline btn-sm btn-danger-outline"
-                  :disabled="togglingAdminer"
-                  @click="toggleAdminer"
-                >
-                  {{ togglingAdminer ? 'Отключение...' : 'Отключить' }}
-                </button>
-                <button
-                  v-else
-                  class="btn-primary btn-sm"
-                  :disabled="togglingAdminer"
-                  @click="toggleAdminer"
-                >
-                  {{ togglingAdminer ? 'Подключение...' : 'Подключить' }}
-                </button>
+                <template v-if="adminerService && adminerService.status === 'running'">
+                  <a
+                    :href="getAdminerUrl(adminerService)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="adminer-link"
+                  >
+                    <span>Перейти</span>
+                    <ExternalLink class="icon-xs" />
+                  </a>
+                  <button
+                    class="btn-outline btn-sm btn-danger-outline"
+                    :disabled="togglingAdminer"
+                    @click="toggleAdminer"
+                  >
+                    {{ togglingAdminer ? 'Отключение...' : 'Отключить' }}
+                  </button>
+                </template>
+                <template v-else-if="adminerService && adminerService.status === 'stopped'">
+                  <button
+                    class="btn-primary btn-sm"
+                    :disabled="togglingAdminer"
+                    @click="startAdminer"
+                  >
+                    {{ togglingAdminer ? 'Запуск...' : 'Запустить' }}
+                  </button>
+                  <button
+                    class="btn-outline btn-sm btn-danger-outline"
+                    :disabled="togglingAdminer"
+                    @click="toggleAdminer"
+                    title="Удалить веб-панель"
+                  >
+                    Отключить
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    class="btn-primary btn-sm"
+                    :disabled="togglingAdminer"
+                    @click="toggleAdminer"
+                  >
+                    {{ togglingAdminer ? 'Подключение...' : 'Подключить' }}
+                  </button>
+                </template>
               </div>
             </div>
 
@@ -965,6 +987,23 @@ async function toggleAdminer() {
     } finally {
       togglingAdminer.value = false;
     }
+  }
+}
+
+async function startAdminer() {
+  if (togglingAdminer.value || !adminerService.value) return;
+  togglingAdminer.value = true;
+  try {
+    const updated = await startManagedService(props.nodeId, adminerService.value.id);
+    const idx = services.value.findIndex((s) => s.id === adminerService.value.id);
+    if (idx !== -1) {
+      services.value[idx] = updated;
+    }
+    showToast('Веб-панель AdminerEvo успешно запущена', 'success');
+  } catch (e) {
+    showToast(e.response?.data?.message || e.message || 'Ошибка запуска веб-панели', 'error');
+  } finally {
+    togglingAdminer.value = false;
   }
 }
 
@@ -1712,6 +1751,31 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text-primary, #f0f6fc);
   white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.status-badge.success {
+  background-color: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+}
+
+.status-badge.warning {
+  background-color: rgba(210, 153, 34, 0.15);
+  color: #d29922;
+}
+
+.status-badge.muted {
+  background-color: rgba(110, 118, 129, 0.15);
+  color: #8b949e;
 }
 
 .tool-card-right {

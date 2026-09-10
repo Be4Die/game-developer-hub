@@ -1135,4 +1135,142 @@ func TestNodeService_StartStopService(t *testing.T) {
 	}
 }
 
+func TestNodeService_UpdateRole_AutoResumeAdminer(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleCompute,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+		updateRoleFn: func(ctx context.Context, id int64, role domain.NodeRole) error {
+			node.Role = role
+			return nil
+		},
+	}
+
+	adminerSvc := &domain.ManagedService{
+		ID:          301,
+		NodeID:      10,
+		Name:        "adminer",
+		ServiceType: domain.ServiceTypeAdminer,
+		Status:      domain.ServiceStatusStopped,
+	}
+
+	svcRepo := &mockManagedServiceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+			return []*domain.ManagedService{adminerSvc}, nil
+		},
+		updateFn: func(ctx context.Context, s *domain.ManagedService) error {
+			adminerSvc.Status = s.Status
+			adminerSvc.HostPort = s.HostPort
+			adminerSvc.ConnectionURI = s.ConnectionURI
+			return nil
+		},
+	}
+
+	adminerStarted := false
+	nodeClient := &hbMockNodeClient{
+		StartServiceFn: func(ctx context.Context, address, apiKey, name string) (uint32, string, error) {
+			if name == "adminer" {
+				adminerStarted = true
+				return 40205, "http://127.0.0.1:40205", nil
+			}
+			return 0, "", nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	resNode, err := svc.UpdateRole(ctx, "user-1", 10, domain.NodeRoleStorage, domain.StorageTransitionActionUnspecified, domain.ComputeTransitionActionTerminate)
+	if err != nil {
+		t.Fatalf("UpdateRole failed: %v", err)
+	}
+
+	if resNode.Role != domain.NodeRoleStorage {
+		t.Errorf("expected role Storage, got %v", resNode.Role)
+	}
+	if !adminerStarted {
+		t.Error("expected Adminer service to be automatically started")
+	}
+	if adminerSvc.Status != domain.ServiceStatusRunning {
+		t.Errorf("expected Adminer status Running, got %v", adminerSvc.Status)
+	}
+	if adminerSvc.HostPort != 40205 {
+		t.Errorf("expected Adminer port 40205, got %d", adminerSvc.HostPort)
+	}
+}
+
+func TestNodeService_CreateService_ResumeStoppedAdminer(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Role:     domain.NodeRoleStorage,
+		Address:  "127.0.0.1:44044",
+		APIToken: "token",
+		Status:   domain.NodeStatusOnline,
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+
+	adminerSvc := &domain.ManagedService{
+		ID:          301,
+		NodeID:      10,
+		Name:        "adminer",
+		ServiceType: domain.ServiceTypeAdminer,
+		Status:      domain.ServiceStatusStopped,
+	}
+
+	svcRepo := &mockManagedServiceRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.ManagedService, error) {
+			if id == 301 {
+				return adminerSvc, nil
+			}
+			return nil, nil
+		},
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+			return []*domain.ManagedService{adminerSvc}, nil
+		},
+		updateFn: func(ctx context.Context, s *domain.ManagedService) error {
+			adminerSvc.Status = s.Status
+			adminerSvc.HostPort = s.HostPort
+			return nil
+		},
+	}
+
+	nodeClient := &hbMockNodeClient{
+		StartServiceFn: func(ctx context.Context, address, apiKey, name string) (uint32, string, error) {
+			return 40205, "http://127.0.0.1:40205", nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	res, err := svc.CreateService(ctx, "user-1", 10, CreateServiceParams{
+		ServiceType: domain.ServiceTypeAdminer,
+		Name:        "adminer",
+	})
+	if err != nil {
+		t.Fatalf("CreateService failed: %v", err)
+	}
+
+	if res.ID != 301 {
+		t.Errorf("expected existing service ID 301, got %d", res.ID)
+	}
+	if res.Status != domain.ServiceStatusRunning {
+		t.Errorf("expected status Running, got %v", res.Status)
+	}
+}
+
+
 

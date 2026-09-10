@@ -585,6 +585,37 @@ func (s *NodeService) UpdateRole(
 		return nil, fmt.Errorf("NodeService.UpdateRole: update role: %w", err)
 	}
 
+	// ─── Авто-возобновление Adminer при возврате в Storage или Mixed ──────────
+	if (role == domain.NodeRoleStorage || role == domain.NodeRoleMixed) && s.serviceRepo != nil && node.Status == domain.NodeStatusOnline && s.nodeClient != nil {
+		services, err := s.serviceRepo.ListByNode(ctx, nodeID)
+		if err == nil {
+			for _, svc := range services {
+				if svc.ServiceType == domain.ServiceTypeAdminer && svc.Status == domain.ServiceStatusStopped {
+					port, uri, startErr := s.nodeClient.StartService(ctx, node.Address, node.APIToken, svc.Name)
+					if startErr == nil {
+						if port > 0 {
+							svc.HostPort = port
+							svc.ConnectionURI = uri
+						}
+						svc.Status = domain.ServiceStatusRunning
+						svc.UpdatedAt = time.Now()
+						_ = s.serviceRepo.Update(ctx, svc)
+						s.log.Info("auto-resumed adminer service on transition to storage/mixed",
+							slog.Int64("node_id", nodeID),
+							slog.String("name", svc.Name),
+							slog.Uint64("host_port", uint64(svc.HostPort)),
+						)
+					} else {
+						s.log.Warn("failed to auto-resume adminer on transition to storage/mixed",
+							slog.Int64("node_id", nodeID),
+							slog.Any("err", startErr),
+						)
+					}
+				}
+			}
+		}
+	}
+
 	node.Role = role
 	node.UpdatedAt = time.Now()
 	s.log.Info("node role updated",
@@ -707,8 +738,14 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 		existingServices, err := s.serviceRepo.ListByNode(ctx, nodeID)
 		if err == nil {
 			for _, svc := range existingServices {
-				if svc.ServiceType == domain.ServiceTypeAdminer && svc.Status != domain.ServiceStatusStopped && svc.Status != domain.ServiceStatusError {
-					return nil, fmt.Errorf("NodeService.CreateService: на ноде %d уже развернута веб-панель управления (AdminerEvo)", nodeID)
+				if svc.ServiceType == domain.ServiceTypeAdminer {
+					if svc.Status == domain.ServiceStatusRunning {
+						return nil, fmt.Errorf("NodeService.CreateService: на ноде %d уже развернута веб-панель управления (AdminerEvo)", nodeID)
+					}
+					if svc.Status == domain.ServiceStatusStopped {
+						// Если Adminer уже развернут, но остановлен, запускаем его
+						return s.StartService(ctx, ownerID, nodeID, svc.ID)
+					}
 				}
 			}
 		}
