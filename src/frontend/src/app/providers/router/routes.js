@@ -21,6 +21,7 @@ import { AdminDevelopersPage } from '@/pages/admin-developers';
 import { AdminModeratorsPage } from '@/pages/admin-moderators';
 import { AdminModeratorDetailPage } from '@/pages/admin-moderator-detail';
 import { ProjectAccessPage } from '@/pages/project-access';
+import { CatalogPage } from '@/pages/catalog';
 
 export const routes = [
   {
@@ -28,7 +29,7 @@ export const routes = [
     redirect: () => {
       if (!isAuthenticated()) return '/login';
       const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
-      if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/admin/developers';
+      if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return '/catalog';
       if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2) return '/moderator/queue';
       return '/projects';
     },
@@ -114,6 +115,20 @@ export const routes = [
     redirect: '/moderator/queue',
   },
   {
+    path: '/catalog',
+    name: 'catalog',
+    component: CatalogPage,
+    meta: { requiresAuth: true, requiresStaff: true },
+  },
+  {
+    path: '/admin/catalog',
+    redirect: '/catalog',
+  },
+  {
+    path: '/moderator/catalog',
+    redirect: '/catalog',
+  },
+  {
     path: '/moderator/queue',
     name: 'moderation-queue',
     component: ModerationQueuePage,
@@ -126,10 +141,18 @@ export const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/moderator/archive',
-    name: 'moderation-archive',
+    path: '/moderator/journal',
+    name: 'moderation-journal',
     component: ModerationArchivePage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, requiresStaff: true },
+  },
+  {
+    path: '/moderator/archive',
+    redirect: '/moderator/journal',
+  },
+  {
+    path: '/admin/journal',
+    redirect: '/moderator/journal',
   },
   {
     path: '/moderator/projects/:projectId',
@@ -149,11 +172,11 @@ export const routes = [
   },
   {
     path: '/admin',
-    redirect: '/admin/developers',
+    redirect: '/catalog',
   },
   {
     path: '/admin/dashboard',
-    redirect: '/admin/developers',
+    redirect: '/catalog',
   },
   {
     path: '/admin/developers',

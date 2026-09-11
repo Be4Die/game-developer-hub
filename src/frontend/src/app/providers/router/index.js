@@ -14,7 +14,7 @@ router.beforeEach((to) => {
   }
   if (to.meta.guest && authed) {
     const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
-    if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return { path: '/admin/developers' };
+    if (user?.role === 'USER_ROLE_ADMIN' || user?.role === 3) return { path: '/catalog' };
     if (user?.role === 'USER_ROLE_MODERATOR' || user?.role === 2)
       return { path: '/moderator/queue' };
     return { path: '/projects' };
@@ -22,6 +22,20 @@ router.beforeEach((to) => {
   if (to.meta.requiresAdmin) {
     const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
     if (user?.role !== 'USER_ROLE_ADMIN' && user?.role !== 3) {
+      return { path: '/projects' };
+    }
+  }
+  if (to.meta.requiresStaff) {
+    const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
+    const r = user?.role;
+    const isStaff =
+      r === 'USER_ROLE_ADMIN' ||
+      r === 'admin' ||
+      r === 3 ||
+      r === 'USER_ROLE_MODERATOR' ||
+      r === 'moderator' ||
+      r === 2;
+    if (!isStaff) {
       return { path: '/projects' };
     }
   }

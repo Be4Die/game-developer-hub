@@ -143,6 +143,17 @@ message ProjectListResponse {
   int32 total = 2;
 }
 
+// ─── List Published (Catalog) ─────────────────────────
+message ProjectListPublishedRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ProjectListPublishedResponse {
+  repeated Project projects = 1;
+  int32 total = 2;
+}
+
 // ─── Update ───────────────────────────────────────────
 message ProjectUpdateRequest {
   int64 id = 1;
@@ -459,6 +470,9 @@ service ProjectService {
   }
   rpc List(ProjectListRequest) returns (ProjectListResponse) {
     option (google.api.http) = { get: "/api/v1/projects" };
+  }
+  rpc ListPublished(ProjectListPublishedRequest) returns (ProjectListPublishedResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/published" };
   }
   rpc Update(ProjectUpdateRequest) returns (ProjectUpdateResponse) {
     option (google.api.http) = { patch: "/api/v1/projects/{id}", body: "*" };

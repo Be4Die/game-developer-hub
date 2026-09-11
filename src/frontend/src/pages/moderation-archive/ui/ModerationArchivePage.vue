@@ -1,7 +1,7 @@
 <template>
   <div class="moderation-page-container">
     <div class="main-content-wrap">
-      <!-- Панель фильтрации и поиска (компактный стиль консоли) -->
+      <!-- Панель фильтрации и поиска (консольный стиль) -->
       <div class="filters-toolbar">
         <!-- Поиск по названию, ID, разработчику, причине -->
         <div class="filter-field field-search">
@@ -10,7 +10,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              :placeholder="t('moderation.searchArchivePlaceholder')"
+              :placeholder="t('journal.searchPlaceholder')"
               class="filter-input"
             />
             <button
@@ -75,16 +75,16 @@
         <p>{{ t('common.loading') }}</p>
       </div>
 
-      <!-- Пустой архив -->
+      <!-- Пустой журнал -->
       <div
         v-else-if="requests.length === 0 && !searchQuery && statusFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
-          <Archive class="icon-lg text-muted" />
+          <BookOpen class="icon-lg text-muted" />
         </div>
-        <h3>{{ t('moderation.noArchive') }}</h3>
-        <p>Здесь сохраняется журнал всех проверенных и вынесенных модераторами решений.</p>
+        <h3>{{ t('journal.emptyJournal') }}</h3>
+        <p>{{ t('journal.emptyJournalDesc') }}</p>
         <button class="btn-primary-sm" @click="loadArchive">
           <RefreshCw class="icon-xs" />
           <span>{{ t('common.refresh') }}</span>
@@ -101,7 +101,7 @@
         </button>
       </div>
 
-      <!-- Таблица архива решений -->
+      <!-- Таблица журнала решений -->
       <div v-else class="table-wrapper">
         <table class="moderation-table">
           <thead>
@@ -121,7 +121,7 @@
               v-for="req in paginatedRequests"
               :key="req.id"
               class="table-row"
-              @click="openProject(req.projectId)"
+              @click="openSnapshot(req)"
             >
               <!-- 1 колонка: Игра / Проект -->
               <td class="col-game">
@@ -134,7 +134,7 @@
                       class="game-icon-img"
                     />
                     <div v-else class="game-icon-mock">
-                      <span>Draft</span>
+                      <span>#{{ req.projectId }}</span>
                     </div>
                   </div>
                   <div class="game-text">
@@ -204,12 +204,19 @@
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
                   <button
+                    class="btn-snapshot-action"
+                    title="Просмотреть снимок решения"
+                    @click="openSnapshot(req)"
+                  >
+                    <Camera class="icon-xs" />
+                    <span>Снимок</span>
+                  </button>
+                  <button
                     class="btn-inspect-sm"
                     :title="t('moderation.viewDetails')"
                     @click="openProject(req.projectId)"
                   >
-                    <Eye class="icon-xs" />
-                    <span>{{ t('moderation.viewDetails') }}</span>
+                    <ExternalLink class="icon-xs" />
                   </button>
                 </div>
               </td>
@@ -260,6 +267,210 @@
           </div>
         </div>
       </div>
+
+      <!-- МОДАЛЬНОЕ ОКНО СНАПШОТА РЕШЕНИЯ (SNAPSHOT AUDIT MODAL) -->
+      <div v-if="showSnapshotModal" class="modal-overlay" @click.self="closeSnapshotModal">
+        <div class="modal-card snapshot-modal-card">
+          <!-- Шапка модального окна -->
+          <div class="modal-header">
+            <div class="modal-header-title">
+              <div class="snapshot-icon-badge">
+                <Camera class="icon-md text-primary" />
+              </div>
+              <div>
+                <div class="snapshot-title-row">
+                  <h3 class="modal-title">{{ t('journal.snapshotModal.title') }}</h3>
+                  <span
+                    v-if="selectedRequest"
+                    class="status-pill-sm"
+                    :class="verdictClass(selectedRequest.status)"
+                  >
+                    {{ verdictLabel(selectedRequest.status) }}
+                  </span>
+                </div>
+                <span class="modal-subtitle">
+                  Заявка #{{ selectedRequest?.id }} • Проект #{{ selectedRequest?.projectId }}
+                </span>
+              </div>
+            </div>
+            <button class="btn-close-modal" @click="closeSnapshotModal">
+              <X class="icon-sm" />
+            </button>
+          </div>
+
+          <!-- Тело модального окна снапшота -->
+          <div v-if="selectedRequest" class="modal-body-scrollable">
+            <!-- Плашка замороженного состояния -->
+            <div class="frozen-banner">
+              <History class="icon-sm text-primary flex-shrink-0" />
+              <span>{{ t('journal.snapshotModal.frozenNotice') }}</span>
+            </div>
+
+            <!-- Сетка содержимого снапшота -->
+            <div class="snapshot-grid">
+              <!-- Левая колонка: Проект и сборка снапшота -->
+              <div class="snapshot-col snapshot-project-info">
+                <div class="snapshot-card">
+                  <!-- Обложка снапшота -->
+                  <div class="snapshot-cover-wrap">
+                    <img
+                      v-if="selectedRequest.snapshot.coverPath"
+                      :src="getMediaUrl(selectedRequest.snapshot.coverPath)"
+                      alt="Cover"
+                      class="snapshot-cover-img"
+                    />
+                    <div v-else class="snapshot-cover-placeholder">
+                      <Gamepad2 class="icon-lg text-muted" />
+                    </div>
+                  </div>
+
+                  <div class="snapshot-card-content">
+                    <div class="snapshot-game-identity">
+                      <div class="snapshot-icon-box">
+                        <img
+                          v-if="selectedRequest.snapshot.iconPath"
+                          :src="getMediaUrl(selectedRequest.snapshot.iconPath)"
+                          alt="Icon"
+                          class="snapshot-icon-img"
+                        />
+                        <div v-else class="snapshot-icon-placeholder">
+                          <span>#{{ selectedRequest.projectId }}</span>
+                        </div>
+                      </div>
+                      <div class="identity-text">
+                        <h4 class="snapshot-game-title">
+                          {{
+                            selectedRequest.snapshot.titleRu ||
+                            selectedRequest.snapshot.titleEn ||
+                            `Проект #${selectedRequest.projectId}`
+                          }}
+                        </h4>
+                        <span class="snapshot-version-tag">
+                          v{{ selectedRequest.snapshot.activeBuildVersion || '1.0.0' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Описание снапшота -->
+                    <div class="snapshot-section-group">
+                      <label class="snapshot-label">Описание (RU / EN):</label>
+                      <p class="snapshot-description-text">
+                        {{
+                          selectedRequest.snapshot.aboutRu ||
+                          selectedRequest.snapshot.aboutEn ||
+                          'Описание отсутствует в данном снапшоте'
+                        }}
+                      </p>
+                    </div>
+
+                    <!-- Ссылка на Dev-билд снапшота -->
+                    <div v-if="selectedRequest.snapshot.devUrl" class="snapshot-section-group">
+                      <a
+                        :href="selectedRequest.snapshot.devUrl"
+                        target="_blank"
+                        rel="noopener"
+                        class="btn-dev-build"
+                      >
+                        <Play class="icon-xs" />
+                        <span>{{ t('journal.snapshotModal.openDevBuild') }}</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Правая колонка: Вердикт и срез переписки -->
+              <div class="snapshot-col snapshot-audit-info">
+                <!-- Блок вердикта -->
+                <div class="snapshot-card verdict-card">
+                  <h4 class="section-title">
+                    <CheckSquare class="icon-xs text-primary" />
+                    {{ t('journal.snapshotModal.verdictInfo') }}
+                  </h4>
+
+                  <div class="verdict-meta-grid">
+                    <div class="verdict-meta-item">
+                      <span class="meta-label">{{ t('journal.snapshotModal.moderator') }}:</span>
+                      <span class="meta-value font-medium">
+                        {{ selectedRequest.moderatorId || t('moderation.notAssigned') }}
+                      </span>
+                    </div>
+
+                    <div class="verdict-meta-item">
+                      <span class="meta-label">{{ t('journal.snapshotModal.date') }}:</span>
+                      <span class="meta-value">
+                        {{
+                          formatDateTime(selectedRequest.reviewedAt || selectedRequest.submittedAt)
+                        }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Официальная причина / Замечания -->
+                  <div class="verdict-reason-box">
+                    <label class="reason-label">
+                      {{ t('journal.snapshotModal.reasonOrComment') }}:
+                    </label>
+                    <p class="reason-content" :class="{ 'text-danger': isRejected(selectedRequest.status) }">
+                      {{ selectedRequest.rejectionReason || t('journal.snapshotModal.noReason') }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Блок среза переписки (Ticket Chat Transcript) -->
+                <div class="snapshot-card chat-transcript-card">
+                  <h4 class="section-title">
+                    <MessageSquare class="icon-xs text-primary" />
+                    {{ t('journal.snapshotModal.chatTranscript') }}
+                  </h4>
+
+                  <div v-if="loadingChat" class="chat-loading-wrap">
+                    <div class="spinner-sm"></div>
+                    <span>Загрузка истории тикета...</span>
+                  </div>
+
+                  <div v-else-if="chatMessages.length === 0" class="chat-empty-wrap">
+                    <MessageSquare class="icon-md text-muted" />
+                    <span>{{ t('journal.snapshotModal.noChatMessages') }}</span>
+                  </div>
+
+                  <div v-else class="chat-messages-container">
+                    <div
+                      v-for="msg in chatMessages"
+                      :key="msg.id"
+                      class="chat-bubble-item"
+                      :class="messageRoleClass(msg.senderRole)"
+                    >
+                      <div class="bubble-header">
+                        <span class="sender-tag">{{ formatSenderRole(msg.senderRole) }}</span>
+                        <span class="bubble-time">{{ formatDateTime(msg.createdAt) }}</span>
+                      </div>
+                      <div class="bubble-content">
+                        {{ msg.content }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Подвал модального окна -->
+          <div class="modal-footer">
+            <button
+              v-if="selectedRequest"
+              class="btn-live-project"
+              @click="openProject(selectedRequest.projectId)"
+            >
+              <ExternalLink class="icon-xs" />
+              <span>{{ t('journal.snapshotModal.openLiveProject') }}</span>
+            </button>
+            <button class="btn-primary-sm" @click="closeSnapshotModal">
+              {{ t('journal.snapshotModal.close') }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -274,13 +485,19 @@ import {
   ChevronDown,
   RotateCcw,
   RefreshCw,
-  Archive,
+  BookOpen,
   User,
-  Eye,
+  ExternalLink,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Camera,
+  History,
+  Gamepad2,
+  Play,
+  CheckSquare,
+  MessageSquare,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -302,6 +519,12 @@ const statusFilter = ref('all');
 const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
+
+// Модальное окно снапшота
+const showSnapshotModal = ref(false);
+const selectedRequest = ref(null);
+const chatMessages = ref([]);
+const loadingChat = ref(false);
 
 async function loadArchive() {
   loading.value = true;
@@ -435,9 +658,9 @@ function isCancelled(status) {
 }
 
 function verdictLabel(status) {
-  if (isApproved(status)) return t('moderation.approved');
-  if (isRejected(status)) return t('moderation.rejected');
-  if (isCancelled(status)) return t('moderation.cancelled');
+  if (isApproved(status)) return t('journal.snapshotModal.approved');
+  if (isRejected(status)) return t('journal.snapshotModal.rejected');
+  if (isCancelled(status)) return t('journal.snapshotModal.cancelled');
   return t('common.unknown');
 }
 
@@ -449,7 +672,43 @@ function verdictClass(status) {
 }
 
 function openProject(projectId) {
+  closeSnapshotModal();
   router.push(`/moderator/projects/${projectId}`);
+}
+
+async function openSnapshot(req) {
+  selectedRequest.value = req;
+  showSnapshotModal.value = true;
+  chatMessages.value = [];
+  loadingChat.value = true;
+  try {
+    const res = await moderationApi.listMessages(req.projectId, { limit: 100 });
+    chatMessages.value = res.messages || [];
+  } catch (e) {
+    console.warn('Failed to load chat history for snapshot:', e);
+  } finally {
+    loadingChat.value = false;
+  }
+}
+
+function closeSnapshotModal() {
+  showSnapshotModal.value = false;
+  selectedRequest.value = null;
+  chatMessages.value = [];
+}
+
+function messageRoleClass(role) {
+  const r = String(role).toUpperCase();
+  if (r.includes('MODERATOR') || role === 2) return 'bubble-moderator';
+  if (r.includes('DEVELOPER') || role === 1) return 'bubble-developer';
+  return 'bubble-system';
+}
+
+function formatSenderRole(role) {
+  const r = String(role).toUpperCase();
+  if (r.includes('MODERATOR') || role === 2) return t('moderation.moderatorRole');
+  if (r.includes('DEVELOPER') || role === 1) return t('moderation.developerRole');
+  return t('moderation.systemRole');
 }
 </script>
 
@@ -550,10 +809,6 @@ function openProject(projectId) {
   justify-content: center;
 }
 
-.clear-input-btn:hover {
-  color: var(--text-main, #f0f6fc);
-}
-
 .filter-select {
   width: 100%;
   height: 36px;
@@ -567,12 +822,7 @@ function openProject(projectId) {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  transition: border-color 0.15s;
   box-sizing: border-box;
-}
-
-.filter-select:focus {
-  border-color: var(--primary, #58a6ff);
 }
 
 .select-arrow {
@@ -598,12 +848,6 @@ function openProject(projectId) {
   transition: all 0.15s;
 }
 
-.btn-reset-filters:hover {
-  background: var(--bg-tertiary, #21262d);
-  color: var(--text-main, #f0f6fc);
-  border-color: var(--border-secondary, #484f58);
-}
-
 .btn-refresh {
   display: inline-flex;
   align-items: center;
@@ -619,16 +863,6 @@ function openProject(projectId) {
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
-}
-
-.btn-refresh:hover:not(:disabled) {
-  background: var(--bg-tertiary, #21262d);
-  border-color: var(--border-secondary, #484f58);
-}
-
-.btn-refresh:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Табличный вид */
@@ -656,7 +890,6 @@ function openProject(projectId) {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-tertiary, #8b949e);
-  letter-spacing: 0.2px;
 }
 
 .col-game {
@@ -688,7 +921,7 @@ function openProject(projectId) {
 }
 
 .col-actions {
-  width: 6%;
+  width: 10%;
   text-align: right;
   padding-right: 16px;
 }
@@ -706,11 +939,6 @@ function openProject(projectId) {
 .table-row td {
   padding: 12px 16px;
   vertical-align: middle;
-}
-
-.table-row td.col-actions {
-  text-align: right;
-  padding-right: 16px;
 }
 
 .game-cell {
@@ -739,15 +967,9 @@ function openProject(projectId) {
 }
 
 .game-icon-mock {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-tertiary, #21262d);
-  color: var(--text-tertiary, #8b949e);
   font-size: 11px;
   font-weight: 600;
+  color: var(--text-tertiary, #8b949e);
 }
 
 .game-text {
@@ -758,7 +980,6 @@ function openProject(projectId) {
 
 .game-type-label {
   font-size: 12px;
-  font-weight: 400;
   color: var(--text-tertiary, #8b949e);
 }
 
@@ -786,10 +1007,6 @@ function openProject(projectId) {
   gap: 6px;
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .status-pill {
@@ -802,6 +1019,15 @@ function openProject(projectId) {
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.status-pill-sm {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .status-approved {
@@ -853,24 +1079,41 @@ function openProject(projectId) {
 .row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.btn-snapshot-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  color: #58a6ff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-snapshot-action:hover {
+  background: rgba(88, 166, 255, 0.2);
 }
 
 .btn-inspect-sm {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 12px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   background: var(--bg-secondary, #21262d);
   border: 1px solid var(--border, #30363d);
   color: var(--text-main, #f0f6fc);
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
-  white-space: nowrap;
 }
 
 .btn-inspect-sm:hover {
@@ -915,11 +1158,10 @@ function openProject(projectId) {
   background: var(--primary, #58a6ff);
   color: #ffffff;
   border: none;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  margin-top: 12px;
 }
 
 /* Пагинация */
@@ -946,25 +1188,9 @@ function openProject(projectId) {
   height: 32px;
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   color: var(--text-main, #f0f6fc);
   cursor: pointer;
-  transition: all 0.15s;
-}
-
-.page-nav-btn:hover:not(:disabled) {
-  border-color: var(--primary, #58a6ff);
-  color: var(--primary, #58a6ff);
-}
-
-.page-nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.page-current {
-  padding: 0 8px;
-  font-weight: 500;
 }
 
 .page-size-wrap {
@@ -979,7 +1205,7 @@ function openProject(projectId) {
   padding: 0 24px 0 8px;
   background: var(--bg-secondary, #161b22);
   border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   color: var(--text-main, #f0f6fc);
   font-size: 12px;
   outline: none;
@@ -1002,44 +1228,426 @@ function openProject(projectId) {
   border-top-color: var(--primary, #58a6ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  margin: 0 auto;
-  display: block;
-  flex-shrink: 0;
 }
 
-.spin {
+.spinner-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border, #30363d);
+  border-top-color: var(--primary, #58a6ff);
+  border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* МОДАЛЬНОЕ ОКНО СНАПШОТА */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
 }
 
-.audit-mode-banner {
+.snapshot-modal-card {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #21262d);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.modal-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.snapshot-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snapshot-title-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: var(--radius-md, 8px);
-  color: #60a5fa;
-  font-size: 0.84rem;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.btn-close-modal {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #8b949e);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modal-body-scrollable {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.frozen-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(88, 166, 255, 0.08);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  border-radius: 6px;
+  color: var(--primary, #58a6ff);
+  font-size: 13px;
+}
+
+.snapshot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.snapshot-card {
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.snapshot-cover-wrap {
+  width: 100%;
+  height: 120px;
+  background: var(--bg-tertiary, #21262d);
+  position: relative;
+}
+
+.snapshot-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.snapshot-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snapshot-card-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.snapshot-game-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.snapshot-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snapshot-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.snapshot-icon-placeholder {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.identity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.snapshot-game-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  margin: 0;
+}
+
+.snapshot-version-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary, #58a6ff);
+}
+
+.snapshot-section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.snapshot-label {
+  font-size: 11px;
   font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.snapshot-description-text {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted, #b0b8c4);
+  margin: 0;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.btn-dev-build {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.btn-dev-build:hover {
+  border-color: var(--primary, #58a6ff);
+  color: var(--primary, #58a6ff);
+}
+
+.snapshot-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  margin: 0 0 12px 0;
+}
+
+.verdict-card {
+  padding: 16px;
+}
+
+.verdict-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.verdict-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.meta-value {
+  color: var(--text-main, #f0f6fc);
+}
+
+.verdict-reason-box {
+  background: var(--bg-tertiary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reason-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.reason-content {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted, #b0b8c4);
+  margin: 0;
+}
+
+.chat-transcript-card {
+  padding: 16px;
+  flex: 1;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-loading-wrap,
+.chat-empty-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  gap: 8px;
+  color: var(--text-tertiary, #8b949e);
+  font-size: 13px;
+  flex: 1;
+}
+
+.chat-messages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.chat-bubble-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bubble-developer {
+  background: rgba(88, 166, 255, 0.08);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+}
+
+.bubble-moderator {
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.bubble-system {
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+}
+
+.bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.sender-tag {
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.bubble-time {
+  color: var(--text-tertiary, #8b949e);
+}
+
+.bubble-content {
+  color: var(--text-muted, #b0b8c4);
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border, #21262d);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.btn-live-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  background: var(--bg-secondary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-live-project:hover {
+  border-color: var(--primary, #58a6ff);
+  color: var(--primary, #58a6ff);
 }
 
 @media (max-width: 800px) {
-  .moderation-page-container {
-    padding: 16px;
-  }
-  .filters-toolbar {
-    flex-wrap: wrap;
-  }
-  .field-search {
-    width: 100%;
-    min-width: 100%;
+  .snapshot-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

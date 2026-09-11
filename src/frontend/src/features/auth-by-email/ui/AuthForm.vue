@@ -198,7 +198,7 @@ async function handleLogin() {
 
     const role = res.user?.role || authState.user?.role;
     if (role === 'USER_ROLE_ADMIN' || role === 3) {
-      router.push('/admin/dashboard');
+      router.push('/catalog');
     } else if (role === 'USER_ROLE_MODERATOR' || role === 2) {
       router.push('/moderator/queue');
     } else {

@@ -226,6 +226,27 @@ func (s *ProjectService) ListProjects(ctx context.Context, userID string, limit,
 	return projects, total, nil
 }
 
+// ListPublishedProjects возвращает список всех опубликованных проектов со связанными активными релизами.
+func (s *ProjectService) ListPublishedProjects(ctx context.Context, limit, offset int) ([]*domain.Project, int, error) {
+	projects, err := s.projectRepo.ListPublished(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ProjectService.ListPublishedProjects: %w", err)
+	}
+
+	total, err := s.projectRepo.CountPublished(ctx)
+	if err != nil {
+		total = len(projects)
+	}
+
+	for _, p := range projects {
+		if rel, err := s.releaseRepo.GetActive(ctx, p.ID); err == nil {
+			p.Release = rel
+		}
+	}
+
+	return projects, total, nil
+}
+
 // UpdateDraft обновляет метаданные черновика проекта.
 func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, userID string, meta domain.DraftMeta) error {
 	if len([]rune(meta.TitleRu)) > 50 || len([]rune(meta.TitleEn)) > 50 {
@@ -590,15 +611,18 @@ func (s *ProjectService) GetPublished(ctx context.Context, projectID int64) (*do
 }
 
 // Unpublish снимает игру с публикации в продуктивном окружении.
-func (s *ProjectService) Unpublish(ctx context.Context, projectID int64, ownerID string) error {
+func (s *ProjectService) Unpublish(ctx context.Context, projectID int64, ownerID string, isStaff ...bool) error {
 	unlock, err := s.locker.Acquire(ctx, fmt.Sprintf("project:%d", projectID), 1*time.Minute)
 	if err != nil {
 		return err
 	}
 	defer unlock()
 
-	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermSubmitModeration); err != nil {
-		return err
+	staff := len(isStaff) > 0 && isStaff[0]
+	if !staff {
+		if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermSubmitModeration); err != nil {
+			return err
+		}
 	}
 
 	if err := s.deployer.UndeployProd(ctx, projectID); err != nil {

@@ -83,6 +83,22 @@ func (h *ProjectHandler) List(ctx context.Context, req *pb.ProjectListRequest) (
 	return resp, nil
 }
 
+// ListPublished возвращает список опубликованных проектов каталога.
+func (h *ProjectHandler) ListPublished(ctx context.Context, req *pb.ProjectListPublishedRequest) (*pb.ProjectListPublishedResponse, error) {
+	projects, total, err := h.svc.ListPublishedProjects(ctx, int(req.GetLimit()), int(req.GetOffset()))
+	if err != nil {
+		return nil, domainError(err, "list published projects")
+	}
+	resp := &pb.ProjectListPublishedResponse{
+		Projects: make([]*pb.Project, len(projects)),
+		Total:    clampInt32(total),
+	}
+	for i, p := range projects {
+		resp.Projects[i] = projectToProto(p)
+	}
+	return resp, nil
+}
+
 // Update обновляет метаданные черновика проекта.
 func (h *ProjectHandler) Update(ctx context.Context, req *pb.ProjectUpdateRequest) (*pb.ProjectUpdateResponse, error) {
 	ownerID, ok := UserIDFromContext(ctx)
@@ -365,7 +381,9 @@ func (h *ProjectHandler) Unpublish(ctx context.Context, req *pb.ProjectUnpublish
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
-	if err := h.svc.Unpublish(ctx, req.GetId(), ownerID); err != nil {
+	userRole, _ := UserRoleFromContext(ctx)
+	isStaff := userRole == 2 || userRole == 3
+	if err := h.svc.Unpublish(ctx, req.GetId(), ownerID, isStaff); err != nil {
 		return nil, domainError(err, "unpublish project")
 	}
 	return &pb.ProjectUnpublishResponse{Success: true}, nil

@@ -54,9 +54,10 @@ watch(userRole, (newRole) => {
     if (
       !route.path.startsWith('/admin') &&
       !route.path.startsWith('/moderator') &&
+      !route.path.startsWith('/catalog') &&
       route.path !== '/profile'
     ) {
-      router.push('/admin/dashboard');
+      router.push('/catalog');
     }
   }
 });

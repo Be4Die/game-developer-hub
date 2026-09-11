@@ -1208,6 +1208,111 @@ func (x *ProjectListResponse) GetTotal() int32 {
 	return 0
 }
 
+// ─── List Published (Catalog) ─────────────────────────
+type ProjectListPublishedRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectListPublishedRequest) Reset() {
+	*x = ProjectListPublishedRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectListPublishedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectListPublishedRequest) ProtoMessage() {}
+
+func (x *ProjectListPublishedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectListPublishedRequest.ProtoReflect.Descriptor instead.
+func (*ProjectListPublishedRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ProjectListPublishedRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ProjectListPublishedRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ProjectListPublishedResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectListPublishedResponse) Reset() {
+	*x = ProjectListPublishedResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectListPublishedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectListPublishedResponse) ProtoMessage() {}
+
+func (x *ProjectListPublishedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectListPublishedResponse.ProtoReflect.Descriptor instead.
+func (*ProjectListPublishedResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ProjectListPublishedResponse) GetProjects() []*Project {
+	if x != nil {
+		return x.Projects
+	}
+	return nil
+}
+
+func (x *ProjectListPublishedResponse) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 // ─── Update ───────────────────────────────────────────
 type ProjectUpdateRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -1225,7 +1330,7 @@ type ProjectUpdateRequest struct {
 
 func (x *ProjectUpdateRequest) Reset() {
 	*x = ProjectUpdateRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	mi := &file_project_manager_v1_project_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1237,7 +1342,7 @@ func (x *ProjectUpdateRequest) String() string {
 func (*ProjectUpdateRequest) ProtoMessage() {}
 
 func (x *ProjectUpdateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[11]
+	mi := &file_project_manager_v1_project_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1250,7 +1355,7 @@ func (x *ProjectUpdateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUpdateRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{11}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ProjectUpdateRequest) GetId() int64 {
@@ -1318,7 +1423,7 @@ type ProjectUpdateResponse struct {
 
 func (x *ProjectUpdateResponse) Reset() {
 	*x = ProjectUpdateResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	mi := &file_project_manager_v1_project_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1330,7 +1435,7 @@ func (x *ProjectUpdateResponse) String() string {
 func (*ProjectUpdateResponse) ProtoMessage() {}
 
 func (x *ProjectUpdateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[12]
+	mi := &file_project_manager_v1_project_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1343,7 +1448,7 @@ func (x *ProjectUpdateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUpdateResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{12}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ProjectUpdateResponse) GetProject() *Project {
@@ -1363,7 +1468,7 @@ type ProjectDeleteRequest struct {
 
 func (x *ProjectDeleteRequest) Reset() {
 	*x = ProjectDeleteRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[13]
+	mi := &file_project_manager_v1_project_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1375,7 +1480,7 @@ func (x *ProjectDeleteRequest) String() string {
 func (*ProjectDeleteRequest) ProtoMessage() {}
 
 func (x *ProjectDeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[13]
+	mi := &file_project_manager_v1_project_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1388,7 +1493,7 @@ func (x *ProjectDeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteRequest.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{13}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ProjectDeleteRequest) GetId() int64 {
@@ -1407,7 +1512,7 @@ type ProjectDeleteResponse struct {
 
 func (x *ProjectDeleteResponse) Reset() {
 	*x = ProjectDeleteResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[14]
+	mi := &file_project_manager_v1_project_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1419,7 +1524,7 @@ func (x *ProjectDeleteResponse) String() string {
 func (*ProjectDeleteResponse) ProtoMessage() {}
 
 func (x *ProjectDeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[14]
+	mi := &file_project_manager_v1_project_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1432,7 +1537,7 @@ func (x *ProjectDeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteResponse.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{14}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ProjectDeleteResponse) GetSuccess() bool {
@@ -1454,7 +1559,7 @@ type ProjectUploadBuildRequest struct {
 
 func (x *ProjectUploadBuildRequest) Reset() {
 	*x = ProjectUploadBuildRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[15]
+	mi := &file_project_manager_v1_project_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1466,7 +1571,7 @@ func (x *ProjectUploadBuildRequest) String() string {
 func (*ProjectUploadBuildRequest) ProtoMessage() {}
 
 func (x *ProjectUploadBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[15]
+	mi := &file_project_manager_v1_project_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1479,7 +1584,7 @@ func (x *ProjectUploadBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{15}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ProjectUploadBuildRequest) GetProjectId() int64 {
@@ -1516,7 +1621,7 @@ type ProjectUploadBuildStreamRequest struct {
 
 func (x *ProjectUploadBuildStreamRequest) Reset() {
 	*x = ProjectUploadBuildStreamRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[16]
+	mi := &file_project_manager_v1_project_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1528,7 +1633,7 @@ func (x *ProjectUploadBuildStreamRequest) String() string {
 func (*ProjectUploadBuildStreamRequest) ProtoMessage() {}
 
 func (x *ProjectUploadBuildStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[16]
+	mi := &file_project_manager_v1_project_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1541,7 +1646,7 @@ func (x *ProjectUploadBuildStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildStreamRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildStreamRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{16}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ProjectUploadBuildStreamRequest) GetPayload() isProjectUploadBuildStreamRequest_Payload {
@@ -1595,7 +1700,7 @@ type BuildUploadStreamMetadata struct {
 
 func (x *BuildUploadStreamMetadata) Reset() {
 	*x = BuildUploadStreamMetadata{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[17]
+	mi := &file_project_manager_v1_project_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1607,7 +1712,7 @@ func (x *BuildUploadStreamMetadata) String() string {
 func (*BuildUploadStreamMetadata) ProtoMessage() {}
 
 func (x *BuildUploadStreamMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[17]
+	mi := &file_project_manager_v1_project_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1620,7 +1725,7 @@ func (x *BuildUploadStreamMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuildUploadStreamMetadata.ProtoReflect.Descriptor instead.
 func (*BuildUploadStreamMetadata) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{17}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *BuildUploadStreamMetadata) GetProjectId() int64 {
@@ -1648,7 +1753,7 @@ type ProjectUploadBuildResponse struct {
 
 func (x *ProjectUploadBuildResponse) Reset() {
 	*x = ProjectUploadBuildResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[18]
+	mi := &file_project_manager_v1_project_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1660,7 +1765,7 @@ func (x *ProjectUploadBuildResponse) String() string {
 func (*ProjectUploadBuildResponse) ProtoMessage() {}
 
 func (x *ProjectUploadBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[18]
+	mi := &file_project_manager_v1_project_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1673,7 +1778,7 @@ func (x *ProjectUploadBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadBuildResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUploadBuildResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{18}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ProjectUploadBuildResponse) GetSuccess() bool {
@@ -1707,7 +1812,7 @@ type ProjectListBuildsRequest struct {
 
 func (x *ProjectListBuildsRequest) Reset() {
 	*x = ProjectListBuildsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[19]
+	mi := &file_project_manager_v1_project_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1719,7 +1824,7 @@ func (x *ProjectListBuildsRequest) String() string {
 func (*ProjectListBuildsRequest) ProtoMessage() {}
 
 func (x *ProjectListBuildsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[19]
+	mi := &file_project_manager_v1_project_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1732,7 +1837,7 @@ func (x *ProjectListBuildsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBuildsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListBuildsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{19}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ProjectListBuildsRequest) GetProjectId() int64 {
@@ -1751,7 +1856,7 @@ type ProjectListBuildsResponse struct {
 
 func (x *ProjectListBuildsResponse) Reset() {
 	*x = ProjectListBuildsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[20]
+	mi := &file_project_manager_v1_project_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1763,7 +1868,7 @@ func (x *ProjectListBuildsResponse) String() string {
 func (*ProjectListBuildsResponse) ProtoMessage() {}
 
 func (x *ProjectListBuildsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[20]
+	mi := &file_project_manager_v1_project_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1776,7 +1881,7 @@ func (x *ProjectListBuildsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBuildsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListBuildsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{20}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ProjectListBuildsResponse) GetBuilds() []*ProjectBuild {
@@ -1797,7 +1902,7 @@ type ProjectDeleteBuildRequest struct {
 
 func (x *ProjectDeleteBuildRequest) Reset() {
 	*x = ProjectDeleteBuildRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[21]
+	mi := &file_project_manager_v1_project_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1809,7 +1914,7 @@ func (x *ProjectDeleteBuildRequest) String() string {
 func (*ProjectDeleteBuildRequest) ProtoMessage() {}
 
 func (x *ProjectDeleteBuildRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[21]
+	mi := &file_project_manager_v1_project_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1822,7 +1927,7 @@ func (x *ProjectDeleteBuildRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteBuildRequest.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteBuildRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{21}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ProjectDeleteBuildRequest) GetProjectId() int64 {
@@ -1848,7 +1953,7 @@ type ProjectDeleteBuildResponse struct {
 
 func (x *ProjectDeleteBuildResponse) Reset() {
 	*x = ProjectDeleteBuildResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[22]
+	mi := &file_project_manager_v1_project_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1860,7 +1965,7 @@ func (x *ProjectDeleteBuildResponse) String() string {
 func (*ProjectDeleteBuildResponse) ProtoMessage() {}
 
 func (x *ProjectDeleteBuildResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[22]
+	mi := &file_project_manager_v1_project_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1873,7 +1978,7 @@ func (x *ProjectDeleteBuildResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDeleteBuildResponse.ProtoReflect.Descriptor instead.
 func (*ProjectDeleteBuildResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{22}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ProjectDeleteBuildResponse) GetSuccess() bool {
@@ -1895,7 +2000,7 @@ type ProjectUploadMediaRequest struct {
 
 func (x *ProjectUploadMediaRequest) Reset() {
 	*x = ProjectUploadMediaRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[23]
+	mi := &file_project_manager_v1_project_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1907,7 +2012,7 @@ func (x *ProjectUploadMediaRequest) String() string {
 func (*ProjectUploadMediaRequest) ProtoMessage() {}
 
 func (x *ProjectUploadMediaRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[23]
+	mi := &file_project_manager_v1_project_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1920,7 +2025,7 @@ func (x *ProjectUploadMediaRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{23}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ProjectUploadMediaRequest) GetProjectId() int64 {
@@ -1957,7 +2062,7 @@ type ProjectUploadMediaStreamRequest struct {
 
 func (x *ProjectUploadMediaStreamRequest) Reset() {
 	*x = ProjectUploadMediaStreamRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[24]
+	mi := &file_project_manager_v1_project_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1969,7 +2074,7 @@ func (x *ProjectUploadMediaStreamRequest) String() string {
 func (*ProjectUploadMediaStreamRequest) ProtoMessage() {}
 
 func (x *ProjectUploadMediaStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[24]
+	mi := &file_project_manager_v1_project_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1982,7 +2087,7 @@ func (x *ProjectUploadMediaStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaStreamRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaStreamRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{24}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ProjectUploadMediaStreamRequest) GetPayload() isProjectUploadMediaStreamRequest_Payload {
@@ -2036,7 +2141,7 @@ type MediaUploadStreamMetadata struct {
 
 func (x *MediaUploadStreamMetadata) Reset() {
 	*x = MediaUploadStreamMetadata{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[25]
+	mi := &file_project_manager_v1_project_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2048,7 +2153,7 @@ func (x *MediaUploadStreamMetadata) String() string {
 func (*MediaUploadStreamMetadata) ProtoMessage() {}
 
 func (x *MediaUploadStreamMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[25]
+	mi := &file_project_manager_v1_project_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2061,7 +2166,7 @@ func (x *MediaUploadStreamMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MediaUploadStreamMetadata.ProtoReflect.Descriptor instead.
 func (*MediaUploadStreamMetadata) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{25}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *MediaUploadStreamMetadata) GetProjectId() int64 {
@@ -2088,7 +2193,7 @@ type ProjectUploadMediaResponse struct {
 
 func (x *ProjectUploadMediaResponse) Reset() {
 	*x = ProjectUploadMediaResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[26]
+	mi := &file_project_manager_v1_project_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2100,7 +2205,7 @@ func (x *ProjectUploadMediaResponse) String() string {
 func (*ProjectUploadMediaResponse) ProtoMessage() {}
 
 func (x *ProjectUploadMediaResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[26]
+	mi := &file_project_manager_v1_project_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2113,7 +2218,7 @@ func (x *ProjectUploadMediaResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUploadMediaResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUploadMediaResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{26}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ProjectUploadMediaResponse) GetSuccess() bool {
@@ -2139,7 +2244,7 @@ type SubmitForModerationRequest struct {
 
 func (x *SubmitForModerationRequest) Reset() {
 	*x = SubmitForModerationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[27]
+	mi := &file_project_manager_v1_project_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2151,7 +2256,7 @@ func (x *SubmitForModerationRequest) String() string {
 func (*SubmitForModerationRequest) ProtoMessage() {}
 
 func (x *SubmitForModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[27]
+	mi := &file_project_manager_v1_project_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2164,7 +2269,7 @@ func (x *SubmitForModerationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitForModerationRequest.ProtoReflect.Descriptor instead.
 func (*SubmitForModerationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{27}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *SubmitForModerationRequest) GetProjectId() int64 {
@@ -2184,7 +2289,7 @@ type SubmitForModerationResponse struct {
 
 func (x *SubmitForModerationResponse) Reset() {
 	*x = SubmitForModerationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[28]
+	mi := &file_project_manager_v1_project_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2196,7 +2301,7 @@ func (x *SubmitForModerationResponse) String() string {
 func (*SubmitForModerationResponse) ProtoMessage() {}
 
 func (x *SubmitForModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[28]
+	mi := &file_project_manager_v1_project_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2209,7 +2314,7 @@ func (x *SubmitForModerationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitForModerationResponse.ProtoReflect.Descriptor instead.
 func (*SubmitForModerationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{28}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *SubmitForModerationResponse) GetSuccess() bool {
@@ -2238,7 +2343,7 @@ type ProjectPublishReleaseRequest struct {
 
 func (x *ProjectPublishReleaseRequest) Reset() {
 	*x = ProjectPublishReleaseRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[29]
+	mi := &file_project_manager_v1_project_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2250,7 +2355,7 @@ func (x *ProjectPublishReleaseRequest) String() string {
 func (*ProjectPublishReleaseRequest) ProtoMessage() {}
 
 func (x *ProjectPublishReleaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[29]
+	mi := &file_project_manager_v1_project_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2263,7 +2368,7 @@ func (x *ProjectPublishReleaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectPublishReleaseRequest.ProtoReflect.Descriptor instead.
 func (*ProjectPublishReleaseRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{29}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ProjectPublishReleaseRequest) GetProjectId() int64 {
@@ -2304,7 +2409,7 @@ type ProjectPublishReleaseResponse struct {
 
 func (x *ProjectPublishReleaseResponse) Reset() {
 	*x = ProjectPublishReleaseResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[30]
+	mi := &file_project_manager_v1_project_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2316,7 +2421,7 @@ func (x *ProjectPublishReleaseResponse) String() string {
 func (*ProjectPublishReleaseResponse) ProtoMessage() {}
 
 func (x *ProjectPublishReleaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[30]
+	mi := &file_project_manager_v1_project_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2329,7 +2434,7 @@ func (x *ProjectPublishReleaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectPublishReleaseResponse.ProtoReflect.Descriptor instead.
 func (*ProjectPublishReleaseResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{30}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ProjectPublishReleaseResponse) GetSuccess() bool {
@@ -2356,7 +2461,7 @@ type ProjectRejectDraftRequest struct {
 
 func (x *ProjectRejectDraftRequest) Reset() {
 	*x = ProjectRejectDraftRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[31]
+	mi := &file_project_manager_v1_project_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2368,7 +2473,7 @@ func (x *ProjectRejectDraftRequest) String() string {
 func (*ProjectRejectDraftRequest) ProtoMessage() {}
 
 func (x *ProjectRejectDraftRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[31]
+	mi := &file_project_manager_v1_project_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2381,7 +2486,7 @@ func (x *ProjectRejectDraftRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRejectDraftRequest.ProtoReflect.Descriptor instead.
 func (*ProjectRejectDraftRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{31}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ProjectRejectDraftRequest) GetProjectId() int64 {
@@ -2407,7 +2512,7 @@ type ProjectRejectDraftResponse struct {
 
 func (x *ProjectRejectDraftResponse) Reset() {
 	*x = ProjectRejectDraftResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[32]
+	mi := &file_project_manager_v1_project_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2419,7 +2524,7 @@ func (x *ProjectRejectDraftResponse) String() string {
 func (*ProjectRejectDraftResponse) ProtoMessage() {}
 
 func (x *ProjectRejectDraftResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[32]
+	mi := &file_project_manager_v1_project_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2432,7 +2537,7 @@ func (x *ProjectRejectDraftResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRejectDraftResponse.ProtoReflect.Descriptor instead.
 func (*ProjectRejectDraftResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{32}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ProjectRejectDraftResponse) GetSuccess() bool {
@@ -2451,7 +2556,7 @@ type ProjectGetPublishedRequest struct {
 
 func (x *ProjectGetPublishedRequest) Reset() {
 	*x = ProjectGetPublishedRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[33]
+	mi := &file_project_manager_v1_project_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2463,7 +2568,7 @@ func (x *ProjectGetPublishedRequest) String() string {
 func (*ProjectGetPublishedRequest) ProtoMessage() {}
 
 func (x *ProjectGetPublishedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[33]
+	mi := &file_project_manager_v1_project_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2476,7 +2581,7 @@ func (x *ProjectGetPublishedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetPublishedRequest.ProtoReflect.Descriptor instead.
 func (*ProjectGetPublishedRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{33}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ProjectGetPublishedRequest) GetId() int64 {
@@ -2495,7 +2600,7 @@ type ProjectGetPublishedResponse struct {
 
 func (x *ProjectGetPublishedResponse) Reset() {
 	*x = ProjectGetPublishedResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[34]
+	mi := &file_project_manager_v1_project_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2507,7 +2612,7 @@ func (x *ProjectGetPublishedResponse) String() string {
 func (*ProjectGetPublishedResponse) ProtoMessage() {}
 
 func (x *ProjectGetPublishedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[34]
+	mi := &file_project_manager_v1_project_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2520,7 +2625,7 @@ func (x *ProjectGetPublishedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectGetPublishedResponse.ProtoReflect.Descriptor instead.
 func (*ProjectGetPublishedResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{34}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ProjectGetPublishedResponse) GetRelease() *ProjectRelease {
@@ -2539,7 +2644,7 @@ type ProjectUnpublishRequest struct {
 
 func (x *ProjectUnpublishRequest) Reset() {
 	*x = ProjectUnpublishRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[35]
+	mi := &file_project_manager_v1_project_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2551,7 +2656,7 @@ func (x *ProjectUnpublishRequest) String() string {
 func (*ProjectUnpublishRequest) ProtoMessage() {}
 
 func (x *ProjectUnpublishRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[35]
+	mi := &file_project_manager_v1_project_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2564,7 +2669,7 @@ func (x *ProjectUnpublishRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnpublishRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUnpublishRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{35}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ProjectUnpublishRequest) GetId() int64 {
@@ -2583,7 +2688,7 @@ type ProjectUnpublishResponse struct {
 
 func (x *ProjectUnpublishResponse) Reset() {
 	*x = ProjectUnpublishResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[36]
+	mi := &file_project_manager_v1_project_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2595,7 +2700,7 @@ func (x *ProjectUnpublishResponse) String() string {
 func (*ProjectUnpublishResponse) ProtoMessage() {}
 
 func (x *ProjectUnpublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[36]
+	mi := &file_project_manager_v1_project_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2608,7 +2713,7 @@ func (x *ProjectUnpublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnpublishResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUnpublishResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{36}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ProjectUnpublishResponse) GetSuccess() bool {
@@ -2634,7 +2739,7 @@ type ProjectMember struct {
 
 func (x *ProjectMember) Reset() {
 	*x = ProjectMember{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[37]
+	mi := &file_project_manager_v1_project_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2646,7 +2751,7 @@ func (x *ProjectMember) String() string {
 func (*ProjectMember) ProtoMessage() {}
 
 func (x *ProjectMember) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[37]
+	mi := &file_project_manager_v1_project_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2659,7 +2764,7 @@ func (x *ProjectMember) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectMember.ProtoReflect.Descriptor instead.
 func (*ProjectMember) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{37}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ProjectMember) GetId() int64 {
@@ -2739,7 +2844,7 @@ type ProjectInvitation struct {
 
 func (x *ProjectInvitation) Reset() {
 	*x = ProjectInvitation{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[38]
+	mi := &file_project_manager_v1_project_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2751,7 +2856,7 @@ func (x *ProjectInvitation) String() string {
 func (*ProjectInvitation) ProtoMessage() {}
 
 func (x *ProjectInvitation) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[38]
+	mi := &file_project_manager_v1_project_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2764,7 +2869,7 @@ func (x *ProjectInvitation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectInvitation.ProtoReflect.Descriptor instead.
 func (*ProjectInvitation) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{38}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ProjectInvitation) GetId() int64 {
@@ -2872,7 +2977,7 @@ type UserAccessBlock struct {
 
 func (x *UserAccessBlock) Reset() {
 	*x = UserAccessBlock{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[39]
+	mi := &file_project_manager_v1_project_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2884,7 +2989,7 @@ func (x *UserAccessBlock) String() string {
 func (*UserAccessBlock) ProtoMessage() {}
 
 func (x *UserAccessBlock) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[39]
+	mi := &file_project_manager_v1_project_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2897,7 +3002,7 @@ func (x *UserAccessBlock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserAccessBlock.ProtoReflect.Descriptor instead.
 func (*UserAccessBlock) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{39}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *UserAccessBlock) GetId() int64 {
@@ -2955,7 +3060,7 @@ type SharedProjectItem struct {
 
 func (x *SharedProjectItem) Reset() {
 	*x = SharedProjectItem{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[40]
+	mi := &file_project_manager_v1_project_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2967,7 +3072,7 @@ func (x *SharedProjectItem) String() string {
 func (*SharedProjectItem) ProtoMessage() {}
 
 func (x *SharedProjectItem) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[40]
+	mi := &file_project_manager_v1_project_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2980,7 +3085,7 @@ func (x *SharedProjectItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SharedProjectItem.ProtoReflect.Descriptor instead.
 func (*SharedProjectItem) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{40}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SharedProjectItem) GetProject() *Project {
@@ -3031,7 +3136,7 @@ type ProjectSendInvitationRequest struct {
 
 func (x *ProjectSendInvitationRequest) Reset() {
 	*x = ProjectSendInvitationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[41]
+	mi := &file_project_manager_v1_project_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3043,7 +3148,7 @@ func (x *ProjectSendInvitationRequest) String() string {
 func (*ProjectSendInvitationRequest) ProtoMessage() {}
 
 func (x *ProjectSendInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[41]
+	mi := &file_project_manager_v1_project_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3056,7 +3161,7 @@ func (x *ProjectSendInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectSendInvitationRequest.ProtoReflect.Descriptor instead.
 func (*ProjectSendInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{41}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ProjectSendInvitationRequest) GetProjectId() int64 {
@@ -3096,7 +3201,7 @@ type ProjectSendInvitationResponse struct {
 
 func (x *ProjectSendInvitationResponse) Reset() {
 	*x = ProjectSendInvitationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[42]
+	mi := &file_project_manager_v1_project_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3108,7 +3213,7 @@ func (x *ProjectSendInvitationResponse) String() string {
 func (*ProjectSendInvitationResponse) ProtoMessage() {}
 
 func (x *ProjectSendInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[42]
+	mi := &file_project_manager_v1_project_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3121,7 +3226,7 @@ func (x *ProjectSendInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectSendInvitationResponse.ProtoReflect.Descriptor instead.
 func (*ProjectSendInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{42}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ProjectSendInvitationResponse) GetInvitation() *ProjectInvitation {
@@ -3139,7 +3244,7 @@ type ProjectListIncomingInvitationsRequest struct {
 
 func (x *ProjectListIncomingInvitationsRequest) Reset() {
 	*x = ProjectListIncomingInvitationsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[43]
+	mi := &file_project_manager_v1_project_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3151,7 +3256,7 @@ func (x *ProjectListIncomingInvitationsRequest) String() string {
 func (*ProjectListIncomingInvitationsRequest) ProtoMessage() {}
 
 func (x *ProjectListIncomingInvitationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[43]
+	mi := &file_project_manager_v1_project_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3164,7 +3269,7 @@ func (x *ProjectListIncomingInvitationsRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ProjectListIncomingInvitationsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListIncomingInvitationsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{43}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{45}
 }
 
 type ProjectListIncomingInvitationsResponse struct {
@@ -3176,7 +3281,7 @@ type ProjectListIncomingInvitationsResponse struct {
 
 func (x *ProjectListIncomingInvitationsResponse) Reset() {
 	*x = ProjectListIncomingInvitationsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[44]
+	mi := &file_project_manager_v1_project_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3188,7 +3293,7 @@ func (x *ProjectListIncomingInvitationsResponse) String() string {
 func (*ProjectListIncomingInvitationsResponse) ProtoMessage() {}
 
 func (x *ProjectListIncomingInvitationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[44]
+	mi := &file_project_manager_v1_project_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3201,7 +3306,7 @@ func (x *ProjectListIncomingInvitationsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ProjectListIncomingInvitationsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListIncomingInvitationsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{44}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ProjectListIncomingInvitationsResponse) GetInvitations() []*ProjectInvitation {
@@ -3220,7 +3325,7 @@ type ProjectListOutgoingInvitationsRequest struct {
 
 func (x *ProjectListOutgoingInvitationsRequest) Reset() {
 	*x = ProjectListOutgoingInvitationsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[45]
+	mi := &file_project_manager_v1_project_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3232,7 +3337,7 @@ func (x *ProjectListOutgoingInvitationsRequest) String() string {
 func (*ProjectListOutgoingInvitationsRequest) ProtoMessage() {}
 
 func (x *ProjectListOutgoingInvitationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[45]
+	mi := &file_project_manager_v1_project_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3245,7 +3350,7 @@ func (x *ProjectListOutgoingInvitationsRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ProjectListOutgoingInvitationsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListOutgoingInvitationsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{45}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ProjectListOutgoingInvitationsRequest) GetProjectId() int64 {
@@ -3264,7 +3369,7 @@ type ProjectListOutgoingInvitationsResponse struct {
 
 func (x *ProjectListOutgoingInvitationsResponse) Reset() {
 	*x = ProjectListOutgoingInvitationsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[46]
+	mi := &file_project_manager_v1_project_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3276,7 +3381,7 @@ func (x *ProjectListOutgoingInvitationsResponse) String() string {
 func (*ProjectListOutgoingInvitationsResponse) ProtoMessage() {}
 
 func (x *ProjectListOutgoingInvitationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[46]
+	mi := &file_project_manager_v1_project_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3289,7 +3394,7 @@ func (x *ProjectListOutgoingInvitationsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ProjectListOutgoingInvitationsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListOutgoingInvitationsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{46}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ProjectListOutgoingInvitationsResponse) GetInvitations() []*ProjectInvitation {
@@ -3309,7 +3414,7 @@ type ProjectRespondInvitationRequest struct {
 
 func (x *ProjectRespondInvitationRequest) Reset() {
 	*x = ProjectRespondInvitationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[47]
+	mi := &file_project_manager_v1_project_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3321,7 +3426,7 @@ func (x *ProjectRespondInvitationRequest) String() string {
 func (*ProjectRespondInvitationRequest) ProtoMessage() {}
 
 func (x *ProjectRespondInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[47]
+	mi := &file_project_manager_v1_project_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3334,7 +3439,7 @@ func (x *ProjectRespondInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRespondInvitationRequest.ProtoReflect.Descriptor instead.
 func (*ProjectRespondInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{47}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *ProjectRespondInvitationRequest) GetInvitationId() int64 {
@@ -3360,7 +3465,7 @@ type ProjectRespondInvitationResponse struct {
 
 func (x *ProjectRespondInvitationResponse) Reset() {
 	*x = ProjectRespondInvitationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[48]
+	mi := &file_project_manager_v1_project_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3372,7 +3477,7 @@ func (x *ProjectRespondInvitationResponse) String() string {
 func (*ProjectRespondInvitationResponse) ProtoMessage() {}
 
 func (x *ProjectRespondInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[48]
+	mi := &file_project_manager_v1_project_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3385,7 +3490,7 @@ func (x *ProjectRespondInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRespondInvitationResponse.ProtoReflect.Descriptor instead.
 func (*ProjectRespondInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{48}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ProjectRespondInvitationResponse) GetSuccess() bool {
@@ -3404,7 +3509,7 @@ type ProjectCancelInvitationRequest struct {
 
 func (x *ProjectCancelInvitationRequest) Reset() {
 	*x = ProjectCancelInvitationRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[49]
+	mi := &file_project_manager_v1_project_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3416,7 +3521,7 @@ func (x *ProjectCancelInvitationRequest) String() string {
 func (*ProjectCancelInvitationRequest) ProtoMessage() {}
 
 func (x *ProjectCancelInvitationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[49]
+	mi := &file_project_manager_v1_project_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3429,7 +3534,7 @@ func (x *ProjectCancelInvitationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectCancelInvitationRequest.ProtoReflect.Descriptor instead.
 func (*ProjectCancelInvitationRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{49}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ProjectCancelInvitationRequest) GetInvitationId() int64 {
@@ -3448,7 +3553,7 @@ type ProjectCancelInvitationResponse struct {
 
 func (x *ProjectCancelInvitationResponse) Reset() {
 	*x = ProjectCancelInvitationResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[50]
+	mi := &file_project_manager_v1_project_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3460,7 +3565,7 @@ func (x *ProjectCancelInvitationResponse) String() string {
 func (*ProjectCancelInvitationResponse) ProtoMessage() {}
 
 func (x *ProjectCancelInvitationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[50]
+	mi := &file_project_manager_v1_project_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3473,7 +3578,7 @@ func (x *ProjectCancelInvitationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectCancelInvitationResponse.ProtoReflect.Descriptor instead.
 func (*ProjectCancelInvitationResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{50}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ProjectCancelInvitationResponse) GetSuccess() bool {
@@ -3493,7 +3598,7 @@ type ProjectListMembersRequest struct {
 
 func (x *ProjectListMembersRequest) Reset() {
 	*x = ProjectListMembersRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[51]
+	mi := &file_project_manager_v1_project_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3505,7 +3610,7 @@ func (x *ProjectListMembersRequest) String() string {
 func (*ProjectListMembersRequest) ProtoMessage() {}
 
 func (x *ProjectListMembersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[51]
+	mi := &file_project_manager_v1_project_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3518,7 +3623,7 @@ func (x *ProjectListMembersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListMembersRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListMembersRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{51}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ProjectListMembersRequest) GetProjectId() int64 {
@@ -3538,7 +3643,7 @@ type ProjectListMembersResponse struct {
 
 func (x *ProjectListMembersResponse) Reset() {
 	*x = ProjectListMembersResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[52]
+	mi := &file_project_manager_v1_project_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3550,7 +3655,7 @@ func (x *ProjectListMembersResponse) String() string {
 func (*ProjectListMembersResponse) ProtoMessage() {}
 
 func (x *ProjectListMembersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[52]
+	mi := &file_project_manager_v1_project_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3563,7 +3668,7 @@ func (x *ProjectListMembersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListMembersResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListMembersResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{52}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ProjectListMembersResponse) GetMembers() []*ProjectMember {
@@ -3591,7 +3696,7 @@ type ProjectUpdateMemberPermissionsRequest struct {
 
 func (x *ProjectUpdateMemberPermissionsRequest) Reset() {
 	*x = ProjectUpdateMemberPermissionsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[53]
+	mi := &file_project_manager_v1_project_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3603,7 +3708,7 @@ func (x *ProjectUpdateMemberPermissionsRequest) String() string {
 func (*ProjectUpdateMemberPermissionsRequest) ProtoMessage() {}
 
 func (x *ProjectUpdateMemberPermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[53]
+	mi := &file_project_manager_v1_project_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3616,7 +3721,7 @@ func (x *ProjectUpdateMemberPermissionsRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ProjectUpdateMemberPermissionsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateMemberPermissionsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{53}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ProjectUpdateMemberPermissionsRequest) GetProjectId() int64 {
@@ -3649,7 +3754,7 @@ type ProjectUpdateMemberPermissionsResponse struct {
 
 func (x *ProjectUpdateMemberPermissionsResponse) Reset() {
 	*x = ProjectUpdateMemberPermissionsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[54]
+	mi := &file_project_manager_v1_project_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3661,7 +3766,7 @@ func (x *ProjectUpdateMemberPermissionsResponse) String() string {
 func (*ProjectUpdateMemberPermissionsResponse) ProtoMessage() {}
 
 func (x *ProjectUpdateMemberPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[54]
+	mi := &file_project_manager_v1_project_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3674,7 +3779,7 @@ func (x *ProjectUpdateMemberPermissionsResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ProjectUpdateMemberPermissionsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUpdateMemberPermissionsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{54}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ProjectUpdateMemberPermissionsResponse) GetMember() *ProjectMember {
@@ -3694,7 +3799,7 @@ type ProjectRemoveMemberRequest struct {
 
 func (x *ProjectRemoveMemberRequest) Reset() {
 	*x = ProjectRemoveMemberRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[55]
+	mi := &file_project_manager_v1_project_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3706,7 +3811,7 @@ func (x *ProjectRemoveMemberRequest) String() string {
 func (*ProjectRemoveMemberRequest) ProtoMessage() {}
 
 func (x *ProjectRemoveMemberRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[55]
+	mi := &file_project_manager_v1_project_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3719,7 +3824,7 @@ func (x *ProjectRemoveMemberRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRemoveMemberRequest.ProtoReflect.Descriptor instead.
 func (*ProjectRemoveMemberRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{55}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ProjectRemoveMemberRequest) GetProjectId() int64 {
@@ -3745,7 +3850,7 @@ type ProjectRemoveMemberResponse struct {
 
 func (x *ProjectRemoveMemberResponse) Reset() {
 	*x = ProjectRemoveMemberResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[56]
+	mi := &file_project_manager_v1_project_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3757,7 +3862,7 @@ func (x *ProjectRemoveMemberResponse) String() string {
 func (*ProjectRemoveMemberResponse) ProtoMessage() {}
 
 func (x *ProjectRemoveMemberResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[56]
+	mi := &file_project_manager_v1_project_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3770,7 +3875,7 @@ func (x *ProjectRemoveMemberResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectRemoveMemberResponse.ProtoReflect.Descriptor instead.
 func (*ProjectRemoveMemberResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{56}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *ProjectRemoveMemberResponse) GetSuccess() bool {
@@ -3789,7 +3894,7 @@ type ProjectLeaveRequest struct {
 
 func (x *ProjectLeaveRequest) Reset() {
 	*x = ProjectLeaveRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[57]
+	mi := &file_project_manager_v1_project_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3801,7 +3906,7 @@ func (x *ProjectLeaveRequest) String() string {
 func (*ProjectLeaveRequest) ProtoMessage() {}
 
 func (x *ProjectLeaveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[57]
+	mi := &file_project_manager_v1_project_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3814,7 +3919,7 @@ func (x *ProjectLeaveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectLeaveRequest.ProtoReflect.Descriptor instead.
 func (*ProjectLeaveRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{57}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *ProjectLeaveRequest) GetProjectId() int64 {
@@ -3833,7 +3938,7 @@ type ProjectLeaveResponse struct {
 
 func (x *ProjectLeaveResponse) Reset() {
 	*x = ProjectLeaveResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[58]
+	mi := &file_project_manager_v1_project_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3845,7 +3950,7 @@ func (x *ProjectLeaveResponse) String() string {
 func (*ProjectLeaveResponse) ProtoMessage() {}
 
 func (x *ProjectLeaveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[58]
+	mi := &file_project_manager_v1_project_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3858,7 +3963,7 @@ func (x *ProjectLeaveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectLeaveResponse.ProtoReflect.Descriptor instead.
 func (*ProjectLeaveResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{58}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *ProjectLeaveResponse) GetSuccess() bool {
@@ -3876,7 +3981,7 @@ type ProjectListSharedProjectsRequest struct {
 
 func (x *ProjectListSharedProjectsRequest) Reset() {
 	*x = ProjectListSharedProjectsRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[59]
+	mi := &file_project_manager_v1_project_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3888,7 +3993,7 @@ func (x *ProjectListSharedProjectsRequest) String() string {
 func (*ProjectListSharedProjectsRequest) ProtoMessage() {}
 
 func (x *ProjectListSharedProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[59]
+	mi := &file_project_manager_v1_project_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3901,7 +4006,7 @@ func (x *ProjectListSharedProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListSharedProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListSharedProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{59}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{61}
 }
 
 type ProjectListSharedProjectsResponse struct {
@@ -3913,7 +4018,7 @@ type ProjectListSharedProjectsResponse struct {
 
 func (x *ProjectListSharedProjectsResponse) Reset() {
 	*x = ProjectListSharedProjectsResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[60]
+	mi := &file_project_manager_v1_project_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3925,7 +4030,7 @@ func (x *ProjectListSharedProjectsResponse) String() string {
 func (*ProjectListSharedProjectsResponse) ProtoMessage() {}
 
 func (x *ProjectListSharedProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[60]
+	mi := &file_project_manager_v1_project_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3938,7 +4043,7 @@ func (x *ProjectListSharedProjectsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ProjectListSharedProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListSharedProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{60}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ProjectListSharedProjectsResponse) GetProjects() []*SharedProjectItem {
@@ -3959,7 +4064,7 @@ type ProjectBlockUserRequest struct {
 
 func (x *ProjectBlockUserRequest) Reset() {
 	*x = ProjectBlockUserRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[61]
+	mi := &file_project_manager_v1_project_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3971,7 +4076,7 @@ func (x *ProjectBlockUserRequest) String() string {
 func (*ProjectBlockUserRequest) ProtoMessage() {}
 
 func (x *ProjectBlockUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[61]
+	mi := &file_project_manager_v1_project_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3984,7 +4089,7 @@ func (x *ProjectBlockUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectBlockUserRequest.ProtoReflect.Descriptor instead.
 func (*ProjectBlockUserRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{61}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *ProjectBlockUserRequest) GetBlockedUserId() string {
@@ -4010,7 +4115,7 @@ type ProjectBlockUserResponse struct {
 
 func (x *ProjectBlockUserResponse) Reset() {
 	*x = ProjectBlockUserResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[62]
+	mi := &file_project_manager_v1_project_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4022,7 +4127,7 @@ func (x *ProjectBlockUserResponse) String() string {
 func (*ProjectBlockUserResponse) ProtoMessage() {}
 
 func (x *ProjectBlockUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[62]
+	mi := &file_project_manager_v1_project_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4035,7 +4140,7 @@ func (x *ProjectBlockUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectBlockUserResponse.ProtoReflect.Descriptor instead.
 func (*ProjectBlockUserResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{62}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ProjectBlockUserResponse) GetSuccess() bool {
@@ -4054,7 +4159,7 @@ type ProjectUnblockUserRequest struct {
 
 func (x *ProjectUnblockUserRequest) Reset() {
 	*x = ProjectUnblockUserRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[63]
+	mi := &file_project_manager_v1_project_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4066,7 +4171,7 @@ func (x *ProjectUnblockUserRequest) String() string {
 func (*ProjectUnblockUserRequest) ProtoMessage() {}
 
 func (x *ProjectUnblockUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[63]
+	mi := &file_project_manager_v1_project_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4079,7 +4184,7 @@ func (x *ProjectUnblockUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnblockUserRequest.ProtoReflect.Descriptor instead.
 func (*ProjectUnblockUserRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{63}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ProjectUnblockUserRequest) GetBlockedUserId() string {
@@ -4098,7 +4203,7 @@ type ProjectUnblockUserResponse struct {
 
 func (x *ProjectUnblockUserResponse) Reset() {
 	*x = ProjectUnblockUserResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[64]
+	mi := &file_project_manager_v1_project_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4110,7 +4215,7 @@ func (x *ProjectUnblockUserResponse) String() string {
 func (*ProjectUnblockUserResponse) ProtoMessage() {}
 
 func (x *ProjectUnblockUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[64]
+	mi := &file_project_manager_v1_project_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4123,7 +4228,7 @@ func (x *ProjectUnblockUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectUnblockUserResponse.ProtoReflect.Descriptor instead.
 func (*ProjectUnblockUserResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{64}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ProjectUnblockUserResponse) GetSuccess() bool {
@@ -4141,7 +4246,7 @@ type ProjectListBlockedUsersRequest struct {
 
 func (x *ProjectListBlockedUsersRequest) Reset() {
 	*x = ProjectListBlockedUsersRequest{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[65]
+	mi := &file_project_manager_v1_project_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4153,7 +4258,7 @@ func (x *ProjectListBlockedUsersRequest) String() string {
 func (*ProjectListBlockedUsersRequest) ProtoMessage() {}
 
 func (x *ProjectListBlockedUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[65]
+	mi := &file_project_manager_v1_project_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4166,7 +4271,7 @@ func (x *ProjectListBlockedUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBlockedUsersRequest.ProtoReflect.Descriptor instead.
 func (*ProjectListBlockedUsersRequest) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{65}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{67}
 }
 
 type ProjectListBlockedUsersResponse struct {
@@ -4178,7 +4283,7 @@ type ProjectListBlockedUsersResponse struct {
 
 func (x *ProjectListBlockedUsersResponse) Reset() {
 	*x = ProjectListBlockedUsersResponse{}
-	mi := &file_project_manager_v1_project_proto_msgTypes[66]
+	mi := &file_project_manager_v1_project_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4190,7 +4295,7 @@ func (x *ProjectListBlockedUsersResponse) String() string {
 func (*ProjectListBlockedUsersResponse) ProtoMessage() {}
 
 func (x *ProjectListBlockedUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_project_manager_v1_project_proto_msgTypes[66]
+	mi := &file_project_manager_v1_project_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4203,7 +4308,7 @@ func (x *ProjectListBlockedUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectListBlockedUsersResponse.ProtoReflect.Descriptor instead.
 func (*ProjectListBlockedUsersResponse) Descriptor() ([]byte, []int) {
-	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{66}
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ProjectListBlockedUsersResponse) GetBlocks() []*UserAccessBlock {
@@ -4317,6 +4422,12 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"d\n" +
 	"\x13ProjectListResponse\x127\n" +
+	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"K\n" +
+	"\x1bProjectListPublishedRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"m\n" +
+	"\x1cProjectListPublishedResponse\x127\n" +
 	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\"\xf2\x01\n" +
 	"\x14ProjectUpdateRequest\x12\x0e\n" +
@@ -4546,11 +4657,12 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x19INVITATION_STATUS_PENDING\x10\x01\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_ACCEPTED\x10\x02\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_DECLINED\x10\x03\x12\x1e\n" +
-	"\x1aINVITATION_STATUS_CANCELED\x10\x042\xf9!\n" +
+	"\x1aINVITATION_STATUS_CANCELED\x10\x042\x92#\n" +
 	"\x0eProjectService\x12z\n" +
 	"\x06Create\x12(.project_manager.v1.ProjectCreateRequest\x1a).project_manager.v1.ProjectCreateResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/projects\x12s\n" +
 	"\x03Get\x12%.project_manager.v1.ProjectGetRequest\x1a&.project_manager.v1.ProjectGetResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/projects/{id}\x12q\n" +
-	"\x04List\x12&.project_manager.v1.ProjectListRequest\x1a'.project_manager.v1.ProjectListResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/v1/projects\x12\x7f\n" +
+	"\x04List\x12&.project_manager.v1.ProjectListRequest\x1a'.project_manager.v1.ProjectListResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/v1/projects\x12\x96\x01\n" +
+	"\rListPublished\x12/.project_manager.v1.ProjectListPublishedRequest\x1a0.project_manager.v1.ProjectListPublishedResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/projects/published\x12\x7f\n" +
 	"\x06Update\x12(.project_manager.v1.ProjectUpdateRequest\x1a).project_manager.v1.ProjectUpdateResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/api/v1/projects/{id}\x12|\n" +
 	"\x06Delete\x12(.project_manager.v1.ProjectDeleteRequest\x1a).project_manager.v1.ProjectDeleteResponse\"\x1d\x82\xd3\xe4\x93\x02\x17*\x15/api/v1/projects/{id}\x12l\n" +
 	"\vUploadBuild\x12-.project_manager.v1.ProjectUploadBuildRequest\x1a..project_manager.v1.ProjectUploadBuildResponse\x12z\n" +
@@ -4593,7 +4705,7 @@ func file_project_manager_v1_project_proto_rawDescGZIP() []byte {
 }
 
 var file_project_manager_v1_project_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
+var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 69)
 var file_project_manager_v1_project_proto_goTypes = []any{
 	(ProjectStatus)(0),                             // 0: project_manager.v1.ProjectStatus
 	(DeploymentEnvironment)(0),                     // 1: project_manager.v1.DeploymentEnvironment
@@ -4610,62 +4722,64 @@ var file_project_manager_v1_project_proto_goTypes = []any{
 	(*ProjectGetResponse)(nil),                     // 12: project_manager.v1.ProjectGetResponse
 	(*ProjectListRequest)(nil),                     // 13: project_manager.v1.ProjectListRequest
 	(*ProjectListResponse)(nil),                    // 14: project_manager.v1.ProjectListResponse
-	(*ProjectUpdateRequest)(nil),                   // 15: project_manager.v1.ProjectUpdateRequest
-	(*ProjectUpdateResponse)(nil),                  // 16: project_manager.v1.ProjectUpdateResponse
-	(*ProjectDeleteRequest)(nil),                   // 17: project_manager.v1.ProjectDeleteRequest
-	(*ProjectDeleteResponse)(nil),                  // 18: project_manager.v1.ProjectDeleteResponse
-	(*ProjectUploadBuildRequest)(nil),              // 19: project_manager.v1.ProjectUploadBuildRequest
-	(*ProjectUploadBuildStreamRequest)(nil),        // 20: project_manager.v1.ProjectUploadBuildStreamRequest
-	(*BuildUploadStreamMetadata)(nil),              // 21: project_manager.v1.BuildUploadStreamMetadata
-	(*ProjectUploadBuildResponse)(nil),             // 22: project_manager.v1.ProjectUploadBuildResponse
-	(*ProjectListBuildsRequest)(nil),               // 23: project_manager.v1.ProjectListBuildsRequest
-	(*ProjectListBuildsResponse)(nil),              // 24: project_manager.v1.ProjectListBuildsResponse
-	(*ProjectDeleteBuildRequest)(nil),              // 25: project_manager.v1.ProjectDeleteBuildRequest
-	(*ProjectDeleteBuildResponse)(nil),             // 26: project_manager.v1.ProjectDeleteBuildResponse
-	(*ProjectUploadMediaRequest)(nil),              // 27: project_manager.v1.ProjectUploadMediaRequest
-	(*ProjectUploadMediaStreamRequest)(nil),        // 28: project_manager.v1.ProjectUploadMediaStreamRequest
-	(*MediaUploadStreamMetadata)(nil),              // 29: project_manager.v1.MediaUploadStreamMetadata
-	(*ProjectUploadMediaResponse)(nil),             // 30: project_manager.v1.ProjectUploadMediaResponse
-	(*SubmitForModerationRequest)(nil),             // 31: project_manager.v1.SubmitForModerationRequest
-	(*SubmitForModerationResponse)(nil),            // 32: project_manager.v1.SubmitForModerationResponse
-	(*ProjectPublishReleaseRequest)(nil),           // 33: project_manager.v1.ProjectPublishReleaseRequest
-	(*ProjectPublishReleaseResponse)(nil),          // 34: project_manager.v1.ProjectPublishReleaseResponse
-	(*ProjectRejectDraftRequest)(nil),              // 35: project_manager.v1.ProjectRejectDraftRequest
-	(*ProjectRejectDraftResponse)(nil),             // 36: project_manager.v1.ProjectRejectDraftResponse
-	(*ProjectGetPublishedRequest)(nil),             // 37: project_manager.v1.ProjectGetPublishedRequest
-	(*ProjectGetPublishedResponse)(nil),            // 38: project_manager.v1.ProjectGetPublishedResponse
-	(*ProjectUnpublishRequest)(nil),                // 39: project_manager.v1.ProjectUnpublishRequest
-	(*ProjectUnpublishResponse)(nil),               // 40: project_manager.v1.ProjectUnpublishResponse
-	(*ProjectMember)(nil),                          // 41: project_manager.v1.ProjectMember
-	(*ProjectInvitation)(nil),                      // 42: project_manager.v1.ProjectInvitation
-	(*UserAccessBlock)(nil),                        // 43: project_manager.v1.UserAccessBlock
-	(*SharedProjectItem)(nil),                      // 44: project_manager.v1.SharedProjectItem
-	(*ProjectSendInvitationRequest)(nil),           // 45: project_manager.v1.ProjectSendInvitationRequest
-	(*ProjectSendInvitationResponse)(nil),          // 46: project_manager.v1.ProjectSendInvitationResponse
-	(*ProjectListIncomingInvitationsRequest)(nil),  // 47: project_manager.v1.ProjectListIncomingInvitationsRequest
-	(*ProjectListIncomingInvitationsResponse)(nil), // 48: project_manager.v1.ProjectListIncomingInvitationsResponse
-	(*ProjectListOutgoingInvitationsRequest)(nil),  // 49: project_manager.v1.ProjectListOutgoingInvitationsRequest
-	(*ProjectListOutgoingInvitationsResponse)(nil), // 50: project_manager.v1.ProjectListOutgoingInvitationsResponse
-	(*ProjectRespondInvitationRequest)(nil),        // 51: project_manager.v1.ProjectRespondInvitationRequest
-	(*ProjectRespondInvitationResponse)(nil),       // 52: project_manager.v1.ProjectRespondInvitationResponse
-	(*ProjectCancelInvitationRequest)(nil),         // 53: project_manager.v1.ProjectCancelInvitationRequest
-	(*ProjectCancelInvitationResponse)(nil),        // 54: project_manager.v1.ProjectCancelInvitationResponse
-	(*ProjectListMembersRequest)(nil),              // 55: project_manager.v1.ProjectListMembersRequest
-	(*ProjectListMembersResponse)(nil),             // 56: project_manager.v1.ProjectListMembersResponse
-	(*ProjectUpdateMemberPermissionsRequest)(nil),  // 57: project_manager.v1.ProjectUpdateMemberPermissionsRequest
-	(*ProjectUpdateMemberPermissionsResponse)(nil), // 58: project_manager.v1.ProjectUpdateMemberPermissionsResponse
-	(*ProjectRemoveMemberRequest)(nil),             // 59: project_manager.v1.ProjectRemoveMemberRequest
-	(*ProjectRemoveMemberResponse)(nil),            // 60: project_manager.v1.ProjectRemoveMemberResponse
-	(*ProjectLeaveRequest)(nil),                    // 61: project_manager.v1.ProjectLeaveRequest
-	(*ProjectLeaveResponse)(nil),                   // 62: project_manager.v1.ProjectLeaveResponse
-	(*ProjectListSharedProjectsRequest)(nil),       // 63: project_manager.v1.ProjectListSharedProjectsRequest
-	(*ProjectListSharedProjectsResponse)(nil),      // 64: project_manager.v1.ProjectListSharedProjectsResponse
-	(*ProjectBlockUserRequest)(nil),                // 65: project_manager.v1.ProjectBlockUserRequest
-	(*ProjectBlockUserResponse)(nil),               // 66: project_manager.v1.ProjectBlockUserResponse
-	(*ProjectUnblockUserRequest)(nil),              // 67: project_manager.v1.ProjectUnblockUserRequest
-	(*ProjectUnblockUserResponse)(nil),             // 68: project_manager.v1.ProjectUnblockUserResponse
-	(*ProjectListBlockedUsersRequest)(nil),         // 69: project_manager.v1.ProjectListBlockedUsersRequest
-	(*ProjectListBlockedUsersResponse)(nil),        // 70: project_manager.v1.ProjectListBlockedUsersResponse
+	(*ProjectListPublishedRequest)(nil),            // 15: project_manager.v1.ProjectListPublishedRequest
+	(*ProjectListPublishedResponse)(nil),           // 16: project_manager.v1.ProjectListPublishedResponse
+	(*ProjectUpdateRequest)(nil),                   // 17: project_manager.v1.ProjectUpdateRequest
+	(*ProjectUpdateResponse)(nil),                  // 18: project_manager.v1.ProjectUpdateResponse
+	(*ProjectDeleteRequest)(nil),                   // 19: project_manager.v1.ProjectDeleteRequest
+	(*ProjectDeleteResponse)(nil),                  // 20: project_manager.v1.ProjectDeleteResponse
+	(*ProjectUploadBuildRequest)(nil),              // 21: project_manager.v1.ProjectUploadBuildRequest
+	(*ProjectUploadBuildStreamRequest)(nil),        // 22: project_manager.v1.ProjectUploadBuildStreamRequest
+	(*BuildUploadStreamMetadata)(nil),              // 23: project_manager.v1.BuildUploadStreamMetadata
+	(*ProjectUploadBuildResponse)(nil),             // 24: project_manager.v1.ProjectUploadBuildResponse
+	(*ProjectListBuildsRequest)(nil),               // 25: project_manager.v1.ProjectListBuildsRequest
+	(*ProjectListBuildsResponse)(nil),              // 26: project_manager.v1.ProjectListBuildsResponse
+	(*ProjectDeleteBuildRequest)(nil),              // 27: project_manager.v1.ProjectDeleteBuildRequest
+	(*ProjectDeleteBuildResponse)(nil),             // 28: project_manager.v1.ProjectDeleteBuildResponse
+	(*ProjectUploadMediaRequest)(nil),              // 29: project_manager.v1.ProjectUploadMediaRequest
+	(*ProjectUploadMediaStreamRequest)(nil),        // 30: project_manager.v1.ProjectUploadMediaStreamRequest
+	(*MediaUploadStreamMetadata)(nil),              // 31: project_manager.v1.MediaUploadStreamMetadata
+	(*ProjectUploadMediaResponse)(nil),             // 32: project_manager.v1.ProjectUploadMediaResponse
+	(*SubmitForModerationRequest)(nil),             // 33: project_manager.v1.SubmitForModerationRequest
+	(*SubmitForModerationResponse)(nil),            // 34: project_manager.v1.SubmitForModerationResponse
+	(*ProjectPublishReleaseRequest)(nil),           // 35: project_manager.v1.ProjectPublishReleaseRequest
+	(*ProjectPublishReleaseResponse)(nil),          // 36: project_manager.v1.ProjectPublishReleaseResponse
+	(*ProjectRejectDraftRequest)(nil),              // 37: project_manager.v1.ProjectRejectDraftRequest
+	(*ProjectRejectDraftResponse)(nil),             // 38: project_manager.v1.ProjectRejectDraftResponse
+	(*ProjectGetPublishedRequest)(nil),             // 39: project_manager.v1.ProjectGetPublishedRequest
+	(*ProjectGetPublishedResponse)(nil),            // 40: project_manager.v1.ProjectGetPublishedResponse
+	(*ProjectUnpublishRequest)(nil),                // 41: project_manager.v1.ProjectUnpublishRequest
+	(*ProjectUnpublishResponse)(nil),               // 42: project_manager.v1.ProjectUnpublishResponse
+	(*ProjectMember)(nil),                          // 43: project_manager.v1.ProjectMember
+	(*ProjectInvitation)(nil),                      // 44: project_manager.v1.ProjectInvitation
+	(*UserAccessBlock)(nil),                        // 45: project_manager.v1.UserAccessBlock
+	(*SharedProjectItem)(nil),                      // 46: project_manager.v1.SharedProjectItem
+	(*ProjectSendInvitationRequest)(nil),           // 47: project_manager.v1.ProjectSendInvitationRequest
+	(*ProjectSendInvitationResponse)(nil),          // 48: project_manager.v1.ProjectSendInvitationResponse
+	(*ProjectListIncomingInvitationsRequest)(nil),  // 49: project_manager.v1.ProjectListIncomingInvitationsRequest
+	(*ProjectListIncomingInvitationsResponse)(nil), // 50: project_manager.v1.ProjectListIncomingInvitationsResponse
+	(*ProjectListOutgoingInvitationsRequest)(nil),  // 51: project_manager.v1.ProjectListOutgoingInvitationsRequest
+	(*ProjectListOutgoingInvitationsResponse)(nil), // 52: project_manager.v1.ProjectListOutgoingInvitationsResponse
+	(*ProjectRespondInvitationRequest)(nil),        // 53: project_manager.v1.ProjectRespondInvitationRequest
+	(*ProjectRespondInvitationResponse)(nil),       // 54: project_manager.v1.ProjectRespondInvitationResponse
+	(*ProjectCancelInvitationRequest)(nil),         // 55: project_manager.v1.ProjectCancelInvitationRequest
+	(*ProjectCancelInvitationResponse)(nil),        // 56: project_manager.v1.ProjectCancelInvitationResponse
+	(*ProjectListMembersRequest)(nil),              // 57: project_manager.v1.ProjectListMembersRequest
+	(*ProjectListMembersResponse)(nil),             // 58: project_manager.v1.ProjectListMembersResponse
+	(*ProjectUpdateMemberPermissionsRequest)(nil),  // 59: project_manager.v1.ProjectUpdateMemberPermissionsRequest
+	(*ProjectUpdateMemberPermissionsResponse)(nil), // 60: project_manager.v1.ProjectUpdateMemberPermissionsResponse
+	(*ProjectRemoveMemberRequest)(nil),             // 61: project_manager.v1.ProjectRemoveMemberRequest
+	(*ProjectRemoveMemberResponse)(nil),            // 62: project_manager.v1.ProjectRemoveMemberResponse
+	(*ProjectLeaveRequest)(nil),                    // 63: project_manager.v1.ProjectLeaveRequest
+	(*ProjectLeaveResponse)(nil),                   // 64: project_manager.v1.ProjectLeaveResponse
+	(*ProjectListSharedProjectsRequest)(nil),       // 65: project_manager.v1.ProjectListSharedProjectsRequest
+	(*ProjectListSharedProjectsResponse)(nil),      // 66: project_manager.v1.ProjectListSharedProjectsResponse
+	(*ProjectBlockUserRequest)(nil),                // 67: project_manager.v1.ProjectBlockUserRequest
+	(*ProjectBlockUserResponse)(nil),               // 68: project_manager.v1.ProjectBlockUserResponse
+	(*ProjectUnblockUserRequest)(nil),              // 69: project_manager.v1.ProjectUnblockUserRequest
+	(*ProjectUnblockUserResponse)(nil),             // 70: project_manager.v1.ProjectUnblockUserResponse
+	(*ProjectListBlockedUsersRequest)(nil),         // 71: project_manager.v1.ProjectListBlockedUsersRequest
+	(*ProjectListBlockedUsersResponse)(nil),        // 72: project_manager.v1.ProjectListBlockedUsersResponse
 }
 var file_project_manager_v1_project_proto_depIdxs = []int32{
 	0,  // 0: project_manager.v1.Project.status:type_name -> project_manager.v1.ProjectStatus
@@ -4676,85 +4790,88 @@ var file_project_manager_v1_project_proto_depIdxs = []int32{
 	4,  // 5: project_manager.v1.ProjectCreateResponse.project:type_name -> project_manager.v1.Project
 	4,  // 6: project_manager.v1.ProjectGetResponse.project:type_name -> project_manager.v1.Project
 	4,  // 7: project_manager.v1.ProjectListResponse.projects:type_name -> project_manager.v1.Project
-	4,  // 8: project_manager.v1.ProjectUpdateResponse.project:type_name -> project_manager.v1.Project
-	21, // 9: project_manager.v1.ProjectUploadBuildStreamRequest.metadata:type_name -> project_manager.v1.BuildUploadStreamMetadata
-	7,  // 10: project_manager.v1.ProjectUploadBuildResponse.build:type_name -> project_manager.v1.ProjectBuild
-	7,  // 11: project_manager.v1.ProjectListBuildsResponse.builds:type_name -> project_manager.v1.ProjectBuild
-	29, // 12: project_manager.v1.ProjectUploadMediaStreamRequest.metadata:type_name -> project_manager.v1.MediaUploadStreamMetadata
-	6,  // 13: project_manager.v1.ProjectPublishReleaseResponse.release:type_name -> project_manager.v1.ProjectRelease
-	6,  // 14: project_manager.v1.ProjectGetPublishedResponse.release:type_name -> project_manager.v1.ProjectRelease
-	3,  // 15: project_manager.v1.ProjectInvitation.status:type_name -> project_manager.v1.InvitationStatus
-	4,  // 16: project_manager.v1.SharedProjectItem.project:type_name -> project_manager.v1.Project
-	42, // 17: project_manager.v1.ProjectSendInvitationResponse.invitation:type_name -> project_manager.v1.ProjectInvitation
-	42, // 18: project_manager.v1.ProjectListIncomingInvitationsResponse.invitations:type_name -> project_manager.v1.ProjectInvitation
-	42, // 19: project_manager.v1.ProjectListOutgoingInvitationsResponse.invitations:type_name -> project_manager.v1.ProjectInvitation
-	41, // 20: project_manager.v1.ProjectListMembersResponse.members:type_name -> project_manager.v1.ProjectMember
-	41, // 21: project_manager.v1.ProjectUpdateMemberPermissionsResponse.member:type_name -> project_manager.v1.ProjectMember
-	44, // 22: project_manager.v1.ProjectListSharedProjectsResponse.projects:type_name -> project_manager.v1.SharedProjectItem
-	43, // 23: project_manager.v1.ProjectListBlockedUsersResponse.blocks:type_name -> project_manager.v1.UserAccessBlock
-	9,  // 24: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
-	11, // 25: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
-	13, // 26: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
-	15, // 27: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
-	17, // 28: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
-	19, // 29: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
-	20, // 30: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
-	23, // 31: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
-	25, // 32: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
-	27, // 33: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
-	28, // 34: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
-	31, // 35: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
-	33, // 36: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
-	35, // 37: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
-	37, // 38: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
-	39, // 39: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
-	45, // 40: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
-	47, // 41: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
-	49, // 42: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
-	51, // 43: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
-	53, // 44: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
-	55, // 45: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
-	57, // 46: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
-	59, // 47: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
-	61, // 48: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
-	63, // 49: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
-	65, // 50: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
-	67, // 51: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
-	69, // 52: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
-	10, // 53: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
-	12, // 54: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
-	14, // 55: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
-	16, // 56: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
-	18, // 57: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
-	22, // 58: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	22, // 59: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	24, // 60: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
-	26, // 61: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
-	30, // 62: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	30, // 63: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	32, // 64: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
-	34, // 65: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
-	36, // 66: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
-	38, // 67: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
-	40, // 68: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
-	46, // 69: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
-	48, // 70: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
-	50, // 71: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
-	52, // 72: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
-	54, // 73: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
-	56, // 74: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
-	58, // 75: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
-	60, // 76: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
-	62, // 77: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
-	64, // 78: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
-	66, // 79: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
-	68, // 80: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
-	70, // 81: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
-	53, // [53:82] is the sub-list for method output_type
-	24, // [24:53] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	4,  // 8: project_manager.v1.ProjectListPublishedResponse.projects:type_name -> project_manager.v1.Project
+	4,  // 9: project_manager.v1.ProjectUpdateResponse.project:type_name -> project_manager.v1.Project
+	23, // 10: project_manager.v1.ProjectUploadBuildStreamRequest.metadata:type_name -> project_manager.v1.BuildUploadStreamMetadata
+	7,  // 11: project_manager.v1.ProjectUploadBuildResponse.build:type_name -> project_manager.v1.ProjectBuild
+	7,  // 12: project_manager.v1.ProjectListBuildsResponse.builds:type_name -> project_manager.v1.ProjectBuild
+	31, // 13: project_manager.v1.ProjectUploadMediaStreamRequest.metadata:type_name -> project_manager.v1.MediaUploadStreamMetadata
+	6,  // 14: project_manager.v1.ProjectPublishReleaseResponse.release:type_name -> project_manager.v1.ProjectRelease
+	6,  // 15: project_manager.v1.ProjectGetPublishedResponse.release:type_name -> project_manager.v1.ProjectRelease
+	3,  // 16: project_manager.v1.ProjectInvitation.status:type_name -> project_manager.v1.InvitationStatus
+	4,  // 17: project_manager.v1.SharedProjectItem.project:type_name -> project_manager.v1.Project
+	44, // 18: project_manager.v1.ProjectSendInvitationResponse.invitation:type_name -> project_manager.v1.ProjectInvitation
+	44, // 19: project_manager.v1.ProjectListIncomingInvitationsResponse.invitations:type_name -> project_manager.v1.ProjectInvitation
+	44, // 20: project_manager.v1.ProjectListOutgoingInvitationsResponse.invitations:type_name -> project_manager.v1.ProjectInvitation
+	43, // 21: project_manager.v1.ProjectListMembersResponse.members:type_name -> project_manager.v1.ProjectMember
+	43, // 22: project_manager.v1.ProjectUpdateMemberPermissionsResponse.member:type_name -> project_manager.v1.ProjectMember
+	46, // 23: project_manager.v1.ProjectListSharedProjectsResponse.projects:type_name -> project_manager.v1.SharedProjectItem
+	45, // 24: project_manager.v1.ProjectListBlockedUsersResponse.blocks:type_name -> project_manager.v1.UserAccessBlock
+	9,  // 25: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
+	11, // 26: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
+	13, // 27: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
+	15, // 28: project_manager.v1.ProjectService.ListPublished:input_type -> project_manager.v1.ProjectListPublishedRequest
+	17, // 29: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
+	19, // 30: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
+	21, // 31: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
+	22, // 32: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
+	25, // 33: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
+	27, // 34: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
+	29, // 35: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
+	30, // 36: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
+	33, // 37: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
+	35, // 38: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
+	37, // 39: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
+	39, // 40: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
+	41, // 41: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
+	47, // 42: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
+	49, // 43: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
+	51, // 44: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
+	53, // 45: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
+	55, // 46: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
+	57, // 47: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
+	59, // 48: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
+	61, // 49: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
+	63, // 50: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
+	65, // 51: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
+	67, // 52: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
+	69, // 53: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
+	71, // 54: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
+	10, // 55: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
+	12, // 56: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
+	14, // 57: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
+	16, // 58: project_manager.v1.ProjectService.ListPublished:output_type -> project_manager.v1.ProjectListPublishedResponse
+	18, // 59: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
+	20, // 60: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
+	24, // 61: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	24, // 62: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	26, // 63: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
+	28, // 64: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
+	32, // 65: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	32, // 66: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	34, // 67: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
+	36, // 68: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
+	38, // 69: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
+	40, // 70: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
+	42, // 71: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
+	48, // 72: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
+	50, // 73: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
+	52, // 74: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
+	54, // 75: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
+	56, // 76: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
+	58, // 77: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
+	60, // 78: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
+	62, // 79: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
+	64, // 80: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
+	66, // 81: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
+	68, // 82: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
+	70, // 83: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
+	72, // 84: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
+	55, // [55:85] is the sub-list for method output_type
+	25, // [25:55] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_project_manager_v1_project_proto_init() }
@@ -4762,11 +4879,11 @@ func file_project_manager_v1_project_proto_init() {
 	if File_project_manager_v1_project_proto != nil {
 		return
 	}
-	file_project_manager_v1_project_proto_msgTypes[16].OneofWrappers = []any{
+	file_project_manager_v1_project_proto_msgTypes[18].OneofWrappers = []any{
 		(*ProjectUploadBuildStreamRequest_Metadata)(nil),
 		(*ProjectUploadBuildStreamRequest_Chunk)(nil),
 	}
-	file_project_manager_v1_project_proto_msgTypes[24].OneofWrappers = []any{
+	file_project_manager_v1_project_proto_msgTypes[26].OneofWrappers = []any{
 		(*ProjectUploadMediaStreamRequest_Metadata)(nil),
 		(*ProjectUploadMediaStreamRequest_Chunk)(nil),
 	}
@@ -4776,7 +4893,7 @@ func file_project_manager_v1_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_manager_v1_project_proto_rawDesc), len(file_project_manager_v1_project_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   67,
+			NumMessages:   69,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -1,15 +1,9 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "game_deployment_agent/v1/deployment_agent.proto",
+    "title": "google/api/http.proto",
     "version": "version not set"
   },
-  "tags": [
-    {
-      "name": "WebGameDeploymentService",
-      "description": "WebGameDeploymentService предоставляет API удалённого развертывания веб-сборок игр на целевом узле с Nginx."
-    }
-  ],
   "consumes": [
     "application/json"
   ],

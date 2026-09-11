@@ -22,6 +22,7 @@ const (
 	ProjectService_Create_FullMethodName                  = "/project_manager.v1.ProjectService/Create"
 	ProjectService_Get_FullMethodName                     = "/project_manager.v1.ProjectService/Get"
 	ProjectService_List_FullMethodName                    = "/project_manager.v1.ProjectService/List"
+	ProjectService_ListPublished_FullMethodName           = "/project_manager.v1.ProjectService/ListPublished"
 	ProjectService_Update_FullMethodName                  = "/project_manager.v1.ProjectService/Update"
 	ProjectService_Delete_FullMethodName                  = "/project_manager.v1.ProjectService/Delete"
 	ProjectService_UploadBuild_FullMethodName             = "/project_manager.v1.ProjectService/UploadBuild"
@@ -57,6 +58,7 @@ type ProjectServiceClient interface {
 	Create(ctx context.Context, in *ProjectCreateRequest, opts ...grpc.CallOption) (*ProjectCreateResponse, error)
 	Get(ctx context.Context, in *ProjectGetRequest, opts ...grpc.CallOption) (*ProjectGetResponse, error)
 	List(ctx context.Context, in *ProjectListRequest, opts ...grpc.CallOption) (*ProjectListResponse, error)
+	ListPublished(ctx context.Context, in *ProjectListPublishedRequest, opts ...grpc.CallOption) (*ProjectListPublishedResponse, error)
 	Update(ctx context.Context, in *ProjectUpdateRequest, opts ...grpc.CallOption) (*ProjectUpdateResponse, error)
 	Delete(ctx context.Context, in *ProjectDeleteRequest, opts ...grpc.CallOption) (*ProjectDeleteResponse, error)
 	// Загрузка сборок
@@ -123,6 +125,16 @@ func (c *projectServiceClient) List(ctx context.Context, in *ProjectListRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProjectListResponse)
 	err := c.cc.Invoke(ctx, ProjectService_List_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListPublished(ctx context.Context, in *ProjectListPublishedRequest, opts ...grpc.CallOption) (*ProjectListPublishedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListPublishedResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListPublished_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -402,6 +414,7 @@ type ProjectServiceServer interface {
 	Create(context.Context, *ProjectCreateRequest) (*ProjectCreateResponse, error)
 	Get(context.Context, *ProjectGetRequest) (*ProjectGetResponse, error)
 	List(context.Context, *ProjectListRequest) (*ProjectListResponse, error)
+	ListPublished(context.Context, *ProjectListPublishedRequest) (*ProjectListPublishedResponse, error)
 	Update(context.Context, *ProjectUpdateRequest) (*ProjectUpdateResponse, error)
 	Delete(context.Context, *ProjectDeleteRequest) (*ProjectDeleteResponse, error)
 	// Загрузка сборок
@@ -452,6 +465,9 @@ func (UnimplementedProjectServiceServer) Get(context.Context, *ProjectGetRequest
 }
 func (UnimplementedProjectServiceServer) List(context.Context, *ProjectListRequest) (*ProjectListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method List not implemented")
+}
+func (UnimplementedProjectServiceServer) ListPublished(context.Context, *ProjectListPublishedRequest) (*ProjectListPublishedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPublished not implemented")
 }
 func (UnimplementedProjectServiceServer) Update(context.Context, *ProjectUpdateRequest) (*ProjectUpdateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Update not implemented")
@@ -602,6 +618,24 @@ func _ProjectService_List_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProjectServiceServer).List(ctx, req.(*ProjectListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListPublished_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListPublishedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListPublished(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListPublished_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListPublished(ctx, req.(*ProjectListPublishedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1070,6 +1104,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "List",
 			Handler:    _ProjectService_List_Handler,
+		},
+		{
+			MethodName: "ListPublished",
+			Handler:    _ProjectService_ListPublished_Handler,
 		},
 		{
 			MethodName: "Update",

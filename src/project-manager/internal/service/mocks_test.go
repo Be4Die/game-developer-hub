@@ -96,6 +96,26 @@ func (m *mockProjectRepo) CountForUser(ctx context.Context, userID string) (int,
 	return len(list), nil
 }
 
+func (m *mockProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Project, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var res []*domain.Project
+	for _, p := range m.projects {
+		if p.Status == domain.ProjectStatusPublished {
+			res = append(res, p)
+		}
+	}
+	return res, nil
+}
+
+func (m *mockProjectRepo) CountPublished(ctx context.Context) (int, error) {
+	list, err := m.ListPublished(ctx, 0, 0)
+	if err != nil {
+		return 0, err
+	}
+	return len(list), nil
+}
+
 func (m *mockProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.ProjectStatus) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

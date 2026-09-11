@@ -66,7 +66,7 @@
               class="table-row"
               @click="openProject(game.id)"
             >
-              <!-- 1 колонка: Игра (Иконка / Mock Draft + 2 строки: статус и название) -->
+              <!-- 1 колонка: Игра (Иконка + Название) -->
               <td class="col-game">
                 <div class="game-cell">
                   <div class="game-icon-box">
@@ -80,13 +80,8 @@
                       <span>Draft</span>
                     </div>
                   </div>
-                  <div class="game-text">
-                    <div class="game-type-label">
-                      {{ getGameTypeLabel(game) }}
-                    </div>
-                    <div class="game-title">
-                      <span>{{ game.title_ru || game.title_en || '—' }}</span>
-                    </div>
+                  <div class="game-title">
+                    <span>{{ game.title_ru || game.title_en || '—' }}</span>
                   </div>
                 </div>
               </td>
@@ -257,9 +252,6 @@ const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
 
-function getGameTypeLabel(game) {
-  return statusLabel(game.status);
-}
 
 async function loadProjects() {
   loading.value = true;
@@ -581,18 +573,7 @@ onMounted(loadProjects);
   letter-spacing: 0.2px;
 }
 
-.game-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 
-.game-type-label {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text-tertiary, #8b949e);
-  line-height: 1.3;
-}
 
 .game-title {
   font-size: 14px;

@@ -14,31 +14,37 @@
           </router-link>
         </template>
         <template v-if="isModerator">
+          <router-link to="/catalog" class="nav-item" active-class="active">
+            <LayoutGrid class="icon-sm" /> {{ t('header.catalog') }}
+          </router-link>
           <router-link to="/moderator/queue" class="nav-item" active-class="active">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
           <router-link to="/moderator/chats" class="nav-item" active-class="active">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>
-          <router-link to="/moderator/archive" class="nav-item" active-class="active">
-            <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
+          <router-link to="/moderator/journal" class="nav-item" active-class="active">
+            <BookOpen class="icon-sm" /> {{ t('header.moderationJournal') }}
           </router-link>
         </template>
         <template v-if="isAdmin">
+          <router-link to="/catalog" class="nav-item" active-class="active">
+            <LayoutGrid class="icon-sm" /> {{ t('header.catalog') }}
+          </router-link>
+          <router-link to="/moderator/queue" class="nav-item" active-class="active">
+            <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
+          </router-link>
+          <router-link to="/moderator/chats" class="nav-item" active-class="active">
+            <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
+          </router-link>
+          <router-link to="/moderator/journal" class="nav-item" active-class="active">
+            <BookOpen class="icon-sm" /> {{ t('header.moderationJournal') }}
+          </router-link>
           <router-link to="/admin/developers" class="nav-item" active-class="active">
             <Users class="icon-sm" /> {{ t('header.developers') }}
           </router-link>
           <router-link to="/admin/moderators" class="nav-item" active-class="active">
             <ShieldCheck class="icon-sm" /> {{ t('header.moderators') }}
-          </router-link>
-          <router-link to="/moderator/queue" class="nav-item" active-class="active">
-            <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
-          </router-link>
-          <router-link to="/moderator/chats" class="nav-item" active-class="active">
-            <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
-          </router-link>
-          <router-link to="/moderator/archive" class="nav-item" active-class="active">
-            <Archive class="icon-sm" /> {{ t('header.moderationArchive') }}
           </router-link>
         </template>
         <!-- Переход в профиль в общей панели навигации -->
@@ -76,6 +82,8 @@ import {
   CheckSquare,
   MessageSquare,
   Archive,
+  BookOpen,
+  LayoutGrid,
   LogOut,
   Users,
   ShieldCheck,

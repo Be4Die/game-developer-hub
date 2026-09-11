@@ -11,6 +11,17 @@ export const listProjects = (params = {}) => {
   }));
 };
 
+export const listPublishedProjects = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.limit !== undefined) query.append('limit', params.limit);
+  if (params.offset !== undefined) query.append('offset', params.offset);
+  const qStr = query.toString() ? `?${query.toString()}` : '';
+  return http.get(`/projects/published${qStr}`).then((r) => ({
+    projects: r.data.projects ?? [],
+    total: r.data.total ?? (r.data.projects ? r.data.projects.length : 0),
+  }));
+};
+
 export const createProject = (payload) =>
   http.post('/projects', payload).then((r) => r.data.project);
 
