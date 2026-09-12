@@ -1,4 +1,5 @@
 import { http } from '@/shared/api';
+import { normalizeRequest } from '../model/helpers';
 
 export const moderationApi = {
   /**
@@ -20,9 +21,10 @@ export const moderationApi = {
     }
     const qStr = query.toString() ? `?${query.toString()}` : '';
     const res = await http.get(`/moderation/requests${qStr}`);
+    const rawList = res.data.requests ?? [];
     return {
-      requests: res.data.requests ?? [],
-      total: res.data.total ?? (res.data.requests ? res.data.requests.length : 0),
+      requests: rawList.map(normalizeRequest),
+      total: res.data.total ?? rawList.length,
     };
   },
 
@@ -31,7 +33,86 @@ export const moderationApi = {
    */
   async getRequest(requestId) {
     const res = await http.get(`/moderation/requests/${requestId}`);
-    return { request: res.data.request };
+    return { request: normalizeRequest(res.data.request) };
+  },
+
+  /**
+   * Получить неизменяемый аудит-снимок по ID заявки
+   */
+  async getSnapshot(requestId) {
+    try {
+      const res = await http.get(`/moderation/requests/${requestId}/snapshot`);
+      let parsed = {};
+      const rawJson = res.data.snapshot_json || res.data.snapshotJson;
+      if (rawJson) {
+        try {
+          parsed = typeof rawJson === 'string'
+            ? JSON.parse(rawJson)
+            : rawJson;
+        } catch (e) {
+          console.warn('Failed to parse snapshot_json:', e);
+        }
+      }
+      return {
+        requestId: res.data.request_id || res.data.requestId,
+        projectId: res.data.project_id || res.data.projectId,
+        status: res.data.status,
+        createdAt: res.data.created_at || res.data.createdAt,
+        payload: parsed,
+      };
+    } catch (err) {
+      console.warn('Snapshot endpoint fallback to getRequest:', err);
+      const fallback = await this.getRequest(requestId);
+      const r = fallback.request;
+      const snap = r.snapshot || {};
+      return {
+        requestId: r.id,
+        projectId: r.projectId,
+        status: r.status,
+        createdAt: r.resolvedAt || r.submittedAt,
+        payload: {
+          project: {
+            id: r.projectId,
+            owner_id: r.ownerId,
+            developer_name: r.ownerId,
+            title_ru: snap.titleRu || '',
+            title_en: snap.titleEn || '',
+            seo_ru: snap.seoRu || '',
+            seo_en: snap.seoEn || '',
+            about_ru: snap.aboutRu || snap.about || '',
+            about_en: snap.aboutEn || '',
+            build_version: snap.activeBuildVersion || '',
+            dev_url: snap.devUrl || '',
+          },
+          media: {
+            icon: {
+              file_name: 'icon.png',
+              mime_type: 'image/png',
+              original_url: snap.iconPath || '',
+            },
+            cover: {
+              file_name: 'cover.png',
+              mime_type: 'image/png',
+              original_url: snap.coverPath || '',
+            },
+            video: {
+              file_name: 'video.mp4',
+              mime_type: 'video/mp4',
+              original_url: snap.videoPath || '',
+            },
+          },
+          verdict: {
+            status: r.status,
+            moderator_id: r.moderatorId,
+            moderator_name: r.moderatorId,
+            submitted_at: r.submittedAt,
+            resolved_at: r.resolvedAt,
+            rejection_reason: r.rejectionReason,
+          },
+          chat_transcript: [],
+        },
+      };
+    }
   },
 
   /**
@@ -40,7 +121,7 @@ export const moderationApi = {
   async getLatestByProject(projectId) {
     try {
       const res = await http.get(`/moderation/projects/${projectId}/latest`);
-      return { request: res.data.request };
+      return { request: normalizeRequest(res.data.request) };
     } catch (err) {
       if (err.response && err.response.status === 404) {
         return { request: null };
@@ -54,7 +135,7 @@ export const moderationApi = {
    */
   async claimRequest(requestId) {
     const res = await http.post(`/moderation/requests/${requestId}/claim`);
-    return { request: res.data.request };
+    return { request: normalizeRequest(res.data.request) };
   },
 
   /**

@@ -49,10 +49,10 @@
             <ModerationVerdictCard :message="msg" />
           </div>
 
-          <!-- Обычное системное событие -->
-          <div v-else-if="isSystemMessage(msg)" class="system-event-card">
-            <Info class="icon-xs system-icon" />
-            <div class="system-content">
+          <!-- Системное сообщение (строго по центру, отдельный стиль от обычных сообщений) -->
+          <div v-else-if="isSystemMessage(msg)" class="system-event-wrapper">
+            <div class="system-event-pill">
+              <span class="system-badge">Система</span>
               <span class="system-text">{{ msg.content }}</span>
               <span class="system-time">{{ formatTime(msg.created_at || msg.createdAt) }}</span>
             </div>
@@ -349,9 +349,27 @@ const dialogStatusClass = computed(() => {
   return 'status-pill-neutral';
 });
 
+const hasDisputeOrQuestions = computed(() => {
+  return messages.value.some((m) => {
+    const msgType = parseMessageType(m.message_type ?? m.messageType);
+    if (msgType === 5) return true;
+    const content = (m.content || '').toLowerCase();
+    return (
+      content.includes('замечани') ||
+      content.includes('вопрос') ||
+      content.includes('нарушен') ||
+      content.includes('отклон') ||
+      content.includes('баг') ||
+      content.includes('почему') ||
+      content.includes('исправ')
+    );
+  });
+});
+
 const showResolveButton = computed(() => {
   return (
     isModeratorOrAdmin.value &&
+    hasDisputeOrQuestions.value &&
     (dialogState.value === 'unanswered' || dialogState.value === 'in_dialog')
   );
 });
@@ -383,8 +401,9 @@ function isOwn(msg) {
 }
 
 function formatSenderRole(msg) {
-  if (isOwn(msg)) return 'Вы';
   const r = parseSenderRole(msg.sender_role ?? msg.senderRole);
+  if (r === 3 || msg.sender_id === 'system') return 'Система';
+  if (isOwn(msg)) return 'Вы';
   if (r === 2) return t('moderation.moderatorRole');
   if (r === 1) return t('moderation.developerRole');
   return 'Пользователь';
@@ -748,39 +767,61 @@ onUnmounted(() => {
   max-width: 90%;
 }
 
-/* Системное событие */
-.system-event-card {
+/* Системные события (по центру) */
+.message-row.is-system {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
-  background: var(--bg-secondary, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-sm, 6px);
-  padding: 6px 12px;
-  max-width: 85%;
-  font-size: 12px;
-  color: var(--text-muted, #b0b8c4);
+  width: 100%;
+  margin: 6px 0;
 }
 
-.system-icon {
-  color: var(--primary, #58a6ff);
+.system-event-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.system-event-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 9999px;
+  padding: 5px 14px;
+  max-width: 90%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.system-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #79c0ff;
+  background: rgba(56, 139, 253, 0.15);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  line-height: 1.3;
   flex-shrink: 0;
 }
 
-.system-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
 .system-text {
+  font-size: 12px;
   font-weight: 500;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.4;
+  text-align: center;
 }
 
 .system-time {
   font-size: 11px;
   color: var(--text-tertiary, #6e7681);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Пузыри сообщений */

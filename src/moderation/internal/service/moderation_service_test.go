@@ -1,8 +1,12 @@
 package service
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"testing"
 	"time"
 
@@ -15,8 +19,9 @@ func setupTestModerationService(t *testing.T) (*ModerationService, *mockRequestR
 	msgRepo := newMockMessageRepo()
 	attRepo := newMockAttachmentRepo()
 	pmClient := newMockProjectClient()
+	snapRepo := newMockSnapshotRepo()
 
-	svc := NewModerationService(reqRepo, msgRepo, attRepo, pmClient)
+	svc := NewModerationService(reqRepo, msgRepo, attRepo, pmClient, snapRepo)
 	return svc, reqRepo, msgRepo, pmClient
 }
 
@@ -467,6 +472,95 @@ func TestUnit_ModerationService_SendMessage_WithAttachments(t *testing.T) {
 	}
 	if len(msg.Attachments) != 1 || msg.Attachments[0].ID != "att-456" {
 		t.Errorf("expected attachment att-456 in message, got %v", msg.Attachments)
+	}
+}
+
+func TestUnit_ModerationService_Snapshot(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _, _ := setupTestModerationService(t)
+
+	// 1. Создаем черновик
+	draft := domain.ProjectSnapshot{
+		ProjectID:          555,
+		TitleRu:            "Киберпанк Арена",
+		TitleEn:            "Cyberpunk Arena",
+		SeoRu:              "SEO Описание",
+		SeoEn:              "SEO Description",
+		AboutRu:            "Полное описание RU",
+		AboutEn:            "Full description EN",
+		IconPath:           "/media/projects/555/icon.png",
+		CoverPath:          "/media/projects/555/cover.png",
+		VideoPath:          "/media/projects/555/video.mp4",
+		ActiveBuildVersion: "1.2.0",
+		DevURL:             "http://dev.domain/games/555",
+	}
+
+	req, err := svc.SubmitDraft(ctx, 555, "dev-owner-1", draft)
+	if err != nil {
+		t.Fatalf("SubmitDraft failed: %v", err)
+	}
+
+	// 2. Отклоняем с нарушениями
+	violations := []*domain.ViolationItem{
+		{
+			RuleCode:    "SEC-04",
+			RuleTitle:   "Сетевая безопасность",
+			Description: "Обнаружены несанкционированные сетевые запросы",
+		},
+	}
+	_, err = svc.Reject(ctx, 555, "mod-reviewer", "Заявка отклонена по правилу SEC-04", violations)
+	if err != nil {
+		t.Fatalf("Reject failed: %v", err)
+	}
+
+	// 3. Получаем снимок
+	snap, err := svc.GetSnapshot(ctx, req.ID)
+	if err != nil {
+		t.Fatalf("GetSnapshot failed: %v", err)
+	}
+	if snap == nil {
+		t.Fatal("expected non-nil snapshot")
+	}
+	if snap.Status != domain.RequestStatusRejected {
+		t.Errorf("expected rejected status in snapshot, got %v", snap.Status)
+	}
+	if snap.FormatVersion != 1 {
+		t.Errorf("expected format_version 1, got %d", snap.FormatVersion)
+	}
+
+	// 4. Проверяем парсинг JSON payload
+	var payload domain.SnapshotPayload
+	if err := json.Unmarshal([]byte(snap.SnapshotJSON), &payload); err != nil {
+		t.Fatalf("failed to unmarshal snapshot JSON: %v", err)
+	}
+
+	if payload.Project.TitleRu != "Киберпанк Арена" {
+		t.Errorf("expected title_ru Киберпанк Арена, got %s", payload.Project.TitleRu)
+	}
+	if payload.Project.BuildVersion != "1.2.0" {
+		t.Errorf("expected build_version 1.2.0, got %s", payload.Project.BuildVersion)
+	}
+	if payload.Verdict.ModeratorID != "mod-reviewer" {
+		t.Errorf("expected moderator mod-reviewer, got %s", payload.Verdict.ModeratorID)
+	}
+	if len(payload.Verdict.Violations) != 1 || payload.Verdict.Violations[0].RuleCode != "SEC-04" {
+		t.Errorf("expected 1 violation SEC-04, got %v", payload.Verdict.Violations)
+	}
+
+	// 5. Проверяем распаковку бинарного Gzip блоба
+	zr, err := gzip.NewReader(bytes.NewReader(snap.SnapshotBlob))
+	if err != nil {
+		t.Fatalf("failed to create gzip reader from snapshot_blob: %v", err)
+	}
+	decompressedBytes, err := io.ReadAll(zr)
+	if err != nil {
+		t.Fatalf("failed to decompress snapshot_blob: %v", err)
+	}
+	if string(decompressedBytes) != snap.SnapshotJSON {
+		t.Errorf("decompressed blob does not match snapshot_json")
 	}
 }
 

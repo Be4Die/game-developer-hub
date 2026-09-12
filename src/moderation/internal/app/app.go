@@ -45,6 +45,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	requestRepo := postgres.NewRequestRepo(pool)
 	messageRepo := postgres.NewMessageRepo(pool)
 	attachmentRepo := postgres.NewAttachmentRepo(pool)
+	snapshotRepo := postgres.NewSnapshotRepo(pool)
 
 	// ─── Клиент Project Manager ─────────────────────────────────
 	var projectClient domain.ProjectClient
@@ -71,7 +72,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		messageRepo,
 		attachmentRepo,
 		projectClient,
+		snapshotRepo,
 	)
+	moderationService.SetStoragePath(cfg.StoragePath)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	moderationHandler := grpctransport.NewModerationHandler(moderationService)

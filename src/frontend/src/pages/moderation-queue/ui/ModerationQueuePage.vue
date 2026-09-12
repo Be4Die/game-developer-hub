@@ -70,7 +70,7 @@
       </div>
 
       <!-- Состояние загрузки -->
-      <div v-if="loading" class="state-container">
+      <div v-if="loading" class="state-container loading-card">
         <div class="spinner-md"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
@@ -133,15 +133,15 @@
                       class="game-icon-img"
                     />
                     <div v-else class="game-icon-mock">
-                      <span>Draft</span>
+                      <Gamepad2 class="icon-xs text-muted" />
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-type-label">Проект #{{ req.projectId }}</div>
-                    <div class="game-title">
-                      {{
-                        req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}`
-                      }}
+                    <div
+                      class="game-title"
+                      :title="req.snapshot.titleRu || req.snapshot.titleEn || '—'"
+                    >
+                      {{ req.snapshot.titleRu || req.snapshot.titleEn || '—' }}
                     </div>
                   </div>
                 </div>
@@ -159,7 +159,7 @@
               <td class="col-dev">
                 <div class="dev-cell" :title="req.ownerId">
                   <User class="icon-xs text-muted" />
-                  <span class="dev-name">{{ req.ownerId || '—' }}</span>
+                  <span class="dev-name">{{ req.ownerId ? getUserDisplayName(req.ownerId) : '—' }}</span>
                 </div>
               </td>
 
@@ -179,8 +179,8 @@
 
               <!-- 6 колонка: Модератор -->
               <td class="col-mod">
-                <span v-if="req.moderatorId" class="mod-name">
-                  {{ req.moderatorId }}
+                <span v-if="req.moderatorId" class="mod-name" :title="req.moderatorId">
+                  {{ getUserDisplayName(req.moderatorId) }}
                 </span>
                 <span v-else class="unassigned-text">
                   {{ t('moderation.notAssigned') }}
@@ -296,6 +296,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Eye,
+  Gamepad2,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -304,7 +305,7 @@ import {
   REQUEST_STATUS,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
-import { useAuth } from '@/entities/user';
+import { useAuth, getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -319,7 +320,7 @@ const isAdmin = computed(() => {
 const currentUserId = computed(() => authState.user?.id || authState.user?.email || '');
 
 const requests = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 const claimingId = ref(null);
 
 const searchQuery = ref('');
@@ -775,6 +776,9 @@ async function claimAndOpen(req) {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .version-badge {
@@ -912,10 +916,15 @@ async function claimAndOpen(req) {
   color: var(--text-muted, #b0b8c4);
 }
 
-.empty-card {
+.empty-card,
+.loading-card {
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-md, 8px);
+}
+
+.loading-card {
+  min-height: 280px;
 }
 
 .empty-icon-wrap {

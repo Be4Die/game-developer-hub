@@ -143,6 +143,8 @@ export function normalizeRequest(req) {
     rejectionReason: req.rejection_reason || req.rejectionReason || '',
     submittedAt: req.submitted_at || req.submittedAt,
     reviewedAt: req.reviewed_at || req.reviewedAt,
+    startedReviewAt: req.started_review_at || req.startedReviewAt,
+    resolvedAt: req.resolved_at || req.resolvedAt,
     snapshot: {
       projectId: Number(snapshot.project_id || snapshot.projectId || req.project_id),
       titleRu: snapshot.title_ru || snapshot.titleRu || '',

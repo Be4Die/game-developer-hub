@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"math"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/moderation/internal/domain"
 	"github.com/Be4Die/game-developer-hub/moderation/internal/service"
@@ -100,6 +101,24 @@ func (h *ModerationHandler) GetRequest(ctx context.Context, req *pb.GetModeratio
 	}
 	return &pb.GetModerationRequestResponse{Request: requestToProto(r)}, nil
 }
+
+// GetSnapshot возвращает неизменяемый аудит-снимок по ID заявки на модерацию.
+func (h *ModerationHandler) GetSnapshot(ctx context.Context, req *pb.GetSnapshotRequest) (*pb.GetSnapshotResponse, error) {
+	snap, err := h.svc.GetSnapshot(ctx, req.GetRequestId())
+	if err != nil {
+		return nil, domainError(err, "get snapshot")
+	}
+
+	return &pb.GetSnapshotResponse{
+		RequestId:    snap.RequestID,
+		ProjectId:    snap.ProjectID,
+		Status:       pb.RequestStatus(snap.Status),
+		SnapshotJson: snap.SnapshotJSON,
+		SnapshotBlob: snap.SnapshotBlob,
+		CreatedAt:    snap.CreatedAt.Format(time.RFC3339),
+	}, nil
+}
+
 
 // GetLatestRequestByProject возвращает последнюю заявку проекта.
 func (h *ModerationHandler) GetLatestRequestByProject(ctx context.Context, req *pb.GetLatestRequestByProjectRequest) (*pb.GetModerationRequestResponse, error) {

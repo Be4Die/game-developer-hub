@@ -176,6 +176,8 @@ services:
         condition: service_healthy
     ports:
       - "50054:50054"
+    volumes:
+      - project_data:/data/projects:ro
     healthcheck:
       test: ["CMD-SHELL", "nc -z localhost 50054 || exit 1"]
       interval: 10s

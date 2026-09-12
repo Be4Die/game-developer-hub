@@ -39,3 +39,11 @@ type AttachmentRepo interface {
 	ListByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]*Attachment, error)
 	PurgeByProjectID(ctx context.Context, projectID int64) (int, []string, error)
 }
+
+// SnapshotRepo определяет контракт репозитория неизменяемых аудит-снимков модерации.
+type SnapshotRepo interface {
+	Save(ctx context.Context, snapshot *ModerationSnapshot) error
+	GetByRequestID(ctx context.Context, requestID int64) (*ModerationSnapshot, error)
+	GetByProjectID(ctx context.Context, projectID int64) (*ModerationSnapshot, error)
+}
+

@@ -22,6 +22,7 @@ const (
 	ModerationService_SubmitDraft_FullMethodName               = "/moderation.v1.ModerationService/SubmitDraft"
 	ModerationService_ListRequests_FullMethodName              = "/moderation.v1.ModerationService/ListRequests"
 	ModerationService_GetRequest_FullMethodName                = "/moderation.v1.ModerationService/GetRequest"
+	ModerationService_GetSnapshot_FullMethodName               = "/moderation.v1.ModerationService/GetSnapshot"
 	ModerationService_GetLatestRequestByProject_FullMethodName = "/moderation.v1.ModerationService/GetLatestRequestByProject"
 	ModerationService_ClaimRequest_FullMethodName              = "/moderation.v1.ModerationService/ClaimRequest"
 	ModerationService_Approve_FullMethodName                   = "/moderation.v1.ModerationService/Approve"
@@ -45,6 +46,7 @@ type ModerationServiceClient interface {
 	SubmitDraft(ctx context.Context, in *SubmitDraftRequest, opts ...grpc.CallOption) (*SubmitDraftResponse, error)
 	ListRequests(ctx context.Context, in *ListModerationRequestsRequest, opts ...grpc.CallOption) (*ListModerationRequestsResponse, error)
 	GetRequest(ctx context.Context, in *GetModerationRequestRequest, opts ...grpc.CallOption) (*GetModerationRequestResponse, error)
+	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error)
 	GetLatestRequestByProject(ctx context.Context, in *GetLatestRequestByProjectRequest, opts ...grpc.CallOption) (*GetModerationRequestResponse, error)
 	ClaimRequest(ctx context.Context, in *ClaimModerationRequestRequest, opts ...grpc.CallOption) (*ClaimModerationRequestResponse, error)
 	Approve(ctx context.Context, in *ApproveModerationRequest, opts ...grpc.CallOption) (*ApproveModerationResponse, error)
@@ -93,6 +95,16 @@ func (c *moderationServiceClient) GetRequest(ctx context.Context, in *GetModerat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetModerationRequestResponse)
 	err := c.cc.Invoke(ctx, ModerationService_GetRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSnapshotResponse)
+	err := c.cc.Invoke(ctx, ModerationService_GetSnapshot_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -246,6 +258,7 @@ type ModerationServiceServer interface {
 	SubmitDraft(context.Context, *SubmitDraftRequest) (*SubmitDraftResponse, error)
 	ListRequests(context.Context, *ListModerationRequestsRequest) (*ListModerationRequestsResponse, error)
 	GetRequest(context.Context, *GetModerationRequestRequest) (*GetModerationRequestResponse, error)
+	GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error)
 	GetLatestRequestByProject(context.Context, *GetLatestRequestByProjectRequest) (*GetModerationRequestResponse, error)
 	ClaimRequest(context.Context, *ClaimModerationRequestRequest) (*ClaimModerationRequestResponse, error)
 	Approve(context.Context, *ApproveModerationRequest) (*ApproveModerationResponse, error)
@@ -278,6 +291,9 @@ func (UnimplementedModerationServiceServer) ListRequests(context.Context, *ListM
 }
 func (UnimplementedModerationServiceServer) GetRequest(context.Context, *GetModerationRequestRequest) (*GetModerationRequestResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRequest not implemented")
+}
+func (UnimplementedModerationServiceServer) GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSnapshot not implemented")
 }
 func (UnimplementedModerationServiceServer) GetLatestRequestByProject(context.Context, *GetLatestRequestByProjectRequest) (*GetModerationRequestResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLatestRequestByProject not implemented")
@@ -392,6 +408,24 @@ func _ModerationService_GetRequest_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModerationServiceServer).GetRequest(ctx, req.(*GetModerationRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).GetSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_GetSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).GetSnapshot(ctx, req.(*GetSnapshotRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -666,6 +700,10 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRequest",
 			Handler:    _ModerationService_GetRequest_Handler,
+		},
+		{
+			MethodName: "GetSnapshot",
+			Handler:    _ModerationService_GetSnapshot_Handler,
 		},
 		{
 			MethodName: "GetLatestRequestByProject",

@@ -2,9 +2,15 @@
 package service
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Be4Die/game-developer-hub/moderation/internal/domain"
 )
@@ -14,7 +20,9 @@ type ModerationService struct {
 	requestRepo    domain.RequestRepo
 	messageRepo    domain.MessageRepo
 	attachmentRepo domain.AttachmentRepo
+	snapshotRepo   domain.SnapshotRepo
 	projectClient  domain.ProjectClient
+	storagePath    string
 }
 
 // NewModerationService создаёт новый экземпляр ModerationService.
@@ -23,14 +31,26 @@ func NewModerationService(
 	messageRepo domain.MessageRepo,
 	attachmentRepo domain.AttachmentRepo,
 	projectClient domain.ProjectClient,
+	snapshotRepos ...domain.SnapshotRepo,
 ) *ModerationService {
+	var snapRepo domain.SnapshotRepo
+	if len(snapshotRepos) > 0 {
+		snapRepo = snapshotRepos[0]
+	}
 	return &ModerationService{
 		requestRepo:    requestRepo,
 		messageRepo:    messageRepo,
 		attachmentRepo: attachmentRepo,
+		snapshotRepo:   snapRepo,
 		projectClient:  projectClient,
 	}
 }
+
+// SetStoragePath задает корневую директорию для чтения медиа-материалов проектов.
+func (s *ModerationService) SetStoragePath(path string) {
+	s.storagePath = path
+}
+
 
 // SubmitDraft создает новый запрос на модерацию со снимком метаданных и фиксирует системное событие в чате.
 func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ownerID string, snapshot domain.ProjectSnapshot) (*domain.ModerationRequest, error) {
@@ -156,6 +176,9 @@ func (s *ModerationService) Approve(ctx context.Context, projectID int64, modera
 		_, _ = s.messageRepo.Create(ctx, commentMsg)
 	}
 
+	// Создание неизменяемого аудит-снимка решения перед очисткой временных файлов
+	_, _ = s.buildAndSaveSnapshot(ctx, req, domain.RequestStatusApproved, moderatorID, "", nil, comment, prodURL)
+
 	if s.attachmentRepo != nil {
 		_, _, _ = s.attachmentRepo.PurgeByProjectID(ctx, projectID)
 	}
@@ -270,8 +293,12 @@ func (s *ModerationService) Reject(ctx context.Context, projectID int64, moderat
 	req.RejectionReason = effectiveReason
 	req.ModeratorID = moderatorID
 
+	// Создание неизменяемого аудит-снимка решения
+	_, _ = s.buildAndSaveSnapshot(ctx, req, domain.RequestStatusRejected, moderatorID, effectiveReason, violations, "", "")
+
 	return req, nil
 }
+
 
 // SendMessage отправляет пользовательское или модераторское сообщение в чат проекта.
 func (s *ModerationService) SendMessage(ctx context.Context, projectID int64, senderID string, senderRole domain.SenderRole, content string, attachmentIDs []string, payload map[string]any) (*domain.ChatMessage, error) {
@@ -423,5 +450,273 @@ func (s *ModerationService) ListModeratorActivity(ctx context.Context, moderator
 	}
 	return s.requestRepo.ListModeratorActivity(ctx, strings.TrimSpace(moderatorID), strings.TrimSpace(actionType), limit, offset)
 }
+
+// GetSnapshot возвращает неизменяемый аудит-снимок по ID заявки на модерацию.
+func (s *ModerationService) GetSnapshot(ctx context.Context, requestID int64) (*domain.ModerationSnapshot, error) {
+	if s.snapshotRepo != nil {
+		snap, err := s.snapshotRepo.GetByRequestID(ctx, requestID)
+		if err == nil && snap != nil {
+			return snap, nil
+		}
+	}
+
+	// Fallback для ранее созданных заявок: синтезируем снимок на лету
+	req, err := s.requestRepo.Get(ctx, requestID)
+	if err != nil {
+		return nil, fmt.Errorf("ModerationService.GetSnapshot request not found: %w", err)
+	}
+
+	return s.buildAndSaveSnapshot(ctx, req, req.Status, req.ModeratorID, req.RejectionReason, nil, "", "")
+}
+
+// buildAndSaveSnapshot формирует полное состояние снимка, упаковывает в JSON и сжимает gzip в бинарный блоб.
+func (s *ModerationService) buildAndSaveSnapshot(
+	ctx context.Context,
+	req *domain.ModerationRequest,
+	status domain.RequestStatus,
+	moderatorID, reason string,
+	violations []*domain.ViolationItem,
+	comment, prodURL string,
+) (*domain.ModerationSnapshot, error) {
+	if s.snapshotRepo == nil {
+		return nil, nil
+	}
+
+	// 1. Извлечение сообщений чата и вложений
+	messages, _, _ := s.messageRepo.ListByProject(ctx, req.ProjectID, 500, 0)
+	var snapshotMessages []*domain.SnapshotMessageItem
+	if len(messages) > 0 && s.attachmentRepo != nil {
+		msgIDs := make([]int64, len(messages))
+		for i, m := range messages {
+			msgIDs[i] = m.ID
+		}
+		attMap, _ := s.attachmentRepo.ListByMessageIDs(ctx, msgIDs)
+		for _, m := range messages {
+			var attItems []*domain.SnapshotAttachmentItem
+			if atts, ok := attMap[m.ID]; ok {
+				for _, a := range atts {
+					attItem := &domain.SnapshotAttachmentItem{
+						ID:          a.ID,
+						FileName:    a.FileName,
+						FileSize:    a.FileSize,
+						MimeType:    a.MimeType,
+						URL:         a.StoragePath,
+						DownloadURL: a.StoragePath,
+					}
+					s.enrichAttachmentFootprint(req.ProjectID, attItem, a.StoragePath)
+					attItems = append(attItems, attItem)
+				}
+			}
+			senderName := m.SenderID
+			if m.SenderRole == domain.SenderRoleSystem {
+				senderName = "Система"
+			}
+			snapshotMessages = append(snapshotMessages, &domain.SnapshotMessageItem{
+				ID:          m.ID,
+				SenderID:    m.SenderID,
+				SenderRole:  m.SenderRole,
+				SenderName:  senderName,
+				MessageType: m.MessageType,
+				Content:     m.Content,
+				CreatedAt:   m.CreatedAt.Format(time.RFC3339),
+				Attachments: attItems,
+			})
+		}
+	}
+
+	// 2. Сбор нарушений регламента
+	var snapshotViolations []*domain.SnapshotViolationItem
+	for _, v := range violations {
+		var attItems []*domain.SnapshotAttachmentItem
+		for _, a := range v.Attachments {
+			attItem := &domain.SnapshotAttachmentItem{
+				ID:          a.ID,
+				FileName:    a.FileName,
+				FileSize:    a.FileSize,
+				MimeType:    a.MimeType,
+				URL:         a.StoragePath,
+				DownloadURL: a.StoragePath,
+			}
+			s.enrichAttachmentFootprint(req.ProjectID, attItem, a.StoragePath)
+			attItems = append(attItems, attItem)
+		}
+		snapshotViolations = append(snapshotViolations, &domain.SnapshotViolationItem{
+			RuleCode:    v.RuleCode,
+			RuleTitle:   v.RuleTitle,
+			Description: v.Description,
+			Attachments: attItems,
+		})
+	}
+
+	// 3. Вычисление времени проверки
+	now := time.Now().UTC()
+	durationStr := "—"
+	var startedReviewStr string
+	if req.StartedReviewAt != nil {
+		startedReviewStr = req.StartedReviewAt.Format(time.RFC3339)
+		d := now.Sub(*req.StartedReviewAt)
+		if d >= 24*time.Hour {
+			days := int(d.Hours() / 24)
+			hours := int(d.Hours()) % 24
+			if hours > 0 {
+				durationStr = fmt.Sprintf("%d д %d ч", days, hours)
+			} else {
+				durationStr = fmt.Sprintf("%d д", days)
+			}
+		} else if d >= time.Hour {
+			hours := int(d.Hours())
+			mins := int(d.Minutes()) % 60
+			if mins > 0 {
+				durationStr = fmt.Sprintf("%d ч %d мин", hours, mins)
+			} else {
+				durationStr = fmt.Sprintf("%d ч", hours)
+			}
+		} else if d > 0 {
+			durationStr = fmt.Sprintf("%d мин", int(d.Minutes()))
+		}
+	}
+
+	var resolvedStr string
+	if req.ResolvedAt != nil {
+		resolvedStr = req.ResolvedAt.Format(time.RFC3339)
+	} else {
+		resolvedStr = now.Format(time.RFC3339)
+	}
+
+	devName := req.OwnerID
+
+	// 4. Обогащение медиа-материалов визуальными отпечатками и контрольными суммами
+	iconItem := s.resolveMediaItem(req.ProjectID, "icon", req.Snapshot.IconPath)
+	coverItem := s.resolveMediaItem(req.ProjectID, "cover", req.Snapshot.CoverPath)
+	videoItem := s.resolveMediaItem(req.ProjectID, "video", req.Snapshot.VideoPath)
+
+	payload := domain.SnapshotPayload{
+		Project: domain.SnapshotProjectData{
+			ID:            req.ProjectID,
+			OwnerID:       req.OwnerID,
+			DeveloperName: devName,
+			TitleRu:       req.Snapshot.TitleRu,
+			TitleEn:       req.Snapshot.TitleEn,
+			SeoRu:         req.Snapshot.SeoRu,
+			SeoEn:         req.Snapshot.SeoEn,
+			AboutRu:       req.Snapshot.AboutRu,
+			AboutEn:       req.Snapshot.AboutEn,
+			BuildVersion:  req.Snapshot.ActiveBuildVersion,
+			DevURL:        req.Snapshot.DevURL,
+			ProdURL:       prodURL,
+		},
+		Media: domain.SnapshotMediaData{
+			Icon:  iconItem,
+			Cover: coverItem,
+			Video: videoItem,
+		},
+		Verdict: domain.SnapshotVerdictData{
+			Status:          status,
+			ModeratorID:     moderatorID,
+			ModeratorName:   moderatorID,
+			SubmittedAt:     req.SubmittedAt.Format(time.RFC3339),
+			StartedReviewAt: startedReviewStr,
+			ResolvedAt:      resolvedStr,
+			ReviewDuration:  durationStr,
+			RejectionReason: reason,
+			Comment:         comment,
+			ProdURL:         prodURL,
+			Violations:      snapshotViolations,
+		},
+		ChatTranscript: snapshotMessages,
+	}
+
+	jsonBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("marshal snapshot payload: %w", err)
+	}
+
+	// Gzip сжатие в бинарный блоб
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	if _, err := zw.Write(jsonBytes); err != nil {
+		return nil, fmt.Errorf("gzip compress snapshot: %w", err)
+	}
+	if err := zw.Close(); err != nil {
+		return nil, fmt.Errorf("gzip close: %w", err)
+	}
+
+	snap := &domain.ModerationSnapshot{
+		RequestID:     req.ID,
+		ProjectID:     req.ProjectID,
+		Status:        status,
+		FormatVersion: 1,
+		SnapshotJSON:  string(jsonBytes),
+		SnapshotBlob:  buf.Bytes(),
+	}
+
+	if err := s.snapshotRepo.Save(ctx, snap); err != nil {
+		return nil, fmt.Errorf("save snapshot: %w", err)
+	}
+	return snap, nil
+}
+
+// resolveMediaItem строит визуальный слепок медиа-файла с диска или fallback на переданный путь.
+func (s *ModerationService) resolveMediaItem(projectID int64, mediaType, rawPath string) domain.SnapshotMediaItem {
+	item := domain.SnapshotMediaItem{
+		FileName:    mediaType + ".png",
+		MimeType:    "image/png",
+		OriginalURL: rawPath,
+	}
+	if mediaType == "video" {
+		item.FileName = "video.mp4"
+		item.MimeType = "video/mp4"
+	}
+
+	if s.storagePath == "" {
+		return item
+	}
+
+	candidatePaths := []string{
+		filepath.Join(s.storagePath, fmt.Sprintf("%d", projectID), item.FileName),
+		filepath.Join(s.storagePath, strings.TrimPrefix(rawPath, "/media/projects/")),
+		filepath.Join(s.storagePath, strings.TrimPrefix(rawPath, "/media/")),
+		filepath.Join(s.storagePath, strings.TrimPrefix(rawPath, "/data/projects/")),
+	}
+
+	for _, cp := range candidatePaths {
+		if fp, err := GenerateMediaFootprint(cp, 260); err == nil && fp != nil {
+			item.FileName = fp.FileName
+			item.FileSize = fp.FileSize
+			item.MimeType = fp.MimeType
+			item.Sha256 = fp.Sha256
+			item.ThumbnailData = fp.ThumbnailData
+			item.Width = fp.Width
+			item.Height = fp.Height
+			break
+		}
+	}
+	return item
+}
+
+// enrichAttachmentFootprint обогащает метаданные вложения превью и sha256 хэшем из файла на диске.
+func (s *ModerationService) enrichAttachmentFootprint(projectID int64, attItem *domain.SnapshotAttachmentItem, rawPath string) {
+	if s.storagePath == "" || rawPath == "" {
+		return
+	}
+	candidatePaths := []string{
+		filepath.Join(s.storagePath, "chat_attachments", fmt.Sprintf("%d", projectID), attItem.FileName),
+		filepath.Join(s.storagePath, strings.TrimPrefix(rawPath, "/")),
+		filepath.Join(os.TempDir(), "chat_attachments", fmt.Sprintf("%d", projectID), attItem.FileName),
+	}
+	for _, cp := range candidatePaths {
+		if fp, err := GenerateMediaFootprint(cp, 260); err == nil && fp != nil {
+			attItem.Sha256 = fp.Sha256
+			if fp.FileSize > 0 {
+				attItem.FileSize = fp.FileSize
+			}
+			if fp.ThumbnailData != "" {
+				attItem.ThumbnailData = fp.ThumbnailData
+			}
+			break
+		}
+	}
+}
+
 
 

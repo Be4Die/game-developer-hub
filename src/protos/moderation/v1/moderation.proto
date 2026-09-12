@@ -306,6 +306,19 @@ message PurgeProjectMediaResponse {
   int32 purged_count = 2;
 }
 
+message GetSnapshotRequest {
+  int64 request_id = 1;
+}
+
+message GetSnapshotResponse {
+  int64 request_id = 1;
+  int64 project_id = 2;
+  RequestStatus status = 3;
+  string snapshot_json = 4;
+  bytes snapshot_blob = 5;
+  string created_at = 6;
+}
+
 // ─── Сервис ───────────────────────────────────────────────────
 
 service ModerationService {
@@ -317,6 +330,10 @@ service ModerationService {
 
   rpc GetRequest(GetModerationRequestRequest) returns (GetModerationRequestResponse) {
     option (google.api.http) = { get: "/api/v1/moderation/requests/{request_id}" };
+  }
+
+  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/requests/{request_id}/snapshot" };
   }
 
   rpc GetLatestRequestByProject(GetLatestRequestByProjectRequest) returns (GetModerationRequestResponse) {
@@ -369,4 +386,5 @@ service ModerationService {
 
   rpc PurgeProjectMedia(PurgeProjectMediaRequest) returns (PurgeProjectMediaResponse);
 }
+
 

@@ -46,10 +46,17 @@ export function getMediaUrl(path) {
   if (path.startsWith('/api/')) {
     return path;
   }
+  if (path.startsWith('/media/')) {
+    return path;
+  }
+  if (path.includes('projects/')) {
+    const projKey = path.replace(/^(\.\/|\/)?(data\/)?/, '');
+    return `/${projKey.startsWith('media/') ? projKey : 'media/' + projKey}`;
+  }
   const clean = path
     .replace(/^(\.\/|\/)?(data\/projects\/|projects\/)?/, '')
     .replace(/^media\//, '');
-  return `/api/v1/media/${clean}`;
+  return `/media/projects/${clean}`;
 }
 
 export function hasPermission(project, perm) {

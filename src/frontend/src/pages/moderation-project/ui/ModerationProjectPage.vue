@@ -45,7 +45,9 @@
           <div class="identity-meta-grid">
             <div class="meta-item">
               <span class="meta-label">{{ t('moderation.developerColumn') }}</span>
-              <span class="meta-value">{{ activeRequest?.ownerId || '—' }}</span>
+              <span class="meta-value" :title="activeRequest?.ownerId || projectData?.ownerId">
+                {{ (activeRequest?.ownerId || projectData?.ownerId) ? getUserDisplayName(activeRequest?.ownerId || projectData?.ownerId) : '—' }}
+              </span>
             </div>
             <div class="meta-item">
               <span class="meta-label">{{ t('moderation.submittedColumn') }}</span>
@@ -55,8 +57,8 @@
             </div>
             <div class="meta-item">
               <span class="meta-label">{{ t('moderation.moderator') }}</span>
-              <span class="meta-value">
-                {{ activeRequest?.moderatorId || t('moderation.notAssigned') }}
+              <span class="meta-value" :title="activeRequest?.moderatorId">
+                {{ activeRequest?.moderatorId ? getUserDisplayName(activeRequest.moderatorId) : t('moderation.notAssigned') }}
               </span>
             </div>
           </div>
@@ -253,7 +255,7 @@
               <button
                 class="btn-verdict btn-reject-ticket"
                 :disabled="actionLoading"
-                @click="showRejectModal = true"
+                @click="goToRejectPage"
               >
                 <XCircle class="icon-sm" />
                 <span>{{ t('moderation.reject') }}</span>
@@ -269,20 +271,12 @@
       <ProjectChat :project-id="projectId" :readonly="isAdmin" />
     </aside>
 
-    <!-- Модальные окна одобрения и отклонения -->
+    <!-- Модальное окно одобрения -->
     <ApproveRequestModal
       v-if="showApproveModal"
       :loading="actionLoading"
       @confirm="handleApprove"
       @cancel="showApproveModal = false"
-    />
-
-    <RejectRequestModal
-      v-if="showRejectModal"
-      :project-id="projectId"
-      :loading="actionLoading"
-      @confirm="handleReject"
-      @cancel="showRejectModal = false"
     />
   </div>
 
@@ -322,8 +316,8 @@ import {
   ProjectChat,
 } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
-import { useAuth } from '@/entities/user';
-import { ApproveRequestModal, RejectRequestModal } from '@/features/review-request';
+import { useAuth, getUserDisplayName } from '@/entities/user';
+import { ApproveRequestModal } from '@/features/review-request';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -343,7 +337,6 @@ const projectData = ref(null);
 const loading = ref(true);
 const actionLoading = ref(false);
 const showApproveModal = ref(false);
-const showRejectModal = ref(false);
 const noRequestMode = ref(false);
 
 const requestStatus = computed(() => activeRequest.value?.status);
@@ -429,6 +422,7 @@ async function loadProjectInfo() {
           videoPath: p.video_path,
           devUrl: p.dev_url,
           activeBuildVersion: p.active_build_version || '1.0.0',
+          ownerId: p.owner_id || p.ownerId,
         };
       } catch (err) {
         showToast('Проект не найден', 'warning');
@@ -476,26 +470,8 @@ async function handleApprove(comment) {
   }
 }
 
-async function handleReject(payload) {
-  actionLoading.value = true;
-  try {
-    let reason = '';
-    let violations = [];
-    if (typeof payload === 'string') {
-      reason = payload;
-    } else if (payload && typeof payload === 'object') {
-      reason = payload.reason || '';
-      violations = payload.violations || [];
-    }
-    await moderationStore.rejectRequest(projectId.value, reason, violations);
-    showRejectModal.value = false;
-    showToast('Проект отклонен, отправлено уведомление', 'warning');
-    await loadProjectInfo();
-  } catch (err) {
-    showToast('Ошибка при отклонении проекта', 'danger');
-  } finally {
-    actionLoading.value = false;
-  }
+function goToRejectPage() {
+  router.push(`/moderator/projects/${projectId.value}/reject`);
 }
 
 onMounted(() => {

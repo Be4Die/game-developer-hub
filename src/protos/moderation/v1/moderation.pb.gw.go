@@ -109,6 +109,45 @@ func local_request_ModerationService_GetRequest_0(ctx context.Context, marshaler
 	return msg, metadata, err
 }
 
+func request_ModerationService_GetSnapshot_0(ctx context.Context, marshaler runtime.Marshaler, client ModerationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetSnapshotRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["request_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "request_id")
+	}
+	protoReq.RequestId, err = runtime.Int64(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "request_id", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	msg, err := client.GetSnapshot(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_ModerationService_GetSnapshot_0(ctx context.Context, marshaler runtime.Marshaler, server ModerationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetSnapshotRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["request_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "request_id")
+	}
+	protoReq.RequestId, err = runtime.Int64(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "request_id", err)
+	}
+	msg, err := server.GetSnapshot(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_ModerationService_GetLatestRequestByProject_0(ctx context.Context, marshaler runtime.Marshaler, client ModerationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetLatestRequestByProjectRequest
@@ -620,6 +659,26 @@ func RegisterModerationServiceHandlerServer(ctx context.Context, mux *runtime.Se
 		}
 		forward_ModerationService_GetRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_ModerationService_GetSnapshot_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/moderation.v1.ModerationService/GetSnapshot", runtime.WithHTTPPathPattern("/api/v1/moderation/requests/{request_id}/snapshot"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ModerationService_GetSnapshot_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ModerationService_GetSnapshot_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_ModerationService_GetLatestRequestByProject_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -914,6 +973,23 @@ func RegisterModerationServiceHandlerClient(ctx context.Context, mux *runtime.Se
 		}
 		forward_ModerationService_GetRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_ModerationService_GetSnapshot_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/moderation.v1.ModerationService/GetSnapshot", runtime.WithHTTPPathPattern("/api/v1/moderation/requests/{request_id}/snapshot"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ModerationService_GetSnapshot_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_ModerationService_GetSnapshot_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_ModerationService_GetLatestRequestByProject_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1107,6 +1183,7 @@ func RegisterModerationServiceHandlerClient(ctx context.Context, mux *runtime.Se
 var (
 	pattern_ModerationService_ListRequests_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "moderation", "requests"}, ""))
 	pattern_ModerationService_GetRequest_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "moderation", "requests", "request_id"}, ""))
+	pattern_ModerationService_GetSnapshot_0               = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"api", "v1", "moderation", "requests", "request_id", "snapshot"}, ""))
 	pattern_ModerationService_GetLatestRequestByProject_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"api", "v1", "moderation", "projects", "project_id", "latest"}, ""))
 	pattern_ModerationService_ClaimRequest_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"api", "v1", "moderation", "requests", "request_id", "claim"}, ""))
 	pattern_ModerationService_Approve_0                   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"api", "v1", "moderation", "projects", "project_id", "approve"}, ""))
@@ -1123,6 +1200,7 @@ var (
 var (
 	forward_ModerationService_ListRequests_0              = runtime.ForwardResponseMessage
 	forward_ModerationService_GetRequest_0                = runtime.ForwardResponseMessage
+	forward_ModerationService_GetSnapshot_0               = runtime.ForwardResponseMessage
 	forward_ModerationService_GetLatestRequestByProject_0 = runtime.ForwardResponseMessage
 	forward_ModerationService_ClaimRequest_0              = runtime.ForwardResponseMessage
 	forward_ModerationService_Approve_0                   = runtime.ForwardResponseMessage

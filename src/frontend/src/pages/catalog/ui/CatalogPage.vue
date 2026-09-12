@@ -37,26 +37,6 @@
           </div>
         </div>
 
-        <!-- Переключатель вида: Сетка / Таблица -->
-        <div class="view-toggle-group">
-          <button
-            class="btn-view-toggle"
-            :class="{ active: viewMode === 'grid' }"
-            :title="t('catalog.viewGrid')"
-            @click="viewMode = 'grid'"
-          >
-            <LayoutGrid class="icon-sm" />
-          </button>
-          <button
-            class="btn-view-toggle"
-            :class="{ active: viewMode === 'table' }"
-            :title="t('catalog.viewTable')"
-            @click="viewMode = 'table'"
-          >
-            <List class="icon-sm" />
-          </button>
-        </div>
-
         <!-- Сброс фильтров -->
         <button
           v-if="searchQuery || sortBy !== 'newest'"
@@ -76,7 +56,7 @@
       </div>
 
       <!-- Состояние загрузки -->
-      <div v-if="loading" class="state-container">
+      <div v-if="loading" class="state-container loading-card">
         <div class="spinner-md"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
@@ -107,103 +87,6 @@
         </button>
       </div>
 
-      <!-- ВИД: СЕТКА КАРТОЧЕК (GRID) -->
-      <div v-else-if="viewMode === 'grid'" class="catalog-grid">
-        <div v-for="game in filteredGames" :key="game.id" class="game-card">
-          <!-- Верхний баннер / обложка -->
-          <div class="card-cover-wrap">
-            <img
-              v-if="getGameCover(game)"
-              :src="getMediaUrl(getGameCover(game))"
-              alt="Cover"
-              class="card-cover-img"
-            />
-            <div v-else class="card-cover-placeholder">
-              <Gamepad2 class="icon-lg placeholder-icon" />
-            </div>
-
-            <!-- Бейдж версии и статуса поверх обложки -->
-            <div class="cover-badges">
-              <span class="version-badge">v{{ getGameVersion(game) }}</span>
-              <span class="badge-live-prod">
-                <span class="pulse-dot-sm"></span> Prod
-              </span>
-            </div>
-          </div>
-
-          <!-- Тело карточки -->
-          <div class="card-body">
-            <div class="card-game-info">
-              <div class="card-icon-box">
-                <img
-                  v-if="getGameIcon(game)"
-                  :src="getMediaUrl(getGameIcon(game))"
-                  alt="Icon"
-                  class="card-icon-img"
-                />
-                <div v-else class="card-icon-placeholder">
-                  <span>#{{ game.id }}</span>
-                </div>
-              </div>
-
-              <div class="card-title-group">
-                <h3 class="game-title" :title="getGameTitle(game)">
-                  {{ getGameTitle(game) }}
-                </h3>
-                <div class="game-author" :title="game.owner_id">
-                  <User class="icon-xs text-muted" />
-                  <span>{{ game.owner_id || '—' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Дополнительные метаданные -->
-            <div class="card-meta-row">
-              <span class="meta-item text-muted">ID: #{{ game.id }}</span>
-              <span v-if="getPublishedAt(game)" class="meta-item text-muted">
-                {{ formatDateTime(getPublishedAt(game)) }}
-              </span>
-            </div>
-
-            <!-- Нижняя панель действий -->
-            <div class="card-actions">
-              <!-- Ссылка играть в Prod (если доступна) -->
-              <a
-                v-if="getProdUrl(game)"
-                :href="getProdUrl(game)"
-                target="_blank"
-                rel="noopener"
-                class="btn-action-primary"
-                :title="t('catalog.playProd')"
-              >
-                <Play class="icon-xs" />
-                <span>{{ t('catalog.playProd') }}</span>
-              </a>
-
-              <!-- Инспектировать проект -->
-              <button
-                class="btn-action-secondary"
-                :title="t('catalog.inspect')"
-                @click="openProject(game.id)"
-              >
-                <Eye class="icon-xs" />
-                <span>{{ t('catalog.inspect') }}</span>
-              </button>
-
-              <!-- Кнопка экстренного отзыва (Killswitch) -->
-              <button
-                class="btn-action-revoke"
-                :title="t('catalog.revokeBtn')"
-                @click="openRevokeModal(game)"
-              >
-                <ShieldAlert class="icon-xs" />
-                <span>{{ t('catalog.revokeBtn') }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ВИД: ТАБЛИЦА (TABLE) -->
       <div v-else class="table-wrapper">
         <table class="catalog-table">
@@ -229,12 +112,11 @@
                       class="game-icon-img"
                     />
                     <div v-else class="game-icon-mock">
-                      <span>#{{ game.id }}</span>
+                      <Gamepad2 class="icon-xs text-muted" />
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-title">{{ getGameTitle(game) }}</div>
-                    <div class="game-type-label">ID #{{ game.id }}</div>
+                    <div class="game-title" :title="getGameTitle(game)">{{ getGameTitle(game) }}</div>
                   </div>
                 </div>
               </td>
@@ -248,7 +130,7 @@
               <td class="col-dev">
                 <div class="dev-cell" :title="game.owner_id">
                   <User class="icon-xs text-muted" />
-                  <span>{{ game.owner_id || '—' }}</span>
+                  <span>{{ game.owner_id ? getUserDisplayName(game.owner_id) : '—' }}</span>
                 </div>
               </td>
 
@@ -385,8 +267,6 @@ import {
   AlertTriangle,
   ChevronDown,
   User,
-  LayoutGrid,
-  List,
   Gamepad2,
 } from 'lucide-vue-next';
 import {
@@ -395,7 +275,7 @@ import {
   getMediaUrl,
 } from '@/entities/project';
 import { moderationApi } from '@/entities/moderation';
-import { useAuth, setUserStatus } from '@/entities/user';
+import { useAuth, setUserStatus, getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
@@ -403,11 +283,10 @@ const router = useRouter();
 const { state: authState } = useAuth();
 
 const games = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 
 const searchQuery = ref('');
 const sortBy = ref('newest');
-const viewMode = ref('grid'); // 'grid' | 'table'
 
 // Модальное окно отзыва
 const showRevokeModal = ref(false);
@@ -781,60 +660,6 @@ async function confirmRevoke() {
   }
 }
 
-/* СЕТКА КАРТОЧЕК */
-.catalog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
-  width: 100%;
-}
-
-.game-card {
-  background: var(--bg-card, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-md, 8px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.15s ease, border-color 0.15s ease;
-}
-
-.game-card:hover {
-  border-color: var(--border-secondary, #484f58);
-  transform: translateY(-2px);
-}
-
-.card-cover-wrap {
-  width: 100%;
-  height: 140px;
-  background: var(--bg-tertiary, #21262d);
-  position: relative;
-  overflow: hidden;
-}
-
-.card-cover-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.card-cover-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary, #484f58);
-}
-
-.cover-badges {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  gap: 6px;
-}
-
 .version-badge {
   display: inline-flex;
   align-items: center;
@@ -845,169 +670,16 @@ async function confirmRevoke() {
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid var(--border, #30363d);
   color: var(--primary, #58a6ff);
-  backdrop-filter: blur(4px);
-}
-
-.badge-live-prod {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  background: rgba(46, 204, 113, 0.2);
-  border: 1px solid rgba(46, 204, 113, 0.4);
-  color: #2ecc71;
-  backdrop-filter: blur(4px);
-}
-
-.card-body {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.card-game-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.card-icon-box {
-  width: 46px;
-  height: 46px;
-  border-radius: 8px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.card-icon-placeholder {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.card-title-group {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
 .game-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.game-author {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--text-muted, #8b949e);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.card-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  border-top: 1px solid var(--border, #21262d);
-  padding-top: 10px;
-}
-
-.card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 4px;
-}
-
-.btn-action-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-  background: var(--primary, #58a6ff);
-  color: #ffffff;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.btn-action-primary:hover {
-  opacity: 0.9;
-}
-
-.btn-action-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-action-secondary:hover {
-  border-color: var(--primary, #58a6ff);
-  color: var(--primary, #58a6ff);
-}
-
-.btn-action-revoke {
-  grid-column: span 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 30px;
-  background: rgba(248, 81, 73, 0.08);
-  border: 1px solid rgba(248, 81, 73, 0.25);
-  color: #f85149;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-action-revoke:hover {
-  background: rgba(248, 81, 73, 0.18);
-  border-color: #f85149;
 }
 
 /* ТАБЛИЦА */
@@ -1137,14 +809,16 @@ async function confirmRevoke() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
   background: var(--bg-secondary, #21262d);
   border: 1px solid var(--border, #30363d);
   color: var(--text-main, #f0f6fc);
   cursor: pointer;
   text-decoration: none;
+  box-sizing: border-box;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
@@ -1157,8 +831,8 @@ async function confirmRevoke() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 12px;
   background: rgba(248, 81, 73, 0.1);
   border: 1px solid rgba(248, 81, 73, 0.3);
   color: #f85149;
@@ -1166,6 +840,8 @@ async function confirmRevoke() {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
@@ -1185,10 +861,15 @@ async function confirmRevoke() {
   color: var(--text-muted, #b0b8c4);
 }
 
-.empty-card {
+.empty-card,
+.loading-card {
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-md, 8px);
+}
+
+.loading-card {
+  min-height: 280px;
 }
 
 .empty-icon-wrap {

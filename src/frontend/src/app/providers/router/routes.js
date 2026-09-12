@@ -16,6 +16,8 @@ import { ModerationQueuePage } from '@/pages/moderation-queue';
 import { ModeratorChatsPage } from '@/pages/moderator-chats';
 import { ModerationArchivePage } from '@/pages/moderation-archive';
 import { ModerationProjectPage } from '@/pages/moderation-project';
+import { ModerationRejectPage } from '@/pages/moderation-reject';
+import { ModerationSnapshotPage } from '@/pages/moderation-snapshot';
 import { ProfilePage } from '@/pages/profile';
 import { AdminDevelopersPage } from '@/pages/admin-developers';
 import { AdminModeratorsPage } from '@/pages/admin-moderators';
@@ -159,6 +161,22 @@ export const routes = [
     name: 'moderation-project',
     component: ModerationProjectPage,
     meta: { requiresAuth: true },
+  },
+  {
+    path: '/moderator/projects/:projectId/reject',
+    name: 'moderation-reject',
+    component: ModerationRejectPage,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/moderator/snapshots/:requestId',
+    name: 'moderation-snapshot',
+    component: ModerationSnapshotPage,
+    meta: { requiresAuth: true, requiresStaff: true },
+  },
+  {
+    path: '/moderator/archive/:requestId',
+    redirect: (to) => `/moderator/snapshots/${to.params.requestId}`,
   },
   {
     path: '/profile',

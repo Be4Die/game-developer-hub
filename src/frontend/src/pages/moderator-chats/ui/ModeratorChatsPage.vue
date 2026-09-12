@@ -70,7 +70,7 @@
       </div>
 
       <!-- Состояние загрузки -->
-      <div v-if="loading" class="state-container">
+      <div v-if="loading" class="state-container loading-card">
         <div class="spinner-md"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
@@ -84,7 +84,7 @@
           <MessageSquare class="icon-lg text-muted" />
         </div>
         <h3>{{ t('moderation.noChats') }}</h3>
-        <p>Когда разработчики или модераторы отправят сообщения, они появятся в этом списке.</p>
+        <p>{{ t('moderation.emptyChatsDesc') }}</p>
         <button class="btn-primary-sm" @click="loadChats">
           <RefreshCw class="icon-xs" />
           <span>{{ t('common.refresh') }}</span>
@@ -130,13 +130,15 @@
                       class="game-icon-img"
                     />
                     <div v-else class="game-icon-mock">
-                      <span>Draft</span>
+                      <Gamepad2 class="icon-xs text-muted" />
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-type-label">Проект #{{ item.projectId }}</div>
-                    <div class="game-title">
-                      {{ item.titleRu || item.titleEn || `Проект #${item.projectId}` }}
+                    <div
+                      class="game-title"
+                      :title="item.titleRu || item.titleEn || '—'"
+                    >
+                      {{ item.titleRu || item.titleEn || '—' }}
                     </div>
                   </div>
                 </div>
@@ -228,6 +230,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Gamepad2,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -242,7 +245,7 @@ const { t } = useI18n();
 const router = useRouter();
 
 const chats = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
@@ -675,6 +678,9 @@ function openChat(projectId) {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .msg-preview-cell {
@@ -787,10 +793,15 @@ function openChat(projectId) {
   color: var(--text-muted, #b0b8c4);
 }
 
-.empty-card {
+.empty-card,
+.loading-card {
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-md, 8px);
+}
+
+.loading-card {
+  min-height: 280px;
 }
 
 .empty-icon-wrap {

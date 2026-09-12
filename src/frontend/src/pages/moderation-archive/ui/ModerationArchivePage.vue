@@ -70,7 +70,7 @@
       </div>
 
       <!-- Состояние загрузки -->
-      <div v-if="loading" class="state-container">
+      <div v-if="loading" class="state-container loading-card">
         <div class="spinner-md"></div>
         <p>{{ t('common.loading') }}</p>
       </div>
@@ -134,17 +134,15 @@
                       class="game-icon-img"
                     />
                     <div v-else class="game-icon-mock">
-                      <span>#{{ req.projectId }}</span>
+                      <Gamepad2 class="icon-xs text-muted" />
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-type-label">
-                      Заявка #{{ req.id }} • Проект #{{ req.projectId }}
-                    </div>
-                    <div class="game-title">
-                      {{
-                        req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}`
-                      }}
+                    <div
+                      class="game-title"
+                      :title="req.snapshot.titleRu || req.snapshot.titleEn || '—'"
+                    >
+                      {{ req.snapshot.titleRu || req.snapshot.titleEn || '—' }}
                     </div>
                   </div>
                 </div>
@@ -162,7 +160,7 @@
               <td class="col-dev">
                 <div class="dev-cell" :title="req.ownerId">
                   <User class="icon-xs text-muted" />
-                  <span class="dev-name">{{ req.ownerId || '—' }}</span>
+                  <span class="dev-name">{{ req.ownerId ? getUserDisplayName(req.ownerId) : '—' }}</span>
                 </div>
               </td>
 
@@ -175,8 +173,8 @@
 
               <!-- 5 колонка: Модератор -->
               <td class="col-mod">
-                <span v-if="req.moderatorId" class="mod-name">
-                  {{ req.moderatorId }}
+                <span v-if="req.moderatorId" class="mod-name" :title="req.moderatorId">
+                  {{ getUserDisplayName(req.moderatorId) }}
                 </span>
                 <span v-else class="unassigned-text">
                   {{ t('moderation.notAssigned') }}
@@ -267,210 +265,6 @@
           </div>
         </div>
       </div>
-
-      <!-- МОДАЛЬНОЕ ОКНО СНАПШОТА РЕШЕНИЯ (SNAPSHOT AUDIT MODAL) -->
-      <div v-if="showSnapshotModal" class="modal-overlay" @click.self="closeSnapshotModal">
-        <div class="modal-card snapshot-modal-card">
-          <!-- Шапка модального окна -->
-          <div class="modal-header">
-            <div class="modal-header-title">
-              <div class="snapshot-icon-badge">
-                <Camera class="icon-md text-primary" />
-              </div>
-              <div>
-                <div class="snapshot-title-row">
-                  <h3 class="modal-title">{{ t('journal.snapshotModal.title') }}</h3>
-                  <span
-                    v-if="selectedRequest"
-                    class="status-pill-sm"
-                    :class="verdictClass(selectedRequest.status)"
-                  >
-                    {{ verdictLabel(selectedRequest.status) }}
-                  </span>
-                </div>
-                <span class="modal-subtitle">
-                  Заявка #{{ selectedRequest?.id }} • Проект #{{ selectedRequest?.projectId }}
-                </span>
-              </div>
-            </div>
-            <button class="btn-close-modal" @click="closeSnapshotModal">
-              <X class="icon-sm" />
-            </button>
-          </div>
-
-          <!-- Тело модального окна снапшота -->
-          <div v-if="selectedRequest" class="modal-body-scrollable">
-            <!-- Плашка замороженного состояния -->
-            <div class="frozen-banner">
-              <History class="icon-sm text-primary flex-shrink-0" />
-              <span>{{ t('journal.snapshotModal.frozenNotice') }}</span>
-            </div>
-
-            <!-- Сетка содержимого снапшота -->
-            <div class="snapshot-grid">
-              <!-- Левая колонка: Проект и сборка снапшота -->
-              <div class="snapshot-col snapshot-project-info">
-                <div class="snapshot-card">
-                  <!-- Обложка снапшота -->
-                  <div class="snapshot-cover-wrap">
-                    <img
-                      v-if="selectedRequest.snapshot.coverPath"
-                      :src="getMediaUrl(selectedRequest.snapshot.coverPath)"
-                      alt="Cover"
-                      class="snapshot-cover-img"
-                    />
-                    <div v-else class="snapshot-cover-placeholder">
-                      <Gamepad2 class="icon-lg text-muted" />
-                    </div>
-                  </div>
-
-                  <div class="snapshot-card-content">
-                    <div class="snapshot-game-identity">
-                      <div class="snapshot-icon-box">
-                        <img
-                          v-if="selectedRequest.snapshot.iconPath"
-                          :src="getMediaUrl(selectedRequest.snapshot.iconPath)"
-                          alt="Icon"
-                          class="snapshot-icon-img"
-                        />
-                        <div v-else class="snapshot-icon-placeholder">
-                          <span>#{{ selectedRequest.projectId }}</span>
-                        </div>
-                      </div>
-                      <div class="identity-text">
-                        <h4 class="snapshot-game-title">
-                          {{
-                            selectedRequest.snapshot.titleRu ||
-                            selectedRequest.snapshot.titleEn ||
-                            `Проект #${selectedRequest.projectId}`
-                          }}
-                        </h4>
-                        <span class="snapshot-version-tag">
-                          v{{ selectedRequest.snapshot.activeBuildVersion || '1.0.0' }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- Описание снапшота -->
-                    <div class="snapshot-section-group">
-                      <label class="snapshot-label">Описание (RU / EN):</label>
-                      <p class="snapshot-description-text">
-                        {{
-                          selectedRequest.snapshot.aboutRu ||
-                          selectedRequest.snapshot.aboutEn ||
-                          'Описание отсутствует в данном снапшоте'
-                        }}
-                      </p>
-                    </div>
-
-                    <!-- Ссылка на Dev-билд снапшота -->
-                    <div v-if="selectedRequest.snapshot.devUrl" class="snapshot-section-group">
-                      <a
-                        :href="selectedRequest.snapshot.devUrl"
-                        target="_blank"
-                        rel="noopener"
-                        class="btn-dev-build"
-                      >
-                        <Play class="icon-xs" />
-                        <span>{{ t('journal.snapshotModal.openDevBuild') }}</span>
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Правая колонка: Вердикт и срез переписки -->
-              <div class="snapshot-col snapshot-audit-info">
-                <!-- Блок вердикта -->
-                <div class="snapshot-card verdict-card">
-                  <h4 class="section-title">
-                    <CheckSquare class="icon-xs text-primary" />
-                    {{ t('journal.snapshotModal.verdictInfo') }}
-                  </h4>
-
-                  <div class="verdict-meta-grid">
-                    <div class="verdict-meta-item">
-                      <span class="meta-label">{{ t('journal.snapshotModal.moderator') }}:</span>
-                      <span class="meta-value font-medium">
-                        {{ selectedRequest.moderatorId || t('moderation.notAssigned') }}
-                      </span>
-                    </div>
-
-                    <div class="verdict-meta-item">
-                      <span class="meta-label">{{ t('journal.snapshotModal.date') }}:</span>
-                      <span class="meta-value">
-                        {{
-                          formatDateTime(selectedRequest.reviewedAt || selectedRequest.submittedAt)
-                        }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Официальная причина / Замечания -->
-                  <div class="verdict-reason-box">
-                    <label class="reason-label">
-                      {{ t('journal.snapshotModal.reasonOrComment') }}:
-                    </label>
-                    <p class="reason-content" :class="{ 'text-danger': isRejected(selectedRequest.status) }">
-                      {{ selectedRequest.rejectionReason || t('journal.snapshotModal.noReason') }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Блок среза переписки (Ticket Chat Transcript) -->
-                <div class="snapshot-card chat-transcript-card">
-                  <h4 class="section-title">
-                    <MessageSquare class="icon-xs text-primary" />
-                    {{ t('journal.snapshotModal.chatTranscript') }}
-                  </h4>
-
-                  <div v-if="loadingChat" class="chat-loading-wrap">
-                    <div class="spinner-sm"></div>
-                    <span>Загрузка истории тикета...</span>
-                  </div>
-
-                  <div v-else-if="chatMessages.length === 0" class="chat-empty-wrap">
-                    <MessageSquare class="icon-md text-muted" />
-                    <span>{{ t('journal.snapshotModal.noChatMessages') }}</span>
-                  </div>
-
-                  <div v-else class="chat-messages-container">
-                    <div
-                      v-for="msg in chatMessages"
-                      :key="msg.id"
-                      class="chat-bubble-item"
-                      :class="messageRoleClass(msg.senderRole)"
-                    >
-                      <div class="bubble-header">
-                        <span class="sender-tag">{{ formatSenderRole(msg.senderRole) }}</span>
-                        <span class="bubble-time">{{ formatDateTime(msg.createdAt) }}</span>
-                      </div>
-                      <div class="bubble-content">
-                        {{ msg.content }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Подвал модального окна -->
-          <div class="modal-footer">
-            <button
-              v-if="selectedRequest"
-              class="btn-live-project"
-              @click="openProject(selectedRequest.projectId)"
-            >
-              <ExternalLink class="icon-xs" />
-              <span>{{ t('journal.snapshotModal.openLiveProject') }}</span>
-            </button>
-            <button class="btn-primary-sm" @click="closeSnapshotModal">
-              {{ t('journal.snapshotModal.close') }}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -498,6 +292,9 @@ import {
   Play,
   CheckSquare,
   MessageSquare,
+  Paperclip,
+  Film,
+  Image,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -506,25 +303,20 @@ import {
   REQUEST_STATUS,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
+import { getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const router = useRouter();
 
 const requests = ref([]);
-const loading = ref(false);
+const loading = ref(true);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
 const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
-
-// Модальное окно снапшота
-const showSnapshotModal = ref(false);
-const selectedRequest = ref(null);
-const chatMessages = ref([]);
-const loadingChat = ref(false);
 
 async function loadArchive() {
   loading.value = true;
@@ -672,43 +464,11 @@ function verdictClass(status) {
 }
 
 function openProject(projectId) {
-  closeSnapshotModal();
   router.push(`/moderator/projects/${projectId}`);
 }
 
-async function openSnapshot(req) {
-  selectedRequest.value = req;
-  showSnapshotModal.value = true;
-  chatMessages.value = [];
-  loadingChat.value = true;
-  try {
-    const res = await moderationApi.listMessages(req.projectId, { limit: 100 });
-    chatMessages.value = res.messages || [];
-  } catch (e) {
-    console.warn('Failed to load chat history for snapshot:', e);
-  } finally {
-    loadingChat.value = false;
-  }
-}
-
-function closeSnapshotModal() {
-  showSnapshotModal.value = false;
-  selectedRequest.value = null;
-  chatMessages.value = [];
-}
-
-function messageRoleClass(role) {
-  const r = String(role).toUpperCase();
-  if (r.includes('MODERATOR') || role === 2) return 'bubble-moderator';
-  if (r.includes('DEVELOPER') || role === 1) return 'bubble-developer';
-  return 'bubble-system';
-}
-
-function formatSenderRole(role) {
-  const r = String(role).toUpperCase();
-  if (r.includes('MODERATOR') || role === 2) return t('moderation.moderatorRole');
-  if (r.includes('DEVELOPER') || role === 1) return t('moderation.developerRole');
-  return t('moderation.systemRole');
+function openSnapshot(req) {
+  router.push(`/moderator/snapshots/${req.id}`);
 }
 </script>
 
@@ -987,6 +747,9 @@ function formatSenderRole(role) {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .version-badge {
@@ -1132,10 +895,15 @@ function formatSenderRole(role) {
   color: var(--text-muted, #b0b8c4);
 }
 
-.empty-card {
+.empty-card,
+.loading-card {
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-md, 8px);
+}
+
+.loading-card {
+  min-height: 280px;
 }
 
 .empty-icon-wrap {
@@ -1238,392 +1006,6 @@ function formatSenderRole(role) {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
-/* МОДАЛЬНОЕ ОКНО СНАПШОТА */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.snapshot-modal-card {
-  width: 100%;
-  max-width: 900px;
-  max-height: 90vh;
-  background: var(--bg-card, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-}
-
-.modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border, #21262d);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.modal-header-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.snapshot-icon-badge {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(88, 166, 255, 0.12);
-  border: 1px solid rgba(88, 166, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.snapshot-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.modal-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-  margin: 0;
-}
-
-.modal-subtitle {
-  font-size: 12px;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.btn-close-modal {
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary, #8b949e);
-  cursor: pointer;
-  padding: 4px;
-}
-
-.modal-body-scrollable {
-  padding: 20px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.frozen-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.25);
-  border-radius: 6px;
-  color: var(--primary, #58a6ff);
-  font-size: 13px;
-}
-
-.snapshot-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.snapshot-card {
-  background: var(--bg-secondary, #0d1117);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.snapshot-cover-wrap {
-  width: 100%;
-  height: 120px;
-  background: var(--bg-tertiary, #21262d);
-  position: relative;
-}
-
-.snapshot-cover-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.snapshot-cover-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.snapshot-card-content {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.snapshot-game-identity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.snapshot-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.snapshot-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.snapshot-icon-placeholder {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.identity-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.snapshot-game-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-  margin: 0;
-}
-
-.snapshot-version-tag {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--primary, #58a6ff);
-}
-
-.snapshot-section-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.snapshot-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.snapshot-description-text {
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text-muted, #b0b8c4);
-  margin: 0;
-  max-height: 100px;
-  overflow-y: auto;
-}
-
-.btn-dev-build {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.15s;
-}
-
-.btn-dev-build:hover {
-  border-color: var(--primary, #58a6ff);
-  color: var(--primary, #58a6ff);
-}
-
-.snapshot-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-  margin: 0 0 12px 0;
-}
-
-.verdict-card {
-  padding: 16px;
-}
-
-.verdict-meta-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.verdict-meta-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.meta-label {
-  font-size: 11px;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.meta-value {
-  color: var(--text-main, #f0f6fc);
-}
-
-.verdict-reason-box {
-  background: var(--bg-tertiary, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: 6px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.reason-label {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.reason-content {
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--text-muted, #b0b8c4);
-  margin: 0;
-}
-
-.chat-transcript-card {
-  padding: 16px;
-  flex: 1;
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-loading-wrap,
-.chat-empty-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px;
-  gap: 8px;
-  color: var(--text-tertiary, #8b949e);
-  font-size: 13px;
-  flex: 1;
-}
-
-.chat-messages-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 260px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-.chat-bubble-item {
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.4;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.bubble-developer {
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
-}
-
-.bubble-moderator {
-  background: rgba(46, 204, 113, 0.08);
-  border: 1px solid rgba(46, 204, 113, 0.2);
-}
-
-.bubble-system {
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-}
-
-.bubble-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-}
-
-.sender-tag {
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-}
-
-.bubble-time {
-  color: var(--text-tertiary, #8b949e);
-}
-
-.bubble-content {
-  color: var(--text-muted, #b0b8c4);
-}
-
-.modal-footer {
-  padding: 14px 20px;
-  border-top: 1px solid var(--border, #21262d);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
 .btn-live-project {
   display: inline-flex;
   align-items: center;

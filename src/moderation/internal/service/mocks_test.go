@@ -447,3 +447,42 @@ func (m *mockAttachmentRepo) PurgeByProjectID(ctx context.Context, projectID int
 	}
 	return count, paths, nil
 }
+
+type mockSnapshotRepo struct {
+	mu        sync.RWMutex
+	snapshots map[int64]*domain.ModerationSnapshot
+}
+
+func newMockSnapshotRepo() *mockSnapshotRepo {
+	return &mockSnapshotRepo{
+		snapshots: make(map[int64]*domain.ModerationSnapshot),
+	}
+}
+
+func (m *mockSnapshotRepo) Save(ctx context.Context, snapshot *domain.ModerationSnapshot) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.snapshots[snapshot.RequestID] = snapshot
+	return nil
+}
+
+func (m *mockSnapshotRepo) GetByRequestID(ctx context.Context, requestID int64) (*domain.ModerationSnapshot, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	s, ok := m.snapshots[requestID]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	return s, nil
+}
+
+func (m *mockSnapshotRepo) GetByProjectID(ctx context.Context, projectID int64) (*domain.ModerationSnapshot, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for _, s := range m.snapshots {
+		if s.ProjectID == projectID {
+			return s, nil
+		}
+	}
+	return nil, domain.ErrNotFound
+}
