@@ -579,6 +579,7 @@ export default {
     searchPlaceholder: 'Поиск в журнале по названию, ID, разработчику, причине...',
     emptyJournal: 'Журнал решений пуст',
     emptyJournalDesc: 'Здесь сохраняется реестр всех проверенных и вынесенных модераторами решений.',
+    snapshotDate: 'Дата снимка',
     snapshotModal: {
       title: 'Снимок решения (Snapshot)',
       backToJournal: 'К журналу решений',

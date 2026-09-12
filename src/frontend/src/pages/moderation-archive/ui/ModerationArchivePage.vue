@@ -468,7 +468,7 @@ function openProject(projectId) {
 }
 
 function openSnapshot(req) {
-  router.push(`/moderator/snapshots/${req.id}`);
+  router.push(`/moderator/journal/${req.id}`);
 }
 </script>
 

@@ -169,14 +169,18 @@ export const routes = [
     meta: { requiresAuth: true },
   },
   {
-    path: '/moderator/snapshots/:requestId',
-    name: 'moderation-snapshot',
+    path: '/moderator/journal/:requestId',
+    name: 'moderation-journal-detail',
     component: ModerationSnapshotPage,
     meta: { requiresAuth: true, requiresStaff: true },
   },
   {
+    path: '/moderator/snapshots/:requestId',
+    redirect: (to) => `/moderator/journal/${to.params.requestId}`,
+  },
+  {
     path: '/moderator/archive/:requestId',
-    redirect: (to) => `/moderator/snapshots/${to.params.requestId}`,
+    redirect: (to) => `/moderator/journal/${to.params.requestId}`,
   },
   {
     path: '/profile',

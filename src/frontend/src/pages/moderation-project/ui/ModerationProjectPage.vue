@@ -196,34 +196,13 @@
           </div>
         </div>
 
-        <!-- КАРТОЧКА 4: ВЕРДИКТ И ПАНЕЛЬ ДЕЙСТВИЙ -->
-        <div class="card verdict-card">
+        <!-- КАРТОЧКА 4: ПАНЕЛЬ ДЕЙСТВИЙ (только для активной заявки на проверке) -->
+        <div v-if="activeRequest && (isPending || isInReview)" class="card actions-card">
           <div class="section-head">
-            <h3>{{ t('moderation.verdictSection') }}</h3>
+            <h3>{{ t('moderation.actions') || 'Действия по заявке' }}</h3>
           </div>
 
-          <!-- Баннер вердикта: Отклонен -->
-          <div v-if="isRejected" class="result-box box-rejected">
-            <AlertTriangle class="icon-md text-danger" />
-            <div class="result-text">
-              <strong>{{ t('moderation.rejected') }}</strong>
-              <p v-if="activeRequest?.rejectionReason">
-                {{ t('moderation.rejectionReason') }}: {{ activeRequest.rejectionReason }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Баннер вердикта: Одобрен -->
-          <div v-else-if="isApproved" class="result-box box-approved">
-            <CheckCircle2 class="icon-md text-success" />
-            <div class="result-text">
-              <strong>{{ t('moderation.approved') }}</strong>
-              <p>Проект одобрен и опубликован в основном каталоге платформы.</p>
-            </div>
-          </div>
-
-          <!-- Панель действий: когда заявка активна -->
-          <div v-else-if="activeRequest" class="verdict-actions-row">
+          <div class="verdict-actions-row">
             <!-- Режим аудита для администратора -->
             <div v-if="isAdmin" class="audit-readonly-notice">
               <Eye class="icon-xs" />
@@ -508,9 +487,9 @@ onMounted(() => {
 
 /* ПРАВАЯ КОЛОНКА: ЧАТ */
 .moderator-chat-aside {
-  width: 480px;
-  min-width: 400px;
-  max-width: 560px;
+  width: 600px;
+  min-width: 480px;
+  max-width: 720px;
   flex-shrink: 0;
   height: 100%;
   border-left: 1px solid var(--border, #30363d);
@@ -520,13 +499,27 @@ onMounted(() => {
 
 @media (min-width: 1600px) {
   .moderator-chat-aside {
+    width: 660px;
+    max-width: 760px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .moderator-chat-aside {
+    width: 720px;
+    max-width: 820px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .moderator-chat-aside {
     width: 520px;
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1200px) {
   .moderator-chat-aside {
-    width: 420px;
+    width: 460px;
   }
 }
 

@@ -254,6 +254,9 @@ function isImage(att) {
 }
 
 function getMediaUrl(att) {
+  if (att.thumbnail_data || att.thumbnailData) {
+    return att.thumbnail_data || att.thumbnailData;
+  }
   const token = localStorage.getItem('gdh_access_token');
   const base = att.url || `/api/v1/projects/${props.message.project_id || props.message.projectId}/chat/attachments/${att.id}`;
   if (token && !base.includes('token=')) {

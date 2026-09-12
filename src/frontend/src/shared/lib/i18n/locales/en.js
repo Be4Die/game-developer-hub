@@ -578,6 +578,7 @@ export default {
     searchPlaceholder: 'Search journal by title, ID, developer, reason...',
     emptyJournal: 'Journal is empty',
     emptyJournalDesc: 'All verified and issued moderation decisions are recorded here.',
+    snapshotDate: 'Snapshot date',
     snapshotModal: {
       title: 'Decision Snapshot',
       backToJournal: 'Back to Journal',

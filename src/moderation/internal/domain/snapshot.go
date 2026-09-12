@@ -89,6 +89,7 @@ type SnapshotMessageItem struct {
 	MessageType MessageType               `json:"message_type"`
 	Content     string                    `json:"content"`
 	CreatedAt   string                    `json:"created_at"`
+	Payload     map[string]any            `json:"payload,omitempty"`
 	Attachments []*SnapshotAttachmentItem `json:"attachments,omitempty"`
 }
 

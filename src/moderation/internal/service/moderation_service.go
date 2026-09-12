@@ -519,6 +519,7 @@ func (s *ModerationService) buildAndSaveSnapshot(
 				MessageType: m.MessageType,
 				Content:     m.Content,
 				CreatedAt:   m.CreatedAt.Format(time.RFC3339),
+				Payload:     m.Payload,
 				Attachments: attItems,
 			})
 		}

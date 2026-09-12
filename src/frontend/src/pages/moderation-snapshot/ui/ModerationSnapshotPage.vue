@@ -1,54 +1,5 @@
 <template>
   <div class="snapshot-view-root">
-    <!-- ВЕРХНИЙ БАР НАВИГАЦИИ -->
-    <header class="snapshot-nav-bar">
-      <div class="nav-bar-left">
-        <button class="btn-nav-back" @click="goBack">
-          <ArrowLeft class="icon-sm" />
-          <span>{{ t('journal.snapshotModal.backToJournal') || 'К журналу решений' }}</span>
-        </button>
-        <div class="nav-divider"></div>
-        <div class="nav-title-stack">
-          <div class="snapshot-badges">
-            <span class="badge-camera">
-              <Camera class="icon-xs" />
-            </span>
-            <span class="badge-snapshot-num">
-              {{ t('journal.snapshotModal.title') || 'Снимок решения (Snapshot)' }} #{{ requestId }}
-            </span>
-            <span class="status-badge" :class="statusBadgeClass">
-              {{ statusText }}
-            </span>
-            <span v-if="projectData.build_version" class="version-tag">
-              v{{ projectData.build_version }}
-            </span>
-          </div>
-          <h1 class="snapshot-heading">
-            {{ projectData.title_ru || projectData.title_en || `Проект #${projectId}` }}
-          </h1>
-        </div>
-      </div>
-
-      <div class="nav-bar-right">
-        <button
-          v-if="projectId"
-          class="btn-open-live"
-          @click="goToLiveProject"
-        >
-          <ExternalLink class="icon-xs" />
-          <span>{{ t('journal.snapshotModal.goToCurrent') || 'Перейти к актуальному проекту' }}</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- ИНФОРМАЦИОННАЯ ПЛАШКА ЗАМОРОЗКИ ДАННЫХ -->
-    <div class="freeze-banner">
-      <Clock class="icon-xs text-primary flex-shrink-0" />
-      <span class="freeze-banner-text">
-        <strong>Замороженный аудит-снимок:</strong> данные проекта, медиафайлы и переписка зафиксированы на момент вынесения вердикта модератором ({{ formatDateTime(verdictData.resolved_at || snapshotMeta.created_at) }}).
-      </span>
-    </div>
-
     <!-- ИНДИКАТОР ЗАГРУЗКИ -->
     <div v-if="loading" class="state-screen">
       <div class="spinner-md"></div>
@@ -84,19 +35,40 @@
 
               <div class="identity-text-box">
                 <div class="identity-top-row">
-                  <span class="project-id-tag">Проект #{{ projectId }}</span>
-                  <span class="status-badge" :class="statusBadgeClass">
-                    {{ statusText }}
-                  </span>
-                  <span v-if="projectData.build_version" class="version-tag">
-                    v{{ projectData.build_version }}
-                  </span>
+                  <div class="identity-tags-group">
+                    <span class="project-id-tag">Проект #{{ projectId }}</span>
+                    <span class="status-badge" :class="statusBadgeClass">
+                      {{ statusText }}
+                    </span>
+                    <span v-if="projectData.build_version" class="version-tag">
+                      v{{ projectData.build_version }}
+                    </span>
+                  </div>
+
+                  <div class="snapshot-date-badge">
+                    <Clock class="icon-xs text-muted" />
+                    <span>{{ t('journal.snapshotDate') || 'Дата снимка' }}: {{ formatDateTime(verdictData.resolved_at || snapshotMeta.created_at) }}</span>
+                  </div>
                 </div>
-                <h1 class="project-main-title">
-                  {{ projectData.title_ru || projectData.title_en || `Проект #${projectId}` }}
-                </h1>
-                <div v-if="projectData.title_en && projectData.title_ru" class="project-sub-title">
-                  {{ projectData.title_en }}
+
+                <div class="identity-main-row">
+                  <div class="identity-titles">
+                    <h1 class="project-main-title">
+                      {{ projectData.title_ru || projectData.title_en || `Проект #${projectId}` }}
+                    </h1>
+                    <div v-if="projectData.title_en && projectData.title_ru" class="project-sub-title">
+                      {{ projectData.title_en }}
+                    </div>
+                  </div>
+
+                  <button
+                    v-if="projectId"
+                    class="btn-open-live"
+                    @click="goToLiveProject"
+                  >
+                    <ExternalLink class="icon-xs" />
+                    <span>{{ t('journal.snapshotModal.goToCurrent') || 'Перейти к проекту' }}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -280,98 +252,6 @@
               </a>
             </div>
           </div>
-
-          <!-- Карточка 4: Вердикт модератора и нарушения -->
-          <div class="card verdict-card">
-            <div class="section-head">
-              <h3>{{ t('moderation.verdictSection') }}</h3>
-            </div>
-
-            <!-- Вердикт: Отклонен -->
-            <div v-if="isRejected" class="result-box box-rejected">
-              <div class="result-header">
-                <AlertTriangle class="icon-md text-danger flex-shrink-0" />
-                <div class="result-text">
-                  <div class="result-title-row">
-                    <strong>{{ t('moderation.rejected') }}</strong>
-                    <span class="verdict-time-tag">Проверено за: {{ verdictData.review_duration || '—' }}</span>
-                  </div>
-                  <p v-if="verdictData.rejection_reason" class="reason-summary">
-                    <strong>Официальное обоснование:</strong> {{ verdictData.rejection_reason }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Список выявленных нарушений правил -->
-              <div v-if="verdictData.violations && verdictData.violations.length" class="violations-block">
-                <div class="violations-heading">
-                  <span>Выявленные нарушения регламента ({{ verdictData.violations.length }}):</span>
-                </div>
-
-                <div
-                  v-for="(v, idx) in verdictData.violations"
-                  :key="idx"
-                  class="violation-item-card"
-                >
-                  <div class="violation-top">
-                    <span class="v-rule-pill">{{ v.rule_code }}</span>
-                    <span class="v-title">{{ v.rule_title }}</span>
-                  </div>
-                  <p class="v-desc">{{ v.description }}</p>
-
-                  <!-- Доказательства нарушения -->
-                  <div v-if="v.attachments && v.attachments.length" class="v-proofs-grid">
-                    <div
-                      v-for="att in v.attachments"
-                      :key="att.id"
-                      class="v-proof-card"
-                    >
-                      <img
-                        v-if="isImgAttachment(att)"
-                        :src="getAttachmentPreview(att)"
-                        :alt="att.file_name"
-                        class="proof-thumb"
-                        @click="openLightbox(getAttachmentPreview(att), att.file_name)"
-                      />
-                      <video
-                        v-else-if="isVideoAttachment(att)"
-                        :src="getAttachmentPreview(att)"
-                        controls
-                        class="proof-video"
-                      ></video>
-                      <span class="proof-name">{{ att.file_name }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Вердикт: Одобрен -->
-            <div v-else-if="isApproved" class="result-box box-approved">
-              <div class="result-header">
-                <CheckCircle2 class="icon-md text-success flex-shrink-0" />
-                <div class="result-text">
-                  <div class="result-title-row">
-                    <strong>{{ t('moderation.approved') }}</strong>
-                    <span class="verdict-time-tag">Проверено за: {{ verdictData.review_duration || '—' }}</span>
-                  </div>
-                  <p>Проект одобрен и опубликован в основном каталоге платформы.</p>
-                  <p v-if="verdictData.comment" class="comment-line">
-                    <strong>Комментарий модератора:</strong> {{ verdictData.comment }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Вердикт: Отозван / Отменен -->
-            <div v-else class="result-box box-cancelled">
-              <Info class="icon-md text-muted flex-shrink-0" />
-              <div class="result-text">
-                <strong>{{ statusText }}</strong>
-                <p>Заявка была отозвана разработчиком или отменена администратором.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
 
@@ -391,24 +271,30 @@
 
           <!-- Список замороженных сообщений -->
           <div class="chat-messages-scroll">
-            <div v-if="!chatMessages.length" class="chat-empty-state">
+            <div v-if="!effectiveChatMessages.length" class="chat-empty-state">
               <MessageSquareDashed class="icon-lg text-muted" />
               <p>В этом тикете нет сохранённых сообщений</p>
             </div>
 
             <div v-else class="messages-stack">
               <div
-                v-for="msg in chatMessages"
+                v-for="msg in effectiveChatMessages"
                 :key="msg.id"
                 class="message-row"
                 :class="{
-                  'is-system': isSystemMsg(msg),
-                  'is-moderator': !isSystemMsg(msg) && isModMsg(msg),
-                  'is-developer': !isSystemMsg(msg) && !isModMsg(msg),
+                  'is-verdict': isRejectionVerdict(msg),
+                  'is-system': !isRejectionVerdict(msg) && isSystemMsg(msg),
+                  'is-moderator': !isRejectionVerdict(msg) && !isSystemMsg(msg) && isModMsg(msg),
+                  'is-developer': !isRejectionVerdict(msg) && !isSystemMsg(msg) && !isModMsg(msg),
                 }"
               >
+                <!-- Вердикт модерации с конкретными нарушениями правил -->
+                <div v-if="isRejectionVerdict(msg)" class="verdict-row-wrap">
+                  <ModerationVerdictCard :message="msg" />
+                </div>
+
                 <!-- Системное событие (строго по центру в капсуле) -->
-                <div v-if="isSystemMsg(msg)" class="system-event-wrapper">
+                <div v-else-if="isSystemMsg(msg)" class="system-event-wrapper">
                   <div class="system-event-pill">
                     <span class="system-badge">Система</span>
                     <span class="system-text">{{ msg.content }}</span>
@@ -501,21 +387,15 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  ArrowLeft,
-  Camera,
   ExternalLink,
   Clock,
   AlertTriangle,
-  CheckCircle2,
-  Info,
   Gamepad2,
   MessageSquare,
   MessageSquareDashed,
   Paperclip,
-  Lock,
   Image as ImageIcon,
   Video as VideoIcon,
-  ShieldCheck,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -526,6 +406,7 @@ import {
 import { getUserDisplayName } from '@/entities/user';
 import { getMediaUrl } from '@/entities/project';
 import MediaLightboxModal from '@/entities/moderation/ui/MediaLightboxModal.vue';
+import ModerationVerdictCard from '@/entities/moderation/ui/ModerationVerdictCard.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -589,10 +470,6 @@ const videoUrl = computed(() => {
   return getMediaUrl(m.original_url);
 });
 
-function goBack() {
-  router.push('/moderator/journal');
-}
-
 function goToLiveProject() {
   if (projectId.value) {
     router.push(`/moderator/projects/${projectId.value}`);
@@ -612,11 +489,67 @@ function closeLightbox() {
   lightboxData.value = null;
 }
 
-function isSystemMsg(msg) {
-  const role = msg.sender_role ?? msg.senderRole;
-  const type = msg.message_type ?? msg.messageType;
-  return role === 3 || role === 'SENDER_ROLE_SYSTEM' || type === 2 || type === 3 || type === 4 || type === 5;
+function isRejectionVerdict(msg) {
+  const msgType = Number(msg.message_type ?? msg.messageType);
+  if (msgType === 5) return true;
+  let p = msg.payload;
+  if (!p && msg.payload_json) {
+    try {
+      p = JSON.parse(msg.payload_json);
+    } catch {
+      p = null;
+    }
+  }
+  return p && (p.type === 'moderation_verdict' || Array.isArray(p.violations));
 }
+
+function isSystemMsg(msg) {
+  if (isRejectionVerdict(msg)) return false;
+  const role = msg.sender_role ?? msg.senderRole;
+  const type = Number(msg.message_type ?? msg.messageType);
+  return role === 3 || role === 'SENDER_ROLE_SYSTEM' || type === 2 || type === 3 || type === 4 || msg.is_system;
+}
+
+const effectiveChatMessages = computed(() => {
+  const msgs = (chatMessages.value || []).map((m) => ({
+    ...m,
+    project_id: m.project_id || projectId.value,
+  }));
+  const hasVerdict = msgs.some((m) => isRejectionVerdict(m));
+  if (!hasVerdict && isRejected.value) {
+    msgs.push({
+      id: 'snapshot-rejection-verdict',
+      project_id: projectId.value,
+      message_type: 5,
+      sender_id: verdictData.value.moderator_id || 'moderator',
+      sender_role: 2,
+      content: verdictData.value.rejection_reason || 'Заявка отклонена модератором',
+      created_at: verdictData.value.resolved_at || snapshotMeta.value.created_at,
+      payload: {
+        type: 'moderation_verdict',
+        reason: verdictData.value.rejection_reason,
+        violations: verdictData.value.violations || [],
+        general_comment: verdictData.value.comment,
+      },
+    });
+  } else if (isApproved.value && !msgs.some((m) => Number(m.message_type ?? m.messageType) === 4)) {
+    msgs.push({
+      id: 'snapshot-approval-verdict',
+      project_id: projectId.value,
+      message_type: 4,
+      is_system: true,
+      sender_id: 'system',
+      sender_role: 3,
+      content: 'Проект одобрен и опубликован в основном каталоге платформы',
+      created_at: verdictData.value.resolved_at || snapshotMeta.value.created_at,
+      payload: {
+        comment: verdictData.value.comment,
+        prod_url: verdictData.value.prod_url,
+      },
+    });
+  }
+  return msgs;
+});
 
 function isModMsg(msg) {
   const role = msg.sender_role ?? msg.senderRole;
@@ -699,121 +632,17 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
   background: var(--bg-app, #0d1117);
+  overflow: hidden;
   box-sizing: border-box;
-}
-
-/* ВЕРХНИЙ БАР НАВИГАЦИИ */
-.snapshot-nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 32px;
-  background: var(--bg-card, #161b22);
-  border-bottom: 1px solid var(--border, #30363d);
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.nav-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.btn-nav-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-secondary, #0d1117);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-nav-back:hover {
-  background: var(--bg-tertiary, #21262d);
-  border-color: var(--border-hover, #8b949e);
-}
-
-.nav-divider {
-  width: 1px;
-  height: 28px;
-  background: var(--border, #30363d);
-}
-
-.nav-title-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.snapshot-badges {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.badge-camera {
-  color: var(--primary, #58a6ff);
-  display: flex;
-  align-items: center;
-}
-
-.badge-snapshot-num {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted, #8b949e);
-}
-
-.snapshot-heading {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-main, #f0f6fc);
-}
-
-.btn-open-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--primary, #58a6ff);
-  color: #ffffff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm, 6px);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.btn-open-live:hover {
-  opacity: 0.9;
-}
-
-/* ЗАМОРОЖЕННЫЙ БАННЕР */
-.freeze-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 32px;
-  background: rgba(56, 139, 253, 0.08);
-  border-bottom: 1px solid rgba(56, 139, 253, 0.2);
-  color: var(--text-main, #f0f6fc);
-  font-size: 13px;
 }
 
 /* РАБОЧАЯ ОБЛАСТЬ (ИДЕНТИЧНА СТРАНИЦЕ МОДЕРАЦИИ) */
 .moderator-workspace {
   display: flex;
   width: 100%;
+  height: 100%;
   flex: 1;
   overflow: hidden;
   box-sizing: border-box;
@@ -822,7 +651,7 @@ onMounted(() => {
 .review-inspector {
   flex: 1;
   min-width: 0;
-  height: calc(100vh - 120px);
+  height: 100%;
   overflow-y: auto;
   padding: 24px 32px 48px;
   box-sizing: border-box;
@@ -857,8 +686,8 @@ onMounted(() => {
 }
 
 .identity-icon-box {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: var(--radius-md, 8px);
   background: var(--bg-tertiary, #21262d);
   border: 1px solid var(--border, #30363d);
@@ -885,13 +714,52 @@ onMounted(() => {
 .identity-text-box {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 .identity-top-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.identity-tags-group {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.snapshot-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #8b949e);
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  padding: 3px 10px;
+  border-radius: var(--radius-sm, 6px);
+  white-space: nowrap;
+}
+
+.identity-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.identity-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .project-id-tag {
@@ -912,14 +780,37 @@ onMounted(() => {
 
 .project-main-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-main, #f0f6fc);
+  line-height: 1.25;
 }
 
 .project-sub-title {
   font-size: 13px;
   color: var(--text-tertiary, #8b949e);
+}
+
+.btn-open-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--primary, #58a6ff);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.btn-open-live:hover {
+  background: var(--bg-tertiary, #21262d);
+  border-color: var(--primary, #58a6ff);
 }
 
 .identity-meta-grid {
@@ -1174,167 +1065,42 @@ onMounted(() => {
   border-color: var(--border-hover, #8b949e);
 }
 
-/* КАРТОЧКА ВЕРДИКТА */
-.verdict-card {
-  border-left: 4px solid var(--border, #30363d);
-}
-
-.result-box {
-  padding: 16px;
-  border-radius: var(--radius-sm, 6px);
-}
-
-.box-rejected {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-}
-
-.box-approved {
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
-
-.box-cancelled {
-  background: rgba(139, 148, 158, 0.08);
-  border: 1px solid rgba(139, 148, 158, 0.25);
-}
-
-.result-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.result-text {
-  flex: 1;
-}
-
-.result-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-
-.result-text strong {
-  font-size: 15px;
-  color: var(--text-main, #f0f6fc);
-}
-
-.result-text p {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--text-muted, #8b949e);
-  line-height: 1.4;
-}
-
-.verdict-time-tag {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.reason-summary {
-  color: var(--text-main, #f0f6fc) !important;
-}
-
-.violations-block {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(239, 68, 68, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.violations-heading {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ef4444;
-}
-
-.violation-item-card {
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius-sm, 6px);
-  padding: 12px;
-}
-
-.violation-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.v-rule-pill {
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.v-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main, #f0f6fc);
-}
-
-.v-desc {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-muted, #8b949e);
-  line-height: 1.4;
-}
-
-.v-proofs-grid {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-.v-proof-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.proof-thumb {
-  width: 100px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-}
-
-.proof-video {
-  width: 140px;
-  height: 80px;
-  border-radius: 4px;
-}
-
-.proof-name {
-  font-size: 10px;
-  color: var(--text-tertiary, #8b949e);
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ПРАВАЯ КОЛОНКА: ЧАТ */
 .moderator-chat-aside {
-  width: 480px;
-  min-width: 400px;
-  max-width: 560px;
+  width: 600px;
+  min-width: 480px;
+  max-width: 720px;
   flex-shrink: 0;
-  height: calc(100vh - 120px);
+  height: 100%;
   border-left: 1px solid var(--border, #30363d);
   background: var(--bg-card, #161b22);
+  transition: width 0.2s ease;
+}
+
+@media (min-width: 1600px) {
+  .moderator-chat-aside {
+    width: 660px;
+    max-width: 760px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .moderator-chat-aside {
+    width: 720px;
+    max-width: 820px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .moderator-chat-aside {
+    width: 520px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .moderator-chat-aside {
+    width: 460px;
+  }
 }
 
 .snapshot-chat-container {
@@ -1404,6 +1170,16 @@ onMounted(() => {
 
 .is-moderator {
   align-items: flex-end;
+}
+
+.message-row.is-verdict {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.verdict-row-wrap {
+  width: 100%;
 }
 
 .system-event-wrapper {
