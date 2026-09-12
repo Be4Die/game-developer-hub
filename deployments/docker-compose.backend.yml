@@ -204,6 +204,7 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_BUILDS_BUCKET: ${S3_BUILDS_BUCKET:-builds}
       S3_MEDIA_BUCKET: ${S3_MEDIA_BUCKET:-media}
+      S3_ATTACHMENTS_BUCKET: ${S3_ATTACHMENTS_BUCKET:-attachments}
       PROJECTS_DATA_PATH: /data/projects
     ports:
       - "8080:8080"
@@ -217,7 +218,7 @@ services:
       moderation:
         condition: service_healthy
     volumes:
-      - project_data:/data/projects:ro
+      - project_data:/data/projects
 
   nginx:
     build:

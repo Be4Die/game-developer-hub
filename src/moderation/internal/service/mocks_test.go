@@ -362,3 +362,88 @@ func (m *mockProjectClient) RejectDraft(ctx context.Context, projectID int64, re
 	m.rejectedMods[projectID] = reason
 	return nil
 }
+
+type mockAttachmentRepo struct {
+	mu          sync.RWMutex
+	attachments map[string]*domain.Attachment
+}
+
+func newMockAttachmentRepo() *mockAttachmentRepo {
+	return &mockAttachmentRepo{
+		attachments: make(map[string]*domain.Attachment),
+	}
+}
+
+func (m *mockAttachmentRepo) Create(ctx context.Context, att *domain.Attachment) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	att.CreatedAt = time.Now()
+	m.attachments[att.ID] = att
+	return nil
+}
+
+func (m *mockAttachmentRepo) Get(ctx context.Context, id string, projectID int64) (*domain.Attachment, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	att, ok := m.attachments[id]
+	if !ok || att.ProjectID != projectID {
+		return nil, domain.ErrNotFound
+	}
+	return att, nil
+}
+
+func (m *mockAttachmentRepo) GetByIDs(ctx context.Context, ids []string) ([]*domain.Attachment, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	var result []*domain.Attachment
+	for _, id := range ids {
+		if a, ok := m.attachments[id]; ok {
+			result = append(result, a)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockAttachmentRepo) BindToMessage(ctx context.Context, attachmentIDs []string, messageID int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, id := range attachmentIDs {
+		if a, ok := m.attachments[id]; ok {
+			a.MessageID = &messageID
+		}
+	}
+	return nil
+}
+
+func (m *mockAttachmentRepo) ListByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]*domain.Attachment, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	result := make(map[int64][]*domain.Attachment)
+	idMap := make(map[int64]bool)
+	for _, id := range messageIDs {
+		idMap[id] = true
+	}
+	for _, a := range m.attachments {
+		if a.MessageID != nil && idMap[*a.MessageID] {
+			result[*a.MessageID] = append(result[*a.MessageID], a)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockAttachmentRepo) PurgeByProjectID(ctx context.Context, projectID int64) (int, []string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var paths []string
+	count := 0
+	for _, a := range m.attachments {
+		if a.ProjectID == projectID && !a.IsPurged {
+			a.IsPurged = true
+			if a.StoragePath != "" {
+				paths = append(paths, a.StoragePath)
+			}
+			count++
+		}
+	}
+	return count, paths, nil
+}

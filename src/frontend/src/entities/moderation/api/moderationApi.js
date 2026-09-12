@@ -71,11 +71,27 @@ export const moderationApi = {
   },
 
   /**
-   * Отклонить заявку на модерацию
+   * Загрузить медиа-вложение (фото или видео) для чата проекта
    */
-  async reject(projectId, reason) {
+  async uploadAttachment(projectId, file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await http.post(`/projects/${projectId}/chat/attachments`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  /**
+   * Отклонить заявку на модерацию со списком нарушений
+   */
+  async reject(projectId, reason, violations = []) {
     const res = await http.post(`/moderation/projects/${projectId}/reject`, {
+      project_id: projectId,
       reason,
+      violations,
     });
     return {
       success: res.data.success,
@@ -98,11 +114,14 @@ export const moderationApi = {
   },
 
   /**
-   * Отправить сообщение в чат проекта
+   * Отправить сообщение в чат проекта с возможными вложениями
    */
-  async sendMessage(projectId, content) {
+  async sendMessage(projectId, content, attachmentIds = [], payloadJson = '') {
     const res = await http.post(`/moderation/projects/${projectId}/messages`, {
+      project_id: projectId,
       content,
+      attachment_ids: attachmentIds,
+      payload_json: payloadJson,
     });
     return {
       message: res.data.message,

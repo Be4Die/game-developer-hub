@@ -93,7 +93,7 @@ func TestCrossService_ModerationWithProjectManager(t *testing.T) {
 	reqRepo := newInMemoryRequestRepo()
 	msgRepo := newInMemoryMessageRepo()
 
-	modSvc := modservice.NewModerationService(reqRepo, msgRepo, pmClientAdapter)
+	modSvc := modservice.NewModerationService(reqRepo, msgRepo, nil, pmClientAdapter)
 	modHandler := modgrpc.NewModerationHandler(modSvc)
 
 	modServer := grpc.NewServer()

@@ -305,7 +305,7 @@ func setupIntegrationServer(t *testing.T) (pb.ModerationServiceClient, func()) {
 	msgRepo := newInMemoryMessageRepo()
 	pmClient := newInMemoryProjectClient()
 
-	svc := service.NewModerationService(reqRepo, msgRepo, pmClient)
+	svc := service.NewModerationService(reqRepo, msgRepo, nil, pmClient)
 	handler := grpctransport.NewModerationHandler(svc)
 
 	s := grpc.NewServer()

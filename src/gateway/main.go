@@ -171,6 +171,13 @@ func run(ctx context.Context) error {
 	mux.HandleFunc("GET /api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/download", handleBackupDownload(gwpb.NewNodeServiceClient(orchConn)))
 	mux.HandleFunc("POST /api/v1/nodes/{node_id}/services/{service_name}/backups/upload", handleBackupUpload(gwpb.NewNodeServiceClient(orchConn)))
 
+	// Эндпоинты вложений чата модерации (фото и видео)
+	modClient := modpb.NewModerationServiceClient(modConn)
+	projClient := projpb.NewProjectServiceClient(projConn)
+	mux.HandleFunc("POST /api/v1/projects/{project_id}/chat/attachments", handleChatAttachmentUpload(modClient, projClient, projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}", handleChatAttachmentServe(modClient, projClient, projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}/download", handleChatAttachmentServe(modClient, projClient, projectsBasePath, s3Client))
+
 	// Все остальные запросы проксируются в gRPC-Gateway
 	mux.Handle("/", gwMux)
 

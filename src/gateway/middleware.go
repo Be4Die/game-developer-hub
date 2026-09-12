@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,7 +33,10 @@ func corsMiddleware(next http.Handler) http.Handler {
 // jwtMetadataAnnotator извлекает Authorization и claims пользователя из JWT токена в gRPC metadata.
 func jwtMetadataAnnotator(_ context.Context, req *http.Request) metadata.MD {
 	md := metadata.MD{}
-	if auth := req.Header.Get("Authorization"); auth != "" {
+	rawToken := extractRawToken(req)
+	if rawToken != "" {
+		md.Set("authorization", "Bearer "+rawToken)
+	} else if auth := req.Header.Get("Authorization"); auth != "" {
 		md.Set("authorization", auth)
 	}
 
@@ -49,19 +51,49 @@ func jwtMetadataAnnotator(_ context.Context, req *http.Request) metadata.MD {
 	return md
 }
 
+// extractRawToken извлекает токен из заголовка Authorization, query параметров или cookies.
+func extractRawToken(req *http.Request) string {
+	if auth := req.Header.Get("Authorization"); auth != "" {
+		trimmed := strings.TrimSpace(auth)
+		if strings.HasPrefix(strings.ToLower(trimmed), "bearer ") {
+			return strings.TrimSpace(trimmed[7:])
+		}
+		return trimmed
+	}
+	if tok := req.URL.Query().Get("token"); tok != "" {
+		return strings.TrimSpace(tok)
+	}
+	if tok := req.URL.Query().Get("auth"); tok != "" {
+		return strings.TrimSpace(tok)
+	}
+	if tok := req.URL.Query().Get("access_token"); tok != "" {
+		return strings.TrimSpace(tok)
+	}
+	if cookie, err := req.Cookie("gdh_access_token"); err == nil && cookie.Value != "" {
+		return strings.TrimSpace(cookie.Value)
+	}
+	if cookie, err := req.Cookie("gdh_session"); err == nil && cookie.Value != "" {
+		return strings.TrimSpace(cookie.Value)
+	}
+	if cookie, err := req.Cookie("access_token"); err == nil && cookie.Value != "" {
+		return strings.TrimSpace(cookie.Value)
+	}
+	return ""
+}
+
 // parseJWTClaims извлекает userID и userRole из JWT payload без валидации подписи (подпись проверяется в SSO).
 func parseJWTClaims(req *http.Request) (userID, userRole string) {
-	authHeader := req.Header.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+	rawToken := extractRawToken(req)
+	if rawToken == "" {
 		return "", ""
 	}
 
-	parts := strings.Split(strings.TrimPrefix(authHeader, "Bearer "), ".")
+	parts := strings.Split(rawToken, ".")
 	if len(parts) != 3 {
 		return "", ""
 	}
 
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	payload, err := decodeJWTSegment(parts[1])
 	if err != nil {
 		return "", ""
 	}
@@ -73,12 +105,36 @@ func parseJWTClaims(req *http.Request) (userID, userRole string) {
 
 	if sub, ok := claims["sub"].(string); ok {
 		userID = sub
+	} else if uid, ok := claims["user_id"].(string); ok {
+		userID = uid
+	} else if id, ok := claims["id"].(string); ok {
+		userID = id
 	}
 
-	if role, ok := claims["role"].(float64); ok {
-		userRole = fmt.Sprintf("%.0f", role)
-	} else if role, ok := claims["role"].(string); ok {
-		userRole = role
+	var rawRole any
+	if rVal, ok := claims["role"]; ok {
+		rawRole = rVal
+	} else if rVal, ok := claims["user_role"]; ok {
+		rawRole = rVal
+	} else if rVal, ok := claims["roles"]; ok {
+		rawRole = rVal
+	}
+
+	switch v := rawRole.(type) {
+	case float64:
+		userRole = fmt.Sprintf("%.0f", v)
+	case int:
+		userRole = fmt.Sprintf("%d", v)
+	case int64:
+		userRole = fmt.Sprintf("%d", v)
+	case json.Number:
+		userRole = v.String()
+	case string:
+		userRole = v
+	case []any:
+		if len(v) > 0 {
+			userRole = fmt.Sprintf("%v", v[0])
+		}
 	}
 
 	return userID, userRole

@@ -13,9 +13,10 @@ func setupTestModerationService(t *testing.T) (*ModerationService, *mockRequestR
 	t.Helper()
 	reqRepo := newMockRequestRepo()
 	msgRepo := newMockMessageRepo()
+	attRepo := newMockAttachmentRepo()
 	pmClient := newMockProjectClient()
 
-	svc := NewModerationService(reqRepo, msgRepo, pmClient)
+	svc := NewModerationService(reqRepo, msgRepo, attRepo, pmClient)
 	return svc, reqRepo, msgRepo, pmClient
 }
 
@@ -192,7 +193,7 @@ func TestUnit_ModerationService_Reject_Success(t *testing.T) {
 
 	_, _ = svc.SubmitDraft(ctx, 100, "dev-1", snapshot)
 
-	rejectedReq, err := svc.Reject(ctx, 100, "mod-1", "Игра не запускается в Firefox")
+	rejectedReq, err := svc.Reject(ctx, 100, "mod-1", "Игра не запускается в Firefox", nil)
 	if err != nil {
 		t.Fatalf("expected reject success, got error: %v", err)
 	}
@@ -234,7 +235,7 @@ func TestUnit_ModerationService_Reject_EmptyReason(t *testing.T) {
 
 	_, _ = svc.SubmitDraft(ctx, 100, "dev-1", snapshot)
 
-	_, err := svc.Reject(ctx, 100, "mod-1", "   ")
+	_, err := svc.Reject(ctx, 100, "mod-1", "   ", nil)
 	if !errors.Is(err, domain.ErrEmptyReason) {
 		t.Errorf("expected ErrEmptyReason on empty reason, got: %v", err)
 	}
@@ -248,18 +249,18 @@ func TestUnit_ModerationService_SendMessage_And_ListMessages(t *testing.T) {
 	svc, _, _, _ := setupTestModerationService(t)
 
 	// Отправка пустого сообщения
-	_, err := svc.SendMessage(ctx, 100, "dev-1", domain.SenderRoleDeveloper, "  ")
+	_, err := svc.SendMessage(ctx, 100, "dev-1", domain.SenderRoleDeveloper, "  ", nil, nil)
 	if !errors.Is(err, domain.ErrEmptyMessage) {
 		t.Errorf("expected ErrEmptyMessage, got: %v", err)
 	}
 
 	// Отправка валидных сообщений
-	msg1, err := svc.SendMessage(ctx, 100, "dev-1", domain.SenderRoleDeveloper, "Здравствуйте, проверите игру?")
+	msg1, err := svc.SendMessage(ctx, 100, "dev-1", domain.SenderRoleDeveloper, "Здравствуйте, проверите игру?", nil, nil)
 	if err != nil || msg1.ID == 0 {
 		t.Fatalf("expected send message 1 success: %v", err)
 	}
 
-	msg2, err := svc.SendMessage(ctx, 100, "mod-1", domain.SenderRoleModerator, "Здравствуйте! Проверяю.")
+	msg2, err := svc.SendMessage(ctx, 100, "mod-1", domain.SenderRoleModerator, "Здравствуйте! Проверяю.", nil, nil)
 	if err != nil || msg2.ID == 0 {
 		t.Fatalf("expected send message 2 success: %v", err)
 	}
@@ -376,6 +377,96 @@ func TestUnit_ModerationService_ModeratorStatsAndActivity(t *testing.T) {
 	}
 	if filteredTotal != 1 || len(filteredActivity) != 1 {
 		t.Errorf("expected 1 rejected activity, got total=%d, len=%d", filteredTotal, len(filteredActivity))
+	}
+}
+
+func TestUnit_ModerationService_Reject_WithViolationsAndAttachments(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _, _ := setupTestModerationService(t)
+
+	// 1. Регистрируем вложение
+	att := &domain.Attachment{
+		ID:          "att-123",
+		ProjectID:   200,
+		UploaderID:  "mod-1",
+		FileName:    "bug.png",
+		FileSize:    1024,
+		MimeType:    "image/png",
+		StoragePath: "projects/200/chat/bug.png",
+	}
+	if err := svc.RegisterAttachment(ctx, att); err != nil {
+		t.Fatalf("failed to register attachment: %v", err)
+	}
+
+	// 2. Черновик
+	_, _ = svc.SubmitDraft(ctx, 200, "dev-1", domain.ProjectSnapshot{
+		ProjectID:          200,
+		TitleRu:            "Тест Игра",
+		ActiveBuildVersion: "1.0.0",
+	})
+
+	// 3. Отклонение с пунктами нарушений
+	violations := []*domain.ViolationItem{
+		{
+			RuleCode:      "2.3.1",
+			RuleTitle:     "Сексуализированный контент",
+			Description:   "Обнаружена модель в сцене 3",
+			AttachmentIDs: []string{"att-123"},
+		},
+	}
+	rejectedReq, err := svc.Reject(ctx, 200, "mod-1", "Заявка отклонена", violations)
+	if err != nil {
+		t.Fatalf("failed to reject: %v", err)
+	}
+	if rejectedReq.Status != domain.RequestStatusRejected {
+		t.Errorf("expected rejected status, got %v", rejectedReq.Status)
+	}
+
+	// 4. Проверяем сообщение в чате
+	messages, total, err := svc.ListMessages(ctx, 200, 10, 0)
+	if err != nil || total < 2 {
+		t.Fatalf("expected at least 2 messages, got %d (err: %v)", total, err)
+	}
+	lastMsg := messages[len(messages)-1]
+	if lastMsg.MessageType != domain.MessageTypeRejected {
+		t.Errorf("expected MessageTypeRejected, got %v", lastMsg.MessageType)
+	}
+	if lastMsg.Payload["type"] != "moderation_verdict" {
+		t.Errorf("expected moderation_verdict in payload, got %v", lastMsg.Payload["type"])
+	}
+}
+
+func TestUnit_ModerationService_SendMessage_WithAttachments(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, _, _, _ := setupTestModerationService(t)
+
+	// Регистрируем вложение
+	att := &domain.Attachment{
+		ID:          "att-456",
+		ProjectID:   300,
+		UploaderID:  "dev-1",
+		FileName:    "screen.png",
+		FileSize:    2048,
+		MimeType:    "image/png",
+		StoragePath: "projects/300/chat/screen.png",
+	}
+	if err := svc.RegisterAttachment(ctx, att); err != nil {
+		t.Fatalf("failed to register attachment: %v", err)
+	}
+
+	// Отправка сообщения только с вложением без текста (валидный сценарий)
+	msg, err := svc.SendMessage(ctx, 300, "dev-1", domain.SenderRoleDeveloper, "", []string{"att-456"}, nil)
+	if err != nil {
+		t.Fatalf("expected send message with attachment to succeed, got %v", err)
+	}
+	if len(msg.Attachments) != 1 || msg.Attachments[0].ID != "att-456" {
+		t.Errorf("expected attachment att-456 in message, got %v", msg.Attachments)
 	}
 }
 

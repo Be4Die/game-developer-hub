@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 
 	"github.com/Be4Die/game-developer-hub/moderation/internal/domain"
@@ -150,7 +151,12 @@ func (h *ModerationHandler) Reject(ctx context.Context, req *pb.RejectModeration
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
 
-	r, err := h.svc.Reject(ctx, req.GetProjectId(), moderatorID, req.GetReason())
+	var violations []*domain.ViolationItem
+	for _, v := range req.GetViolations() {
+		violations = append(violations, violationItemFromProto(v))
+	}
+
+	r, err := h.svc.Reject(ctx, req.GetProjectId(), moderatorID, req.GetReason(), violations)
 	if err != nil {
 		return nil, domainError(err, "reject project")
 	}
@@ -174,7 +180,12 @@ func (h *ModerationHandler) SendMessage(ctx context.Context, req *pb.SendChatMes
 		senderRole = domain.SenderRoleModerator
 	}
 
-	msg, err := h.svc.SendMessage(ctx, req.GetProjectId(), senderID, senderRole, req.GetContent())
+	var payload map[string]any
+	if raw := req.GetPayloadJson(); raw != "" {
+		_ = json.Unmarshal([]byte(raw), &payload)
+	}
+
+	msg, err := h.svc.SendMessage(ctx, req.GetProjectId(), senderID, senderRole, req.GetContent(), req.GetAttachmentIds(), payload)
 	if err != nil {
 		return nil, domainError(err, "send chat message")
 	}
@@ -324,5 +335,48 @@ func (h *ModerationHandler) ListModeratorActivity(ctx context.Context, req *pb.L
 	}
 
 	return resp, nil
+}
+
+// RegisterAttachment регистрирует загруженное вложение в сервисе модерации.
+func (h *ModerationHandler) RegisterAttachment(ctx context.Context, req *pb.RegisterAttachmentRequest) (*pb.RegisterAttachmentResponse, error) {
+	att := &domain.Attachment{
+		ID:           req.GetId(),
+		ProjectID:    req.GetProjectId(),
+		UploaderID:   req.GetUploaderId(),
+		UploaderRole: domain.SenderRole(req.GetUploaderRole()),
+		FileName:     req.GetFileName(),
+		FileSize:     req.GetFileSize(),
+		MimeType:     req.GetMimeType(),
+		StoragePath:  req.GetStoragePath(),
+	}
+
+	if err := h.svc.RegisterAttachment(ctx, att); err != nil {
+		return nil, domainError(err, "register attachment")
+	}
+
+	return &pb.RegisterAttachmentResponse{Attachment: attachmentToProto(att)}, nil
+}
+
+// GetAttachment возвращает информацию о вложении.
+func (h *ModerationHandler) GetAttachment(ctx context.Context, req *pb.GetAttachmentRequest) (*pb.GetAttachmentResponse, error) {
+	att, err := h.svc.GetAttachment(ctx, req.GetAttachmentId(), req.GetProjectId())
+	if err != nil {
+		return nil, domainError(err, "get attachment")
+	}
+
+	return &pb.GetAttachmentResponse{Attachment: attachmentToProto(att)}, nil
+}
+
+// PurgeProjectMedia помечает медиафайлы проекта как очищенные.
+func (h *ModerationHandler) PurgeProjectMedia(ctx context.Context, req *pb.PurgeProjectMediaRequest) (*pb.PurgeProjectMediaResponse, error) {
+	count, _, err := h.svc.PurgeProjectMedia(ctx, req.GetProjectId())
+	if err != nil {
+		return nil, domainError(err, "purge project media")
+	}
+
+	return &pb.PurgeProjectMediaResponse{
+		Success:     true,
+		PurgedCount: int32(count),
+	}, nil
 }
 

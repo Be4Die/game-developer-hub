@@ -38,13 +38,19 @@
           :key="msg.id"
           class="message-row"
           :class="{
-            'is-system': isSystemMessage(msg),
-            'is-own': !isSystemMessage(msg) && isOwn(msg),
-            'is-other': !isSystemMessage(msg) && !isOwn(msg),
+            'is-verdict': isRejectionVerdict(msg),
+            'is-system': !isRejectionVerdict(msg) && isSystemMessage(msg),
+            'is-own': !isRejectionVerdict(msg) && !isSystemMessage(msg) && isOwn(msg),
+            'is-other': !isRejectionVerdict(msg) && !isSystemMessage(msg) && !isOwn(msg),
           }"
         >
-          <!-- Системное событие -->
-          <div v-if="isSystemMessage(msg)" class="system-event-card">
+          <!-- Вердикт модерации с конкретными нарушениями правил -->
+          <div v-if="isRejectionVerdict(msg)" class="verdict-row-wrap">
+            <ModerationVerdictCard :message="msg" />
+          </div>
+
+          <!-- Обычное системное событие -->
+          <div v-else-if="isSystemMessage(msg)" class="system-event-card">
             <Info class="icon-xs system-icon" />
             <div class="system-content">
               <span class="system-text">{{ msg.content }}</span>
@@ -52,37 +58,152 @@
             </div>
           </div>
 
-          <!-- Обычное сообщение -->
+          <!-- Обычное сообщение пользователя / модератора -->
           <div v-else class="chat-bubble">
             <div class="bubble-header">
               <span class="author-name">{{ formatSenderRole(msg) }}</span>
               <span class="bubble-time">{{ formatTime(msg.created_at || msg.createdAt) }}</span>
             </div>
-            <div class="bubble-body">{{ msg.content }}</div>
+            <div v-if="msg.content" class="bubble-body">{{ msg.content }}</div>
+
+            <!-- Вложения обычного сообщения -->
+            <div
+              v-if="msg.attachments && msg.attachments.length"
+              class="bubble-attachments-stack"
+            >
+              <div
+                v-for="att in msg.attachments"
+                :key="att.id"
+                class="bubble-attachment-item"
+              >
+                <!-- Видео -->
+                <div v-if="isVideo(att)" class="bubble-video-wrapper">
+                  <video
+                    :src="getMediaUrl(att, msg)"
+                    controls
+                    preload="metadata"
+                    class="embedded-bubble-video"
+                  ></video>
+                </div>
+
+                <!-- Изображение -->
+                <div
+                  v-else-if="isImage(att)"
+                  class="bubble-image-wrapper"
+                  @click="openLightbox(att, msg)"
+                >
+                  <img
+                    :src="getMediaUrl(att, msg)"
+                    :alt="att.file_name || att.fileName"
+                    class="embedded-bubble-image"
+                    loading="lazy"
+                  />
+                  <div class="image-overlay">
+                    <Maximize2 class="icon-xs" />
+                    <span>Увеличить</span>
+                  </div>
+                </div>
+
+                <!-- Скачивание файла -->
+                <div class="attachment-download-bar">
+                  <a
+                    :href="getDownloadUrl(att, msg)"
+                    :download="att.file_name || att.fileName || 'attachment'"
+                    class="attachment-download-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Paperclip class="icon-xs" />
+                    <span class="att-filename">{{ att.file_name || att.fileName }}</span>
+                    <span class="att-filesize">({{ formatSize(att.file_size || att.fileSize) }})</span>
+                    <span class="att-dl-action">• Скачать</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Поле ввода сообщения -->
-    <div v-if="!isChatReadOnly" class="chat-input-row">
-      <textarea
-        v-model="inputContent"
-        class="chat-textarea"
-        :placeholder="t('moderation.chatPlaceholder')"
-        rows="2"
-        :disabled="sending"
-        @keydown.enter.exact.prevent="handleSend"
-      ></textarea>
-      <button
-        class="btn-send"
-        :disabled="!inputContent.trim() || sending"
-        :title="t('moderation.sendMessage')"
-        @click="handleSend"
-      >
-        <Send class="icon-sm" />
-      </button>
+    <div
+      v-if="!isChatReadOnly"
+      class="chat-input-area"
+      @dragover.prevent="isDragging = true"
+      @dragleave.prevent="isDragging = false"
+      @drop.prevent="handleDrop"
+    >
+      <!-- Превью выбранных вложений перед отправкой -->
+      <div v-if="pendingAttachments.length" class="pending-attachments-row">
+        <div
+          v-for="(att, idx) in pendingAttachments"
+          :key="att.id || idx"
+          class="pending-attachment-chip"
+        >
+          <Film v-if="isVideo(att)" class="icon-xs text-primary" />
+          <Image v-else class="icon-xs text-primary" />
+          <span class="pending-filename">{{ att.file_name || att.name }}</span>
+          <span class="pending-filesize">({{ formatSize(att.file_size || att.size) }})</span>
+          <button
+            type="button"
+            class="btn-remove-pending"
+            title="Удалить"
+            @click="removePendingAttachment(idx)"
+          >
+            <X class="icon-xs" />
+          </button>
+        </div>
+        <div v-if="uploadingCount > 0" class="uploading-indicator">
+          <Loader2 class="icon-xs spin" />
+          <span>Загрузка...</span>
+        </div>
+      </div>
+
+      <div class="chat-input-row" :class="{ 'is-drag-over': isDragging }">
+        <!-- Кнопка прикрепления файлов -->
+        <label
+          class="btn-attach"
+          :class="{ disabled: uploadingCount > 0 || sending }"
+          title="Прикрепить фото или видео"
+        >
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,video/mp4,video/webm"
+            multiple
+            class="file-hidden-input"
+            :disabled="uploadingCount > 0 || sending"
+            @change="handleFileSelect"
+          />
+          <Paperclip class="icon-sm" />
+        </label>
+
+        <textarea
+          v-model="inputContent"
+          class="chat-textarea"
+          :placeholder="t('moderation.chatPlaceholder') + ' (вставка скриншота по Ctrl+V)'"
+          rows="2"
+          :disabled="sending"
+          @keydown.enter.exact.prevent="handleSend"
+          @paste="handlePaste"
+        ></textarea>
+
+        <button
+          class="btn-send"
+          :disabled="
+            (!inputContent.trim() && !pendingAttachments.length) ||
+            sending ||
+            uploadingCount > 0
+          "
+          :title="t('moderation.sendMessage')"
+          @click="handleSend"
+        >
+          <Send class="icon-sm" />
+        </button>
+      </div>
     </div>
+
     <div v-else class="chat-readonly-banner">
       <Eye class="icon-xs text-muted" />
       <span>Режим аудита: чат доступен только для чтения</span>
@@ -100,13 +221,35 @@
         <span>{{ t('moderation.closeDialogBtn') }}</span>
       </button>
     </div>
+
+    <!-- Модальное окно просмотра картинок в оригинале -->
+    <MediaLightboxModal
+      v-if="lightboxMedia"
+      :src="getMediaUrl(lightboxMedia.att, lightboxMedia.msg)"
+      :file-name="lightboxMedia.att.file_name || lightboxMedia.att.fileName"
+      :download-url="getDownloadUrl(lightboxMedia.att, lightboxMedia.msg)"
+      @close="lightboxMedia = null"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MessageSquare, MessageSquareDashed, Info, Send, CheckCircle2, Eye } from 'lucide-vue-next';
+import {
+  MessageSquare,
+  MessageSquareDashed,
+  Info,
+  Send,
+  CheckCircle2,
+  Eye,
+  Paperclip,
+  Image,
+  Film,
+  X,
+  Maximize2,
+  Loader2,
+} from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import {
   formatDateTime,
@@ -116,6 +259,13 @@ import {
 } from '../model/helpers';
 import { useAuth } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import {
+  validateChatFile,
+  compressImageIfNeeded,
+  formatBytes,
+} from '@/shared/lib/mediaCompressor';
+import ModerationVerdictCard from './ModerationVerdictCard.vue';
+import MediaLightboxModal from './MediaLightboxModal.vue';
 
 const { t } = useI18n();
 
@@ -165,6 +315,13 @@ const sending = ref(false);
 const closingDialog = ref(false);
 const inputContent = ref('');
 const messagesContainer = ref(null);
+const fileInputRef = ref(null);
+
+// Вложения
+const pendingAttachments = ref([]);
+const uploadingCount = ref(0);
+const isDragging = ref(false);
+const lightboxMedia = ref(null);
 
 let pollTimer = null;
 
@@ -199,7 +356,22 @@ const showResolveButton = computed(() => {
   );
 });
 
+function isRejectionVerdict(msg) {
+  const msgType = parseMessageType(msg.message_type ?? msg.messageType);
+  if (msgType === 5) return true;
+  let p = msg.payload;
+  if (!p && msg.payload_json) {
+    try {
+      p = JSON.parse(msg.payload_json);
+    } catch {
+      p = null;
+    }
+  }
+  return p && (p.type === 'moderation_verdict' || Array.isArray(p.violations));
+}
+
 function isSystemMessage(msg) {
+  if (isRejectionVerdict(msg)) return false;
   const msgType = parseMessageType(msg.message_type ?? msg.messageType);
   const senderRole = parseSenderRole(msg.sender_role ?? msg.senderRole);
   return msg.is_system || msgType > 1 || senderRole === 3 || msg.sender_id === 'system';
@@ -220,6 +392,111 @@ function formatSenderRole(msg) {
 
 function formatTime(isoStr) {
   return formatDateTime(isoStr);
+}
+
+function formatSize(bytes) {
+  return formatBytes(bytes);
+}
+
+function isVideo(att) {
+  const mime = (att.mime_type || att.mimeType || att.type || '').toLowerCase();
+  const name = (att.file_name || att.fileName || att.name || '').toLowerCase();
+  return mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.webm');
+}
+
+function isImage(att) {
+  const mime = (att.mime_type || att.mimeType || att.type || '').toLowerCase();
+  const name = (att.file_name || att.fileName || att.name || '').toLowerCase();
+  return (
+    mime.startsWith('image/') ||
+    name.endsWith('.png') ||
+    name.endsWith('.jpg') ||
+    name.endsWith('.jpeg') ||
+    name.endsWith('.webp')
+  );
+}
+
+function getMediaUrl(att, msg) {
+  const token = localStorage.getItem('gdh_access_token');
+  const projId = msg?.project_id || msg?.projectId || props.projectId;
+  const base = att.url || `/api/v1/projects/${projId}/chat/attachments/${att.id}`;
+  if (token && !base.includes('token=')) {
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}token=${encodeURIComponent(token)}`;
+  }
+  return base;
+}
+
+function getDownloadUrl(att, msg) {
+  const token = localStorage.getItem('gdh_access_token');
+  const projId = msg?.project_id || msg?.projectId || props.projectId;
+  const base = att.download_url || `/api/v1/projects/${projId}/chat/attachments/${att.id}/download`;
+  if (token && !base.includes('token=')) {
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}token=${encodeURIComponent(token)}`;
+  }
+  return base;
+}
+
+function openLightbox(att, msg) {
+  lightboxMedia.value = { att, msg };
+}
+
+function removePendingAttachment(index) {
+  pendingAttachments.value.splice(index, 1);
+}
+
+async function processAndUploadFile(file) {
+  const validation = validateChatFile(file);
+  if (!validation.valid) {
+    showToast(validation.error, 'danger');
+    return;
+  }
+
+  uploadingCount.value++;
+  try {
+    let processedFile = file;
+    if (validation.isImage) {
+      processedFile = await compressImageIfNeeded(file, 1920, 0.85);
+    }
+    const uploaded = await moderationApi.uploadAttachment(props.projectId, processedFile);
+    pendingAttachments.value.push(uploaded);
+    showToast('Файл прикреплен', 'success');
+  } catch (err) {
+    console.error('Failed to upload attachment:', err);
+    const msg =
+      err.response?.data?.message ||
+      (typeof err.response?.data === 'string' ? err.response.data.trim() : null);
+    showToast(msg || 'Ошибка загрузки файла', 'danger');
+  } finally {
+    uploadingCount.value--;
+  }
+}
+
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  files.forEach(processAndUploadFile);
+}
+
+function handleDrop(e) {
+  isDragging.value = false;
+  const files = Array.from(e.dataTransfer?.files || []);
+  files.forEach(processAndUploadFile);
+}
+
+function handlePaste(e) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      if (file) {
+        processAndUploadFile(file);
+      }
+    }
+  }
 }
 
 async function scrollToBottom() {
@@ -250,12 +527,14 @@ async function fetchMessages(silent = false) {
 
 async function handleSend() {
   const text = inputContent.value.trim();
-  if (!text || sending.value) return;
+  const attachmentIds = pendingAttachments.value.map((a) => a.id);
+  if ((!text && !attachmentIds.length) || sending.value || uploadingCount.value > 0) return;
 
   sending.value = true;
   try {
-    await moderationApi.sendMessage(props.projectId, text);
+    await moderationApi.sendMessage(props.projectId, text, attachmentIds);
     inputContent.value = '';
+    pendingAttachments.value = [];
     await fetchMessages(true);
     scrollToBottom();
   } catch (err) {
@@ -283,6 +562,7 @@ watch(
   () => props.projectId,
   (newId) => {
     if (newId) {
+      pendingAttachments.value = [];
       fetchMessages();
     }
   }
@@ -439,12 +719,16 @@ onUnmounted(() => {
 .messages-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .message-row {
   display: flex;
   width: 100%;
+}
+
+.message-row.is-verdict {
+  justify-content: center;
 }
 
 .message-row.is-system {
@@ -457,6 +741,11 @@ onUnmounted(() => {
 
 .message-row.is-other {
   justify-content: flex-start;
+}
+
+.verdict-row-wrap {
+  width: 100%;
+  max-width: 90%;
 }
 
 /* Системное событие */
@@ -496,12 +785,12 @@ onUnmounted(() => {
 
 /* Пузыри сообщений */
 .chat-bubble {
-  max-width: 75%;
+  max-width: 88%;
   padding: 10px 14px;
   border-radius: var(--radius-md, 8px);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .message-row.is-own .chat-bubble {
@@ -550,14 +839,210 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
-/* Поле ввода */
+/* Вложения внутри пузыря */
+.bubble-attachments-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bubble-attachment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bubble-image-wrapper {
+  position: relative;
+  max-width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #000;
+}
+
+.embedded-bubble-image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  display: block;
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bubble-image-wrapper:hover .image-overlay {
+  opacity: 1;
+}
+
+.bubble-video-wrapper {
+  max-width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #000;
+}
+
+.embedded-bubble-video {
+  width: 100%;
+  max-height: 280px;
+  display: block;
+}
+
+.attachment-download-bar {
+  display: flex;
+  align-items: center;
+}
+
+.attachment-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: inherit;
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: opacity 0.15s;
+  max-width: 100%;
+}
+
+.attachment-download-link:hover {
+  opacity: 0.85;
+}
+
+.att-filename {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.att-filesize {
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.att-dl-action {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Область ввода и превью вложений */
+.chat-input-area {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card, #161b22);
+  border-top: 1px solid var(--border, #30363d);
+}
+
+.pending-attachments-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px 0;
+}
+
+.pending-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-main, #f0f6fc);
+}
+
+.pending-filename {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending-filesize {
+  color: var(--text-tertiary, #8b949e);
+}
+
+.btn-remove-pending {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #8b949e);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.btn-remove-pending:hover {
+  color: #ef4444;
+}
+
+.uploading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--primary, #58a6ff);
+}
+
 .chat-input-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  background: var(--bg-card, #161b22);
-  border-top: 1px solid var(--border, #30363d);
+  padding: 10px 12px;
+  transition: background-color 0.15s;
+}
+
+.chat-input-row.is-drag-over {
+  background: rgba(88, 166, 255, 0.08);
+  outline: 2px dashed var(--primary, #58a6ff);
+  outline-offset: -2px;
+}
+
+.file-hidden-input {
+  display: none;
+}
+
+.btn-attach {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--text-secondary, #c9d1d9);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-attach:hover:not(.disabled) {
+  background: var(--bg-secondary, #0d1117);
+  color: var(--primary, #58a6ff);
+}
+
+.btn-attach.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .chat-readonly-banner {
@@ -626,6 +1111,10 @@ onUnmounted(() => {
   display: inline-block;
   flex-shrink: 0;
   vertical-align: middle;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {

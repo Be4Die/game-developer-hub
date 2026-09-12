@@ -62,7 +62,14 @@ func (a *JWTAuth) extractUserInfo(ctx context.Context) (string, string, error) {
 	if vals := md.Get("x-user-id"); len(vals) > 0 && vals[0] != "" {
 		role := "developer"
 		if rVals := md.Get("x-user-role"); len(rVals) > 0 && rVals[0] != "" {
-			role = rVals[0]
+			switch strings.ToLower(rVals[0]) {
+			case "2", "moderator", "user_role_moderator", "role_moderator":
+				role = "moderator"
+			case "3", "admin", "user_role_admin", "role_admin":
+				role = "admin"
+			default:
+				role = "developer"
+			}
 		}
 		return vals[0], role, nil
 	}

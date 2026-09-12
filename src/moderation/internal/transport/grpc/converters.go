@@ -1,6 +1,8 @@
 package grpc
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/moderation/internal/domain"
@@ -53,6 +55,37 @@ func requestToProto(r *domain.ModerationRequest) *pb.ModerationRequest {
 	return proto
 }
 
+func attachmentToProto(a *domain.Attachment) *pb.AttachmentInfo {
+	if a == nil {
+		return nil
+	}
+	url := fmt.Sprintf("/api/v1/projects/%d/chat/attachments/%s", a.ProjectID, a.ID)
+	downloadURL := fmt.Sprintf("/api/v1/projects/%d/chat/attachments/%s/download", a.ProjectID, a.ID)
+	return &pb.AttachmentInfo{
+		Id:          a.ID,
+		ProjectId:   a.ProjectID,
+		FileName:    a.FileName,
+		FileSize:    a.FileSize,
+		MimeType:    a.MimeType,
+		Url:         url,
+		DownloadUrl: downloadURL,
+		IsPurged:    a.IsPurged,
+		CreatedAt:   formatTime(a.CreatedAt),
+	}
+}
+
+func violationItemFromProto(v *pb.ViolationItem) *domain.ViolationItem {
+	if v == nil {
+		return nil
+	}
+	return &domain.ViolationItem{
+		RuleCode:      v.GetRuleCode(),
+		RuleTitle:     v.GetRuleTitle(),
+		Description:   v.GetDescription(),
+		AttachmentIDs: v.GetAttachmentIds(),
+	}
+}
+
 func messageToProto(m *domain.ChatMessage) *pb.ChatMessage {
 	if m == nil {
 		return nil
@@ -70,6 +103,19 @@ func messageToProto(m *domain.ChatMessage) *pb.ChatMessage {
 
 	if m.RequestID != nil {
 		proto.RequestId = *m.RequestID
+	}
+
+	if len(m.Attachments) > 0 {
+		proto.Attachments = make([]*pb.AttachmentInfo, len(m.Attachments))
+		for i, a := range m.Attachments {
+			proto.Attachments[i] = attachmentToProto(a)
+		}
+	}
+
+	if len(m.Payload) > 0 {
+		if bytes, err := json.Marshal(m.Payload); err == nil {
+			proto.PayloadJson = string(bytes)
+		}
 	}
 
 	return proto

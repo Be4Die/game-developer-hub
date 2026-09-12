@@ -46,8 +46,17 @@ func (a *JWTAuth) extractUserID(ctx context.Context) (string, float64, string, s
 	if vals := md.Get("x-user-id"); len(vals) > 0 && vals[0] != "" {
 		var role float64
 		if roleVals := md.Get("x-user-role"); len(roleVals) > 0 && roleVals[0] != "" {
-			if roleInt, err := strconv.Atoi(roleVals[0]); err == nil {
-				role = float64(roleInt)
+			switch strings.ToLower(roleVals[0]) {
+			case "admin", "user_role_admin", "3":
+				role = 3
+			case "moderator", "user_role_moderator", "2":
+				role = 2
+			case "developer", "user_role_developer", "1":
+				role = 1
+			default:
+				if roleInt, err := strconv.Atoi(roleVals[0]); err == nil {
+					role = float64(roleInt)
+				}
 			}
 		}
 		return vals[0], role, email, name, nil
@@ -184,11 +193,21 @@ func UserRoleFromContext(ctx context.Context) (int, bool) {
 	if len(vals) == 0 || vals[0] == "" {
 		return 0, false
 	}
-	role, err := strconv.Atoi(vals[0])
-	if err != nil {
-		return 0, false
+	r := strings.ToLower(vals[0])
+	switch r {
+	case "admin", "user_role_admin", "3":
+		return 3, true
+	case "moderator", "user_role_moderator", "2":
+		return 2, true
+	case "developer", "user_role_developer", "1":
+		return 1, true
+	default:
+		role, err := strconv.Atoi(vals[0])
+		if err != nil {
+			return 0, false
+		}
+		return role, true
 	}
-	return role, true
 }
 
 type wrappedStream struct {

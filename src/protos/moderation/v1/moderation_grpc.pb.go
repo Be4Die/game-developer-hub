@@ -33,6 +33,9 @@ const (
 	ModerationService_GetModeratorStats_FullMethodName         = "/moderation.v1.ModerationService/GetModeratorStats"
 	ModerationService_ListModeratorsStats_FullMethodName       = "/moderation.v1.ModerationService/ListModeratorsStats"
 	ModerationService_ListModeratorActivity_FullMethodName     = "/moderation.v1.ModerationService/ListModeratorActivity"
+	ModerationService_RegisterAttachment_FullMethodName        = "/moderation.v1.ModerationService/RegisterAttachment"
+	ModerationService_GetAttachment_FullMethodName             = "/moderation.v1.ModerationService/GetAttachment"
+	ModerationService_PurgeProjectMedia_FullMethodName         = "/moderation.v1.ModerationService/PurgeProjectMedia"
 )
 
 // ModerationServiceClient is the client API for ModerationService service.
@@ -53,6 +56,9 @@ type ModerationServiceClient interface {
 	GetModeratorStats(ctx context.Context, in *GetModeratorStatsRequest, opts ...grpc.CallOption) (*GetModeratorStatsResponse, error)
 	ListModeratorsStats(ctx context.Context, in *ListModeratorsStatsRequest, opts ...grpc.CallOption) (*ListModeratorsStatsResponse, error)
 	ListModeratorActivity(ctx context.Context, in *ListModeratorActivityRequest, opts ...grpc.CallOption) (*ListModeratorActivityResponse, error)
+	RegisterAttachment(ctx context.Context, in *RegisterAttachmentRequest, opts ...grpc.CallOption) (*RegisterAttachmentResponse, error)
+	GetAttachment(ctx context.Context, in *GetAttachmentRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error)
+	PurgeProjectMedia(ctx context.Context, in *PurgeProjectMediaRequest, opts ...grpc.CallOption) (*PurgeProjectMediaResponse, error)
 }
 
 type moderationServiceClient struct {
@@ -203,6 +209,36 @@ func (c *moderationServiceClient) ListModeratorActivity(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *moderationServiceClient) RegisterAttachment(ctx context.Context, in *RegisterAttachmentRequest, opts ...grpc.CallOption) (*RegisterAttachmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterAttachmentResponse)
+	err := c.cc.Invoke(ctx, ModerationService_RegisterAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) GetAttachment(ctx context.Context, in *GetAttachmentRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAttachmentResponse)
+	err := c.cc.Invoke(ctx, ModerationService_GetAttachment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) PurgeProjectMedia(ctx context.Context, in *PurgeProjectMediaRequest, opts ...grpc.CallOption) (*PurgeProjectMediaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PurgeProjectMediaResponse)
+	err := c.cc.Invoke(ctx, ModerationService_PurgeProjectMedia_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModerationServiceServer is the server API for ModerationService service.
 // All implementations must embed UnimplementedModerationServiceServer
 // for forward compatibility.
@@ -221,6 +257,9 @@ type ModerationServiceServer interface {
 	GetModeratorStats(context.Context, *GetModeratorStatsRequest) (*GetModeratorStatsResponse, error)
 	ListModeratorsStats(context.Context, *ListModeratorsStatsRequest) (*ListModeratorsStatsResponse, error)
 	ListModeratorActivity(context.Context, *ListModeratorActivityRequest) (*ListModeratorActivityResponse, error)
+	RegisterAttachment(context.Context, *RegisterAttachmentRequest) (*RegisterAttachmentResponse, error)
+	GetAttachment(context.Context, *GetAttachmentRequest) (*GetAttachmentResponse, error)
+	PurgeProjectMedia(context.Context, *PurgeProjectMediaRequest) (*PurgeProjectMediaResponse, error)
 	mustEmbedUnimplementedModerationServiceServer()
 }
 
@@ -272,6 +311,15 @@ func (UnimplementedModerationServiceServer) ListModeratorsStats(context.Context,
 }
 func (UnimplementedModerationServiceServer) ListModeratorActivity(context.Context, *ListModeratorActivityRequest) (*ListModeratorActivityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListModeratorActivity not implemented")
+}
+func (UnimplementedModerationServiceServer) RegisterAttachment(context.Context, *RegisterAttachmentRequest) (*RegisterAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterAttachment not implemented")
+}
+func (UnimplementedModerationServiceServer) GetAttachment(context.Context, *GetAttachmentRequest) (*GetAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAttachment not implemented")
+}
+func (UnimplementedModerationServiceServer) PurgeProjectMedia(context.Context, *PurgeProjectMediaRequest) (*PurgeProjectMediaResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PurgeProjectMedia not implemented")
 }
 func (UnimplementedModerationServiceServer) mustEmbedUnimplementedModerationServiceServer() {}
 func (UnimplementedModerationServiceServer) testEmbeddedByValue()                           {}
@@ -546,6 +594,60 @@ func _ModerationService_ListModeratorActivity_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModerationService_RegisterAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterAttachmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).RegisterAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_RegisterAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).RegisterAttachment(ctx, req.(*RegisterAttachmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_GetAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAttachmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).GetAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_GetAttachment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).GetAttachment(ctx, req.(*GetAttachmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_PurgeProjectMedia_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PurgeProjectMediaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).PurgeProjectMedia(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_PurgeProjectMedia_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).PurgeProjectMedia(ctx, req.(*PurgeProjectMediaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModerationService_ServiceDesc is the grpc.ServiceDesc for ModerationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +710,18 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListModeratorActivity",
 			Handler:    _ModerationService_ListModeratorActivity_Handler,
+		},
+		{
+			MethodName: "RegisterAttachment",
+			Handler:    _ModerationService_RegisterAttachment_Handler,
+		},
+		{
+			MethodName: "GetAttachment",
+			Handler:    _ModerationService_GetAttachment_Handler,
+		},
+		{
+			MethodName: "PurgeProjectMedia",
+			Handler:    _ModerationService_PurgeProjectMedia_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

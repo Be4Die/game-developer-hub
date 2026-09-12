@@ -29,3 +29,13 @@ type MessageRepo interface {
 	ListByProject(ctx context.Context, projectID int64, limit, offset int) ([]*ChatMessage, int, error)
 	ListActiveChats(ctx context.Context, limit, offset int) ([]*ChatSummary, int, error)
 }
+
+// AttachmentRepo определяет контракт репозитория вложений чата.
+type AttachmentRepo interface {
+	Create(ctx context.Context, att *Attachment) error
+	Get(ctx context.Context, id string, projectID int64) (*Attachment, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*Attachment, error)
+	BindToMessage(ctx context.Context, attachmentIDs []string, messageID int64) error
+	ListByMessageIDs(ctx context.Context, messageIDs []int64) (map[int64][]*Attachment, error)
+	PurgeByProjectID(ctx context.Context, projectID int64) (int, []string, error)
+}

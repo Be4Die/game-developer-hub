@@ -74,9 +74,9 @@ export const moderationStore = reactive({
     }
   },
 
-  async rejectRequest(projectId, reason) {
+  async rejectRequest(projectId, reason, violations = []) {
     try {
-      const res = await moderationApi.reject(projectId, reason);
+      const res = await moderationApi.reject(projectId, reason, violations);
       showToast('Заявка отклонена', 'info');
       return res;
     } catch (err) {
@@ -100,9 +100,9 @@ export const moderationStore = reactive({
     }
   },
 
-  async sendMessage(projectId, content) {
+  async sendMessage(projectId, content, attachmentIds = [], payloadJson = '') {
     try {
-      const data = await moderationApi.sendMessage(projectId, content);
+      const data = await moderationApi.sendMessage(projectId, content, attachmentIds, payloadJson);
       if (data.message) {
         this.messages.push(data.message);
       }

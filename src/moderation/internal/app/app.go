@@ -44,6 +44,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// ─── Репозитории ────────────────────────────────────────────
 	requestRepo := postgres.NewRequestRepo(pool)
 	messageRepo := postgres.NewMessageRepo(pool)
+	attachmentRepo := postgres.NewAttachmentRepo(pool)
 
 	// ─── Клиент Project Manager ─────────────────────────────────
 	var projectClient domain.ProjectClient
@@ -68,6 +69,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	moderationService := service.NewModerationService(
 		requestRepo,
 		messageRepo,
+		attachmentRepo,
 		projectClient,
 	)
 

@@ -279,6 +279,7 @@
 
     <RejectRequestModal
       v-if="showRejectModal"
+      :project-id="projectId"
       :loading="actionLoading"
       @confirm="handleReject"
       @cancel="showRejectModal = false"
@@ -475,10 +476,18 @@ async function handleApprove(comment) {
   }
 }
 
-async function handleReject(reason) {
+async function handleReject(payload) {
   actionLoading.value = true;
   try {
-    await moderationStore.rejectRequest(projectId.value, reason);
+    let reason = '';
+    let violations = [];
+    if (typeof payload === 'string') {
+      reason = payload;
+    } else if (payload && typeof payload === 'object') {
+      reason = payload.reason || '';
+      violations = payload.violations || [];
+    }
+    await moderationStore.rejectRequest(projectId.value, reason, violations);
     showRejectModal.value = false;
     showToast('Проект отклонен, отправлено уведомление', 'warning');
     await loadProjectInfo();
@@ -523,11 +532,26 @@ onMounted(() => {
 
 /* ПРАВАЯ КОЛОНКА: ЧАТ */
 .moderator-chat-aside {
-  width: 440px;
+  width: 480px;
+  min-width: 400px;
+  max-width: 560px;
   flex-shrink: 0;
   height: 100%;
   border-left: 1px solid var(--border, #30363d);
   background: var(--bg-card, #161b22);
+  transition: width 0.2s ease;
+}
+
+@media (min-width: 1600px) {
+  .moderator-chat-aside {
+    width: 520px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .moderator-chat-aside {
+    width: 420px;
+  }
 }
 
 /* КАРТОЧКИ */

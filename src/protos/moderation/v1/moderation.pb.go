@@ -443,6 +443,200 @@ func (x *ModerationRequest) GetResolvedAt() string {
 	return ""
 }
 
+// AttachmentInfo информация о медиа-вложении (фото или видео).
+type AttachmentInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProjectId     int64                  `protobuf:"varint,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	MessageId     int64                  `protobuf:"varint,3,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	FileName      string                 `protobuf:"bytes,4,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize      int64                  `protobuf:"varint,5,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	MimeType      string                 `protobuf:"bytes,6,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	Url           string                 `protobuf:"bytes,7,opt,name=url,proto3" json:"url,omitempty"`
+	DownloadUrl   string                 `protobuf:"bytes,8,opt,name=download_url,json=downloadUrl,proto3" json:"download_url,omitempty"`
+	IsPurged      bool                   `protobuf:"varint,9,opt,name=is_purged,json=isPurged,proto3" json:"is_purged,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AttachmentInfo) Reset() {
+	*x = AttachmentInfo{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AttachmentInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AttachmentInfo) ProtoMessage() {}
+
+func (x *AttachmentInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AttachmentInfo.ProtoReflect.Descriptor instead.
+func (*AttachmentInfo) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AttachmentInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AttachmentInfo) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *AttachmentInfo) GetMessageId() int64 {
+	if x != nil {
+		return x.MessageId
+	}
+	return 0
+}
+
+func (x *AttachmentInfo) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *AttachmentInfo) GetFileSize() int64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *AttachmentInfo) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+func (x *AttachmentInfo) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *AttachmentInfo) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *AttachmentInfo) GetIsPurged() bool {
+	if x != nil {
+		return x.IsPurged
+	}
+	return false
+}
+
+func (x *AttachmentInfo) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+// ViolationItem пункт нарушения правил модерации.
+type ViolationItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RuleCode      string                 `protobuf:"bytes,1,opt,name=rule_code,json=ruleCode,proto3" json:"rule_code,omitempty"`
+	RuleTitle     string                 `protobuf:"bytes,2,opt,name=rule_title,json=ruleTitle,proto3" json:"rule_title,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	AttachmentIds []string               `protobuf:"bytes,4,rep,name=attachment_ids,json=attachmentIds,proto3" json:"attachment_ids,omitempty"`
+	Attachments   []*AttachmentInfo      `protobuf:"bytes,5,rep,name=attachments,proto3" json:"attachments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ViolationItem) Reset() {
+	*x = ViolationItem{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ViolationItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ViolationItem) ProtoMessage() {}
+
+func (x *ViolationItem) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ViolationItem.ProtoReflect.Descriptor instead.
+func (*ViolationItem) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ViolationItem) GetRuleCode() string {
+	if x != nil {
+		return x.RuleCode
+	}
+	return ""
+}
+
+func (x *ViolationItem) GetRuleTitle() string {
+	if x != nil {
+		return x.RuleTitle
+	}
+	return ""
+}
+
+func (x *ViolationItem) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ViolationItem) GetAttachmentIds() []string {
+	if x != nil {
+		return x.AttachmentIds
+	}
+	return nil
+}
+
+func (x *ViolationItem) GetAttachments() []*AttachmentInfo {
+	if x != nil {
+		return x.Attachments
+	}
+	return nil
+}
+
 // ChatMessage сообщение или системное событие в чате проекта.
 type ChatMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -454,13 +648,15 @@ type ChatMessage struct {
 	MessageType   MessageType            `protobuf:"varint,6,opt,name=message_type,json=messageType,proto3,enum=moderation.v1.MessageType" json:"message_type,omitempty"`
 	Content       string                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Attachments   []*AttachmentInfo      `protobuf:"bytes,9,rep,name=attachments,proto3" json:"attachments,omitempty"`
+	PayloadJson   string                 `protobuf:"bytes,10,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ChatMessage) Reset() {
 	*x = ChatMessage{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[2]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +668,7 @@ func (x *ChatMessage) String() string {
 func (*ChatMessage) ProtoMessage() {}
 
 func (x *ChatMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[2]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +681,7 @@ func (x *ChatMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatMessage.ProtoReflect.Descriptor instead.
 func (*ChatMessage) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{2}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ChatMessage) GetId() int64 {
@@ -544,6 +740,20 @@ func (x *ChatMessage) GetCreatedAt() string {
 	return ""
 }
 
+func (x *ChatMessage) GetAttachments() []*AttachmentInfo {
+	if x != nil {
+		return x.Attachments
+	}
+	return nil
+}
+
+func (x *ChatMessage) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
 type SubmitDraftRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
@@ -555,7 +765,7 @@ type SubmitDraftRequest struct {
 
 func (x *SubmitDraftRequest) Reset() {
 	*x = SubmitDraftRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[3]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -567,7 +777,7 @@ func (x *SubmitDraftRequest) String() string {
 func (*SubmitDraftRequest) ProtoMessage() {}
 
 func (x *SubmitDraftRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[3]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -580,7 +790,7 @@ func (x *SubmitDraftRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitDraftRequest.ProtoReflect.Descriptor instead.
 func (*SubmitDraftRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{3}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SubmitDraftRequest) GetProjectId() int64 {
@@ -614,7 +824,7 @@ type SubmitDraftResponse struct {
 
 func (x *SubmitDraftResponse) Reset() {
 	*x = SubmitDraftResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[4]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -626,7 +836,7 @@ func (x *SubmitDraftResponse) String() string {
 func (*SubmitDraftResponse) ProtoMessage() {}
 
 func (x *SubmitDraftResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[4]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -639,7 +849,7 @@ func (x *SubmitDraftResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitDraftResponse.ProtoReflect.Descriptor instead.
 func (*SubmitDraftResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{4}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SubmitDraftResponse) GetSuccess() bool {
@@ -668,7 +878,7 @@ type ListModerationRequestsRequest struct {
 
 func (x *ListModerationRequestsRequest) Reset() {
 	*x = ListModerationRequestsRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[5]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -680,7 +890,7 @@ func (x *ListModerationRequestsRequest) String() string {
 func (*ListModerationRequestsRequest) ProtoMessage() {}
 
 func (x *ListModerationRequestsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[5]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -693,7 +903,7 @@ func (x *ListModerationRequestsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModerationRequestsRequest.ProtoReflect.Descriptor instead.
 func (*ListModerationRequestsRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{5}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListModerationRequestsRequest) GetStatus() RequestStatus {
@@ -734,7 +944,7 @@ type ListModerationRequestsResponse struct {
 
 func (x *ListModerationRequestsResponse) Reset() {
 	*x = ListModerationRequestsResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[6]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -746,7 +956,7 @@ func (x *ListModerationRequestsResponse) String() string {
 func (*ListModerationRequestsResponse) ProtoMessage() {}
 
 func (x *ListModerationRequestsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[6]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -759,7 +969,7 @@ func (x *ListModerationRequestsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModerationRequestsResponse.ProtoReflect.Descriptor instead.
 func (*ListModerationRequestsResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{6}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListModerationRequestsResponse) GetRequests() []*ModerationRequest {
@@ -785,7 +995,7 @@ type GetModerationRequestRequest struct {
 
 func (x *GetModerationRequestRequest) Reset() {
 	*x = GetModerationRequestRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[7]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -797,7 +1007,7 @@ func (x *GetModerationRequestRequest) String() string {
 func (*GetModerationRequestRequest) ProtoMessage() {}
 
 func (x *GetModerationRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[7]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -810,7 +1020,7 @@ func (x *GetModerationRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModerationRequestRequest.ProtoReflect.Descriptor instead.
 func (*GetModerationRequestRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{7}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetModerationRequestRequest) GetRequestId() int64 {
@@ -829,7 +1039,7 @@ type GetModerationRequestResponse struct {
 
 func (x *GetModerationRequestResponse) Reset() {
 	*x = GetModerationRequestResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[8]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -841,7 +1051,7 @@ func (x *GetModerationRequestResponse) String() string {
 func (*GetModerationRequestResponse) ProtoMessage() {}
 
 func (x *GetModerationRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[8]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -854,7 +1064,7 @@ func (x *GetModerationRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModerationRequestResponse.ProtoReflect.Descriptor instead.
 func (*GetModerationRequestResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{8}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetModerationRequestResponse) GetRequest() *ModerationRequest {
@@ -873,7 +1083,7 @@ type GetLatestRequestByProjectRequest struct {
 
 func (x *GetLatestRequestByProjectRequest) Reset() {
 	*x = GetLatestRequestByProjectRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[9]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +1095,7 @@ func (x *GetLatestRequestByProjectRequest) String() string {
 func (*GetLatestRequestByProjectRequest) ProtoMessage() {}
 
 func (x *GetLatestRequestByProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[9]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +1108,7 @@ func (x *GetLatestRequestByProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestRequestByProjectRequest.ProtoReflect.Descriptor instead.
 func (*GetLatestRequestByProjectRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{9}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetLatestRequestByProjectRequest) GetProjectId() int64 {
@@ -917,7 +1127,7 @@ type ClaimModerationRequestRequest struct {
 
 func (x *ClaimModerationRequestRequest) Reset() {
 	*x = ClaimModerationRequestRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[10]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -929,7 +1139,7 @@ func (x *ClaimModerationRequestRequest) String() string {
 func (*ClaimModerationRequestRequest) ProtoMessage() {}
 
 func (x *ClaimModerationRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[10]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -942,7 +1152,7 @@ func (x *ClaimModerationRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimModerationRequestRequest.ProtoReflect.Descriptor instead.
 func (*ClaimModerationRequestRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{10}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ClaimModerationRequestRequest) GetRequestId() int64 {
@@ -961,7 +1171,7 @@ type ClaimModerationRequestResponse struct {
 
 func (x *ClaimModerationRequestResponse) Reset() {
 	*x = ClaimModerationRequestResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[11]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -973,7 +1183,7 @@ func (x *ClaimModerationRequestResponse) String() string {
 func (*ClaimModerationRequestResponse) ProtoMessage() {}
 
 func (x *ClaimModerationRequestResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[11]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -986,7 +1196,7 @@ func (x *ClaimModerationRequestResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClaimModerationRequestResponse.ProtoReflect.Descriptor instead.
 func (*ClaimModerationRequestResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{11}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ClaimModerationRequestResponse) GetRequest() *ModerationRequest {
@@ -1006,7 +1216,7 @@ type ApproveModerationRequest struct {
 
 func (x *ApproveModerationRequest) Reset() {
 	*x = ApproveModerationRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[12]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1018,7 +1228,7 @@ func (x *ApproveModerationRequest) String() string {
 func (*ApproveModerationRequest) ProtoMessage() {}
 
 func (x *ApproveModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[12]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1031,7 +1241,7 @@ func (x *ApproveModerationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveModerationRequest.ProtoReflect.Descriptor instead.
 func (*ApproveModerationRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{12}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ApproveModerationRequest) GetProjectId() int64 {
@@ -1059,7 +1269,7 @@ type ApproveModerationResponse struct {
 
 func (x *ApproveModerationResponse) Reset() {
 	*x = ApproveModerationResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[13]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1071,7 +1281,7 @@ func (x *ApproveModerationResponse) String() string {
 func (*ApproveModerationResponse) ProtoMessage() {}
 
 func (x *ApproveModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[13]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1084,7 +1294,7 @@ func (x *ApproveModerationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveModerationResponse.ProtoReflect.Descriptor instead.
 func (*ApproveModerationResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{13}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ApproveModerationResponse) GetSuccess() bool {
@@ -1112,13 +1322,14 @@ type RejectModerationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Violations    []*ViolationItem       `protobuf:"bytes,3,rep,name=violations,proto3" json:"violations,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RejectModerationRequest) Reset() {
 	*x = RejectModerationRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[14]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1130,7 +1341,7 @@ func (x *RejectModerationRequest) String() string {
 func (*RejectModerationRequest) ProtoMessage() {}
 
 func (x *RejectModerationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[14]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1143,7 +1354,7 @@ func (x *RejectModerationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectModerationRequest.ProtoReflect.Descriptor instead.
 func (*RejectModerationRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{14}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RejectModerationRequest) GetProjectId() int64 {
@@ -1160,6 +1371,13 @@ func (x *RejectModerationRequest) GetReason() string {
 	return ""
 }
 
+func (x *RejectModerationRequest) GetViolations() []*ViolationItem {
+	if x != nil {
+		return x.Violations
+	}
+	return nil
+}
+
 type RejectModerationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
@@ -1170,7 +1388,7 @@ type RejectModerationResponse struct {
 
 func (x *RejectModerationResponse) Reset() {
 	*x = RejectModerationResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[15]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1182,7 +1400,7 @@ func (x *RejectModerationResponse) String() string {
 func (*RejectModerationResponse) ProtoMessage() {}
 
 func (x *RejectModerationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[15]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1413,7 @@ func (x *RejectModerationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RejectModerationResponse.ProtoReflect.Descriptor instead.
 func (*RejectModerationResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{15}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RejectModerationResponse) GetSuccess() bool {
@@ -1216,13 +1434,15 @@ type SendChatMessageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	AttachmentIds []string               `protobuf:"bytes,3,rep,name=attachment_ids,json=attachmentIds,proto3" json:"attachment_ids,omitempty"`
+	PayloadJson   string                 `protobuf:"bytes,4,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SendChatMessageRequest) Reset() {
 	*x = SendChatMessageRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[16]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1234,7 +1454,7 @@ func (x *SendChatMessageRequest) String() string {
 func (*SendChatMessageRequest) ProtoMessage() {}
 
 func (x *SendChatMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[16]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1247,7 +1467,7 @@ func (x *SendChatMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendChatMessageRequest.ProtoReflect.Descriptor instead.
 func (*SendChatMessageRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{16}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SendChatMessageRequest) GetProjectId() int64 {
@@ -1264,6 +1484,20 @@ func (x *SendChatMessageRequest) GetContent() string {
 	return ""
 }
 
+func (x *SendChatMessageRequest) GetAttachmentIds() []string {
+	if x != nil {
+		return x.AttachmentIds
+	}
+	return nil
+}
+
+func (x *SendChatMessageRequest) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
 type SendChatMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       *ChatMessage           `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -1273,7 +1507,7 @@ type SendChatMessageResponse struct {
 
 func (x *SendChatMessageResponse) Reset() {
 	*x = SendChatMessageResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[17]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1285,7 +1519,7 @@ func (x *SendChatMessageResponse) String() string {
 func (*SendChatMessageResponse) ProtoMessage() {}
 
 func (x *SendChatMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[17]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1298,7 +1532,7 @@ func (x *SendChatMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendChatMessageResponse.ProtoReflect.Descriptor instead.
 func (*SendChatMessageResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{17}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *SendChatMessageResponse) GetMessage() *ChatMessage {
@@ -1319,7 +1553,7 @@ type ListChatMessagesRequest struct {
 
 func (x *ListChatMessagesRequest) Reset() {
 	*x = ListChatMessagesRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[18]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1331,7 +1565,7 @@ func (x *ListChatMessagesRequest) String() string {
 func (*ListChatMessagesRequest) ProtoMessage() {}
 
 func (x *ListChatMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[18]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1344,7 +1578,7 @@ func (x *ListChatMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ListChatMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{18}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListChatMessagesRequest) GetProjectId() int64 {
@@ -1378,7 +1612,7 @@ type ListChatMessagesResponse struct {
 
 func (x *ListChatMessagesResponse) Reset() {
 	*x = ListChatMessagesResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[19]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1390,7 +1624,7 @@ func (x *ListChatMessagesResponse) String() string {
 func (*ListChatMessagesResponse) ProtoMessage() {}
 
 func (x *ListChatMessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[19]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1403,7 +1637,7 @@ func (x *ListChatMessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChatMessagesResponse.ProtoReflect.Descriptor instead.
 func (*ListChatMessagesResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{19}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListChatMessagesResponse) GetMessages() []*ChatMessage {
@@ -1430,7 +1664,7 @@ type ChatSummary struct {
 
 func (x *ChatSummary) Reset() {
 	*x = ChatSummary{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[20]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1442,7 +1676,7 @@ func (x *ChatSummary) String() string {
 func (*ChatSummary) ProtoMessage() {}
 
 func (x *ChatSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[20]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1455,7 +1689,7 @@ func (x *ChatSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChatSummary.ProtoReflect.Descriptor instead.
 func (*ChatSummary) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{20}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ChatSummary) GetProjectId() int64 {
@@ -1482,7 +1716,7 @@ type ListActiveChatsRequest struct {
 
 func (x *ListActiveChatsRequest) Reset() {
 	*x = ListActiveChatsRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[21]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1494,7 +1728,7 @@ func (x *ListActiveChatsRequest) String() string {
 func (*ListActiveChatsRequest) ProtoMessage() {}
 
 func (x *ListActiveChatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[21]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1507,7 +1741,7 @@ func (x *ListActiveChatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListActiveChatsRequest.ProtoReflect.Descriptor instead.
 func (*ListActiveChatsRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{21}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListActiveChatsRequest) GetLimit() int32 {
@@ -1534,7 +1768,7 @@ type ListActiveChatsResponse struct {
 
 func (x *ListActiveChatsResponse) Reset() {
 	*x = ListActiveChatsResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[22]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1546,7 +1780,7 @@ func (x *ListActiveChatsResponse) String() string {
 func (*ListActiveChatsResponse) ProtoMessage() {}
 
 func (x *ListActiveChatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[22]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1559,7 +1793,7 @@ func (x *ListActiveChatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListActiveChatsResponse.ProtoReflect.Descriptor instead.
 func (*ListActiveChatsResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{22}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListActiveChatsResponse) GetChats() []*ChatSummary {
@@ -1586,7 +1820,7 @@ type CloseDialogRequest struct {
 
 func (x *CloseDialogRequest) Reset() {
 	*x = CloseDialogRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1598,7 +1832,7 @@ func (x *CloseDialogRequest) String() string {
 func (*CloseDialogRequest) ProtoMessage() {}
 
 func (x *CloseDialogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[23]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1611,7 +1845,7 @@ func (x *CloseDialogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloseDialogRequest.ProtoReflect.Descriptor instead.
 func (*CloseDialogRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{23}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *CloseDialogRequest) GetProjectId() int64 {
@@ -1638,7 +1872,7 @@ type CloseDialogResponse struct {
 
 func (x *CloseDialogResponse) Reset() {
 	*x = CloseDialogResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1650,7 +1884,7 @@ func (x *CloseDialogResponse) String() string {
 func (*CloseDialogResponse) ProtoMessage() {}
 
 func (x *CloseDialogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[24]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1663,7 +1897,7 @@ func (x *CloseDialogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CloseDialogResponse.ProtoReflect.Descriptor instead.
 func (*CloseDialogResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{24}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CloseDialogResponse) GetSuccess() bool {
@@ -1702,7 +1936,7 @@ type ModeratorStats struct {
 
 func (x *ModeratorStats) Reset() {
 	*x = ModeratorStats{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[25]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1714,7 +1948,7 @@ func (x *ModeratorStats) String() string {
 func (*ModeratorStats) ProtoMessage() {}
 
 func (x *ModeratorStats) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[25]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1727,7 +1961,7 @@ func (x *ModeratorStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModeratorStats.ProtoReflect.Descriptor instead.
 func (*ModeratorStats) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{25}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ModeratorStats) GetModeratorId() string {
@@ -1830,7 +2064,7 @@ type GetModeratorStatsRequest struct {
 
 func (x *GetModeratorStatsRequest) Reset() {
 	*x = GetModeratorStatsRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[26]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1842,7 +2076,7 @@ func (x *GetModeratorStatsRequest) String() string {
 func (*GetModeratorStatsRequest) ProtoMessage() {}
 
 func (x *GetModeratorStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[26]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1855,7 +2089,7 @@ func (x *GetModeratorStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModeratorStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetModeratorStatsRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{26}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetModeratorStatsRequest) GetModeratorId() string {
@@ -1874,7 +2108,7 @@ type GetModeratorStatsResponse struct {
 
 func (x *GetModeratorStatsResponse) Reset() {
 	*x = GetModeratorStatsResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[27]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1886,7 +2120,7 @@ func (x *GetModeratorStatsResponse) String() string {
 func (*GetModeratorStatsResponse) ProtoMessage() {}
 
 func (x *GetModeratorStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[27]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1899,7 +2133,7 @@ func (x *GetModeratorStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModeratorStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetModeratorStatsResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{27}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetModeratorStatsResponse) GetStats() *ModeratorStats {
@@ -1917,7 +2151,7 @@ type ListModeratorsStatsRequest struct {
 
 func (x *ListModeratorsStatsRequest) Reset() {
 	*x = ListModeratorsStatsRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[28]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1929,7 +2163,7 @@ func (x *ListModeratorsStatsRequest) String() string {
 func (*ListModeratorsStatsRequest) ProtoMessage() {}
 
 func (x *ListModeratorsStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[28]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1942,7 +2176,7 @@ func (x *ListModeratorsStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModeratorsStatsRequest.ProtoReflect.Descriptor instead.
 func (*ListModeratorsStatsRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{28}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{30}
 }
 
 type ListModeratorsStatsResponse struct {
@@ -1954,7 +2188,7 @@ type ListModeratorsStatsResponse struct {
 
 func (x *ListModeratorsStatsResponse) Reset() {
 	*x = ListModeratorsStatsResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[29]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1966,7 +2200,7 @@ func (x *ListModeratorsStatsResponse) String() string {
 func (*ListModeratorsStatsResponse) ProtoMessage() {}
 
 func (x *ListModeratorsStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[29]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1979,7 +2213,7 @@ func (x *ListModeratorsStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModeratorsStatsResponse.ProtoReflect.Descriptor instead.
 func (*ListModeratorsStatsResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{29}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ListModeratorsStatsResponse) GetStats() []*ModeratorStats {
@@ -2007,7 +2241,7 @@ type ModeratorActivityItem struct {
 
 func (x *ModeratorActivityItem) Reset() {
 	*x = ModeratorActivityItem{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[30]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2019,7 +2253,7 @@ func (x *ModeratorActivityItem) String() string {
 func (*ModeratorActivityItem) ProtoMessage() {}
 
 func (x *ModeratorActivityItem) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[30]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2032,7 +2266,7 @@ func (x *ModeratorActivityItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModeratorActivityItem.ProtoReflect.Descriptor instead.
 func (*ModeratorActivityItem) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{30}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ModeratorActivityItem) GetId() int64 {
@@ -2110,7 +2344,7 @@ type ListModeratorActivityRequest struct {
 
 func (x *ListModeratorActivityRequest) Reset() {
 	*x = ListModeratorActivityRequest{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[31]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2122,7 +2356,7 @@ func (x *ListModeratorActivityRequest) String() string {
 func (*ListModeratorActivityRequest) ProtoMessage() {}
 
 func (x *ListModeratorActivityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[31]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2135,7 +2369,7 @@ func (x *ListModeratorActivityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModeratorActivityRequest.ProtoReflect.Descriptor instead.
 func (*ListModeratorActivityRequest) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{31}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ListModeratorActivityRequest) GetModeratorId() string {
@@ -2176,7 +2410,7 @@ type ListModeratorActivityResponse struct {
 
 func (x *ListModeratorActivityResponse) Reset() {
 	*x = ListModeratorActivityResponse{}
-	mi := &file_moderation_v1_moderation_proto_msgTypes[32]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2188,7 +2422,7 @@ func (x *ListModeratorActivityResponse) String() string {
 func (*ListModeratorActivityResponse) ProtoMessage() {}
 
 func (x *ListModeratorActivityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moderation_v1_moderation_proto_msgTypes[32]
+	mi := &file_moderation_v1_moderation_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2201,7 +2435,7 @@ func (x *ListModeratorActivityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModeratorActivityResponse.ProtoReflect.Descriptor instead.
 func (*ListModeratorActivityResponse) Descriptor() ([]byte, []int) {
-	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{32}
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListModeratorActivityResponse) GetItems() []*ModeratorActivityItem {
@@ -2214,6 +2448,342 @@ func (x *ListModeratorActivityResponse) GetItems() []*ModeratorActivityItem {
 func (x *ListModeratorActivityResponse) GetTotal() int32 {
 	if x != nil {
 		return x.Total
+	}
+	return 0
+}
+
+type RegisterAttachmentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProjectId     int64                  `protobuf:"varint,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	UploaderId    string                 `protobuf:"bytes,3,opt,name=uploader_id,json=uploaderId,proto3" json:"uploader_id,omitempty"`
+	UploaderRole  SenderRole             `protobuf:"varint,4,opt,name=uploader_role,json=uploaderRole,proto3,enum=moderation.v1.SenderRole" json:"uploader_role,omitempty"`
+	FileName      string                 `protobuf:"bytes,5,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize      int64                  `protobuf:"varint,6,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	MimeType      string                 `protobuf:"bytes,7,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	StoragePath   string                 `protobuf:"bytes,8,opt,name=storage_path,json=storagePath,proto3" json:"storage_path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterAttachmentRequest) Reset() {
+	*x = RegisterAttachmentRequest{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterAttachmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterAttachmentRequest) ProtoMessage() {}
+
+func (x *RegisterAttachmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterAttachmentRequest.ProtoReflect.Descriptor instead.
+func (*RegisterAttachmentRequest) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *RegisterAttachmentRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *RegisterAttachmentRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *RegisterAttachmentRequest) GetUploaderId() string {
+	if x != nil {
+		return x.UploaderId
+	}
+	return ""
+}
+
+func (x *RegisterAttachmentRequest) GetUploaderRole() SenderRole {
+	if x != nil {
+		return x.UploaderRole
+	}
+	return SenderRole_SENDER_ROLE_UNSPECIFIED
+}
+
+func (x *RegisterAttachmentRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *RegisterAttachmentRequest) GetFileSize() int64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *RegisterAttachmentRequest) GetMimeType() string {
+	if x != nil {
+		return x.MimeType
+	}
+	return ""
+}
+
+func (x *RegisterAttachmentRequest) GetStoragePath() string {
+	if x != nil {
+		return x.StoragePath
+	}
+	return ""
+}
+
+type RegisterAttachmentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Attachment    *AttachmentInfo        `protobuf:"bytes,1,opt,name=attachment,proto3" json:"attachment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RegisterAttachmentResponse) Reset() {
+	*x = RegisterAttachmentResponse{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RegisterAttachmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterAttachmentResponse) ProtoMessage() {}
+
+func (x *RegisterAttachmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterAttachmentResponse.ProtoReflect.Descriptor instead.
+func (*RegisterAttachmentResponse) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *RegisterAttachmentResponse) GetAttachment() *AttachmentInfo {
+	if x != nil {
+		return x.Attachment
+	}
+	return nil
+}
+
+type GetAttachmentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AttachmentId  string                 `protobuf:"bytes,1,opt,name=attachment_id,json=attachmentId,proto3" json:"attachment_id,omitempty"`
+	ProjectId     int64                  `protobuf:"varint,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAttachmentRequest) Reset() {
+	*x = GetAttachmentRequest{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAttachmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAttachmentRequest) ProtoMessage() {}
+
+func (x *GetAttachmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAttachmentRequest.ProtoReflect.Descriptor instead.
+func (*GetAttachmentRequest) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *GetAttachmentRequest) GetAttachmentId() string {
+	if x != nil {
+		return x.AttachmentId
+	}
+	return ""
+}
+
+func (x *GetAttachmentRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+type GetAttachmentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Attachment    *AttachmentInfo        `protobuf:"bytes,1,opt,name=attachment,proto3" json:"attachment,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAttachmentResponse) Reset() {
+	*x = GetAttachmentResponse{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAttachmentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAttachmentResponse) ProtoMessage() {}
+
+func (x *GetAttachmentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAttachmentResponse.ProtoReflect.Descriptor instead.
+func (*GetAttachmentResponse) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GetAttachmentResponse) GetAttachment() *AttachmentInfo {
+	if x != nil {
+		return x.Attachment
+	}
+	return nil
+}
+
+type PurgeProjectMediaRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PurgeProjectMediaRequest) Reset() {
+	*x = PurgeProjectMediaRequest{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PurgeProjectMediaRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeProjectMediaRequest) ProtoMessage() {}
+
+func (x *PurgeProjectMediaRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeProjectMediaRequest.ProtoReflect.Descriptor instead.
+func (*PurgeProjectMediaRequest) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *PurgeProjectMediaRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+type PurgeProjectMediaResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	PurgedCount   int32                  `protobuf:"varint,2,opt,name=purged_count,json=purgedCount,proto3" json:"purged_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PurgeProjectMediaResponse) Reset() {
+	*x = PurgeProjectMediaResponse{}
+	mi := &file_moderation_v1_moderation_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PurgeProjectMediaResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PurgeProjectMediaResponse) ProtoMessage() {}
+
+func (x *PurgeProjectMediaResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moderation_v1_moderation_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PurgeProjectMediaResponse.ProtoReflect.Descriptor instead.
+func (*PurgeProjectMediaResponse) Descriptor() ([]byte, []int) {
+	return file_moderation_v1_moderation_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *PurgeProjectMediaResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *PurgeProjectMediaResponse) GetPurgedCount() int32 {
+	if x != nil {
+		return x.PurgedCount
 	}
 	return 0
 }
@@ -2253,7 +2823,29 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x11started_review_at\x18\t \x01(\tR\x0fstartedReviewAt\x12\x1f\n" +
 	"\vresolved_at\x18\n" +
 	" \x01(\tR\n" +
-	"resolvedAt\"\xac\x02\n" +
+	"resolvedAt\"\xa6\x02\n" +
+	"\x0eAttachmentInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\x03R\tprojectId\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x03 \x01(\x03R\tmessageId\x12\x1b\n" +
+	"\tfile_name\x18\x04 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\x05 \x01(\x03R\bfileSize\x12\x1b\n" +
+	"\tmime_type\x18\x06 \x01(\tR\bmimeType\x12\x10\n" +
+	"\x03url\x18\a \x01(\tR\x03url\x12!\n" +
+	"\fdownload_url\x18\b \x01(\tR\vdownloadUrl\x12\x1b\n" +
+	"\tis_purged\x18\t \x01(\bR\bisPurged\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\tR\tcreatedAt\"\xd5\x01\n" +
+	"\rViolationItem\x12\x1b\n" +
+	"\trule_code\x18\x01 \x01(\tR\bruleCode\x12\x1d\n" +
+	"\n" +
+	"rule_title\x18\x02 \x01(\tR\truleTitle\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12%\n" +
+	"\x0eattachment_ids\x18\x04 \x03(\tR\rattachmentIds\x12?\n" +
+	"\vattachments\x18\x05 \x03(\v2\x1d.moderation.v1.AttachmentInfoR\vattachments\"\x90\x03\n" +
 	"\vChatMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -2266,7 +2858,10 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\fmessage_type\x18\x06 \x01(\x0e2\x1a.moderation.v1.MessageTypeR\vmessageType\x12\x18\n" +
 	"\acontent\x18\a \x01(\tR\acontent\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt\"\x8a\x01\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\x12?\n" +
+	"\vattachments\x18\t \x03(\v2\x1d.moderation.v1.AttachmentInfoR\vattachments\x12!\n" +
+	"\fpayload_json\x18\n" +
+	" \x01(\tR\vpayloadJson\"\x8a\x01\n" +
 	"\x12SubmitDraftRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +
@@ -2303,18 +2898,23 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x19ApproveModerationResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12:\n" +
 	"\arequest\x18\x02 \x01(\v2 .moderation.v1.ModerationRequestR\arequest\x12\x19\n" +
-	"\bprod_url\x18\x03 \x01(\tR\aprodUrl\"P\n" +
+	"\bprod_url\x18\x03 \x01(\tR\aprodUrl\"\x8e\x01\n" +
 	"\x17RejectModerationRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"p\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12<\n" +
+	"\n" +
+	"violations\x18\x03 \x03(\v2\x1c.moderation.v1.ViolationItemR\n" +
+	"violations\"p\n" +
 	"\x18RejectModerationResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12:\n" +
-	"\arequest\x18\x02 \x01(\v2 .moderation.v1.ModerationRequestR\arequest\"Q\n" +
+	"\arequest\x18\x02 \x01(\v2 .moderation.v1.ModerationRequestR\arequest\"\x9b\x01\n" +
 	"\x16SendChatMessageRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"O\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\x12%\n" +
+	"\x0eattachment_ids\x18\x03 \x03(\tR\rattachmentIds\x12!\n" +
+	"\fpayload_json\x18\x04 \x01(\tR\vpayloadJson\"O\n" +
 	"\x17SendChatMessageResponse\x124\n" +
 	"\amessage\x18\x01 \x01(\v2\x1a.moderation.v1.ChatMessageR\amessage\"f\n" +
 	"\x17ListChatMessagesRequest\x12\x1d\n" +
@@ -2385,7 +2985,36 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"q\n" +
 	"\x1dListModeratorActivityResponse\x12:\n" +
 	"\x05items\x18\x01 \x03(\v2$.moderation.v1.ModeratorActivityItemR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total*\xc1\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xa5\x02\n" +
+	"\x19RegisterAttachmentRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\x03R\tprojectId\x12\x1f\n" +
+	"\vuploader_id\x18\x03 \x01(\tR\n" +
+	"uploaderId\x12>\n" +
+	"\ruploader_role\x18\x04 \x01(\x0e2\x19.moderation.v1.SenderRoleR\fuploaderRole\x12\x1b\n" +
+	"\tfile_name\x18\x05 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\x06 \x01(\x03R\bfileSize\x12\x1b\n" +
+	"\tmime_type\x18\a \x01(\tR\bmimeType\x12!\n" +
+	"\fstorage_path\x18\b \x01(\tR\vstoragePath\"[\n" +
+	"\x1aRegisterAttachmentResponse\x12=\n" +
+	"\n" +
+	"attachment\x18\x01 \x01(\v2\x1d.moderation.v1.AttachmentInfoR\n" +
+	"attachment\"Z\n" +
+	"\x14GetAttachmentRequest\x12#\n" +
+	"\rattachment_id\x18\x01 \x01(\tR\fattachmentId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\x03R\tprojectId\"V\n" +
+	"\x15GetAttachmentResponse\x12=\n" +
+	"\n" +
+	"attachment\x18\x01 \x01(\v2\x1d.moderation.v1.AttachmentInfoR\n" +
+	"attachment\"9\n" +
+	"\x18PurgeProjectMediaRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\"X\n" +
+	"\x19PurgeProjectMediaResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12!\n" +
+	"\fpurged_count\x18\x02 \x01(\x05R\vpurgedCount*\xc1\x01\n" +
 	"\rRequestStatus\x12\x1e\n" +
 	"\x1aREQUEST_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16REQUEST_STATUS_PENDING\x10\x01\x12\x1c\n" +
@@ -2405,7 +3034,7 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x16MESSAGE_TYPE_SUBMITTED\x10\x02\x12\x1f\n" +
 	"\x1bMESSAGE_TYPE_STATUS_CHANGED\x10\x03\x12\x19\n" +
 	"\x15MESSAGE_TYPE_APPROVED\x10\x04\x12\x19\n" +
-	"\x15MESSAGE_TYPE_REJECTED\x10\x052\xf5\x10\n" +
+	"\x15MESSAGE_TYPE_REJECTED\x10\x052\xa4\x13\n" +
 	"\x11ModerationService\x12T\n" +
 	"\vSubmitDraft\x12!.moderation.v1.SubmitDraftRequest\x1a\".moderation.v1.SubmitDraftResponse\x12\x90\x01\n" +
 	"\fListRequests\x12,.moderation.v1.ListModerationRequestsRequest\x1a-.moderation.v1.ListModerationRequestsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/moderation/requests\x12\x97\x01\n" +
@@ -2421,7 +3050,10 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\vCloseDialog\x12!.moderation.v1.CloseDialogRequest\x1a\".moderation.v1.CloseDialogResponse\"@\x82\xd3\xe4\x93\x02::\x01*\"5/api/v1/moderation/projects/{project_id}/close-dialog\x12\xa2\x01\n" +
 	"\x11GetModeratorStats\x12'.moderation.v1.GetModeratorStatsRequest\x1a(.moderation.v1.GetModeratorStatsResponse\":\x82\xd3\xe4\x93\x024\x122/api/v1/moderation/moderators/{moderator_id}/stats\x12\x99\x01\n" +
 	"\x13ListModeratorsStats\x12).moderation.v1.ListModeratorsStatsRequest\x1a*.moderation.v1.ListModeratorsStatsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/moderation/moderators/stats\x12\xb1\x01\n" +
-	"\x15ListModeratorActivity\x12+.moderation.v1.ListModeratorActivityRequest\x1a,.moderation.v1.ListModeratorActivityResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/moderation/moderators/{moderator_id}/activityB\xc1\x01\n" +
+	"\x15ListModeratorActivity\x12+.moderation.v1.ListModeratorActivityRequest\x1a,.moderation.v1.ListModeratorActivityResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/moderation/moderators/{moderator_id}/activity\x12i\n" +
+	"\x12RegisterAttachment\x12(.moderation.v1.RegisterAttachmentRequest\x1a).moderation.v1.RegisterAttachmentResponse\x12Z\n" +
+	"\rGetAttachment\x12#.moderation.v1.GetAttachmentRequest\x1a$.moderation.v1.GetAttachmentResponse\x12f\n" +
+	"\x11PurgeProjectMedia\x12'.moderation.v1.PurgeProjectMediaRequest\x1a(.moderation.v1.PurgeProjectMediaResponseB\xc1\x01\n" +
 	"\x11com.moderation.v1B\x0fModerationProtoP\x01ZFgithub.com/Be4Die/game-developer-hub/protos/moderation/v1;moderationv1\xa2\x02\x03MXX\xaa\x02\rModeration.V1\xca\x02\rModeration\\V1\xe2\x02\x19Moderation\\V1\\GPBMetadata\xea\x02\x0eModeration::V1b\x06proto3"
 
 var (
@@ -2437,99 +3069,119 @@ func file_moderation_v1_moderation_proto_rawDescGZIP() []byte {
 }
 
 var file_moderation_v1_moderation_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_moderation_v1_moderation_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_moderation_v1_moderation_proto_goTypes = []any{
 	(RequestStatus)(0),                       // 0: moderation.v1.RequestStatus
 	(SenderRole)(0),                          // 1: moderation.v1.SenderRole
 	(MessageType)(0),                         // 2: moderation.v1.MessageType
 	(*ProjectSnapshot)(nil),                  // 3: moderation.v1.ProjectSnapshot
 	(*ModerationRequest)(nil),                // 4: moderation.v1.ModerationRequest
-	(*ChatMessage)(nil),                      // 5: moderation.v1.ChatMessage
-	(*SubmitDraftRequest)(nil),               // 6: moderation.v1.SubmitDraftRequest
-	(*SubmitDraftResponse)(nil),              // 7: moderation.v1.SubmitDraftResponse
-	(*ListModerationRequestsRequest)(nil),    // 8: moderation.v1.ListModerationRequestsRequest
-	(*ListModerationRequestsResponse)(nil),   // 9: moderation.v1.ListModerationRequestsResponse
-	(*GetModerationRequestRequest)(nil),      // 10: moderation.v1.GetModerationRequestRequest
-	(*GetModerationRequestResponse)(nil),     // 11: moderation.v1.GetModerationRequestResponse
-	(*GetLatestRequestByProjectRequest)(nil), // 12: moderation.v1.GetLatestRequestByProjectRequest
-	(*ClaimModerationRequestRequest)(nil),    // 13: moderation.v1.ClaimModerationRequestRequest
-	(*ClaimModerationRequestResponse)(nil),   // 14: moderation.v1.ClaimModerationRequestResponse
-	(*ApproveModerationRequest)(nil),         // 15: moderation.v1.ApproveModerationRequest
-	(*ApproveModerationResponse)(nil),        // 16: moderation.v1.ApproveModerationResponse
-	(*RejectModerationRequest)(nil),          // 17: moderation.v1.RejectModerationRequest
-	(*RejectModerationResponse)(nil),         // 18: moderation.v1.RejectModerationResponse
-	(*SendChatMessageRequest)(nil),           // 19: moderation.v1.SendChatMessageRequest
-	(*SendChatMessageResponse)(nil),          // 20: moderation.v1.SendChatMessageResponse
-	(*ListChatMessagesRequest)(nil),          // 21: moderation.v1.ListChatMessagesRequest
-	(*ListChatMessagesResponse)(nil),         // 22: moderation.v1.ListChatMessagesResponse
-	(*ChatSummary)(nil),                      // 23: moderation.v1.ChatSummary
-	(*ListActiveChatsRequest)(nil),           // 24: moderation.v1.ListActiveChatsRequest
-	(*ListActiveChatsResponse)(nil),          // 25: moderation.v1.ListActiveChatsResponse
-	(*CloseDialogRequest)(nil),               // 26: moderation.v1.CloseDialogRequest
-	(*CloseDialogResponse)(nil),              // 27: moderation.v1.CloseDialogResponse
-	(*ModeratorStats)(nil),                   // 28: moderation.v1.ModeratorStats
-	(*GetModeratorStatsRequest)(nil),         // 29: moderation.v1.GetModeratorStatsRequest
-	(*GetModeratorStatsResponse)(nil),        // 30: moderation.v1.GetModeratorStatsResponse
-	(*ListModeratorsStatsRequest)(nil),       // 31: moderation.v1.ListModeratorsStatsRequest
-	(*ListModeratorsStatsResponse)(nil),      // 32: moderation.v1.ListModeratorsStatsResponse
-	(*ModeratorActivityItem)(nil),            // 33: moderation.v1.ModeratorActivityItem
-	(*ListModeratorActivityRequest)(nil),     // 34: moderation.v1.ListModeratorActivityRequest
-	(*ListModeratorActivityResponse)(nil),    // 35: moderation.v1.ListModeratorActivityResponse
+	(*AttachmentInfo)(nil),                   // 5: moderation.v1.AttachmentInfo
+	(*ViolationItem)(nil),                    // 6: moderation.v1.ViolationItem
+	(*ChatMessage)(nil),                      // 7: moderation.v1.ChatMessage
+	(*SubmitDraftRequest)(nil),               // 8: moderation.v1.SubmitDraftRequest
+	(*SubmitDraftResponse)(nil),              // 9: moderation.v1.SubmitDraftResponse
+	(*ListModerationRequestsRequest)(nil),    // 10: moderation.v1.ListModerationRequestsRequest
+	(*ListModerationRequestsResponse)(nil),   // 11: moderation.v1.ListModerationRequestsResponse
+	(*GetModerationRequestRequest)(nil),      // 12: moderation.v1.GetModerationRequestRequest
+	(*GetModerationRequestResponse)(nil),     // 13: moderation.v1.GetModerationRequestResponse
+	(*GetLatestRequestByProjectRequest)(nil), // 14: moderation.v1.GetLatestRequestByProjectRequest
+	(*ClaimModerationRequestRequest)(nil),    // 15: moderation.v1.ClaimModerationRequestRequest
+	(*ClaimModerationRequestResponse)(nil),   // 16: moderation.v1.ClaimModerationRequestResponse
+	(*ApproveModerationRequest)(nil),         // 17: moderation.v1.ApproveModerationRequest
+	(*ApproveModerationResponse)(nil),        // 18: moderation.v1.ApproveModerationResponse
+	(*RejectModerationRequest)(nil),          // 19: moderation.v1.RejectModerationRequest
+	(*RejectModerationResponse)(nil),         // 20: moderation.v1.RejectModerationResponse
+	(*SendChatMessageRequest)(nil),           // 21: moderation.v1.SendChatMessageRequest
+	(*SendChatMessageResponse)(nil),          // 22: moderation.v1.SendChatMessageResponse
+	(*ListChatMessagesRequest)(nil),          // 23: moderation.v1.ListChatMessagesRequest
+	(*ListChatMessagesResponse)(nil),         // 24: moderation.v1.ListChatMessagesResponse
+	(*ChatSummary)(nil),                      // 25: moderation.v1.ChatSummary
+	(*ListActiveChatsRequest)(nil),           // 26: moderation.v1.ListActiveChatsRequest
+	(*ListActiveChatsResponse)(nil),          // 27: moderation.v1.ListActiveChatsResponse
+	(*CloseDialogRequest)(nil),               // 28: moderation.v1.CloseDialogRequest
+	(*CloseDialogResponse)(nil),              // 29: moderation.v1.CloseDialogResponse
+	(*ModeratorStats)(nil),                   // 30: moderation.v1.ModeratorStats
+	(*GetModeratorStatsRequest)(nil),         // 31: moderation.v1.GetModeratorStatsRequest
+	(*GetModeratorStatsResponse)(nil),        // 32: moderation.v1.GetModeratorStatsResponse
+	(*ListModeratorsStatsRequest)(nil),       // 33: moderation.v1.ListModeratorsStatsRequest
+	(*ListModeratorsStatsResponse)(nil),      // 34: moderation.v1.ListModeratorsStatsResponse
+	(*ModeratorActivityItem)(nil),            // 35: moderation.v1.ModeratorActivityItem
+	(*ListModeratorActivityRequest)(nil),     // 36: moderation.v1.ListModeratorActivityRequest
+	(*ListModeratorActivityResponse)(nil),    // 37: moderation.v1.ListModeratorActivityResponse
+	(*RegisterAttachmentRequest)(nil),        // 38: moderation.v1.RegisterAttachmentRequest
+	(*RegisterAttachmentResponse)(nil),       // 39: moderation.v1.RegisterAttachmentResponse
+	(*GetAttachmentRequest)(nil),             // 40: moderation.v1.GetAttachmentRequest
+	(*GetAttachmentResponse)(nil),            // 41: moderation.v1.GetAttachmentResponse
+	(*PurgeProjectMediaRequest)(nil),         // 42: moderation.v1.PurgeProjectMediaRequest
+	(*PurgeProjectMediaResponse)(nil),        // 43: moderation.v1.PurgeProjectMediaResponse
 }
 var file_moderation_v1_moderation_proto_depIdxs = []int32{
 	0,  // 0: moderation.v1.ModerationRequest.status:type_name -> moderation.v1.RequestStatus
 	3,  // 1: moderation.v1.ModerationRequest.snapshot:type_name -> moderation.v1.ProjectSnapshot
-	1,  // 2: moderation.v1.ChatMessage.sender_role:type_name -> moderation.v1.SenderRole
-	2,  // 3: moderation.v1.ChatMessage.message_type:type_name -> moderation.v1.MessageType
-	3,  // 4: moderation.v1.SubmitDraftRequest.snapshot:type_name -> moderation.v1.ProjectSnapshot
-	4,  // 5: moderation.v1.SubmitDraftResponse.request:type_name -> moderation.v1.ModerationRequest
-	0,  // 6: moderation.v1.ListModerationRequestsRequest.status:type_name -> moderation.v1.RequestStatus
-	4,  // 7: moderation.v1.ListModerationRequestsResponse.requests:type_name -> moderation.v1.ModerationRequest
-	4,  // 8: moderation.v1.GetModerationRequestResponse.request:type_name -> moderation.v1.ModerationRequest
-	4,  // 9: moderation.v1.ClaimModerationRequestResponse.request:type_name -> moderation.v1.ModerationRequest
-	4,  // 10: moderation.v1.ApproveModerationResponse.request:type_name -> moderation.v1.ModerationRequest
-	4,  // 11: moderation.v1.RejectModerationResponse.request:type_name -> moderation.v1.ModerationRequest
-	5,  // 12: moderation.v1.SendChatMessageResponse.message:type_name -> moderation.v1.ChatMessage
-	5,  // 13: moderation.v1.ListChatMessagesResponse.messages:type_name -> moderation.v1.ChatMessage
-	5,  // 14: moderation.v1.ChatSummary.last_message:type_name -> moderation.v1.ChatMessage
-	23, // 15: moderation.v1.ListActiveChatsResponse.chats:type_name -> moderation.v1.ChatSummary
-	5,  // 16: moderation.v1.CloseDialogResponse.message:type_name -> moderation.v1.ChatMessage
-	28, // 17: moderation.v1.GetModeratorStatsResponse.stats:type_name -> moderation.v1.ModeratorStats
-	28, // 18: moderation.v1.ListModeratorsStatsResponse.stats:type_name -> moderation.v1.ModeratorStats
-	33, // 19: moderation.v1.ListModeratorActivityResponse.items:type_name -> moderation.v1.ModeratorActivityItem
-	6,  // 20: moderation.v1.ModerationService.SubmitDraft:input_type -> moderation.v1.SubmitDraftRequest
-	8,  // 21: moderation.v1.ModerationService.ListRequests:input_type -> moderation.v1.ListModerationRequestsRequest
-	10, // 22: moderation.v1.ModerationService.GetRequest:input_type -> moderation.v1.GetModerationRequestRequest
-	12, // 23: moderation.v1.ModerationService.GetLatestRequestByProject:input_type -> moderation.v1.GetLatestRequestByProjectRequest
-	13, // 24: moderation.v1.ModerationService.ClaimRequest:input_type -> moderation.v1.ClaimModerationRequestRequest
-	15, // 25: moderation.v1.ModerationService.Approve:input_type -> moderation.v1.ApproveModerationRequest
-	17, // 26: moderation.v1.ModerationService.Reject:input_type -> moderation.v1.RejectModerationRequest
-	19, // 27: moderation.v1.ModerationService.SendMessage:input_type -> moderation.v1.SendChatMessageRequest
-	21, // 28: moderation.v1.ModerationService.ListMessages:input_type -> moderation.v1.ListChatMessagesRequest
-	24, // 29: moderation.v1.ModerationService.ListActiveChats:input_type -> moderation.v1.ListActiveChatsRequest
-	26, // 30: moderation.v1.ModerationService.CloseDialog:input_type -> moderation.v1.CloseDialogRequest
-	29, // 31: moderation.v1.ModerationService.GetModeratorStats:input_type -> moderation.v1.GetModeratorStatsRequest
-	31, // 32: moderation.v1.ModerationService.ListModeratorsStats:input_type -> moderation.v1.ListModeratorsStatsRequest
-	34, // 33: moderation.v1.ModerationService.ListModeratorActivity:input_type -> moderation.v1.ListModeratorActivityRequest
-	7,  // 34: moderation.v1.ModerationService.SubmitDraft:output_type -> moderation.v1.SubmitDraftResponse
-	9,  // 35: moderation.v1.ModerationService.ListRequests:output_type -> moderation.v1.ListModerationRequestsResponse
-	11, // 36: moderation.v1.ModerationService.GetRequest:output_type -> moderation.v1.GetModerationRequestResponse
-	11, // 37: moderation.v1.ModerationService.GetLatestRequestByProject:output_type -> moderation.v1.GetModerationRequestResponse
-	14, // 38: moderation.v1.ModerationService.ClaimRequest:output_type -> moderation.v1.ClaimModerationRequestResponse
-	16, // 39: moderation.v1.ModerationService.Approve:output_type -> moderation.v1.ApproveModerationResponse
-	18, // 40: moderation.v1.ModerationService.Reject:output_type -> moderation.v1.RejectModerationResponse
-	20, // 41: moderation.v1.ModerationService.SendMessage:output_type -> moderation.v1.SendChatMessageResponse
-	22, // 42: moderation.v1.ModerationService.ListMessages:output_type -> moderation.v1.ListChatMessagesResponse
-	25, // 43: moderation.v1.ModerationService.ListActiveChats:output_type -> moderation.v1.ListActiveChatsResponse
-	27, // 44: moderation.v1.ModerationService.CloseDialog:output_type -> moderation.v1.CloseDialogResponse
-	30, // 45: moderation.v1.ModerationService.GetModeratorStats:output_type -> moderation.v1.GetModeratorStatsResponse
-	32, // 46: moderation.v1.ModerationService.ListModeratorsStats:output_type -> moderation.v1.ListModeratorsStatsResponse
-	35, // 47: moderation.v1.ModerationService.ListModeratorActivity:output_type -> moderation.v1.ListModeratorActivityResponse
-	34, // [34:48] is the sub-list for method output_type
-	20, // [20:34] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	5,  // 2: moderation.v1.ViolationItem.attachments:type_name -> moderation.v1.AttachmentInfo
+	1,  // 3: moderation.v1.ChatMessage.sender_role:type_name -> moderation.v1.SenderRole
+	2,  // 4: moderation.v1.ChatMessage.message_type:type_name -> moderation.v1.MessageType
+	5,  // 5: moderation.v1.ChatMessage.attachments:type_name -> moderation.v1.AttachmentInfo
+	3,  // 6: moderation.v1.SubmitDraftRequest.snapshot:type_name -> moderation.v1.ProjectSnapshot
+	4,  // 7: moderation.v1.SubmitDraftResponse.request:type_name -> moderation.v1.ModerationRequest
+	0,  // 8: moderation.v1.ListModerationRequestsRequest.status:type_name -> moderation.v1.RequestStatus
+	4,  // 9: moderation.v1.ListModerationRequestsResponse.requests:type_name -> moderation.v1.ModerationRequest
+	4,  // 10: moderation.v1.GetModerationRequestResponse.request:type_name -> moderation.v1.ModerationRequest
+	4,  // 11: moderation.v1.ClaimModerationRequestResponse.request:type_name -> moderation.v1.ModerationRequest
+	4,  // 12: moderation.v1.ApproveModerationResponse.request:type_name -> moderation.v1.ModerationRequest
+	6,  // 13: moderation.v1.RejectModerationRequest.violations:type_name -> moderation.v1.ViolationItem
+	4,  // 14: moderation.v1.RejectModerationResponse.request:type_name -> moderation.v1.ModerationRequest
+	7,  // 15: moderation.v1.SendChatMessageResponse.message:type_name -> moderation.v1.ChatMessage
+	7,  // 16: moderation.v1.ListChatMessagesResponse.messages:type_name -> moderation.v1.ChatMessage
+	7,  // 17: moderation.v1.ChatSummary.last_message:type_name -> moderation.v1.ChatMessage
+	25, // 18: moderation.v1.ListActiveChatsResponse.chats:type_name -> moderation.v1.ChatSummary
+	7,  // 19: moderation.v1.CloseDialogResponse.message:type_name -> moderation.v1.ChatMessage
+	30, // 20: moderation.v1.GetModeratorStatsResponse.stats:type_name -> moderation.v1.ModeratorStats
+	30, // 21: moderation.v1.ListModeratorsStatsResponse.stats:type_name -> moderation.v1.ModeratorStats
+	35, // 22: moderation.v1.ListModeratorActivityResponse.items:type_name -> moderation.v1.ModeratorActivityItem
+	1,  // 23: moderation.v1.RegisterAttachmentRequest.uploader_role:type_name -> moderation.v1.SenderRole
+	5,  // 24: moderation.v1.RegisterAttachmentResponse.attachment:type_name -> moderation.v1.AttachmentInfo
+	5,  // 25: moderation.v1.GetAttachmentResponse.attachment:type_name -> moderation.v1.AttachmentInfo
+	8,  // 26: moderation.v1.ModerationService.SubmitDraft:input_type -> moderation.v1.SubmitDraftRequest
+	10, // 27: moderation.v1.ModerationService.ListRequests:input_type -> moderation.v1.ListModerationRequestsRequest
+	12, // 28: moderation.v1.ModerationService.GetRequest:input_type -> moderation.v1.GetModerationRequestRequest
+	14, // 29: moderation.v1.ModerationService.GetLatestRequestByProject:input_type -> moderation.v1.GetLatestRequestByProjectRequest
+	15, // 30: moderation.v1.ModerationService.ClaimRequest:input_type -> moderation.v1.ClaimModerationRequestRequest
+	17, // 31: moderation.v1.ModerationService.Approve:input_type -> moderation.v1.ApproveModerationRequest
+	19, // 32: moderation.v1.ModerationService.Reject:input_type -> moderation.v1.RejectModerationRequest
+	21, // 33: moderation.v1.ModerationService.SendMessage:input_type -> moderation.v1.SendChatMessageRequest
+	23, // 34: moderation.v1.ModerationService.ListMessages:input_type -> moderation.v1.ListChatMessagesRequest
+	26, // 35: moderation.v1.ModerationService.ListActiveChats:input_type -> moderation.v1.ListActiveChatsRequest
+	28, // 36: moderation.v1.ModerationService.CloseDialog:input_type -> moderation.v1.CloseDialogRequest
+	31, // 37: moderation.v1.ModerationService.GetModeratorStats:input_type -> moderation.v1.GetModeratorStatsRequest
+	33, // 38: moderation.v1.ModerationService.ListModeratorsStats:input_type -> moderation.v1.ListModeratorsStatsRequest
+	36, // 39: moderation.v1.ModerationService.ListModeratorActivity:input_type -> moderation.v1.ListModeratorActivityRequest
+	38, // 40: moderation.v1.ModerationService.RegisterAttachment:input_type -> moderation.v1.RegisterAttachmentRequest
+	40, // 41: moderation.v1.ModerationService.GetAttachment:input_type -> moderation.v1.GetAttachmentRequest
+	42, // 42: moderation.v1.ModerationService.PurgeProjectMedia:input_type -> moderation.v1.PurgeProjectMediaRequest
+	9,  // 43: moderation.v1.ModerationService.SubmitDraft:output_type -> moderation.v1.SubmitDraftResponse
+	11, // 44: moderation.v1.ModerationService.ListRequests:output_type -> moderation.v1.ListModerationRequestsResponse
+	13, // 45: moderation.v1.ModerationService.GetRequest:output_type -> moderation.v1.GetModerationRequestResponse
+	13, // 46: moderation.v1.ModerationService.GetLatestRequestByProject:output_type -> moderation.v1.GetModerationRequestResponse
+	16, // 47: moderation.v1.ModerationService.ClaimRequest:output_type -> moderation.v1.ClaimModerationRequestResponse
+	18, // 48: moderation.v1.ModerationService.Approve:output_type -> moderation.v1.ApproveModerationResponse
+	20, // 49: moderation.v1.ModerationService.Reject:output_type -> moderation.v1.RejectModerationResponse
+	22, // 50: moderation.v1.ModerationService.SendMessage:output_type -> moderation.v1.SendChatMessageResponse
+	24, // 51: moderation.v1.ModerationService.ListMessages:output_type -> moderation.v1.ListChatMessagesResponse
+	27, // 52: moderation.v1.ModerationService.ListActiveChats:output_type -> moderation.v1.ListActiveChatsResponse
+	29, // 53: moderation.v1.ModerationService.CloseDialog:output_type -> moderation.v1.CloseDialogResponse
+	32, // 54: moderation.v1.ModerationService.GetModeratorStats:output_type -> moderation.v1.GetModeratorStatsResponse
+	34, // 55: moderation.v1.ModerationService.ListModeratorsStats:output_type -> moderation.v1.ListModeratorsStatsResponse
+	37, // 56: moderation.v1.ModerationService.ListModeratorActivity:output_type -> moderation.v1.ListModeratorActivityResponse
+	39, // 57: moderation.v1.ModerationService.RegisterAttachment:output_type -> moderation.v1.RegisterAttachmentResponse
+	41, // 58: moderation.v1.ModerationService.GetAttachment:output_type -> moderation.v1.GetAttachmentResponse
+	43, // 59: moderation.v1.ModerationService.PurgeProjectMedia:output_type -> moderation.v1.PurgeProjectMediaResponse
+	43, // [43:60] is the sub-list for method output_type
+	26, // [26:43] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_moderation_v1_moderation_proto_init() }
@@ -2543,7 +3195,7 @@ func file_moderation_v1_moderation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moderation_v1_moderation_proto_rawDesc), len(file_moderation_v1_moderation_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   33,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -65,3 +65,29 @@ DROP TRIGGER IF EXISTS trigger_moderation_requests_updated_at ON moderation_requ
 CREATE TRIGGER trigger_moderation_requests_updated_at
     BEFORE UPDATE ON moderation_requests
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица moderation_attachments — вложения (фото и видео) в чате проекта
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS moderation_attachments (
+    id            TEXT PRIMARY KEY,                     -- UUID строкой
+    project_id    BIGINT NOT NULL,
+    message_id    BIGINT REFERENCES moderation_messages(id) ON DELETE SET NULL,
+    uploader_id   TEXT NOT NULL,
+    uploader_role SMALLINT NOT NULL DEFAULT 1,          -- 1=developer, 2=moderator, 3=admin
+    file_name     TEXT NOT NULL,                        -- Исходное имя файла
+    file_size     BIGINT NOT NULL,                      -- Размер файла в байтах
+    mime_type     TEXT NOT NULL,                        -- "image/png", "image/jpeg", "video/mp4", etc.
+    storage_path  TEXT NOT NULL DEFAULT '',             -- Путь в S3 или файловой системе
+    is_purged     BOOLEAN NOT NULL DEFAULT FALSE,       -- Флаг очистки файла после публикации проекта
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE moderation_attachments IS 'Метаданные загруженных фото и видео вложений для чата модерации проекта';
+COMMENT ON COLUMN moderation_attachments.uploader_role IS '1=developer, 2=moderator, 3=admin';
+COMMENT ON COLUMN moderation_attachments.is_purged IS 'true если физический файл удален после одобрения проекта';
+
+CREATE INDEX IF NOT EXISTS idx_mod_attachments_project ON moderation_attachments(project_id);
+CREATE INDEX IF NOT EXISTS idx_mod_attachments_message ON moderation_attachments(message_id) WHERE message_id IS NOT NULL;
+

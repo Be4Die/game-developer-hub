@@ -543,7 +543,9 @@ async function handleSidebarSubmit() {
 
 /* Правый сайдбар с чатом */
 .chat-sidebar {
-  width: 400px;
+  width: 480px;
+  min-width: 400px;
+  max-width: 560px;
   height: 100%;
   background: var(--bg-card);
   border-left: 1px solid var(--border);
@@ -552,6 +554,19 @@ async function handleSidebarSubmit() {
   flex-shrink: 0;
   overflow: hidden;
   box-sizing: border-box;
+  transition: width 0.2s ease;
+}
+
+@media (min-width: 1600px) {
+  .chat-sidebar {
+    width: 520px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .chat-sidebar {
+    width: 420px;
+  }
 }
 
 .workspace-chat {
