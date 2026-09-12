@@ -79,7 +79,7 @@ func handleBuildUpload(client gwpb.BuildServiceClient, fallback http.Handler) ht
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		r.Body = http.MaxBytesReader(w, r.Body, 2048<<20)
 		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return
@@ -163,7 +163,7 @@ func handleProjectBuildUpload(client projpb.ProjectServiceClient, fallback http.
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		r.Body = http.MaxBytesReader(w, r.Body, 2048<<20)
 		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return
@@ -240,7 +240,7 @@ func handleProjectMediaUpload(client projpb.ProjectServiceClient, fallback http.
 			return
 		}
 
-		r.Body = http.MaxBytesReader(w, r.Body, 32<<20)
+		r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
 		if err := r.ParseMultipartForm(32 << 20); err != nil { //nolint:gosec // bounded by MaxBytesReader
 			http.Error(w, fmt.Sprintf("parse multipart: %v", err), http.StatusBadRequest)
 			return

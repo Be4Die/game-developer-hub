@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"sync"
@@ -15,9 +16,11 @@ import (
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/valkey"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
+
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/deployment"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/postgres"
+	s3storage "github.com/Be4Die/game-developer-hub/project-manager/internal/storage/s3"
 	grpctransport "github.com/Be4Die/game-developer-hub/project-manager/internal/transport/grpc"
 	pb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,11 +73,58 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	blockRepo := postgres.NewBlockRepo(pool)
 
 	// ─── Хранилища и Драйверы развертывания ─────────────────────
-	buildStorage := filesystem.NewBuildStorage(cfg.Storage.ProjectsPath)
-	mediaStorage := filesystem.NewMediaStorage(cfg.Storage.ProjectsPath)
+	var (
+		buildStorage domain.BuildStorage
+		mediaStorage domain.MediaStorage
+		deployer     domain.Deployer
+		s3Client     *s3storage.Client
+	)
 
-	var deployer domain.Deployer
-	if cfg.Deployment.Mode == "agent" {
+	if cfg.Storage.Driver == "s3" || cfg.Deployment.Mode == "s3" {
+		client, err := s3storage.NewClient(context.Background(), s3storage.Config{
+			Endpoint:     cfg.Storage.S3.Endpoint,
+			AccessKey:    cfg.Storage.S3.AccessKey,
+			SecretKey:    cfg.Storage.S3.SecretKey,
+			UseSSL:       cfg.Storage.S3.UseSSL,
+			Region:       cfg.Storage.S3.Region,
+			GamesBucket:  cfg.Storage.S3.GamesBucket,
+			MediaBucket:  cfg.Storage.S3.MediaBucket,
+			BuildsBucket: cfg.Storage.S3.BuildsBucket,
+		}, log)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create S3 client: %w", err)
+		}
+		s3Client = client
+
+		if err := s3Client.EnsureBuckets(context.Background(),
+			cfg.Storage.S3.GamesBucket,
+			cfg.Storage.S3.MediaBucket,
+			cfg.Storage.S3.BuildsBucket,
+		); err != nil {
+			log.Warn("failed to ensure S3 buckets (storage might still be starting)", slog.String("error", err.Error()))
+		}
+	}
+
+	// Выбор хранилища билдов и промо-медиа
+	if cfg.Storage.Driver == "s3" && s3Client != nil {
+		buildStorage = s3storage.NewBuildStorage(s3Client, cfg.Storage.S3.BuildsBucket)
+		mediaStorage = s3storage.NewMediaStorage(s3Client, cfg.Storage.S3.MediaBucket)
+		log.Info("using S3 build and media storage", slog.String("endpoint", cfg.Storage.S3.Endpoint))
+	} else {
+		buildStorage = filesystem.NewBuildStorage(cfg.Storage.ProjectsPath)
+		mediaStorage = filesystem.NewMediaStorage(cfg.Storage.ProjectsPath)
+		log.Info("using filesystem build and media storage", slog.String("path", cfg.Storage.ProjectsPath))
+	}
+
+	// Выбор режима публикации игр (local, agent, s3)
+	switch cfg.Deployment.Mode {
+	case "s3":
+		if s3Client == nil {
+			return nil, fmt.Errorf("deployment.mode is 's3' but S3 client was not initialized")
+		}
+		deployer = s3storage.NewDeployer(s3Client, cfg.Storage.S3.GamesBucket, cfg.Storage.S3.BuildsBucket, cfg.Deployment.URLPrefix)
+		log.Info("using S3 deployer for web games", slog.String("endpoint", cfg.Storage.S3.Endpoint))
+	case "agent":
 		agentDeployer, err := deployment.NewAgentDeployer(
 			cfg.Deployment.AgentEndpoint,
 			cfg.Deployment.AgentAPIKey,
@@ -82,9 +132,18 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create agent deployer: %w", err)
 		}
+		if s3Storage, ok := buildStorage.(interface {
+			GetObject(ctx context.Context, projectID int64, version string) (io.ReadCloser, error)
+		}); ok {
+			agentDeployer.SetArchiveOpener(func(ctx context.Context, projectID int64, version, _ string) (io.ReadCloser, error) {
+				return s3Storage.GetObject(ctx, projectID, version)
+			})
+		}
 		deployer = agentDeployer
 		log.Info("using remote agent deployer", slog.String("endpoint", cfg.Deployment.AgentEndpoint))
-	} else {
+	case "local":
+		fallthrough
+	default:
 		deployer = deployment.NewLocalDeployer(
 			cfg.Deployment.GamesBasePath,
 			cfg.Deployment.URLPrefix,

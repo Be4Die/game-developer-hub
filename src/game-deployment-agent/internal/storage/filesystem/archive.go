@@ -4,6 +4,7 @@ package filesystem
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -107,6 +108,100 @@ func isAllowedFile(name string) bool {
 	return false
 }
 
+func isIgnoredFile(name string) bool {
+	clean := filepath.ToSlash(filepath.Clean(name))
+	if strings.HasPrefix(clean, "__MACOSX/") || strings.Contains(clean, "/__MACOSX/") || clean == "__MACOSX" {
+		return true
+	}
+	base := filepath.Base(clean)
+	if strings.HasPrefix(base, "._") || base == ".DS_Store" || strings.EqualFold(base, "thumbs.db") {
+		return true
+	}
+	return false
+}
+
+// determineRootPrefix проверяет, находятся ли все файлы архива в единой папке-обёртке с index.html.
+// Если да, возвращает префикс для удаления (например, "Archive/").
+func determineRootPrefix(names []string) string {
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "index.html" {
+			return ""
+		}
+	}
+
+	var candidateDir string
+	var minDepth = -1
+
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		base := filepath.Base(clean)
+		if strings.EqualFold(base, "index.html") {
+			dir := filepath.Dir(clean)
+			if dir != "." && dir != "" {
+				depth := strings.Count(dir, "/") + 1
+				if minDepth == -1 || depth < minDepth {
+					minDepth = depth
+					candidateDir = dir
+				}
+			}
+		}
+	}
+
+	if candidateDir == "" {
+		return ""
+	}
+
+	prefix := candidateDir + "/"
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "." || clean == "" {
+			continue
+		}
+		if clean != candidateDir && !strings.HasPrefix(clean, prefix) {
+			topDir := strings.Split(candidateDir, "/")[0]
+			if clean != topDir && !strings.HasPrefix(clean, topDir+"/") {
+				return ""
+			}
+			prefix = topDir + "/"
+		}
+	}
+
+	return prefix
+}
+
+func detectArchiveType(archivePath string) (string, error) {
+	f, err := os.Open(archivePath) //nolint:gosec
+	if err != nil {
+		return "", fmt.Errorf("open archive: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	header := make([]byte, 4)
+	n, err := io.ReadFull(f, header)
+	if err == nil || (errors.Is(err, io.ErrUnexpectedEOF) && n >= 2) {
+		if n >= 2 && bytes.Equal(header[:2], []byte{0x1f, 0x8b}) {
+			return "tar.gz", nil
+		}
+		if n >= 4 && bytes.Equal(header[:4], []byte{0x50, 0x4b, 0x03, 0x04}) {
+			return "zip", nil
+		}
+	}
+
+	lower := strings.ToLower(archivePath)
+	if strings.HasSuffix(lower, ".tar.gz") || strings.HasSuffix(lower, ".tgz") {
+		return "tar.gz", nil
+	}
+	if strings.HasSuffix(lower, ".zip") {
+		return "zip", nil
+	}
+
+	return "", domain.ErrInvalidArchive
+}
+
 // ExtractArchive распаковывает архив (ZIP или TAR.GZ) в целевую директорию targetDir.
 // Производит проверки безопасности: Zip-Slip, Zip-Bomb, белый список расширений и наличие index.html.
 func ExtractArchive(archivePath, targetDir string, maxUnpackedBytes int64, maxFiles int) error {
@@ -121,15 +216,16 @@ func ExtractArchive(archivePath, targetDir string, maxUnpackedBytes int64, maxFi
 		return fmt.Errorf("create target dir %s: %w", targetDir, err)
 	}
 
-	var hasIndexHTML bool
-	var err error
+	archType, err := detectArchiveType(archivePath)
+	if err != nil {
+		_ = os.RemoveAll(targetDir)
+		return err
+	}
 
-	if strings.HasSuffix(archivePath, ".zip") {
-		hasIndexHTML, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
-	} else if strings.HasSuffix(archivePath, ".tar.gz") || strings.HasSuffix(archivePath, ".tgz") {
-		hasIndexHTML, err = extractTarGz(archivePath, targetDir, maxUnpackedBytes, maxFiles)
+	if archType == "tar.gz" {
+		err = extractTarGz(archivePath, targetDir, maxUnpackedBytes, maxFiles)
 	} else {
-		hasIndexHTML, err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
+		err = extractZip(archivePath, targetDir, maxUnpackedBytes, maxFiles)
 	}
 
 	if err != nil {
@@ -137,19 +233,14 @@ func ExtractArchive(archivePath, targetDir string, maxUnpackedBytes int64, maxFi
 		return err
 	}
 
-	if !hasIndexHTML {
-		_ = os.RemoveAll(targetDir)
-		return domain.ErrNoIndexHTML
-	}
-
 	return nil
 }
 
-func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bool, error) {
+func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) error {
 	cleanArchive := filepath.Clean(archivePath)
 	r, err := zip.OpenReader(cleanArchive)
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
+		return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
 	}
 	defer func() {
 		_ = r.Close()
@@ -161,46 +252,68 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 
 	cleanTarget := filepath.Clean(targetDir)
 
+	// Pass 1: Сбор файлов для определения корневой обёртки
+	var validNames []string
 	for _, f := range r.File {
-		fileCount++
-		if fileCount > maxFiles {
-			return false, domain.ErrZipBomb
+		if isIgnoredFile(f.Name) {
+			continue
+		}
+		validNames = append(validNames, f.Name)
+	}
+
+	stripPrefix := determineRootPrefix(validNames)
+
+	// Pass 2: Распаковка файлов
+	for _, f := range r.File {
+		if isIgnoredFile(f.Name) {
+			continue
 		}
 
-		cleanPath := filepath.Clean(filepath.Join(cleanTarget, f.Name)) //nolint:gosec // Zip Slip checked below
+		cleanName := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(f.Name, "./")))
+		cleanName = strings.TrimPrefix(cleanName, "/")
+		relPath := strings.TrimPrefix(cleanName, stripPrefix)
+		if relPath == "" || relPath == "." {
+			continue
+		}
+
+		fileCount++
+		if fileCount > maxFiles {
+			return domain.ErrZipBomb
+		}
+
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, filepath.FromSlash(relPath))) //nolint:gosec // Zip Slip checked below
 		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
-			return false, domain.ErrZipSlip
+			return domain.ErrZipSlip
 		}
 
 		if f.FileInfo().IsDir() {
 			if err := os.MkdirAll(cleanPath, 0o750); err != nil {
-				return false, fmt.Errorf("mkdir %s: %w", cleanPath, err)
+				return fmt.Errorf("mkdir %s: %w", cleanPath, err)
 			}
 			continue
 		}
 
-		// Проверка белого списка расширений
-		if !isAllowedFile(f.Name) {
-			return false, fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, f.Name)
+		if !isAllowedFile(relPath) {
+			return fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, f.Name)
 		}
 
-		if strings.EqualFold(filepath.Clean(f.Name), "index.html") || strings.EqualFold(f.Name, "index.html") {
+		if strings.EqualFold(relPath, "index.html") {
 			hasIndexHTML = true
 		}
 
 		if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
-			return false, fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
+			return fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
 		}
 
 		rc, err := f.Open()
 		if err != nil {
-			return false, fmt.Errorf("open zip item %s: %w", f.Name, err)
+			return fmt.Errorf("open zip item %s: %w", f.Name, err)
 		}
 
 		outFile, err := os.OpenFile(cleanPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode()&0o750|0o640) //nolint:gosec // path traversal sanitized above
 		if err != nil {
 			_ = rc.Close()
-			return false, fmt.Errorf("create file %s: %w", cleanPath, err)
+			return fmt.Errorf("create file %s: %w", cleanPath, err)
 		}
 
 		written, err := io.Copy(outFile, io.LimitReader(rc, maxBytes-totalBytes+1))
@@ -208,37 +321,70 @@ func extractZip(archivePath, targetDir string, maxBytes int64, maxFiles int) (bo
 		_ = outFile.Close()
 
 		if err != nil {
-			return false, fmt.Errorf("copy file %s: %w", cleanPath, err)
+			return fmt.Errorf("copy file %s: %w", cleanPath, err)
 		}
 
 		totalBytes += written
 		if totalBytes > maxBytes {
-			return false, domain.ErrZipBomb
+			return domain.ErrZipBomb
 		}
 	}
 
-	return hasIndexHTML, nil
+	if !hasIndexHTML {
+		return domain.ErrNoIndexHTML
+	}
+
+	return nil
 }
 
-func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (bool, error) {
+func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) error {
 	cleanArchive := filepath.Clean(archivePath)
 	file, err := os.Open(cleanArchive) //nolint:gosec
 	if err != nil {
-		return false, fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
+		return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
 	}
 	defer func() {
 		_ = file.Close()
 	}()
 
+	// Pass 1: Читаем заголовки для вычисления stripPrefix
 	gzr, err := gzip.NewReader(file)
 	if err != nil {
-		return false, fmt.Errorf("%w: gzip error: %w", domain.ErrInvalidArchive, err)
+		return fmt.Errorf("%w: gzip error: %w", domain.ErrInvalidArchive, err)
+	}
+	tr := tar.NewReader(gzr)
+
+	var validNames []string
+	for {
+		header, err := tr.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			_ = gzr.Close()
+			return fmt.Errorf("tar next: %w", err)
+		}
+		if isIgnoredFile(header.Name) {
+			continue
+		}
+		validNames = append(validNames, header.Name)
+	}
+	_ = gzr.Close()
+
+	stripPrefix := determineRootPrefix(validNames)
+
+	// Pass 2: Распаковка
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("seek archive: %w", err)
+	}
+	gzr2, err := gzip.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("%w: gzip error: %w", domain.ErrInvalidArchive, err)
 	}
 	defer func() {
-		_ = gzr.Close()
+		_ = gzr2.Close()
 	}()
-
-	tr := tar.NewReader(gzr)
+	tr2 := tar.NewReader(gzr2)
 
 	var totalBytes int64
 	var fileCount int
@@ -247,59 +393,73 @@ func extractTarGz(archivePath, targetDir string, maxBytes int64, maxFiles int) (
 	cleanTarget := filepath.Clean(targetDir)
 
 	for {
-		header, err := tr.Next()
+		header, err := tr2.Next()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return false, fmt.Errorf("tar next: %w", err)
+			return fmt.Errorf("tar next: %w", err)
+		}
+		if isIgnoredFile(header.Name) {
+			continue
+		}
+
+		cleanName := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(header.Name, "./")))
+		cleanName = strings.TrimPrefix(cleanName, "/")
+		relPath := strings.TrimPrefix(cleanName, stripPrefix)
+		if relPath == "" || relPath == "." {
+			continue
 		}
 
 		fileCount++
 		if fileCount > maxFiles {
-			return false, domain.ErrZipBomb
+			return domain.ErrZipBomb
 		}
 
-		cleanPath := filepath.Clean(filepath.Join(cleanTarget, header.Name)) //nolint:gosec // Tar Slip checked below
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, filepath.FromSlash(relPath))) //nolint:gosec // Tar Slip checked below
 		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
-			return false, domain.ErrZipSlip
+			return domain.ErrZipSlip
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(cleanPath, 0o750); err != nil {
-				return false, fmt.Errorf("mkdir %s: %w", cleanPath, err)
+				return fmt.Errorf("mkdir %s: %w", cleanPath, err)
 			}
 		case tar.TypeReg:
-			if !isAllowedFile(header.Name) {
-				return false, fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, header.Name)
+			if !isAllowedFile(relPath) {
+				return fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, header.Name)
 			}
 
-			if strings.EqualFold(filepath.Clean(header.Name), "index.html") || strings.EqualFold(header.Name, "index.html") {
+			if strings.EqualFold(relPath, "index.html") {
 				hasIndexHTML = true
 			}
 
 			if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
-				return false, fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
+				return fmt.Errorf("mkdir parent %s: %w", cleanPath, err)
 			}
 
 			outFile, err := os.OpenFile(cleanPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, header.FileInfo().Mode()&0o750|0o640) //nolint:gosec // path traversal sanitized above
 			if err != nil {
-				return false, fmt.Errorf("create file %s: %w", cleanPath, err)
+				return fmt.Errorf("create file %s: %w", cleanPath, err)
 			}
 
-			written, err := io.Copy(outFile, io.LimitReader(tr, maxBytes-totalBytes+1))
+			written, err := io.Copy(outFile, io.LimitReader(tr2, maxBytes-totalBytes+1))
 			_ = outFile.Close()
 			if err != nil {
-				return false, fmt.Errorf("copy file %s: %w", cleanPath, err)
+				return fmt.Errorf("copy file %s: %w", cleanPath, err)
 			}
 
 			totalBytes += written
 			if totalBytes > maxBytes {
-				return false, domain.ErrZipBomb
+				return domain.ErrZipBomb
 			}
 		}
 	}
 
-	return hasIndexHTML, nil
+	if !hasIndexHTML {
+		return domain.ErrNoIndexHTML
+	}
+
+	return nil
 }

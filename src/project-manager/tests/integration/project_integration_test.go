@@ -5,13 +5,10 @@ import (
 	"bytes"
 	"context"
 	"net"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
-	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/deployment"
-	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/filesystem"
 	grpctransport "github.com/Be4Die/game-developer-hub/project-manager/internal/transport/grpc"
 	pb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 	"google.golang.org/grpc"
@@ -26,7 +23,6 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, func()) {
 	t.Helper()
 
 	lis := bufconn.Listen(bufSize)
-	tmpDir := t.TempDir()
 
 	pRepo := newMockProjectRepo()
 	dRepo := newMockDraftRepo()
@@ -35,9 +31,9 @@ func setupIntegrationServer(t *testing.T) (pb.ProjectServiceClient, func()) {
 	rRepo := newMockReleaseRepo()
 	depRepo := newMockDeploymentRepo()
 
-	bStorage := filesystem.NewBuildStorage(filepath.Join(tmpDir, "projects"))
-	mStorage := filesystem.NewMediaStorage(filepath.Join(tmpDir, "projects"))
-	deployer := deployment.NewLocalDeployer(filepath.Join(tmpDir, "games"), "/games")
+	bStorage := newMockBuildStorage()
+	mStorage := newMockMediaStorage()
+	deployer := newMockDeployer()
 
 	projSvc := service.NewProjectService(
 		pRepo, dRepo, bRepo, rRepo, depRepo, nil, nil, nil, mClient,

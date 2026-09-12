@@ -11,6 +11,12 @@ import (
 	"syscall"
 	"time"
 
+	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -112,6 +118,44 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	// Инициализация S3 клиента (SeaweedFS) при наличии S3_ENDPOINT
+	var s3Client *s3.Client
+	if s3Endpoint := os.Getenv("S3_ENDPOINT"); s3Endpoint != "" {
+		if !strings.HasPrefix(s3Endpoint, "http://") && !strings.HasPrefix(s3Endpoint, "https://") {
+			if os.Getenv("S3_USE_SSL") == "true" {
+				s3Endpoint = "https://" + s3Endpoint
+			} else {
+				s3Endpoint = "http://" + s3Endpoint
+			}
+		}
+		region := os.Getenv("S3_REGION")
+		if region == "" {
+			region = "us-east-1"
+		}
+		accessKey := os.Getenv("S3_ACCESS_KEY")
+		secretKey := os.Getenv("S3_SECRET_KEY")
+		if accessKey == "" && secretKey == "" {
+			if strings.Contains(s3Endpoint, "8333") || strings.Contains(s3Endpoint, "seaweedfs") || strings.Contains(s3Endpoint, "localhost") {
+				accessKey = "seaweedfs"
+				secretKey = "seaweedfs"
+			}
+		}
+		optFns := []func(*awsconfig.LoadOptions) error{
+			awsconfig.WithRegion(region),
+		}
+		if accessKey != "" || secretKey != "" {
+			optFns = append(optFns, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")))
+		}
+		sdkCfg, err := awsconfig.LoadDefaultConfig(ctx, optFns...)
+		if err == nil {
+			s3Client = s3.NewFromConfig(sdkCfg, func(o *s3.Options) {
+				o.BaseEndpoint = aws.String(s3Endpoint)
+				o.UsePathStyle = true
+			})
+			log.Printf("gateway configured with S3 storage at %s (region: %s)", s3Endpoint, region)
+		}
+	}
+
 	// Корневой маршрутизатор
 	mux := http.NewServeMux()
 
@@ -120,10 +164,10 @@ func run(ctx context.Context) error {
 	mux.HandleFunc("POST /api/v1/projects/{project_id}/builds", handleProjectBuildUpload(projpb.NewProjectServiceClient(projConn), gwMux))
 	mux.HandleFunc("POST /api/v1/projects/{project_id}/media", handleProjectMediaUpload(projpb.NewProjectServiceClient(projConn), gwMux))
 	mux.HandleFunc("GET /api/v1/games/{game_id}/instances/{instance_id}/logs", handleInstanceLogsStream(gwpb.NewInstanceServiceClient(orchConn)))
-	mux.HandleFunc("GET /api/v1/projects/{project_id}/builds/{version}/download", handleProjectBuildDownload(projectsBasePath))
-	mux.HandleFunc("GET /api/v1/projects/{project_id}/media/{type}", handleProjectMediaServe(projectsBasePath))
-	mux.HandleFunc("GET /api/v1/media/{path...}", handleProjectMediaServe(projectsBasePath))
-	mux.HandleFunc("GET /media/{path...}", handleProjectMediaServe(projectsBasePath))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/builds/{version}/download", handleProjectBuildDownload(projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/media/{type}", handleProjectMediaServe(projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/media/{path...}", handleProjectMediaServe(projectsBasePath, s3Client))
+	mux.HandleFunc("GET /media/{path...}", handleProjectMediaServe(projectsBasePath, s3Client))
 	mux.HandleFunc("GET /api/v1/nodes/{node_id}/services/{service_name}/backups/{backup_id}/download", handleBackupDownload(gwpb.NewNodeServiceClient(orchConn)))
 	mux.HandleFunc("POST /api/v1/nodes/{node_id}/services/{service_name}/backups/upload", handleBackupUpload(gwpb.NewNodeServiceClient(orchConn)))
 

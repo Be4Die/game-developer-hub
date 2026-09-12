@@ -64,15 +64,29 @@ func (c DBConfig) DSN() string {
 	)
 }
 
-// StorageConfig настройки файлового хранилища.
+// S3Config настройки подключения к SeaweedFS S3.
+type S3Config struct {
+	Endpoint     string `yaml:"endpoint" env:"S3_ENDPOINT" env-default:""`
+	AccessKey    string `yaml:"access_key" env:"S3_ACCESS_KEY" env-default:""`
+	SecretKey    string `yaml:"secret_key" env:"S3_SECRET_KEY" env-default:""`
+	UseSSL       bool   `yaml:"use_ssl" env:"S3_USE_SSL" env-default:"false"`
+	Region       string `yaml:"region" env:"S3_REGION" env-default:"us-east-1"`
+	GamesBucket  string `yaml:"games_bucket" env:"S3_GAMES_BUCKET" env-default:"games"`
+	MediaBucket  string `yaml:"media_bucket" env:"S3_MEDIA_BUCKET" env-default:"media"`
+	BuildsBucket string `yaml:"builds_bucket" env:"S3_BUILDS_BUCKET" env-default:"builds"`
+}
+
+// StorageConfig настройки хранилища (s3 или fs).
 type StorageConfig struct {
-	ProjectsPath     string `yaml:"projects_path" env:"STORAGE_PROJECTS_PATH" env-default:"./data/projects"`
-	MaxBuildVersions int    `yaml:"max_build_versions" env:"STORAGE_MAX_BUILD_VERSIONS" env-default:"5"`
+	Driver           string   `yaml:"driver" env:"STORAGE_DRIVER" env-default:"s3"` // s3 | fs
+	ProjectsPath     string   `yaml:"projects_path" env:"STORAGE_PROJECTS_PATH" env-default:"./data/projects"`
+	MaxBuildVersions int      `yaml:"max_build_versions" env:"STORAGE_MAX_BUILD_VERSIONS" env-default:"5"`
+	S3               S3Config `yaml:"s3"`
 }
 
 // DeploymentConfig настройки подсистемы развертывания.
 type DeploymentConfig struct {
-	Mode          string `yaml:"mode" env:"DEPLOYMENT_MODE" env-default:"local"` // local | agent
+	Mode          string `yaml:"mode" env:"DEPLOYMENT_MODE" env-default:"s3"` // s3 | local | agent
 	GamesBasePath string `yaml:"games_base_path" env:"DEPLOYMENT_GAMES_PATH" env-default:"./data/games"`
 	URLPrefix     string `yaml:"url_prefix" env:"DEPLOYMENT_URL_PREFIX" env-default:"/games"`
 	AgentEndpoint string `yaml:"agent_endpoint" env:"DEPLOYMENT_AGENT_ENDPOINT" env-default:""`

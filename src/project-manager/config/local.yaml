@@ -18,11 +18,21 @@ valkey:
   db: 2
 
 storage:
+  driver: "s3" # "s3" (SeaweedFS / S3) или "fs" (локальная файловая система)
   projects_path: "./data/projects"
   max_build_versions: 5
+  s3:
+    endpoint: "localhost:8333"
+    access_key: ""
+    secret_key: ""
+    use_ssl: false
+    region: "us-east-1"
+    games_bucket: "games"
+    media_bucket: "media"
+    builds_bucket: "builds"
 
 deployment:
-  mode: "local" # "local" или "agent"
+  mode: "s3" # "s3" (прямая выгрузка в S3), "local" (локальная распаковка на машине), "agent" (через game-deployment-agent)
   games_base_path: "./data/games"
   url_prefix: "/games"
   agent_endpoint: "localhost:50055"

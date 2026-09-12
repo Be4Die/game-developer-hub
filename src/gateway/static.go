@@ -2,15 +2,30 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // handleProjectBuildDownload отдаёт zip-архив клиентской сборки для скачивания.
 // GET /api/v1/projects/{project_id}/builds/{version}/download
-func handleProjectBuildDownload(basePath string) http.HandlerFunc {
+func handleProjectBuildDownload(basePath string, s3Clients ...*s3.Client) http.HandlerFunc {
+	var s3Client *s3.Client
+	if len(s3Clients) > 0 {
+		s3Client = s3Clients[0]
+	}
+
+	buildsBucket := os.Getenv("S3_BUILDS_BUCKET")
+	if buildsBucket == "" {
+		buildsBucket = "builds"
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectID := r.PathValue("project_id")
 		version := strings.TrimSuffix(r.PathValue("version"), ".zip")
@@ -20,9 +35,30 @@ func handleProjectBuildDownload(basePath string) http.HandlerFunc {
 			return
 		}
 
+		downloadFilename := fmt.Sprintf("build_project_%s_v%s.zip", projectID, version)
+
+		// 1. Попытка отдать из S3 (SeaweedFS)
+		if s3Client != nil {
+			s3Key := fmt.Sprintf("projects/%s/%s.zip", projectID, version)
+			out, err := s3Client.GetObject(r.Context(), &s3.GetObjectInput{
+				Bucket: aws.String(buildsBucket),
+				Key:    aws.String(s3Key),
+			})
+			if err == nil {
+				defer func() { _ = out.Body.Close() }()
+				w.Header().Set("Content-Type", "application/zip")
+				w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadFilename))
+				if out.ContentLength != nil && *out.ContentLength > 0 {
+					w.Header().Set("Content-Length", fmt.Sprintf("%d", *out.ContentLength))
+				}
+				_, _ = io.Copy(w, out.Body)
+				return
+			}
+		}
+
+		// 2. Фоллбэк на локальную файловую систему
 		filePath := filepath.Join(basePath, "archives", projectID, version+".zip")
 		if _, err := os.Stat(filePath); os.IsNotExist(err) { //nolint:gosec
-			// Fallback пути для локальной разработки
 			for _, alt := range []string{
 				filepath.Join("./data/projects/archives", projectID, version+".zip"),
 				filepath.Join("../project-manager/data/projects/archives", projectID, version+".zip"),
@@ -39,7 +75,6 @@ func handleProjectBuildDownload(basePath string) http.HandlerFunc {
 			return
 		}
 
-		downloadFilename := fmt.Sprintf("build_project_%s_v%s.zip", projectID, version)
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", downloadFilename))
 		http.ServeFile(w, r, filePath) //nolint:gosec
@@ -47,7 +82,17 @@ func handleProjectBuildDownload(basePath string) http.HandlerFunc {
 }
 
 // handleProjectMediaServe отдаёт статические файлы промо-материалов (иконки, обложки, видео).
-func handleProjectMediaServe(basePath string) http.HandlerFunc {
+func handleProjectMediaServe(basePath string, s3Clients ...*s3.Client) http.HandlerFunc {
+	var s3Client *s3.Client
+	if len(s3Clients) > 0 {
+		s3Client = s3Clients[0]
+	}
+
+	mediaBucket := os.Getenv("S3_MEDIA_BUCKET")
+	if mediaBucket == "" {
+		mediaBucket = "media"
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		var subPath string
 
@@ -78,9 +123,34 @@ func handleProjectMediaServe(basePath string) http.HandlerFunc {
 			return
 		}
 
+		// 1. Попытка отдать из S3 (SeaweedFS)
+		if s3Client != nil {
+			s3Key := filepath.ToSlash(cleanSub)
+			out, err := s3Client.GetObject(r.Context(), &s3.GetObjectInput{
+				Bucket: aws.String(mediaBucket),
+				Key:    aws.String(s3Key),
+			})
+			if err == nil {
+				defer func() { _ = out.Body.Close() }()
+				contentType := "application/octet-stream"
+				if out.ContentType != nil && *out.ContentType != "" {
+					contentType = *out.ContentType
+				} else if ct := mime.TypeByExtension(filepath.Ext(cleanSub)); ct != "" {
+					contentType = ct
+				}
+				w.Header().Set("Content-Type", contentType)
+				w.Header().Set("Cache-Control", "public, max-age=3600")
+				if out.ContentLength != nil && *out.ContentLength > 0 {
+					w.Header().Set("Content-Length", fmt.Sprintf("%d", *out.ContentLength))
+				}
+				_, _ = io.Copy(w, out.Body)
+				return
+			}
+		}
+
+		// 2. Фоллбэк на локальную файловую систему
 		filePath := filepath.Join(basePath, "media", cleanSub)
 		if _, err := os.Stat(filePath); os.IsNotExist(err) { //nolint:gosec
-			// Fallback пути для локальной разработки
 			for _, alt := range []string{
 				filepath.Join("./data/projects/media", cleanSub),
 				filepath.Join("../project-manager/data/projects/media", cleanSub),

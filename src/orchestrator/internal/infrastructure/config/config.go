@@ -74,9 +74,21 @@ type KVConfig struct {
 	KeyTTL   time.Duration `yaml:"key_ttl"  env-default:"45s"`
 }
 
-// StorageConfig хранит настройки файлового хранилища билдов.
+// S3Config хранит настройки подключения к SeaweedFS S3.
+type S3Config struct {
+	Endpoint  string `yaml:"endpoint" env:"S3_ENDPOINT" env-default:""`
+	Bucket    string `yaml:"bucket" env:"S3_SERVER_BUILDS_BUCKET" env-default:"server-builds"`
+	AccessKey string `yaml:"access_key" env:"S3_ACCESS_KEY" env-default:""`
+	SecretKey string `yaml:"secret_key" env:"S3_SECRET_KEY" env-default:""`
+	UseSSL    bool   `yaml:"use_ssl" env:"S3_USE_SSL" env-default:"false"`
+	Region    string `yaml:"region" env:"S3_REGION" env-default:"us-east-1"`
+}
+
+// StorageConfig хранит настройки хранилища билдов (s3 или fs).
 type StorageConfig struct {
-	BuildsPath string `yaml:"builds_path" env-default:"./data/builds"`
+	Driver     string   `yaml:"driver" env:"STORAGE_DRIVER" env-default:"s3"` // s3 | fs
+	BuildsPath string   `yaml:"builds_path" env:"STORAGE_BUILDS_PATH" env-default:"./data/builds"`
+	S3         S3Config `yaml:"s3"`
 }
 
 // GRPCClientConfig хранит настройки gRPC-клиента для подключения к нодам.

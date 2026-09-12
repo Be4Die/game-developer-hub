@@ -206,6 +206,7 @@ func (h *ProjectHandler) UploadBuildStream(stream pb.ProjectService_UploadBuildS
 	}()
 
 	b, devURL, svcErr := h.svc.UploadBuildStream(stream.Context(), projectID, ownerID, version, pr)
+	_ = pr.Close()
 	streamErr := <-done
 
 	if svcErr == nil && streamErr != nil {
@@ -315,6 +316,7 @@ func (h *ProjectHandler) UploadMediaStream(stream pb.ProjectService_UploadMediaS
 	}()
 
 	path, svcErr := h.svc.UploadMediaStream(stream.Context(), meta.GetProjectId(), ownerID, meta.GetMediaType(), pr)
+	_ = pr.Close()
 	streamErr := <-done
 
 	if svcErr == nil && streamErr != nil {

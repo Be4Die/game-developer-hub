@@ -443,9 +443,11 @@ func TestUserService_SetUserStatus(t *testing.T) {
 	ctx := context.Background()
 	log := newTestLogger()
 
-	admin := &domain.User{ID: "admin-1", Role: domain.RoleAdmin}
-	moderator := &domain.User{ID: "mod-1", Role: domain.RoleModerator}
-	developer := &domain.User{ID: "dev-1", Role: domain.RoleDeveloper, Status: domain.StatusActive}
+	newAdmin := func() *domain.User { return &domain.User{ID: "admin-1", Role: domain.RoleAdmin} }
+	newModerator := func() *domain.User { return &domain.User{ID: "mod-1", Role: domain.RoleModerator} }
+	newDeveloper := func() *domain.User {
+		return &domain.User{ID: "dev-1", Role: domain.RoleDeveloper, Status: domain.StatusActive}
+	}
 
 	t.Run("admin suspends developer and revokes sessions", func(t *testing.T) {
 		t.Parallel()
@@ -455,10 +457,10 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -498,7 +500,7 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "dev-1" {
 					return suspendedDev, nil
@@ -528,10 +530,10 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "mod-1" {
-					return moderator, nil
+					return newModerator(), nil
 				}
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -559,7 +561,7 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "mod-1" {
-					return moderator, nil
+					return newModerator(), nil
 				}
 				if id == "mod-2" {
 					return targetMod, nil
@@ -586,7 +588,7 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "mod-2" {
 					return targetMod, nil
@@ -612,7 +614,7 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -635,10 +637,10 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "mod-1" {
-					return moderator, nil
+					return newModerator(), nil
 				}
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -661,7 +663,7 @@ func TestUserService_SetUserStatus(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -685,9 +687,13 @@ func TestUserService_DeleteUser(t *testing.T) {
 	ctx := context.Background()
 	log := newTestLogger()
 
-	admin := &domain.User{ID: "admin-1", Role: domain.RoleAdmin}
-	moderator := &domain.User{ID: "mod-1", Role: domain.RoleModerator, Email: "mod@welwise.com"}
-	developer := &domain.User{ID: "dev-1", Role: domain.RoleDeveloper, Email: "dev@example.com"}
+	newAdmin := func() *domain.User { return &domain.User{ID: "admin-1", Role: domain.RoleAdmin} }
+	newModerator := func() *domain.User {
+		return &domain.User{ID: "mod-1", Role: domain.RoleModerator, Email: "mod@welwise.com"}
+	}
+	newDeveloper := func() *domain.User {
+		return &domain.User{ID: "dev-1", Role: domain.RoleDeveloper, Email: "dev@example.com"}
+	}
 
 	t.Run("admin soft-deletes developer", func(t *testing.T) {
 		t.Parallel()
@@ -697,10 +703,10 @@ func TestUserService_DeleteUser(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -736,10 +742,10 @@ func TestUserService_DeleteUser(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "mod-1" {
-					return moderator, nil
+					return newModerator(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -765,10 +771,10 @@ func TestUserService_DeleteUser(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "mod-1" {
-					return moderator, nil
+					return newModerator(), nil
 				}
 				if id == "dev-1" {
-					return developer, nil
+					return newDeveloper(), nil
 				}
 				return nil, domain.ErrNotFound
 			},
@@ -788,7 +794,7 @@ func TestUserService_DeleteUser(t *testing.T) {
 		userRepo := &stubUserRepo{
 			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
 				if id == "admin-1" {
-					return admin, nil
+					return newAdmin(), nil
 				}
 				if id == "admin-2" {
 					return otherAdmin, nil

@@ -139,6 +139,99 @@ func (m *inMemoryRequestRepo) Resolve(ctx context.Context, id int64, status doma
 	return nil
 }
 
+func (m *inMemoryRequestRepo) GetModeratorStats(ctx context.Context, moderatorID string) (*domain.ModeratorStats, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	stats := &domain.ModeratorStats{
+		ModeratorID: moderatorID,
+	}
+
+	for _, req := range m.requests {
+		if req.ModeratorID != moderatorID {
+			continue
+		}
+		stats.TotalAssigned++
+		switch req.Status {
+		case domain.RequestStatusInReview:
+			stats.InReviewCount++
+		case domain.RequestStatusApproved:
+			stats.ApprovedCount++
+		case domain.RequestStatusRejected:
+			stats.RejectedCount++
+		}
+	}
+
+	return stats, nil
+}
+
+func (m *inMemoryRequestRepo) ListModeratorsStats(ctx context.Context) ([]*domain.ModeratorStats, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	mods := make(map[string]bool)
+	for _, req := range m.requests {
+		if req.ModeratorID != "" {
+			mods[req.ModeratorID] = true
+		}
+	}
+
+	var result []*domain.ModeratorStats
+	for modID := range mods {
+		stats, _ := m.GetModeratorStats(ctx, modID)
+		result = append(result, stats)
+	}
+
+	return result, nil
+}
+
+func (m *inMemoryRequestRepo) ListModeratorActivity(ctx context.Context, moderatorID string, actionType string, limit, offset int) ([]*domain.ModeratorActivityItem, int, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var list []*domain.ModeratorActivityItem
+	for _, req := range m.requests {
+		if req.ModeratorID != moderatorID {
+			continue
+		}
+		item := &domain.ModeratorActivityItem{
+			ID:           req.ID,
+			ProjectID:    req.ProjectID,
+			ProjectTitle: req.Snapshot.TitleRu,
+			CreatedAt:    req.UpdatedAt,
+		}
+		switch req.Status {
+		case domain.RequestStatusApproved:
+			item.ActionType = "approved"
+			item.ActionTitle = "Одобрил публикацию"
+		case domain.RequestStatusRejected:
+			item.ActionType = "rejected"
+			item.ActionTitle = "Отклонил заявку"
+			item.Details = req.RejectionReason
+		case domain.RequestStatusInReview:
+			item.ActionType = "claimed"
+			item.ActionTitle = "Взял в работу"
+		default:
+			item.ActionType = "created"
+			item.ActionTitle = "Создана заявка"
+		}
+		if actionType == "" || item.ActionType == actionType {
+			list = append(list, item)
+		}
+	}
+
+	total := len(list)
+	if offset >= total {
+		return []*domain.ModeratorActivityItem{}, total, nil
+	}
+	end := offset + limit
+	if end > total || limit <= 0 {
+		end = total
+	}
+
+	return list[offset:end], total, nil
+}
+
 type inMemoryMessageRepo struct {
 	mu       sync.RWMutex
 	messages map[int64][]*domain.ChatMessage

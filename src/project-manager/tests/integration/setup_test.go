@@ -4,14 +4,12 @@ package integration
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/valkey"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/service"
-	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/deployment"
-	"github.com/Be4Die/game-developer-hub/project-manager/internal/storage/filesystem"
 	pg "github.com/Be4Die/game-developer-hub/project-manager/internal/storage/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
 	testcontainerspostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -29,9 +27,9 @@ type TestEnv struct {
 	releaseRepo    *pg.ReleaseRepo
 	deploymentRepo *pg.DeploymentRepo
 	projectSvc     *service.ProjectService
-	buildStorage   *filesystem.BuildStorage
-	mediaStorage   *filesystem.MediaStorage
-	deployer       *deployment.LocalDeployer
+	buildStorage   domain.BuildStorage
+	mediaStorage   domain.MediaStorage
+	deployer       domain.Deployer
 }
 
 func setupIntegration(t *testing.T) *TestEnv {
@@ -111,10 +109,9 @@ func setupIntegration(t *testing.T) *TestEnv {
 	invRepo := pg.NewInvitationRepo(pool)
 	blockRepo := pg.NewBlockRepo(pool)
 
-	tmpDir := t.TempDir()
-	bStorage := filesystem.NewBuildStorage(filepath.Join(tmpDir, "projects"))
-	mStorage := filesystem.NewMediaStorage(filepath.Join(tmpDir, "projects"))
-	deployer := deployment.NewLocalDeployer(filepath.Join(tmpDir, "games"), "/games")
+	bStorage := newMockBuildStorage()
+	mStorage := newMockMediaStorage()
+	deployer := newMockDeployer()
 	mClient := newMockModerationClient()
 
 	projSvc := service.NewProjectService(

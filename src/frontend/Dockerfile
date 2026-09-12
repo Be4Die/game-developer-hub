@@ -26,8 +26,9 @@ RUN apk add --no-cache openssl && \
 # Copy built frontend assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy optimized nginx configuration
+# Copy optimized nginx configuration and template
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Expose standard HTTP and HTTPS ports
 EXPOSE 80 443

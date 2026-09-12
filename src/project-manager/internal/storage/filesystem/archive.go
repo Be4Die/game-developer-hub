@@ -107,42 +107,128 @@ func isAllowedFile(name string) bool {
 	return false
 }
 
+func isIgnoredFile(name string) bool {
+	clean := filepath.ToSlash(filepath.Clean(name))
+	if strings.HasPrefix(clean, "__MACOSX/") || strings.Contains(clean, "/__MACOSX/") || clean == "__MACOSX" {
+		return true
+	}
+	base := filepath.Base(clean)
+	if strings.HasPrefix(base, "._") || base == ".DS_Store" || strings.EqualFold(base, "thumbs.db") {
+		return true
+	}
+	return false
+}
+
+// determineRootPrefix проверяет, находятся ли все файлы архива в единой папке-обёртке с index.html.
+// Если да, возвращает префикс для удаления (например, "Archive/").
+func determineRootPrefix(names []string) string {
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "index.html" {
+			return ""
+		}
+	}
+
+	var candidateDir string
+	var minDepth = -1
+
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		base := filepath.Base(clean)
+		if strings.EqualFold(base, "index.html") {
+			dir := filepath.Dir(clean)
+			if dir != "." && dir != "" {
+				depth := strings.Count(dir, "/") + 1
+				if minDepth == -1 || depth < minDepth {
+					minDepth = depth
+					candidateDir = dir
+				}
+			}
+		}
+	}
+
+	if candidateDir == "" {
+		return ""
+	}
+
+	prefix := candidateDir + "/"
+	for _, name := range names {
+		clean := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(name, "./")))
+		clean = strings.TrimPrefix(clean, "/")
+		if clean == "." || clean == "" {
+			continue
+		}
+		if clean != candidateDir && !strings.HasPrefix(clean, prefix) {
+			topDir := strings.Split(candidateDir, "/")[0]
+			if clean != topDir && !strings.HasPrefix(clean, topDir+"/") {
+				return ""
+			}
+			prefix = topDir + "/"
+		}
+	}
+
+	return prefix
+}
+
+func detectArchiveType(archivePath string) (string, error) {
+	f, err := os.Open(archivePath) //nolint:gosec
+	if err != nil {
+		return "", fmt.Errorf("open archive: %w", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	header := make([]byte, 4)
+	n, err := io.ReadFull(f, header)
+	if err == nil || (errors.Is(err, io.ErrUnexpectedEOF) && n >= 2) {
+		if n >= 2 && bytes.Equal(header[:2], []byte{0x1f, 0x8b}) {
+			return "tar.gz", nil
+		}
+		if n >= 4 && bytes.Equal(header[:4], []byte{0x50, 0x4b, 0x03, 0x04}) {
+			return "zip", nil
+		}
+	}
+
+	lower := strings.ToLower(archivePath)
+	if strings.HasSuffix(lower, ".tar.gz") || strings.HasSuffix(lower, ".tgz") {
+		return "tar.gz", nil
+	}
+	if strings.HasSuffix(lower, ".zip") {
+		return "zip", nil
+	}
+
+	return "", domain.ErrInvalidArchive
+}
+
 // ExtractArchive распаковывает zip или tar.gz архив в указанную целевую директорию targetDir.
 // Выполняет валидацию на Zip Slip, Zip Bomb, белый список расширений и обязательное наличие index.html.
 func ExtractArchive(archivePath, targetDir string) error {
 	cleanArchive := filepath.Clean(archivePath)
 	cleanTarget := filepath.Clean(targetDir)
 
-	ext := strings.ToLower(filepath.Ext(cleanArchive))
-	if strings.HasSuffix(strings.ToLower(cleanArchive), ".tar.gz") || strings.HasSuffix(strings.ToLower(cleanArchive), ".tgz") {
-		return extractTarGz(cleanArchive, cleanTarget)
-	}
-	if ext == ".zip" {
-		return extractZip(cleanArchive, cleanTarget)
+	if err := os.MkdirAll(cleanTarget, 0o750); err != nil {
+		return fmt.Errorf("mkdir targetDir: %w", err)
 	}
 
-	// Попробуем определить по магическим байтам
-	f, err := os.Open(cleanArchive) //nolint:gosec
+	archType, err := detectArchiveType(cleanArchive)
 	if err != nil {
-		return fmt.Errorf("open archive: %w", err)
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	header := make([]byte, 4)
-	if _, err := io.ReadFull(f, header); err != nil {
-		return domain.ErrInvalidArchive
+		_ = os.RemoveAll(cleanTarget)
+		return err
 	}
 
-	if bytes.Equal(header[:2], []byte{0x1f, 0x8b}) {
-		return extractTarGz(cleanArchive, cleanTarget)
-	}
-	if bytes.Equal(header, []byte{0x50, 0x4b, 0x03, 0x04}) {
-		return extractZip(cleanArchive, cleanTarget)
+	if archType == "tar.gz" {
+		err = extractTarGz(cleanArchive, cleanTarget)
+	} else {
+		err = extractZip(cleanArchive, cleanTarget)
 	}
 
-	return domain.ErrInvalidArchive
+	if err != nil {
+		_ = os.RemoveAll(cleanTarget)
+		return err
+	}
+
+	return nil
 }
 
 func extractZip(archivePath, targetDir string) error {
@@ -158,33 +244,41 @@ func extractZip(archivePath, targetDir string) error {
 	}()
 
 	var (
-		totalSize int64
-		hasIndex  bool
+		totalSize    int64
+		hasIndexHTML bool
+		fileCount    int
 	)
 
-	// Первый проход: проверка наличия index.html
+	// Первый проход: сбор имен для определения stripPrefix
+	var validNames []string
 	for _, f := range r.File {
-		cleanName := filepath.Clean(f.Name)
-		if cleanName == "index.html" || strings.HasSuffix(cleanName, "/index.html") || strings.HasSuffix(cleanName, "\\index.html") {
-			hasIndex = true
+		if isIgnoredFile(f.Name) {
+			continue
 		}
+		validNames = append(validNames, f.Name)
 	}
 
-	if !hasIndex {
-		return domain.ErrNoIndexHTML
-	}
-
-	if err := os.MkdirAll(cleanTarget, 0o750); err != nil {
-		return fmt.Errorf("mkdir targetDir: %w", err)
-	}
+	stripPrefix := determineRootPrefix(validNames)
 
 	// Второй проход: безопасная распаковка
-	for i, f := range r.File {
-		if i > maxFileCount {
+	for _, f := range r.File {
+		if isIgnoredFile(f.Name) {
+			continue
+		}
+
+		cleanName := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(f.Name, "./")))
+		cleanName = strings.TrimPrefix(cleanName, "/")
+		relPath := strings.TrimPrefix(cleanName, stripPrefix)
+		if relPath == "" || relPath == "." {
+			continue
+		}
+
+		fileCount++
+		if fileCount > maxFileCount {
 			return fmt.Errorf("%w: file count exceeds limit", domain.ErrInvalidArchive)
 		}
 
-		cleanPath := filepath.Clean(filepath.Join(cleanTarget, f.Name)) //nolint:gosec // Zip Slip checked below
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, filepath.FromSlash(relPath))) //nolint:gosec // Zip Slip checked below
 		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
 			return fmt.Errorf("%w: illegal file path (zip slip detected)", domain.ErrInvalidArchive)
 		}
@@ -196,8 +290,12 @@ func extractZip(archivePath, targetDir string) error {
 			continue
 		}
 
-		if !isAllowedFile(f.Name) {
+		if !isAllowedFile(relPath) {
 			return fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, f.Name)
+		}
+
+		if strings.EqualFold(relPath, "index.html") {
+			hasIndexHTML = true
 		}
 
 		if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
@@ -229,6 +327,10 @@ func extractZip(archivePath, targetDir string) error {
 		}
 	}
 
+	if !hasIndexHTML {
+		return domain.ErrNoIndexHTML
+	}
+
 	return nil
 }
 
@@ -244,32 +346,68 @@ func extractTarGz(archivePath, targetDir string) error {
 		_ = file.Close()
 	}()
 
+	// Первый проход: определение stripPrefix
 	gzr, err := gzip.NewReader(file)
 	if err != nil {
 		return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
 	}
-	defer func() {
-		_ = gzr.Close()
-	}()
-
 	tarReader := tar.NewReader(gzr)
-	var (
-		totalSize int64
-		hasIndex  bool
-		fileCount int
-	)
 
-	if err := os.MkdirAll(cleanTarget, 0o750); err != nil {
-		return fmt.Errorf("mkdir targetDir: %w", err)
-	}
-
+	var validNames []string
 	for {
 		header, err := tarReader.Next()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
+			_ = gzr.Close()
 			return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
+		}
+		if isIgnoredFile(header.Name) {
+			continue
+		}
+		validNames = append(validNames, header.Name)
+	}
+	_ = gzr.Close()
+
+	stripPrefix := determineRootPrefix(validNames)
+
+	// Второй проход: распаковка
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return fmt.Errorf("seek archive: %w", err)
+	}
+	gzr2, err := gzip.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
+	}
+	defer func() {
+		_ = gzr2.Close()
+	}()
+	tarReader2 := tar.NewReader(gzr2)
+
+	var (
+		totalSize    int64
+		hasIndexHTML bool
+		fileCount    int
+	)
+
+	for {
+		header, err := tarReader2.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("%w: %w", domain.ErrInvalidArchive, err)
+		}
+		if isIgnoredFile(header.Name) {
+			continue
+		}
+
+		cleanName := filepath.ToSlash(filepath.Clean(strings.TrimPrefix(header.Name, "./")))
+		cleanName = strings.TrimPrefix(cleanName, "/")
+		relPath := strings.TrimPrefix(cleanName, stripPrefix)
+		if relPath == "" || relPath == "." {
+			continue
 		}
 
 		fileCount++
@@ -277,12 +415,7 @@ func extractTarGz(archivePath, targetDir string) error {
 			return fmt.Errorf("%w: file count exceeds limit", domain.ErrInvalidArchive)
 		}
 
-		cleanName := filepath.Clean(header.Name)
-		if cleanName == "index.html" || strings.HasSuffix(cleanName, "/index.html") {
-			hasIndex = true
-		}
-
-		cleanPath := filepath.Clean(filepath.Join(cleanTarget, header.Name)) //nolint:gosec // Tar Slip checked below
+		cleanPath := filepath.Clean(filepath.Join(cleanTarget, filepath.FromSlash(relPath))) //nolint:gosec // Tar Slip checked below
 		if !strings.HasPrefix(cleanPath, cleanTarget+string(os.PathSeparator)) && cleanPath != cleanTarget {
 			return fmt.Errorf("%w: illegal file path (zip slip detected)", domain.ErrInvalidArchive)
 		}
@@ -293,8 +426,12 @@ func extractTarGz(archivePath, targetDir string) error {
 				return fmt.Errorf("mkdir: %w", err)
 			}
 		case tar.TypeReg:
-			if !isAllowedFile(header.Name) {
+			if !isAllowedFile(relPath) {
 				return fmt.Errorf("%w: %s", domain.ErrDisallowedFileType, header.Name)
+			}
+
+			if strings.EqualFold(relPath, "index.html") {
+				hasIndexHTML = true
 			}
 
 			if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
@@ -306,7 +443,7 @@ func extractTarGz(archivePath, targetDir string) error {
 				return fmt.Errorf("create file: %w", err)
 			}
 
-			written, err := io.Copy(outFile, io.LimitReader(tarReader, maxUnpackedSize-totalSize))
+			written, err := io.Copy(outFile, io.LimitReader(tarReader2, maxUnpackedSize-totalSize))
 			_ = outFile.Close()
 			if err != nil {
 				return fmt.Errorf("write file: %w", err)
@@ -319,7 +456,7 @@ func extractTarGz(archivePath, targetDir string) error {
 		}
 	}
 
-	if !hasIndex {
+	if !hasIndexHTML {
 		return domain.ErrNoIndexHTML
 	}
 

@@ -21,11 +21,15 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,7 +41,6 @@ import (
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
-	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
 	grpctransport "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/grpc"
@@ -205,7 +208,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 	nodeState := valkey.NewNodeStateStore(redisClient, keyTTL)
 	instanceState := valkey.NewInstanceStateStore(redisClient, keyTTL)
 	queueStore := valkey.NewQueueStore(redisClient)
-	buildFS := filesystem.NewBuildStorageFS(t.TempDir())
+	buildFS := newMockBuildStorageFS()
 
 	// ─── gRPC-клиент к реальной ноде ────────────────────────────
 	grpcCfg := config.GRPCClientConfig{
@@ -482,4 +485,50 @@ func withJWT(ctx context.Context, secret, issuer string) context.Context {
 	tokenStr := generateTestJWT(secret, issuer, e2eTestUserID)
 	md := metadata.New(map[string]string{"authorization": "Bearer " + tokenStr})
 	return metadata.NewOutgoingContext(ctx, md)
+}
+
+type mockBuildStorageFS struct {
+	mu    sync.Mutex
+	files map[string][]byte
+}
+
+func newMockBuildStorageFS() *mockBuildStorageFS {
+	return &mockBuildStorageFS{files: make(map[string][]byte)}
+}
+
+func (m *mockBuildStorageFS) Save(gameID int64, version string, reader io.Reader, size int64) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	key := fmt.Sprintf("%d/%s", gameID, version)
+	m.files[key] = data
+	return "s3://mock-builds/" + key, nil
+}
+
+func (m *mockBuildStorageFS) Get(gameID int64, version string) (io.ReadCloser, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	key := fmt.Sprintf("%d/%s", gameID, version)
+	data, ok := m.files[key]
+	if !ok {
+		return nil, domain.ErrBuildNotFound
+	}
+	return io.NopCloser(bytes.NewReader(data)), nil
+}
+
+func (m *mockBuildStorageFS) Delete(gameID int64, version string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.files, fmt.Sprintf("%d/%s", gameID, version))
+	return nil
+}
+
+func (m *mockBuildStorageFS) Exists(gameID int64, version string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, ok := m.files[fmt.Sprintf("%d/%s", gameID, version)]
+	return ok
 }

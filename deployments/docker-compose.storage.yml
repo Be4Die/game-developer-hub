@@ -1,0 +1,37 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — Внешний контур объектного хранилища SeaweedFS
+#
+#  Сервисы:
+#    seaweedfs — распределенное S3-совместимое объектное хранилище
+#                S3 API:     :8333
+#                Filer HTTP: :8888
+#                Master:     :9333
+#
+#  Использование:
+#    docker compose -f docker-compose.storage.yml up -d
+#    docker compose -f docker-compose.storage.yml down
+# ═══════════════════════════════════════════════════════════════
+
+name: gdh-storage
+
+services:
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: gdh-seaweedfs
+    restart: unless-stopped
+    command: "server -s3 -filer -dir=/data -volume.max=100 -s3.port=8333 -filer.port=8888 -ip=0.0.0.0"
+    ports:
+      - "8333:8333"
+      - "8888:8888"
+      - "9333:9333"
+    volumes:
+      - seaweed_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8333/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 3s
+
+volumes:
+  seaweed_data:

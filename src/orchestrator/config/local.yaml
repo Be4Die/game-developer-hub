@@ -23,7 +23,15 @@ kv:
   key_ttl: 45s
 
 storage:
+  driver: "s3" # "s3" (SeaweedFS / S3) или "fs" (локальная файловая система)
   builds_path: "./data/builds"
+  s3:
+    endpoint: "localhost:8333"
+    bucket: "server-builds"
+    access_key: ""
+    secret_key: ""
+    use_ssl: false
+    region: "us-east-1"
 
 grpc_client:
   timeout: 30s

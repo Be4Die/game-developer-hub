@@ -17,10 +17,11 @@ import (
 
 // AgentDeployer реализует domain.Deployer для удаленного развертывания веб-сборок игр через gRPC агент.
 type AgentDeployer struct {
-	agentAddr string
-	apiKey    string
-	client    pb.WebGameDeploymentServiceClient
-	conn      *grpc.ClientConn
+	agentAddr     string
+	apiKey        string
+	client        pb.WebGameDeploymentServiceClient
+	conn          *grpc.ClientConn
+	archiveOpener func(ctx context.Context, projectID int64, version string, archivePath string) (io.ReadCloser, error)
 }
 
 // NewAgentDeployer создает клиент для взаимодействия с удаленным агентом развертывания.
@@ -38,6 +39,11 @@ func NewAgentDeployer(agentAddr, apiKey string) (*AgentDeployer, error) {
 		client:    client,
 		conn:      conn,
 	}, nil
+}
+
+// SetArchiveOpener задает кастомную функцию открытия архива (например, из S3).
+func (d *AgentDeployer) SetArchiveOpener(fn func(ctx context.Context, projectID int64, version string, archivePath string) (io.ReadCloser, error)) {
+	d.archiveOpener = fn
 }
 
 // Close закрывает сетевое gRPC соединение с агентом.
@@ -77,10 +83,20 @@ func (d *AgentDeployer) DeployDev(ctx context.Context, projectID int64, version 
 		return nil, fmt.Errorf("agent_deployer: send metadata: %w", err)
 	}
 
-	// 2. Читаем архив с диска и стримим чанками по 64 КБ
-	file, err := os.Open(filepath.Clean(archivePath)) //nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("agent_deployer: open archive %s: %w", archivePath, err)
+	// 2. Читаем архив из источника (диск или S3) и стримим чанками по 64 КБ
+	var file io.ReadCloser
+	if d.archiveOpener != nil {
+		rc, openErr := d.archiveOpener(ctx, projectID, version, archivePath)
+		if openErr != nil {
+			return nil, fmt.Errorf("agent_deployer: open archive stream %s: %w", archivePath, openErr)
+		}
+		file = rc
+	} else {
+		f, openErr := os.Open(filepath.Clean(archivePath)) //nolint:gosec
+		if openErr != nil {
+			return nil, fmt.Errorf("agent_deployer: open archive %s: %w", archivePath, openErr)
+		}
+		file = f
 	}
 	defer func() {
 		_ = file.Close()

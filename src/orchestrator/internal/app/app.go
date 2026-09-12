@@ -11,11 +11,13 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/postgres"
+	s3storage "github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/s3"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/valkey"
 	grpctransport "github.com/Be4Die/game-developer-hub/orchestrator/internal/transport/grpc"
 	pb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
@@ -77,7 +79,27 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	queueStore := valkey.NewQueueStore(valkeyClient)
 
 	// ─── Хранилище файлов ───────────────────────────────────────
-	buildFS := filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
+	var buildFS domain.BuildStorageFS
+	if cfg.Storage.Driver == "s3" && cfg.Storage.S3.Endpoint != "" {
+		s3Store, err := s3storage.NewBuildStorageS3(context.Background(), s3storage.Config{
+			Endpoint:  cfg.Storage.S3.Endpoint,
+			Bucket:    cfg.Storage.S3.Bucket,
+			AccessKey: cfg.Storage.S3.AccessKey,
+			SecretKey: cfg.Storage.S3.SecretKey,
+			UseSSL:    cfg.Storage.S3.UseSSL,
+			Region:    cfg.Storage.S3.Region,
+		}, log)
+		if err != nil {
+			log.Warn("failed to initialize S3 build storage, falling back to filesystem", slog.String("error", err.Error()))
+			buildFS = filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
+		} else {
+			buildFS = s3Store
+			log.Info("using S3 build storage", slog.String("endpoint", cfg.Storage.S3.Endpoint), slog.String("bucket", cfg.Storage.S3.Bucket))
+		}
+	} else {
+		buildFS = filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
+		log.Info("using filesystem build storage", slog.String("path", cfg.Storage.BuildsPath))
+	}
 
 	// ─── Сервисы ────────────────────────────────────────────────
 	buildPipeline := service.NewBuildPipeline(

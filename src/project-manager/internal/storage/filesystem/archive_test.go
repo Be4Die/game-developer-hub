@@ -212,3 +212,36 @@ func TestUnit_Archive_UnityWebGLBrotliAssets(t *testing.T) {
 		}
 	}
 }
+
+func TestArchive_MacOSMetadataAndNested(t *testing.T) {
+	// 1. ZIP with macOS metadata and single-root wrapper folder
+	tmpDir := t.TempDir()
+	archivePath := filepath.Join(tmpDir, "game.zip")
+	targetDir := filepath.Join(tmpDir, "unpacked")
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	mw, _ := zw.Create("__MACOSX/._index.html")
+	_, _ = mw.Write([]byte{0x01, 0x02})
+	iw, _ := zw.Create("GameFolder/index.html")
+	_, _ = iw.Write([]byte("<html>Game</html>"))
+	bw, _ := zw.Create("GameFolder/game.wasm")
+	_, _ = bw.Write([]byte("wasm"))
+	_ = zw.Close()
+
+	if err := os.WriteFile(archivePath, buf.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ExtractArchive(archivePath, targetDir); err != nil {
+		t.Fatalf("ExtractArchive failed: %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(targetDir, "index.html")); err != nil {
+		t.Fatalf("expected index.html at root of targetDir: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(targetDir, "game.wasm")); err != nil {
+		t.Fatalf("expected game.wasm at root of targetDir: %v", err)
+	}
+}
+
