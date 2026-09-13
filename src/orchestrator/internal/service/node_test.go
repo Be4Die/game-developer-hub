@@ -1272,5 +1272,84 @@ func TestNodeService_CreateService_ResumeStoppedAdminer(t *testing.T) {
 	}
 }
 
+func TestDetermineIngressMode(t *testing.T) {
+	tests := []struct {
+		addr         string
+		expectedMode domain.IngressMode
+		expectedHost string
+	}{
+		{"192.168.1.1:44044", domain.IngressModePlatformProxy, ""},
+		{"127.0.0.1:44044", domain.IngressModePlatformProxy, ""},
+		{"localhost:44044", domain.IngressModePlatformProxy, ""},
+		{"host.docker.internal:44044", domain.IngressModePlatformProxy, ""},
+		{"node1.mygame.ru:44044", domain.IngressModeDirect, "node1.mygame.ru"},
+		{"server.studio.com", domain.IngressModeDirect, "server.studio.com"},
+	}
+
+	for _, tc := range tests {
+		mode, customDomain := determineIngressMode(tc.addr)
+		if mode != tc.expectedMode {
+			t.Errorf("addr %s: expected mode %v, got %v", tc.addr, tc.expectedMode, mode)
+		}
+		if customDomain != tc.expectedHost {
+			t.Errorf("addr %s: expected customDomain %q, got %q", tc.addr, tc.expectedHost, customDomain)
+		}
+	}
+}
+
+func TestUpdateIngress(t *testing.T) {
+	ctx := context.Background()
+	var updatedMode domain.IngressMode
+	var updatedDomain string
+
+	mockNode := &domain.Node{
+		ID:          10,
+		OwnerID:     "user-1",
+		Address:     "127.0.0.1:44044",
+		IngressMode: domain.IngressModePlatformProxy,
+	}
+
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return mockNode, nil
+		},
+		updateIngressFn: func(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
+			updatedMode = mode
+			updatedDomain = customDomain
+			return nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, &hbMockNodeClient{})
+
+	// 1. Успешное обновление на Direct режим (с skipDNSCheck = true для теста)
+	node, err := svc.UpdateIngress(ctx, "user-1", 10, domain.IngressModeDirect, "node.example.com", true)
+	if err != nil {
+		t.Fatalf("UpdateIngress failed: %v", err)
+	}
+	if node.IngressMode != domain.IngressModeDirect || node.CustomDomain != "node.example.com" {
+		t.Errorf("expected Direct and node.example.com, got %v and %s", node.IngressMode, node.CustomDomain)
+	}
+	if updatedMode != domain.IngressModeDirect || updatedDomain != "node.example.com" {
+		t.Errorf("repo not called correctly: mode=%v domain=%s", updatedMode, updatedDomain)
+	}
+
+	// 2. Чужой пользователь -> Forbidden
+	_, err = svc.UpdateIngress(ctx, "other-user", 10, domain.IngressModePlatformProxy, "", false)
+	if !errors.Is(err, domain.ErrForbidden) {
+		t.Errorf("expected ErrForbidden, got %v", err)
+	}
+
+	// 3. Тест VerifyDomain на localhost
+	mockNode.Address = "127.0.0.1:44044"
+	vRes, err := svc.VerifyDomain(ctx, "user-1", 10, "localhost")
+	if err != nil {
+		t.Fatalf("VerifyDomain failed: %v", err)
+	}
+	if !vRes.Valid {
+		t.Errorf("expected localhost to be valid for 127.0.0.1 node, got message: %s", vRes.Message)
+	}
+}
+
 
 

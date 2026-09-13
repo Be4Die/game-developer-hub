@@ -4,6 +4,7 @@ import {
   normalizeService,
   nodeRoleToProto,
   serviceTypeToProto,
+  ingressModeToProto,
 } from '../model/nodeModel';
 
 export function listNodes(status) {
@@ -36,15 +37,41 @@ export function registerNode(payload) {
     };
   } else {
     // Manual mode
+    const manual = {
+      address: payload.address,
+      token: payload.token,
+      region: payload.region,
+    };
+    if (payload.ingress_mode) {
+      manual.ingress_mode = ingressModeToProto[payload.ingress_mode] || payload.ingress_mode;
+    }
+    if (payload.custom_domain) {
+      manual.custom_domain = payload.custom_domain;
+    }
     requestBody = {
-      manual: {
-        address: payload.address,
-        token: payload.token,
-        region: payload.region,
-      },
+      manual,
     };
   }
   return http.post('/nodes', requestBody).then((r) => normalizeNode(r.data));
+}
+
+export function updateNodeIngress(nodeId, ingressMode, customDomain = '', skipDnsCheck = false) {
+  const protoMode = ingressModeToProto[ingressMode] || ingressMode;
+  return http
+    .patch(`/nodes/${nodeId}/ingress`, {
+      ingress_mode: protoMode,
+      custom_domain: customDomain,
+      skip_dns_check: skipDnsCheck,
+    })
+    .then((r) => normalizeNode(r.data.node || r.data));
+}
+
+export function verifyNodeDomain(nodeId, customDomain) {
+  return http
+    .post(`/nodes/${nodeId}/verify-domain`, {
+      custom_domain: customDomain,
+    })
+    .then((r) => r.data);
 }
 
 export function deleteNode(nodeId) {

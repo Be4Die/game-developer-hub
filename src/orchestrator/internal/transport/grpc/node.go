@@ -46,6 +46,14 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.NodeServiceRegisterR
 		if v.Manual.Region != nil {
 			params.Region = v.Manual.GetRegion()
 		}
+		if v.Manual.IngressMode != nil {
+			mode := ingressModeFromProto(v.Manual.GetIngressMode())
+			params.IngressMode = &mode
+		}
+		if v.Manual.CustomDomain != nil {
+			cd := v.Manual.GetCustomDomain()
+			params.CustomDomain = &cd
+		}
 	case *pb.NodeServiceRegisterRequest_Authorize:
 		params.NodeID = ptrInt64(v.Authorize.GetNodeId())
 		params.Token = v.Authorize.GetToken()
@@ -200,6 +208,49 @@ func (h *NodeHandler) UpdateRole(ctx context.Context, req *pb.NodeServiceUpdateR
 	}
 
 	return &pb.NodeServiceUpdateRoleResponse{Node: nodeToProto(node)}, nil
+}
+
+// UpdateIngress изменяет сетевой режим ноды (Direct / Platform Proxy).
+func (h *NodeHandler) UpdateIngress(ctx context.Context, req *pb.NodeServiceUpdateIngressRequest) (*pb.NodeServiceUpdateIngressResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	mode := ingressModeFromProto(req.GetIngressMode())
+	node, err := h.nodeService.UpdateIngress(
+		ctx,
+		ownerID,
+		req.GetNodeId(),
+		mode,
+		req.GetCustomDomain(),
+		req.GetSkipDnsCheck(),
+	)
+	if err != nil {
+		return nil, domainError(err, "update node ingress")
+	}
+
+	return &pb.NodeServiceUpdateIngressResponse{Node: nodeToProto(node)}, nil
+}
+
+// VerifyDomain проверяет DNS-запись кастомного домена на соответствие IP-адресу ноды.
+func (h *NodeHandler) VerifyDomain(ctx context.Context, req *pb.NodeServiceVerifyDomainRequest) (*pb.NodeServiceVerifyDomainResponse, error) {
+	ownerID, _ := GetUserID(ctx)
+	if isSuperuser(ctx) {
+		ownerID = ""
+	}
+
+	res, err := h.nodeService.VerifyDomain(ctx, ownerID, req.GetNodeId(), req.GetCustomDomain())
+	if err != nil {
+		return nil, domainError(err, "verify domain")
+	}
+
+	return &pb.NodeServiceVerifyDomainResponse{
+		Valid:       res.Valid,
+		Message:     res.Message,
+		ResolvedIps: res.ResolvedIPs,
+		NodeIp:      res.NodeIP,
+	}, nil
 }
 
 // CreateService разворачивает управляемый сервис хранения данных на ноде.

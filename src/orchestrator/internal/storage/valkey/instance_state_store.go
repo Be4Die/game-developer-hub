@@ -166,6 +166,7 @@ func (s *InstanceStateStore) Delete(ctx context.Context, instanceID int64) error
 		keyInstanceQueue + strconv.FormatInt(instanceID, 10),
 		keyInstanceUsage + strconv.FormatInt(instanceID, 10),
 		keyInstanceZeroSince + strconv.FormatInt(instanceID, 10),
+		fmt.Sprintf("instance:%d:target", instanceID),
 	}
 
 	err := s.client.Del(ctx, keys...).Err()
@@ -207,6 +208,26 @@ func (s *InstanceStateStore) DeleteZeroPlayersSince(ctx context.Context, instanc
 	err := s.client.Del(ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("valkey.InstanceStateStore.DeleteZeroPlayersSince: %w", err)
+	}
+	return nil
+}
+
+// SetEndpointRoute сохраняет маршрут инстанса для ingress-proxy (ключ instance:{id}:target -> host:port).
+func (s *InstanceStateStore) SetEndpointRoute(ctx context.Context, instanceID int64, targetAddr string) error {
+	key := fmt.Sprintf("instance:%d:target", instanceID)
+	err := s.client.Set(ctx, key, targetAddr, 0).Err()
+	if err != nil {
+		return fmt.Errorf("valkey.InstanceStateStore.SetEndpointRoute: %w", err)
+	}
+	return nil
+}
+
+// DeleteEndpointRoute удаляет маршрут инстанса из KV.
+func (s *InstanceStateStore) DeleteEndpointRoute(ctx context.Context, instanceID int64) error {
+	key := fmt.Sprintf("instance:%d:target", instanceID)
+	err := s.client.Del(ctx, key).Err()
+	if err != nil {
+		return fmt.Errorf("valkey.InstanceStateStore.DeleteEndpointRoute: %w", err)
 	}
 	return nil
 }

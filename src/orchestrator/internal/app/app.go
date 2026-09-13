@@ -114,11 +114,11 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	queueService := service.NewQueueService(
 		queueStore, queueEventRepo, policyService, instanceRepo, instanceState, nodeRepo, log,
-	)
+	).WithProxy(cfg.IngressProxy.Host, cfg.IngressProxy.Port)
 
 	discoveryService := service.NewDiscoveryService(
 		instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceService, queueService,
-	)
+	).WithProxy(cfg.IngressProxy.Host, cfg.IngressProxy.Port)
 
 	nodeService := service.NewNodeService(
 		log, nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,

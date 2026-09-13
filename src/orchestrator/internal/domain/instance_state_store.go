@@ -45,4 +45,10 @@ type InstanceStateStore interface {
 
 	// DeleteZeroPlayersSince удаляет timestamp нулевого онлайна.
 	DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error
+
+	// SetEndpointRoute сохраняет маршрут инстанса для ingress-proxy (ключ instance:{id}:target -> host:port).
+	SetEndpointRoute(ctx context.Context, instanceID int64, targetAddr string) error
+
+	// DeleteEndpointRoute удаляет маршрут инстанса из KV.
+	DeleteEndpointRoute(ctx context.Context, instanceID int64) error
 }

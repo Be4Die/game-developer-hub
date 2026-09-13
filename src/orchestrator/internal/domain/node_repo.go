@@ -28,4 +28,7 @@ type NodeRepo interface {
 
 	// UpdateRole обновляет роль ноды (mixed, compute, storage).
 	UpdateRole(ctx context.Context, id int64, role NodeRole) error
+
+	// UpdateIngress обновляет сетевой режим ноды (platform_proxy / direct) и кастомный домен.
+	UpdateIngress(ctx context.Context, id int64, mode IngressMode, customDomain string) error
 }

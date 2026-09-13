@@ -30,6 +30,8 @@ type QueueService struct {
 	instanceState domain.InstanceStateStore
 	nodeRepo      domain.NodeRepo
 	log           *slog.Logger
+	proxyHost     string
+	proxyPort     uint32
 }
 
 // NewQueueService создаёт сервис очереди.
@@ -51,6 +53,13 @@ func NewQueueService(
 		nodeRepo:      nodeRepo,
 		log:           log,
 	}
+}
+
+// WithProxy настраивает параметры платформенного прокси.
+func (s *QueueService) WithProxy(host string, port uint32) *QueueService {
+	s.proxyHost = host
+	s.proxyPort = port
+	return s
 }
 
 // Join добавляет игрока в очередь.
@@ -248,22 +257,10 @@ func (s *QueueService) ProcessQueue(ctx context.Context, gameID int64) error {
 		return fmt.Errorf("QueueService.ProcessQueue: get node: %w", err)
 	}
 
-	// Используем server_address из инстанса если есть, иначе из ноды
-	host := available.ServerAddress
-	if host == "" {
-		host = node.Address
-	}
-
-	endpoint := &domain.ServerEndpoint{
-		InstanceID: available.ID,
-		Address:    host,
-		Port:       available.HostPort,
-		Protocol:   available.Protocol,
-		MaxPlayers: available.MaxPlayers,
-	}
+	endpoint := domain.BuildServerEndpoint(available, node, s.proxyHost, s.proxyPort, nil)
 
 	// Резервируем для первого игрока
-	playerID, err := s.store.Reserve(ctx, gameID, endpoint, time.Duration(policy.QueueReservationSec)*time.Second)
+	playerID, err := s.store.Reserve(ctx, gameID, &endpoint, time.Duration(policy.QueueReservationSec)*time.Second)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
 			return nil // очередь опустела

@@ -29,6 +29,7 @@ type Config struct {
 	GRPCClient    GRPCClientConfig `yaml:"grpc_client"`
 	NodeHeartbeat NodeHeartbeatCfg `yaml:"node_heartbeat"`
 	Limits        LimitsConfig     `yaml:"limits"`
+	IngressProxy  IngressProxyConfig `yaml:"ingress_proxy"`
 }
 
 // JWTConfig хранит параметры валидации JWT-токенов.
@@ -138,6 +139,12 @@ type LimitsConfig struct {
 
 	// MaxBuildSizeBytes — максимальный размер загружаемого билда в байтах.
 	MaxBuildSizeBytes int64 `yaml:"max_build_size" env-default:"2147483648"` // 2 GB
+}
+
+// IngressProxyConfig хранит параметры шлюза WSS-проксирования.
+type IngressProxyConfig struct {
+	Host string `yaml:"host" env:"INGRESS_PROXY_HOST" env-default:"localhost"`
+	Port uint32 `yaml:"port" env:"INGRESS_PROXY_PORT" env-default:"80"`
 }
 
 // MustLoad загружает конфигурацию из файла или env. Паникует при ошибке.

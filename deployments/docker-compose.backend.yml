@@ -79,6 +79,8 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-}
       S3_USE_SSL: ${S3_USE_SSL:-false}
       S3_REGION: ${S3_REGION:-us-east-1}
+      INGRESS_PROXY_HOST: ${INGRESS_PROXY_HOST:-localhost}
+      INGRESS_PROXY_PORT: ${INGRESS_PROXY_PORT:-80}
     depends_on:
       postgres:
         condition: service_healthy
@@ -238,11 +240,34 @@ services:
     depends_on:
       gateway:
         condition: service_started
+      ingress-proxy:
+        condition: service_started
     volumes:
       - games_data:/data/games:ro
       - project_data:/data/projects:ro
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingress-proxy:
+    build:
+      context: ../src
+      dockerfile: ingress-proxy/Dockerfile
+    container_name: gdh-ingress-proxy
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      PORT: "8085"
+      VALKEY_ADDR: "valkey:6379"
+      VALKEY_PASSWORD: ""
+    depends_on:
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8085/healthz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

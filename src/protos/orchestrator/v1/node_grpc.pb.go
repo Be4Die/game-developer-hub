@@ -27,6 +27,8 @@ const (
 	NodeService_ListInstances_FullMethodName           = "/orchestrator.v1.NodeService/ListInstances"
 	NodeService_Announce_FullMethodName                = "/orchestrator.v1.NodeService/Announce"
 	NodeService_UpdateRole_FullMethodName              = "/orchestrator.v1.NodeService/UpdateRole"
+	NodeService_UpdateIngress_FullMethodName           = "/orchestrator.v1.NodeService/UpdateIngress"
+	NodeService_VerifyDomain_FullMethodName            = "/orchestrator.v1.NodeService/VerifyDomain"
 	NodeService_CreateService_FullMethodName           = "/orchestrator.v1.NodeService/CreateService"
 	NodeService_ListServices_FullMethodName            = "/orchestrator.v1.NodeService/ListServices"
 	NodeService_CreateServiceBackup_FullMethodName     = "/orchestrator.v1.NodeService/CreateServiceBackup"
@@ -66,6 +68,10 @@ type NodeServiceClient interface {
 	Announce(ctx context.Context, in *NodeServiceAnnounceRequest, opts ...grpc.CallOption) (*NodeServiceAnnounceResponse, error)
 	// Обновить роль ноды (Mixed, Compute, Storage).
 	UpdateRole(ctx context.Context, in *NodeServiceUpdateRoleRequest, opts ...grpc.CallOption) (*NodeServiceUpdateRoleResponse, error)
+	// Обновить сетевой режим ноды (Direct / Platform Proxy).
+	UpdateIngress(ctx context.Context, in *NodeServiceUpdateIngressRequest, opts ...grpc.CallOption) (*NodeServiceUpdateIngressResponse, error)
+	// Проверить сопоставление кастомного домена и IP-адреса ноды через DNS.
+	VerifyDomain(ctx context.Context, in *NodeServiceVerifyDomainRequest, opts ...grpc.CallOption) (*NodeServiceVerifyDomainResponse, error)
 	// Развернуть управляемый сервис хранения данных на ноде.
 	CreateService(ctx context.Context, in *NodeServiceCreateServiceRequest, opts ...grpc.CallOption) (*NodeServiceCreateServiceResponse, error)
 	// Список управляемых сервисов на ноде.
@@ -178,6 +184,26 @@ func (c *nodeServiceClient) UpdateRole(ctx context.Context, in *NodeServiceUpdat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NodeServiceUpdateRoleResponse)
 	err := c.cc.Invoke(ctx, NodeService_UpdateRole_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) UpdateIngress(ctx context.Context, in *NodeServiceUpdateIngressRequest, opts ...grpc.CallOption) (*NodeServiceUpdateIngressResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceUpdateIngressResponse)
+	err := c.cc.Invoke(ctx, NodeService_UpdateIngress_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) VerifyDomain(ctx context.Context, in *NodeServiceVerifyDomainRequest, opts ...grpc.CallOption) (*NodeServiceVerifyDomainResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceVerifyDomainResponse)
+	err := c.cc.Invoke(ctx, NodeService_VerifyDomain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -359,6 +385,10 @@ type NodeServiceServer interface {
 	Announce(context.Context, *NodeServiceAnnounceRequest) (*NodeServiceAnnounceResponse, error)
 	// Обновить роль ноды (Mixed, Compute, Storage).
 	UpdateRole(context.Context, *NodeServiceUpdateRoleRequest) (*NodeServiceUpdateRoleResponse, error)
+	// Обновить сетевой режим ноды (Direct / Platform Proxy).
+	UpdateIngress(context.Context, *NodeServiceUpdateIngressRequest) (*NodeServiceUpdateIngressResponse, error)
+	// Проверить сопоставление кастомного домена и IP-адреса ноды через DNS.
+	VerifyDomain(context.Context, *NodeServiceVerifyDomainRequest) (*NodeServiceVerifyDomainResponse, error)
 	// Развернуть управляемый сервис хранения данных на ноде.
 	CreateService(context.Context, *NodeServiceCreateServiceRequest) (*NodeServiceCreateServiceResponse, error)
 	// Список управляемых сервисов на ноде.
@@ -420,6 +450,12 @@ func (UnimplementedNodeServiceServer) Announce(context.Context, *NodeServiceAnno
 }
 func (UnimplementedNodeServiceServer) UpdateRole(context.Context, *NodeServiceUpdateRoleRequest) (*NodeServiceUpdateRoleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateRole not implemented")
+}
+func (UnimplementedNodeServiceServer) UpdateIngress(context.Context, *NodeServiceUpdateIngressRequest) (*NodeServiceUpdateIngressResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateIngress not implemented")
+}
+func (UnimplementedNodeServiceServer) VerifyDomain(context.Context, *NodeServiceVerifyDomainRequest) (*NodeServiceVerifyDomainResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyDomain not implemented")
 }
 func (UnimplementedNodeServiceServer) CreateService(context.Context, *NodeServiceCreateServiceRequest) (*NodeServiceCreateServiceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateService not implemented")
@@ -624,6 +660,42 @@ func _NodeService_UpdateRole_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NodeServiceServer).UpdateRole(ctx, req.(*NodeServiceUpdateRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_UpdateIngress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceUpdateIngressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).UpdateIngress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_UpdateIngress_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).UpdateIngress(ctx, req.(*NodeServiceUpdateIngressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_VerifyDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceVerifyDomainRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).VerifyDomain(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_VerifyDomain_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).VerifyDomain(ctx, req.(*NodeServiceVerifyDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -900,6 +972,14 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateRole",
 			Handler:    _NodeService_UpdateRole_Handler,
+		},
+		{
+			MethodName: "UpdateIngress",
+			Handler:    _NodeService_UpdateIngress_Handler,
+		},
+		{
+			MethodName: "VerifyDomain",
+			Handler:    _NodeService_VerifyDomain_Handler,
 		},
 		{
 			MethodName: "CreateService",

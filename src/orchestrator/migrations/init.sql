@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS nodes (
     region        TEXT,                              -- опциональный регион
     status        SMALLINT NOT NULL DEFAULT 1,       -- 1=unauthorized, 2=online, 3=offline, 4=maintenance
     role          SMALLINT NOT NULL DEFAULT 1,       -- 1=mixed, 2=compute, 3=storage
+    backups_enabled BOOLEAN NOT NULL DEFAULT true,   -- флаг включения бэкапов
+    ingress_mode  SMALLINT NOT NULL DEFAULT 1,       -- 1=platform_proxy, 2=direct
+    custom_domain TEXT NOT NULL DEFAULT '',          -- кастомный FQDN-домен (для direct режима)
     cpu_cores     INTEGER NOT NULL DEFAULT 0,        -- количество CPU ядер
     total_memory  BIGINT NOT NULL DEFAULT 0,         -- объём оперативной памяти (bytes)
     total_disk    BIGINT NOT NULL DEFAULT 0,         -- объём диска (bytes)
@@ -29,6 +32,7 @@ CREATE TABLE IF NOT EXISTS nodes (
 
 COMMENT ON TABLE nodes IS 'Реестр вычислительных узлов (game-server-node)';
 COMMENT ON COLUMN nodes.status IS '1=unauthorized, 2=online, 3=offline, 4=maintenance';
+COMMENT ON COLUMN nodes.ingress_mode IS '1=platform_proxy, 2=direct';
 
 CREATE INDEX IF NOT EXISTS idx_nodes_status ON nodes(status);
 CREATE INDEX IF NOT EXISTS idx_nodes_address ON nodes(address);

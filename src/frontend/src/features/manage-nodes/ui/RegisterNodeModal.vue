@@ -72,6 +72,40 @@
           <label>Регион (опционально)</label>
           <input v-model="manualForm.region" type="text" class="form-input" placeholder="EU" />
         </div>
+
+        <!-- Подсказка о режиме маршрутизации сетевого трафика -->
+        <div v-if="addressNetworkHint" class="network-hint-banner" :class="addressNetworkHint.type">
+          <span class="hint-icon">{{ addressNetworkHint.icon }}</span>
+          <div class="hint-text">
+            <strong>{{ addressNetworkHint.title }}</strong>: {{ addressNetworkHint.desc }}
+          </div>
+        </div>
+
+        <!-- Дополнительные настройки Ingress -->
+        <div class="advanced-toggle" @click="showAdvancedIngress = !showAdvancedIngress">
+          <span>⚙️ Настройки маршрутизации (Ingress)</span>
+          <span class="toggle-arrow">{{ showAdvancedIngress ? '▲' : '▼' }}</span>
+        </div>
+        <div v-if="showAdvancedIngress" class="advanced-section">
+          <div class="form-group">
+            <label>Режим Ingress</label>
+            <select v-model="manualForm.ingress_mode" class="form-input">
+              <option value="">Автоопределение (по IP/домену)</option>
+              <option value="platform_proxy">🌐 Прокси платформы</option>
+              <option value="direct">⚡ Прямой домен (Direct SSL)</option>
+            </select>
+          </div>
+          <div v-if="manualForm.ingress_mode === 'direct'" class="form-group">
+            <label>Пользовательский домен (FQDN)</label>
+            <input
+              v-model="manualForm.custom_domain"
+              type="text"
+              class="form-input"
+              placeholder="node1.mygames.com"
+            />
+          </div>
+        </div>
+
         <p class="hint">Введите адрес ноды и её API-ключ (NODE_API_KEY) для подключения.</p>
       </div>
 
@@ -103,6 +137,7 @@ const emit = defineEmits(['registered', 'cancel']);
 const registerTab = ref('available');
 const registering = ref(false);
 const registerError = ref(null);
+const showAdvancedIngress = ref(false);
 
 const availableForm = ref({
   node_id: '',
@@ -113,6 +148,34 @@ const manualForm = ref({
   address: '',
   token: '',
   region: '',
+  ingress_mode: '',
+  custom_domain: '',
+});
+
+const addressNetworkHint = computed(() => {
+  const addr = (manualForm.value.address || '').trim();
+  if (!addr) return null;
+  const host = addr.split(':')[0].toLowerCase();
+  const isIP = /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+
+  if (isIP || isLocal) {
+    return {
+      type: 'proxy',
+      icon: '🌐',
+      title: 'Прокси платформы',
+      desc: 'Для IP-адресов игровой WSS-трафик автоматически пойдет через защищенный ингресс-прокси платформы.',
+    };
+  }
+  if (host.includes('.') && /[a-z]/i.test(host)) {
+    return {
+      type: 'direct',
+      icon: '⚡',
+      title: 'Прямой домен',
+      desc: 'Обнаружено доменное имя. Браузерные клиенты смогут подключаться напрямую (Direct WSS) при наличии SSL-сертификата на ноде.',
+    };
+  }
+  return null;
 });
 
 const canSubmit = computed(() => {
@@ -138,6 +201,8 @@ async function submitRegister() {
         address: manualForm.value.address,
         token: manualForm.value.token,
         region: manualForm.value.region || undefined,
+        ingress_mode: manualForm.value.ingress_mode || undefined,
+        custom_domain: manualForm.value.custom_domain || undefined,
       };
     }
     await registerNode(payload);
@@ -252,6 +317,58 @@ async function submitRegister() {
   color: var(--danger);
   border-radius: var(--radius-md);
   font-size: 0.85rem;
+}
+
+.network-hint-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.network-hint-banner.proxy {
+  background: rgba(56, 139, 253, 0.1);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  color: var(--text-main, #f0f6fc);
+}
+
+.network-hint-banner.direct {
+  background: rgba(46, 160, 67, 0.1);
+  border: 1px solid rgba(46, 160, 67, 0.3);
+  color: var(--text-main, #f0f6fc);
+}
+
+.hint-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.advanced-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text-muted, #8b949e);
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.advanced-toggle:hover {
+  color: var(--text-main, #f0f6fc);
+}
+
+.advanced-section {
+  padding: 12px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .modal-actions {

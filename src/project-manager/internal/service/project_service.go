@@ -23,10 +23,11 @@ type ProjectService struct {
 	blockRepo        domain.BlockRepo
 	moderationClient domain.ModerationClient
 	buildStorage     domain.BuildStorage
-	mediaStorage     domain.MediaStorage
-	deployer         domain.Deployer
-	locker           domain.Locker
-	maxVersions      int
+	mediaStorage       domain.MediaStorage
+	deployer           domain.Deployer
+	locker             domain.Locker
+	maxVersions        int
+	platformProxyHosts []string
 }
 
 // NewProjectService создаёт экземпляр ProjectService.
@@ -67,6 +68,35 @@ func NewProjectService(
 		deployer:         deployer,
 		locker:           locker,
 		maxVersions:      maxVersions,
+	}
+}
+
+// WithPlatformProxyHosts конфигурирует список хостов платформы для CSP онлайн-игр.
+func (s *ProjectService) WithPlatformProxyHosts(hosts []string) *ProjectService {
+	s.platformProxyHosts = hosts
+	return s
+}
+
+func (s *ProjectService) resolveAllowedHosts(isOnline bool) []string {
+	if !isOnline {
+		return nil
+	}
+	if len(s.platformProxyHosts) > 0 {
+		return s.platformProxyHosts
+	}
+	return []string{
+		"wss://*.proxy.welwise.online:*",
+		"https://*.proxy.welwise.online:*",
+		"wss://*.nodes.welwise-games.online:*",
+		"https://*.nodes.welwise-games.online:*",
+		"ws://localhost:*",
+		"wss://localhost:*",
+		"http://localhost:*",
+		"https://localhost:*",
+		"ws://127.0.0.1:*",
+		"wss://127.0.0.1:*",
+		"http://127.0.0.1:*",
+		"https://127.0.0.1:*",
 	}
 }
 
@@ -300,7 +330,7 @@ func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, userI
 	if meta.IsOnline != nil {
 		draft.IsOnline = *meta.IsOnline
 		_ = s.projectRepo.UpdateIsOnline(ctx, projectID, *meta.IsOnline)
-		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", *meta.IsOnline, nil)
+		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", *meta.IsOnline, s.resolveAllowedHosts(*meta.IsOnline))
 	}
 
 	return s.draftRepo.Update(ctx, draft)
@@ -382,7 +412,7 @@ func (s *ProjectService) UploadBuildStream(ctx context.Context, projectID int64,
 	// 4. Обновление активной сборки в черновике
 	_ = s.draftRepo.UpdateActiveBuild(ctx, projectID, version, deployRes.URL)
 	if d, err := s.draftRepo.Get(ctx, projectID); err == nil {
-		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", d.IsOnline, nil)
+		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", d.IsOnline, s.resolveAllowedHosts(d.IsOnline))
 	}
 
 	// 5. Аудит развертывания
@@ -595,7 +625,7 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 	}
 	release.ID = relID
 
-	_ = s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, nil)
+	_ = s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, s.resolveAllowedHosts(draft.IsOnline))
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
 		ProjectID:   projectID,

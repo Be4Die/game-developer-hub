@@ -647,6 +647,120 @@ func (x *HealthResponse) GetFreeDiskBytes() uint64 {
 	return 0
 }
 
+// UpdateCSPRequest запрос на обновление или генерацию csp.json на узле агента.
+type UpdateCSPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Env           string                 `protobuf:"bytes,2,opt,name=env,proto3" json:"env,omitempty"`
+	IsOnline      bool                   `protobuf:"varint,3,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
+	AllowedHosts  []string               `protobuf:"bytes,4,rep,name=allowed_hosts,json=allowedHosts,proto3" json:"allowed_hosts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateCSPRequest) Reset() {
+	*x = UpdateCSPRequest{}
+	mi := &file_game_deployment_agent_v1_deployment_agent_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCSPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCSPRequest) ProtoMessage() {}
+
+func (x *UpdateCSPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_game_deployment_agent_v1_deployment_agent_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateCSPRequest.ProtoReflect.Descriptor instead.
+func (*UpdateCSPRequest) Descriptor() ([]byte, []int) {
+	return file_game_deployment_agent_v1_deployment_agent_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *UpdateCSPRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *UpdateCSPRequest) GetEnv() string {
+	if x != nil {
+		return x.Env
+	}
+	return ""
+}
+
+func (x *UpdateCSPRequest) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
+}
+
+func (x *UpdateCSPRequest) GetAllowedHosts() []string {
+	if x != nil {
+		return x.AllowedHosts
+	}
+	return nil
+}
+
+// UpdateCSPResponse результат обновления csp.json.
+type UpdateCSPResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateCSPResponse) Reset() {
+	*x = UpdateCSPResponse{}
+	mi := &file_game_deployment_agent_v1_deployment_agent_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateCSPResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateCSPResponse) ProtoMessage() {}
+
+func (x *UpdateCSPResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_game_deployment_agent_v1_deployment_agent_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateCSPResponse.ProtoReflect.Descriptor instead.
+func (*UpdateCSPResponse) Descriptor() ([]byte, []int) {
+	return file_game_deployment_agent_v1_deployment_agent_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UpdateCSPResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_game_deployment_agent_v1_deployment_agent_proto protoreflect.FileDescriptor
 
 const file_game_deployment_agent_v1_deployment_agent_proto_rawDesc = "" +
@@ -688,14 +802,23 @@ const file_game_deployment_agent_v1_deployment_agent_proto_rawDesc = "" +
 	"\x0eHealthResponse\x12\x18\n" +
 	"\ahealthy\x18\x01 \x01(\bR\ahealthy\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12&\n" +
-	"\x0ffree_disk_bytes\x18\x03 \x01(\x04R\rfreeDiskBytes2\x9c\x05\n" +
+	"\x0ffree_disk_bytes\x18\x03 \x01(\x04R\rfreeDiskBytes\"\x85\x01\n" +
+	"\x10UpdateCSPRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x10\n" +
+	"\x03env\x18\x02 \x01(\tR\x03env\x12\x1b\n" +
+	"\tis_online\x18\x03 \x01(\bR\bisOnline\x12#\n" +
+	"\rallowed_hosts\x18\x04 \x03(\tR\fallowedHosts\"-\n" +
+	"\x11UpdateCSPResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x82\x06\n" +
 	"\x18WebGameDeploymentService\x12o\n" +
 	"\x0fDeployDevStream\x120.game_deployment_agent.v1.DeployDevStreamRequest\x1a(.game_deployment_agent.v1.DeployResponse(\x01\x12c\n" +
 	"\n" +
 	"DeployProd\x12+.game_deployment_agent.v1.DeployProdRequest\x1a(.game_deployment_agent.v1.DeployResponse\x12i\n" +
 	"\fUndeployProd\x12-.game_deployment_agent.v1.UndeployProdRequest\x1a*.game_deployment_agent.v1.UndeployResponse\x12p\n" +
 	"\rDeleteVersion\x12..game_deployment_agent.v1.DeleteVersionRequest\x1a/.game_deployment_agent.v1.DeleteVersionResponse\x12p\n" +
-	"\rDeleteProject\x12..game_deployment_agent.v1.DeleteProjectRequest\x1a/.game_deployment_agent.v1.DeleteProjectResponse\x12[\n" +
+	"\rDeleteProject\x12..game_deployment_agent.v1.DeleteProjectRequest\x1a/.game_deployment_agent.v1.DeleteProjectResponse\x12d\n" +
+	"\tUpdateCSP\x12*.game_deployment_agent.v1.UpdateCSPRequest\x1a+.game_deployment_agent.v1.UpdateCSPResponse\x12[\n" +
 	"\x06Health\x12'.game_deployment_agent.v1.HealthRequest\x1a(.game_deployment_agent.v1.HealthResponseB\x8b\x02\n" +
 	"\x1ccom.game_deployment_agent.v1B\x14DeploymentAgentProtoP\x01Z\\github.com/Be4Die/game-developer-hub/protos/game_deployment_agent/v1;game_deployment_agentv1\xa2\x02\x03GXX\xaa\x02\x16GameDeploymentAgent.V1\xca\x02\x16GameDeploymentAgent\\V1\xe2\x02\"GameDeploymentAgent\\V1\\GPBMetadata\xea\x02\x17GameDeploymentAgent::V1b\x06proto3"
 
@@ -711,7 +834,7 @@ func file_game_deployment_agent_v1_deployment_agent_proto_rawDescGZIP() []byte {
 	return file_game_deployment_agent_v1_deployment_agent_proto_rawDescData
 }
 
-var file_game_deployment_agent_v1_deployment_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_game_deployment_agent_v1_deployment_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_game_deployment_agent_v1_deployment_agent_proto_goTypes = []any{
 	(*DeployDevStreamRequest)(nil), // 0: game_deployment_agent.v1.DeployDevStreamRequest
 	(*DeployMetadata)(nil),         // 1: game_deployment_agent.v1.DeployMetadata
@@ -725,6 +848,8 @@ var file_game_deployment_agent_v1_deployment_agent_proto_goTypes = []any{
 	(*DeleteProjectResponse)(nil),  // 9: game_deployment_agent.v1.DeleteProjectResponse
 	(*HealthRequest)(nil),          // 10: game_deployment_agent.v1.HealthRequest
 	(*HealthResponse)(nil),         // 11: game_deployment_agent.v1.HealthResponse
+	(*UpdateCSPRequest)(nil),       // 12: game_deployment_agent.v1.UpdateCSPRequest
+	(*UpdateCSPResponse)(nil),      // 13: game_deployment_agent.v1.UpdateCSPResponse
 }
 var file_game_deployment_agent_v1_deployment_agent_proto_depIdxs = []int32{
 	1,  // 0: game_deployment_agent.v1.DeployDevStreamRequest.metadata:type_name -> game_deployment_agent.v1.DeployMetadata
@@ -733,15 +858,17 @@ var file_game_deployment_agent_v1_deployment_agent_proto_depIdxs = []int32{
 	4,  // 3: game_deployment_agent.v1.WebGameDeploymentService.UndeployProd:input_type -> game_deployment_agent.v1.UndeployProdRequest
 	6,  // 4: game_deployment_agent.v1.WebGameDeploymentService.DeleteVersion:input_type -> game_deployment_agent.v1.DeleteVersionRequest
 	8,  // 5: game_deployment_agent.v1.WebGameDeploymentService.DeleteProject:input_type -> game_deployment_agent.v1.DeleteProjectRequest
-	10, // 6: game_deployment_agent.v1.WebGameDeploymentService.Health:input_type -> game_deployment_agent.v1.HealthRequest
-	2,  // 7: game_deployment_agent.v1.WebGameDeploymentService.DeployDevStream:output_type -> game_deployment_agent.v1.DeployResponse
-	2,  // 8: game_deployment_agent.v1.WebGameDeploymentService.DeployProd:output_type -> game_deployment_agent.v1.DeployResponse
-	5,  // 9: game_deployment_agent.v1.WebGameDeploymentService.UndeployProd:output_type -> game_deployment_agent.v1.UndeployResponse
-	7,  // 10: game_deployment_agent.v1.WebGameDeploymentService.DeleteVersion:output_type -> game_deployment_agent.v1.DeleteVersionResponse
-	9,  // 11: game_deployment_agent.v1.WebGameDeploymentService.DeleteProject:output_type -> game_deployment_agent.v1.DeleteProjectResponse
-	11, // 12: game_deployment_agent.v1.WebGameDeploymentService.Health:output_type -> game_deployment_agent.v1.HealthResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
+	12, // 6: game_deployment_agent.v1.WebGameDeploymentService.UpdateCSP:input_type -> game_deployment_agent.v1.UpdateCSPRequest
+	10, // 7: game_deployment_agent.v1.WebGameDeploymentService.Health:input_type -> game_deployment_agent.v1.HealthRequest
+	2,  // 8: game_deployment_agent.v1.WebGameDeploymentService.DeployDevStream:output_type -> game_deployment_agent.v1.DeployResponse
+	2,  // 9: game_deployment_agent.v1.WebGameDeploymentService.DeployProd:output_type -> game_deployment_agent.v1.DeployResponse
+	5,  // 10: game_deployment_agent.v1.WebGameDeploymentService.UndeployProd:output_type -> game_deployment_agent.v1.UndeployResponse
+	7,  // 11: game_deployment_agent.v1.WebGameDeploymentService.DeleteVersion:output_type -> game_deployment_agent.v1.DeleteVersionResponse
+	9,  // 12: game_deployment_agent.v1.WebGameDeploymentService.DeleteProject:output_type -> game_deployment_agent.v1.DeleteProjectResponse
+	13, // 13: game_deployment_agent.v1.WebGameDeploymentService.UpdateCSP:output_type -> game_deployment_agent.v1.UpdateCSPResponse
+	11, // 14: game_deployment_agent.v1.WebGameDeploymentService.Health:output_type -> game_deployment_agent.v1.HealthResponse
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -762,7 +889,7 @@ func file_game_deployment_agent_v1_deployment_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_game_deployment_agent_v1_deployment_agent_proto_rawDesc), len(file_game_deployment_agent_v1_deployment_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

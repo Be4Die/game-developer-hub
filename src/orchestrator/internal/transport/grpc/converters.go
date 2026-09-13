@@ -109,6 +109,8 @@ func nodeToProto(n *domain.Node) *pb.Node {
 		CreatedAt:        timestamppb.New(n.CreatedAt),
 		UpdatedAt:        timestamppb.New(n.UpdatedAt),
 		BackupsEnabled:   n.BackupsEnabled,
+		IngressMode:      ingressModeToProto(n.IngressMode),
+		CustomDomain:     n.CustomDomain,
 	}
 }
 
@@ -146,6 +148,28 @@ func nodeRoleFromProto(r pb.NodeRole) domain.NodeRole {
 		return domain.NodeRoleStorage
 	default:
 		return domain.NodeRoleUnspecified
+	}
+}
+
+func ingressModeToProto(m domain.IngressMode) pb.IngressMode {
+	switch m {
+	case domain.IngressModePlatformProxy:
+		return pb.IngressMode_INGRESS_MODE_PLATFORM_PROXY
+	case domain.IngressModeDirect:
+		return pb.IngressMode_INGRESS_MODE_DIRECT
+	default:
+		return pb.IngressMode_INGRESS_MODE_UNSPECIFIED
+	}
+}
+
+func ingressModeFromProto(m pb.IngressMode) domain.IngressMode {
+	switch m {
+	case pb.IngressMode_INGRESS_MODE_PLATFORM_PROXY:
+		return domain.IngressModePlatformProxy
+	case pb.IngressMode_INGRESS_MODE_DIRECT:
+		return domain.IngressModeDirect
+	default:
+		return domain.IngressModeUnspecified
 	}
 }
 
@@ -276,6 +300,7 @@ func serverEndpointToProto(ep domain.ServerEndpoint) *pb.ServerEndpoint {
 		Protocol:    protocolToProto(ep.Protocol),
 		PlayerCount: playerCount,
 		MaxPlayers:  ep.MaxPlayers,
+		Path:        ep.Path,
 	}
 }
 

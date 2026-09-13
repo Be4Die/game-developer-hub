@@ -17,4 +17,6 @@ var (
 	ErrNoAvailableNode = errors.New("no available node with sufficient resources")
 	// ErrForbidden возвращается при попытке выполнить операцию над чужим ресурсом.
 	ErrForbidden = errors.New("forbidden")
+	// ErrDomainMismatch возвращается если DNS-запись домена не указывает на ноду.
+	ErrDomainMismatch = errors.New("domain DNS does not point to node address")
 )

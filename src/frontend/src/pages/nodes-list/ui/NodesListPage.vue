@@ -95,7 +95,23 @@
             >
               <!-- Адрес -->
               <td class="col-addr">
-                <span class="node-address">{{ node.address }}</span>
+                <div class="addr-cell-content">
+                  <span class="node-address">{{ node.address }}</span>
+                  <span
+                    v-if="node.ingress_mode === 'direct'"
+                    class="ingress-badge direct"
+                    :title="'Прямой домен: ' + (node.custom_domain || node.address)"
+                  >
+                    ⚡ Прямой
+                  </span>
+                  <span
+                    v-else
+                    class="ingress-badge proxy"
+                    title="Трафик сессий идет через безопасный WSS-прокси платформы"
+                  >
+                    🌐 Прокси
+                  </span>
+                </div>
               </td>
 
               <!-- Регион -->
@@ -638,11 +654,40 @@ onMounted(fetchNodes);
   text-align: right;
 }
 
+.addr-cell-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .node-address {
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+}
+
+.ingress-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.ingress-badge.direct {
+  background: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.3);
+}
+
+.ingress-badge.proxy {
+  background: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(56, 139, 253, 0.3);
 }
 
 .cell-text {

@@ -100,6 +100,29 @@ export function normalizeService(raw) {
   };
 }
 
+export const ingressModeMap = {
+  0: 'platform_proxy',
+  1: 'platform_proxy',
+  2: 'direct',
+  '0': 'platform_proxy',
+  '1': 'platform_proxy',
+  '2': 'direct',
+  INGRESS_MODE_UNSPECIFIED: 'platform_proxy',
+  INGRESS_MODE_PLATFORM_PROXY: 'platform_proxy',
+  INGRESS_MODE_DIRECT: 'direct',
+};
+
+export const ingressModeToProto = {
+  platform_proxy: 'INGRESS_MODE_PLATFORM_PROXY',
+  direct: 'INGRESS_MODE_DIRECT',
+};
+
+export function normalizeIngressMode(mode) {
+  if (!mode) return 'platform_proxy';
+  if (ingressModeMap[mode]) return ingressModeMap[mode];
+  return 'platform_proxy';
+}
+
 export function normalizeNode(raw) {
   if (!raw) return raw;
   const data = raw.node ? { ...raw.node } : { ...raw };
@@ -107,6 +130,8 @@ export function normalizeNode(raw) {
     ...data,
     status: normalizeNodeStatus(data.status),
     role: normalizeNodeRole(data.role),
+    ingress_mode: normalizeIngressMode(data.ingress_mode),
+    custom_domain: data.custom_domain || '',
     backups_enabled: !!data.backups_enabled,
   };
 }

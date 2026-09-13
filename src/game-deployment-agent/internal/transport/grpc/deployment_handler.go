@@ -156,3 +156,16 @@ func (h *DeploymentHandler) Health(_ context.Context, _ *pb.HealthRequest) (*pb.
 		FreeDiskBytes: freeBytes,
 	}, nil
 }
+
+// UpdateCSP обновляет манифест безопасности csp.json на узле агента.
+func (h *DeploymentHandler) UpdateCSP(ctx context.Context, req *pb.UpdateCSPRequest) (*pb.UpdateCSPResponse, error) {
+	if req.ProjectId <= 0 {
+		return nil, status.Error(codes.InvalidArgument, "project_id is required")
+	}
+
+	if err := h.svc.UpdateCSP(ctx, req.ProjectId, req.Env, req.IsOnline, req.AllowedHosts); err != nil {
+		return nil, status.Errorf(codes.Internal, "update csp failed: %v", err)
+	}
+
+	return &pb.UpdateCSPResponse{Success: true}, nil
+}

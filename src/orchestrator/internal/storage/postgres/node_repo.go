@@ -35,12 +35,17 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 	if role == 0 {
 		role = domain.NodeRoleMixed
 	}
+	ingressMode := node.IngressMode
+	if ingressMode == 0 {
+		ingressMode = domain.IngressModePlatformProxy
+	}
 
 	const q = `
 		INSERT INTO nodes (owner_id, address, token_hash, api_token, region, status, role,
 		                   cpu_cores, total_memory, total_disk, agent_version,
-		                   last_ping_at, created_at, updated_at, backups_enabled)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+		                   last_ping_at, created_at, updated_at, backups_enabled,
+		                   ingress_mode, custom_domain)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
 		RETURNING id
 	`
 
@@ -48,6 +53,7 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk, node.AgentVersion,
 		node.LastPingAt, node.CreatedAt, node.UpdatedAt, node.BackupsEnabled,
+		ingressMode, node.CustomDomain,
 	).Scan(&node.ID)
 	if err != nil {
 		if isPgUniqueViolation(err) {
@@ -57,6 +63,7 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 	}
 
 	node.Role = role
+	node.IngressMode = ingressMode
 	return nil
 }
 
@@ -66,18 +73,24 @@ func (r *NodeRepo) Update(ctx context.Context, node *domain.Node) error {
 	if role == 0 {
 		role = domain.NodeRoleMixed
 	}
+	ingressMode := node.IngressMode
+	if ingressMode == 0 {
+		ingressMode = domain.IngressModePlatformProxy
+	}
 
 	const q = `
 		UPDATE nodes SET owner_id=$1, address=$2, token_hash=$3, api_token=$4, region=$5, status=$6, role=$7,
 		                 cpu_cores=$8, total_memory=$9, total_disk=$10,
-		                 agent_version=$11, last_ping_at=$12, updated_at=$13, backups_enabled=$14
-		WHERE id=$15
+		                 agent_version=$11, last_ping_at=$12, updated_at=$13, backups_enabled=$14,
+		                 ingress_mode=$15, custom_domain=$16
+		WHERE id=$17
 	`
 
 	tag, err := r.pool.Exec(ctx, q,
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk,
-		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.BackupsEnabled, node.ID,
+		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.BackupsEnabled,
+		ingressMode, node.CustomDomain, node.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.NodeRepo.Update: %w", err)
@@ -94,7 +107,8 @@ func (r *NodeRepo) GetByID(ctx context.Context, id int64) (*domain.Node, error) 
 	const q = `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at, backups_enabled
+		       last_ping_at, created_at, updated_at, backups_enabled,
+		       ingress_mode, custom_domain
 		FROM nodes WHERE id = $1
 	`
 
@@ -107,7 +121,8 @@ func (r *NodeRepo) GetByAddress(ctx context.Context, address string) (*domain.No
 	const q = `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at, backups_enabled
+		       last_ping_at, created_at, updated_at, backups_enabled,
+		       ingress_mode, custom_domain
 		FROM nodes WHERE address = $1
 	`
 
@@ -120,7 +135,8 @@ func (r *NodeRepo) List(ctx context.Context, status *domain.NodeStatus) ([]*doma
 	q := `
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
-		       last_ping_at, created_at, updated_at, backups_enabled
+		       last_ping_at, created_at, updated_at, backups_enabled,
+		       ingress_mode, custom_domain
 		FROM nodes
 	`
 
@@ -198,6 +214,21 @@ func (r *NodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRol
 	return nil
 }
 
+// UpdateIngress обновляет сетевой режим ноды (platform_proxy / direct) и кастомный домен.
+func (r *NodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
+	const q = `UPDATE nodes SET ingress_mode = $1, custom_domain = $2, updated_at = NOW() WHERE id = $3`
+
+	tag, err := r.pool.Exec(ctx, q, mode, customDomain, id)
+	if err != nil {
+		return fmt.Errorf("postgres.NodeRepo.UpdateIngress: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}
+
 type nodeScanner interface {
 	Scan(dest ...any) error
 }
@@ -205,9 +236,10 @@ type nodeScanner interface {
 func scanNode(s nodeScanner) (*domain.Node, error) {
 	n := &domain.Node{}
 	err := s.Scan(
-			&n.ID, &n.OwnerID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status, &n.Role,
-			&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
-			&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt, &n.BackupsEnabled,
+		&n.ID, &n.OwnerID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status, &n.Role,
+		&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
+		&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt, &n.BackupsEnabled,
+		&n.IngressMode, &n.CustomDomain,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

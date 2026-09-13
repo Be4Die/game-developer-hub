@@ -195,6 +195,17 @@ func (d *AgentDeployer) DeleteProject(ctx context.Context, projectID int64) erro
 }
 
 // UpdateCSP обновляет манифест csp.json на удаленном агенте развертывания.
-func (d *AgentDeployer) UpdateCSP(_ context.Context, _ int64, _ string, _ bool, _ []string) error {
+func (d *AgentDeployer) UpdateCSP(ctx context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error {
+	ctx = d.withAuth(ctx)
+
+	_, err := d.client.UpdateCSP(ctx, &pb.UpdateCSPRequest{
+		ProjectId:    projectID,
+		Env:          env,
+		IsOnline:     isOnline,
+		AllowedHosts: allowedHosts,
+	})
+	if err != nil {
+		return fmt.Errorf("agent_deployer: update csp: %w", err)
+	}
 	return nil
 }

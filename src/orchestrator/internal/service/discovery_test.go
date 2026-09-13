@@ -83,6 +83,12 @@ func (m *discMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanc
 func (m *discMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error {
 	return nil
 }
+func (m *discMockInstanceState) SetEndpointRoute(ctx context.Context, instanceID int64, targetAddr string) error {
+	return nil
+}
+func (m *discMockInstanceState) DeleteEndpointRoute(ctx context.Context, instanceID int64) error {
+	return nil
+}
 
 type discMockBuildStorage struct {
 	listByGameFn func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error)
@@ -158,6 +164,9 @@ func (m *discMockNodeRepo) List(ctx context.Context, status *domain.NodeStatus) 
 func (m *discMockNodeRepo) Delete(ctx context.Context, id int64) error         { return nil }
 func (m *discMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error { return nil }
 func (m *discMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRole) error {
+	return nil
+}
+func (m *discMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
 	return nil
 }
 

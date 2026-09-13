@@ -246,6 +246,56 @@ func (NodeRole) EnumDescriptor() ([]byte, []int) {
 	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{3}
 }
 
+// Сетевой режим подключения к игровому серверу ноды.
+type IngressMode int32
+
+const (
+	IngressMode_INGRESS_MODE_UNSPECIFIED    IngressMode = 0
+	IngressMode_INGRESS_MODE_PLATFORM_PROXY IngressMode = 1 // Проксирование через шлюз Платформы
+	IngressMode_INGRESS_MODE_DIRECT         IngressMode = 2 // Прямое подключение по собственному домену
+)
+
+// Enum value maps for IngressMode.
+var (
+	IngressMode_name = map[int32]string{
+		0: "INGRESS_MODE_UNSPECIFIED",
+		1: "INGRESS_MODE_PLATFORM_PROXY",
+		2: "INGRESS_MODE_DIRECT",
+	}
+	IngressMode_value = map[string]int32{
+		"INGRESS_MODE_UNSPECIFIED":    0,
+		"INGRESS_MODE_PLATFORM_PROXY": 1,
+		"INGRESS_MODE_DIRECT":         2,
+	}
+)
+
+func (x IngressMode) Enum() *IngressMode {
+	p := new(IngressMode)
+	*p = x
+	return p
+}
+
+func (x IngressMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (IngressMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_orchestrator_v1_common_proto_enumTypes[4].Descriptor()
+}
+
+func (IngressMode) Type() protoreflect.EnumType {
+	return &file_orchestrator_v1_common_proto_enumTypes[4]
+}
+
+func (x IngressMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use IngressMode.Descriptor instead.
+func (IngressMode) EnumDescriptor() ([]byte, []int) {
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
+}
+
 // Тип управляемого сервиса хранения данных.
 type ServiceType int32
 
@@ -295,11 +345,11 @@ func (x ServiceType) String() string {
 }
 
 func (ServiceType) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[4].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[5].Descriptor()
 }
 
 func (ServiceType) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[4]
+	return &file_orchestrator_v1_common_proto_enumTypes[5]
 }
 
 func (x ServiceType) Number() protoreflect.EnumNumber {
@@ -308,7 +358,7 @@ func (x ServiceType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ServiceType.Descriptor instead.
 func (ServiceType) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{4}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
 }
 
 // Статус сервиса хранения данных.
@@ -351,11 +401,11 @@ func (x ServiceStatus) String() string {
 }
 
 func (ServiceStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[5].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[6].Descriptor()
 }
 
 func (ServiceStatus) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[5]
+	return &file_orchestrator_v1_common_proto_enumTypes[6]
 }
 
 func (x ServiceStatus) Number() protoreflect.EnumNumber {
@@ -364,7 +414,7 @@ func (x ServiceStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ServiceStatus.Descriptor instead.
 func (ServiceStatus) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{5}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{6}
 }
 
 // Источник лога.
@@ -401,11 +451,11 @@ func (x LogSource) String() string {
 }
 
 func (LogSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[6].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[7].Descriptor()
 }
 
 func (LogSource) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[6]
+	return &file_orchestrator_v1_common_proto_enumTypes[7]
 }
 
 func (x LogSource) Number() protoreflect.EnumNumber {
@@ -414,7 +464,7 @@ func (x LogSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LogSource.Descriptor instead.
 func (LogSource) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{6}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{7}
 }
 
 // Стратегия выделения порта.
@@ -454,11 +504,11 @@ func (x PortAllocationStrategy) String() string {
 }
 
 func (PortAllocationStrategy) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[7].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[8].Descriptor()
 }
 
 func (PortAllocationStrategy) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[7]
+	return &file_orchestrator_v1_common_proto_enumTypes[8]
 }
 
 func (x PortAllocationStrategy) Number() protoreflect.EnumNumber {
@@ -467,7 +517,7 @@ func (x PortAllocationStrategy) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PortAllocationStrategy.Descriptor instead.
 func (PortAllocationStrategy) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{7}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{8}
 }
 
 // Статус ответа discovery.
@@ -516,11 +566,11 @@ func (x DiscoveryStatus) String() string {
 }
 
 func (DiscoveryStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_orchestrator_v1_common_proto_enumTypes[8].Descriptor()
+	return file_orchestrator_v1_common_proto_enumTypes[9].Descriptor()
 }
 
 func (DiscoveryStatus) Type() protoreflect.EnumType {
-	return &file_orchestrator_v1_common_proto_enumTypes[8]
+	return &file_orchestrator_v1_common_proto_enumTypes[9]
 }
 
 func (x DiscoveryStatus) Number() protoreflect.EnumNumber {
@@ -529,7 +579,7 @@ func (x DiscoveryStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DiscoveryStatus.Descriptor instead.
 func (DiscoveryStatus) EnumDescriptor() ([]byte, []int) {
-	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{8}
+	return file_orchestrator_v1_common_proto_rawDescGZIP(), []int{9}
 }
 
 // Серверный билд.
@@ -839,6 +889,8 @@ type Node struct {
 	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Role             NodeRole               `protobuf:"varint,13,opt,name=role,proto3,enum=orchestrator.v1.NodeRole" json:"role,omitempty"`
 	BackupsEnabled   bool                   `protobuf:"varint,14,opt,name=backups_enabled,json=backupsEnabled,proto3" json:"backups_enabled,omitempty"`
+	IngressMode      IngressMode            `protobuf:"varint,15,opt,name=ingress_mode,json=ingressMode,proto3,enum=orchestrator.v1.IngressMode" json:"ingress_mode,omitempty"`
+	CustomDomain     string                 `protobuf:"bytes,16,opt,name=custom_domain,json=customDomain,proto3" json:"custom_domain,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -969,6 +1021,20 @@ func (x *Node) GetBackupsEnabled() bool {
 		return x.BackupsEnabled
 	}
 	return false
+}
+
+func (x *Node) GetIngressMode() IngressMode {
+	if x != nil {
+		return x.IngressMode
+	}
+	return IngressMode_INGRESS_MODE_UNSPECIFIED
+}
+
+func (x *Node) GetCustomDomain() string {
+	if x != nil {
+		return x.CustomDomain
+	}
+	return ""
 }
 
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).
@@ -1501,6 +1567,7 @@ type ServerEndpoint struct {
 	Protocol      Protocol               `protobuf:"varint,4,opt,name=protocol,proto3,enum=orchestrator.v1.Protocol" json:"protocol,omitempty"`
 	PlayerCount   uint32                 `protobuf:"varint,5,opt,name=player_count,json=playerCount,proto3" json:"player_count,omitempty"`
 	MaxPlayers    uint32                 `protobuf:"varint,6,opt,name=max_players,json=maxPlayers,proto3" json:"max_players,omitempty"`
+	Path          string                 `protobuf:"bytes,7,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1575,6 +1642,13 @@ func (x *ServerEndpoint) GetMaxPlayers() uint32 {
 		return x.MaxPlayers
 	}
 	return 0
+}
+
+func (x *ServerEndpoint) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
 }
 
 // Запись журнала.
@@ -1736,7 +1810,7 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\xbe\x04\n" +
+	"\r_player_count\"\xa4\x05\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x18\n" +
@@ -1755,7 +1829,9 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12-\n" +
 	"\x04role\x18\r \x01(\x0e2\x19.orchestrator.v1.NodeRoleR\x04role\x12'\n" +
-	"\x0fbackups_enabled\x18\x0e \x01(\bR\x0ebackupsEnabled\"\x89\x04\n" +
+	"\x0fbackups_enabled\x18\x0e \x01(\bR\x0ebackupsEnabled\x12?\n" +
+	"\fingress_mode\x18\x0f \x01(\x0e2\x1c.orchestrator.v1.IngressModeR\vingressMode\x12#\n" +
+	"\rcustom_domain\x18\x10 \x01(\tR\fcustomDomain\"\x89\x04\n" +
 	"\x0eManagedService\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x03R\x06nodeId\x12\x19\n" +
@@ -1796,7 +1872,7 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x05exact\x18\x02 \x01(\v2$.orchestrator.v1.PortAllocationExactH\x00R\x05exact\x12<\n" +
 	"\x05range\x18\x03 \x01(\v2$.orchestrator.v1.PortAllocationRangeH\x00R\x05rangeB\n" +
 	"\n" +
-	"\bstrategy\"\xda\x01\n" +
+	"\bstrategy\"\xee\x01\n" +
 	"\x0eServerEndpoint\x12\x1f\n" +
 	"\vinstance_id\x18\x01 \x01(\x03R\n" +
 	"instanceId\x12\x18\n" +
@@ -1805,7 +1881,8 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\bprotocol\x18\x04 \x01(\x0e2\x19.orchestrator.v1.ProtocolR\bprotocol\x12!\n" +
 	"\fplayer_count\x18\x05 \x01(\rR\vplayerCount\x12\x1f\n" +
 	"\vmax_players\x18\x06 \x01(\rR\n" +
-	"maxPlayers\"\x92\x01\n" +
+	"maxPlayers\x12\x12\n" +
+	"\x04path\x18\a \x01(\tR\x04path\"\x92\x01\n" +
 	"\bLogEntry\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x122\n" +
 	"\x06source\x18\x02 \x01(\x0e2\x1a.orchestrator.v1.LogSourceR\x06source\x12\x18\n" +
@@ -1837,7 +1914,11 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x15NODE_ROLE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fNODE_ROLE_MIXED\x10\x01\x12\x15\n" +
 	"\x11NODE_ROLE_COMPUTE\x10\x02\x12\x15\n" +
-	"\x11NODE_ROLE_STORAGE\x10\x03*\xdb\x01\n" +
+	"\x11NODE_ROLE_STORAGE\x10\x03*e\n" +
+	"\vIngressMode\x12\x1c\n" +
+	"\x18INGRESS_MODE_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bINGRESS_MODE_PLATFORM_PROXY\x10\x01\x12\x17\n" +
+	"\x13INGRESS_MODE_DIRECT\x10\x02*\xdb\x01\n" +
 	"\vServiceType\x12\x1c\n" +
 	"\x18SERVICE_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15SERVICE_TYPE_POSTGRES\x10\x01\x12\x16\n" +
@@ -1884,66 +1965,68 @@ func file_orchestrator_v1_common_proto_rawDescGZIP() []byte {
 	return file_orchestrator_v1_common_proto_rawDescData
 }
 
-var file_orchestrator_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
+var file_orchestrator_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
 var file_orchestrator_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_orchestrator_v1_common_proto_goTypes = []any{
 	(Protocol)(0),                 // 0: orchestrator.v1.Protocol
 	(InstanceStatus)(0),           // 1: orchestrator.v1.InstanceStatus
 	(NodeStatus)(0),               // 2: orchestrator.v1.NodeStatus
 	(NodeRole)(0),                 // 3: orchestrator.v1.NodeRole
-	(ServiceType)(0),              // 4: orchestrator.v1.ServiceType
-	(ServiceStatus)(0),            // 5: orchestrator.v1.ServiceStatus
-	(LogSource)(0),                // 6: orchestrator.v1.LogSource
-	(PortAllocationStrategy)(0),   // 7: orchestrator.v1.PortAllocationStrategy
-	(DiscoveryStatus)(0),          // 8: orchestrator.v1.DiscoveryStatus
-	(*ServerBuild)(nil),           // 9: orchestrator.v1.ServerBuild
-	(*Instance)(nil),              // 10: orchestrator.v1.Instance
-	(*Node)(nil),                  // 11: orchestrator.v1.Node
-	(*ManagedService)(nil),        // 12: orchestrator.v1.ManagedService
-	(*ResourceUsage)(nil),         // 13: orchestrator.v1.ResourceUsage
-	(*ResourceLimits)(nil),        // 14: orchestrator.v1.ResourceLimits
-	(*PortAllocationAny)(nil),     // 15: orchestrator.v1.PortAllocationAny
-	(*PortAllocationExact)(nil),   // 16: orchestrator.v1.PortAllocationExact
-	(*PortAllocationRange)(nil),   // 17: orchestrator.v1.PortAllocationRange
-	(*PortAllocation)(nil),        // 18: orchestrator.v1.PortAllocation
-	(*ServerEndpoint)(nil),        // 19: orchestrator.v1.ServerEndpoint
-	(*LogEntry)(nil),              // 20: orchestrator.v1.LogEntry
-	(*Error)(nil),                 // 21: orchestrator.v1.Error
-	nil,                           // 22: orchestrator.v1.Instance.DeveloperPayloadEntry
-	(*timestamppb.Timestamp)(nil), // 23: google.protobuf.Timestamp
+	(IngressMode)(0),              // 4: orchestrator.v1.IngressMode
+	(ServiceType)(0),              // 5: orchestrator.v1.ServiceType
+	(ServiceStatus)(0),            // 6: orchestrator.v1.ServiceStatus
+	(LogSource)(0),                // 7: orchestrator.v1.LogSource
+	(PortAllocationStrategy)(0),   // 8: orchestrator.v1.PortAllocationStrategy
+	(DiscoveryStatus)(0),          // 9: orchestrator.v1.DiscoveryStatus
+	(*ServerBuild)(nil),           // 10: orchestrator.v1.ServerBuild
+	(*Instance)(nil),              // 11: orchestrator.v1.Instance
+	(*Node)(nil),                  // 12: orchestrator.v1.Node
+	(*ManagedService)(nil),        // 13: orchestrator.v1.ManagedService
+	(*ResourceUsage)(nil),         // 14: orchestrator.v1.ResourceUsage
+	(*ResourceLimits)(nil),        // 15: orchestrator.v1.ResourceLimits
+	(*PortAllocationAny)(nil),     // 16: orchestrator.v1.PortAllocationAny
+	(*PortAllocationExact)(nil),   // 17: orchestrator.v1.PortAllocationExact
+	(*PortAllocationRange)(nil),   // 18: orchestrator.v1.PortAllocationRange
+	(*PortAllocation)(nil),        // 19: orchestrator.v1.PortAllocation
+	(*ServerEndpoint)(nil),        // 20: orchestrator.v1.ServerEndpoint
+	(*LogEntry)(nil),              // 21: orchestrator.v1.LogEntry
+	(*Error)(nil),                 // 22: orchestrator.v1.Error
+	nil,                           // 23: orchestrator.v1.Instance.DeveloperPayloadEntry
+	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
 }
 var file_orchestrator_v1_common_proto_depIdxs = []int32{
 	0,  // 0: orchestrator.v1.ServerBuild.protocol:type_name -> orchestrator.v1.Protocol
-	23, // 1: orchestrator.v1.ServerBuild.created_at:type_name -> google.protobuf.Timestamp
+	24, // 1: orchestrator.v1.ServerBuild.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: orchestrator.v1.Instance.protocol:type_name -> orchestrator.v1.Protocol
 	1,  // 3: orchestrator.v1.Instance.status:type_name -> orchestrator.v1.InstanceStatus
-	22, // 4: orchestrator.v1.Instance.developer_payload:type_name -> orchestrator.v1.Instance.DeveloperPayloadEntry
-	23, // 5: orchestrator.v1.Instance.started_at:type_name -> google.protobuf.Timestamp
-	23, // 6: orchestrator.v1.Instance.created_at:type_name -> google.protobuf.Timestamp
-	23, // 7: orchestrator.v1.Instance.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 4: orchestrator.v1.Instance.developer_payload:type_name -> orchestrator.v1.Instance.DeveloperPayloadEntry
+	24, // 5: orchestrator.v1.Instance.started_at:type_name -> google.protobuf.Timestamp
+	24, // 6: orchestrator.v1.Instance.created_at:type_name -> google.protobuf.Timestamp
+	24, // 7: orchestrator.v1.Instance.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 8: orchestrator.v1.Node.status:type_name -> orchestrator.v1.NodeStatus
-	23, // 9: orchestrator.v1.Node.last_ping_at:type_name -> google.protobuf.Timestamp
-	23, // 10: orchestrator.v1.Node.created_at:type_name -> google.protobuf.Timestamp
-	23, // 11: orchestrator.v1.Node.updated_at:type_name -> google.protobuf.Timestamp
+	24, // 9: orchestrator.v1.Node.last_ping_at:type_name -> google.protobuf.Timestamp
+	24, // 10: orchestrator.v1.Node.created_at:type_name -> google.protobuf.Timestamp
+	24, // 11: orchestrator.v1.Node.updated_at:type_name -> google.protobuf.Timestamp
 	3,  // 12: orchestrator.v1.Node.role:type_name -> orchestrator.v1.NodeRole
-	4,  // 13: orchestrator.v1.ManagedService.type:type_name -> orchestrator.v1.ServiceType
-	5,  // 14: orchestrator.v1.ManagedService.status:type_name -> orchestrator.v1.ServiceStatus
-	23, // 15: orchestrator.v1.ManagedService.created_at:type_name -> google.protobuf.Timestamp
-	23, // 16: orchestrator.v1.ManagedService.updated_at:type_name -> google.protobuf.Timestamp
-	7,  // 17: orchestrator.v1.PortAllocationAny.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	7,  // 18: orchestrator.v1.PortAllocationExact.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	7,  // 19: orchestrator.v1.PortAllocationRange.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
-	15, // 20: orchestrator.v1.PortAllocation.any:type_name -> orchestrator.v1.PortAllocationAny
-	16, // 21: orchestrator.v1.PortAllocation.exact:type_name -> orchestrator.v1.PortAllocationExact
-	17, // 22: orchestrator.v1.PortAllocation.range:type_name -> orchestrator.v1.PortAllocationRange
-	0,  // 23: orchestrator.v1.ServerEndpoint.protocol:type_name -> orchestrator.v1.Protocol
-	23, // 24: orchestrator.v1.LogEntry.timestamp:type_name -> google.protobuf.Timestamp
-	6,  // 25: orchestrator.v1.LogEntry.source:type_name -> orchestrator.v1.LogSource
-	26, // [26:26] is the sub-list for method output_type
-	26, // [26:26] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	4,  // 13: orchestrator.v1.Node.ingress_mode:type_name -> orchestrator.v1.IngressMode
+	5,  // 14: orchestrator.v1.ManagedService.type:type_name -> orchestrator.v1.ServiceType
+	6,  // 15: orchestrator.v1.ManagedService.status:type_name -> orchestrator.v1.ServiceStatus
+	24, // 16: orchestrator.v1.ManagedService.created_at:type_name -> google.protobuf.Timestamp
+	24, // 17: orchestrator.v1.ManagedService.updated_at:type_name -> google.protobuf.Timestamp
+	8,  // 18: orchestrator.v1.PortAllocationAny.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	8,  // 19: orchestrator.v1.PortAllocationExact.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	8,  // 20: orchestrator.v1.PortAllocationRange.strategy:type_name -> orchestrator.v1.PortAllocationStrategy
+	16, // 21: orchestrator.v1.PortAllocation.any:type_name -> orchestrator.v1.PortAllocationAny
+	17, // 22: orchestrator.v1.PortAllocation.exact:type_name -> orchestrator.v1.PortAllocationExact
+	18, // 23: orchestrator.v1.PortAllocation.range:type_name -> orchestrator.v1.PortAllocationRange
+	0,  // 24: orchestrator.v1.ServerEndpoint.protocol:type_name -> orchestrator.v1.Protocol
+	24, // 25: orchestrator.v1.LogEntry.timestamp:type_name -> google.protobuf.Timestamp
+	7,  // 26: orchestrator.v1.LogEntry.source:type_name -> orchestrator.v1.LogSource
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_common_proto_init() }
@@ -1962,7 +2045,7 @@ func file_orchestrator_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_common_proto_rawDesc), len(file_orchestrator_v1_common_proto_rawDesc)),
-			NumEnums:      9,
+			NumEnums:      10,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,

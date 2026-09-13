@@ -29,3 +29,9 @@ type DeploymentResult struct {
 	UnpackedPath string
 	Success      bool
 }
+
+// CSPManifest определяет структуру манифеста сетевой безопасности игры.
+type CSPManifest struct {
+	IsOnline   bool     `json:"is_online"`
+	ConnectSrc []string `json:"connect_src"`
+}

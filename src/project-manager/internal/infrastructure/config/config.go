@@ -86,11 +86,12 @@ type StorageConfig struct {
 
 // DeploymentConfig настройки подсистемы развертывания.
 type DeploymentConfig struct {
-	Mode          string `yaml:"mode" env:"DEPLOYMENT_MODE" env-default:"s3"` // s3 | local | agent
-	GamesBasePath string `yaml:"games_base_path" env:"DEPLOYMENT_GAMES_PATH" env-default:"./data/games"`
-	URLPrefix     string `yaml:"url_prefix" env:"DEPLOYMENT_URL_PREFIX" env-default:"/games"`
-	AgentEndpoint string `yaml:"agent_endpoint" env:"DEPLOYMENT_AGENT_ENDPOINT" env-default:""`
-	AgentAPIKey   string `yaml:"agent_api_key" env:"DEPLOYMENT_AGENT_API_KEY" env-default:""`
+	Mode               string   `yaml:"mode" env:"DEPLOYMENT_MODE" env-default:"s3"` // s3 | local | agent
+	GamesBasePath      string   `yaml:"games_base_path" env:"DEPLOYMENT_GAMES_PATH" env-default:"./data/games"`
+	URLPrefix          string   `yaml:"url_prefix" env:"DEPLOYMENT_URL_PREFIX" env-default:"/games"`
+	AgentEndpoint      string   `yaml:"agent_endpoint" env:"DEPLOYMENT_AGENT_ENDPOINT" env-default:""`
+	AgentAPIKey        string   `yaml:"agent_api_key" env:"DEPLOYMENT_AGENT_API_KEY" env-default:""`
+	PlatformProxyHosts []string `yaml:"platform_proxy_hosts" env:"DEPLOYMENT_PLATFORM_PROXY_HOSTS" env-separator:","`
 }
 
 // JWTConfig настройки JWT-валидации.

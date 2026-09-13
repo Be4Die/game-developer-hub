@@ -24,6 +24,7 @@ const (
 	WebGameDeploymentService_UndeployProd_FullMethodName    = "/game_deployment_agent.v1.WebGameDeploymentService/UndeployProd"
 	WebGameDeploymentService_DeleteVersion_FullMethodName   = "/game_deployment_agent.v1.WebGameDeploymentService/DeleteVersion"
 	WebGameDeploymentService_DeleteProject_FullMethodName   = "/game_deployment_agent.v1.WebGameDeploymentService/DeleteProject"
+	WebGameDeploymentService_UpdateCSP_FullMethodName       = "/game_deployment_agent.v1.WebGameDeploymentService/UpdateCSP"
 	WebGameDeploymentService_Health_FullMethodName          = "/game_deployment_agent.v1.WebGameDeploymentService/Health"
 )
 
@@ -43,6 +44,8 @@ type WebGameDeploymentServiceClient interface {
 	DeleteVersion(ctx context.Context, in *DeleteVersionRequest, opts ...grpc.CallOption) (*DeleteVersionResponse, error)
 	// DeleteProject удаляет все развернутые версии и симлинки проекта.
 	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error)
+	// UpdateCSP обновляет манифест безопасности csp.json для окружения игры.
+	UpdateCSP(ctx context.Context, in *UpdateCSPRequest, opts ...grpc.CallOption) (*UpdateCSPResponse, error)
 	// Health проверяет состояние здоровья агента и доступное дисковое пространство.
 	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
@@ -108,6 +111,16 @@ func (c *webGameDeploymentServiceClient) DeleteProject(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *webGameDeploymentServiceClient) UpdateCSP(ctx context.Context, in *UpdateCSPRequest, opts ...grpc.CallOption) (*UpdateCSPResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateCSPResponse)
+	err := c.cc.Invoke(ctx, WebGameDeploymentService_UpdateCSP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *webGameDeploymentServiceClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthResponse)
@@ -134,6 +147,8 @@ type WebGameDeploymentServiceServer interface {
 	DeleteVersion(context.Context, *DeleteVersionRequest) (*DeleteVersionResponse, error)
 	// DeleteProject удаляет все развернутые версии и симлинки проекта.
 	DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error)
+	// UpdateCSP обновляет манифест безопасности csp.json для окружения игры.
+	UpdateCSP(context.Context, *UpdateCSPRequest) (*UpdateCSPResponse, error)
 	// Health проверяет состояние здоровья агента и доступное дисковое пространство.
 	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 	mustEmbedUnimplementedWebGameDeploymentServiceServer()
@@ -160,6 +175,9 @@ func (UnimplementedWebGameDeploymentServiceServer) DeleteVersion(context.Context
 }
 func (UnimplementedWebGameDeploymentServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteProject not implemented")
+}
+func (UnimplementedWebGameDeploymentServiceServer) UpdateCSP(context.Context, *UpdateCSPRequest) (*UpdateCSPResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateCSP not implemented")
 }
 func (UnimplementedWebGameDeploymentServiceServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Health not implemented")
@@ -265,6 +283,24 @@ func _WebGameDeploymentService_DeleteProject_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WebGameDeploymentService_UpdateCSP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCSPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WebGameDeploymentServiceServer).UpdateCSP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WebGameDeploymentService_UpdateCSP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WebGameDeploymentServiceServer).UpdateCSP(ctx, req.(*UpdateCSPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WebGameDeploymentService_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthRequest)
 	if err := dec(in); err != nil {
@@ -305,6 +341,10 @@ var WebGameDeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProject",
 			Handler:    _WebGameDeploymentService_DeleteProject_Handler,
+		},
+		{
+			MethodName: "UpdateCSP",
+			Handler:    _WebGameDeploymentService_UpdateCSP_Handler,
 		},
 		{
 			MethodName: "Health",

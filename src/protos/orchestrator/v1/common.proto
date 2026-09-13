@@ -40,6 +40,13 @@ enum NodeRole {
   NODE_ROLE_STORAGE = 3;  // Только базы данных и хранилища (stateful)
 }
 
+// Сетевой режим подключения к игровому серверу ноды.
+enum IngressMode {
+  INGRESS_MODE_UNSPECIFIED = 0;
+  INGRESS_MODE_PLATFORM_PROXY = 1; // Проксирование через шлюз Платформы
+  INGRESS_MODE_DIRECT = 2;         // Прямое подключение по собственному домену
+}
+
 // Тип управляемого сервиса хранения данных.
 enum ServiceType {
   SERVICE_TYPE_UNSPECIFIED = 0;
@@ -127,6 +134,8 @@ message Node {
   google.protobuf.Timestamp updated_at = 12;
   NodeRole role = 13;
   bool backups_enabled = 14;
+  IngressMode ingress_mode = 15;
+  string custom_domain = 16;
 }
 
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).
@@ -195,6 +204,7 @@ message ServerEndpoint {
   Protocol protocol = 4;
   uint32 player_count = 5;
   uint32 max_players = 6;
+  string path = 7;
 }
 
 // Статус ответа discovery.

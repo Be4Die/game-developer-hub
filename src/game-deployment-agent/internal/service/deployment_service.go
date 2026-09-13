@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -160,4 +161,40 @@ func (s *DeploymentService) GetFreeDiskBytes() uint64 {
 		return stat.Bavail * uint64(stat.Bsize)
 	}
 	return 0
+}
+
+// UpdateCSP обновляет или создаёт csp.json манифест сетевой безопасности на узле агента.
+func (s *DeploymentService) UpdateCSP(_ context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error {
+	manifest := domain.CSPManifest{
+		IsOnline:   isOnline,
+		ConnectSrc: []string{"'self'"},
+	}
+	if isOnline {
+		if len(allowedHosts) > 0 {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, allowedHosts...)
+		} else {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, "wss://*.nodes.welwise-games.online:*")
+		}
+	}
+
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal csp manifest: %w", err)
+	}
+
+	projDir := s.projectDir(projectID)
+	if err := os.MkdirAll(projDir, 0o750); err != nil {
+		return fmt.Errorf("create project dir for csp: %w", err)
+	}
+
+	_ = os.WriteFile(filepath.Join(projDir, "csp.json"), data, 0o644) //nolint:gosec
+
+	if env != "" {
+		envDir := filepath.Join(projDir, env)
+		if _, err := os.Stat(envDir); err == nil {
+			_ = os.WriteFile(filepath.Join(envDir, "csp.json"), data, 0o644) //nolint:gosec
+		}
+	}
+
+	return nil
 }

@@ -19,6 +19,9 @@ service WebGameDeploymentService {
   // DeleteProject удаляет все развернутые версии и симлинки проекта.
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
 
+  // UpdateCSP обновляет манифест безопасности csp.json для окружения игры.
+  rpc UpdateCSP(UpdateCSPRequest) returns (UpdateCSPResponse);
+
   // Health проверяет состояние здоровья агента и доступное дисковое пространство.
   rpc Health(HealthRequest) returns (HealthResponse);
 }
@@ -89,4 +92,17 @@ message HealthResponse {
   bool healthy = 1;
   string version = 2;
   uint64 free_disk_bytes = 3;
+}
+
+// UpdateCSPRequest запрос на обновление или генерацию csp.json на узле агента.
+message UpdateCSPRequest {
+  int64 project_id = 1;
+  string env = 2;
+  bool is_online = 3;
+  repeated string allowed_hosts = 4;
+}
+
+// UpdateCSPResponse результат обновления csp.json.
+message UpdateCSPResponse {
+  bool success = 1;
 }

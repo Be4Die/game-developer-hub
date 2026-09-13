@@ -156,6 +156,12 @@ func (m *instMockInstanceState) GetZeroPlayersSince(ctx context.Context, instanc
 func (m *instMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instanceID int64) error {
 	return nil
 }
+func (m *instMockInstanceState) SetEndpointRoute(ctx context.Context, instanceID int64, targetAddr string) error {
+	return nil
+}
+func (m *instMockInstanceState) DeleteEndpointRoute(ctx context.Context, instanceID int64) error {
+	return nil
+}
 
 type instMockBuildStorage struct {
 	createFn                    func(ctx context.Context, build *domain.ServerBuild) error
@@ -267,6 +273,9 @@ func (m *instMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain
 	if m.updateRoleFn != nil {
 		return m.updateRoleFn(ctx, id, role)
 	}
+	return nil
+}
+func (m *instMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
 	return nil
 }
 

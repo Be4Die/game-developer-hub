@@ -98,3 +98,37 @@ func TestUnit_DeploymentService_Lifecycle(t *testing.T) {
 		t.Errorf("expected project dir to be removed")
 	}
 }
+
+func TestUnit_DeploymentService_UpdateCSP(t *testing.T) {
+	tempBase, err := os.MkdirTemp("", "agent-games-csp-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer func() {
+		_ = os.RemoveAll(tempBase)
+	}()
+
+	svc := NewDeploymentService(tempBase, "/games", 100, 1000)
+	ctx := context.Background()
+	projectID := int64(202)
+
+	// Test online CSP with custom hosts
+	hosts := []string{"wss://proxy.welwise.online:*", "https://proxy.welwise.online:*"}
+	err = svc.UpdateCSP(ctx, projectID, "dev", true, hosts)
+	if err != nil {
+		t.Fatalf("unexpected error updating CSP: %v", err)
+	}
+
+	manifestPath := filepath.Join(tempBase, "202", "csp.json")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		t.Fatalf("failed to read generated csp.json: %v", err)
+	}
+
+	if !bytes.Contains(data, []byte("proxy.welwise.online")) {
+		t.Errorf("expected csp.json to contain proxy host, got %s", string(data))
+	}
+	if !bytes.Contains(data, []byte("'self'")) {
+		t.Errorf("expected csp.json to contain 'self', got %s", string(data))
+	}
+}

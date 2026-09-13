@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 )
@@ -27,6 +26,8 @@ type DiscoveryService struct {
 	policyService *GamePolicyService
 	instanceSvc   instanceStarter
 	queueSvc      queueProcessor
+	proxyHost     string
+	proxyPort     uint32
 }
 
 // NewDiscoveryService создаёт сервис обнаружения серверов.
@@ -48,6 +49,13 @@ func NewDiscoveryService(
 		instanceSvc:   instanceSvc,
 		queueSvc:      queueSvc,
 	}
+}
+
+// WithProxy настраивает параметры платформенного прокси.
+func (s *DiscoveryService) WithProxy(host string, port uint32) *DiscoveryService {
+	s.proxyHost = host
+	s.proxyPort = port
+	return s
 }
 
 // DiscoverServers возвращает список доступных серверов для подключения
@@ -96,19 +104,8 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, pl
 			continue // Нода не найдена — пропускаем инстанс.
 		}
 
-		host, _, err := net.SplitHostPort(node.Address)
-		if err != nil {
-			host = node.Address
-		}
-
-		endpoints = append(endpoints, domain.ServerEndpoint{
-			InstanceID:  inst.ID,
-			Address:     host,
-			Port:        inst.HostPort,
-			Protocol:    inst.Protocol,
-			PlayerCount: &playerCount,
-			MaxPlayers:  inst.MaxPlayers,
-		})
+		endpoint := domain.BuildServerEndpoint(inst, node, s.proxyHost, s.proxyPort, &playerCount)
+		endpoints = append(endpoints, endpoint)
 
 		if playerCount < inst.MaxPlayers {
 			hasAvailable = true

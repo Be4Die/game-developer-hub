@@ -37,6 +37,19 @@ deployment:
   url_prefix: "/games"
   agent_endpoint: "localhost:50055"
   agent_api_key: "dev-deployment-agent-key"
+  platform_proxy_hosts:
+    - "wss://*.proxy.welwise.online:*"
+    - "https://*.proxy.welwise.online:*"
+    - "wss://*.nodes.welwise-games.online:*"
+    - "https://*.nodes.welwise-games.online:*"
+    - "ws://localhost:*"
+    - "wss://localhost:*"
+    - "http://localhost:*"
+    - "https://localhost:*"
+    - "ws://127.0.0.1:*"
+    - "wss://127.0.0.1:*"
+    - "http://127.0.0.1:*"
+    - "https://127.0.0.1:*"
 
 moderation:
   addr: "" # при пустом адресе используется in-memory StubModerationClient

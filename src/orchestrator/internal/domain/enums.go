@@ -280,4 +280,27 @@ const (
 	BackupStatusRestoring
 )
 
+// ─── IngressMode ─────────────────────────────────────────────────────────────
+
+// IngressMode определяет сетевой режим подключения к игровому серверу ноды.
+type IngressMode uint8
+
+// Сетевые режимы ноды.
+const (
+	IngressModeUnspecified   IngressMode = 0
+	IngressModePlatformProxy IngressMode = 1 // Маршрутизация через WSS-прокси платформы
+	IngressModeDirect        IngressMode = 2 // Прямое подключение по собственному FQDN-домену с SSL
+)
+
+func (m IngressMode) String() string {
+	switch m {
+	case IngressModePlatformProxy:
+		return "platform_proxy"
+	case IngressModeDirect:
+		return "direct"
+	default:
+		return "unspecified"
+	}
+}
+
 

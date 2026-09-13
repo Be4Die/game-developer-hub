@@ -111,6 +111,7 @@ type hbMockNodeRepo struct {
 	deleteFn         func(ctx context.Context, id int64) error
 	updateLastPingFn func(ctx context.Context, id int64) error
 	updateRoleFn     func(ctx context.Context, id int64, role domain.NodeRole) error
+	updateIngressFn  func(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error
 }
 
 func (m *hbMockNodeRepo) Create(ctx context.Context, node *domain.Node) error {
@@ -158,6 +159,12 @@ func (m *hbMockNodeRepo) UpdateLastPing(ctx context.Context, id int64) error {
 func (m *hbMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain.NodeRole) error {
 	if m.updateRoleFn != nil {
 		return m.updateRoleFn(ctx, id, role)
+	}
+	return nil
+}
+func (m *hbMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
+	if m.updateIngressFn != nil {
+		return m.updateIngressFn(ctx, id, mode, customDomain)
 	}
 	return nil
 }
@@ -409,6 +416,12 @@ func (m *hbMockInstanceState) DeleteZeroPlayersSince(ctx context.Context, instan
 	if m.deleteZeroSinceFn != nil {
 		return m.deleteZeroSinceFn(ctx, instanceID)
 	}
+	return nil
+}
+func (m *hbMockInstanceState) SetEndpointRoute(ctx context.Context, instanceID int64, targetAddr string) error {
+	return nil
+}
+func (m *hbMockInstanceState) DeleteEndpointRoute(ctx context.Context, instanceID int64) error {
 	return nil
 }
 

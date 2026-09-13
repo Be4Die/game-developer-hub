@@ -194,6 +194,11 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		return nil, fmt.Errorf("InstanceService.StartInstance: set KV status: %w", err)
 	}
 
+	targetAddr := fmt.Sprintf("%s:%d", serverHost, result.HostPort)
+	if err := s.instanceState.SetEndpointRoute(ctx, instance.ID, targetAddr); err != nil {
+		return nil, fmt.Errorf("InstanceService.StartInstance: set endpoint route: %w", err)
+	}
+
 	// Обновляем счётчик активных инстансов на ноде.
 	if err := s.incrementNodeInstanceCount(ctx, node.ID, 1); err != nil {
 		return nil, fmt.Errorf("InstanceService.StartInstance: update node count: %w", err)
@@ -334,6 +339,8 @@ func (s *InstanceService) RestartInstance(ctx context.Context, ownerID string, g
 	if err := s.instanceState.SetStatus(ctx, instance.ID, domain.InstanceStatusRunning); err != nil {
 		return nil, fmt.Errorf("InstanceService.RestartInstance: set KV status: %w", err)
 	}
+	targetAddr := fmt.Sprintf("%s:%d", instance.ServerAddress, instance.HostPort)
+	_ = s.instanceState.SetEndpointRoute(ctx, instance.ID, targetAddr)
 
 	return instance, nil
 }
@@ -368,6 +375,8 @@ func (s *InstanceService) ResumeInstance(ctx context.Context, ownerID string, ga
 	if err := s.instanceState.SetStatus(ctx, instance.ID, domain.InstanceStatusRunning); err != nil {
 		return nil, fmt.Errorf("InstanceService.ResumeInstance: set KV status: %w", err)
 	}
+	targetAddr := fmt.Sprintf("%s:%d", instance.ServerAddress, instance.HostPort)
+	_ = s.instanceState.SetEndpointRoute(ctx, instance.ID, targetAddr)
 	if err := s.incrementNodeInstanceCount(ctx, node.ID, 1); err != nil {
 		return nil, fmt.Errorf("InstanceService.ResumeInstance: update node count: %w", err)
 	}

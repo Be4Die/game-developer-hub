@@ -183,7 +183,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		deployer,
 		locker,
 		cfg.Storage.MaxBuildVersions,
-	)
+	).WithPlatformProxyHosts(cfg.Deployment.PlatformProxyHosts)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)

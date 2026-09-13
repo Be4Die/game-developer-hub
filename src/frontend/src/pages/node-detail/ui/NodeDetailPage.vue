@@ -91,6 +91,25 @@
                 <span class="spec-label">Добавлена</span>
                 <span class="spec-value">{{ formatDateTime(node.created_at) }}</span>
               </div>
+              <div class="spec-row">
+                <span class="spec-label">Маршрутизация</span>
+                <div class="spec-value ingress-spec-cell">
+                  <span v-if="node.ingress_mode === 'direct'" class="badge-ingress direct">
+                    ⚡ Прямой ({{ node.custom_domain || node.address }})
+                  </span>
+                  <span v-else class="badge-ingress proxy">
+                    🌐 Прокси платформы
+                  </span>
+                  <button
+                    v-if="!isUnauthorized"
+                    class="btn-edit-ingress"
+                    title="Настроить режим сетевой маршрутизации"
+                    @click="openIngressModal"
+                  >
+                    Изменить
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="spec-col">
@@ -640,21 +659,140 @@
     />
 
     <!-- Подтверждение удаления ноды -->
-    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-      <div class="modal card delete-modal">
-        <h3>Удалить ноду?</h3>
-        <p>
-          Нода <code>{{ node.address }}</code> будет удалена из реестра кластера.
-        </p>
-        <p class="text-danger">Все активные инстансы на этой ноде будут переведены в статус «Авария».</p>
-        <div class="modal-actions">
-          <button class="btn-outline" @click="showDeleteConfirm = false">Отмена</button>
-          <button class="btn-danger" :disabled="deleting" @click="doDelete">
-            {{ deleting ? 'Удаление...' : 'Удалить ноду' }}
-          </button>
+    <Teleport to="body">
+      <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+        <div class="modal card delete-modal">
+          <div class="modal-header">
+            <h3>Удалить ноду?</h3>
+            <button class="close-btn" @click="showDeleteConfirm = false">&times;</button>
+          </div>
+          <p class="modal-subtext">
+            Нода <code>{{ node.address }}</code> будет удалена из реестра кластера.
+          </p>
+          <p class="text-danger">Все активные инстансы на этой ноде будут переведены в статус «Авария».</p>
+          <div class="modal-actions">
+            <button class="btn-outline" @click="showDeleteConfirm = false">Отмена</button>
+            <button class="btn-danger" :disabled="deleting" @click="doDelete">
+              {{ deleting ? 'Удаление...' : 'Удалить ноду' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
+
+    <!-- Модальное окно настройки сетевой маршрутизации -->
+    <Teleport to="body">
+      <div v-if="showIngressModal" class="modal-overlay" @click.self="showIngressModal = false">
+        <div class="modal card ingress-config-modal">
+          <div class="modal-header">
+            <h3>Маршрутизация трафика</h3>
+            <button class="close-btn" @click="showIngressModal = false">&times;</button>
+          </div>
+          <p class="modal-subtext">
+            Выберите, как игровые клиенты будут подключаться к этой ноде.
+          </p>
+
+          <div class="ingress-options">
+            <div
+              class="ingress-option-card"
+              :class="{ active: ingressForm.mode === 'platform_proxy' }"
+              @click="ingressForm.mode = 'platform_proxy'"
+            >
+              <div class="radio-circle">
+                <div v-if="ingressForm.mode === 'platform_proxy'" class="radio-dot"></div>
+              </div>
+              <div class="ingress-option-text">
+                <div class="option-title-row">
+                  <span class="option-title">Прокси платформы</span>
+                  <span class="badge-recommended">Рекомендуется</span>
+                </div>
+                <p class="option-desc">
+                  Подключение через защищённый SSL-прокси платформы. Подходит для серверов без собственного домена.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="ingress-option-card"
+              :class="{ active: ingressForm.mode === 'direct' }"
+              @click="ingressForm.mode = 'direct'"
+            >
+              <div class="radio-circle">
+                <div v-if="ingressForm.mode === 'direct'" class="radio-dot"></div>
+              </div>
+              <div class="ingress-option-text">
+                <div class="option-title-row">
+                  <span class="option-title">Прямое подключение</span>
+                </div>
+                <p class="option-desc">
+                  Клиенты подключаются напрямую к вашей ноде через ваш домен и SSL-сертификат.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="ingressForm.mode === 'direct'" class="custom-domain-field">
+            <label class="input-label">Доменное имя сервера (FQDN) *</label>
+            <div class="domain-input-row">
+              <input
+                v-model="ingressForm.customDomain"
+                type="text"
+                class="form-input"
+                placeholder="например: node.example.com"
+                @input="onDomainInput"
+              />
+              <button
+                type="button"
+                class="btn-outline btn-verify-dns"
+                :disabled="verifyingDomain || !ingressForm.customDomain.trim()"
+                @click="checkDomainDNS"
+              >
+                {{ verifyingDomain ? 'Проверка...' : 'Проверить DNS' }}
+              </button>
+            </div>
+            <p v-if="!domainVerificationResult" class="field-hint">Домен должен указывать на IP-адрес этого сервера.</p>
+
+            <div v-if="domainVerificationResult" class="dns-result-box" :class="{ valid: domainVerificationResult.valid, invalid: !domainVerificationResult.valid }">
+              <div class="dns-result-header">
+                <Check v-if="domainVerificationResult.valid" class="icon-xs text-success" />
+                <AlertCircle v-else class="icon-xs text-danger" />
+                <span class="dns-result-title">
+                  {{ domainVerificationResult.valid ? 'Домен подтверждён' : 'Несоответствие DNS' }}
+                </span>
+              </div>
+              <p class="dns-result-msg">{{ domainVerificationResult.message }}</p>
+              <div v-if="domainVerificationResult.node_ip" class="dns-details">
+                <span class="dns-detail-item">IP ноды: <code>{{ domainVerificationResult.node_ip }}</code></span>
+                <span v-if="domainVerificationResult.resolved_ips && domainVerificationResult.resolved_ips.length" class="dns-detail-item">
+                  IP домена: <code>{{ domainVerificationResult.resolved_ips.join(', ') }}</code>
+                </span>
+              </div>
+            </div>
+
+            <label v-if="domainVerificationResult && !domainVerificationResult.valid" class="skip-dns-label">
+              <input type="checkbox" v-model="skipDnsCheck" class="form-checkbox" />
+              <span>Сохранить без проверки DNS (если запись ещё обновляется)</span>
+            </label>
+          </div>
+
+          <div v-if="ingressError" class="modal-error">
+            <AlertCircle class="icon-xs" />
+            <span>{{ ingressError }}</span>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-outline" @click="showIngressModal = false">Отмена</button>
+            <button
+              class="btn-primary"
+              :disabled="savingIngress || verifyingDomain || (ingressForm.mode === 'direct' && !ingressForm.customDomain.trim()) || (ingressForm.mode === 'direct' && domainVerificationResult && !domainVerificationResult.valid && !skipDnsCheck)"
+              @click="saveIngressSettings"
+            >
+              {{ savingIngress ? 'Сохранение...' : 'Сохранить' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -693,6 +831,8 @@ import {
   createNodeService,
   startManagedService,
   stopManagedService,
+  updateNodeIngress,
+  verifyNodeDomain,
 } from '@/entities/node';
 import { listProjects } from '@/entities/project';
 import { CreateServiceModal, ServiceBackupsModal, RoleTransitionModal } from '@/features/manage-nodes';
@@ -723,6 +863,86 @@ const deleting = ref(false);
 const authToken = ref('');
 const authError = ref(null);
 const authorizing = ref(false);
+
+const showIngressModal = ref(false);
+const savingIngress = ref(false);
+const ingressError = ref(null);
+const verifyingDomain = ref(false);
+const domainVerificationResult = ref(null);
+const skipDnsCheck = ref(false);
+const ingressForm = ref({
+  mode: 'platform_proxy',
+  customDomain: '',
+});
+
+function openIngressModal() {
+  ingressForm.value = {
+    mode: node.value?.ingress_mode || 'platform_proxy',
+    customDomain: node.value?.custom_domain || '',
+  };
+  ingressError.value = null;
+  domainVerificationResult.value = null;
+  skipDnsCheck.value = false;
+  showIngressModal.value = true;
+}
+
+function onDomainInput() {
+  domainVerificationResult.value = null;
+  ingressError.value = null;
+}
+
+async function checkDomainDNS() {
+  const domainToTest = ingressForm.value.customDomain.trim();
+  if (!domainToTest) return;
+  verifyingDomain.value = true;
+  ingressError.value = null;
+  try {
+    const res = await verifyNodeDomain(props.nodeId, domainToTest);
+    domainVerificationResult.value = res;
+    if (res.valid) {
+      skipDnsCheck.value = false;
+    }
+  } catch (err) {
+    const msg = err.response?.data?.message || err.message || 'Не удалось выполнить проверку DNS';
+    domainVerificationResult.value = {
+      valid: false,
+      message: msg,
+      node_ip: '',
+      resolved_ips: [],
+    };
+  } finally {
+    verifyingDomain.value = false;
+  }
+}
+
+async function saveIngressSettings() {
+  savingIngress.value = true;
+  ingressError.value = null;
+  try {
+    const updated = await updateNodeIngress(
+      props.nodeId,
+      ingressForm.value.mode,
+      ingressForm.value.mode === 'direct' ? ingressForm.value.customDomain.trim() : '',
+      skipDnsCheck.value
+    );
+    node.value = updated;
+    showToast('Настройки маршрутизации обновлены', 'success');
+    showIngressModal.value = false;
+  } catch (err) {
+    const msg = err.response?.data?.message || err.message || 'Ошибка обновления маршрутизации';
+    ingressError.value = msg;
+    if (msg.includes('DNS') || msg.includes('IP') || msg.includes('domain mismatch')) {
+      if (!domainVerificationResult.value) {
+        domainVerificationResult.value = {
+          valid: false,
+          message: msg,
+        };
+      }
+    }
+  } finally {
+    savingIngress.value = false;
+  }
+}
 
 const updatingRole = ref(false);
 const showTransitionModal = ref(false);
@@ -2181,5 +2401,366 @@ onUnmounted(() => {
     width: 100%;
     justify-content: space-between;
   }
+}
+
+/* Ingress Styles */
+.ingress-spec-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.badge-ingress {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badge-ingress.direct {
+  background: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+  border: 1px solid rgba(46, 160, 67, 0.3);
+}
+
+.badge-ingress.proxy {
+  background: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(56, 139, 253, 0.3);
+}
+
+.btn-edit-ingress {
+  background: transparent;
+  border: 1px solid var(--border, #30363d);
+  border-radius: 4px;
+  color: var(--text-muted, #8b949e);
+  font-size: 11px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-edit-ingress:hover {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-main, #f0f6fc);
+  border-color: var(--primary, #58a6ff);
+}
+
+/* Modal Overlay & Base */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #8b949e);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+
+.close-btn:hover {
+  color: var(--text-main, #f0f6fc);
+}
+
+.modal-subtext {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.45;
+}
+
+.delete-modal {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-lg, 12px);
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ingress-config-modal {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-lg, 12px);
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ingress-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ingress-option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-secondary, #161b22);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ingress-option-card:hover {
+  border-color: var(--border-secondary, #484f58);
+  background: var(--bg-tertiary, #21262d);
+}
+
+.ingress-option-card.active {
+  border-color: var(--primary, #58a6ff);
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.radio-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-secondary, #484f58);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.ingress-option-card.active .radio-circle {
+  border-color: var(--primary, #58a6ff);
+}
+
+.radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary, #58a6ff);
+}
+
+.ingress-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.option-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.option-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.badge-recommended {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(56, 139, 253, 0.15);
+  color: var(--primary, #58a6ff);
+  border: 1px solid rgba(56, 139, 253, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.option-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.35;
+}
+
+.custom-domain-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+}
+
+.input-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+}
+
+.domain-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.domain-input-row .form-input {
+  flex: 1;
+}
+
+.btn-verify-dns {
+  white-space: nowrap;
+  height: 38px;
+  font-size: 12px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm, 6px);
+}
+
+.dns-result-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.8rem;
+}
+
+.dns-result-box.valid {
+  background: rgba(46, 160, 67, 0.12);
+  border: 1px solid rgba(46, 160, 67, 0.3);
+  color: #3fb950;
+}
+
+.dns-result-box.invalid {
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #f85149;
+}
+
+.dns-result-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.dns-result-title {
+  font-size: 0.82rem;
+}
+
+.dns-result-msg {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.9;
+  line-height: 1.35;
+}
+
+.dns-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.dns-details code {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.skip-dns-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-muted, #8b949e);
+  cursor: pointer;
+  user-select: none;
+  margin-top: 2px;
+}
+
+.skip-dns-label .form-checkbox {
+  cursor: pointer;
+  accent-color: var(--primary, #58a6ff);
+}
+
+.custom-domain-field .form-input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  background: var(--bg-app, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.custom-domain-field .form-input:focus {
+  border-color: var(--primary, #58a6ff);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.custom-domain-field .form-input::placeholder {
+  color: var(--text-tertiary, #6e7681);
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted, #8b949e);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.modal-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  color: #f85149;
+  font-size: 0.82rem;
 }
 </style>

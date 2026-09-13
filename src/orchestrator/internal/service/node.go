@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
@@ -61,11 +62,13 @@ func (s *NodeService) WithBackupRepo(r domain.BackupRepo) *NodeService {
 
 // RegisterNodeParams содержит параметры подключения ноды.
 type RegisterNodeParams struct {
-	OwnerID string
-	Address string
-	Token   string
-	Region  string
-	NodeID  *int64
+	OwnerID      string
+	Address      string
+	Token        string
+	Region       string
+	NodeID       *int64
+	IngressMode  *domain.IngressMode
+	CustomDomain *string
 }
 
 // RegisterNode подключает ноду к оркестратору.
@@ -74,40 +77,74 @@ func (s *NodeService) RegisterNode(ctx context.Context, params RegisterNodeParam
 	if params.NodeID != nil {
 		return s.authorizeNode(ctx, params.OwnerID, *params.NodeID, params.Token)
 	}
-	return s.registerNodeManual(ctx, params.OwnerID, params.Address, params.Token, params.Region)
+	return s.registerNodeManual(ctx, params)
 }
 
-func (s *NodeService) registerNodeManual(ctx context.Context, ownerID, address, token, region string) (*domain.Node, error) {
-	existing, err := s.nodeRepo.GetByAddress(ctx, address)
+// determineIngressMode определяет сетевой режим ноды на основе адреса.
+// Если хост — IP-адрес или локальный узел (localhost, host.docker.internal), используется IngressModePlatformProxy.
+// Если хост — FQDN-домен (например, node1.mygame.ru), используется IngressModeDirect.
+func determineIngressMode(addr string) (domain.IngressMode, string) {
+	host := addr
+	if h, _, err := net.SplitHostPort(addr); err == nil {
+		host = h
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return domain.IngressModePlatformProxy, ""
+	}
+	if host == "localhost" || host == "host.docker.internal" || host == "127.0.0.1" {
+		return domain.IngressModePlatformProxy, ""
+	}
+	return domain.IngressModeDirect, host
+}
+
+func (s *NodeService) registerNodeManual(ctx context.Context, params RegisterNodeParams) (*domain.Node, error) {
+	existing, err := s.nodeRepo.GetByAddress(ctx, params.Address)
 	if err != nil && !errors.Is(err, domain.ErrNotFound) {
 		return nil, fmt.Errorf("NodeService.registerNodeManual: get by address: %w", err)
 	}
+
+	mode, customDomain := determineIngressMode(params.Address)
+	if params.IngressMode != nil && *params.IngressMode != domain.IngressModeUnspecified {
+		mode = *params.IngressMode
+	}
+	if params.CustomDomain != nil && *params.CustomDomain != "" {
+		customDomain = *params.CustomDomain
+	}
+	if mode == domain.IngressModePlatformProxy {
+		customDomain = ""
+	}
+
 	if err == nil {
 		if existing.Status == domain.NodeStatusOnline {
 			return nil, domain.ErrAlreadyExists
 		}
 		// Нода уже анонсирована — авторизуем её с предоставленным токеном.
 		if existing.Status == domain.NodeStatusUnauthorized {
-			return s.authorizeNode(ctx, ownerID, existing.ID, token)
+			if params.IngressMode != nil && *params.IngressMode != domain.IngressModeUnspecified {
+				_ = s.nodeRepo.UpdateIngress(ctx, existing.ID, mode, customDomain)
+			}
+			return s.authorizeNode(ctx, params.OwnerID, existing.ID, params.Token)
 		}
 	}
 
 	// Нода неизвестна — подключаемся к ней по gRPC.
-	info, err := s.nodeClient.GetNodeInfo(ctx, address, token)
+	info, err := s.nodeClient.GetNodeInfo(ctx, params.Address, params.Token)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.registerNodeManual: GetNodeInfo: %w", err)
 	}
 
 	now := time.Now()
-	tokenHash := sha256.Sum256([]byte(token))
+	tokenHash := sha256.Sum256([]byte(params.Token))
 
 	node := &domain.Node{
-		OwnerID:      ownerID,
-		Address:      address,
+		OwnerID:      params.OwnerID,
+		Address:      params.Address,
 		TokenHash:    tokenHash[:],
-		APIToken:     token,
-		Region:       region,
+		APIToken:     params.Token,
+		Region:       params.Region,
 		Status:       domain.NodeStatusOnline,
+		IngressMode:  mode,
+		CustomDomain: customDomain,
 		CPUCores:     info.CPUCores,
 		TotalMemory:  info.TotalMemoryBytes,
 		TotalDisk:    info.TotalDiskBytes,
@@ -330,6 +367,7 @@ func (s *NodeService) createAnnouncedNode(ctx context.Context, params AnnounceNo
 	apiKey := params.APIKey
 	tokenHash := sha256.Sum256([]byte(apiKey))
 	now := time.Now()
+	mode, customDomain := determineIngressMode(params.Address)
 	node := &domain.Node{
 		OwnerID:      "",
 		Address:      params.Address,
@@ -337,6 +375,8 @@ func (s *NodeService) createAnnouncedNode(ctx context.Context, params AnnounceNo
 		APIToken:     apiKey,
 		Region:       params.Region,
 		Status:       domain.NodeStatusUnauthorized,
+		IngressMode:  mode,
+		CustomDomain: customDomain,
 		CPUCores:     params.CPUCores,
 		TotalMemory:  params.TotalMemoryBytes,
 		TotalDisk:    params.TotalDiskBytes,
@@ -622,6 +662,171 @@ func (s *NodeService) UpdateRole(
 		slog.Int64("node_id", nodeID),
 		slog.String("role", role.String()),
 	)
+	return node, nil
+}
+
+// VerifyDomainResult содержит результат проверки DNS-записи домена.
+type VerifyDomainResult struct {
+	Valid       bool
+	Message     string
+	ResolvedIPs []string
+	NodeIP      string
+}
+
+// sanitizeDomain очищает домен от схемы, порта и концевых слэшей.
+func sanitizeDomain(raw string) string {
+	d := strings.TrimSpace(raw)
+	d = strings.TrimPrefix(d, "https://")
+	d = strings.TrimPrefix(d, "http://")
+	d = strings.Split(d, "/")[0]
+	d = strings.Split(d, ":")[0]
+	return strings.ToLower(strings.TrimSpace(d))
+}
+
+// VerifyDomain проверяет сопоставление кастомного домена и IP-адреса ноды через DNS.
+func (s *NodeService) VerifyDomain(ctx context.Context, ownerID string, nodeID int64, customDomain string) (*VerifyDomainResult, error) {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.VerifyDomain: get node: %w", err)
+	}
+	if node.OwnerID != "" && node.OwnerID != ownerID {
+		return nil, fmt.Errorf("NodeService.VerifyDomain: %w", domain.ErrForbidden)
+	}
+
+	cleanDomain := sanitizeDomain(customDomain)
+	if cleanDomain == "" {
+		return &VerifyDomainResult{
+			Valid:   false,
+			Message: "Домен не может быть пустым",
+		}, nil
+	}
+
+	// Извлекаем адрес ноды без порта
+	nodeHost := node.Address
+	if h, _, err := net.SplitHostPort(node.Address); err == nil {
+		nodeHost = h
+	}
+	nodeHost = strings.TrimSpace(nodeHost)
+
+	var expectedIPs []string
+	isNodeLoopback := nodeHost == "localhost" || nodeHost == "127.0.0.1" || nodeHost == "::1"
+	if isNodeLoopback {
+		expectedIPs = []string{"127.0.0.1", "::1"}
+	} else if ip := net.ParseIP(nodeHost); ip != nil {
+		expectedIPs = []string{ip.String()}
+	} else {
+		resolvedNodeIPs, _ := net.DefaultResolver.LookupIP(ctx, "ip", nodeHost)
+		for _, r := range resolvedNodeIPs {
+			expectedIPs = append(expectedIPs, r.String())
+		}
+	}
+
+	var resolvedIPs []string
+	if cleanDomain == "localhost" {
+		resolvedIPs = []string{"127.0.0.1", "::1"}
+	} else {
+		dnsLookupCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+		defer cancel()
+		lookupRes, err := net.DefaultResolver.LookupIP(dnsLookupCtx, "ip", cleanDomain)
+		if err != nil {
+			return &VerifyDomainResult{
+				Valid:   false,
+				Message: fmt.Sprintf("DNS lookup failed: %v", err),
+				NodeIP:  nodeHost,
+			}, nil
+		}
+		for _, r := range lookupRes {
+			resolvedIPs = append(resolvedIPs, r.String())
+		}
+	}
+
+	if len(resolvedIPs) == 0 {
+		return &VerifyDomainResult{
+			Valid:   false,
+			Message: "DNS-записи A/AAAA для указанного домена не найдены",
+			NodeIP:  nodeHost,
+		}, nil
+	}
+
+	matched := false
+	if isNodeLoopback && (cleanDomain == "localhost" || cleanDomain == "127.0.0.1") {
+		matched = true
+	} else {
+		for _, rip := range resolvedIPs {
+			for _, eip := range expectedIPs {
+				if rip == eip {
+					matched = true
+					break
+				}
+			}
+			if matched {
+				break
+			}
+		}
+	}
+
+	if !matched {
+		return &VerifyDomainResult{
+			Valid:       false,
+			Message:     fmt.Sprintf("Домен указывает на %v, но IP ноды: %s", resolvedIPs, nodeHost),
+			ResolvedIPs: resolvedIPs,
+			NodeIP:      nodeHost,
+		}, nil
+	}
+
+	return &VerifyDomainResult{
+		Valid:       true,
+		Message:     fmt.Sprintf("Домен успешно подтверждён: указывает на IP ноды (%s)", nodeHost),
+		ResolvedIPs: resolvedIPs,
+		NodeIP:      nodeHost,
+	}, nil
+}
+
+// UpdateIngress обновляет сетевой режим подключения к ноде (Platform Proxy или Direct) и кастомный домен.
+func (s *NodeService) UpdateIngress(ctx context.Context, ownerID string, nodeID int64, mode domain.IngressMode, customDomain string, skipDNSCheck bool) (*domain.Node, error) {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.UpdateIngress: get node: %w", err)
+	}
+	if node.OwnerID != "" && node.OwnerID != ownerID {
+		return nil, fmt.Errorf("NodeService.UpdateIngress: %w", domain.ErrForbidden)
+	}
+
+	if mode == domain.IngressModeUnspecified {
+		mode = domain.IngressModePlatformProxy
+	}
+	if mode == domain.IngressModePlatformProxy {
+		customDomain = ""
+	} else if mode == domain.IngressModeDirect {
+		customDomain = sanitizeDomain(customDomain)
+		if customDomain == "" {
+			return nil, fmt.Errorf("NodeService.UpdateIngress: домен не указан")
+		}
+		if !skipDNSCheck {
+			vRes, err := s.VerifyDomain(ctx, ownerID, nodeID, customDomain)
+			if err != nil {
+				return nil, fmt.Errorf("NodeService.UpdateIngress verify: %w", err)
+			}
+			if !vRes.Valid {
+				return nil, fmt.Errorf("NodeService.UpdateIngress: %w: %s", domain.ErrDomainMismatch, vRes.Message)
+			}
+		}
+	}
+
+	if err := s.nodeRepo.UpdateIngress(ctx, nodeID, mode, customDomain); err != nil {
+		return nil, fmt.Errorf("NodeService.UpdateIngress: update ingress: %w", err)
+	}
+
+	node.IngressMode = mode
+	node.CustomDomain = customDomain
+	node.UpdatedAt = time.Now()
+
+	s.log.Info("node ingress updated",
+		slog.Int64("node_id", nodeID),
+		slog.String("mode", mode.String()),
+		slog.String("custom_domain", customDomain),
+	)
+
 	return node, nil
 }
 
