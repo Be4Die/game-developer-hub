@@ -134,10 +134,7 @@
                     </div>
                   </div>
                   <div class="game-text">
-                    <div
-                      class="game-title"
-                      :title="item.titleRu || item.titleEn || '—'"
-                    >
+                    <div class="game-title" :title="item.titleRu || item.titleEn || '—'">
                       {{ item.titleRu || item.titleEn || '—' }}
                     </div>
                   </div>
@@ -146,8 +143,8 @@
 
               <!-- 2 колонка: Последнее сообщение -->
               <td class="col-last-msg">
-                <div class="msg-content-text" :title="item.lastMessage?.content">
-                  {{ item.lastMessage?.content || '—' }}
+                <div class="msg-content-text" :title="item.lastMessage?.content || ''">
+                  {{ formatLastMessage(item.lastMessage?.content) }}
                 </div>
               </td>
 
@@ -376,6 +373,15 @@ function dialogStatusClass(state) {
   return 'status-neutral';
 }
 
+function formatLastMessage(content) {
+  if (!content || !content.trim()) return '—';
+  const clean = content.trim().replace(/\s+/g, ' ');
+  if (clean.length > 300) {
+    return clean.slice(0, 300) + '…';
+  }
+  return clean;
+}
+
 function openChat(projectId) {
   router.push(`/moderator/projects/${projectId}`);
 }
@@ -570,8 +576,10 @@ function openChat(projectId) {
 
 .moderation-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
 
 .moderation-table thead {
@@ -585,22 +593,23 @@ function openChat(projectId) {
   font-weight: 600;
   color: var(--text-tertiary, #8b949e);
   letter-spacing: 0.2px;
+  overflow: hidden;
 }
 
 .col-game {
-  width: 32%;
+  width: 26%;
 }
 
 .col-last-msg {
-  width: 42%;
+  width: 44%;
 }
 
 .col-reply-status {
-  width: 14%;
+  width: 15%;
 }
 
 .col-date {
-  width: 12%;
+  width: 15%;
   text-align: right;
   padding-right: 20px;
 }
@@ -618,6 +627,7 @@ function openChat(projectId) {
 .table-row td {
   padding: 12px 16px;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .table-row td.col-date {
@@ -629,6 +639,7 @@ function openChat(projectId) {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .game-icon-box {
@@ -666,6 +677,8 @@ function openChat(projectId) {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .game-type-label {
@@ -735,10 +748,16 @@ function openChat(projectId) {
 .msg-content-text {
   font-size: 13px;
   color: var(--text-main, #f0f6fc);
-  white-space: nowrap;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .status-pill {
@@ -780,6 +799,7 @@ function openChat(projectId) {
 .date-text {
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
+  white-space: nowrap;
 }
 
 /* Пустые состояния */
