@@ -54,6 +54,7 @@ message Project {
   string about_en = 19;
   repeated string current_user_permissions = 20;
   bool is_owner = 21;
+  bool is_online = 22;
 }
 
 // ProjectDraft рабочее состояние черновика проекта.
@@ -71,6 +72,7 @@ message ProjectDraft {
   string dev_url = 11;
   string updated_at = 12;
   string about_en = 13;
+  bool is_online = 14;
 }
 
 // ProjectRelease зафиксированный опубликованный релиз.
@@ -89,6 +91,7 @@ message ProjectRelease {
   string prod_url = 12;
   string published_at = 13;
   string about_en = 14;
+  bool is_online = 15;
 }
 
 // ProjectBuild клиентский билд веб-игры.
@@ -117,6 +120,7 @@ message DeploymentRecord {
 message ProjectCreateRequest {
   string title_ru = 1;
   string title_en = 2;
+  bool is_online = 3;
 }
 
 message ProjectCreateResponse {
@@ -164,6 +168,7 @@ message ProjectUpdateRequest {
   string about_ru = 6;
   string active_build_version = 7;
   string about_en = 8;
+  optional bool is_online = 9;
 }
 
 message ProjectUpdateResponse {

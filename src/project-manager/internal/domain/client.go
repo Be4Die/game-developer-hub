@@ -25,6 +25,7 @@ type ProjectSnapshot struct {
 	VideoPath          string
 	ActiveBuildVersion string
 	DevURL             string
+	IsOnline           bool
 }
 
 // ModerationRequestInfo содержит статус заявки на модерацию.

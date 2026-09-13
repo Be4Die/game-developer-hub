@@ -260,6 +260,7 @@ type Project struct {
 	AboutEn                string                 `protobuf:"bytes,19,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
 	CurrentUserPermissions []string               `protobuf:"bytes,20,rep,name=current_user_permissions,json=currentUserPermissions,proto3" json:"current_user_permissions,omitempty"`
 	IsOwner                bool                   `protobuf:"varint,21,opt,name=is_owner,json=isOwner,proto3" json:"is_owner,omitempty"`
+	IsOnline               bool                   `protobuf:"varint,22,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -441,6 +442,13 @@ func (x *Project) GetIsOwner() bool {
 	return false
 }
 
+func (x *Project) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
+}
+
 // ProjectDraft рабочее состояние черновика проекта.
 type ProjectDraft struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -457,6 +465,7 @@ type ProjectDraft struct {
 	DevUrl             string                 `protobuf:"bytes,11,opt,name=dev_url,json=devUrl,proto3" json:"dev_url,omitempty"`
 	UpdatedAt          string                 `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	AboutEn            string                 `protobuf:"bytes,13,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
+	IsOnline           bool                   `protobuf:"varint,14,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -582,6 +591,13 @@ func (x *ProjectDraft) GetAboutEn() string {
 	return ""
 }
 
+func (x *ProjectDraft) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
+}
+
 // ProjectRelease зафиксированный опубликованный релиз.
 type ProjectRelease struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -599,6 +615,7 @@ type ProjectRelease struct {
 	ProdUrl       string                 `protobuf:"bytes,12,opt,name=prod_url,json=prodUrl,proto3" json:"prod_url,omitempty"`
 	PublishedAt   string                 `protobuf:"bytes,13,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
 	AboutEn       string                 `protobuf:"bytes,14,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
+	IsOnline      bool                   `protobuf:"varint,15,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -729,6 +746,13 @@ func (x *ProjectRelease) GetAboutEn() string {
 		return x.AboutEn
 	}
 	return ""
+}
+
+func (x *ProjectRelease) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
 }
 
 // ProjectBuild клиентский билд веб-игры.
@@ -922,6 +946,7 @@ type ProjectCreateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TitleRu       string                 `protobuf:"bytes,1,opt,name=title_ru,json=titleRu,proto3" json:"title_ru,omitempty"`
 	TitleEn       string                 `protobuf:"bytes,2,opt,name=title_en,json=titleEn,proto3" json:"title_en,omitempty"`
+	IsOnline      bool                   `protobuf:"varint,3,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -968,6 +993,13 @@ func (x *ProjectCreateRequest) GetTitleEn() string {
 		return x.TitleEn
 	}
 	return ""
+}
+
+func (x *ProjectCreateRequest) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
 }
 
 type ProjectCreateResponse struct {
@@ -1324,6 +1356,7 @@ type ProjectUpdateRequest struct {
 	AboutRu            string                 `protobuf:"bytes,6,opt,name=about_ru,json=aboutRu,proto3" json:"about_ru,omitempty"`
 	ActiveBuildVersion string                 `protobuf:"bytes,7,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
 	AboutEn            string                 `protobuf:"bytes,8,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
+	IsOnline           *bool                  `protobuf:"varint,9,opt,name=is_online,json=isOnline,proto3,oneof" json:"is_online,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1412,6 +1445,13 @@ func (x *ProjectUpdateRequest) GetAboutEn() string {
 		return x.AboutEn
 	}
 	return ""
+}
+
+func (x *ProjectUpdateRequest) GetIsOnline() bool {
+	if x != nil && x.IsOnline != nil {
+		return *x.IsOnline
+	}
+	return false
 }
 
 type ProjectUpdateResponse struct {
@@ -4322,7 +4362,7 @@ var File_project_manager_v1_project_proto protoreflect.FileDescriptor
 
 const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\n" +
-	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\xd3\x05\n" +
+	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\xf0\x05\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x19\n" +
@@ -4349,7 +4389,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\arelease\x18\x12 \x01(\v2\".project_manager.v1.ProjectReleaseR\arelease\x12\x19\n" +
 	"\babout_en\x18\x13 \x01(\tR\aaboutEn\x128\n" +
 	"\x18current_user_permissions\x18\x14 \x03(\tR\x16currentUserPermissions\x12\x19\n" +
-	"\bis_owner\x18\x15 \x01(\bR\aisOwner\"\x8c\x03\n" +
+	"\bis_owner\x18\x15 \x01(\bR\aisOwner\x12\x1b\n" +
+	"\tis_online\x18\x16 \x01(\bR\bisOnline\"\xa9\x03\n" +
 	"\fProjectDraft\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +
@@ -4368,7 +4409,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\adev_url\x18\v \x01(\tR\x06devUrl\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\f \x01(\tR\tupdatedAt\x12\x19\n" +
-	"\babout_en\x18\r \x01(\tR\aaboutEn\"\x8c\x03\n" +
+	"\babout_en\x18\r \x01(\tR\aaboutEn\x12\x1b\n" +
+	"\tis_online\x18\x0e \x01(\bR\bisOnline\"\xa9\x03\n" +
 	"\x0eProjectRelease\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -4387,7 +4429,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"video_path\x18\v \x01(\tR\tvideoPath\x12\x19\n" +
 	"\bprod_url\x18\f \x01(\tR\aprodUrl\x12!\n" +
 	"\fpublished_at\x18\r \x01(\tR\vpublishedAt\x12\x19\n" +
-	"\babout_en\x18\x0e \x01(\tR\aaboutEn\"\xd1\x01\n" +
+	"\babout_en\x18\x0e \x01(\tR\aaboutEn\x12\x1b\n" +
+	"\tis_online\x18\x0f \x01(\bR\bisOnline\"\xd1\x01\n" +
 	"\fProjectBuild\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +
@@ -4408,10 +4451,11 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\x0e2$.project_manager.v1.DeploymentStatusR\x06status\x12#\n" +
 	"\rerror_message\x18\x06 \x01(\tR\ferrorMessage\x12\x1f\n" +
 	"\vdeployed_at\x18\a \x01(\tR\n" +
-	"deployedAt\"L\n" +
+	"deployedAt\"i\n" +
 	"\x14ProjectCreateRequest\x12\x19\n" +
 	"\btitle_ru\x18\x01 \x01(\tR\atitleRu\x12\x19\n" +
-	"\btitle_en\x18\x02 \x01(\tR\atitleEn\"N\n" +
+	"\btitle_en\x18\x02 \x01(\tR\atitleEn\x12\x1b\n" +
+	"\tis_online\x18\x03 \x01(\bR\bisOnline\"N\n" +
 	"\x15ProjectCreateResponse\x125\n" +
 	"\aproject\x18\x01 \x01(\v2\x1b.project_manager.v1.ProjectR\aproject\"#\n" +
 	"\x11ProjectGetRequest\x12\x0e\n" +
@@ -4429,7 +4473,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"m\n" +
 	"\x1cProjectListPublishedResponse\x127\n" +
 	"\bprojects\x18\x01 \x03(\v2\x1b.project_manager.v1.ProjectR\bprojects\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xf2\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xa2\x02\n" +
 	"\x14ProjectUpdateRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\btitle_ru\x18\x02 \x01(\tR\atitleRu\x12\x19\n" +
@@ -4438,7 +4482,10 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x06seo_en\x18\x05 \x01(\tR\x05seoEn\x12\x19\n" +
 	"\babout_ru\x18\x06 \x01(\tR\aaboutRu\x120\n" +
 	"\x14active_build_version\x18\a \x01(\tR\x12activeBuildVersion\x12\x19\n" +
-	"\babout_en\x18\b \x01(\tR\aaboutEn\"N\n" +
+	"\babout_en\x18\b \x01(\tR\aaboutEn\x12 \n" +
+	"\tis_online\x18\t \x01(\bH\x00R\bisOnline\x88\x01\x01B\f\n" +
+	"\n" +
+	"_is_online\"N\n" +
 	"\x15ProjectUpdateResponse\x125\n" +
 	"\aproject\x18\x01 \x01(\v2\x1b.project_manager.v1.ProjectR\aproject\"&\n" +
 	"\x14ProjectDeleteRequest\x12\x0e\n" +
@@ -4879,6 +4926,7 @@ func file_project_manager_v1_project_proto_init() {
 	if File_project_manager_v1_project_proto != nil {
 		return
 	}
+	file_project_manager_v1_project_proto_msgTypes[13].OneofWrappers = []any{}
 	file_project_manager_v1_project_proto_msgTypes[18].OneofWrappers = []any{
 		(*ProjectUploadBuildStreamRequest_Metadata)(nil),
 		(*ProjectUploadBuildStreamRequest_Chunk)(nil),

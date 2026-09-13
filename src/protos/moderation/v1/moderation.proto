@@ -47,6 +47,7 @@ message ProjectSnapshot {
   string active_build_version = 10;
   string dev_url = 11;
   string about_en = 12;
+  bool is_online = 13;
 }
 
 // ModerationRequest сущность запроса на модерацию проекта.

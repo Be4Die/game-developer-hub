@@ -208,6 +208,7 @@ type ProjectSnapshot struct {
 	ActiveBuildVersion string                 `protobuf:"bytes,10,opt,name=active_build_version,json=activeBuildVersion,proto3" json:"active_build_version,omitempty"`
 	DevUrl             string                 `protobuf:"bytes,11,opt,name=dev_url,json=devUrl,proto3" json:"dev_url,omitempty"`
 	AboutEn            string                 `protobuf:"bytes,12,opt,name=about_en,json=aboutEn,proto3" json:"about_en,omitempty"`
+	IsOnline           bool                   `protobuf:"varint,13,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -324,6 +325,13 @@ func (x *ProjectSnapshot) GetAboutEn() string {
 		return x.AboutEn
 	}
 	return ""
+}
+
+func (x *ProjectSnapshot) GetIsOnline() bool {
+	if x != nil {
+		return x.IsOnline
+	}
+	return false
 }
 
 // ModerationRequest сущность запроса на модерацию проекта.
@@ -2920,7 +2928,7 @@ var File_moderation_v1_moderation_proto protoreflect.FileDescriptor
 
 const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\n" +
-	"\x1emoderation/v1/moderation.proto\x12\rmoderation.v1\x1a\x1cgoogle/api/annotations.proto\"\xf0\x02\n" +
+	"\x1emoderation/v1/moderation.proto\x12\rmoderation.v1\x1a\x1cgoogle/api/annotations.proto\"\x8d\x03\n" +
 	"\x0fProjectSnapshot\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +
@@ -2937,7 +2945,8 @@ const file_moderation_v1_moderation_proto_rawDesc = "" +
 	"\x14active_build_version\x18\n" +
 	" \x01(\tR\x12activeBuildVersion\x12\x17\n" +
 	"\adev_url\x18\v \x01(\tR\x06devUrl\x12\x19\n" +
-	"\babout_en\x18\f \x01(\tR\aaboutEn\"\x8d\x03\n" +
+	"\babout_en\x18\f \x01(\tR\aaboutEn\x12\x1b\n" +
+	"\tis_online\x18\r \x01(\bR\bisOnline\"\x8d\x03\n" +
 	"\x11ModerationRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
 	"\n" +

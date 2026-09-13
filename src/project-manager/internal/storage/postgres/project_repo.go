@@ -24,12 +24,12 @@ func NewProjectRepo(pool *pgxpool.Pool) *ProjectRepo {
 // Create создаёт новый проект в базе данных и возвращает его ID.
 func (r *ProjectRepo) Create(ctx context.Context, p *domain.Project) (int64, error) {
 	const query = `
-		INSERT INTO projects (owner_id, status)
-		VALUES ($1, $2)
+		INSERT INTO projects (owner_id, status, is_online)
+		VALUES ($1, $2, $3)
 		RETURNING id
 	`
 	var id int64
-	err := r.pool.QueryRow(ctx, query, p.OwnerID, p.Status).Scan(&id)
+	err := r.pool.QueryRow(ctx, query, p.OwnerID, p.Status, p.IsOnline).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("postgres.ProjectRepo.Create: %w", err)
 	}
@@ -39,10 +39,10 @@ func (r *ProjectRepo) Create(ctx context.Context, p *domain.Project) (int64, err
 // Get загружает проект по его идентификатору. Возвращает ErrNotFound при отсутствии.
 func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.updated_at
+		       d.dev_url, d.is_online, d.updated_at
 		FROM projects p
 		LEFT JOIN project_drafts d ON d.project_id = p.id
 		WHERE p.id = $1
@@ -56,15 +56,16 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		iconPath, coverPath  *string
 		videoPath, activeVer *string
 		devURL               *string
+		draftIsOnline        *bool
 		draftUpdatedAt       *time.Time
 	)
 
 	row := r.pool.QueryRow(ctx, query, id)
 	err := row.Scan(
-		&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
 		&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 		&iconPath, &coverPath, &videoPath, &activeVer,
-		&devURL, &draftUpdatedAt,
+		&devURL, &draftIsOnline, &draftUpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -108,6 +109,9 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 		if devURL != nil {
 			draft.DevURL = *devURL
 		}
+		if draftIsOnline != nil {
+			draft.IsOnline = *draftIsOnline
+		}
 		if draftUpdatedAt != nil {
 			draft.UpdatedAt = *draftUpdatedAt
 		}
@@ -120,10 +124,10 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 // ListByOwner возвращает список проектов пользователя с пагинацией.
 func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.updated_at
+		       d.dev_url, d.is_online, d.updated_at
 		FROM projects p
 		LEFT JOIN project_drafts d ON d.project_id = p.id
 		WHERE p.owner_id = $1
@@ -147,13 +151,14 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 			iconPath, coverPath  *string
 			videoPath, activeVer *string
 			devURL               *string
+			draftIsOnline        *bool
 			draftUpdatedAt       *time.Time
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
-			&devURL, &draftUpdatedAt,
+			&devURL, &draftIsOnline, &draftUpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("postgres.ProjectRepo.ListByOwner scan: %w", err)
 		}
@@ -193,6 +198,9 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 			if devURL != nil {
 				draft.DevURL = *devURL
 			}
+			if draftIsOnline != nil {
+				draft.IsOnline = *draftIsOnline
+			}
 			if draftUpdatedAt != nil {
 				draft.UpdatedAt = *draftUpdatedAt
 			}
@@ -223,10 +231,10 @@ func (r *ProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int, er
 // ListForUser возвращает список проектов, к которым пользователь имеет доступ (владелец или участник).
 func (r *ProjectRepo) ListForUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.updated_at,
+		       d.dev_url, d.is_online, d.updated_at,
 		       COALESCE(pm.permissions, '{}')
 		FROM projects p
 		LEFT JOIN project_drafts d ON d.project_id = p.id
@@ -252,14 +260,15 @@ func (r *ProjectRepo) ListForUser(ctx context.Context, userID string, limit, off
 			iconPath, coverPath  *string
 			videoPath, activeVer *string
 			devURL               *string
+			draftIsOnline        *bool
 			draftUpdatedAt       *time.Time
 			memberPerms          []string
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
-			&devURL, &draftUpdatedAt,
+			&devURL, &draftIsOnline, &draftUpdatedAt,
 			&memberPerms,
 		); err != nil {
 			return nil, fmt.Errorf("postgres.ProjectRepo.ListForUser scan: %w", err)
@@ -299,6 +308,9 @@ func (r *ProjectRepo) ListForUser(ctx context.Context, userID string, limit, off
 			}
 			if devURL != nil {
 				draft.DevURL = *devURL
+			}
+			if draftIsOnline != nil {
+				draft.IsOnline = *draftIsOnline
 			}
 			if draftUpdatedAt != nil {
 				draft.UpdatedAt = *draftUpdatedAt
@@ -342,10 +354,10 @@ func (r *ProjectRepo) CountForUser(ctx context.Context, userID string) (int, err
 // ListPublished возвращает список опубликованных проектов с пагинацией.
 func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.updated_at
+		       d.dev_url, d.is_online, d.updated_at
 		FROM projects p
 		LEFT JOIN project_drafts d ON d.project_id = p.id
 		WHERE p.status = 3
@@ -369,13 +381,14 @@ func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 			iconPath, coverPath  *string
 			videoPath, activeVer *string
 			devURL               *string
+			draftIsOnline        *bool
 			draftUpdatedAt       *time.Time
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
-			&devURL, &draftUpdatedAt,
+			&devURL, &draftIsOnline, &draftUpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("postgres.ProjectRepo.ListPublished scan: %w", err)
 		}
@@ -415,6 +428,9 @@ func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 			if devURL != nil {
 				draft.DevURL = *devURL
 			}
+			if draftIsOnline != nil {
+				draft.IsOnline = *draftIsOnline
+			}
 			if draftUpdatedAt != nil {
 				draft.UpdatedAt = *draftUpdatedAt
 			}
@@ -448,6 +464,16 @@ func (r *ProjectRepo) UpdateStatus(ctx context.Context, id int64, status domain.
 	_, err := r.pool.Exec(ctx, query, status, id)
 	if err != nil {
 		return fmt.Errorf("postgres.ProjectRepo.UpdateStatus: %w", err)
+	}
+	return nil
+}
+
+// UpdateIsOnline обновляет признак онлайн-игры базовой сущности проекта.
+func (r *ProjectRepo) UpdateIsOnline(ctx context.Context, id int64, isOnline bool) error {
+	const query = `UPDATE projects SET is_online = $1 WHERE id = $2`
+	_, err := r.pool.Exec(ctx, query, isOnline, id)
+	if err != nil {
+		return fmt.Errorf("postgres.ProjectRepo.UpdateIsOnline: %w", err)
 	}
 	return nil
 }

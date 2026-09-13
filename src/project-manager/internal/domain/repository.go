@@ -13,6 +13,7 @@ type ProjectRepo interface {
 	ListPublished(ctx context.Context, limit, offset int) ([]*Project, error)
 	CountPublished(ctx context.Context) (int, error)
 	UpdateStatus(ctx context.Context, id int64, status ProjectStatus) error
+	UpdateIsOnline(ctx context.Context, id int64, isOnline bool) error
 	Delete(ctx context.Context, id int64) error
 }
 

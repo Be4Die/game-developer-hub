@@ -25,6 +25,7 @@ func TestConverters_ProjectToProto(t *testing.T) {
 		ID:        123,
 		OwnerID:   "user-1",
 		Status:    domain.ProjectStatusPublished,
+		IsOnline:  true,
 		CreatedAt: now,
 		UpdatedAt: now,
 		Draft: &domain.Draft{
@@ -40,6 +41,7 @@ func TestConverters_ProjectToProto(t *testing.T) {
 			VideoPath:          "/video.mp4",
 			ActiveBuildVersion: "v1.0.0",
 			DevURL:             "https://dev.local/123",
+			IsOnline:           true,
 			UpdatedAt:          now,
 		},
 		Release: &domain.Release{
@@ -56,6 +58,7 @@ func TestConverters_ProjectToProto(t *testing.T) {
 			CoverPath:   "/rel_cover.png",
 			VideoPath:   "/rel_video.mp4",
 			ProdURL:     "https://prod.local/123",
+			IsOnline:    true,
 			PublishedAt: now,
 		},
 	}
@@ -65,11 +68,14 @@ func TestConverters_ProjectToProto(t *testing.T) {
 	assert.Equal(t, int64(123), proto.Id)
 	assert.Equal(t, "user-1", proto.OwnerId)
 	assert.Equal(t, pb.ProjectStatus_PROJECT_STATUS_PUBLISHED, proto.Status)
+	assert.True(t, proto.IsOnline)
 	assert.Equal(t, "Название", proto.TitleRu)
 	assert.Equal(t, "https://prod.local/123", proto.ProdUrl)
 	assert.Equal(t, "https://dev.local/123", proto.DevUrl)
 	assert.NotNil(t, proto.Draft)
+	assert.True(t, proto.Draft.IsOnline)
 	assert.NotNil(t, proto.Release)
+	assert.True(t, proto.Release.IsOnline)
 }
 
 func TestConverters_BuildAndReleaseToProto(t *testing.T) {

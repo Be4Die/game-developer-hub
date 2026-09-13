@@ -36,6 +36,7 @@ type SnapshotProjectData struct {
 	BuildVersion  string `json:"build_version"`
 	DevURL        string `json:"dev_url"`
 	ProdURL       string `json:"prod_url,omitempty"`
+	IsOnline      bool   `json:"is_online"`
 }
 
 // SnapshotMediaData медиа-материалы проекта со слепками и контрольными суммами.

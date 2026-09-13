@@ -23,12 +23,12 @@ func NewDraftRepo(pool *pgxpool.Pool) *DraftRepo {
 // Create сохраняет новую запись черновика в базе данных.
 func (r *DraftRepo) Create(ctx context.Context, d *domain.Draft) error {
 	const query = `
-		INSERT INTO project_drafts (project_id, title_ru, title_en, seo_ru, seo_en, about_ru, about_en, icon_path, cover_path, video_path, active_build_version, dev_url)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO project_drafts (project_id, title_ru, title_en, seo_ru, seo_en, about_ru, about_en, icon_path, cover_path, video_path, active_build_version, dev_url, is_online)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	_, err := r.pool.Exec(ctx, query,
 		d.ProjectID, d.TitleRu, d.TitleEn, d.SeoRu, d.SeoEn, d.AboutRu, d.AboutEn,
-		d.IconPath, d.CoverPath, d.VideoPath, d.ActiveBuildVersion, d.DevURL,
+		d.IconPath, d.CoverPath, d.VideoPath, d.ActiveBuildVersion, d.DevURL, d.IsOnline,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.DraftRepo.Create: %w", err)
@@ -40,14 +40,14 @@ func (r *DraftRepo) Create(ctx context.Context, d *domain.Draft) error {
 func (r *DraftRepo) Get(ctx context.Context, projectID int64) (*domain.Draft, error) {
 	const query = `
 		SELECT project_id, title_ru, title_en, seo_ru, seo_en, about_ru, about_en,
-		       icon_path, cover_path, video_path, active_build_version, dev_url, updated_at
+		       icon_path, cover_path, video_path, active_build_version, dev_url, is_online, updated_at
 		FROM project_drafts
 		WHERE project_id = $1
 	`
 	var d domain.Draft
 	err := r.pool.QueryRow(ctx, query, projectID).Scan(
 		&d.ProjectID, &d.TitleRu, &d.TitleEn, &d.SeoRu, &d.SeoEn, &d.AboutRu, &d.AboutEn,
-		&d.IconPath, &d.CoverPath, &d.VideoPath, &d.ActiveBuildVersion, &d.DevURL, &d.UpdatedAt,
+		&d.IconPath, &d.CoverPath, &d.VideoPath, &d.ActiveBuildVersion, &d.DevURL, &d.IsOnline, &d.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -62,11 +62,11 @@ func (r *DraftRepo) Get(ctx context.Context, projectID int64) (*domain.Draft, er
 func (r *DraftRepo) Update(ctx context.Context, d *domain.Draft) error {
 	const query = `
 		UPDATE project_drafts
-		SET title_ru = $1, title_en = $2, seo_ru = $3, seo_en = $4, about_ru = $5, about_en = $6, active_build_version = $7
-		WHERE project_id = $8
+		SET title_ru = $1, title_en = $2, seo_ru = $3, seo_en = $4, about_ru = $5, about_en = $6, active_build_version = $7, is_online = $8
+		WHERE project_id = $9
 	`
 	_, err := r.pool.Exec(ctx, query,
-		d.TitleRu, d.TitleEn, d.SeoRu, d.SeoEn, d.AboutRu, d.AboutEn, d.ActiveBuildVersion, d.ProjectID,
+		d.TitleRu, d.TitleEn, d.SeoRu, d.SeoEn, d.AboutRu, d.AboutEn, d.ActiveBuildVersion, d.IsOnline, d.ProjectID,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.DraftRepo.Update: %w", err)

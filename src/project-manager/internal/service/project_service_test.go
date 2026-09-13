@@ -66,7 +66,7 @@ func TestUnit_ProjectService_CreateProject(t *testing.T) {
 
 	svc, _, _ := setupTestProjectService(t)
 
-	p, err := svc.CreateProject(ctx, "user-123", "Тестовая игра", "Test Game")
+	p, err := svc.CreateProject(ctx, "user-123", "Тестовая игра", "Test Game", true)
 	if err != nil {
 		t.Fatalf("expected create success, got error: %v", err)
 	}
@@ -77,8 +77,14 @@ func TestUnit_ProjectService_CreateProject(t *testing.T) {
 	if p.OwnerID != "user-123" {
 		t.Errorf("expected owner_id user-123, got: %s", p.OwnerID)
 	}
+	if !p.IsOnline {
+		t.Errorf("expected is_online true, got false")
+	}
 	if p.Draft == nil || p.Draft.TitleRu != "Тестовая игра" {
 		t.Errorf("expected draft with TitleRu 'Тестовая игра', got: %+v", p.Draft)
+	}
+	if p.Draft == nil || !p.Draft.IsOnline {
+		t.Errorf("expected draft is_online true, got false")
 	}
 }
 
@@ -89,14 +95,16 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 
 	svc, _, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 
+	isOnlineTrue := true
 	meta := domain.DraftMeta{
-		TitleRu: "Обновленная игра",
-		TitleEn: "Updated Game",
-		AboutRu: "Описание игры",
-		AboutEn: "Game description",
-		SeoRu:   "seo ru",
+		TitleRu:  "Обновленная игра",
+		TitleEn:  "Updated Game",
+		AboutRu:  "Описание игры",
+		AboutEn:  "Game description",
+		SeoRu:    "seo ru",
+		IsOnline: &isOnlineTrue,
 	}
 
 	err := svc.UpdateDraft(ctx, p.ID, "user-123", meta)
@@ -110,6 +118,9 @@ func TestUnit_ProjectService_UpdateDraft(t *testing.T) {
 	}
 	if updated.Draft.TitleRu != "Обновленная игра" || updated.Draft.AboutRu != "Описание игры" || updated.Draft.AboutEn != "Game description" {
 		t.Errorf("draft not updated properly: %+v", updated.Draft)
+	}
+	if !updated.IsOnline || !updated.Draft.IsOnline {
+		t.Errorf("expected is_online to be updated to true on project and draft")
 	}
 
 	// Проверка прав доступа
@@ -133,7 +144,7 @@ func TestUnit_ProjectService_UploadBuildStream(t *testing.T) {
 
 	svc, _, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 
 	archiveData := []byte("dummy zip content")
 	b, devURL, err := svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader(archiveData))
@@ -162,7 +173,7 @@ func TestUnit_ProjectService_SubmitForModeration(t *testing.T) {
 
 	svc, pRepo, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 
 	// 1. Попытка отправки неполного черновика (нет описания и билда)
 	_, err := svc.SubmitForModeration(ctx, p.ID, "user-123")
@@ -207,7 +218,7 @@ func TestUnit_ProjectService_PublishRelease(t *testing.T) {
 
 	svc, pRepo, rRepo := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 	_ = svc.UpdateDraft(ctx, p.ID, "user-123", domain.DraftMeta{
 		TitleRu: "Игра",
 		AboutRu: "Описание игры",
@@ -246,7 +257,7 @@ func TestUnit_ProjectService_RejectDraft(t *testing.T) {
 
 	svc, pRepo, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 	_ = pRepo.UpdateStatus(ctx, p.ID, domain.ProjectStatusPending)
 
 	err := svc.RejectDraft(ctx, p.ID)
@@ -267,9 +278,9 @@ func TestUnit_ProjectService_ListProjectsAndBuilds(t *testing.T) {
 
 	svc, _, _ := setupTestProjectService(t)
 
-	p1, _ := svc.CreateProject(ctx, "user-abc", "Игра 1", "Game 1")
-	p2, _ := svc.CreateProject(ctx, "user-abc", "Игра 2", "Game 2")
-	_, _ = svc.CreateProject(ctx, "user-other", "Игра 3", "Game 3")
+	p1, _ := svc.CreateProject(ctx, "user-abc", "Игра 1", "Game 1", false)
+	p2, _ := svc.CreateProject(ctx, "user-abc", "Игра 2", "Game 2", false)
+	_, _ = svc.CreateProject(ctx, "user-other", "Игра 3", "Game 3", false)
 
 	// List user-abc projects
 	list, total, err := svc.ListProjects(ctx, "user-abc", 10, 0)
@@ -308,7 +319,7 @@ func TestUnit_ProjectService_MediaManagement(t *testing.T) {
 
 	svc, _, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 
 	// 1. Upload Icon
 	iconPath, err := svc.UploadMediaStream(ctx, p.ID, "user-123", "icon", bytes.NewReader([]byte("icon-png")))
@@ -355,7 +366,7 @@ func TestUnit_ProjectService_DeleteProjectAndBuild(t *testing.T) {
 
 	svc, pRepo, _ := setupTestProjectService(t)
 
-	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game")
+	p, _ := svc.CreateProject(ctx, "user-123", "Игра", "Game", false)
 	_, _, _ = svc.UploadBuildStream(ctx, p.ID, "user-123", "1.0.0", bytes.NewReader([]byte("b1")))
 
 	// Delete build by non-owner
@@ -397,7 +408,7 @@ func TestUnit_ProjectService_SharedAccess_InvitationsAndPermissions(t *testing.T
 	svc, _, _, _, _ := setupTestProjectServiceFull(t)
 
 	// 1. Создаем проект владельцем
-	p, err := svc.CreateProject(ctx, "dev-owner", "Игра Владельца", "Owner Game")
+	p, err := svc.CreateProject(ctx, "dev-owner", "Игра Владельца", "Owner Game", false)
 	require.NoError(t, err)
 
 	// 2. Попытка пригласить самого себя — ошибка
@@ -490,7 +501,7 @@ func TestUnit_ProjectService_SharedAccess_BlockSpam(t *testing.T) {
 	svc, _, _, _, _ := setupTestProjectServiceFull(t)
 
 	// Создаем проект спамером
-	p, err := svc.CreateProject(ctx, "dev-spammer", "Спам Игра", "Spam Game")
+	p, err := svc.CreateProject(ctx, "dev-spammer", "Спам Игра", "Spam Game", false)
 	require.NoError(t, err)
 
 	// Жертва блокирует спамера
@@ -534,7 +545,7 @@ func TestUnit_ProjectService_ListProjectsIncludesShared(t *testing.T) {
 	svc, _, memRepo, _, _ := setupTestProjectServiceFull(t)
 
 	// Владелец создаёт проект
-	p, err := svc.CreateProject(ctx, "dev-owner", "Собственный проект", "Owner Project")
+	p, err := svc.CreateProject(ctx, "dev-owner", "Собственный проект", "Owner Project", false)
 	require.NoError(t, err)
 
 	// Добавляем участника

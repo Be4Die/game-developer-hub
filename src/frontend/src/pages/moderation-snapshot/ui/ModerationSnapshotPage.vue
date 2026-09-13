@@ -43,6 +43,15 @@
                     <span v-if="projectData.build_version" class="version-tag">
                       v{{ projectData.build_version }}
                     </span>
+                    <span
+                      class="mode-badge"
+                      :class="isSnapshotOnline ? 'mode-online' : 'mode-offline'"
+                      :title="isSnapshotOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                    >
+                      <Globe v-if="isSnapshotOnline" class="icon-xxs" />
+                      <Gamepad2 v-else class="icon-xxs" />
+                      <span>{{ isSnapshotOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                    </span>
                   </div>
 
                   <div class="snapshot-date-badge">
@@ -82,6 +91,12 @@
                 </span>
               </div>
               <div class="meta-item">
+                <span class="meta-label">{{ t('projects.networkMode') }}</span>
+                <span class="meta-value">
+                  {{ isSnapshotOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}
+                </span>
+              </div>
+              <div class="meta-item">
                 <span class="meta-label">{{ t('moderation.submittedColumn') }}</span>
                 <span class="meta-value">
                   {{ formatDateTime(verdictData.submitted_at) }}
@@ -98,8 +113,16 @@
 
           <!-- Карточка 1: Основная информация (RU / EN) -->
           <div class="card section-card">
-            <div class="section-head">
+            <div class="section-head section-head-with-actions">
               <h3>{{ t('moderation.basicInfo') }}</h3>
+              <span
+                class="mode-badge"
+                :class="isSnapshotOnline ? 'mode-online' : 'mode-offline'"
+              >
+                <Globe v-if="isSnapshotOnline" class="icon-xxs" />
+                <Gamepad2 v-else class="icon-xxs" />
+                <span>{{ isSnapshotOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+              </span>
             </div>
 
             <!-- Названия -->
@@ -391,6 +414,7 @@ import {
   Clock,
   AlertTriangle,
   Gamepad2,
+  Globe,
   MessageSquare,
   MessageSquareDashed,
   Paperclip,
@@ -425,6 +449,17 @@ const lightboxData = ref(null);
 
 const projectId = computed(() => {
   return projectData.value.id || snapshotMeta.value.projectId || snapshotMeta.value.project_id || '';
+});
+
+const isSnapshotOnline = computed(() => {
+  return Boolean(
+    projectData.value.is_online ??
+    projectData.value.isOnline ??
+    snapshotMeta.value?.snapshot?.is_online ??
+    snapshotMeta.value?.snapshot?.isOnline ??
+    snapshotMeta.value?.is_online ??
+    snapshotMeta.value?.isOnline
+  );
 });
 
 const status = computed(() => {
@@ -847,11 +882,47 @@ onMounted(() => {
   margin-bottom: 16px;
 }
 
+.section-head.section-head-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .section-head h3 {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 .data-row {

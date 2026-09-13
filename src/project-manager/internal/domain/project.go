@@ -19,11 +19,12 @@ const (
 // Project представляет агрегат игрового проекта на платформе.
 // Содержит базовую идентификационную информацию и ссылки на черновик и релиз.
 type Project struct {
-	ID        int64
-	OwnerID   string
-	Status    ProjectStatus
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                     int64
+	OwnerID                string
+	Status                 ProjectStatus
+	IsOnline               bool
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
 	Draft                  *Draft
 	Release                *Release
 	CurrentUserPermissions []string

@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -117,5 +118,41 @@ func (d *LocalDeployer) DeleteProject(_ context.Context, projectID int64) error 
 	if err := os.RemoveAll(projDir); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("local_deployer: delete project dir %s: %w", projDir, err)
 	}
+	return nil
+}
+
+// UpdateCSP обновляет или создаёт файл csp.json манифеста сетевой безопасности для целевого окружения проекта.
+func (d *LocalDeployer) UpdateCSP(_ context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error {
+	manifest := domain.CSPManifest{
+		IsOnline:   isOnline,
+		ConnectSrc: []string{"'self'"},
+	}
+	if isOnline {
+		if len(allowedHosts) > 0 {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, allowedHosts...)
+		} else {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, "wss://*.nodes.welwise-games.online:*")
+		}
+	}
+
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("local_deployer: marshal csp manifest: %w", err)
+	}
+
+	projDir := d.projectDir(projectID)
+	if err := os.MkdirAll(projDir, 0o750); err != nil {
+		return fmt.Errorf("local_deployer: create project dir for csp: %w", err)
+	}
+
+	_ = os.WriteFile(filepath.Join(projDir, "csp.json"), data, 0o644) //nolint:gosec
+
+	if env != "" {
+		envDir := filepath.Join(projDir, env)
+		if _, err := os.Stat(envDir); err == nil {
+			_ = os.WriteFile(filepath.Join(envDir, "csp.json"), data, 0o644) //nolint:gosec
+		}
+	}
+
 	return nil
 }

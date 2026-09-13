@@ -41,7 +41,7 @@ func (h *ProjectHandler) Create(ctx context.Context, req *pb.ProjectCreateReques
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
 	}
-	p, err := h.svc.CreateProject(ctx, ownerID, req.GetTitleRu(), req.GetTitleEn())
+	p, err := h.svc.CreateProject(ctx, ownerID, req.GetTitleRu(), req.GetTitleEn(), req.GetIsOnline())
 	if err != nil {
 		return nil, domainError(err, "create project")
 	}
@@ -113,6 +113,7 @@ func (h *ProjectHandler) Update(ctx context.Context, req *pb.ProjectUpdateReques
 		AboutRu:            req.GetAboutRu(),
 		AboutEn:            req.GetAboutEn(),
 		ActiveBuildVersion: req.GetActiveBuildVersion(),
+		IsOnline:           req.IsOnline,
 	}
 	if err := h.svc.UpdateDraft(ctx, req.GetId(), ownerID, meta); err != nil {
 		return nil, domainError(err, "update project draft")

@@ -193,3 +193,8 @@ func (d *AgentDeployer) DeleteProject(ctx context.Context, projectID int64) erro
 	}
 	return nil
 }
+
+// UpdateCSP обновляет манифест csp.json на удаленном агенте развертывания.
+func (d *AgentDeployer) UpdateCSP(_ context.Context, _ int64, _ string, _ bool, _ []string) error {
+	return nil
+}

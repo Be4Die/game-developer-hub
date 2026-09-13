@@ -38,6 +38,19 @@
           </div>
         </div>
 
+        <!-- Фильтр по сетевому режиму -->
+        <div class="filter-field field-mode">
+          <label class="field-label">{{ t('projects.mode') }}</label>
+          <div class="select-wrapper">
+            <select v-model="modeFilter" class="filter-select">
+              <option value="all">{{ t('common.all') }}</option>
+              <option value="online">{{ t('projects.modeOnline') }}</option>
+              <option value="offline">{{ t('projects.modeOffline') }}</option>
+            </select>
+            <ChevronDown class="icon-xs select-arrow" />
+          </div>
+        </div>
+
         <!-- Сортировка -->
         <div class="filter-field field-sort">
           <label class="field-label">{{ t('common.actions') }}</label>
@@ -53,7 +66,7 @@
 
         <!-- Кнопка сброса фильтров -->
         <button
-          v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
+          v-if="searchQuery || statusFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
           title="Сбросить фильтры"
           @click="resetFilters"
@@ -137,11 +150,22 @@
                     </div>
                   </div>
                   <div class="game-text">
-                    <div
-                      class="game-title"
-                      :title="req.snapshot.titleRu || req.snapshot.titleEn || '—'"
-                    >
-                      {{ req.snapshot.titleRu || req.snapshot.titleEn || '—' }}
+                    <div class="game-title-row">
+                      <span
+                        class="game-title"
+                        :title="req.snapshot.titleRu || req.snapshot.titleEn || '—'"
+                      >
+                        {{ req.snapshot.titleRu || req.snapshot.titleEn || '—' }}
+                      </span>
+                      <span
+                        class="mode-badge"
+                        :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
+                        :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                      >
+                        <Globe v-if="req.snapshot.isOnline" class="icon-xxs" />
+                        <Gamepad2 v-else class="icon-xxs" />
+                        <span>{{ req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -297,6 +321,7 @@ import {
   ChevronsRight,
   Eye,
   Gamepad2,
+  Globe,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -325,6 +350,7 @@ const claimingId = ref(null);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
+const modeFilter = ref('all');
 const sortBy = ref('newest');
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -361,6 +387,7 @@ onMounted(loadQueue);
 function resetFilters() {
   searchQuery.value = '';
   statusFilter.value = 'all';
+  modeFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
 }
@@ -380,6 +407,13 @@ const filteredRequests = computed(() => {
         currentUserId.value &&
         (r.moderatorId === currentUserId.value || r.moderatorId === authState.user?.email)
     );
+  }
+
+  // Фильтр по сетевому режиму
+  if (modeFilter.value === 'online') {
+    list = list.filter((r) => r.snapshot?.isOnline);
+  } else if (modeFilter.value === 'offline') {
+    list = list.filter((r) => !r.snapshot?.isOnline);
   }
 
   // Поиск
@@ -772,6 +806,12 @@ async function claimAndOpen(req) {
   color: var(--text-tertiary, #8b949e);
 }
 
+.game-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .game-title {
   font-size: 14px;
   font-weight: 600;
@@ -779,6 +819,36 @@ async function claimAndOpen(req) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 .version-badge {

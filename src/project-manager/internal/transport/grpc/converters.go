@@ -25,6 +25,7 @@ func projectToProto(p *domain.Project) *pb.Project {
 		Status:    pb.ProjectStatus(p.Status),
 		CreatedAt: formatTime(p.CreatedAt),
 		UpdatedAt: formatTime(p.UpdatedAt),
+		IsOnline:  p.IsOnline,
 	}
 
 	if p.Draft != nil {
@@ -70,6 +71,7 @@ func draftToProto(d *domain.Draft) *pb.ProjectDraft {
 		VideoPath:          d.VideoPath,
 		ActiveBuildVersion: d.ActiveBuildVersion,
 		DevUrl:             d.DevURL,
+		IsOnline:           d.IsOnline,
 		UpdatedAt:          formatTime(d.UpdatedAt),
 	}
 }
@@ -107,6 +109,7 @@ func releaseToProto(r *domain.Release) *pb.ProjectRelease {
 		CoverPath:   r.CoverPath,
 		VideoPath:   r.VideoPath,
 		ProdUrl:     r.ProdURL,
+		IsOnline:    r.IsOnline,
 		PublishedAt: formatTime(r.PublishedAt),
 	}
 }

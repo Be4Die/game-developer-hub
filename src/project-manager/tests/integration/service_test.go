@@ -20,7 +20,7 @@ func TestIntegration_ProjectService_FullFlow(t *testing.T) {
 	ownerID := "user-service-test-1"
 
 	// 1. Create Project
-	proj, err := env.projectSvc.CreateProject(ctx, ownerID, "Игра Тест", "Game Test")
+	proj, err := env.projectSvc.CreateProject(ctx, ownerID, "Игра Тест", "Game Test", false)
 	require.NoError(t, err)
 	assert.Greater(t, proj.ID, int64(0))
 

@@ -31,6 +31,15 @@
                 <span v-if="projectData.activeBuildVersion" class="version-tag">
                   v{{ projectData.activeBuildVersion }}
                 </span>
+                <span
+                  class="mode-badge"
+                  :class="isProjectOnline ? 'mode-online' : 'mode-offline'"
+                  :title="isProjectOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                >
+                  <Globe v-if="isProjectOnline" class="icon-xxs" />
+                  <Gamepad2 v-else class="icon-xxs" />
+                  <span>{{ isProjectOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                </span>
               </div>
               <h1 class="project-main-title">
                 {{ projectData.titleRu || projectData.titleEn || `Проект #${projectId}` }}
@@ -50,6 +59,12 @@
               </span>
             </div>
             <div class="meta-item">
+              <span class="meta-label">{{ t('projects.networkMode') }}</span>
+              <span class="meta-value">
+                {{ isProjectOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}
+              </span>
+            </div>
+            <div class="meta-item">
               <span class="meta-label">{{ t('moderation.submittedColumn') }}</span>
               <span class="meta-value">
                 {{ activeRequest ? formatDateTime(activeRequest.submittedAt) : '—' }}
@@ -66,8 +81,16 @@
 
         <!-- КАРТОЧКА 1: ОСНОВНАЯ ИНФОРМАЦИЯ -->
         <div class="card section-card">
-          <div class="section-head">
+          <div class="section-head section-head-with-actions">
             <h3>{{ t('moderation.basicInfo') }}</h3>
+            <span
+              class="mode-badge"
+              :class="isProjectOnline ? 'mode-online' : 'mode-offline'"
+            >
+              <Globe v-if="isProjectOnline" class="icon-xxs" />
+              <Gamepad2 v-else class="icon-xxs" />
+              <span>{{ isProjectOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+            </span>
           </div>
 
           <!-- Названия -->
@@ -277,6 +300,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
   Gamepad2,
+  Globe,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -375,6 +399,15 @@ const projectVideoUrl = computed(() => {
   return getMediaUrl(path);
 });
 
+const isProjectOnline = computed(() => {
+  return !!(
+    projectData.value?.isOnline ||
+    projectData.value?.is_online ||
+    activeRequest.value?.snapshot?.isOnline ||
+    activeRequest.value?.snapshot?.is_online
+  );
+});
+
 async function loadProjectInfo() {
   loading.value = true;
   noRequestMode.value = false;
@@ -382,7 +415,10 @@ async function loadProjectInfo() {
     const data = await moderationApi.getLatestByProject(projectId.value);
     if (data && data.request) {
       activeRequest.value = data.request;
-      projectData.value = data.request.snapshot || {};
+      projectData.value = {
+        ...(data.request.snapshot || {}),
+        isOnline: Boolean(data.request.snapshot?.isOnline ?? data.request.snapshot?.is_online),
+      };
     } else {
       noRequestMode.value = true;
       activeRequest.value = null;
@@ -402,6 +438,7 @@ async function loadProjectInfo() {
           devUrl: p.dev_url,
           activeBuildVersion: p.active_build_version || '1.0.0',
           ownerId: p.owner_id || p.ownerId,
+          isOnline: Boolean(p.is_online ?? p.isOnline),
         };
       } catch (err) {
         showToast('Проект не найден', 'warning');
@@ -979,6 +1016,42 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 0.82rem;
+}
+
+.section-head.section-head-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 @media (max-width: 1000px) {

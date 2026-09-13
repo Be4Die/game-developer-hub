@@ -8,12 +8,14 @@ CREATE TABLE IF NOT EXISTS projects (
     id          BIGSERIAL PRIMARY KEY,
     owner_id    TEXT NOT NULL,                                       -- ID владельца (пользователь SSO)
     status      SMALLINT NOT NULL DEFAULT 1,                        -- 1=draft, 2=pending, 3=published, 4=rejected
+    is_online   BOOLEAN NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE projects IS 'Проекты игр разработчиков';
 COMMENT ON COLUMN projects.status IS '1=draft, 2=pending, 3=published, 4=rejected';
+COMMENT ON COLUMN projects.is_online IS 'Признак онлайн-игры проекта';
 
 CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
@@ -35,10 +37,12 @@ CREATE TABLE IF NOT EXISTS project_drafts (
     video_path            TEXT NOT NULL DEFAULT '',
     active_build_version  TEXT NOT NULL DEFAULT '',
     dev_url               TEXT NOT NULL DEFAULT '',
+    is_online             BOOLEAN NOT NULL DEFAULT FALSE,
     updated_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE project_drafts IS 'Рабочие изменяемые черновики проектов';
+COMMENT ON COLUMN project_drafts.is_online IS 'Флаг онлайн-игры с выделенными серверами и оркестрацией';
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Таблица project_builds — клиентские билды проектов
@@ -78,6 +82,7 @@ CREATE TABLE IF NOT EXISTS project_releases (
     cover_path            TEXT NOT NULL DEFAULT '',
     video_path            TEXT NOT NULL DEFAULT '',
     prod_url              TEXT NOT NULL DEFAULT '',
+    is_online             BOOLEAN NOT NULL DEFAULT FALSE,
     is_active             BOOLEAN NOT NULL DEFAULT TRUE,
     published_by          TEXT NOT NULL DEFAULT '',
     published_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

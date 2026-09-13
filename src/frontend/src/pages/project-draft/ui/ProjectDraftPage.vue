@@ -11,8 +11,34 @@
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
-        <div class="section-head">
+        <div class="section-head section-head-with-actions">
           <h3>{{ t('projectDraft.basicInfo') }}</h3>
+
+          <!-- Компактный переключатель сетевого режима -->
+          <div class="mode-toggle-group">
+            <button
+              type="button"
+              class="mode-toggle-btn"
+              :class="{ active: !meta.is_online }"
+              :disabled="!canEditInfo"
+              :title="t('projectDraft.modeOffline')"
+              @click="selectNetworkMode(false)"
+            >
+              <Gamepad2 class="icon-xs" />
+              <span>{{ t('projectDraft.modeOffline') }}</span>
+            </button>
+            <button
+              type="button"
+              class="mode-toggle-btn"
+              :class="{ active: meta.is_online }"
+              :disabled="!canEditInfo"
+              :title="t('projectDraft.modeOnline')"
+              @click="selectNetworkMode(true)"
+            >
+              <Globe class="icon-xs" />
+              <span>{{ t('projectDraft.modeOnline') }}</span>
+            </button>
+          </div>
         </div>
         <div class="input-row">
           <div class="input-group">
@@ -405,7 +431,16 @@
 import { ref, computed, onMounted, watch, inject, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Image as ImageIcon, Film, Upload, Trash2, Loader2, Download } from 'lucide-vue-next';
+import {
+  Image as ImageIcon,
+  Film,
+  Upload,
+  Trash2,
+  Loader2,
+  Download,
+  Gamepad2,
+  Globe,
+} from 'lucide-vue-next';
 import {
   getProject,
   updateProject,
@@ -441,7 +476,13 @@ const meta = ref({
   seo_en: '',
   about_ru: '',
   about_en: '',
+  is_online: false,
 });
+
+function selectNetworkMode(isOnline) {
+  if (!canEditInfo.value) return;
+  meta.value.is_online = isOnline;
+}
 
 const media = ref({ icon: false, cover: false, video: false });
 const mediaUrls = ref({ icon: '', cover: '', video: '' });
@@ -575,6 +616,7 @@ async function loadProject(keepStaged = false) {
       about_ru:
         project.draft?.about_ru || project.about_ru || project.draft?.about || project.about || '',
       about_en: project.draft?.about_en || project.about_en || '',
+      is_online: project.draft?.is_online ?? project.is_online ?? false,
     };
 
     const iconPath = project.draft?.icon_path || project.icon_path;
@@ -679,6 +721,11 @@ async function saveMeta(silent = false) {
           ...sharedProject.value,
           title_ru: meta.value.title_ru,
           title_en: meta.value.title_en,
+          is_online: meta.value.is_online,
+          draft: {
+            ...sharedProject.value.draft,
+            is_online: meta.value.is_online,
+          },
         };
       }
       await loadProject(false);
@@ -1261,5 +1308,58 @@ function downloadBuild(version) {
   border-radius: var(--radius-sm, 6px);
   font-size: 13px;
   text-align: center;
+}
+
+/* Compact Network Mode Switcher in Section Head */
+.section-head.section-head-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mode-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  padding: 3px;
+  gap: 3px;
+}
+
+.mode-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted, #8b949e);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.mode-toggle-btn:hover:not(:disabled):not(.active) {
+  color: var(--text-main, #f0f6fc);
+  background: var(--bg-tertiary, #21262d);
+}
+
+.mode-toggle-btn.active {
+  color: var(--primary, #58a6ff);
+  background: var(--primary-light, rgba(88, 166, 255, 0.12));
+  border-color: rgba(88, 166, 255, 0.35);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+}
+
+.mode-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

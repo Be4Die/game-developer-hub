@@ -80,6 +80,7 @@ func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 			VideoPath:          snapshot.VideoPath,
 			ActiveBuildVersion: snapshot.ActiveBuildVersion,
 			DevUrl:             snapshot.DevURL,
+			IsOnline:           snapshot.IsOnline,
 		},
 	}
 

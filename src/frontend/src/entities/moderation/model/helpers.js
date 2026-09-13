@@ -159,6 +159,7 @@ export function normalizeRequest(req) {
       videoPath: snapshot.video_path || snapshot.videoPath || '',
       activeBuildVersion: snapshot.active_build_version || snapshot.activeBuildVersion || '',
       devUrl: snapshot.dev_url || snapshot.devUrl || '',
+      isOnline: Boolean(snapshot.is_online ?? snapshot.isOnline),
     },
   };
 }

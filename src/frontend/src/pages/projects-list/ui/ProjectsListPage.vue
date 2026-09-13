@@ -6,6 +6,7 @@
         v-model:search-query="searchQuery"
         v-model:status-filter="statusFilter"
         v-model:role-filter="roleFilter"
+        v-model:mode-filter="modeFilter"
         v-model:sort-by="sortBy"
         :creating="creating"
         @reset="resetFilters"
@@ -20,7 +21,7 @@
 
       <!-- Пустой список без проектов -->
       <div
-        v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all' && roleFilter === 'all'"
+        v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all' && roleFilter === 'all' && modeFilter === 'all'"
         class="state-container empty-card"
       >
         <div class="empty-icon-wrap">
@@ -81,7 +82,16 @@
                     </div>
                   </div>
                   <div class="game-title">
-                    <span>{{ game.title_ru || game.title_en || '—' }}</span>
+                    <span class="game-title-text">{{ game.title_ru || game.title_en || '—' }}</span>
+                    <span
+                      class="mode-badge"
+                      :class="game.is_online ? 'mode-online' : 'mode-offline'"
+                      :title="game.is_online ? t('projects.modeOnline') : t('projects.modeOffline')"
+                    >
+                      <Globe v-if="game.is_online" class="icon-xxs" />
+                      <Gamepad2 v-else class="icon-xxs" />
+                      <span>{{ game.is_online ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                    </span>
                   </div>
                 </div>
               </td>
@@ -212,6 +222,7 @@ import { useI18n } from 'vue-i18n';
 import {
   Plus,
   Gamepad2,
+  Globe,
   Search,
   Trash2,
   User,
@@ -247,11 +258,11 @@ const creating = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('all');
 const roleFilter = ref('all');
+const modeFilter = ref('all');
 const sortBy = ref('newest');
 
 const currentPage = ref(1);
 const pageSize = ref(10);
-
 
 async function loadProjects() {
   loading.value = true;
@@ -272,6 +283,7 @@ const createNewGame = async () => {
     const project = await createProject({
       title_ru: 'Новый проект',
       title_en: 'New Project',
+      is_online: false,
     });
     resetDraftState();
     showToast(t('projects.createModalTitle') + ` #${project.id}`, 'success');
@@ -321,6 +333,7 @@ const resetFilters = () => {
   searchQuery.value = '';
   statusFilter.value = 'all';
   roleFilter.value = 'all';
+  modeFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
 };
@@ -348,6 +361,12 @@ const filteredGames = computed(() => {
     list = list.filter((g) => g.is_owner !== false);
   } else if (roleFilter.value === 'shared') {
     list = list.filter((g) => g.is_owner === false);
+  }
+
+  if (modeFilter.value === 'online') {
+    list = list.filter((g) => g.is_online === true);
+  } else if (modeFilter.value === 'offline') {
+    list = list.filter((g) => !g.is_online);
   }
 
   if (sortBy.value === 'newest') {
@@ -576,10 +595,49 @@ onMounted(loadProjects);
 
 
 .game-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
   line-height: 1.3;
+}
+
+.game-title-text {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 .date-text {

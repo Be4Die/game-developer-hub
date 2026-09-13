@@ -30,6 +30,7 @@ type ProjectSnapshot struct {
 	VideoPath          string `json:"video_path"`
 	ActiveBuildVersion string `json:"active_build_version"`
 	DevURL             string `json:"dev_url"`
+	IsOnline           bool   `json:"is_online"`
 }
 
 // ModerationRequest представляет заявку на модерацию игрового проекта.

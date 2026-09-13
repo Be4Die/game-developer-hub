@@ -71,7 +71,7 @@ func NewProjectService(
 }
 
 // CreateProject создаёт новый игровой проект и инициализирует для него пустой черновик.
-func (s *ProjectService) CreateProject(ctx context.Context, ownerID, titleRu, titleEn string) (*domain.Project, error) {
+func (s *ProjectService) CreateProject(ctx context.Context, ownerID, titleRu, titleEn string, isOnline bool) (*domain.Project, error) {
 	if ownerID == "" {
 		return nil, domain.ErrForbidden
 	}
@@ -80,8 +80,9 @@ func (s *ProjectService) CreateProject(ctx context.Context, ownerID, titleRu, ti
 	}
 
 	p := &domain.Project{
-		OwnerID: ownerID,
-		Status:  domain.ProjectStatusDraft,
+		OwnerID:  ownerID,
+		Status:   domain.ProjectStatusDraft,
+		IsOnline: isOnline,
 	}
 
 	id, err := s.projectRepo.Create(ctx, p)
@@ -94,6 +95,7 @@ func (s *ProjectService) CreateProject(ctx context.Context, ownerID, titleRu, ti
 		ProjectID: id,
 		TitleRu:   titleRu,
 		TitleEn:   titleEn,
+		IsOnline:  isOnline,
 	}
 	if err := s.draftRepo.Create(ctx, draft); err != nil {
 		_ = s.projectRepo.Delete(ctx, id)
@@ -295,6 +297,11 @@ func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, userI
 	if meta.ActiveBuildVersion != "" {
 		draft.ActiveBuildVersion = meta.ActiveBuildVersion
 	}
+	if meta.IsOnline != nil {
+		draft.IsOnline = *meta.IsOnline
+		_ = s.projectRepo.UpdateIsOnline(ctx, projectID, *meta.IsOnline)
+		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", *meta.IsOnline, nil)
+	}
 
 	return s.draftRepo.Update(ctx, draft)
 }
@@ -374,6 +381,9 @@ func (s *ProjectService) UploadBuildStream(ctx context.Context, projectID int64,
 
 	// 4. Обновление активной сборки в черновике
 	_ = s.draftRepo.UpdateActiveBuild(ctx, projectID, version, deployRes.URL)
+	if d, err := s.draftRepo.Get(ctx, projectID); err == nil {
+		_ = s.deployer.UpdateCSP(ctx, projectID, "dev", d.IsOnline, nil)
+	}
 
 	// 5. Аудит развертывания
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
@@ -506,6 +516,7 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 		VideoPath:          draft.VideoPath,
 		ActiveBuildVersion: draft.ActiveBuildVersion,
 		DevURL:             draft.DevURL,
+		IsOnline:           draft.IsOnline,
 	}
 
 	requestID, err := s.moderationClient.SubmitDraft(ctx, snapshot)
@@ -573,6 +584,7 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		CoverPath:   coverPath,
 		VideoPath:   videoPath,
 		ProdURL:     deployRes.URL,
+		IsOnline:    draft.IsOnline,
 		IsActive:    true,
 		PublishedBy: approvedBy,
 	}
@@ -583,6 +595,7 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 	}
 	release.ID = relID
 
+	_ = s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, nil)
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
 		ProjectID:   projectID,

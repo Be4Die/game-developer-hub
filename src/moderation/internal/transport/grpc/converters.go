@@ -42,6 +42,7 @@ func requestToProto(r *domain.ModerationRequest) *pb.ModerationRequest {
 			VideoPath:          r.Snapshot.VideoPath,
 			ActiveBuildVersion: r.Snapshot.ActiveBuildVersion,
 			DevUrl:             r.Snapshot.DevURL,
+			IsOnline:           r.Snapshot.IsOnline,
 		},
 	}
 
@@ -138,6 +139,7 @@ func snapshotFromProto(p *pb.ProjectSnapshot) domain.ProjectSnapshot {
 		VideoPath:          p.GetVideoPath(),
 		ActiveBuildVersion: p.GetActiveBuildVersion(),
 		DevURL:             p.GetDevUrl(),
+		IsOnline:           p.GetIsOnline(),
 	}
 }
 

@@ -3,8 +3,16 @@
     <div class="form-grid">
       <!-- БЛОК 1: ОСНОВНАЯ ИНФОРМАЦИЯ -->
       <div class="card form-section">
-        <div class="section-head">
+        <div class="section-head section-head-with-actions">
           <h3>{{ t('projectDraft.basicInfo') }}</h3>
+          <span
+            class="mode-badge"
+            :class="isProjectOnline ? 'mode-online' : 'mode-offline'"
+          >
+            <Globe v-if="isProjectOnline" class="icon-xxs" />
+            <Gamepad2 v-else class="icon-xxs" />
+            <span>{{ isProjectOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+          </span>
         </div>
 
         <div class="input-row">
@@ -176,7 +184,7 @@
 import { ref, computed, onMounted, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Image as ImageIcon, Film, Download } from 'lucide-vue-next';
+import { Image as ImageIcon, Film, Download, Globe, Gamepad2 } from 'lucide-vue-next';
 import { getProject, getPublished, getMediaUrl } from '@/entities/project';
 
 const { t } = useI18n();
@@ -191,6 +199,15 @@ const releaseData = computed(() => {
   if (directRelease.value) return directRelease.value;
   if (sharedProject?.value?.release) return sharedProject.value.release;
   return sharedProject?.value || null;
+});
+
+const isProjectOnline = computed(() => {
+  return Boolean(
+    releaseData.value?.is_online ??
+    releaseData.value?.isOnline ??
+    sharedProject?.value?.is_online ??
+    sharedProject?.value?.isOnline
+  );
 });
 
 const releaseVersion = computed(() => {
@@ -278,11 +295,47 @@ onMounted(loadData);
   padding-bottom: 12px;
 }
 
+.section-head.section-head-with-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .section-head h3 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-main);
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 .input-row {

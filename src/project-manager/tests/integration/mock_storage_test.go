@@ -82,3 +82,6 @@ func (d *mockDeployer) DeleteVersion(ctx context.Context, projectID int64, versi
 	return nil
 }
 func (d *mockDeployer) DeleteProject(ctx context.Context, projectID int64) error { return nil }
+func (d *mockDeployer) UpdateCSP(ctx context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error {
+	return nil
+}

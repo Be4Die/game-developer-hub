@@ -55,7 +55,7 @@
           <CheckCircle class="icon-sm" /> {{ t('projectWorkspace.publishedTab') }}
         </router-link>
         <router-link
-          v-if="canManageServers"
+          v-if="canManageServers && isOnline"
           :to="`/projects/${id}/servers`"
           class="nav-btn"
           active-class="active"
@@ -174,6 +174,10 @@ const canSubmitModeration = computed(
   () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
 );
 
+const isOnline = computed(() => {
+  return project.value?.draft?.is_online ?? project.value?.is_online ?? false;
+});
+
 const collaboratorPermissionsText = computed(() => {
   if (isOwner.value) return '';
   return permissions.value.map((p) => permissionLabel(p)).join(', ');
@@ -240,7 +244,7 @@ watch(
     if (route.name === 'stats' && !canViewStats.value) {
       router.replace(`/projects/${props.id}/draft`);
     }
-    if ((route.name === 'servers' || route.path.includes('/servers')) && !canManageServers.value) {
+    if ((route.name === 'servers' || route.path.includes('/servers')) && (!canManageServers.value || !isOnline.value)) {
       router.replace(`/projects/${props.id}/draft`);
     }
   }

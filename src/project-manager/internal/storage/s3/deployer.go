@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -685,4 +686,45 @@ func (d *Deployer) DeleteVersion(ctx context.Context, projectID int64, version s
 func (d *Deployer) DeleteProject(ctx context.Context, projectID int64) error {
 	projPrefix := fmt.Sprintf("%d/", projectID)
 	return d.deletePrefix(ctx, projPrefix)
+}
+
+// UpdateCSP загружает csp.json манифест сетевой безопасности в бакет games S3.
+func (d *Deployer) UpdateCSP(ctx context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error {
+	manifest := domain.CSPManifest{
+		IsOnline:   isOnline,
+		ConnectSrc: []string{"'self'"},
+	}
+	if isOnline {
+		if len(allowedHosts) > 0 {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, allowedHosts...)
+		} else {
+			manifest.ConnectSrc = append(manifest.ConnectSrc, "wss://*.nodes.welwise-games.online:*")
+		}
+	}
+
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return fmt.Errorf("s3_deployer: marshal csp manifest: %w", err)
+	}
+
+	keys := []string{
+		fmt.Sprintf("%d/csp.json", projectID),
+	}
+	if env != "" {
+		keys = append(keys, fmt.Sprintf("%d/%s/csp.json", projectID, env))
+	}
+
+	for _, key := range keys {
+		_, err := d.client.PutObject(ctx, &s3.PutObjectInput{
+			Bucket:      aws.String(d.gamesBucket),
+			Key:         aws.String(key),
+			Body:        bytes.NewReader(data),
+			ContentType: aws.String("application/json"),
+		})
+		if err != nil {
+			return fmt.Errorf("s3_deployer: put csp.json to %s: %w", key, err)
+		}
+	}
+
+	return nil
 }

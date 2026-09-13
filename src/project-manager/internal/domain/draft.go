@@ -17,6 +17,7 @@ type Draft struct {
 	VideoPath          string
 	ActiveBuildVersion string
 	DevURL             string
+	IsOnline           bool
 	UpdatedAt          time.Time
 }
 
@@ -29,6 +30,7 @@ type DraftMeta struct {
 	AboutRu            string
 	AboutEn            string
 	ActiveBuildVersion string
+	IsOnline           *bool
 }
 
 // IsReadyForModeration проверяет полноту заполнения черновика перед отправкой на модерацию.

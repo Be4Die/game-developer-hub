@@ -32,15 +32,15 @@ func (r *ReleaseRepo) Create(ctx context.Context, rel *domain.Release) (int64, e
 	const query = `
 		INSERT INTO project_releases (
 			project_id, version, title_ru, title_en, seo_ru, seo_en,
-			about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_active, published_by
+			about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_online, is_active, published_by
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true, $14)
 		RETURNING id, published_at
 	`
 	var id int64
 	err := r.pool.QueryRow(ctx, query,
 		rel.ProjectID, rel.Version, rel.TitleRu, rel.TitleEn, rel.SeoRu, rel.SeoEn,
-		rel.AboutRu, rel.AboutEn, rel.IconPath, rel.CoverPath, rel.VideoPath, rel.ProdURL, rel.PublishedBy,
+		rel.AboutRu, rel.AboutEn, rel.IconPath, rel.CoverPath, rel.VideoPath, rel.ProdURL, rel.IsOnline, rel.PublishedBy,
 	).Scan(&id, &rel.PublishedAt)
 	if err != nil {
 		return 0, fmt.Errorf("postgres.ReleaseRepo.Create: %w", err)
@@ -54,7 +54,7 @@ func (r *ReleaseRepo) Create(ctx context.Context, rel *domain.Release) (int64, e
 func (r *ReleaseRepo) GetActive(ctx context.Context, projectID int64) (*domain.Release, error) {
 	const query = `
 		SELECT id, project_id, version, title_ru, title_en, seo_ru, seo_en,
-		       about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_active,
+		       about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_online, is_active,
 		       published_by, published_at, unpublish_at
 		FROM project_releases
 		WHERE project_id = $1 AND is_active = true
@@ -63,7 +63,7 @@ func (r *ReleaseRepo) GetActive(ctx context.Context, projectID int64) (*domain.R
 	var rel domain.Release
 	err := r.pool.QueryRow(ctx, query, projectID).Scan(
 		&rel.ID, &rel.ProjectID, &rel.Version, &rel.TitleRu, &rel.TitleEn, &rel.SeoRu, &rel.SeoEn,
-		&rel.AboutRu, &rel.AboutEn, &rel.IconPath, &rel.CoverPath, &rel.VideoPath, &rel.ProdURL, &rel.IsActive,
+		&rel.AboutRu, &rel.AboutEn, &rel.IconPath, &rel.CoverPath, &rel.VideoPath, &rel.ProdURL, &rel.IsOnline, &rel.IsActive,
 		&rel.PublishedBy, &rel.PublishedAt, &rel.UnpublishAt,
 	)
 	if err != nil {
@@ -79,7 +79,7 @@ func (r *ReleaseRepo) GetActive(ctx context.Context, projectID int64) (*domain.R
 func (r *ReleaseRepo) ListByProject(ctx context.Context, projectID int64) ([]*domain.Release, error) {
 	const query = `
 		SELECT id, project_id, version, title_ru, title_en, seo_ru, seo_en,
-		       about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_active,
+		       about_ru, about_en, icon_path, cover_path, video_path, prod_url, is_online, is_active,
 		       published_by, published_at, unpublish_at
 		FROM project_releases
 		WHERE project_id = $1
@@ -96,7 +96,7 @@ func (r *ReleaseRepo) ListByProject(ctx context.Context, projectID int64) ([]*do
 		var rel domain.Release
 		if err := rows.Scan(
 			&rel.ID, &rel.ProjectID, &rel.Version, &rel.TitleRu, &rel.TitleEn, &rel.SeoRu, &rel.SeoEn,
-			&rel.AboutRu, &rel.AboutEn, &rel.IconPath, &rel.CoverPath, &rel.VideoPath, &rel.ProdURL, &rel.IsActive,
+			&rel.AboutRu, &rel.AboutEn, &rel.IconPath, &rel.CoverPath, &rel.VideoPath, &rel.ProdURL, &rel.IsOnline, &rel.IsActive,
 			&rel.PublishedBy, &rel.PublishedAt, &rel.UnpublishAt,
 		); err != nil {
 			return nil, fmt.Errorf("postgres.ReleaseRepo.ListByProject scan: %w", err)

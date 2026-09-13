@@ -24,6 +24,19 @@
           </div>
         </div>
 
+        <!-- Фильтр по сетевому режиму -->
+        <div class="filter-field field-mode">
+          <label class="field-label">{{ t('projects.mode') }}</label>
+          <div class="select-wrapper">
+            <select v-model="modeFilter" class="filter-select">
+              <option value="all">{{ t('common.all') }}</option>
+              <option value="online">{{ t('projects.modeOnline') }}</option>
+              <option value="offline">{{ t('projects.modeOffline') }}</option>
+            </select>
+            <ChevronDown class="icon-xs select-arrow" />
+          </div>
+        </div>
+
         <!-- Сортировка -->
         <div class="filter-field field-sort">
           <label class="field-label">{{ t('common.actions') }}</label>
@@ -39,7 +52,7 @@
 
         <!-- Сброс фильтров -->
         <button
-          v-if="searchQuery || sortBy !== 'newest'"
+          v-if="searchQuery || modeFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
           title="Сбросить фильтры"
           @click="resetFilters"
@@ -116,7 +129,18 @@
                     </div>
                   </div>
                   <div class="game-text">
-                    <div class="game-title" :title="getGameTitle(game)">{{ getGameTitle(game) }}</div>
+                    <div class="game-title-row">
+                      <span class="game-title" :title="getGameTitle(game)">{{ getGameTitle(game) }}</span>
+                      <span
+                        class="mode-badge"
+                        :class="isGameOnline(game) ? 'mode-online' : 'mode-offline'"
+                        :title="isGameOnline(game) ? t('projects.modeOnline') : t('projects.modeOffline')"
+                      >
+                        <Globe v-if="isGameOnline(game)" class="icon-xxs" />
+                        <Gamepad2 v-else class="icon-xxs" />
+                        <span>{{ isGameOnline(game) ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -268,6 +292,7 @@ import {
   ChevronDown,
   User,
   Gamepad2,
+  Globe,
 } from 'lucide-vue-next';
 import {
   listPublishedProjects,
@@ -286,6 +311,7 @@ const games = ref([]);
 const loading = ref(true);
 
 const searchQuery = ref('');
+const modeFilter = ref('all');
 const sortBy = ref('newest');
 
 // Модальное окно отзыва
@@ -317,7 +343,19 @@ onMounted(loadGames);
 
 function resetFilters() {
   searchQuery.value = '';
+  modeFilter.value = 'all';
   sortBy.value = 'newest';
+}
+
+function isGameOnline(p) {
+  return Boolean(
+    p.release?.is_online ??
+    p.release?.isOnline ??
+    p.draft?.is_online ??
+    p.draft?.isOnline ??
+    p.is_online ??
+    p.isOnline
+  );
 }
 
 function getGameTitle(p) {
@@ -376,6 +414,13 @@ function formatDateTime(val) {
 
 const filteredGames = computed(() => {
   let list = [...games.value];
+
+  // Фильтр по сетевому режиму
+  if (modeFilter.value === 'online') {
+    list = list.filter((g) => isGameOnline(g));
+  } else if (modeFilter.value === 'offline') {
+    list = list.filter((g) => !isGameOnline(g));
+  }
 
   // Поиск
   if (searchQuery.value.trim()) {
@@ -672,6 +717,12 @@ async function confirmRevoke() {
   color: var(--primary, #58a6ff);
 }
 
+.game-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .game-title {
   font-size: 14px;
   font-weight: 600;
@@ -680,6 +731,36 @@ async function confirmRevoke() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 /* ТАБЛИЦА */

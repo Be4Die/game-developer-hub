@@ -605,6 +605,7 @@ func (s *ModerationService) buildAndSaveSnapshot(
 			BuildVersion:  req.Snapshot.ActiveBuildVersion,
 			DevURL:        req.Snapshot.DevURL,
 			ProdURL:       prodURL,
+			IsOnline:      req.Snapshot.IsOnline,
 		},
 		Media: domain.SnapshotMediaData{
 			Icon:  iconItem,

@@ -58,6 +58,23 @@
       </div>
     </div>
 
+    <!-- Селектор сетевого режима (Офлайн / Онлайн) -->
+    <div class="filter-field field-mode">
+      <label class="field-label">{{ t('projects.mode') }}</label>
+      <div class="select-wrapper">
+        <select
+          :value="modeFilter"
+          class="filter-select"
+          @change="$emit('update:modeFilter', $event.target.value)"
+        >
+          <option value="all">{{ t('projects.allModes') }}</option>
+          <option value="online">{{ t('projects.modeOnline') }}</option>
+          <option value="offline">{{ t('projects.modeOffline') }}</option>
+        </select>
+        <ChevronDown class="icon-xs select-arrow" />
+      </div>
+    </div>
+
     <!-- Селектор сортировки -->
     <div class="filter-field field-sort">
       <label class="field-label">{{ t('common.actions') }}</label>
@@ -77,7 +94,7 @@
 
     <!-- Кнопка сброса фильтров -->
     <button
-      v-if="searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || sortBy !== 'newest'"
+      v-if="searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
       class="btn-reset-filters"
       title="Сбросить фильтры"
       @click="$emit('reset')"
@@ -104,6 +121,7 @@ defineProps({
   searchQuery: { type: String, default: '' },
   statusFilter: { type: String, default: 'all' },
   roleFilter: { type: String, default: 'all' },
+  modeFilter: { type: String, default: 'all' },
   sortBy: { type: String, default: 'newest' },
   creating: { type: Boolean, default: false },
 });
@@ -112,6 +130,7 @@ defineEmits([
   'update:searchQuery',
   'update:statusFilter',
   'update:roleFilter',
+  'update:modeFilter',
   'update:sortBy',
   'reset',
   'create',

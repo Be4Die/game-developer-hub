@@ -126,6 +126,17 @@ func (m *mockProjectRepo) UpdateStatus(ctx context.Context, id int64, status dom
 	return nil
 }
 
+func (m *mockProjectRepo) UpdateIsOnline(ctx context.Context, id int64, isOnline bool) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	p, ok := m.projects[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	p.IsOnline = isOnline
+	return nil
+}
+
 func (m *mockProjectRepo) Delete(ctx context.Context, id int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

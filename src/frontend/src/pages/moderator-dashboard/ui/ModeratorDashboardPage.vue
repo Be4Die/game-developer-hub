@@ -74,6 +74,15 @@
                 <span class="badge" :class="getStatusBadgeClass(req.status)">
                   {{ getStatusText(req.status) }}
                 </span>
+                <span
+                  class="mode-badge"
+                  :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
+                  :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                >
+                  <Globe v-if="req.snapshot.isOnline" class="icon-xxs" />
+                  <Gamepad2 v-else class="icon-xxs" />
+                  <span>{{ req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                </span>
               </div>
               <span class="request-time">{{ formatDateTime(req.submittedAt) }}</span>
             </div>
@@ -131,6 +140,15 @@
             <div class="request-header">
               <div class="title-with-badge">
                 <span class="badge badge-info">В проверке</span>
+                <span
+                  class="mode-badge"
+                  :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
+                  :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                >
+                  <Globe v-if="req.snapshot.isOnline" class="icon-xxs" />
+                  <Gamepad2 v-else class="icon-xxs" />
+                  <span>{{ req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                </span>
               </div>
               <span class="request-time">{{ formatDateTime(req.submittedAt) }}</span>
             </div>
@@ -179,6 +197,8 @@ import {
   CheckCircle2,
   RefreshCw,
   ListOrdered,
+  Globe,
+  Gamepad2,
 } from 'lucide-vue-next';
 import {
   moderationStore,
@@ -393,6 +413,35 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.mode-badge.mode-online {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.mode-badge.mode-offline {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.icon-xxs {
+  width: 12px;
+  height: 12px;
 }
 
 .request-id {

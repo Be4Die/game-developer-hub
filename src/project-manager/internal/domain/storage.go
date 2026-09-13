@@ -22,6 +22,12 @@ type MediaStorage interface {
 	SnapshotMediaForRelease(ctx context.Context, projectID int64, version string, srcPath string, mediaType string) (filePath string, err error)
 }
 
+// CSPManifest определяет структуру манифеста сетевой безопасности игры для доставки на площадку.
+type CSPManifest struct {
+	IsOnline   bool     `json:"is_online"`
+	ConnectSrc []string `json:"connect_src"`
+}
+
 // Deployer управляет жизненным циклом распаковки и публикации сборок веб-игр в целевые окружения.
 type Deployer interface {
 	DeployDev(ctx context.Context, projectID int64, version string, archivePath string) (*DeploymentResult, error)
@@ -29,4 +35,5 @@ type Deployer interface {
 	UndeployProd(ctx context.Context, projectID int64) error
 	DeleteVersion(ctx context.Context, projectID int64, version string) error
 	DeleteProject(ctx context.Context, projectID int64) error
+	UpdateCSP(ctx context.Context, projectID int64, env string, isOnline bool, allowedHosts []string) error
 }

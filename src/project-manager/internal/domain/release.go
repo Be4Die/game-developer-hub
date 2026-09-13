@@ -18,6 +18,7 @@ type Release struct {
 	CoverPath   string
 	VideoPath   string
 	ProdURL     string
+	IsOnline    bool
 	IsActive    bool
 	PublishedBy string
 	PublishedAt time.Time
