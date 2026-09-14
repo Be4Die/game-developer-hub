@@ -27,6 +27,7 @@ type NodeService struct {
 	nodeClient    domain.NodeClient
 	serviceRepo   domain.ManagedServiceRepo
 	backupRepo    domain.BackupRepo
+	platformRepo  domain.PlatformAccessRepo
 }
 
 // NewNodeService создаёт сервис управления нодами.
@@ -57,6 +58,12 @@ func (s *NodeService) WithServiceRepo(r domain.ManagedServiceRepo) *NodeService 
 // WithBackupRepo задает репозиторий бэкапов.
 func (s *NodeService) WithBackupRepo(r domain.BackupRepo) *NodeService {
 	s.backupRepo = r
+	return s
+}
+
+// WithPlatformAccessRepo задает репозиторий заявок на платформенные ноды.
+func (s *NodeService) WithPlatformAccessRepo(r domain.PlatformAccessRepo) *NodeService {
+	s.platformRepo = r
 	return s
 }
 
@@ -197,15 +204,29 @@ func (s *NodeService) authorizeNode(ctx context.Context, ownerID string, nodeID 
 }
 
 // ListNodes возвращает ноды пользователя с обогащением из KV.
-func (s *NodeService) ListNodes(ctx context.Context, ownerID string, status *domain.NodeStatus) ([]*EnrichedNode, error) {
+// Если указан gameID и проекту одобрен доступ к платформенным серверам, возвращаются также платформенные ноды.
+func (s *NodeService) ListNodes(ctx context.Context, ownerID string, status *domain.NodeStatus, gameID *int64) ([]*EnrichedNode, error) {
 	nodes, err := s.nodeRepo.List(ctx, status)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.ListNodes: %w", err)
 	}
+
+	hasPlatformAccess := false
+	if gameID != nil && s.platformRepo != nil {
+		hasAccess, _, err := s.platformRepo.HasApprovedAccess(ctx, *gameID)
+		if err == nil && hasAccess {
+			hasPlatformAccess = true
+		}
+	}
+
 	result := make([]*EnrichedNode, 0, len(nodes))
 	for _, n := range nodes {
-		if ownerID != "" && n.OwnerID != "" && n.OwnerID != ownerID {
-			continue
+		if ownerID != "" {
+			isOwner := (n.OwnerID == "" || n.OwnerID == ownerID)
+			isAllowedPlatform := hasPlatformAccess && n.IsPlatform
+			if !isOwner && !isAllowedPlatform {
+				continue
+			}
 		}
 
 		enriched := &EnrichedNode{Node: n}
@@ -226,13 +247,13 @@ func (s *NodeService) ListNodes(ctx context.Context, ownerID string, status *dom
 	return result, nil
 }
 
-// GetNode возвращает ноду с обогащением из KV. Проверяет владение.
+// GetNode возвращает ноду с обогащением из KV. Проверяет владение (или доступ к платформенной ноде).
 func (s *NodeService) GetNode(ctx context.Context, ownerID string, nodeID int64) (*EnrichedNode, error) {
 	node, err := s.nodeRepo.GetByID(ctx, nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.GetNode: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID && !node.IsPlatform {
 		return nil, domain.ErrForbidden
 	}
 
@@ -249,6 +270,20 @@ func (s *NodeService) GetNode(ctx context.Context, ownerID string, nodeID int64)
 	}
 
 	return enriched, nil
+}
+
+// UpdatePlatformStatus обновляет признак платформенной ноды (пул платформы).
+func (s *NodeService) UpdatePlatformStatus(ctx context.Context, nodeID int64, isPlatform bool) (*EnrichedNode, error) {
+	node, err := s.nodeRepo.GetByID(ctx, nodeID)
+	if err != nil {
+		return nil, fmt.Errorf("NodeService.UpdatePlatformStatus: get node: %w", err)
+	}
+
+	if err := s.nodeRepo.UpdatePlatformStatus(ctx, nodeID, isPlatform); err != nil {
+		return nil, fmt.Errorf("NodeService.UpdatePlatformStatus: update: %w", err)
+	}
+	node.IsPlatform = isPlatform
+	return &EnrichedNode{Node: node}, nil
 }
 
 // DeleteNode удаляет ноду из оркестратора. Проверяет владение.

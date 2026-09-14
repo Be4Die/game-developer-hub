@@ -248,7 +248,7 @@
             <select v-model="draft.node_preference">
               <option value="auto">Авто (наименее загруженная)</option>
               <option v-for="n in onlineNodeList" :key="n.id" :value="n.id">
-                {{ n.address }} ({{ n.id }})
+                {{ n.is_platform ? '⭐ [Платформа] ' : '' }}{{ n.address }} ({{ n.id }})
               </option>
             </select>
           </label>

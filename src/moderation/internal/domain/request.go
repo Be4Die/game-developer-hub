@@ -16,6 +16,15 @@ const (
 	RequestStatusCancelled   RequestStatus = 5 // Отозвано разработчиком
 )
 
+// RequestType тип заявки на модерацию.
+type RequestType int16
+
+const (
+	RequestTypeUnspecified        RequestType = 0
+	RequestTypeProjectPublication RequestType = 1 // Публикация проекта
+	RequestTypeServerAccess       RequestType = 2 // Доступ к серверам платформы
+)
+
 // ProjectSnapshot фиксирует неизменяемый снимок данных черновика на момент отправки на модерацию.
 type ProjectSnapshot struct {
 	ProjectID          int64  `json:"project_id"`
@@ -40,11 +49,19 @@ type ModerationRequest struct {
 	OwnerID         string
 	ModeratorID     string
 	Status          RequestStatus
+	Type            RequestType
 	Snapshot        ProjectSnapshot
-	RejectionReason string
-	SubmittedAt     time.Time
-	StartedReviewAt *time.Time
-	ResolvedAt      *time.Time
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	Reason          string
+	MaxInstances         int32
+	MaxTotalCPUMillis    uint32
+	MaxTotalMemoryMB     uint64
+	MaxInstanceCPUMillis uint32
+	MaxInstanceMemoryMB  uint64
+	ModeratorComment     string
+	RejectionReason      string
+	SubmittedAt          time.Time
+	StartedReviewAt      *time.Time
+	ResolvedAt           *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 }

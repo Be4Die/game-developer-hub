@@ -111,6 +111,7 @@ func nodeToProto(n *domain.Node) *pb.Node {
 		BackupsEnabled:   n.BackupsEnabled,
 		IngressMode:      ingressModeToProto(n.IngressMode),
 		CustomDomain:     n.CustomDomain,
+		IsPlatform:       n.IsPlatform,
 	}
 }
 
@@ -572,8 +573,28 @@ func domainError(err error, action string) error {
 		return status.Error(codes.ResourceExhausted, action+": "+err.Error())
 	case errors.Is(err, domain.ErrForbidden):
 		return status.Error(codes.PermissionDenied, action+": forbidden")
+	case errors.Is(err, domain.ErrPlatformAccessRequired):
+		return status.Error(codes.PermissionDenied, action+": platform access required for this project")
+	case errors.Is(err, domain.ErrPlatformQuotaExceeded):
+		return status.Error(codes.ResourceExhausted, action+": platform server instance quota exceeded")
 	default:
 		return status.Error(codes.Internal, action+": "+err.Error())
+	}
+}
+
+func platformGrantToProto(g *domain.PlatformGrant) *pb.PlatformGrant {
+	if g == nil {
+		return nil
+	}
+	return &pb.PlatformGrant{
+		GameId:               g.GameID,
+		MaxInstances:         g.MaxInstances,
+		IsActive:             g.IsActive,
+		UpdatedAt:            timestamppb.New(g.UpdatedAt),
+		MaxTotalCpuMillis:    g.MaxTotalCPUMillis,
+		MaxTotalMemoryMb:     g.MaxTotalMemoryMB,
+		MaxInstanceCpuMillis: g.MaxInstanceCPUMillis,
+		MaxInstanceMemoryMb:  g.MaxInstanceMemoryMB,
 	}
 }
 

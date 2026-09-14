@@ -149,6 +149,14 @@ export const routes = [
     meta: { requiresAuth: true, requiresStaff: true },
   },
   {
+    path: '/moderator/platform-servers',
+    redirect: '/moderator/queue?type=server',
+  },
+  {
+    path: '/admin/platform-servers',
+    redirect: '/moderator/queue?type=server',
+  },
+  {
     path: '/moderator/archive',
     redirect: '/moderator/journal',
   },

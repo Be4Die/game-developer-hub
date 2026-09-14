@@ -288,6 +288,8 @@ func (s *Seeder) seedNodes(ctx context.Context) error {
 			APIToken:     seedToken,
 			Region:       "seed-region",
 			Status:       domain.NodeStatusOnline,
+			IsPlatform:   i <= 2,
+			OwnerID:      "",
 			CPUCores:     uint32(4 + (i%4)*2),        // 4-10 cores
 			TotalMemory:  uint64(8+(i%3)*8) << 30,    // 8-24 GB
 			TotalDisk:    uint64(100+(i%5)*50) << 30, // 100-300 GB
@@ -296,13 +298,26 @@ func (s *Seeder) seedNodes(ctx context.Context) error {
 			CreatedAt:    now,
 			UpdatedAt:    now,
 		}
+		if i <= 2 {
+			node.OwnerID = "admin"
+		}
 
 		if err := repo.Create(ctx, node); err != nil {
 			return err
 		}
 	}
+	platformRepo := postgres.NewPlatformAccessRepo(s.pgPool)
+	_, _ = platformRepo.SaveGrant(ctx, &domain.PlatformGrant{
+		GameID:               1,
+		MaxInstances:         3,
+		MaxTotalCPUMillis:    4000,
+		MaxTotalMemoryMB:     8192,
+		MaxInstanceCPUMillis: 2000,
+		MaxInstanceMemoryMB:  4096,
+		IsActive:             true,
+	})
 
-	s.log("    [OK] Создано нод: %d", s.cfg.Nodes)
+	s.log("    [OK] Создано нод: %d (из них 2 платформенные), 1 платформенный грант", s.cfg.Nodes)
 	return nil
 }
 

@@ -15,6 +15,7 @@ type Node struct {
 	BackupsEnabled bool        // роль ноды: mixed, compute, storage
 	IngressMode    IngressMode // сетевой режим: platform_proxy или direct
 	CustomDomain   string      // собственный домен ноды (для direct режима)
+	IsPlatform     bool        // флаг платформенной ноды (общий пул серверов)
 	CPUCores     uint32    // получено из NodeInfo
 	TotalMemory  uint64    // получено из NodeInfo
 	TotalDisk    uint64    // получено из NodeInfo

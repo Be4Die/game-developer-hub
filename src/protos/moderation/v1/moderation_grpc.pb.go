@@ -27,6 +27,9 @@ const (
 	ModerationService_ClaimRequest_FullMethodName              = "/moderation.v1.ModerationService/ClaimRequest"
 	ModerationService_Approve_FullMethodName                   = "/moderation.v1.ModerationService/Approve"
 	ModerationService_Reject_FullMethodName                    = "/moderation.v1.ModerationService/Reject"
+	ModerationService_SubmitServerAccess_FullMethodName        = "/moderation.v1.ModerationService/SubmitServerAccess"
+	ModerationService_GetServerAccess_FullMethodName           = "/moderation.v1.ModerationService/GetServerAccess"
+	ModerationService_ReviewServerAccess_FullMethodName        = "/moderation.v1.ModerationService/ReviewServerAccess"
 	ModerationService_SendMessage_FullMethodName               = "/moderation.v1.ModerationService/SendMessage"
 	ModerationService_ListMessages_FullMethodName              = "/moderation.v1.ModerationService/ListMessages"
 	ModerationService_ListActiveChats_FullMethodName           = "/moderation.v1.ModerationService/ListActiveChats"
@@ -51,6 +54,9 @@ type ModerationServiceClient interface {
 	ClaimRequest(ctx context.Context, in *ClaimModerationRequestRequest, opts ...grpc.CallOption) (*ClaimModerationRequestResponse, error)
 	Approve(ctx context.Context, in *ApproveModerationRequest, opts ...grpc.CallOption) (*ApproveModerationResponse, error)
 	Reject(ctx context.Context, in *RejectModerationRequest, opts ...grpc.CallOption) (*RejectModerationResponse, error)
+	SubmitServerAccess(ctx context.Context, in *SubmitServerAccessRequest, opts ...grpc.CallOption) (*SubmitServerAccessResponse, error)
+	GetServerAccess(ctx context.Context, in *GetServerAccessRequest, opts ...grpc.CallOption) (*GetServerAccessResponse, error)
+	ReviewServerAccess(ctx context.Context, in *ReviewServerAccessRequest, opts ...grpc.CallOption) (*ReviewServerAccessResponse, error)
 	SendMessage(ctx context.Context, in *SendChatMessageRequest, opts ...grpc.CallOption) (*SendChatMessageResponse, error)
 	ListMessages(ctx context.Context, in *ListChatMessagesRequest, opts ...grpc.CallOption) (*ListChatMessagesResponse, error)
 	ListActiveChats(ctx context.Context, in *ListActiveChatsRequest, opts ...grpc.CallOption) (*ListActiveChatsResponse, error)
@@ -145,6 +151,36 @@ func (c *moderationServiceClient) Reject(ctx context.Context, in *RejectModerati
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RejectModerationResponse)
 	err := c.cc.Invoke(ctx, ModerationService_Reject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) SubmitServerAccess(ctx context.Context, in *SubmitServerAccessRequest, opts ...grpc.CallOption) (*SubmitServerAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitServerAccessResponse)
+	err := c.cc.Invoke(ctx, ModerationService_SubmitServerAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) GetServerAccess(ctx context.Context, in *GetServerAccessRequest, opts ...grpc.CallOption) (*GetServerAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetServerAccessResponse)
+	err := c.cc.Invoke(ctx, ModerationService_GetServerAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *moderationServiceClient) ReviewServerAccess(ctx context.Context, in *ReviewServerAccessRequest, opts ...grpc.CallOption) (*ReviewServerAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewServerAccessResponse)
+	err := c.cc.Invoke(ctx, ModerationService_ReviewServerAccess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +299,9 @@ type ModerationServiceServer interface {
 	ClaimRequest(context.Context, *ClaimModerationRequestRequest) (*ClaimModerationRequestResponse, error)
 	Approve(context.Context, *ApproveModerationRequest) (*ApproveModerationResponse, error)
 	Reject(context.Context, *RejectModerationRequest) (*RejectModerationResponse, error)
+	SubmitServerAccess(context.Context, *SubmitServerAccessRequest) (*SubmitServerAccessResponse, error)
+	GetServerAccess(context.Context, *GetServerAccessRequest) (*GetServerAccessResponse, error)
+	ReviewServerAccess(context.Context, *ReviewServerAccessRequest) (*ReviewServerAccessResponse, error)
 	SendMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error)
 	ListMessages(context.Context, *ListChatMessagesRequest) (*ListChatMessagesResponse, error)
 	ListActiveChats(context.Context, *ListActiveChatsRequest) (*ListActiveChatsResponse, error)
@@ -306,6 +345,15 @@ func (UnimplementedModerationServiceServer) Approve(context.Context, *ApproveMod
 }
 func (UnimplementedModerationServiceServer) Reject(context.Context, *RejectModerationRequest) (*RejectModerationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Reject not implemented")
+}
+func (UnimplementedModerationServiceServer) SubmitServerAccess(context.Context, *SubmitServerAccessRequest) (*SubmitServerAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitServerAccess not implemented")
+}
+func (UnimplementedModerationServiceServer) GetServerAccess(context.Context, *GetServerAccessRequest) (*GetServerAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetServerAccess not implemented")
+}
+func (UnimplementedModerationServiceServer) ReviewServerAccess(context.Context, *ReviewServerAccessRequest) (*ReviewServerAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReviewServerAccess not implemented")
 }
 func (UnimplementedModerationServiceServer) SendMessage(context.Context, *SendChatMessageRequest) (*SendChatMessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
@@ -498,6 +546,60 @@ func _ModerationService_Reject_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModerationServiceServer).Reject(ctx, req.(*RejectModerationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_SubmitServerAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitServerAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).SubmitServerAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_SubmitServerAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).SubmitServerAccess(ctx, req.(*SubmitServerAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_GetServerAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetServerAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).GetServerAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_GetServerAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).GetServerAccess(ctx, req.(*GetServerAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModerationService_ReviewServerAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewServerAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModerationServiceServer).ReviewServerAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModerationService_ReviewServerAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModerationServiceServer).ReviewServerAccess(ctx, req.(*ReviewServerAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -720,6 +822,18 @@ var ModerationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Reject",
 			Handler:    _ModerationService_Reject_Handler,
+		},
+		{
+			MethodName: "SubmitServerAccess",
+			Handler:    _ModerationService_SubmitServerAccess_Handler,
+		},
+		{
+			MethodName: "GetServerAccess",
+			Handler:    _ModerationService_GetServerAccess_Handler,
+		},
+		{
+			MethodName: "ReviewServerAccess",
+			Handler:    _ModerationService_ReviewServerAccess_Handler,
 		},
 		{
 			MethodName: "SendMessage",

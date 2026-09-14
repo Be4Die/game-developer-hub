@@ -7,7 +7,7 @@ import {
   ingressModeToProto,
 } from '../model/nodeModel';
 
-export function listNodes(status) {
+export function listNodes(status, gameId = null) {
   const params = {};
   if (status && status !== 'all') {
     const statusMap = {
@@ -18,8 +18,12 @@ export function listNodes(status) {
     };
     params.status = statusMap[status] || status;
   }
+  if (gameId) {
+    params.game_id = gameId;
+  }
   return http.get('/nodes', { params }).then((r) => (r.data.nodes ?? []).map(normalizeNode));
 }
+
 
 export function getNode(nodeId) {
   return http.get(`/nodes/${nodeId}`).then((r) => normalizeNode(r.data.node || r.data));
@@ -227,3 +231,57 @@ export function toggleServiceAutoBackup(nodeId, serviceName, enabled) {
     .put(`/nodes/${nodeId}/services/${serviceName}/auto-backup/toggle`, { enabled })
     .then((r) => normalizeService(r.data.service || r.data));
 }
+
+// ─── Platform Nodes & Access Requests ─────────────────────────────────────
+
+export function updateNodePlatform(nodeId, isPlatform) {
+  return http
+    .patch(`/nodes/${nodeId}/platform`, { is_platform: isPlatform })
+    .then((r) => normalizeNode(r.data.node || r.data));
+}
+
+export function getPlatformAccess(gameId) {
+  return http
+    .get(`/projects/${gameId}/platform-access`)
+    .then((r) => r.data.request || null)
+    .catch((err) => {
+      if (err.response && (err.response.status === 404 || err.response.status === 400)) {
+        return null;
+      }
+      throw err;
+    });
+}
+
+export function createPlatformAccess(gameId, reason) {
+  return http
+    .post(`/projects/${gameId}/platform-access`, { reason })
+    .then((r) => r.data.request);
+}
+
+export function listPlatformAccessRequests(status = null) {
+  const params = {};
+  if (status && status !== 'all') {
+    const statusToProto = {
+      pending: 'PLATFORM_ACCESS_STATUS_PENDING',
+      approved: 'PLATFORM_ACCESS_STATUS_APPROVED',
+      rejected: 'PLATFORM_ACCESS_STATUS_REJECTED',
+    };
+    params.status = statusToProto[status] || status;
+  }
+  return http
+    .get('/platform-access/requests', { params })
+    .then((r) => r.data.requests ?? []);
+}
+
+export function reviewPlatformAccess(requestId, { approved, rejection_reason = '', max_instances = 5, status, reviewer_comment }) {
+  const finalStatus = status || (approved ? 'PLATFORM_ACCESS_STATUS_APPROVED' : 'PLATFORM_ACCESS_STATUS_REJECTED');
+  const finalComment = reviewer_comment ?? rejection_reason ?? '';
+  return http
+    .post(`/platform-access/requests/${requestId}/review`, {
+      status: finalStatus,
+      reviewer_comment: finalComment,
+      max_instances: Number(max_instances),
+    })
+    .then((r) => r.data.request);
+}
+

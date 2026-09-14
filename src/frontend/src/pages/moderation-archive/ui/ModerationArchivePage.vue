@@ -38,6 +38,19 @@
           </div>
         </div>
 
+        <!-- Фильтр по типу заявки -->
+        <div class="filter-field field-type">
+          <label class="field-label">{{ t('common.type') || 'Тип' }}</label>
+          <div class="select-wrapper">
+            <select v-model="typeFilter" class="filter-select">
+              <option value="all">Все типы</option>
+              <option value="publication">Публикация</option>
+              <option value="server_access">Серверы</option>
+            </select>
+            <ChevronDown class="icon-xs select-arrow" />
+          </div>
+        </div>
+
         <!-- Фильтр по сетевому режиму -->
         <div class="filter-field field-mode">
           <label class="field-label">{{ t('projects.mode') }}</label>
@@ -66,7 +79,7 @@
 
         <!-- Кнопка сброса фильтров -->
         <button
-          v-if="searchQuery || statusFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
+          v-if="searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
           class="btn-reset-filters"
           title="Сбросить фильтры"
           @click="resetFilters"
@@ -154,11 +167,15 @@
                     <div class="game-title-row">
                       <span
                         class="game-title"
-                        :title="req.snapshot.titleRu || req.snapshot.titleEn || '—'"
+                        :title="req.snapshot.titleRu || req.snapshot.titleEn || (req.type === 2 ? `Проект #${req.projectId}` : '—')"
                       >
-                        {{ req.snapshot.titleRu || req.snapshot.titleEn || '—' }}
+                        {{ req.snapshot.titleRu || req.snapshot.titleEn || (req.type === 2 ? `Проект #${req.projectId}` : '—') }}
+                      </span>
+                      <span class="req-type-badge" :class="getTypeBadgeClass(req.type)">
+                        {{ getTypeText(req.type) }}
                       </span>
                       <span
+                        v-if="req.type !== 2"
                         class="mode-badge"
                         :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
                         :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
@@ -172,9 +189,16 @@
                 </div>
               </td>
 
-              <!-- 2 колонка: Версия сборки -->
+              <!-- 2 колонка: Версия сборки / Квота -->
               <td class="col-version">
-                <span v-if="req.snapshot.activeBuildVersion" class="version-badge">
+                <span
+                  v-if="req.type === 2"
+                  class="server-quota-tag"
+                  :title="`Лимит: ${req.maxInstances || 2} инст., CPU: ${formatCpu(req.maxTotalCpuMillis, true)}, RAM: ${formatMemory(req.maxTotalMemoryMb, true)}`"
+                >
+                  {{ req.maxInstances ? `${req.maxInstances} инст.` : 'Серверы' }}
+                </span>
+                <span v-else-if="req.snapshot.activeBuildVersion" class="version-badge">
                   v{{ req.snapshot.activeBuildVersion }}
                 </span>
                 <span v-else class="text-muted text-sm">—</span>
@@ -207,9 +231,15 @@
 
               <!-- 6 колонка: Причина / Замечания -->
               <td class="col-reason">
-                <div class="reason-cell" :title="req.rejectionReason || 'Без замечаний'">
-                  <span v-if="req.rejectionReason" class="reason-text">
+                <div class="reason-cell" :title="req.rejectionReason || req.moderatorComment || req.reason || 'Без замечаний'">
+                  <span v-if="req.rejectionReason" class="reason-text text-danger">
                     {{ req.rejectionReason }}
+                  </span>
+                  <span v-else-if="req.moderatorComment" class="comment-text">
+                    {{ req.moderatorComment }}
+                  </span>
+                  <span v-else-if="req.reason" class="reason-text">
+                    {{ req.reason }}
                   </span>
                   <span v-else class="text-muted text-sm">—</span>
                 </div>
@@ -326,6 +356,11 @@ import {
   normalizeRequest,
   formatDateTime,
   REQUEST_STATUS,
+  REQUEST_TYPE,
+  getTypeText,
+  getTypeBadgeClass,
+  formatCpu,
+  formatMemory,
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { getUserDisplayName } from '@/entities/user';
@@ -339,6 +374,7 @@ const loading = ref(true);
 
 const searchQuery = ref('');
 const statusFilter = ref('all');
+const typeFilter = ref('all');
 const modeFilter = ref('all');
 const sortBy = ref('newest');
 const currentPage = ref(1);
@@ -380,6 +416,7 @@ onMounted(loadArchive);
 function resetFilters() {
   searchQuery.value = '';
   statusFilter.value = 'all';
+  typeFilter.value = 'all';
   modeFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
@@ -395,6 +432,14 @@ const filteredRequests = computed(() => {
     list = list.filter((r) => isRejected(r.status));
   } else if (statusFilter.value === 'cancelled') {
     list = list.filter((r) => isCancelled(r.status));
+  }
+
+  // Фильтр по типу заявки
+  if (typeFilter.value !== 'all') {
+    list = list.filter((r) => {
+      const isServer = r.type === 2 || r.type === 'REQUEST_TYPE_SERVER_ACCESS' || r.type === REQUEST_TYPE.SERVER_ACCESS;
+      return typeFilter.value === 'server_access' ? isServer : !isServer;
+    });
   }
 
   // Фильтр по режиму сети
@@ -415,6 +460,8 @@ const filteredRequests = computed(() => {
       const owner = (r.ownerId || '').toLowerCase();
       const mod = (r.moderatorId || '').toLowerCase();
       const reason = (r.rejectionReason || '').toLowerCase();
+      const modComment = (r.moderatorComment || '').toLowerCase();
+      const devReason = (r.reason || '').toLowerCase();
       return (
         titleRu.includes(q) ||
         titleEn.includes(q) ||
@@ -422,7 +469,9 @@ const filteredRequests = computed(() => {
         reqId.includes(q) ||
         owner.includes(q) ||
         mod.includes(q) ||
-        reason.includes(q)
+        reason.includes(q) ||
+        modComment.includes(q) ||
+        devReason.includes(q)
       );
     });
   }
@@ -545,6 +594,11 @@ function openSnapshot(req) {
 
 .field-status {
   width: 180px;
+  flex-shrink: 0;
+}
+
+.field-type {
+  width: 150px;
   flex-shrink: 0;
 }
 
@@ -834,6 +888,41 @@ function openSnapshot(req) {
   color: var(--primary, #58a6ff);
 }
 
+.req-type-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.req-type-badge.badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.req-type-badge.badge-primary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.server-quota-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
 .dev-cell {
   display: inline-flex;
   align-items: center;
@@ -902,6 +991,15 @@ function openSnapshot(req) {
 .reason-text {
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
+}
+
+.reason-text.text-danger {
+  color: #f85149;
+}
+
+.comment-text {
+  font-size: 13px;
+  color: #7ee787;
 }
 
 .date-text {

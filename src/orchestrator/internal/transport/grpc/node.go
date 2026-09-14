@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -23,12 +24,17 @@ import (
 // NodeHandler реализует NodeService.
 type NodeHandler struct {
 	pb.UnimplementedNodeServiceServer
-	nodeService *service.NodeService
+	nodeService     *service.NodeService
+	platformService *service.PlatformAccessService
 }
 
 // NewNodeHandler создаёт обработчик нод.
-func NewNodeHandler(svc *service.NodeService) *NodeHandler {
-	return &NodeHandler{nodeService: svc}
+func NewNodeHandler(svc *service.NodeService, platformSvc ...*service.PlatformAccessService) *NodeHandler {
+	h := &NodeHandler{nodeService: svc}
+	if len(platformSvc) > 0 {
+		h.platformService = platformSvc[0]
+	}
+	return h
 }
 
 // Register подключает вычислительную ноду.
@@ -68,6 +74,7 @@ func (h *NodeHandler) Register(ctx context.Context, req *pb.NodeServiceRegisterR
 }
 
 // List возвращает список всех нод пользователя.
+// Если указан game_id и проект имеет доступ к серверам платформы, возвращаются также платформенные ноды.
 func (h *NodeHandler) List(ctx context.Context, req *pb.NodeServiceListRequest) (*pb.NodeServiceListResponse, error) {
 	ownerID, _ := GetUserID(ctx)
 	if isSuperuser(ctx) {
@@ -80,7 +87,13 @@ func (h *NodeHandler) List(ctx context.Context, req *pb.NodeServiceListRequest) 
 		statusFilter = &s
 	}
 
-	nodes, err := h.nodeService.ListNodes(ctx, ownerID, statusFilter)
+	var gameID *int64
+	if req.GameId != nil {
+		gid := req.GetGameId()
+		gameID = &gid
+	}
+
+	nodes, err := h.nodeService.ListNodes(ctx, ownerID, statusFilter, gameID)
 	if err != nil {
 		return nil, domainError(err, "list nodes")
 	}
@@ -637,4 +650,97 @@ func (h *NodeHandler) ToggleServiceAutoBackup(ctx context.Context, req *pb.NodeS
 		return nil, domainError(err, "toggle auto backup")
 	}
 	return &pb.NodeServiceToggleServiceAutoBackupResponse{Service: managedServiceToProto(svc)}, nil
+}
+
+func isStaff(ctx context.Context) bool {
+	role, ok := GetUserRole(ctx)
+	return ok && (role == 2 || role == 3) // Moderator (2) or Admin (3)
+}
+
+// UpdatePlatformStatus переключает флаг платформенной ноды (только для Администратора).
+func (h *NodeHandler) UpdatePlatformStatus(ctx context.Context, req *pb.NodeServiceUpdatePlatformStatusRequest) (*pb.NodeServiceUpdatePlatformStatusResponse, error) {
+	if !isSuperuser(ctx) {
+		return nil, status.Error(codes.PermissionDenied, "admin privilege required")
+	}
+
+	node, err := h.nodeService.UpdatePlatformStatus(ctx, req.GetNodeId(), req.GetIsPlatform())
+	if err != nil {
+		return nil, domainError(err, "update platform status")
+	}
+
+	return &pb.NodeServiceUpdatePlatformStatusResponse{Node: enrichedNodeToProto(node)}, nil
+}
+
+// GrantPlatformAccess выдает квоту доступа к платформенным мощностям для игры.
+func (h *NodeHandler) GrantPlatformAccess(ctx context.Context, req *pb.GrantPlatformAccessRequest) (*pb.GrantPlatformAccessResponse, error) {
+	if !isStaff(ctx) {
+		return nil, status.Error(codes.PermissionDenied, "moderator or admin privilege required")
+	}
+
+	if h.platformService == nil {
+		return nil, status.Error(codes.Unavailable, "platform service not initialized")
+	}
+
+	grant, err := h.platformService.GrantAccess(
+		ctx,
+		req.GetProjectId(),
+		req.GetMaxInstances(),
+		req.GetMaxTotalCpuMillis(),
+		req.GetMaxTotalMemoryMb(),
+		req.GetMaxInstanceCpuMillis(),
+		req.GetMaxInstanceMemoryMb(),
+	)
+	if err != nil {
+		return nil, domainError(err, "grant platform access")
+	}
+
+	return &pb.GrantPlatformAccessResponse{
+		Success: true,
+		Grant:   platformGrantToProto(grant),
+	}, nil
+}
+
+// RevokePlatformAccess отзывает доступ к платформенным серверам для игры.
+func (h *NodeHandler) RevokePlatformAccess(ctx context.Context, req *pb.RevokePlatformAccessRequest) (*pb.RevokePlatformAccessResponse, error) {
+	if !isStaff(ctx) {
+		return nil, status.Error(codes.PermissionDenied, "moderator or admin privilege required")
+	}
+
+	if h.platformService == nil {
+		return nil, status.Error(codes.Unavailable, "platform service not initialized")
+	}
+
+	if err := h.platformService.RevokeAccess(ctx, req.GetProjectId()); err != nil {
+		return nil, domainError(err, "revoke platform access")
+	}
+
+	return &pb.RevokePlatformAccessResponse{
+		Success: true,
+	}, nil
+}
+
+// GetPlatformGrant возвращает статус квоты платформенных мощностей проекта.
+func (h *NodeHandler) GetPlatformGrant(ctx context.Context, req *pb.GetPlatformGrantRequest) (*pb.GetPlatformGrantResponse, error) {
+	if h.platformService == nil {
+		return nil, status.Error(codes.Unavailable, "platform service not initialized")
+	}
+
+	grant, activeCount, err := h.platformService.GetGrant(ctx, req.GetProjectId())
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return &pb.GetPlatformGrantResponse{
+				HasAccess:       false,
+				MaxInstances:    0,
+				ActiveInstances: 0,
+			}, nil
+		}
+		return nil, domainError(err, "get platform grant")
+	}
+
+	return &pb.GetPlatformGrantResponse{
+		HasAccess:       grant.IsActive,
+		MaxInstances:    grant.MaxInstances,
+		ActiveInstances: activeCount,
+		Grant:           platformGrantToProto(grant),
+	}, nil
 }

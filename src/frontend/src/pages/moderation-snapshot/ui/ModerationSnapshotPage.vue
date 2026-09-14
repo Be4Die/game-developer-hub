@@ -37,6 +37,9 @@
                 <div class="identity-top-row">
                   <div class="identity-tags-group">
                     <span class="project-id-tag">Проект #{{ projectId }}</span>
+                    <span class="req-type-badge" :class="isServerAccess ? 'badge-warning' : 'badge-primary'">
+                      {{ isServerAccess ? 'Серверы платформы' : 'Публикация' }}
+                    </span>
                     <span class="status-badge" :class="statusBadgeClass">
                       {{ statusText }}
                     </span>
@@ -107,6 +110,62 @@
                 <span class="meta-value" :title="verdictData.moderator_id">
                   {{ verdictData.moderator_id ? getUserDisplayName(verdictData.moderator_id) : '—' }}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Карточка решения по серверам платформы -->
+          <div v-if="isServerAccess" class="card section-card server-access-card">
+            <div class="section-head">
+              <div class="head-title-row">
+                <Server class="icon-sm text-primary" />
+                <h3>Решение по доступу к серверам платформы</h3>
+              </div>
+              <span class="status-badge" :class="statusBadgeClass">
+                {{ statusText }}
+              </span>
+            </div>
+
+            <!-- Запрошенная разработчиком цель -->
+            <div class="server-purpose-block">
+              <label class="data-label">Цель использования / Запрос разработчика</label>
+              <div class="purpose-quote">
+                {{ verdictData.reason || 'Запрос мощностей платформы для игровых серверов' }}
+              </div>
+            </div>
+
+            <!-- Утверждённая квота ресурсов -->
+            <div class="server-quota-section">
+              <label class="data-label">Параметры квоты ресурсов</label>
+              <div class="quota-grid">
+                <div class="quota-pill">
+                  <span class="quota-label">Лимит серверов:</span>
+                  <span class="quota-val highlight">{{ verdictData.max_instances || '—' }} инст.</span>
+                </div>
+                <div class="quota-pill">
+                  <span class="quota-label">Всего CPU на проект:</span>
+                  <span class="quota-val">{{ formatCpu(verdictData.max_total_cpu_millis) }}</span>
+                </div>
+                <div class="quota-pill">
+                  <span class="quota-label">Всего RAM на проект:</span>
+                  <span class="quota-val">{{ formatMemory(verdictData.max_total_memory_mb) }}</span>
+                </div>
+                <div class="quota-pill">
+                  <span class="quota-label">На инстанс CPU:</span>
+                  <span class="quota-val">{{ formatCpu(verdictData.max_instance_cpu_millis) }}</span>
+                </div>
+                <div class="quota-pill">
+                  <span class="quota-label">На инстанс RAM:</span>
+                  <span class="quota-val">{{ formatMemory(verdictData.max_instance_memory_mb) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Комментарий модератора или причина отклонения -->
+            <div v-if="verdictData.comment || verdictData.rejection_reason" class="mod-verdict-comment">
+              <label class="data-label">{{ isApproved ? 'Комментарий модератора' : 'Причина отклонения' }}</label>
+              <div class="comment-box" :class="isApproved ? 'comment-approved' : 'comment-rejected'">
+                {{ verdictData.comment || verdictData.rejection_reason }}
               </div>
             </div>
           </div>
@@ -415,6 +474,7 @@ import {
   AlertTriangle,
   Gamepad2,
   Globe,
+  Server,
   MessageSquare,
   MessageSquareDashed,
   Paperclip,
@@ -426,6 +486,8 @@ import {
   getStatusText,
   getStatusBadgeClass,
   formatDateTime,
+  formatCpu,
+  formatMemory,
 } from '@/entities/moderation';
 import { getUserDisplayName } from '@/entities/user';
 import { getMediaUrl } from '@/entities/project';
@@ -446,6 +508,11 @@ const mediaData = ref({});
 const verdictData = ref({});
 const chatMessages = ref([]);
 const lightboxData = ref(null);
+
+const isServerAccess = computed(() => {
+  const t = verdictData.value.request_type;
+  return t === 2 || t === 'REQUEST_TYPE_SERVER_ACCESS' || Number(verdictData.value.max_instances) > 0;
+});
 
 const projectId = computed(() => {
   return projectData.value.id || snapshotMeta.value.projectId || snapshotMeta.value.project_id || '';
@@ -575,7 +642,9 @@ const effectiveChatMessages = computed(() => {
       is_system: true,
       sender_id: 'system',
       sender_role: 3,
-      content: 'Проект одобрен и опубликован в основном каталоге платформы',
+      content: isServerAccess.value
+        ? `Доступ к серверам платформы одобрен (квота: ${verdictData.value.max_instances || 2} серверов)`
+        : 'Проект одобрен и опубликован в основном каталоге платформы',
       created_at: verdictData.value.resolved_at || snapshotMeta.value.created_at,
       payload: {
         comment: verdictData.value.comment,
@@ -918,6 +987,113 @@ onMounted(() => {
   color: #94a3b8;
   background: rgba(148, 163, 184, 0.1);
   border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.req-type-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.req-type-badge.badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.req-type-badge.badge-primary {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.server-access-card {
+  border-left: 4px solid var(--primary, #58a6ff);
+}
+
+.head-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.server-purpose-block {
+  margin-bottom: 16px;
+}
+
+.purpose-quote {
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-left: 3px solid var(--primary, #58a6ff);
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px 14px;
+  color: var(--text-main, #f0f6fc);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.server-quota-section {
+  margin-bottom: 16px;
+}
+
+.quota-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.quota-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  font-size: 13px;
+}
+
+.quota-label {
+  color: var(--text-tertiary, #8b949e);
+}
+
+.quota-val {
+  color: var(--text-main, #f0f6fc);
+  font-weight: 600;
+}
+
+.quota-val.highlight {
+  color: #38bdf8;
+}
+
+.mod-verdict-comment {
+  margin-top: 12px;
+}
+
+.comment-box {
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.comment-box.comment-approved {
+  background: rgba(46, 160, 67, 0.1);
+  border: 1px solid rgba(46, 160, 67, 0.3);
+  color: #7ee787;
+}
+
+.comment-box.comment-rejected {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #fca5a5;
 }
 
 .icon-xxs {

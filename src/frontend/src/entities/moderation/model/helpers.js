@@ -1,5 +1,5 @@
 import { i18n } from '@/shared/lib';
-import { REQUEST_STATUS, REQUEST_STATUS_LABELS, REQUEST_STATUS_BADGES } from './constants';
+import { REQUEST_STATUS, REQUEST_STATUS_LABELS, REQUEST_STATUS_BADGES, REQUEST_TYPE, REQUEST_TYPE_LABELS, REQUEST_TYPE_BADGES } from './constants';
 
 export function getStatusText(status) {
   const t = i18n.global.t;
@@ -140,6 +140,14 @@ export function normalizeRequest(req) {
     ownerId: req.owner_id || req.ownerId,
     moderatorId: req.moderator_id || req.moderatorId,
     status: req.status,
+    type: req.type ?? 1,
+    reason: req.reason || '',
+    maxInstances: req.max_instances ?? req.maxInstances ?? 0,
+    maxTotalCpuMillis: req.max_total_cpu_millis ?? req.maxTotalCpuMillis ?? 0,
+    maxTotalMemoryMb: req.max_total_memory_mb ?? req.maxTotalMemoryMb ?? 0,
+    maxInstanceCpuMillis: req.max_instance_cpu_millis ?? req.maxInstanceCpuMillis ?? 0,
+    maxInstanceMemoryMb: req.max_instance_memory_mb ?? req.maxInstanceMemoryMb ?? 0,
+    moderatorComment: req.moderator_comment || req.moderatorComment || '',
     rejectionReason: req.rejection_reason || req.rejectionReason || '',
     submittedAt: req.submitted_at || req.submittedAt,
     reviewedAt: req.reviewed_at || req.reviewedAt,
@@ -162,6 +170,34 @@ export function normalizeRequest(req) {
       isOnline: Boolean(snapshot.is_online ?? snapshot.isOnline),
     },
   };
+}
+
+export function formatCpu(millis, compact = false) {
+  if (!millis || millis <= 0) return compact ? 'не огр.' : 'Без ограничений';
+  const cores = millis / 1000;
+  return `${cores % 1 === 0 ? cores : cores.toFixed(1)} CPU`;
+}
+
+export function formatMemory(mb, compact = false) {
+  if (!mb || mb <= 0) return compact ? 'не огр.' : 'Без ограничений';
+  if (mb >= 1024 && mb % 1024 === 0) {
+    return `${mb / 1024} ГБ RAM`;
+  }
+  return `${mb} МБ RAM`;
+}
+
+export function getTypeText(type) {
+  if (type === REQUEST_TYPE.SERVER_ACCESS || type === 'REQUEST_TYPE_SERVER_ACCESS' || type === 2) {
+    return 'Серверы';
+  }
+  return 'Публикация';
+}
+
+export function getTypeBadgeClass(type) {
+  if (type === REQUEST_TYPE.SERVER_ACCESS || type === 'REQUEST_TYPE_SERVER_ACCESS' || type === 2) {
+    return 'badge-warning';
+  }
+  return 'badge-primary';
 }
 
 export function formatDurationSeconds(sec) {

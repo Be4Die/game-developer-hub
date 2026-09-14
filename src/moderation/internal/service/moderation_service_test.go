@@ -564,3 +564,105 @@ func TestUnit_ModerationService_Snapshot(t *testing.T) {
 	}
 }
 
+func TestUnit_ModerationService_ServerAccessSnapshot(t *testing.T) {
+	ctx := context.Background()
+	reqRepo := newMockRequestRepo()
+	msgRepo := newMockMessageRepo()
+	snapRepo := newMockSnapshotRepo()
+
+	svc := NewModerationService(reqRepo, msgRepo, nil, nil, snapRepo)
+
+	// 1. Подаем заявку на серверы
+	req, err := svc.SubmitServerAccess(
+		ctx,
+		777,
+		"dev-owner-multiplayer",
+		"Выделите серверы для турнира",
+		3,
+		2000,
+		4096,
+		1000,
+		2048,
+	)
+	if err != nil {
+		t.Fatalf("SubmitServerAccess failed: %v", err)
+	}
+
+	// 2. Одобряем заявку модератором
+	reviewed, err := svc.ReviewServerAccess(
+		ctx,
+		req.ID,
+		"mod-server-admin",
+		true,
+		5,
+		4000,
+		8192,
+		2000,
+		4096,
+		"Одобрено на время проведения турнира",
+		"",
+	)
+	if err != nil {
+		t.Fatalf("ReviewServerAccess failed: %v", err)
+	}
+	if reviewed.Status != domain.RequestStatusApproved {
+		t.Fatalf("expected approved status, got %v", reviewed.Status)
+	}
+
+	// 3. Проверяем получение снимка
+	snap, err := svc.GetSnapshot(ctx, req.ID)
+	if err != nil {
+		t.Fatalf("GetSnapshot failed: %v", err)
+	}
+	if snap == nil {
+		t.Fatal("expected non-nil snapshot")
+	}
+	if snap.Status != domain.RequestStatusApproved {
+		t.Errorf("expected snapshot status Approved, got %v", snap.Status)
+	}
+
+	// 4. Проверяем распаковку и поля verdict
+	var payload domain.SnapshotPayload
+	if err := json.Unmarshal([]byte(snap.SnapshotJSON), &payload); err != nil {
+		t.Fatalf("failed to unmarshal snapshot JSON: %v", err)
+	}
+
+	if payload.Verdict.RequestType != domain.RequestTypeServerAccess {
+		t.Errorf("expected RequestTypeServerAccess (2), got %v", payload.Verdict.RequestType)
+	}
+	if payload.Verdict.Reason != "Выделите серверы для турнира" {
+		t.Errorf("expected developer reason, got %q", payload.Verdict.Reason)
+	}
+	if payload.Verdict.Comment != "Одобрено на время проведения турнира" {
+		t.Errorf("expected moderator comment, got %q", payload.Verdict.Comment)
+	}
+	if payload.Verdict.MaxInstances != 5 {
+		t.Errorf("expected MaxInstances 5, got %d", payload.Verdict.MaxInstances)
+	}
+	if payload.Verdict.MaxTotalCPUMillis != 4000 {
+		t.Errorf("expected MaxTotalCPUMillis 4000, got %d", payload.Verdict.MaxTotalCPUMillis)
+	}
+	if payload.Verdict.MaxTotalMemoryMB != 8192 {
+		t.Errorf("expected MaxTotalMemoryMB 8192, got %d", payload.Verdict.MaxTotalMemoryMB)
+	}
+	if payload.Verdict.MaxInstanceCPUMillis != 2000 {
+		t.Errorf("expected MaxInstanceCPUMillis 2000, got %d", payload.Verdict.MaxInstanceCPUMillis)
+	}
+	if payload.Verdict.MaxInstanceMemoryMB != 4096 {
+		t.Errorf("expected MaxInstanceMemoryMB 4096, got %d", payload.Verdict.MaxInstanceMemoryMB)
+	}
+
+	// 5. Проверяем Gzip blob
+	zr, err := gzip.NewReader(bytes.NewReader(snap.SnapshotBlob))
+	if err != nil {
+		t.Fatalf("gzip reader error: %v", err)
+	}
+	blobBytes, err := io.ReadAll(zr)
+	if err != nil {
+		t.Fatalf("read blob error: %v", err)
+	}
+	if string(blobBytes) != snap.SnapshotJSON {
+		t.Errorf("gzip decompressed blob does not match snapshot JSON")
+	}
+}
+

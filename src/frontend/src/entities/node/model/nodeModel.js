@@ -123,6 +123,25 @@ export function normalizeIngressMode(mode) {
   return 'platform_proxy';
 }
 
+export const platformAccessStatusMap = {
+  PLATFORM_ACCESS_STATUS_UNSPECIFIED: 'pending',
+  PLATFORM_ACCESS_STATUS_PENDING: 'pending',
+  PLATFORM_ACCESS_STATUS_APPROVED: 'approved',
+  PLATFORM_ACCESS_STATUS_REJECTED: 'rejected',
+  0: 'pending',
+  1: 'pending',
+  2: 'approved',
+  3: 'rejected',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+};
+
+export function normalizePlatformAccessStatus(status) {
+  if (!status) return 'pending';
+  return platformAccessStatusMap[status] || String(status).toLowerCase();
+}
+
 export function normalizeNode(raw) {
   if (!raw) return raw;
   const data = raw.node ? { ...raw.node } : { ...raw };
@@ -133,5 +152,7 @@ export function normalizeNode(raw) {
     ingress_mode: normalizeIngressMode(data.ingress_mode),
     custom_domain: data.custom_domain || '',
     backups_enabled: !!data.backups_enabled,
+    is_platform: Boolean(data.is_platform ?? raw.is_platform ?? false),
   };
 }
+

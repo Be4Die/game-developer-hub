@@ -891,6 +891,7 @@ type Node struct {
 	BackupsEnabled   bool                   `protobuf:"varint,14,opt,name=backups_enabled,json=backupsEnabled,proto3" json:"backups_enabled,omitempty"`
 	IngressMode      IngressMode            `protobuf:"varint,15,opt,name=ingress_mode,json=ingressMode,proto3,enum=orchestrator.v1.IngressMode" json:"ingress_mode,omitempty"`
 	CustomDomain     string                 `protobuf:"bytes,16,opt,name=custom_domain,json=customDomain,proto3" json:"custom_domain,omitempty"`
+	IsPlatform       bool                   `protobuf:"varint,17,opt,name=is_platform,json=isPlatform,proto3" json:"is_platform,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1035,6 +1036,13 @@ func (x *Node) GetCustomDomain() string {
 		return x.CustomDomain
 	}
 	return ""
+}
+
+func (x *Node) GetIsPlatform() bool {
+	if x != nil {
+		return x.IsPlatform
+	}
+	return false
 }
 
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).
@@ -1810,7 +1818,7 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x15DeveloperPayloadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0f\n" +
-	"\r_player_count\"\xa4\x05\n" +
+	"\r_player_count\"\xc5\x05\n" +
 	"\x04Node\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x18\n" +
@@ -1831,7 +1839,9 @@ const file_orchestrator_v1_common_proto_rawDesc = "" +
 	"\x04role\x18\r \x01(\x0e2\x19.orchestrator.v1.NodeRoleR\x04role\x12'\n" +
 	"\x0fbackups_enabled\x18\x0e \x01(\bR\x0ebackupsEnabled\x12?\n" +
 	"\fingress_mode\x18\x0f \x01(\x0e2\x1c.orchestrator.v1.IngressModeR\vingressMode\x12#\n" +
-	"\rcustom_domain\x18\x10 \x01(\tR\fcustomDomain\"\x89\x04\n" +
+	"\rcustom_domain\x18\x10 \x01(\tR\fcustomDomain\x12\x1f\n" +
+	"\vis_platform\x18\x11 \x01(\bR\n" +
+	"isPlatform\"\x89\x04\n" +
 	"\x0eManagedService\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
 	"\anode_id\x18\x02 \x01(\x03R\x06nodeId\x12\x19\n" +

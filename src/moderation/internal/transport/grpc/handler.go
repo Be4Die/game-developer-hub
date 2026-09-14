@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math"
 	"time"
 
@@ -75,6 +76,15 @@ func (h *ModerationHandler) ListRequests(ctx context.Context, req *pb.ListModera
 	if req.GetModeratorId() != "" {
 		modID := req.GetModeratorId()
 		filter.ModeratorID = &modID
+	}
+
+	if req.GetType() != pb.RequestType_REQUEST_TYPE_UNSPECIFIED {
+		reqType := domain.RequestType(int16(req.GetType()))
+		filter.Type = &reqType
+	}
+
+	if req.GetQuery() != "" {
+		filter.Query = req.GetQuery()
 	}
 
 	requests, total, err := h.svc.ListRequests(ctx, filter)
@@ -181,6 +191,78 @@ func (h *ModerationHandler) Reject(ctx context.Context, req *pb.RejectModeration
 	}
 
 	return &pb.RejectModerationResponse{
+		Success: true,
+		Request: requestToProto(r),
+	}, nil
+}
+
+// SubmitServerAccess создает заявку на доступ к серверам платформы.
+func (h *ModerationHandler) SubmitServerAccess(ctx context.Context, req *pb.SubmitServerAccessRequest) (*pb.SubmitServerAccessResponse, error) {
+	ownerID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	r, err := h.svc.SubmitServerAccess(
+		ctx,
+		req.GetProjectId(),
+		ownerID,
+		req.GetReason(),
+		req.GetMaxInstances(),
+		req.GetMaxTotalCpuMillis(),
+		req.GetMaxTotalMemoryMb(),
+		req.GetMaxInstanceCpuMillis(),
+		req.GetMaxInstanceMemoryMb(),
+	)
+	if err != nil {
+		return nil, domainError(err, "submit server access")
+	}
+
+	return &pb.SubmitServerAccessResponse{
+		Success: true,
+		Request: requestToProto(r),
+	}, nil
+}
+
+// GetServerAccess возвращает последнюю заявку на серверы по проекту.
+func (h *ModerationHandler) GetServerAccess(ctx context.Context, req *pb.GetServerAccessRequest) (*pb.GetServerAccessResponse, error) {
+	r, err := h.svc.GetServerAccess(ctx, req.GetProjectId())
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			return &pb.GetServerAccessResponse{}, nil
+		}
+		return nil, domainError(err, "get server access")
+	}
+	return &pb.GetServerAccessResponse{
+		Request: requestToProto(r),
+	}, nil
+}
+
+// ReviewServerAccess одобряет или отклоняет заявку на доступ к серверам платформы.
+func (h *ModerationHandler) ReviewServerAccess(ctx context.Context, req *pb.ReviewServerAccessRequest) (*pb.ReviewServerAccessResponse, error) {
+	moderatorID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	r, err := h.svc.ReviewServerAccess(
+		ctx,
+		req.GetRequestId(),
+		moderatorID,
+		req.GetApproved(),
+		req.GetMaxInstances(),
+		req.GetMaxTotalCpuMillis(),
+		req.GetMaxTotalMemoryMb(),
+		req.GetMaxInstanceCpuMillis(),
+		req.GetMaxInstanceMemoryMb(),
+		req.GetModeratorComment(),
+		req.GetRejectionReason(),
+	)
+	if err != nil {
+		return nil, domainError(err, "review server access")
+	}
+
+	return &pb.ReviewServerAccessResponse{
 		Success: true,
 		Request: requestToProto(r),
 	}, nil

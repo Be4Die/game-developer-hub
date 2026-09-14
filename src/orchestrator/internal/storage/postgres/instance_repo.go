@@ -27,15 +27,17 @@ func (r *InstanceRepo) Create(ctx context.Context, inst *domain.Instance) error 
 		INSERT INTO instances (id, owner_id, node_id, server_build_id, game_id, name,
 		                       build_version, protocol, host_port, internal_port,
 		                       status, max_players, developer_payload,
-		                       server_address, started_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		                       server_address, allocated_cpu_millis, allocated_memory_bytes,
+		                       started_at, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
 	`
 
 	_, err := r.pool.Exec(ctx, q,
 		inst.ID, inst.OwnerID, inst.NodeID, inst.ServerBuildID, inst.GameID, inst.Name,
 		inst.BuildVersion, inst.Protocol, inst.HostPort, inst.InternalPort,
 		inst.Status, inst.MaxPlayers, inst.DeveloperPayload,
-		inst.ServerAddress, inst.StartedAt, inst.CreatedAt, inst.UpdatedAt,
+		inst.ServerAddress, inst.AllocatedCPUMillis, inst.AllocatedMemoryBytes,
+		inst.StartedAt, inst.CreatedAt, inst.UpdatedAt,
 	)
 	if err != nil {
 		if isPgUniqueViolation(err) {
@@ -53,7 +55,8 @@ func (r *InstanceRepo) GetByID(ctx context.Context, id int64) (*domain.Instance,
 		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
-		       server_address, started_at, created_at, updated_at
+		       server_address, allocated_cpu_millis, allocated_memory_bytes,
+		       started_at, created_at, updated_at
 		FROM instances WHERE id = $1
 	`
 
@@ -68,7 +71,8 @@ func (r *InstanceRepo) ListByGame(ctx context.Context, gameID int64, status *dom
 		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
-		       server_address, started_at, created_at, updated_at
+		       server_address, allocated_cpu_millis, allocated_memory_bytes,
+		       started_at, created_at, updated_at
 		FROM instances WHERE game_id = $1
 	`
 
@@ -106,7 +110,8 @@ func (r *InstanceRepo) ListByNode(ctx context.Context, nodeID int64) ([]*domain.
 		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
-		       server_address, started_at, created_at, updated_at
+		       server_address, allocated_cpu_millis, allocated_memory_bytes,
+		       started_at, created_at, updated_at
 		FROM instances WHERE node_id = $1 ORDER BY created_at DESC
 	`
 
@@ -193,7 +198,8 @@ func (r *InstanceRepo) List(ctx context.Context) ([]*domain.Instance, error) {
 		SELECT id, owner_id, node_id, server_build_id, game_id, name,
 		       build_version, protocol, host_port, internal_port,
 		       status, max_players, developer_payload,
-		       server_address, started_at, created_at, updated_at
+		       server_address, allocated_cpu_millis, allocated_memory_bytes,
+		       started_at, created_at, updated_at
 		FROM instances ORDER BY created_at DESC
 	`
 
@@ -228,7 +234,8 @@ func scanInstance(s instanceScanner) (*domain.Instance, error) {
 		&inst.ID, &inst.OwnerID, &inst.NodeID, &inst.ServerBuildID, &inst.GameID, &inst.Name,
 		&inst.BuildVersion, &inst.Protocol, &inst.HostPort, &inst.InternalPort,
 		&inst.Status, &inst.MaxPlayers, &inst.DeveloperPayload,
-		&inst.ServerAddress, &inst.StartedAt, &inst.CreatedAt, &inst.UpdatedAt,
+		&inst.ServerAddress, &inst.AllocatedCPUMillis, &inst.AllocatedMemoryBytes,
+		&inst.StartedAt, &inst.CreatedAt, &inst.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

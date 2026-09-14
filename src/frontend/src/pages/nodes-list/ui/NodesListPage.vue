@@ -34,6 +34,7 @@
               <option value="offline">Не в сети</option>
               <option value="unauthorized">Не авторизована</option>
               <option value="maintenance">Обслуживание</option>
+              <option value="platform">⭐ Платформенные</option>
             </select>
             <ChevronDown class="icon-xs select-arrow" />
           </div>
@@ -97,6 +98,13 @@
               <td class="col-addr">
                 <div class="addr-cell-content">
                   <span class="node-address">{{ node.address }}</span>
+                  <span
+                    v-if="node.is_platform"
+                    class="ingress-badge platform"
+                    title="Общедоступная нода платформы (общий пул)"
+                  >
+                    ⭐ Платформа
+                  </span>
                   <span
                     v-if="node.ingress_mode === 'direct'"
                     class="ingress-badge direct"
@@ -163,6 +171,17 @@
               <!-- Действия -->
               <td class="col-actions" @click.stop>
                 <button
+                  v-if="isAdmin"
+                  class="btn-icon"
+                  :class="node.is_platform ? 'text-warning' : 'text-muted'"
+                  :title="node.is_platform ? 'Исключить ноду из пула платформы' : 'Сделать ноду платформенной (пул платформы)'"
+                  :disabled="updatingPlatformId === node.id"
+                  @click="togglePlatformStatus(node)"
+                >
+                  <ShieldCheck v-if="node.is_platform" class="icon-xs" />
+                  <Shield v-else class="icon-xs" />
+                </button>
+                <button
                   class="btn-icon text-danger-hover"
                   title="Удалить"
                   :disabled="deletingId === node.id"
@@ -225,11 +244,18 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { Plus, Trash2, AlertCircle, Server, X, ChevronDown, RotateCcw } from 'lucide-vue-next';
+import { Plus, Trash2, AlertCircle, Server, X, ChevronDown, RotateCcw, Shield, ShieldCheck } from 'lucide-vue-next';
 import { StatusBadge } from '@/shared/ui';
 import { RegisterNodeModal } from '@/features/manage-nodes';
-import { listNodes, deleteNode } from '@/entities/node';
+import { listNodes, deleteNode, updateNodePlatform } from '@/entities/node';
+import { useAuth } from '@/entities/user';
 import { formatBytes, formatTime, showToast } from '@/shared/lib';
+
+const { state: authState } = useAuth();
+const isAdmin = computed(() => {
+  const r = authState.user?.role;
+  return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
+});
 
 const nodes = ref([]);
 const loading = ref(true);
@@ -240,6 +266,7 @@ const showRegisterForm = ref(false);
 const deleteTarget = ref(null);
 const deleting = ref(false);
 const deletingId = ref(null);
+const updatingPlatformId = ref(null);
 
 const filteredNodes = computed(() => {
   let list = [...nodes.value];
@@ -251,7 +278,9 @@ const filteredNodes = computed(() => {
       return addr.includes(q) || reg.includes(q);
     });
   }
-  if (statusFilter.value !== 'all') {
+  if (statusFilter.value === 'platform') {
+    list = list.filter((n) => n.is_platform);
+  } else if (statusFilter.value !== 'all') {
     const statusMap = {
       unauthorized: 'NODE_STATUS_UNAUTHORIZED',
       online: 'NODE_STATUS_ONLINE',
@@ -279,11 +308,30 @@ async function fetchNodes() {
   loading.value = true;
   error.value = null;
   try {
-    nodes.value = await listNodes(statusFilter.value === 'all' ? undefined : statusFilter.value);
+    const apiStatus = statusFilter.value === 'platform' || statusFilter.value === 'all'
+      ? undefined
+      : statusFilter.value;
+    nodes.value = await listNodes(apiStatus);
   } catch (e) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {
     loading.value = false;
+  }
+}
+
+async function togglePlatformStatus(node) {
+  updatingPlatformId.value = node.id;
+  try {
+    const updated = await updateNodePlatform(node.id, !node.is_platform);
+    node.is_platform = updated.is_platform;
+    showToast(
+      node.is_platform ? 'Нода добавлена в пул платформы' : 'Нода исключена из пула платформы',
+      'success'
+    );
+  } catch (e) {
+    showToast(e.response?.data?.message ?? 'Ошибка обновления статуса ноды', 'danger');
+  } finally {
+    updatingPlatformId.value = null;
   }
 }
 
@@ -678,6 +726,13 @@ onMounted(fetchNodes);
   line-height: 1.4;
 }
 
+.ingress-badge.platform {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  font-weight: 600;
+}
+
 .ingress-badge.direct {
   background: rgba(46, 160, 67, 0.15);
   color: #3fb950;
@@ -690,10 +745,15 @@ onMounted(fetchNodes);
   border: 1px solid rgba(56, 139, 253, 0.3);
 }
 
+.text-warning {
+  color: #eab308 !important;
+}
+
 .cell-text {
   font-size: 13px;
   color: var(--text-muted, #b0b8c4);
 }
+
 
 .cell-muted {
   font-size: 13px;

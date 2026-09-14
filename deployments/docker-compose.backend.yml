@@ -171,10 +171,13 @@ services:
       CONFIG_PATH: /app/config/docker.yaml
       JWT_SECRET: dev-jwt-secret-for-local-testing
       PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
+      ORCHESTRATOR_GRPC_ADDR: gdh-orchestrator:50052
     depends_on:
       postgres:
         condition: service_healthy
       project-manager:
+        condition: service_healthy
+      orchestrator:
         condition: service_healthy
     ports:
       - "50054:50054"

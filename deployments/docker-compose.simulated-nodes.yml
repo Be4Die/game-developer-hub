@@ -1,0 +1,89 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — Симуляция нескольких нод (Multi-Node Dev Setup)
+#
+#  Запускает 3 независимые ноды:
+#    - node-platform-1 (:44044) — Платформенная нода #1 (ключ: platform-key-1)
+#    - node-platform-2 (:44046) — Платформенная нода #2 (ключ: platform-key-2)
+#    - node-dev-1      (:44048) — Личная нода разработчика (ключ: dev-key-1)
+#
+#  Использование:
+#    docker compose -f deployments/docker-compose.simulated-nodes.yml up -d
+#    docker compose -f deployments/docker-compose.simulated-nodes.yml down -v
+# ═══════════════════════════════════════════════════════════════
+
+name: gdh-simulated-nodes
+
+services:
+  # ── Платформенная нода #1 ──────────────────────────────────────
+  node-platform-1:
+    build:
+      context: ../src
+      dockerfile: game-server-node/Dockerfile
+    container_name: gdh-node-platform-1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      NODE_API_KEY: platform-key-1
+      ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
+      GDH_BACKUPS_DIR: /app/data/backups
+      NODE_REGION: eu-central
+    ports:
+      - "44044:44044"
+      - "44045:44045"
+    volumes:
+      - ../src/game-server-node/config:/app/config:ro
+      - node_platform_1_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # ── Платформенная нода #2 ──────────────────────────────────────
+  node-platform-2:
+    build:
+      context: ../src
+      dockerfile: game-server-node/Dockerfile
+    container_name: gdh-node-platform-2
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      NODE_API_KEY: platform-key-2
+      ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
+      GDH_BACKUPS_DIR: /app/data/backups
+      NODE_REGION: ru-central
+    ports:
+      - "44046:44044"
+      - "44047:44045"
+    volumes:
+      - ../src/game-server-node/config:/app/config:ro
+      - node_platform_2_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # ── Личная нода разработчика ─────────────────────────────────
+  node-dev-1:
+    build:
+      context: ../src
+      dockerfile: game-server-node/Dockerfile
+    container_name: gdh-node-dev-1
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+      NODE_API_KEY: dev-key-1
+      ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
+      GDH_BACKUPS_DIR: /app/data/backups
+      NODE_REGION: local-dev
+    ports:
+      - "44048:44044"
+      - "44049:44045"
+    volumes:
+      - ../src/game-server-node/config:/app/config:ro
+      - node_dev_1_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  node_platform_1_data:
+  node_platform_2_data:
+  node_dev_1_data:

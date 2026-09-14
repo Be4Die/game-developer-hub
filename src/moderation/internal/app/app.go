@@ -26,6 +26,7 @@ type App struct {
 	gRPCServer *grpc.Server
 	pool       *pgxpool.Pool
 	pmClient   *client.ProjectGRPCClient
+	orchClient *client.OrchestratorGRPCClient
 	once       sync.Once
 }
 
@@ -66,6 +67,18 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log.Info("using in-memory stub project client")
 	}
 
+	// ─── Клиент Orchestrator ───────────────────────────────────
+	var orchGRPCClient *client.OrchestratorGRPCClient
+	if cfg.Orchestrator.Addr != "" {
+		orch, err := client.NewOrchestratorGRPCClient(cfg.Orchestrator.Addr)
+		if err != nil {
+			log.Warn("failed to connect to orchestrator", slog.String("error", err.Error()))
+		} else {
+			orchGRPCClient = orch
+			log.Info("connected to orchestrator", slog.String("addr", cfg.Orchestrator.Addr))
+		}
+	}
+
 	// ─── Сервис ─────────────────────────────────────────────────
 	moderationService := service.NewModerationService(
 		requestRepo,
@@ -75,6 +88,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		snapshotRepo,
 	)
 	moderationService.SetStoragePath(cfg.StoragePath)
+	if orchGRPCClient != nil {
+		moderationService.SetOrchestratorClient(orchGRPCClient)
+	}
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	moderationHandler := grpctransport.NewModerationHandler(moderationService)
@@ -100,6 +116,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		gRPCServer: gRPCServer,
 		pool:       pool,
 		pmClient:   pmGRPCClient,
+		orchClient: orchGRPCClient,
 	}, nil
 }
 
@@ -127,6 +144,9 @@ func (a *App) MustStop() {
 		a.gRPCServer.GracefulStop()
 		if a.pmClient != nil {
 			_ = a.pmClient.Close()
+		}
+		if a.orchClient != nil {
+			_ = a.orchClient.Close()
 		}
 		a.pool.Close()
 		a.log.Info("moderation service stopped")

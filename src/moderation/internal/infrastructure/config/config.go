@@ -22,7 +22,13 @@ type Config struct {
 	GRPC           GRPCConfig
 	DB             DBConfig
 	ProjectManager PMConfig
+	Orchestrator   OrchestratorConfig
 	JWT            JWTConfig
+}
+
+// OrchestratorConfig настройки подключения к сервису orchestrator.
+type OrchestratorConfig struct {
+	Addr string `yaml:"addr" env:"ORCHESTRATOR_GRPC_ADDR" env-default:"localhost:50052"`
 }
 
 // GRPCConfig настройки gRPC-сервера.

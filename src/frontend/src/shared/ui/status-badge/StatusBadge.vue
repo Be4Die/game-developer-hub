@@ -13,9 +13,25 @@ const props = defineProps({
   type: {
     type: String,
     default: 'instance',
-    validator: (v) => ['instance', 'node', 'role', 'service'].includes(v),
+    validator: (v) => ['instance', 'node', 'role', 'service', 'platform_access'].includes(v),
   },
 });
+
+const platformAccessMap = {
+  PLATFORM_ACCESS_STATUS_UNSPECIFIED: { label: 'Неизвестно', cls: 'muted' },
+  PLATFORM_ACCESS_STATUS_PENDING: { label: 'На рассмотрении', cls: 'warning' },
+  PLATFORM_ACCESS_STATUS_APPROVED: { label: 'Доступ открыт', cls: 'success' },
+  PLATFORM_ACCESS_STATUS_REJECTED: { label: 'Отклонено', cls: 'danger' },
+  REQUEST_STATUS_UNSPECIFIED: { label: 'Неизвестно', cls: 'muted' },
+  REQUEST_STATUS_PENDING: { label: 'На рассмотрении', cls: 'warning' },
+  REQUEST_STATUS_IN_REVIEW: { label: 'В проверке', cls: 'warning' },
+  REQUEST_STATUS_APPROVED: { label: 'Доступ открыт', cls: 'success' },
+  REQUEST_STATUS_REJECTED: { label: 'Отклонено', cls: 'danger' },
+  pending: { label: 'На рассмотрении', cls: 'warning' },
+  in_review: { label: 'В проверке', cls: 'warning' },
+  approved: { label: 'Доступ открыт', cls: 'success' },
+  rejected: { label: 'Отклонено', cls: 'danger' },
+};
 
 const instanceMap = {
   starting: { label: 'Запускается', cls: 'warning' },
@@ -78,6 +94,7 @@ const map = computed(() => {
   if (props.type === 'node') return nodeMap;
   if (props.type === 'role') return roleMap.value;
   if (props.type === 'service') return serviceMap;
+  if (props.type === 'platform_access') return platformAccessMap;
   return instanceMap;
 });
 
@@ -86,6 +103,16 @@ const statusKey = computed(() => {
   const status = props.status;
   if (typeof status === 'number' || /^\d+$/.test(String(status))) {
     const numStatus = Number(status);
+    if (props.type === 'platform_access') {
+      const numPlatformMap = {
+        0: 'REQUEST_STATUS_UNSPECIFIED',
+        1: 'REQUEST_STATUS_PENDING',
+        2: 'REQUEST_STATUS_APPROVED',
+        3: 'REQUEST_STATUS_APPROVED',
+        4: 'REQUEST_STATUS_REJECTED',
+      };
+      return numPlatformMap[numStatus] || 'REQUEST_STATUS_UNSPECIFIED';
+    }
     if (props.type === 'role') {
       const numRoleMap = {
         0: 'NODE_ROLE_UNSPECIFIED',

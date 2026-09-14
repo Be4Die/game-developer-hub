@@ -7,11 +7,17 @@ export const moderationApi = {
    */
   async listRequests(params = {}) {
     const query = new URLSearchParams();
+    if (params.type !== undefined && params.type !== '' && params.type !== 0 && params.type !== '0') {
+      query.append('type', params.type);
+    }
     if (params.status !== undefined && params.status !== '') {
       query.append('status', params.status);
     }
     if (params.moderator_id) {
       query.append('moderator_id', params.moderator_id);
+    }
+    if (params.query) {
+      query.append('query', params.query);
     }
     if (params.limit !== undefined) {
       query.append('limit', params.limit);
@@ -25,6 +31,76 @@ export const moderationApi = {
     return {
       requests: rawList.map(normalizeRequest),
       total: res.data.total ?? rawList.length,
+    };
+  },
+
+  /**
+   * Подать заявку на доступ к серверам платформы
+   */
+  async submitServerAccess(projectId, payload) {
+    const data = typeof payload === 'string' ? { reason: payload } : (payload || {});
+    const res = await http.post(`/moderation/projects/${projectId}/server-access`, {
+      project_id: projectId,
+      reason: data.reason || '',
+      max_instances: data.maxInstances ?? data.max_instances ?? 2,
+      max_total_cpu_millis: data.maxTotalCpuMillis ?? data.max_total_cpu_millis ?? 0,
+      max_total_memory_mb: data.maxTotalMemoryMb ?? data.max_total_memory_mb ?? 0,
+      max_instance_cpu_millis: data.maxInstanceCpuMillis ?? data.max_instance_cpu_millis ?? 0,
+      max_instance_memory_mb: data.maxInstanceMemoryMb ?? data.max_instance_memory_mb ?? 0,
+    });
+    return {
+      success: res.data.success,
+      request: normalizeRequest(res.data.request),
+    };
+  },
+
+  /**
+   * Получить статус заявки на доступ к серверам платформы
+   */
+  async getServerAccess(projectId) {
+    try {
+      const res = await http.get(`/moderation/projects/${projectId}/server-access`);
+      return {
+        request: res.data.request ? normalizeRequest(res.data.request) : null,
+      };
+    } catch (err) {
+      if (err.response && err.response.status === 404) {
+        return { request: null };
+      }
+      throw err;
+    }
+  },
+
+  /**
+   * Рассмотреть заявку на доступ к серверам платформы (одобрить или отклонить)
+   */
+  async reviewServerAccess(
+    requestId,
+    {
+      approved,
+      maxInstances = 2,
+      maxTotalCpuMillis = 0,
+      maxTotalMemoryMb = 0,
+      maxInstanceCpuMillis = 0,
+      maxInstanceMemoryMb = 0,
+      moderatorComment = '',
+      rejectionReason = '',
+    } = {}
+  ) {
+    const res = await http.post(`/moderation/requests/${requestId}/review-server-access`, {
+      request_id: requestId,
+      approved,
+      max_instances: maxInstances,
+      max_total_cpu_millis: maxTotalCpuMillis,
+      max_total_memory_mb: maxTotalMemoryMb,
+      max_instance_cpu_millis: maxInstanceCpuMillis,
+      max_instance_memory_mb: maxInstanceMemoryMb,
+      moderator_comment: moderatorComment,
+      rejection_reason: rejectionReason,
+    });
+    return {
+      success: res.data.success,
+      request: normalizeRequest(res.data.request),
     };
   },
 
@@ -108,6 +184,14 @@ export const moderationApi = {
             submitted_at: r.submittedAt,
             resolved_at: r.resolvedAt,
             rejection_reason: r.rejectionReason,
+            comment: r.moderatorComment,
+            request_type: r.type,
+            reason: r.reason,
+            max_instances: r.maxInstances,
+            max_total_cpu_millis: r.maxTotalCpuMillis,
+            max_total_memory_mb: r.maxTotalMemoryMb,
+            max_instance_cpu_millis: r.maxInstanceCpuMillis,
+            max_instance_memory_mb: r.maxInstanceMemoryMb,
           },
           chat_transcript: [],
         },

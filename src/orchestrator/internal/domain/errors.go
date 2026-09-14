@@ -19,4 +19,8 @@ var (
 	ErrForbidden = errors.New("forbidden")
 	// ErrDomainMismatch возвращается если DNS-запись домена не указывает на ноду.
 	ErrDomainMismatch = errors.New("domain DNS does not point to node address")
+	// ErrPlatformAccessRequired возвращается когда для запуска требуется одобренный доступ к серверам платформы.
+	ErrPlatformAccessRequired = errors.New("platform access required for this project")
+	// ErrPlatformQuotaExceeded возвращается при превышении лимита инстансов на платформенных нодах.
+	ErrPlatformQuotaExceeded = errors.New("platform server instance quota exceeded")
 )

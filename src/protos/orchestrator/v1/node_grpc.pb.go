@@ -43,6 +43,10 @@ const (
 	NodeService_DeleteService_FullMethodName           = "/orchestrator.v1.NodeService/DeleteService"
 	NodeService_StartService_FullMethodName            = "/orchestrator.v1.NodeService/StartService"
 	NodeService_StopService_FullMethodName             = "/orchestrator.v1.NodeService/StopService"
+	NodeService_UpdatePlatformStatus_FullMethodName    = "/orchestrator.v1.NodeService/UpdatePlatformStatus"
+	NodeService_GrantPlatformAccess_FullMethodName     = "/orchestrator.v1.NodeService/GrantPlatformAccess"
+	NodeService_RevokePlatformAccess_FullMethodName    = "/orchestrator.v1.NodeService/RevokePlatformAccess"
+	NodeService_GetPlatformGrant_FullMethodName        = "/orchestrator.v1.NodeService/GetPlatformGrant"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -100,6 +104,14 @@ type NodeServiceClient interface {
 	StartService(ctx context.Context, in *NodeServiceStartServiceRequest, opts ...grpc.CallOption) (*NodeServiceStartServiceResponse, error)
 	// Остановить работающий управляемый сервис.
 	StopService(ctx context.Context, in *NodeServiceStopServiceRequest, opts ...grpc.CallOption) (*NodeServiceStopServiceResponse, error)
+	// Переключить статус платформенной ноды (только для Администратора).
+	UpdatePlatformStatus(ctx context.Context, in *NodeServiceUpdatePlatformStatusRequest, opts ...grpc.CallOption) (*NodeServiceUpdatePlatformStatusResponse, error)
+	// Выдать или обновить квоту платформенных мощностей проекту (вызывается сервисом модерации/админом).
+	GrantPlatformAccess(ctx context.Context, in *GrantPlatformAccessRequest, opts ...grpc.CallOption) (*GrantPlatformAccessResponse, error)
+	// Отозвать доступ к платформенным серверам для проекта.
+	RevokePlatformAccess(ctx context.Context, in *RevokePlatformAccessRequest, opts ...grpc.CallOption) (*RevokePlatformAccessResponse, error)
+	// Получить статус квоты платформенных мощностей проекта.
+	GetPlatformGrant(ctx context.Context, in *GetPlatformGrantRequest, opts ...grpc.CallOption) (*GetPlatformGrantResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -362,6 +374,46 @@ func (c *nodeServiceClient) StopService(ctx context.Context, in *NodeServiceStop
 	return out, nil
 }
 
+func (c *nodeServiceClient) UpdatePlatformStatus(ctx context.Context, in *NodeServiceUpdatePlatformStatusRequest, opts ...grpc.CallOption) (*NodeServiceUpdatePlatformStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeServiceUpdatePlatformStatusResponse)
+	err := c.cc.Invoke(ctx, NodeService_UpdatePlatformStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) GrantPlatformAccess(ctx context.Context, in *GrantPlatformAccessRequest, opts ...grpc.CallOption) (*GrantPlatformAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GrantPlatformAccessResponse)
+	err := c.cc.Invoke(ctx, NodeService_GrantPlatformAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) RevokePlatformAccess(ctx context.Context, in *RevokePlatformAccessRequest, opts ...grpc.CallOption) (*RevokePlatformAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokePlatformAccessResponse)
+	err := c.cc.Invoke(ctx, NodeService_RevokePlatformAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *nodeServiceClient) GetPlatformGrant(ctx context.Context, in *GetPlatformGrantRequest, opts ...grpc.CallOption) (*GetPlatformGrantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPlatformGrantResponse)
+	err := c.cc.Invoke(ctx, NodeService_GetPlatformGrant_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -417,6 +469,14 @@ type NodeServiceServer interface {
 	StartService(context.Context, *NodeServiceStartServiceRequest) (*NodeServiceStartServiceResponse, error)
 	// Остановить работающий управляемый сервис.
 	StopService(context.Context, *NodeServiceStopServiceRequest) (*NodeServiceStopServiceResponse, error)
+	// Переключить статус платформенной ноды (только для Администратора).
+	UpdatePlatformStatus(context.Context, *NodeServiceUpdatePlatformStatusRequest) (*NodeServiceUpdatePlatformStatusResponse, error)
+	// Выдать или обновить квоту платформенных мощностей проекту (вызывается сервисом модерации/админом).
+	GrantPlatformAccess(context.Context, *GrantPlatformAccessRequest) (*GrantPlatformAccessResponse, error)
+	// Отозвать доступ к платформенным серверам для проекта.
+	RevokePlatformAccess(context.Context, *RevokePlatformAccessRequest) (*RevokePlatformAccessResponse, error)
+	// Получить статус квоты платформенных мощностей проекта.
+	GetPlatformGrant(context.Context, *GetPlatformGrantRequest) (*GetPlatformGrantResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -498,6 +558,18 @@ func (UnimplementedNodeServiceServer) StartService(context.Context, *NodeService
 }
 func (UnimplementedNodeServiceServer) StopService(context.Context, *NodeServiceStopServiceRequest) (*NodeServiceStopServiceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StopService not implemented")
+}
+func (UnimplementedNodeServiceServer) UpdatePlatformStatus(context.Context, *NodeServiceUpdatePlatformStatusRequest) (*NodeServiceUpdatePlatformStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdatePlatformStatus not implemented")
+}
+func (UnimplementedNodeServiceServer) GrantPlatformAccess(context.Context, *GrantPlatformAccessRequest) (*GrantPlatformAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GrantPlatformAccess not implemented")
+}
+func (UnimplementedNodeServiceServer) RevokePlatformAccess(context.Context, *RevokePlatformAccessRequest) (*RevokePlatformAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokePlatformAccess not implemented")
+}
+func (UnimplementedNodeServiceServer) GetPlatformGrant(context.Context, *GetPlatformGrantRequest) (*GetPlatformGrantResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPlatformGrant not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -934,6 +1006,78 @@ func _NodeService_StopService_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_UpdatePlatformStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeServiceUpdatePlatformStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).UpdatePlatformStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_UpdatePlatformStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).UpdatePlatformStatus(ctx, req.(*NodeServiceUpdatePlatformStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_GrantPlatformAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GrantPlatformAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).GrantPlatformAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_GrantPlatformAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).GrantPlatformAccess(ctx, req.(*GrantPlatformAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_RevokePlatformAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokePlatformAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).RevokePlatformAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_RevokePlatformAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).RevokePlatformAccess(ctx, req.(*RevokePlatformAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NodeService_GetPlatformGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPlatformGrantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).GetPlatformGrant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_GetPlatformGrant_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).GetPlatformGrant(ctx, req.(*GetPlatformGrantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1028,6 +1172,22 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopService",
 			Handler:    _NodeService_StopService_Handler,
+		},
+		{
+			MethodName: "UpdatePlatformStatus",
+			Handler:    _NodeService_UpdatePlatformStatus_Handler,
+		},
+		{
+			MethodName: "GrantPlatformAccess",
+			Handler:    _NodeService_GrantPlatformAccess_Handler,
+		},
+		{
+			MethodName: "RevokePlatformAccess",
+			Handler:    _NodeService_RevokePlatformAccess_Handler,
+		},
+		{
+			MethodName: "GetPlatformGrant",
+			Handler:    _NodeService_GetPlatformGrant_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

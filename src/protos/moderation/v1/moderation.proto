@@ -15,6 +15,13 @@ enum RequestStatus {
   REQUEST_STATUS_CANCELLED = 5;
 }
 
+// RequestType тип заявки на модерацию.
+enum RequestType {
+  REQUEST_TYPE_UNSPECIFIED = 0;
+  REQUEST_TYPE_PROJECT_PUBLICATION = 1; // Публикация проекта
+  REQUEST_TYPE_SERVER_ACCESS = 2;       // Доступ к серверам платформы
+}
+
 // SenderRole роль отправителя сообщения в чате проекта.
 enum SenderRole {
   SENDER_ROLE_UNSPECIFIED = 0;
@@ -62,6 +69,14 @@ message ModerationRequest {
   string submitted_at = 8;
   string started_review_at = 9;
   string resolved_at = 10;
+  RequestType type = 11;
+  string reason = 12;
+  int32 max_instances = 13;
+  uint32 max_total_cpu_millis = 14;
+  uint64 max_total_memory_mb = 15;
+  uint32 max_instance_cpu_millis = 16;
+  uint64 max_instance_memory_mb = 17;
+  string moderator_comment = 18;
 }
 
 // AttachmentInfo информация о медиа-вложении (фото или видео).
@@ -119,6 +134,8 @@ message ListModerationRequestsRequest {
   string moderator_id = 2;
   int32 limit = 3;
   int32 offset = 4;
+  RequestType type = 5;
+  string query = 6;
 }
 
 message ListModerationRequestsResponse {
@@ -213,6 +230,48 @@ message CloseDialogRequest {
 message CloseDialogResponse {
   bool success = 1;
   ChatMessage message = 2;
+}
+
+// ─── Заявки на доступ к серверам платформы ───────────────────
+
+message SubmitServerAccessRequest {
+  int64 project_id = 1;
+  string reason = 2;
+  int32 max_instances = 3;
+  uint32 max_total_cpu_millis = 4;
+  uint64 max_total_memory_mb = 5;
+  uint32 max_instance_cpu_millis = 6;
+  uint64 max_instance_memory_mb = 7;
+}
+
+message SubmitServerAccessResponse {
+  bool success = 1;
+  ModerationRequest request = 2;
+}
+
+message GetServerAccessRequest {
+  int64 project_id = 1;
+}
+
+message GetServerAccessResponse {
+  ModerationRequest request = 1;
+}
+
+message ReviewServerAccessRequest {
+  int64 request_id = 1;
+  bool approved = 2;
+  int32 max_instances = 3;
+  string rejection_reason = 4;
+  uint32 max_total_cpu_millis = 5;
+  uint64 max_total_memory_mb = 6;
+  uint32 max_instance_cpu_millis = 7;
+  uint64 max_instance_memory_mb = 8;
+  string moderator_comment = 9;
+}
+
+message ReviewServerAccessResponse {
+  bool success = 1;
+  ModerationRequest request = 2;
 }
 
 // ─── Статистика и журнал действий модератора ─────────────────
@@ -351,6 +410,18 @@ service ModerationService {
 
   rpc Reject(RejectModerationRequest) returns (RejectModerationResponse) {
     option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/reject", body: "*" };
+  }
+
+  rpc SubmitServerAccess(SubmitServerAccessRequest) returns (SubmitServerAccessResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/projects/{project_id}/server-access", body: "*" };
+  }
+
+  rpc GetServerAccess(GetServerAccessRequest) returns (GetServerAccessResponse) {
+    option (google.api.http) = { get: "/api/v1/moderation/projects/{project_id}/server-access" };
+  }
+
+  rpc ReviewServerAccess(ReviewServerAccessRequest) returns (ReviewServerAccessResponse) {
+    option (google.api.http) = { post: "/api/v1/moderation/requests/{request_id}/review-server-access", body: "*" };
   }
 
   rpc SendMessage(SendChatMessageRequest) returns (SendChatMessageResponse) {

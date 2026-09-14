@@ -485,6 +485,7 @@ func (x *NodeServiceRegisterResponse) GetNode() *Node {
 type NodeServiceListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        *NodeStatus            `protobuf:"varint,1,opt,name=status,proto3,enum=orchestrator.v1.NodeStatus,oneof" json:"status,omitempty"`
+	GameId        *int64                 `protobuf:"varint,2,opt,name=game_id,json=gameId,proto3,oneof" json:"game_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -524,6 +525,13 @@ func (x *NodeServiceListRequest) GetStatus() NodeStatus {
 		return *x.Status
 	}
 	return NodeStatus_NODE_STATUS_UNSPECIFIED
+}
+
+func (x *NodeServiceListRequest) GetGameId() int64 {
+	if x != nil && x.GameId != nil {
+		return *x.GameId
+	}
+	return 0
 }
 
 type NodeServiceListResponse struct {
@@ -3096,6 +3104,538 @@ func (x *NodeServiceStopServiceResponse) GetService() *ManagedService {
 	return nil
 }
 
+type PlatformGrant struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	GameId               int64                  `protobuf:"varint,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	MaxInstances         int32                  `protobuf:"varint,2,opt,name=max_instances,json=maxInstances,proto3" json:"max_instances,omitempty"`
+	IsActive             bool                   `protobuf:"varint,3,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	UpdatedAt            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	MaxTotalCpuMillis    uint32                 `protobuf:"varint,5,opt,name=max_total_cpu_millis,json=maxTotalCpuMillis,proto3" json:"max_total_cpu_millis,omitempty"`
+	MaxTotalMemoryMb     uint64                 `protobuf:"varint,6,opt,name=max_total_memory_mb,json=maxTotalMemoryMb,proto3" json:"max_total_memory_mb,omitempty"`
+	MaxInstanceCpuMillis uint32                 `protobuf:"varint,7,opt,name=max_instance_cpu_millis,json=maxInstanceCpuMillis,proto3" json:"max_instance_cpu_millis,omitempty"`
+	MaxInstanceMemoryMb  uint64                 `protobuf:"varint,8,opt,name=max_instance_memory_mb,json=maxInstanceMemoryMb,proto3" json:"max_instance_memory_mb,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PlatformGrant) Reset() {
+	*x = PlatformGrant{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformGrant) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformGrant) ProtoMessage() {}
+
+func (x *PlatformGrant) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformGrant.ProtoReflect.Descriptor instead.
+func (*PlatformGrant) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *PlatformGrant) GetGameId() int64 {
+	if x != nil {
+		return x.GameId
+	}
+	return 0
+}
+
+func (x *PlatformGrant) GetMaxInstances() int32 {
+	if x != nil {
+		return x.MaxInstances
+	}
+	return 0
+}
+
+func (x *PlatformGrant) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *PlatformGrant) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *PlatformGrant) GetMaxTotalCpuMillis() uint32 {
+	if x != nil {
+		return x.MaxTotalCpuMillis
+	}
+	return 0
+}
+
+func (x *PlatformGrant) GetMaxTotalMemoryMb() uint64 {
+	if x != nil {
+		return x.MaxTotalMemoryMb
+	}
+	return 0
+}
+
+func (x *PlatformGrant) GetMaxInstanceCpuMillis() uint32 {
+	if x != nil {
+		return x.MaxInstanceCpuMillis
+	}
+	return 0
+}
+
+func (x *PlatformGrant) GetMaxInstanceMemoryMb() uint64 {
+	if x != nil {
+		return x.MaxInstanceMemoryMb
+	}
+	return 0
+}
+
+type NodeServiceUpdatePlatformStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        int64                  `protobuf:"varint,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	IsPlatform    bool                   `protobuf:"varint,2,opt,name=is_platform,json=isPlatform,proto3" json:"is_platform,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceUpdatePlatformStatusRequest) Reset() {
+	*x = NodeServiceUpdatePlatformStatusRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceUpdatePlatformStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceUpdatePlatformStatusRequest) ProtoMessage() {}
+
+func (x *NodeServiceUpdatePlatformStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceUpdatePlatformStatusRequest.ProtoReflect.Descriptor instead.
+func (*NodeServiceUpdatePlatformStatusRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *NodeServiceUpdatePlatformStatusRequest) GetNodeId() int64 {
+	if x != nil {
+		return x.NodeId
+	}
+	return 0
+}
+
+func (x *NodeServiceUpdatePlatformStatusRequest) GetIsPlatform() bool {
+	if x != nil {
+		return x.IsPlatform
+	}
+	return false
+}
+
+type NodeServiceUpdatePlatformStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Node          *Node                  `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeServiceUpdatePlatformStatusResponse) Reset() {
+	*x = NodeServiceUpdatePlatformStatusResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeServiceUpdatePlatformStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeServiceUpdatePlatformStatusResponse) ProtoMessage() {}
+
+func (x *NodeServiceUpdatePlatformStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeServiceUpdatePlatformStatusResponse.ProtoReflect.Descriptor instead.
+func (*NodeServiceUpdatePlatformStatusResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *NodeServiceUpdatePlatformStatusResponse) GetNode() *Node {
+	if x != nil {
+		return x.Node
+	}
+	return nil
+}
+
+type GrantPlatformAccessRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId            int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	MaxInstances         int32                  `protobuf:"varint,2,opt,name=max_instances,json=maxInstances,proto3" json:"max_instances,omitempty"`
+	MaxTotalCpuMillis    uint32                 `protobuf:"varint,3,opt,name=max_total_cpu_millis,json=maxTotalCpuMillis,proto3" json:"max_total_cpu_millis,omitempty"`
+	MaxTotalMemoryMb     uint64                 `protobuf:"varint,4,opt,name=max_total_memory_mb,json=maxTotalMemoryMb,proto3" json:"max_total_memory_mb,omitempty"`
+	MaxInstanceCpuMillis uint32                 `protobuf:"varint,5,opt,name=max_instance_cpu_millis,json=maxInstanceCpuMillis,proto3" json:"max_instance_cpu_millis,omitempty"`
+	MaxInstanceMemoryMb  uint64                 `protobuf:"varint,6,opt,name=max_instance_memory_mb,json=maxInstanceMemoryMb,proto3" json:"max_instance_memory_mb,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GrantPlatformAccessRequest) Reset() {
+	*x = GrantPlatformAccessRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantPlatformAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantPlatformAccessRequest) ProtoMessage() {}
+
+func (x *GrantPlatformAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantPlatformAccessRequest.ProtoReflect.Descriptor instead.
+func (*GrantPlatformAccessRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *GrantPlatformAccessRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *GrantPlatformAccessRequest) GetMaxInstances() int32 {
+	if x != nil {
+		return x.MaxInstances
+	}
+	return 0
+}
+
+func (x *GrantPlatformAccessRequest) GetMaxTotalCpuMillis() uint32 {
+	if x != nil {
+		return x.MaxTotalCpuMillis
+	}
+	return 0
+}
+
+func (x *GrantPlatformAccessRequest) GetMaxTotalMemoryMb() uint64 {
+	if x != nil {
+		return x.MaxTotalMemoryMb
+	}
+	return 0
+}
+
+func (x *GrantPlatformAccessRequest) GetMaxInstanceCpuMillis() uint32 {
+	if x != nil {
+		return x.MaxInstanceCpuMillis
+	}
+	return 0
+}
+
+func (x *GrantPlatformAccessRequest) GetMaxInstanceMemoryMb() uint64 {
+	if x != nil {
+		return x.MaxInstanceMemoryMb
+	}
+	return 0
+}
+
+type GrantPlatformAccessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Grant         *PlatformGrant         `protobuf:"bytes,2,opt,name=grant,proto3" json:"grant,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GrantPlatformAccessResponse) Reset() {
+	*x = GrantPlatformAccessResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantPlatformAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantPlatformAccessResponse) ProtoMessage() {}
+
+func (x *GrantPlatformAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantPlatformAccessResponse.ProtoReflect.Descriptor instead.
+func (*GrantPlatformAccessResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *GrantPlatformAccessResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GrantPlatformAccessResponse) GetGrant() *PlatformGrant {
+	if x != nil {
+		return x.Grant
+	}
+	return nil
+}
+
+type RevokePlatformAccessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokePlatformAccessRequest) Reset() {
+	*x = RevokePlatformAccessRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokePlatformAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokePlatformAccessRequest) ProtoMessage() {}
+
+func (x *RevokePlatformAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokePlatformAccessRequest.ProtoReflect.Descriptor instead.
+func (*RevokePlatformAccessRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *RevokePlatformAccessRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+type RevokePlatformAccessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokePlatformAccessResponse) Reset() {
+	*x = RevokePlatformAccessResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokePlatformAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokePlatformAccessResponse) ProtoMessage() {}
+
+func (x *RevokePlatformAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokePlatformAccessResponse.ProtoReflect.Descriptor instead.
+func (*RevokePlatformAccessResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *RevokePlatformAccessResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetPlatformGrantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlatformGrantRequest) Reset() {
+	*x = GetPlatformGrantRequest{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlatformGrantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlatformGrantRequest) ProtoMessage() {}
+
+func (x *GetPlatformGrantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlatformGrantRequest.ProtoReflect.Descriptor instead.
+func (*GetPlatformGrantRequest) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *GetPlatformGrantRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+type GetPlatformGrantResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	HasAccess       bool                   `protobuf:"varint,1,opt,name=has_access,json=hasAccess,proto3" json:"has_access,omitempty"`
+	MaxInstances    int32                  `protobuf:"varint,2,opt,name=max_instances,json=maxInstances,proto3" json:"max_instances,omitempty"`
+	ActiveInstances int32                  `protobuf:"varint,3,opt,name=active_instances,json=activeInstances,proto3" json:"active_instances,omitempty"`
+	Grant           *PlatformGrant         `protobuf:"bytes,4,opt,name=grant,proto3" json:"grant,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetPlatformGrantResponse) Reset() {
+	*x = GetPlatformGrantResponse{}
+	mi := &file_orchestrator_v1_node_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlatformGrantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlatformGrantResponse) ProtoMessage() {}
+
+func (x *GetPlatformGrantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_orchestrator_v1_node_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlatformGrantResponse.ProtoReflect.Descriptor instead.
+func (*GetPlatformGrantResponse) Descriptor() ([]byte, []int) {
+	return file_orchestrator_v1_node_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *GetPlatformGrantResponse) GetHasAccess() bool {
+	if x != nil {
+		return x.HasAccess
+	}
+	return false
+}
+
+func (x *GetPlatformGrantResponse) GetMaxInstances() int32 {
+	if x != nil {
+		return x.MaxInstances
+	}
+	return 0
+}
+
+func (x *GetPlatformGrantResponse) GetActiveInstances() int32 {
+	if x != nil {
+		return x.ActiveInstances
+	}
+	return 0
+}
+
+func (x *GetPlatformGrantResponse) GetGrant() *PlatformGrant {
+	if x != nil {
+		return x.Grant
+	}
+	return nil
+}
+
 var File_orchestrator_v1_node_proto protoreflect.FileDescriptor
 
 const file_orchestrator_v1_node_proto_rawDesc = "" +
@@ -3118,10 +3658,13 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\tauthorize\x18\x02 \x01(\v2&.orchestrator.v1.RegisterNodeAuthorizeH\x00R\tauthorizeB\x06\n" +
 	"\x04mode\"H\n" +
 	"\x1bNodeServiceRegisterResponse\x12)\n" +
-	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"]\n" +
+	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"\x87\x01\n" +
 	"\x16NodeServiceListRequest\x128\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x1b.orchestrator.v1.NodeStatusH\x00R\x06status\x88\x01\x01B\t\n" +
-	"\a_status\"F\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x1b.orchestrator.v1.NodeStatusH\x00R\x06status\x88\x01\x01\x12\x1c\n" +
+	"\agame_id\x18\x02 \x01(\x03H\x01R\x06gameId\x88\x01\x01B\t\n" +
+	"\a_statusB\n" +
+	"\n" +
+	"\b_game_id\"F\n" +
 	"\x17NodeServiceListResponse\x12+\n" +
 	"\x05nodes\x18\x01 \x03(\v2\x15.orchestrator.v1.NodeR\x05nodes\"0\n" +
 	"\x15NodeServiceGetRequest\x12\x17\n" +
@@ -3288,7 +3831,48 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\n" +
 	"service_id\x18\x02 \x01(\x03R\tserviceId\"[\n" +
 	"\x1eNodeServiceStopServiceResponse\x129\n" +
-	"\aservice\x18\x01 \x01(\v2\x1f.orchestrator.v1.ManagedServiceR\aservice*\x8e\x01\n" +
+	"\aservice\x18\x01 \x01(\v2\x1f.orchestrator.v1.ManagedServiceR\aservice\"\xf1\x02\n" +
+	"\rPlatformGrant\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\x03R\x06gameId\x12#\n" +
+	"\rmax_instances\x18\x02 \x01(\x05R\fmaxInstances\x12\x1b\n" +
+	"\tis_active\x18\x03 \x01(\bR\bisActive\x129\n" +
+	"\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12/\n" +
+	"\x14max_total_cpu_millis\x18\x05 \x01(\rR\x11maxTotalCpuMillis\x12-\n" +
+	"\x13max_total_memory_mb\x18\x06 \x01(\x04R\x10maxTotalMemoryMb\x125\n" +
+	"\x17max_instance_cpu_millis\x18\a \x01(\rR\x14maxInstanceCpuMillis\x123\n" +
+	"\x16max_instance_memory_mb\x18\b \x01(\x04R\x13maxInstanceMemoryMb\"b\n" +
+	"&NodeServiceUpdatePlatformStatusRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\x03R\x06nodeId\x12\x1f\n" +
+	"\vis_platform\x18\x02 \x01(\bR\n" +
+	"isPlatform\"T\n" +
+	"'NodeServiceUpdatePlatformStatusResponse\x12)\n" +
+	"\x04node\x18\x01 \x01(\v2\x15.orchestrator.v1.NodeR\x04node\"\xac\x02\n" +
+	"\x1aGrantPlatformAccessRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12#\n" +
+	"\rmax_instances\x18\x02 \x01(\x05R\fmaxInstances\x12/\n" +
+	"\x14max_total_cpu_millis\x18\x03 \x01(\rR\x11maxTotalCpuMillis\x12-\n" +
+	"\x13max_total_memory_mb\x18\x04 \x01(\x04R\x10maxTotalMemoryMb\x125\n" +
+	"\x17max_instance_cpu_millis\x18\x05 \x01(\rR\x14maxInstanceCpuMillis\x123\n" +
+	"\x16max_instance_memory_mb\x18\x06 \x01(\x04R\x13maxInstanceMemoryMb\"m\n" +
+	"\x1bGrantPlatformAccessResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x124\n" +
+	"\x05grant\x18\x02 \x01(\v2\x1e.orchestrator.v1.PlatformGrantR\x05grant\"<\n" +
+	"\x1bRevokePlatformAccessRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\"8\n" +
+	"\x1cRevokePlatformAccessResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"8\n" +
+	"\x17GetPlatformGrantRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\"\xbf\x01\n" +
+	"\x18GetPlatformGrantResponse\x12\x1d\n" +
+	"\n" +
+	"has_access\x18\x01 \x01(\bR\thasAccess\x12#\n" +
+	"\rmax_instances\x18\x02 \x01(\x05R\fmaxInstances\x12)\n" +
+	"\x10active_instances\x18\x03 \x01(\x05R\x0factiveInstances\x124\n" +
+	"\x05grant\x18\x04 \x01(\v2\x1e.orchestrator.v1.PlatformGrantR\x05grant*\x8e\x01\n" +
 	"\x17StorageTransitionAction\x12)\n" +
 	"%STORAGE_TRANSITION_ACTION_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eSTORAGE_TRANSITION_ACTION_STOP\x10\x01\x12$\n" +
@@ -3307,7 +3891,7 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\x16BACKUP_STATUS_CREATING\x10\x01\x12\x17\n" +
 	"\x13BACKUP_STATUS_READY\x10\x02\x12\x18\n" +
 	"\x14BACKUP_STATUS_FAILED\x10\x03\x12\x1b\n" +
-	"\x17BACKUP_STATUS_RESTORING\x10\x042\xdd\x1f\n" +
+	"\x17BACKUP_STATUS_RESTORING\x10\x042\xb5%\n" +
 	"\vNodeService\x12\x7f\n" +
 	"\bRegister\x12+.orchestrator.v1.NodeServiceRegisterRequest\x1a,.orchestrator.v1.NodeServiceRegisterResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/nodes\x12p\n" +
 	"\x04List\x12'.orchestrator.v1.NodeServiceListRequest\x1a(.orchestrator.v1.NodeServiceListResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/nodes\x12w\n" +
@@ -3333,7 +3917,11 @@ const file_orchestrator_v1_node_proto_rawDesc = "" +
 	"\x17ToggleServiceAutoBackup\x12:.orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest\x1a;.orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse\"M\x82\xd3\xe4\x93\x02G:\x01*\x1aB/api/v1/nodes/{node_id}/services/{service_name}/auto-backup/toggle\x12\xab\x01\n" +
 	"\rDeleteService\x120.orchestrator.v1.NodeServiceDeleteServiceRequest\x1a1.orchestrator.v1.NodeServiceDeleteServiceResponse\"5\x82\xd3\xe4\x93\x02/*-/api/v1/nodes/{node_id}/services/{service_id}\x12\xb1\x01\n" +
 	"\fStartService\x12/.orchestrator.v1.NodeServiceStartServiceRequest\x1a0.orchestrator.v1.NodeServiceStartServiceResponse\">\x82\xd3\xe4\x93\x028:\x01*\"3/api/v1/nodes/{node_id}/services/{service_id}/start\x12\xad\x01\n" +
-	"\vStopService\x12..orchestrator.v1.NodeServiceStopServiceRequest\x1a/.orchestrator.v1.NodeServiceStopServiceResponse\"=\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/nodes/{node_id}/services/{service_id}/stopB\xc9\x01\n" +
+	"\vStopService\x12..orchestrator.v1.NodeServiceStopServiceRequest\x1a/.orchestrator.v1.NodeServiceStopServiceResponse\"=\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/nodes/{node_id}/services/{service_id}/stop\x12\xdd\x01\n" +
+	"\x14UpdatePlatformStatus\x127.orchestrator.v1.NodeServiceUpdatePlatformStatusRequest\x1a8.orchestrator.v1.NodeServiceUpdatePlatformStatusResponse\"R\x82\xd3\xe4\x93\x02L:\x01*Z%:\x01*\x1a /api/v1/nodes/{node_id}/platform2 /api/v1/nodes/{node_id}/platform\x12\xa9\x01\n" +
+	"\x13GrantPlatformAccess\x12+.orchestrator.v1.GrantPlatformAccessRequest\x1a,.orchestrator.v1.GrantPlatformAccessResponse\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/projects/{project_id}/platform-grant\x12\xa9\x01\n" +
+	"\x14RevokePlatformAccess\x12,.orchestrator.v1.RevokePlatformAccessRequest\x1a-.orchestrator.v1.RevokePlatformAccessResponse\"4\x82\xd3\xe4\x93\x02.*,/api/v1/projects/{project_id}/platform-grant\x12\x9d\x01\n" +
+	"\x10GetPlatformGrant\x12(.orchestrator.v1.GetPlatformGrantRequest\x1a).orchestrator.v1.GetPlatformGrantResponse\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/projects/{project_id}/platform-grantB\xc9\x01\n" +
 	"\x13com.orchestrator.v1B\tNodeProtoP\x01ZJgithub.com/Be4Die/game-developer-hub/protos/orchestrator/v1;orchestratorv1\xa2\x02\x03OXX\xaa\x02\x0fOrchestrator.V1\xca\x02\x0fOrchestrator\\V1\xe2\x02\x1bOrchestrator\\V1\\GPBMetadata\xea\x02\x10Orchestrator::V1b\x06proto3"
 
 var (
@@ -3349,7 +3937,7 @@ func file_orchestrator_v1_node_proto_rawDescGZIP() []byte {
 }
 
 var file_orchestrator_v1_node_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
+var file_orchestrator_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 61)
 var file_orchestrator_v1_node_proto_goTypes = []any{
 	(StorageTransitionAction)(0),                       // 0: orchestrator.v1.StorageTransitionAction
 	(ComputeTransitionAction)(0),                       // 1: orchestrator.v1.ComputeTransitionAction
@@ -3407,100 +3995,121 @@ var file_orchestrator_v1_node_proto_goTypes = []any{
 	(*NodeServiceStartServiceResponse)(nil),            // 53: orchestrator.v1.NodeServiceStartServiceResponse
 	(*NodeServiceStopServiceRequest)(nil),              // 54: orchestrator.v1.NodeServiceStopServiceRequest
 	(*NodeServiceStopServiceResponse)(nil),             // 55: orchestrator.v1.NodeServiceStopServiceResponse
-	(IngressMode)(0),                                   // 56: orchestrator.v1.IngressMode
-	(*Node)(nil),                                       // 57: orchestrator.v1.Node
-	(NodeStatus)(0),                                    // 58: orchestrator.v1.NodeStatus
-	(*ResourceUsage)(nil),                              // 59: orchestrator.v1.ResourceUsage
-	(*Instance)(nil),                                   // 60: orchestrator.v1.Instance
-	(NodeRole)(0),                                      // 61: orchestrator.v1.NodeRole
-	(ServiceType)(0),                                   // 62: orchestrator.v1.ServiceType
-	(*ManagedService)(nil),                             // 63: orchestrator.v1.ManagedService
-	(*timestamppb.Timestamp)(nil),                      // 64: google.protobuf.Timestamp
+	(*PlatformGrant)(nil),                              // 56: orchestrator.v1.PlatformGrant
+	(*NodeServiceUpdatePlatformStatusRequest)(nil),     // 57: orchestrator.v1.NodeServiceUpdatePlatformStatusRequest
+	(*NodeServiceUpdatePlatformStatusResponse)(nil),    // 58: orchestrator.v1.NodeServiceUpdatePlatformStatusResponse
+	(*GrantPlatformAccessRequest)(nil),                 // 59: orchestrator.v1.GrantPlatformAccessRequest
+	(*GrantPlatformAccessResponse)(nil),                // 60: orchestrator.v1.GrantPlatformAccessResponse
+	(*RevokePlatformAccessRequest)(nil),                // 61: orchestrator.v1.RevokePlatformAccessRequest
+	(*RevokePlatformAccessResponse)(nil),               // 62: orchestrator.v1.RevokePlatformAccessResponse
+	(*GetPlatformGrantRequest)(nil),                    // 63: orchestrator.v1.GetPlatformGrantRequest
+	(*GetPlatformGrantResponse)(nil),                   // 64: orchestrator.v1.GetPlatformGrantResponse
+	(IngressMode)(0),                                   // 65: orchestrator.v1.IngressMode
+	(*Node)(nil),                                       // 66: orchestrator.v1.Node
+	(NodeStatus)(0),                                    // 67: orchestrator.v1.NodeStatus
+	(*ResourceUsage)(nil),                              // 68: orchestrator.v1.ResourceUsage
+	(*Instance)(nil),                                   // 69: orchestrator.v1.Instance
+	(NodeRole)(0),                                      // 70: orchestrator.v1.NodeRole
+	(ServiceType)(0),                                   // 71: orchestrator.v1.ServiceType
+	(*ManagedService)(nil),                             // 72: orchestrator.v1.ManagedService
+	(*timestamppb.Timestamp)(nil),                      // 73: google.protobuf.Timestamp
 }
 var file_orchestrator_v1_node_proto_depIdxs = []int32{
-	56, // 0: orchestrator.v1.RegisterNodeManual.ingress_mode:type_name -> orchestrator.v1.IngressMode
+	65, // 0: orchestrator.v1.RegisterNodeManual.ingress_mode:type_name -> orchestrator.v1.IngressMode
 	4,  // 1: orchestrator.v1.NodeServiceRegisterRequest.manual:type_name -> orchestrator.v1.RegisterNodeManual
 	5,  // 2: orchestrator.v1.NodeServiceRegisterRequest.authorize:type_name -> orchestrator.v1.RegisterNodeAuthorize
-	57, // 3: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
-	58, // 4: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
-	57, // 5: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
-	57, // 6: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
-	59, // 7: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
-	60, // 8: orchestrator.v1.NodeServiceListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
-	61, // 9: orchestrator.v1.NodeServiceUpdateRoleRequest.role:type_name -> orchestrator.v1.NodeRole
+	66, // 3: orchestrator.v1.NodeServiceRegisterResponse.node:type_name -> orchestrator.v1.Node
+	67, // 4: orchestrator.v1.NodeServiceListRequest.status:type_name -> orchestrator.v1.NodeStatus
+	66, // 5: orchestrator.v1.NodeServiceListResponse.nodes:type_name -> orchestrator.v1.Node
+	66, // 6: orchestrator.v1.NodeServiceGetResponse.node:type_name -> orchestrator.v1.Node
+	68, // 7: orchestrator.v1.NodeServiceGetUsageResponse.usage:type_name -> orchestrator.v1.ResourceUsage
+	69, // 8: orchestrator.v1.NodeServiceListInstancesResponse.instances:type_name -> orchestrator.v1.Instance
+	70, // 9: orchestrator.v1.NodeServiceUpdateRoleRequest.role:type_name -> orchestrator.v1.NodeRole
 	0,  // 10: orchestrator.v1.NodeServiceUpdateRoleRequest.storage_action:type_name -> orchestrator.v1.StorageTransitionAction
 	1,  // 11: orchestrator.v1.NodeServiceUpdateRoleRequest.compute_action:type_name -> orchestrator.v1.ComputeTransitionAction
-	57, // 12: orchestrator.v1.NodeServiceUpdateRoleResponse.node:type_name -> orchestrator.v1.Node
-	56, // 13: orchestrator.v1.NodeServiceUpdateIngressRequest.ingress_mode:type_name -> orchestrator.v1.IngressMode
-	57, // 14: orchestrator.v1.NodeServiceUpdateIngressResponse.node:type_name -> orchestrator.v1.Node
-	62, // 15: orchestrator.v1.NodeServiceCreateServiceRequest.type:type_name -> orchestrator.v1.ServiceType
-	63, // 16: orchestrator.v1.NodeServiceCreateServiceResponse.service:type_name -> orchestrator.v1.ManagedService
-	63, // 17: orchestrator.v1.NodeServiceListServicesResponse.services:type_name -> orchestrator.v1.ManagedService
-	57, // 18: orchestrator.v1.NodeServiceToggleBackupsResponse.node:type_name -> orchestrator.v1.Node
-	63, // 19: orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse.service:type_name -> orchestrator.v1.ManagedService
-	62, // 20: orchestrator.v1.ServiceBackup.service_type:type_name -> orchestrator.v1.ServiceType
+	66, // 12: orchestrator.v1.NodeServiceUpdateRoleResponse.node:type_name -> orchestrator.v1.Node
+	65, // 13: orchestrator.v1.NodeServiceUpdateIngressRequest.ingress_mode:type_name -> orchestrator.v1.IngressMode
+	66, // 14: orchestrator.v1.NodeServiceUpdateIngressResponse.node:type_name -> orchestrator.v1.Node
+	71, // 15: orchestrator.v1.NodeServiceCreateServiceRequest.type:type_name -> orchestrator.v1.ServiceType
+	72, // 16: orchestrator.v1.NodeServiceCreateServiceResponse.service:type_name -> orchestrator.v1.ManagedService
+	72, // 17: orchestrator.v1.NodeServiceListServicesResponse.services:type_name -> orchestrator.v1.ManagedService
+	66, // 18: orchestrator.v1.NodeServiceToggleBackupsResponse.node:type_name -> orchestrator.v1.Node
+	72, // 19: orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse.service:type_name -> orchestrator.v1.ManagedService
+	71, // 20: orchestrator.v1.ServiceBackup.service_type:type_name -> orchestrator.v1.ServiceType
 	2,  // 21: orchestrator.v1.ServiceBackup.backup_type:type_name -> orchestrator.v1.BackupType
 	3,  // 22: orchestrator.v1.ServiceBackup.status:type_name -> orchestrator.v1.BackupStatus
-	64, // 23: orchestrator.v1.ServiceBackup.created_at:type_name -> google.protobuf.Timestamp
+	73, // 23: orchestrator.v1.ServiceBackup.created_at:type_name -> google.protobuf.Timestamp
 	36, // 24: orchestrator.v1.NodeServiceCreateServiceBackupResponse.backup:type_name -> orchestrator.v1.ServiceBackup
 	36, // 25: orchestrator.v1.NodeServiceListServiceBackupsResponse.backups:type_name -> orchestrator.v1.ServiceBackup
 	50, // 26: orchestrator.v1.NodeServiceUploadBackupChunk.metadata:type_name -> orchestrator.v1.NodeServiceUploadBackupMetadata
 	36, // 27: orchestrator.v1.NodeServiceUploadBackupResponse.backup:type_name -> orchestrator.v1.ServiceBackup
-	63, // 28: orchestrator.v1.NodeServiceStartServiceResponse.service:type_name -> orchestrator.v1.ManagedService
-	63, // 29: orchestrator.v1.NodeServiceStopServiceResponse.service:type_name -> orchestrator.v1.ManagedService
-	6,  // 30: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
-	8,  // 31: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
-	10, // 32: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
-	12, // 33: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
-	14, // 34: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
-	16, // 35: orchestrator.v1.NodeService.ListInstances:input_type -> orchestrator.v1.NodeServiceListInstancesRequest
-	18, // 36: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
-	20, // 37: orchestrator.v1.NodeService.UpdateRole:input_type -> orchestrator.v1.NodeServiceUpdateRoleRequest
-	22, // 38: orchestrator.v1.NodeService.UpdateIngress:input_type -> orchestrator.v1.NodeServiceUpdateIngressRequest
-	24, // 39: orchestrator.v1.NodeService.VerifyDomain:input_type -> orchestrator.v1.NodeServiceVerifyDomainRequest
-	26, // 40: orchestrator.v1.NodeService.CreateService:input_type -> orchestrator.v1.NodeServiceCreateServiceRequest
-	28, // 41: orchestrator.v1.NodeService.ListServices:input_type -> orchestrator.v1.NodeServiceListServicesRequest
-	37, // 42: orchestrator.v1.NodeService.CreateServiceBackup:input_type -> orchestrator.v1.NodeServiceCreateServiceBackupRequest
-	39, // 43: orchestrator.v1.NodeService.ListServiceBackups:input_type -> orchestrator.v1.NodeServiceListServiceBackupsRequest
-	41, // 44: orchestrator.v1.NodeService.RestoreServiceBackup:input_type -> orchestrator.v1.NodeServiceRestoreServiceBackupRequest
-	43, // 45: orchestrator.v1.NodeService.DeleteServiceBackup:input_type -> orchestrator.v1.NodeServiceDeleteServiceBackupRequest
-	45, // 46: orchestrator.v1.NodeService.GetBackupTicket:input_type -> orchestrator.v1.NodeServiceGetBackupTicketRequest
-	47, // 47: orchestrator.v1.NodeService.DownloadServiceBackup:input_type -> orchestrator.v1.NodeServiceDownloadServiceBackupRequest
-	49, // 48: orchestrator.v1.NodeService.UploadServiceBackup:input_type -> orchestrator.v1.NodeServiceUploadBackupChunk
-	32, // 49: orchestrator.v1.NodeService.ToggleBackups:input_type -> orchestrator.v1.NodeServiceToggleBackupsRequest
-	34, // 50: orchestrator.v1.NodeService.ToggleServiceAutoBackup:input_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest
-	30, // 51: orchestrator.v1.NodeService.DeleteService:input_type -> orchestrator.v1.NodeServiceDeleteServiceRequest
-	52, // 52: orchestrator.v1.NodeService.StartService:input_type -> orchestrator.v1.NodeServiceStartServiceRequest
-	54, // 53: orchestrator.v1.NodeService.StopService:input_type -> orchestrator.v1.NodeServiceStopServiceRequest
-	7,  // 54: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
-	9,  // 55: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
-	11, // 56: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
-	13, // 57: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
-	15, // 58: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
-	17, // 59: orchestrator.v1.NodeService.ListInstances:output_type -> orchestrator.v1.NodeServiceListInstancesResponse
-	19, // 60: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
-	21, // 61: orchestrator.v1.NodeService.UpdateRole:output_type -> orchestrator.v1.NodeServiceUpdateRoleResponse
-	23, // 62: orchestrator.v1.NodeService.UpdateIngress:output_type -> orchestrator.v1.NodeServiceUpdateIngressResponse
-	25, // 63: orchestrator.v1.NodeService.VerifyDomain:output_type -> orchestrator.v1.NodeServiceVerifyDomainResponse
-	27, // 64: orchestrator.v1.NodeService.CreateService:output_type -> orchestrator.v1.NodeServiceCreateServiceResponse
-	29, // 65: orchestrator.v1.NodeService.ListServices:output_type -> orchestrator.v1.NodeServiceListServicesResponse
-	38, // 66: orchestrator.v1.NodeService.CreateServiceBackup:output_type -> orchestrator.v1.NodeServiceCreateServiceBackupResponse
-	40, // 67: orchestrator.v1.NodeService.ListServiceBackups:output_type -> orchestrator.v1.NodeServiceListServiceBackupsResponse
-	42, // 68: orchestrator.v1.NodeService.RestoreServiceBackup:output_type -> orchestrator.v1.NodeServiceRestoreServiceBackupResponse
-	44, // 69: orchestrator.v1.NodeService.DeleteServiceBackup:output_type -> orchestrator.v1.NodeServiceDeleteServiceBackupResponse
-	46, // 70: orchestrator.v1.NodeService.GetBackupTicket:output_type -> orchestrator.v1.NodeServiceGetBackupTicketResponse
-	48, // 71: orchestrator.v1.NodeService.DownloadServiceBackup:output_type -> orchestrator.v1.NodeServiceBackupChunk
-	51, // 72: orchestrator.v1.NodeService.UploadServiceBackup:output_type -> orchestrator.v1.NodeServiceUploadBackupResponse
-	33, // 73: orchestrator.v1.NodeService.ToggleBackups:output_type -> orchestrator.v1.NodeServiceToggleBackupsResponse
-	35, // 74: orchestrator.v1.NodeService.ToggleServiceAutoBackup:output_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse
-	31, // 75: orchestrator.v1.NodeService.DeleteService:output_type -> orchestrator.v1.NodeServiceDeleteServiceResponse
-	53, // 76: orchestrator.v1.NodeService.StartService:output_type -> orchestrator.v1.NodeServiceStartServiceResponse
-	55, // 77: orchestrator.v1.NodeService.StopService:output_type -> orchestrator.v1.NodeServiceStopServiceResponse
-	54, // [54:78] is the sub-list for method output_type
-	30, // [30:54] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	72, // 28: orchestrator.v1.NodeServiceStartServiceResponse.service:type_name -> orchestrator.v1.ManagedService
+	72, // 29: orchestrator.v1.NodeServiceStopServiceResponse.service:type_name -> orchestrator.v1.ManagedService
+	73, // 30: orchestrator.v1.PlatformGrant.updated_at:type_name -> google.protobuf.Timestamp
+	66, // 31: orchestrator.v1.NodeServiceUpdatePlatformStatusResponse.node:type_name -> orchestrator.v1.Node
+	56, // 32: orchestrator.v1.GrantPlatformAccessResponse.grant:type_name -> orchestrator.v1.PlatformGrant
+	56, // 33: orchestrator.v1.GetPlatformGrantResponse.grant:type_name -> orchestrator.v1.PlatformGrant
+	6,  // 34: orchestrator.v1.NodeService.Register:input_type -> orchestrator.v1.NodeServiceRegisterRequest
+	8,  // 35: orchestrator.v1.NodeService.List:input_type -> orchestrator.v1.NodeServiceListRequest
+	10, // 36: orchestrator.v1.NodeService.Get:input_type -> orchestrator.v1.NodeServiceGetRequest
+	12, // 37: orchestrator.v1.NodeService.Delete:input_type -> orchestrator.v1.NodeServiceDeleteRequest
+	14, // 38: orchestrator.v1.NodeService.GetUsage:input_type -> orchestrator.v1.NodeServiceGetUsageRequest
+	16, // 39: orchestrator.v1.NodeService.ListInstances:input_type -> orchestrator.v1.NodeServiceListInstancesRequest
+	18, // 40: orchestrator.v1.NodeService.Announce:input_type -> orchestrator.v1.NodeServiceAnnounceRequest
+	20, // 41: orchestrator.v1.NodeService.UpdateRole:input_type -> orchestrator.v1.NodeServiceUpdateRoleRequest
+	22, // 42: orchestrator.v1.NodeService.UpdateIngress:input_type -> orchestrator.v1.NodeServiceUpdateIngressRequest
+	24, // 43: orchestrator.v1.NodeService.VerifyDomain:input_type -> orchestrator.v1.NodeServiceVerifyDomainRequest
+	26, // 44: orchestrator.v1.NodeService.CreateService:input_type -> orchestrator.v1.NodeServiceCreateServiceRequest
+	28, // 45: orchestrator.v1.NodeService.ListServices:input_type -> orchestrator.v1.NodeServiceListServicesRequest
+	37, // 46: orchestrator.v1.NodeService.CreateServiceBackup:input_type -> orchestrator.v1.NodeServiceCreateServiceBackupRequest
+	39, // 47: orchestrator.v1.NodeService.ListServiceBackups:input_type -> orchestrator.v1.NodeServiceListServiceBackupsRequest
+	41, // 48: orchestrator.v1.NodeService.RestoreServiceBackup:input_type -> orchestrator.v1.NodeServiceRestoreServiceBackupRequest
+	43, // 49: orchestrator.v1.NodeService.DeleteServiceBackup:input_type -> orchestrator.v1.NodeServiceDeleteServiceBackupRequest
+	45, // 50: orchestrator.v1.NodeService.GetBackupTicket:input_type -> orchestrator.v1.NodeServiceGetBackupTicketRequest
+	47, // 51: orchestrator.v1.NodeService.DownloadServiceBackup:input_type -> orchestrator.v1.NodeServiceDownloadServiceBackupRequest
+	49, // 52: orchestrator.v1.NodeService.UploadServiceBackup:input_type -> orchestrator.v1.NodeServiceUploadBackupChunk
+	32, // 53: orchestrator.v1.NodeService.ToggleBackups:input_type -> orchestrator.v1.NodeServiceToggleBackupsRequest
+	34, // 54: orchestrator.v1.NodeService.ToggleServiceAutoBackup:input_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupRequest
+	30, // 55: orchestrator.v1.NodeService.DeleteService:input_type -> orchestrator.v1.NodeServiceDeleteServiceRequest
+	52, // 56: orchestrator.v1.NodeService.StartService:input_type -> orchestrator.v1.NodeServiceStartServiceRequest
+	54, // 57: orchestrator.v1.NodeService.StopService:input_type -> orchestrator.v1.NodeServiceStopServiceRequest
+	57, // 58: orchestrator.v1.NodeService.UpdatePlatformStatus:input_type -> orchestrator.v1.NodeServiceUpdatePlatformStatusRequest
+	59, // 59: orchestrator.v1.NodeService.GrantPlatformAccess:input_type -> orchestrator.v1.GrantPlatformAccessRequest
+	61, // 60: orchestrator.v1.NodeService.RevokePlatformAccess:input_type -> orchestrator.v1.RevokePlatformAccessRequest
+	63, // 61: orchestrator.v1.NodeService.GetPlatformGrant:input_type -> orchestrator.v1.GetPlatformGrantRequest
+	7,  // 62: orchestrator.v1.NodeService.Register:output_type -> orchestrator.v1.NodeServiceRegisterResponse
+	9,  // 63: orchestrator.v1.NodeService.List:output_type -> orchestrator.v1.NodeServiceListResponse
+	11, // 64: orchestrator.v1.NodeService.Get:output_type -> orchestrator.v1.NodeServiceGetResponse
+	13, // 65: orchestrator.v1.NodeService.Delete:output_type -> orchestrator.v1.NodeServiceDeleteResponse
+	15, // 66: orchestrator.v1.NodeService.GetUsage:output_type -> orchestrator.v1.NodeServiceGetUsageResponse
+	17, // 67: orchestrator.v1.NodeService.ListInstances:output_type -> orchestrator.v1.NodeServiceListInstancesResponse
+	19, // 68: orchestrator.v1.NodeService.Announce:output_type -> orchestrator.v1.NodeServiceAnnounceResponse
+	21, // 69: orchestrator.v1.NodeService.UpdateRole:output_type -> orchestrator.v1.NodeServiceUpdateRoleResponse
+	23, // 70: orchestrator.v1.NodeService.UpdateIngress:output_type -> orchestrator.v1.NodeServiceUpdateIngressResponse
+	25, // 71: orchestrator.v1.NodeService.VerifyDomain:output_type -> orchestrator.v1.NodeServiceVerifyDomainResponse
+	27, // 72: orchestrator.v1.NodeService.CreateService:output_type -> orchestrator.v1.NodeServiceCreateServiceResponse
+	29, // 73: orchestrator.v1.NodeService.ListServices:output_type -> orchestrator.v1.NodeServiceListServicesResponse
+	38, // 74: orchestrator.v1.NodeService.CreateServiceBackup:output_type -> orchestrator.v1.NodeServiceCreateServiceBackupResponse
+	40, // 75: orchestrator.v1.NodeService.ListServiceBackups:output_type -> orchestrator.v1.NodeServiceListServiceBackupsResponse
+	42, // 76: orchestrator.v1.NodeService.RestoreServiceBackup:output_type -> orchestrator.v1.NodeServiceRestoreServiceBackupResponse
+	44, // 77: orchestrator.v1.NodeService.DeleteServiceBackup:output_type -> orchestrator.v1.NodeServiceDeleteServiceBackupResponse
+	46, // 78: orchestrator.v1.NodeService.GetBackupTicket:output_type -> orchestrator.v1.NodeServiceGetBackupTicketResponse
+	48, // 79: orchestrator.v1.NodeService.DownloadServiceBackup:output_type -> orchestrator.v1.NodeServiceBackupChunk
+	51, // 80: orchestrator.v1.NodeService.UploadServiceBackup:output_type -> orchestrator.v1.NodeServiceUploadBackupResponse
+	33, // 81: orchestrator.v1.NodeService.ToggleBackups:output_type -> orchestrator.v1.NodeServiceToggleBackupsResponse
+	35, // 82: orchestrator.v1.NodeService.ToggleServiceAutoBackup:output_type -> orchestrator.v1.NodeServiceToggleServiceAutoBackupResponse
+	31, // 83: orchestrator.v1.NodeService.DeleteService:output_type -> orchestrator.v1.NodeServiceDeleteServiceResponse
+	53, // 84: orchestrator.v1.NodeService.StartService:output_type -> orchestrator.v1.NodeServiceStartServiceResponse
+	55, // 85: orchestrator.v1.NodeService.StopService:output_type -> orchestrator.v1.NodeServiceStopServiceResponse
+	58, // 86: orchestrator.v1.NodeService.UpdatePlatformStatus:output_type -> orchestrator.v1.NodeServiceUpdatePlatformStatusResponse
+	60, // 87: orchestrator.v1.NodeService.GrantPlatformAccess:output_type -> orchestrator.v1.GrantPlatformAccessResponse
+	62, // 88: orchestrator.v1.NodeService.RevokePlatformAccess:output_type -> orchestrator.v1.RevokePlatformAccessResponse
+	64, // 89: orchestrator.v1.NodeService.GetPlatformGrant:output_type -> orchestrator.v1.GetPlatformGrantResponse
+	62, // [62:90] is the sub-list for method output_type
+	34, // [34:62] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_orchestrator_v1_node_proto_init() }
@@ -3528,7 +4137,7 @@ func file_orchestrator_v1_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_orchestrator_v1_node_proto_rawDesc), len(file_orchestrator_v1_node_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   52,
+			NumMessages:   61,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -169,6 +169,14 @@ func (m *hbMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode domai
 	return nil
 }
 
+func (m *hbMockNodeRepo) UpdatePlatformStatus(ctx context.Context, id int64, isPlatform bool) error {
+	return nil
+}
+
+func (m *hbMockNodeRepo) ListPlatformNodes(ctx context.Context) ([]*domain.Node, error) {
+	return nil, nil
+}
+
 type hbMockNodeStateStore struct {
 	updateHeartbeatFn        func(ctx context.Context, nodeID int64, usage *domain.ResourceUsage) error
 	getUsageFn               func(ctx context.Context, nodeID int64) (*domain.ResourceUsage, error)

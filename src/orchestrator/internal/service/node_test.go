@@ -272,7 +272,7 @@ func TestNodeService_ListNodes_Success(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	t.Cleanup(cancel)
-	result, err := svc.ListNodes(ctx, "", nil)
+	result, err := svc.ListNodes(ctx, "", nil, nil)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

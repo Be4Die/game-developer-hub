@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     backups_enabled BOOLEAN NOT NULL DEFAULT true,   -- флаг включения бэкапов
     ingress_mode  SMALLINT NOT NULL DEFAULT 1,       -- 1=platform_proxy, 2=direct
     custom_domain TEXT NOT NULL DEFAULT '',          -- кастомный FQDN-домен (для direct режима)
+    is_platform   BOOLEAN NOT NULL DEFAULT false,    -- флаг платформенной ноды (общий пул)
     cpu_cores     INTEGER NOT NULL DEFAULT 0,        -- количество CPU ядер
     total_memory  BIGINT NOT NULL DEFAULT 0,         -- объём оперативной памяти (bytes)
     total_disk    BIGINT NOT NULL DEFAULT 0,         -- объём диска (bytes)
@@ -207,6 +208,34 @@ CREATE INDEX IF NOT EXISTS idx_node_services_owner ON node_services(owner_id);
 
 CREATE TRIGGER trigger_node_services_updated_at
     BEFORE UPDATE ON node_services
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица platform_access_requests — заявки разработчиков на доступ к серверам платформы
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS platform_access_requests (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL,
+    developer_id TEXT NOT NULL,
+    status SMALLINT NOT NULL DEFAULT 1, -- 1=pending, 2=approved, 3=rejected, 4=revoked
+    reason TEXT NOT NULL DEFAULT '',
+    reviewer_id TEXT NOT NULL DEFAULT '',
+    reviewer_comment TEXT NOT NULL DEFAULT '',
+    max_instances INTEGER NOT NULL DEFAULT 2,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE platform_access_requests IS 'Заявки разработчиков на доступ к серверам платформенного пула';
+COMMENT ON COLUMN platform_access_requests.status IS '1=pending, 2=approved, 3=rejected, 4=revoked';
+
+CREATE INDEX IF NOT EXISTS idx_platform_req_project ON platform_access_requests(project_id);
+CREATE INDEX IF NOT EXISTS idx_platform_req_developer ON platform_access_requests(developer_id);
+CREATE INDEX IF NOT EXISTS idx_platform_req_status ON platform_access_requests(status);
+
+CREATE TRIGGER trigger_platform_access_requests_updated_at
+    BEFORE UPDATE ON platform_access_requests
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─────────────────────────────────────────────────────────────────────────────

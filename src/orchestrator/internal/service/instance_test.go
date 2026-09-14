@@ -279,6 +279,14 @@ func (m *instMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode dom
 	return nil
 }
 
+func (m *instMockNodeRepo) UpdatePlatformStatus(ctx context.Context, id int64, isPlatform bool) error {
+	return nil
+}
+
+func (m *instMockNodeRepo) ListPlatformNodes(ctx context.Context) ([]*domain.Node, error) {
+	return nil, nil
+}
+
 type instMockNodeStateStore struct {
 	updateHeartbeatFn        func(ctx context.Context, nodeID int64, usage *domain.ResourceUsage) error
 	getUsageFn               func(ctx context.Context, nodeID int64) (*domain.ResourceUsage, error)

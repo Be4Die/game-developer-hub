@@ -72,6 +72,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	queueEventRepo := postgres.NewQueueEventRepo(pool)
 	managedServiceRepo := postgres.NewManagedServiceRepo(pool)
 	backupRepo := postgres.NewBackupRepo(pool)
+	platformAccessRepo := postgres.NewPlatformAccessRepo(pool)
 
 	// ─── Хранилища (Valkey) ─────────────────────────────────────
 	nodeState := valkey.NewNodeStateStore(valkeyClient, cfg.KV.KeyTTL)
@@ -108,7 +109,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	instanceService := service.NewInstanceService(
 		instanceRepo, instanceState, buildRepo, nodeRepo, nodeState, nodeClient, cfg.Limits,
-	).WithServiceRepo(managedServiceRepo)
+	).WithServiceRepo(managedServiceRepo).WithPlatformAccessRepo(platformAccessRepo)
 
 	policyService := service.NewGamePolicyService(policyRepo)
 
@@ -120,9 +121,11 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		instanceRepo, instanceState, nodeRepo, buildRepo, policyService, instanceService, queueService,
 	).WithProxy(cfg.IngressProxy.Host, cfg.IngressProxy.Port)
 
+	platformAccessService := service.NewPlatformAccessService(platformAccessRepo)
+
 	nodeService := service.NewNodeService(
 		log, nodeRepo, nodeState, instanceRepo, instanceState, nodeClient,
-	).WithServiceRepo(managedServiceRepo).WithBackupRepo(backupRepo)
+	).WithServiceRepo(managedServiceRepo).WithBackupRepo(backupRepo).WithPlatformAccessRepo(platformAccessRepo)
 
 	heartbeatService := service.NewHeartbeatService(
 		nodeRepo, nodeState, instanceRepo, instanceState, nodeClient, buildRepo, policyService, instanceService, queueService,
@@ -133,7 +136,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	buildHandler := grpctransport.NewBuildHandler(buildPipeline)
 	instanceHandler := grpctransport.NewInstanceHandler(instanceService, cfg.Limits.MaxLogTailLines)
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
-	nodeHandler := grpctransport.NewNodeHandler(nodeService)
+	nodeHandler := grpctransport.NewNodeHandler(nodeService, platformAccessService)
 	healthHandler := grpctransport.NewHealthHandler("1.0.0")
 	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
 	queueHandler := grpctransport.NewQueueHandler(queueService)

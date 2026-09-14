@@ -34,3 +34,24 @@ export const REQUEST_STATUS_BADGES = {
   REQUEST_STATUS_REJECTED: 'badge-danger',
   REQUEST_STATUS_CANCELLED: 'badge-neutral',
 };
+
+export const REQUEST_TYPE = {
+  UNSPECIFIED: 0,
+  PROJECT_PUBLICATION: 1,
+  SERVER_ACCESS: 2,
+};
+
+export const REQUEST_TYPE_LABELS = {
+  [REQUEST_TYPE.UNSPECIFIED]: 'Все типы',
+  [REQUEST_TYPE.PROJECT_PUBLICATION]: 'Публикация',
+  [REQUEST_TYPE.SERVER_ACCESS]: 'Серверы',
+  REQUEST_TYPE_PROJECT_PUBLICATION: 'Публикация',
+  REQUEST_TYPE_SERVER_ACCESS: 'Серверы',
+};
+
+export const REQUEST_TYPE_BADGES = {
+  [REQUEST_TYPE.PROJECT_PUBLICATION]: 'badge-primary',
+  [REQUEST_TYPE.SERVER_ACCESS]: 'badge-warning',
+  REQUEST_TYPE_PROJECT_PUBLICATION: 'badge-primary',
+  REQUEST_TYPE_SERVER_ACCESS: 'badge-warning',
+};

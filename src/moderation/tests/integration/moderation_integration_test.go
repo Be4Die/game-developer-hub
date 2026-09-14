@@ -79,6 +79,25 @@ func (m *inMemoryRequestRepo) GetLatestByProject(ctx context.Context, projectID 
 	return &copied, nil
 }
 
+func (m *inMemoryRequestRepo) GetLatestByProjectAndType(ctx context.Context, projectID int64, reqType domain.RequestType) (*domain.ModerationRequest, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	var latest *domain.ModerationRequest
+	for _, req := range m.requests {
+		if req.ProjectID == projectID && req.Type == reqType {
+			if latest == nil || req.SubmittedAt.After(latest.SubmittedAt) {
+				latest = req
+			}
+		}
+	}
+	if latest == nil {
+		return nil, domain.ErrNotFound
+	}
+	copied := *latest
+	return &copied, nil
+}
+
 func (m *inMemoryRequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]*domain.ModerationRequest, int, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -89,6 +108,9 @@ func (m *inMemoryRequestRepo) List(ctx context.Context, filter domain.RequestFil
 			continue
 		}
 		if filter.ModeratorID != nil && req.ModeratorID != *filter.ModeratorID {
+			continue
+		}
+		if filter.Type != nil && req.Type != *filter.Type {
 			continue
 		}
 		copied := *req
@@ -130,6 +152,44 @@ func (m *inMemoryRequestRepo) Resolve(ctx context.Context, id int64, status doma
 
 	req.Status = status
 	req.RejectionReason = reason
+	if req.ModeratorID == "" {
+		req.ModeratorID = moderatorID
+	}
+	now := time.Now()
+	req.ResolvedAt = &now
+	req.UpdatedAt = now
+	return nil
+}
+
+func (m *inMemoryRequestRepo) ResolveServerAccess(
+	ctx context.Context,
+	id int64,
+	status domain.RequestStatus,
+	maxInstances int32,
+	maxTotalCPU uint32,
+	maxTotalMemoryMB uint64,
+	maxInstanceCPU uint32,
+	maxInstanceMemoryMB uint64,
+	moderatorComment string,
+	rejectionReason string,
+	moderatorID string,
+) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	req, ok := m.requests[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+
+	req.Status = status
+	req.MaxInstances = maxInstances
+	req.MaxTotalCPUMillis = maxTotalCPU
+	req.MaxTotalMemoryMB = maxTotalMemoryMB
+	req.MaxInstanceCPUMillis = maxInstanceCPU
+	req.MaxInstanceMemoryMB = maxInstanceMemoryMB
+	req.ModeratorComment = moderatorComment
+	req.RejectionReason = rejectionReason
 	if req.ModeratorID == "" {
 		req.ModeratorID = moderatorID
 	}

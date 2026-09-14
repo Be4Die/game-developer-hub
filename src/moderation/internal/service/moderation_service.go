@@ -17,12 +17,13 @@ import (
 
 // ModerationService координирует операции модерации, чата и взаимодействия с сервисом управления проектами.
 type ModerationService struct {
-	requestRepo    domain.RequestRepo
-	messageRepo    domain.MessageRepo
-	attachmentRepo domain.AttachmentRepo
-	snapshotRepo   domain.SnapshotRepo
-	projectClient  domain.ProjectClient
-	storagePath    string
+	requestRepo        domain.RequestRepo
+	messageRepo        domain.MessageRepo
+	attachmentRepo     domain.AttachmentRepo
+	snapshotRepo       domain.SnapshotRepo
+	projectClient      domain.ProjectClient
+	orchestratorClient domain.OrchestratorClient
+	storagePath        string
 }
 
 // NewModerationService создаёт новый экземпляр ModerationService.
@@ -51,6 +52,10 @@ func (s *ModerationService) SetStoragePath(path string) {
 	s.storagePath = path
 }
 
+// SetOrchestratorClient задает gRPC-клиент к сервису orchestrator.
+func (s *ModerationService) SetOrchestratorClient(client domain.OrchestratorClient) {
+	s.orchestratorClient = client
+}
 
 // SubmitDraft создает новый запрос на модерацию со снимком метаданных и фиксирует системное событие в чате.
 func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ownerID string, snapshot domain.ProjectSnapshot) (*domain.ModerationRequest, error) {
@@ -58,6 +63,7 @@ func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ow
 		ProjectID: projectID,
 		OwnerID:   ownerID,
 		Status:    domain.RequestStatusPending,
+		Type:      domain.RequestTypeProjectPublication,
 		Snapshot:  snapshot,
 	}
 
@@ -98,6 +104,174 @@ func (s *ModerationService) GetRequest(ctx context.Context, requestID int64) (*d
 // GetLatestRequestByProject возвращает последнюю заявку по проекту.
 func (s *ModerationService) GetLatestRequestByProject(ctx context.Context, projectID int64) (*domain.ModerationRequest, error) {
 	return s.requestRepo.GetLatestByProject(ctx, projectID)
+}
+
+// SubmitServerAccess создает новую заявку на доступ к серверам платформы.
+func (s *ModerationService) SubmitServerAccess(
+	ctx context.Context,
+	projectID int64,
+	ownerID, reason string,
+	maxInstances int32,
+	maxTotalCPU uint32,
+	maxTotalMemoryMB uint64,
+	maxInstanceCPU uint32,
+	maxInstanceMemoryMB uint64,
+) (*domain.ModerationRequest, error) {
+	if maxInstances <= 0 {
+		maxInstances = 2
+	}
+
+	var snap domain.ProjectSnapshot
+	if pubReq, err := s.requestRepo.GetLatestByProjectAndType(ctx, projectID, domain.RequestTypeProjectPublication); err == nil && pubReq != nil {
+		snap = pubReq.Snapshot
+	}
+
+	req := &domain.ModerationRequest{
+		ProjectID:            projectID,
+		OwnerID:              ownerID,
+		Status:               domain.RequestStatusPending,
+		Type:                 domain.RequestTypeServerAccess,
+		Snapshot:             snap,
+		Reason:               reason,
+		MaxInstances:         maxInstances,
+		MaxTotalCPUMillis:    maxTotalCPU,
+		MaxTotalMemoryMB:     maxTotalMemoryMB,
+		MaxInstanceCPUMillis: maxInstanceCPU,
+		MaxInstanceMemoryMB:  maxInstanceMemoryMB,
+	}
+
+	id, err := s.requestRepo.Create(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("ModerationService.SubmitServerAccess create: %w", err)
+	}
+	req.ID = id
+
+	// Системное сообщение в чат проекта
+	sysMsg := &domain.ChatMessage{
+		ProjectID:   projectID,
+		RequestID:   &id,
+		SenderID:    "system",
+		SenderRole:  domain.SenderRoleSystem,
+		MessageType: domain.MessageTypeSubmitted,
+		Content:     "Подана заявка на доступ к серверам платформы",
+		Payload: map[string]any{
+			"reason": reason,
+		},
+	}
+	_, _ = s.messageRepo.Create(ctx, sysMsg)
+
+	return req, nil
+}
+
+// GetServerAccess возвращает последнюю заявку на серверы по проекту.
+func (s *ModerationService) GetServerAccess(ctx context.Context, projectID int64) (*domain.ModerationRequest, error) {
+	return s.requestRepo.GetLatestByProjectAndType(ctx, projectID, domain.RequestTypeServerAccess)
+}
+
+// ReviewServerAccess одобряет или отклоняет заявку на доступ к серверам платформы.
+func (s *ModerationService) ReviewServerAccess(
+	ctx context.Context,
+	requestID int64,
+	moderatorID string,
+	approved bool,
+	maxInstances int32,
+	maxTotalCPU uint32,
+	maxTotalMemoryMB uint64,
+	maxInstanceCPU uint32,
+	maxInstanceMemoryMB uint64,
+	moderatorComment string,
+	rejectionReason string,
+) (*domain.ModerationRequest, error) {
+	req, err := s.requestRepo.Get(ctx, requestID)
+	if err != nil {
+		return nil, fmt.Errorf("ModerationService.ReviewServerAccess get: %w", err)
+	}
+
+	if approved {
+		if maxInstances <= 0 {
+			maxInstances = 3
+		}
+		if err := s.requestRepo.ResolveServerAccess(
+			ctx, requestID, domain.RequestStatusApproved,
+			maxInstances, maxTotalCPU, maxTotalMemoryMB, maxInstanceCPU, maxInstanceMemoryMB,
+			moderatorComment, "", moderatorID,
+		); err != nil {
+			return nil, fmt.Errorf("ModerationService.ReviewServerAccess resolve approved: %w", err)
+		}
+
+		if s.orchestratorClient != nil {
+			if err := s.orchestratorClient.GrantPlatformAccess(
+				ctx, req.ProjectID, maxInstances,
+				maxTotalCPU, maxTotalMemoryMB, maxInstanceCPU, maxInstanceMemoryMB,
+			); err != nil {
+				return nil, fmt.Errorf("ModerationService.ReviewServerAccess grant in orchestrator: %w", err)
+			}
+		}
+
+		msgContent := fmt.Sprintf("Доступ к серверам платформы одобрен (квота: %d серверов)", maxInstances)
+		if moderatorComment != "" {
+			msgContent += fmt.Sprintf(". Комментарий модератора: %s", moderatorComment)
+		}
+
+		sysMsg := &domain.ChatMessage{
+			ProjectID:   req.ProjectID,
+			RequestID:   &req.ID,
+			SenderID:    moderatorID,
+			SenderRole:  domain.SenderRoleSystem,
+			MessageType: domain.MessageTypeApproved,
+			Content:     msgContent,
+		}
+		_, _ = s.messageRepo.Create(ctx, sysMsg)
+
+		updatedReq, err := s.requestRepo.Get(ctx, requestID)
+		if err == nil && updatedReq != nil {
+			req = updatedReq
+		} else {
+			req.Status = domain.RequestStatusApproved
+			req.ModeratorID = moderatorID
+			req.MaxInstances = maxInstances
+			req.MaxTotalCPUMillis = maxTotalCPU
+			req.MaxTotalMemoryMB = maxTotalMemoryMB
+			req.MaxInstanceCPUMillis = maxInstanceCPU
+			req.MaxInstanceMemoryMB = maxInstanceMemoryMB
+			req.ModeratorComment = moderatorComment
+		}
+
+		// Создание неизменяемого аудит-снимка решения
+		_, _ = s.buildAndSaveSnapshot(ctx, req, domain.RequestStatusApproved, moderatorID, "", nil, moderatorComment, "")
+	} else {
+		if err := s.requestRepo.ResolveServerAccess(
+			ctx, requestID, domain.RequestStatusRejected,
+			0, 0, 0, 0, 0,
+			"", rejectionReason, moderatorID,
+		); err != nil {
+			return nil, fmt.Errorf("ModerationService.ReviewServerAccess resolve rejected: %w", err)
+		}
+
+		sysMsg := &domain.ChatMessage{
+			ProjectID:   req.ProjectID,
+			RequestID:   &req.ID,
+			SenderID:    moderatorID,
+			SenderRole:  domain.SenderRoleSystem,
+			MessageType: domain.MessageTypeRejected,
+			Content:     fmt.Sprintf("Заявка на доступ к серверам платформы отклонена: %s", rejectionReason),
+		}
+		_, _ = s.messageRepo.Create(ctx, sysMsg)
+
+		updatedReq, err := s.requestRepo.Get(ctx, requestID)
+		if err == nil && updatedReq != nil {
+			req = updatedReq
+		} else {
+			req.Status = domain.RequestStatusRejected
+			req.ModeratorID = moderatorID
+			req.RejectionReason = rejectionReason
+		}
+
+		// Создание неизменяемого аудит-снимка решения
+		_, _ = s.buildAndSaveSnapshot(ctx, req, domain.RequestStatusRejected, moderatorID, rejectionReason, nil, "", "")
+	}
+
+	return s.requestRepo.Get(ctx, requestID)
 }
 
 // ClaimRequest закрепляет запрос за модератором и переводит в статус проверки.
@@ -466,7 +640,9 @@ func (s *ModerationService) GetSnapshot(ctx context.Context, requestID int64) (*
 		return nil, fmt.Errorf("ModerationService.GetSnapshot request not found: %w", err)
 	}
 
-	return s.buildAndSaveSnapshot(ctx, req, req.Status, req.ModeratorID, req.RejectionReason, nil, "", "")
+	effectiveReason := req.RejectionReason
+	effectiveComment := req.ModeratorComment
+	return s.buildAndSaveSnapshot(ctx, req, req.Status, req.ModeratorID, effectiveReason, nil, effectiveComment, "")
 }
 
 // buildAndSaveSnapshot формирует полное состояние снимка, упаковывает в JSON и сжимает gzip в бинарный блоб.
@@ -586,26 +762,42 @@ func (s *ModerationService) buildAndSaveSnapshot(
 
 	devName := req.OwnerID
 
+	// Метаданные проекта (fallback к заявке на публикацию или номеру проекта, если это заявка на серверы)
+	snapData := req.Snapshot
+	if snapData.TitleRu == "" && snapData.TitleEn == "" {
+		if pubReq, err := s.requestRepo.GetLatestByProjectAndType(ctx, req.ProjectID, domain.RequestTypeProjectPublication); err == nil && pubReq != nil {
+			snapData = pubReq.Snapshot
+		}
+	}
+	titleRu := snapData.TitleRu
+	if titleRu == "" {
+		if snapData.TitleEn != "" {
+			titleRu = snapData.TitleEn
+		} else {
+			titleRu = fmt.Sprintf("Проект #%d", req.ProjectID)
+		}
+	}
+
 	// 4. Обогащение медиа-материалов визуальными отпечатками и контрольными суммами
-	iconItem := s.resolveMediaItem(req.ProjectID, "icon", req.Snapshot.IconPath)
-	coverItem := s.resolveMediaItem(req.ProjectID, "cover", req.Snapshot.CoverPath)
-	videoItem := s.resolveMediaItem(req.ProjectID, "video", req.Snapshot.VideoPath)
+	iconItem := s.resolveMediaItem(req.ProjectID, "icon", snapData.IconPath)
+	coverItem := s.resolveMediaItem(req.ProjectID, "cover", snapData.CoverPath)
+	videoItem := s.resolveMediaItem(req.ProjectID, "video", snapData.VideoPath)
 
 	payload := domain.SnapshotPayload{
 		Project: domain.SnapshotProjectData{
 			ID:            req.ProjectID,
 			OwnerID:       req.OwnerID,
 			DeveloperName: devName,
-			TitleRu:       req.Snapshot.TitleRu,
-			TitleEn:       req.Snapshot.TitleEn,
-			SeoRu:         req.Snapshot.SeoRu,
-			SeoEn:         req.Snapshot.SeoEn,
-			AboutRu:       req.Snapshot.AboutRu,
-			AboutEn:       req.Snapshot.AboutEn,
-			BuildVersion:  req.Snapshot.ActiveBuildVersion,
-			DevURL:        req.Snapshot.DevURL,
+			TitleRu:       titleRu,
+			TitleEn:       snapData.TitleEn,
+			SeoRu:         snapData.SeoRu,
+			SeoEn:         snapData.SeoEn,
+			AboutRu:       snapData.AboutRu,
+			AboutEn:       snapData.AboutEn,
+			BuildVersion:  snapData.ActiveBuildVersion,
+			DevURL:        snapData.DevURL,
 			ProdURL:       prodURL,
-			IsOnline:      req.Snapshot.IsOnline,
+			IsOnline:      snapData.IsOnline,
 		},
 		Media: domain.SnapshotMediaData{
 			Icon:  iconItem,
@@ -613,17 +805,24 @@ func (s *ModerationService) buildAndSaveSnapshot(
 			Video: videoItem,
 		},
 		Verdict: domain.SnapshotVerdictData{
-			Status:          status,
-			ModeratorID:     moderatorID,
-			ModeratorName:   moderatorID,
-			SubmittedAt:     req.SubmittedAt.Format(time.RFC3339),
-			StartedReviewAt: startedReviewStr,
-			ResolvedAt:      resolvedStr,
-			ReviewDuration:  durationStr,
-			RejectionReason: reason,
-			Comment:         comment,
-			ProdURL:         prodURL,
-			Violations:      snapshotViolations,
+			Status:               status,
+			ModeratorID:          moderatorID,
+			ModeratorName:        moderatorID,
+			SubmittedAt:          req.SubmittedAt.Format(time.RFC3339),
+			StartedReviewAt:      startedReviewStr,
+			ResolvedAt:           resolvedStr,
+			ReviewDuration:       durationStr,
+			RejectionReason:      reason,
+			Comment:              comment,
+			ProdURL:              prodURL,
+			Violations:           snapshotViolations,
+			RequestType:          req.Type,
+			Reason:               req.Reason,
+			MaxInstances:         req.MaxInstances,
+			MaxTotalCPUMillis:    req.MaxTotalCPUMillis,
+			MaxTotalMemoryMB:     req.MaxTotalMemoryMB,
+			MaxInstanceCPUMillis: req.MaxInstanceCPUMillis,
+			MaxInstanceMemoryMB:  req.MaxInstanceMemoryMB,
 		},
 		ChatTranscript: snapshotMessages,
 	}

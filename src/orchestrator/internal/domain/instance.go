@@ -19,8 +19,10 @@ type Instance struct {
 	QueueSize        *uint32
 	MaxPlayers       uint32
 	DeveloperPayload map[string]string
-	ServerAddress    string // IP-адрес ноды для клиентов
-	StartedAt        time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ServerAddress        string // IP-адрес ноды для клиентов
+	AllocatedCPUMillis   uint32 // Выделенные миллиядра CPU (0 = без лимита)
+	AllocatedMemoryBytes uint64 // Выделенная память в байтах (0 = без лимита)
+	StartedAt            time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 }

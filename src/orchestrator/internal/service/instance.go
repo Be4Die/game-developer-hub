@@ -23,6 +23,7 @@ type InstanceService struct {
 	nodeClient    domain.NodeClient
 	limits        config.LimitsConfig
 	serviceRepo   domain.ManagedServiceRepo
+	platformRepo  domain.PlatformAccessRepo
 }
 
 // NewInstanceService создаёт сервис управления инстансами.
@@ -49,6 +50,12 @@ func NewInstanceService(
 // WithServiceRepo задает репозиторий управляемых сервисов для автоматической инжекции переменных.
 func (s *InstanceService) WithServiceRepo(r domain.ManagedServiceRepo) *InstanceService {
 	s.serviceRepo = r
+	return s
+}
+
+// WithPlatformAccessRepo задает репозиторий заявок на платформенные ноды.
+func (s *InstanceService) WithPlatformAccessRepo(r domain.PlatformAccessRepo) *InstanceService {
+	s.platformRepo = r
 	return s
 }
 
@@ -142,6 +149,67 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 		}
 	}
 
+	var allocatedCPU uint32
+	var allocatedMem uint64
+
+	if node.IsPlatform && s.platformRepo != nil {
+		grant, err := s.platformRepo.GetGrant(ctx, params.GameID)
+		if err != nil {
+			return nil, fmt.Errorf("InstanceService.StartInstance: get platform grant: %w", err)
+		}
+		if !grant.IsActive {
+			return nil, domain.ErrPlatformAccessRequired
+		}
+
+		reqLimits := params.ResourceLimits
+		if reqLimits == nil {
+			reqLimits = &domain.ResourceLimits{}
+		}
+
+		// 1. Проверка лимитов на отдельный инстанс (0 = unlim)
+		if grant.MaxInstanceCPUMillis > 0 {
+			if reqLimits.CPUMillis == nil {
+				cp := grant.MaxInstanceCPUMillis
+				reqLimits.CPUMillis = &cp
+			} else if *reqLimits.CPUMillis > grant.MaxInstanceCPUMillis {
+				return nil, fmt.Errorf("%w: requested CPU (%d millis) exceeds per-instance limit (%d millis)", domain.ErrPlatformQuotaExceeded, *reqLimits.CPUMillis, grant.MaxInstanceCPUMillis)
+			}
+		}
+
+		if grant.MaxInstanceMemoryMB > 0 {
+			maxMemBytes := grant.MaxInstanceMemoryMB * 1024 * 1024
+			if reqLimits.MemoryBytes == nil {
+				mb := maxMemBytes
+				reqLimits.MemoryBytes = &mb
+			} else if *reqLimits.MemoryBytes > maxMemBytes {
+				return nil, fmt.Errorf("%w: requested memory (%d bytes) exceeds per-instance limit (%d bytes)", domain.ErrPlatformQuotaExceeded, *reqLimits.MemoryBytes, maxMemBytes)
+			}
+		}
+
+		if reqLimits.CPUMillis != nil {
+			allocatedCPU = *reqLimits.CPUMillis
+		}
+		if reqLimits.MemoryBytes != nil {
+			allocatedMem = *reqLimits.MemoryBytes
+		}
+
+		// 2. Проверка суммарных проектных лимитов (0 = unlim)
+		count, curCPU, curMem, err := s.platformRepo.GetActivePlatformUsage(ctx, params.GameID)
+		if err == nil {
+			if count >= grant.MaxInstances {
+				return nil, domain.ErrPlatformQuotaExceeded
+			}
+			if grant.MaxTotalCPUMillis > 0 && curCPU+allocatedCPU > grant.MaxTotalCPUMillis {
+				return nil, fmt.Errorf("%w: total CPU limit exceeded (allocated %d + new %d > limit %d millis)", domain.ErrPlatformQuotaExceeded, curCPU, allocatedCPU, grant.MaxTotalCPUMillis)
+			}
+			if grant.MaxTotalMemoryMB > 0 && curMem+allocatedMem > grant.MaxTotalMemoryMB*1024*1024 {
+				return nil, fmt.Errorf("%w: total memory limit exceeded (allocated %d + new %d > limit %d bytes)", domain.ErrPlatformQuotaExceeded, curMem, allocatedMem, grant.MaxTotalMemoryMB*1024*1024)
+			}
+		}
+
+		params.ResourceLimits = reqLimits
+	}
+
 	startReq := domain.StartInstanceRequest{
 		GameID:           params.GameID,
 		InstanceID:       nextID, // Передаём выделенный ID
@@ -164,23 +232,25 @@ func (s *InstanceService) StartInstance(ctx context.Context, params StartInstanc
 	// Шаг 6: запись метаданных в PG.
 	now := time.Now()
 	instance := &domain.Instance{
-		ID:               nextID,
-		OwnerID:          params.OwnerID,
-		NodeID:           node.ID,
-		ServerBuildID:    build.ID,
-		GameID:           params.GameID,
-		Name:             params.Name,
-		BuildVersion:     params.BuildVersion,
-		Protocol:         build.Protocol,
-		HostPort:         result.HostPort,
-		InternalPort:     build.InternalPort,
-		Status:           domain.InstanceStatusStarting,
-		MaxPlayers:       maxPlayers,
-		DeveloperPayload: params.DeveloperPayload,
-		ServerAddress:    serverHost,
-		StartedAt:        now,
-		CreatedAt:        now,
-		UpdatedAt:        now,
+		ID:                   nextID,
+		OwnerID:              params.OwnerID,
+		NodeID:               node.ID,
+		ServerBuildID:        build.ID,
+		GameID:               params.GameID,
+		Name:                 params.Name,
+		BuildVersion:         params.BuildVersion,
+		Protocol:             build.Protocol,
+		HostPort:             result.HostPort,
+		InternalPort:         build.InternalPort,
+		Status:               domain.InstanceStatusStarting,
+		MaxPlayers:           maxPlayers,
+		DeveloperPayload:     params.DeveloperPayload,
+		ServerAddress:        serverHost,
+		AllocatedCPUMillis:   allocatedCPU,
+		AllocatedMemoryBytes: allocatedMem,
+		StartedAt:            now,
+		CreatedAt:            now,
+		UpdatedAt:            now,
 	}
 
 	if err := s.instanceRepo.Create(ctx, instance); err != nil {
@@ -533,10 +603,20 @@ type EnrichedInstance struct {
 }
 
 // selectNodeForInstance выбирает ноду с наименьшей загрузкой.
-// Если nodePreference = "auto" — выбирает любую онлайн-ноду.
+// Если nodePreference = "auto" — выбирает наименее загруженную подходящую онлайн-ноду.
 // Если nodePreference = "node-<id>" — выбирает конкретную ноду (должна быть online).
-func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.ServerBuild, nodePreference string) (*domain.Node, error) {
-	// Если указана конкретная нода — пробуем найти её.
+func (s *InstanceService) selectNodeForInstance(ctx context.Context, build *domain.ServerBuild, nodePreference string) (*domain.Node, error) {
+	// Проверяем статус доступа к серверам платформы
+	hasPlatformAccess := false
+	var platformGrant *domain.PlatformGrant
+	if s.platformRepo != nil && build != nil && build.GameID > 0 {
+		if has, grant, err := s.platformRepo.HasApprovedAccess(ctx, build.GameID); err == nil && has {
+			hasPlatformAccess = true
+			platformGrant = grant
+		}
+	}
+
+	// Если указана конкретная нода — проверяем её доступность
 	if nodePreference != "" && nodePreference != "auto" {
 		var nodeID int64
 		if _, err := fmt.Sscanf(nodePreference, "node-%d", &nodeID); err == nil && nodeID > 0 {
@@ -547,13 +627,49 @@ func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.S
 			if node.Status != domain.NodeStatusOnline {
 				return nil, domain.ErrNoAvailableNode
 			}
+
+			// Если нода платформенная — проверяем наличие доступа и квоту
+			if node.IsPlatform {
+				if !hasPlatformAccess {
+					return nil, domain.ErrPlatformAccessRequired
+				}
+				if s.platformRepo != nil && build != nil && platformGrant != nil {
+					count, allocCPU, allocMem, _ := s.platformRepo.GetActivePlatformUsage(ctx, build.GameID)
+					if count >= platformGrant.MaxInstances {
+						return nil, domain.ErrPlatformQuotaExceeded
+					}
+					if platformGrant.MaxTotalCPUMillis > 0 && allocCPU >= platformGrant.MaxTotalCPUMillis {
+						return nil, domain.ErrPlatformQuotaExceeded
+					}
+					if platformGrant.MaxTotalMemoryMB > 0 && allocMem >= platformGrant.MaxTotalMemoryMB*1024*1024 {
+						return nil, domain.ErrPlatformQuotaExceeded
+					}
+				}
+			} else if build != nil && build.OwnerID != "" && node.OwnerID != "" && node.OwnerID != build.OwnerID {
+				// Личная нода другого пользователя недоступна
+				return nil, domain.ErrForbidden
+			}
+
 			return node, nil
 		}
 	}
 
+	// Автоматический выбор ноды
 	nodes, err := s.nodeRepo.List(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("selectNodeForInstance: list nodes: %w", err)
+	}
+
+	canUsePlatform := false
+	if hasPlatformAccess && s.platformRepo != nil && build != nil && platformGrant != nil {
+		count, allocCPU, allocMem, _ := s.platformRepo.GetActivePlatformUsage(ctx, build.GameID)
+		canUsePlatform = count < platformGrant.MaxInstances
+		if platformGrant.MaxTotalCPUMillis > 0 && allocCPU >= platformGrant.MaxTotalCPUMillis {
+			canUsePlatform = false
+		}
+		if platformGrant.MaxTotalMemoryMB > 0 && allocMem >= platformGrant.MaxTotalMemoryMB*1024*1024 {
+			canUsePlatform = false
+		}
 	}
 
 	var best *domain.Node
@@ -569,6 +685,17 @@ func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.S
 			continue
 		}
 
+		if n.IsPlatform {
+			if !canUsePlatform {
+				continue
+			}
+		} else {
+			// Личная нода: проверяем принадлежность владельцу билда
+			if build != nil && build.OwnerID != "" && n.OwnerID != "" && n.OwnerID != build.OwnerID {
+				continue
+			}
+		}
+
 		load, err := s.nodeState.GetActiveInstanceCount(ctx, n.ID)
 		if err != nil {
 			load = 0
@@ -581,6 +708,9 @@ func (s *InstanceService) selectNodeForInstance(ctx context.Context, _ *domain.S
 	}
 
 	if best == nil {
+		if !hasPlatformAccess {
+			return nil, domain.ErrPlatformAccessRequired
+		}
 		return nil, domain.ErrNoAvailableNode
 	}
 

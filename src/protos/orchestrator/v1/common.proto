@@ -136,6 +136,7 @@ message Node {
   bool backups_enabled = 14;
   IngressMode ingress_mode = 15;
   string custom_domain = 16;
+  bool is_platform = 17;
 }
 
 // Управляемый сервис хранения данных (Managed Database/Cache/Storage).

@@ -32,12 +32,19 @@ func (r *RequestRepo) Create(ctx context.Context, req *domain.ModerationRequest)
 		return 0, fmt.Errorf("marshal snapshot: %w", err)
 	}
 
+	reqType := req.Type
+	if reqType == 0 {
+		reqType = domain.RequestTypeProjectPublication
+	}
+
 	query := `
 		INSERT INTO moderation_requests (
-			project_id, owner_id, moderator_id, status, snapshot_meta,
-			rejection_reason, submitted_at, created_at, updated_at
+			project_id, owner_id, moderator_id, status, request_type, reason,
+			max_instances, max_total_cpu_millis, max_total_memory_mb,
+			max_instance_cpu_millis, max_instance_memory_mb, moderator_comment,
+			snapshot_meta, rejection_reason, submitted_at, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW()
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), NOW()
 		)
 		RETURNING id, submitted_at, created_at, updated_at
 	`
@@ -50,6 +57,14 @@ func (r *RequestRepo) Create(ctx context.Context, req *domain.ModerationRequest)
 		req.OwnerID,
 		req.ModeratorID,
 		int16(req.Status),
+		int16(reqType),
+		req.Reason,
+		req.MaxInstances,
+		req.MaxTotalCPUMillis,
+		req.MaxTotalMemoryMB,
+		req.MaxInstanceCPUMillis,
+		req.MaxInstanceMemoryMB,
+		req.ModeratorComment,
 		snapshotJSON,
 		req.RejectionReason,
 	).Scan(&id, &submittedAt, &createdAt, &updatedAt)
@@ -58,6 +73,7 @@ func (r *RequestRepo) Create(ctx context.Context, req *domain.ModerationRequest)
 	}
 
 	req.ID = id
+	req.Type = reqType
 	req.SubmittedAt = submittedAt
 	req.CreatedAt = createdAt
 	req.UpdatedAt = updatedAt
@@ -69,8 +85,10 @@ func (r *RequestRepo) Create(ctx context.Context, req *domain.ModerationRequest)
 func (r *RequestRepo) Get(ctx context.Context, id int64) (*domain.ModerationRequest, error) {
 	query := `
 		SELECT
-			id, project_id, owner_id, moderator_id, status, snapshot_meta,
-			rejection_reason, submitted_at, started_review_at, resolved_at,
+			id, project_id, owner_id, moderator_id, status, request_type, reason,
+			max_instances, max_total_cpu_millis, max_total_memory_mb,
+			max_instance_cpu_millis, max_instance_memory_mb, moderator_comment,
+			snapshot_meta, rejection_reason, submitted_at, started_review_at, resolved_at,
 			created_at, updated_at
 		FROM moderation_requests
 		WHERE id = $1
@@ -78,7 +96,7 @@ func (r *RequestRepo) Get(ctx context.Context, id int64) (*domain.ModerationRequ
 
 	req := &domain.ModerationRequest{}
 	var snapshotRaw []byte
-	var statusInt int16
+	var statusInt, typeInt int16
 
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&req.ID,
@@ -86,6 +104,14 @@ func (r *RequestRepo) Get(ctx context.Context, id int64) (*domain.ModerationRequ
 		&req.OwnerID,
 		&req.ModeratorID,
 		&statusInt,
+		&typeInt,
+		&req.Reason,
+		&req.MaxInstances,
+		&req.MaxTotalCPUMillis,
+		&req.MaxTotalMemoryMB,
+		&req.MaxInstanceCPUMillis,
+		&req.MaxInstanceMemoryMB,
+		&req.ModeratorComment,
 		&snapshotRaw,
 		&req.RejectionReason,
 		&req.SubmittedAt,
@@ -102,6 +128,7 @@ func (r *RequestRepo) Get(ctx context.Context, id int64) (*domain.ModerationRequ
 	}
 
 	req.Status = domain.RequestStatus(statusInt)
+	req.Type = domain.RequestType(typeInt)
 	if len(snapshotRaw) > 0 {
 		_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
 	}
@@ -113,8 +140,10 @@ func (r *RequestRepo) Get(ctx context.Context, id int64) (*domain.ModerationRequ
 func (r *RequestRepo) GetLatestByProject(ctx context.Context, projectID int64) (*domain.ModerationRequest, error) {
 	query := `
 		SELECT
-			id, project_id, owner_id, moderator_id, status, snapshot_meta,
-			rejection_reason, submitted_at, started_review_at, resolved_at,
+			id, project_id, owner_id, moderator_id, status, request_type, reason,
+			max_instances, max_total_cpu_millis, max_total_memory_mb,
+			max_instance_cpu_millis, max_instance_memory_mb, moderator_comment,
+			snapshot_meta, rejection_reason, submitted_at, started_review_at, resolved_at,
 			created_at, updated_at
 		FROM moderation_requests
 		WHERE project_id = $1
@@ -124,7 +153,7 @@ func (r *RequestRepo) GetLatestByProject(ctx context.Context, projectID int64) (
 
 	req := &domain.ModerationRequest{}
 	var snapshotRaw []byte
-	var statusInt int16
+	var statusInt, typeInt int16
 
 	err := r.pool.QueryRow(ctx, query, projectID).Scan(
 		&req.ID,
@@ -132,6 +161,14 @@ func (r *RequestRepo) GetLatestByProject(ctx context.Context, projectID int64) (
 		&req.OwnerID,
 		&req.ModeratorID,
 		&statusInt,
+		&typeInt,
+		&req.Reason,
+		&req.MaxInstances,
+		&req.MaxTotalCPUMillis,
+		&req.MaxTotalMemoryMB,
+		&req.MaxInstanceCPUMillis,
+		&req.MaxInstanceMemoryMB,
+		&req.ModeratorComment,
 		&snapshotRaw,
 		&req.RejectionReason,
 		&req.SubmittedAt,
@@ -148,6 +185,64 @@ func (r *RequestRepo) GetLatestByProject(ctx context.Context, projectID int64) (
 	}
 
 	req.Status = domain.RequestStatus(statusInt)
+	req.Type = domain.RequestType(typeInt)
+	if len(snapshotRaw) > 0 {
+		_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
+	}
+
+	return req, nil
+}
+
+// GetLatestByProjectAndType возвращает последнюю заявку проекта заданного типа.
+func (r *RequestRepo) GetLatestByProjectAndType(ctx context.Context, projectID int64, reqType domain.RequestType) (*domain.ModerationRequest, error) {
+	query := `
+		SELECT
+			id, project_id, owner_id, moderator_id, status, request_type, reason,
+			max_instances, max_total_cpu_millis, max_total_memory_mb,
+			max_instance_cpu_millis, max_instance_memory_mb, moderator_comment,
+			snapshot_meta, rejection_reason, submitted_at, started_review_at, resolved_at,
+			created_at, updated_at
+		FROM moderation_requests
+		WHERE project_id = $1 AND request_type = $2
+		ORDER BY submitted_at DESC
+		LIMIT 1
+	`
+
+	req := &domain.ModerationRequest{}
+	var snapshotRaw []byte
+	var statusInt, typeInt int16
+
+	err := r.pool.QueryRow(ctx, query, projectID, int16(reqType)).Scan(
+		&req.ID,
+		&req.ProjectID,
+		&req.OwnerID,
+		&req.ModeratorID,
+		&statusInt,
+		&typeInt,
+		&req.Reason,
+		&req.MaxInstances,
+		&req.MaxTotalCPUMillis,
+		&req.MaxTotalMemoryMB,
+		&req.MaxInstanceCPUMillis,
+		&req.MaxInstanceMemoryMB,
+		&req.ModeratorComment,
+		&snapshotRaw,
+		&req.RejectionReason,
+		&req.SubmittedAt,
+		&req.StartedReviewAt,
+		&req.ResolvedAt,
+		&req.CreatedAt,
+		&req.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrNotFound
+		}
+		return nil, fmt.Errorf("RequestRepo.GetLatestByProjectAndType: %w", err)
+	}
+
+	req.Status = domain.RequestStatus(statusInt)
+	req.Type = domain.RequestType(typeInt)
 	if len(snapshotRaw) > 0 {
 		_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
 	}
@@ -170,6 +265,19 @@ func (r *RequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]
 	if filter.ModeratorID != nil && *filter.ModeratorID != "" {
 		whereConditions = append(whereConditions, fmt.Sprintf("moderator_id = $%d", argIdx))
 		args = append(args, *filter.ModeratorID)
+		argIdx++
+	}
+
+	if filter.Type != nil && *filter.Type != domain.RequestTypeUnspecified {
+		whereConditions = append(whereConditions, fmt.Sprintf("request_type = $%d", argIdx))
+		args = append(args, int16(*filter.Type))
+		argIdx++
+	}
+
+	if filter.Query != "" {
+		qPattern := "%" + strings.ToLower(filter.Query) + "%"
+		whereConditions = append(whereConditions, fmt.Sprintf("(LOWER(owner_id) LIKE $%d OR LOWER(reason) LIKE $%d OR LOWER(snapshot_meta->>'title_ru') LIKE $%d OR LOWER(snapshot_meta->>'title_en') LIKE $%d)", argIdx, argIdx, argIdx, argIdx))
+		args = append(args, qPattern)
 		argIdx++
 	}
 
@@ -196,12 +304,14 @@ func (r *RequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]
 
 	query := fmt.Sprintf(`
 		SELECT
-			id, project_id, owner_id, moderator_id, status, snapshot_meta,
-			rejection_reason, submitted_at, started_review_at, resolved_at,
+			id, project_id, owner_id, moderator_id, status, request_type, reason,
+			max_instances, max_total_cpu_millis, max_total_memory_mb,
+			max_instance_cpu_millis, max_instance_memory_mb, moderator_comment,
+			snapshot_meta, rejection_reason, submitted_at, started_review_at, resolved_at,
 			created_at, updated_at
 		FROM moderation_requests
 		%s
-		ORDER BY submitted_at ASC
+		ORDER BY submitted_at DESC
 		LIMIT $%d OFFSET $%d
 	`, whereSQL, argIdx, argIdx+1)
 
@@ -217,7 +327,7 @@ func (r *RequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]
 	for rows.Next() {
 		req := &domain.ModerationRequest{}
 		var snapshotRaw []byte
-		var statusInt int16
+		var statusInt, typeInt int16
 
 		err := rows.Scan(
 			&req.ID,
@@ -225,6 +335,14 @@ func (r *RequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]
 			&req.OwnerID,
 			&req.ModeratorID,
 			&statusInt,
+			&typeInt,
+			&req.Reason,
+			&req.MaxInstances,
+			&req.MaxTotalCPUMillis,
+			&req.MaxTotalMemoryMB,
+			&req.MaxInstanceCPUMillis,
+			&req.MaxInstanceMemoryMB,
+			&req.ModeratorComment,
 			&snapshotRaw,
 			&req.RejectionReason,
 			&req.SubmittedAt,
@@ -238,6 +356,7 @@ func (r *RequestRepo) List(ctx context.Context, filter domain.RequestFilter) ([]
 		}
 
 		req.Status = domain.RequestStatus(statusInt)
+		req.Type = domain.RequestType(typeInt)
 		if len(snapshotRaw) > 0 {
 			_ = json.Unmarshal(snapshotRaw, &req.Snapshot)
 		}
@@ -291,6 +410,52 @@ func (r *RequestRepo) Resolve(ctx context.Context, id int64, status domain.Reque
 	tag, err := r.pool.Exec(ctx, query, id, int16(status), reason, moderatorID)
 	if err != nil {
 		return fmt.Errorf("RequestRepo.Resolve: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}
+
+// ResolveServerAccess сохраняет вердикт по заявке на серверы платформы (с квотой или причиной).
+func (r *RequestRepo) ResolveServerAccess(
+	ctx context.Context,
+	id int64,
+	status domain.RequestStatus,
+	maxInstances int32,
+	maxTotalCPU uint32,
+	maxTotalMemoryMB uint64,
+	maxInstanceCPU uint32,
+	maxInstanceMemoryMB uint64,
+	moderatorComment string,
+	rejectionReason string,
+	moderatorID string,
+) error {
+	query := `
+		UPDATE moderation_requests
+		SET
+			status = $2,
+			max_instances = $3,
+			max_total_cpu_millis = $4,
+			max_total_memory_mb = $5,
+			max_instance_cpu_millis = $6,
+			max_instance_memory_mb = $7,
+			moderator_comment = $8,
+			rejection_reason = $9,
+			moderator_id = CASE WHEN moderator_id = '' THEN $10 ELSE moderator_id END,
+			resolved_at = NOW(),
+			updated_at = NOW()
+		WHERE id = $1
+	`
+
+	tag, err := r.pool.Exec(
+		ctx, query, id, int16(status), maxInstances,
+		maxTotalCPU, maxTotalMemoryMB, maxInstanceCPU, maxInstanceMemoryMB,
+		moderatorComment, rejectionReason, moderatorID,
+	)
+	if err != nil {
+		return fmt.Errorf("RequestRepo.ResolveServerAccess: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return domain.ErrNotFound

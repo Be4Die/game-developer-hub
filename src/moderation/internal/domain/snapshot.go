@@ -60,17 +60,24 @@ type SnapshotMediaItem struct {
 
 // SnapshotVerdictData зафиксированное решение модератора.
 type SnapshotVerdictData struct {
-	Status          RequestStatus            `json:"status"`
-	ModeratorID     string                   `json:"moderator_id"`
-	ModeratorName   string                   `json:"moderator_name"`
-	SubmittedAt     string                   `json:"submitted_at"`
-	StartedReviewAt string                   `json:"started_review_at"`
-	ResolvedAt      string                   `json:"resolved_at"`
-	ReviewDuration  string                   `json:"review_duration"`
-	RejectionReason string                   `json:"rejection_reason,omitempty"`
-	Comment         string                   `json:"comment,omitempty"`
-	ProdURL         string                   `json:"prod_url,omitempty"`
-	Violations      []*SnapshotViolationItem `json:"violations,omitempty"`
+	Status               RequestStatus            `json:"status"`
+	ModeratorID          string                   `json:"moderator_id"`
+	ModeratorName        string                   `json:"moderator_name"`
+	SubmittedAt          string                   `json:"submitted_at"`
+	StartedReviewAt      string                   `json:"started_review_at"`
+	ResolvedAt           string                   `json:"resolved_at"`
+	ReviewDuration       string                   `json:"review_duration"`
+	RejectionReason      string                   `json:"rejection_reason,omitempty"`
+	Comment              string                   `json:"comment,omitempty"`
+	ProdURL              string                   `json:"prod_url,omitempty"`
+	Violations           []*SnapshotViolationItem `json:"violations,omitempty"`
+	RequestType          RequestType              `json:"request_type,omitempty"`
+	Reason               string                   `json:"reason,omitempty"`
+	MaxInstances         int32                    `json:"max_instances,omitempty"`
+	MaxTotalCPUMillis    uint32                   `json:"max_total_cpu_millis,omitempty"`
+	MaxTotalMemoryMB     uint64                   `json:"max_total_memory_mb,omitempty"`
+	MaxInstanceCPUMillis uint32                   `json:"max_instance_cpu_millis,omitempty"`
+	MaxInstanceMemoryMB  uint64                   `json:"max_instance_memory_mb,omitempty"`
 }
 
 // SnapshotViolationItem пункт выявленного нарушения регламента в снимке.

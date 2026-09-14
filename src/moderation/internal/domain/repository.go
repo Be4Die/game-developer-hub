@@ -6,6 +6,8 @@ import "context"
 type RequestFilter struct {
 	Status      *RequestStatus
 	ModeratorID *string
+	Type        *RequestType
+	Query       string
 	Limit       int
 	Offset      int
 }
@@ -15,9 +17,23 @@ type RequestRepo interface {
 	Create(ctx context.Context, req *ModerationRequest) (int64, error)
 	Get(ctx context.Context, id int64) (*ModerationRequest, error)
 	GetLatestByProject(ctx context.Context, projectID int64) (*ModerationRequest, error)
+	GetLatestByProjectAndType(ctx context.Context, projectID int64, reqType RequestType) (*ModerationRequest, error)
 	List(ctx context.Context, filter RequestFilter) ([]*ModerationRequest, int, error)
 	Claim(ctx context.Context, id int64, moderatorID string) error
 	Resolve(ctx context.Context, id int64, status RequestStatus, reason, moderatorID string) error
+	ResolveServerAccess(
+		ctx context.Context,
+		id int64,
+		status RequestStatus,
+		maxInstances int32,
+		maxTotalCPU uint32,
+		maxTotalMemoryMB uint64,
+		maxInstanceCPU uint32,
+		maxInstanceMemoryMB uint64,
+		moderatorComment string,
+		rejectionReason string,
+		moderatorID string,
+	) error
 	GetModeratorStats(ctx context.Context, moderatorID string) (*ModeratorStats, error)
 	ListModeratorsStats(ctx context.Context) ([]*ModeratorStats, error)
 	ListModeratorActivity(ctx context.Context, moderatorID string, actionType string, limit, offset int) ([]*ModeratorActivityItem, int, error)

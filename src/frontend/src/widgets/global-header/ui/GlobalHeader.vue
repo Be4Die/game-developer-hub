@@ -34,6 +34,9 @@
           <router-link to="/moderator/queue" class="nav-item" active-class="active">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
+          <router-link to="/nodes" class="nav-item" active-class="active">
+            <Server class="icon-sm" /> {{ t('header.gameServers') }}
+          </router-link>
           <router-link to="/moderator/chats" class="nav-item" active-class="active">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>

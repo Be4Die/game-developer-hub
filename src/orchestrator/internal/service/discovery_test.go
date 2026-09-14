@@ -169,6 +169,12 @@ func (m *discMockNodeRepo) UpdateRole(ctx context.Context, id int64, role domain
 func (m *discMockNodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.IngressMode, customDomain string) error {
 	return nil
 }
+func (m *discMockNodeRepo) UpdatePlatformStatus(ctx context.Context, id int64, isPlatform bool) error {
+	return nil
+}
+func (m *discMockNodeRepo) ListPlatformNodes(ctx context.Context) ([]*domain.Node, error) {
+	return nil, nil
+}
 
 func newTestDiscoveryService(
 	instanceRepo domain.InstanceRepo,

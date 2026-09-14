@@ -15,6 +15,9 @@ db:
 project_manager:
   addr: "gdh-project-manager:50053"
 
+orchestrator:
+  addr: "gdh-orchestrator:50052"
+
 jwt:
   secret: "dev-jwt-secret-for-local-testing"
   issuer: "sso"

@@ -44,8 +44,8 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 		INSERT INTO nodes (owner_id, address, token_hash, api_token, region, status, role,
 		                   cpu_cores, total_memory, total_disk, agent_version,
 		                   last_ping_at, created_at, updated_at, backups_enabled,
-		                   ingress_mode, custom_domain)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+		                   ingress_mode, custom_domain, is_platform)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
 		RETURNING id
 	`
 
@@ -53,7 +53,7 @@ func (r *NodeRepo) Create(ctx context.Context, node *domain.Node) error {
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk, node.AgentVersion,
 		node.LastPingAt, node.CreatedAt, node.UpdatedAt, node.BackupsEnabled,
-		ingressMode, node.CustomDomain,
+		ingressMode, node.CustomDomain, node.IsPlatform,
 	).Scan(&node.ID)
 	if err != nil {
 		if isPgUniqueViolation(err) {
@@ -82,15 +82,15 @@ func (r *NodeRepo) Update(ctx context.Context, node *domain.Node) error {
 		UPDATE nodes SET owner_id=$1, address=$2, token_hash=$3, api_token=$4, region=$5, status=$6, role=$7,
 		                 cpu_cores=$8, total_memory=$9, total_disk=$10,
 		                 agent_version=$11, last_ping_at=$12, updated_at=$13, backups_enabled=$14,
-		                 ingress_mode=$15, custom_domain=$16
-		WHERE id=$17
+		                 ingress_mode=$15, custom_domain=$16, is_platform=$17
+		WHERE id=$18
 	`
 
 	tag, err := r.pool.Exec(ctx, q,
 		node.OwnerID, node.Address, node.TokenHash, node.APIToken, node.Region, node.Status, role,
 		node.CPUCores, node.TotalMemory, node.TotalDisk,
 		node.AgentVersion, node.LastPingAt, node.UpdatedAt, node.BackupsEnabled,
-		ingressMode, node.CustomDomain, node.ID,
+		ingressMode, node.CustomDomain, node.IsPlatform, node.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("postgres.NodeRepo.Update: %w", err)
@@ -108,7 +108,7 @@ func (r *NodeRepo) GetByID(ctx context.Context, id int64) (*domain.Node, error) 
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at, backups_enabled,
-		       ingress_mode, custom_domain
+		       ingress_mode, custom_domain, is_platform
 		FROM nodes WHERE id = $1
 	`
 
@@ -122,7 +122,7 @@ func (r *NodeRepo) GetByAddress(ctx context.Context, address string) (*domain.No
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at, backups_enabled,
-		       ingress_mode, custom_domain
+		       ingress_mode, custom_domain, is_platform
 		FROM nodes WHERE address = $1
 	`
 
@@ -136,7 +136,7 @@ func (r *NodeRepo) List(ctx context.Context, status *domain.NodeStatus) ([]*doma
 		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
 		       cpu_cores, total_memory, total_disk, agent_version,
 		       last_ping_at, created_at, updated_at, backups_enabled,
-		       ingress_mode, custom_domain
+		       ingress_mode, custom_domain, is_platform
 		FROM nodes
 	`
 
@@ -229,6 +229,54 @@ func (r *NodeRepo) UpdateIngress(ctx context.Context, id int64, mode domain.Ingr
 	return nil
 }
 
+// UpdatePlatformStatus обновляет признак платформенной ноды.
+func (r *NodeRepo) UpdatePlatformStatus(ctx context.Context, id int64, isPlatform bool) error {
+	const q = `UPDATE nodes SET is_platform = $1, updated_at = NOW() WHERE id = $2`
+
+	tag, err := r.pool.Exec(ctx, q, isPlatform, id)
+	if err != nil {
+		return fmt.Errorf("postgres.NodeRepo.UpdatePlatformStatus: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+
+	return nil
+}
+
+// ListPlatformNodes возвращает все платформенные ноды.
+func (r *NodeRepo) ListPlatformNodes(ctx context.Context) ([]*domain.Node, error) {
+	const q = `
+		SELECT id, owner_id, address, token_hash, api_token, region, status, role,
+		       cpu_cores, total_memory, total_disk, agent_version,
+		       last_ping_at, created_at, updated_at, backups_enabled,
+		       ingress_mode, custom_domain, is_platform
+		FROM nodes
+		WHERE is_platform = true
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("postgres.NodeRepo.ListPlatformNodes: %w", err)
+	}
+	defer rows.Close()
+
+	var nodes []*domain.Node
+	for rows.Next() {
+		n, err := scanNode(rows)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, n)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("postgres.NodeRepo.ListPlatformNodes: %w", err)
+	}
+
+	return nodes, nil
+}
+
 type nodeScanner interface {
 	Scan(dest ...any) error
 }
@@ -239,7 +287,7 @@ func scanNode(s nodeScanner) (*domain.Node, error) {
 		&n.ID, &n.OwnerID, &n.Address, &n.TokenHash, &n.APIToken, &n.Region, &n.Status, &n.Role,
 		&n.CPUCores, &n.TotalMemory, &n.TotalDisk, &n.AgentVersion,
 		&n.LastPingAt, &n.CreatedAt, &n.UpdatedAt, &n.BackupsEnabled,
-		&n.IngressMode, &n.CustomDomain,
+		&n.IngressMode, &n.CustomDomain, &n.IsPlatform,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

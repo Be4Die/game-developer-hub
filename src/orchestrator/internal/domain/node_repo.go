@@ -31,4 +31,10 @@ type NodeRepo interface {
 
 	// UpdateIngress обновляет сетевой режим ноды (platform_proxy / direct) и кастомный домен.
 	UpdateIngress(ctx context.Context, id int64, mode IngressMode, customDomain string) error
+
+	// UpdatePlatformStatus обновляет признак платформенной ноды.
+	UpdatePlatformStatus(ctx context.Context, id int64, isPlatform bool) error
+
+	// ListPlatformNodes возвращает все платформенные ноды.
+	ListPlatformNodes(ctx context.Context) ([]*Node, error)
 }
