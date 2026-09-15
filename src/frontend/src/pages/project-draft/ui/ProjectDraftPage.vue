@@ -817,6 +817,7 @@ function downloadBuild(version) {
 
 <style scoped>
 .tab-fade-in {
+  width: 100%;
   animation: fadeIn 0.3s ease;
 }
 @keyframes fadeIn {
@@ -834,8 +835,30 @@ function downloadBuild(version) {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 900px;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
   padding-bottom: 60px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1440px) {
+  .form-grid {
+    max-width: 1260px;
+  }
+}
+
+@media (min-width: 1720px) {
+  .form-grid {
+    max-width: 1380px;
+  }
+}
+
+@media (max-width: 860px) {
+  .input-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .rejection-notice {

@@ -131,9 +131,33 @@
     </main>
 
     <!-- ПРАВЫЙ САЙДБАР: Чат проекта -->
-    <aside class="chat-sidebar">
-      <ProjectChat :project-id="id" class="workspace-chat" />
+    <aside class="chat-sidebar" :class="{ 'is-collapsed': !isChatOpen }">
+      <ProjectChat
+        :project-id="id"
+        class="workspace-chat"
+        :collapsible="true"
+        :is-open="isChatOpen"
+        @collapse="isChatOpen = false"
+        @unread-count-changed="(cnt) => (unreadChatCount = cnt)"
+      />
     </aside>
+
+    <!-- Плавающий бейдж для открытия чата (виден в свернутом состоянии) -->
+    <button
+      v-if="!isChatOpen"
+      type="button"
+      class="chat-dock-trigger"
+      :title="t('moderation.projectChatTitle')"
+      @click="isChatOpen = true"
+    >
+      <div class="chat-dock-icon-wrap">
+        <MessageSquare class="icon-chat-trigger" />
+        <!-- Красный кружок с белой цифрой непрочитанных (отображается только если unreadChatCount > 0) -->
+        <span v-if="unreadChatCount > 0" class="chat-unread-badge">
+          {{ unreadChatCount > 99 ? '99+' : unreadChatCount }}
+        </span>
+      </div>
+    </button>
   </div>
 </template>
 
@@ -152,6 +176,7 @@ import {
   Loader2,
   Users,
   Gamepad2,
+  MessageSquare,
 } from 'lucide-vue-next';
 import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
@@ -162,6 +187,10 @@ const props = defineProps({
 });
 const route = useRoute();
 const router = useRouter();
+
+// Состояние сворачивания чата (по умолчанию скрыт) и счетчик непрочитанных
+const isChatOpen = ref(false);
+const unreadChatCount = ref(0);
 
 // ─── Project data (shared with child tabs) ───────────────────
 const project = ref(null);
@@ -315,6 +344,7 @@ async function handleSidebarSubmit() {
 }
 
 .game-workspace {
+  position: relative;
   display: flex;
   height: calc(100vh - 60px);
   max-height: calc(100vh - 60px);
@@ -560,17 +590,30 @@ async function handleSidebarSubmit() {
   flex-shrink: 0;
   overflow: hidden;
   box-sizing: border-box;
-  transition: width 0.2s ease;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s ease,
+              opacity 0.2s ease;
+}
+
+.chat-sidebar.is-collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-left: none !important;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 @media (min-width: 1600px) {
-  .chat-sidebar {
+  .chat-sidebar:not(.is-collapsed) {
     width: 520px;
   }
 }
 
 @media (max-width: 1280px) {
-  .chat-sidebar {
+  .chat-sidebar:not(.is-collapsed) {
     width: 420px;
   }
 }
@@ -578,6 +621,82 @@ async function handleSidebarSubmit() {
 .workspace-chat {
   flex: 1;
   height: 100%;
+}
+
+/* Плавающая кнопка в правом нижнем углу для открытия чата (когда свернут) */
+.chat-dock-trigger {
+  position: absolute;
+  right: 28px;
+  bottom: 28px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 50%;
+  color: var(--text-main, #f0f6fc);
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.chat-dock-trigger:hover {
+  transform: translateY(-2px) scale(1.06);
+  background: var(--bg-secondary, #21262d);
+  border-color: var(--primary, #3b82f6);
+  color: var(--primary, #3b82f6);
+  box-shadow: 0 10px 28px rgba(59, 130, 246, 0.3);
+}
+
+.chat-dock-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.icon-chat-trigger {
+  width: 24px;
+  height: 24px;
+}
+
+/* Красный кружок с белой цифрой (число непрочитанных) */
+.chat-unread-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 2px solid var(--bg-card, #161b22);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+  pointer-events: none;
+  animation: badge-pulse 2s infinite ease-in-out;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 .spin {

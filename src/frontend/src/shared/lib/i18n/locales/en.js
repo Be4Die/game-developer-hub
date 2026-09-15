@@ -318,6 +318,7 @@ export default {
     verdictRejected: 'Submission rejected. Remarks sent to project chat.',
     chatTitle: 'Moderation Chat',
     projectChatTitle: 'Project Chat',
+    collapseChat: 'Collapse chat',
     chatPlaceholder: 'Write a message to developer...',
     sendMessage: 'Send',
     systemMessage: 'System Notification',

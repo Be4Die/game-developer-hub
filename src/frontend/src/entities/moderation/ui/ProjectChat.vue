@@ -14,6 +14,16 @@
           {{ dialogStatusLabel }}
         </span>
       </div>
+      <div v-if="collapsible" class="chat-header-right">
+        <button
+          type="button"
+          class="btn-chat-collapse"
+          :title="t('moderation.collapseChat') || 'Свернуть чат'"
+          @click="emit('collapse')"
+        >
+          <ChevronRight class="icon-sm" />
+        </button>
+      </div>
     </div>
 
     <!-- Область сообщений -->
@@ -239,7 +249,6 @@ import { useI18n } from 'vue-i18n';
 import {
   MessageSquare,
   MessageSquareDashed,
-  Info,
   Send,
   CheckCircle2,
   Eye,
@@ -249,6 +258,7 @@ import {
   X,
   Maximize2,
   Loader2,
+  ChevronRight,
 } from 'lucide-vue-next';
 import { moderationApi } from '../api/moderationApi';
 import {
@@ -282,9 +292,17 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  collapsible: {
+    type: Boolean,
+    default: false,
+  },
+  isOpen: {
+    type: Boolean,
+    default: true,
+  },
 });
 
-const emit = defineEmits(['dialogStatusChanged']);
+const emit = defineEmits(['dialogStatusChanged', 'collapse', 'unreadCountChanged']);
 
 const { state: authState } = useAuth();
 const currentUserId = computed(() => authState.user?.id || authState.user?.sub || '');
@@ -398,6 +416,50 @@ function isSystemMessage(msg) {
 function isOwn(msg) {
   if (!currentUserId.value) return false;
   return String(msg.sender_id) === String(currentUserId.value);
+}
+
+const storageKey = computed(() => {
+  const uid = currentUserId.value || 'anon';
+  return `gdh_chat_last_read_${uid}_${props.projectId}`;
+});
+
+const unreadCount = ref(0);
+
+function updateUnreadCount() {
+  if (!props.projectId) return;
+
+  // Если чат открыт — сразу считаем сообщения прочитанными и сохраняем ID последнего
+  if (props.isOpen) {
+    if (messages.value.length > 0) {
+      const maxId = messages.value.reduce((max, m) => {
+        const idNum = Number(m.id) || 0;
+        return idNum > max ? idNum : max;
+      }, 0);
+      if (maxId > 0) {
+        localStorage.setItem(storageKey.value, String(maxId));
+      }
+    }
+    if (unreadCount.value !== 0) {
+      unreadCount.value = 0;
+      emit('unreadCountChanged', 0);
+    }
+    return;
+  }
+
+  // Если чат свернут / закрыт
+  const savedLastRead = localStorage.getItem(storageKey.value);
+  let unread = 0;
+  if (savedLastRead === null) {
+    // Еще ни разу не открывали чат для этого проекта:
+    // непрочитанными являются все сообщения не от текущего пользователя
+    unread = messages.value.filter((m) => !isOwn(m)).length;
+  } else {
+    const lastReadId = Number(savedLastRead) || 0;
+    unread = messages.value.filter((m) => !isOwn(m) && (Number(m.id) || 0) > lastReadId).length;
+  }
+
+  unreadCount.value = unread;
+  emit('unreadCountChanged', unread);
 }
 
 function formatSenderRole(msg) {
@@ -533,8 +595,11 @@ async function fetchMessages(silent = false) {
     const newMessages = data.messages || [];
     const hadChanges = newMessages.length !== messages.value.length;
     messages.value = newMessages;
+    updateUnreadCount();
     if (hadChanges) {
-      scrollToBottom();
+      if (props.isOpen) {
+        scrollToBottom();
+      }
       emit('dialogStatusChanged', dialogState.value);
     }
   } catch (err) {
@@ -587,6 +652,16 @@ watch(
   }
 );
 
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      updateUnreadCount();
+      scrollToBottom();
+    }
+  }
+);
+
 onMounted(() => {
   fetchMessages();
   if (props.autoPollInterval > 0) {
@@ -632,6 +707,32 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.chat-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.btn-chat-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #8b949e);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.btn-chat-collapse:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
 }
 
 .chat-title {
