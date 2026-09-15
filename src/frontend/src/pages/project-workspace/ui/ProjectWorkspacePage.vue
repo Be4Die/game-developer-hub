@@ -46,6 +46,9 @@
         <router-link :to="`/projects/${id}/draft`" class="nav-btn" active-class="active">
           <PenTool class="icon-sm" /> {{ t('projectWorkspace.draftTab') }}
         </router-link>
+        <router-link :to="`/projects/${id}/sandbox`" class="nav-btn" active-class="active">
+          <Gamepad2 class="icon-sm" /> {{ t('projectWorkspace.sandboxTab') }}
+        </router-link>
         <router-link
           v-if="isPublished"
           :to="`/projects/${id}/published`"
@@ -148,6 +151,7 @@ import {
   Send,
   Loader2,
   Users,
+  Gamepad2,
 } from 'lucide-vue-next';
 import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
@@ -251,9 +255,7 @@ watch(
 );
 
 function openDevGame() {
-  const url =
-    project.value?.draft?.dev_url || project.value?.dev_url || `/games/${props.id}/dev/index.html`;
-  window.open(url, '_blank');
+  router.push(`/projects/${props.id}/sandbox`);
 }
 
 function openProdGame() {

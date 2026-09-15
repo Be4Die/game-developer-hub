@@ -170,12 +170,17 @@ export default {
   },
   projectWorkspace: {
     draftTab: 'Черновик',
+    sandboxTab: 'Песочница',
     moderationTab: 'Модерация и чат',
     statsTab: 'Аналитика',
     serversTab: 'Серверная часть',
     publishedTab: 'Опубликованная версия',
     accessTab: 'Коллаборация и доступ',
     statusBadge: 'Статус: {status}',
+  },
+  projectSandbox: {
+    title: 'Песочница тестирования игры',
+    subtitle: 'Изолированная среда выполнения игры с поддержкой WelwiseGames JS-SDK. Все события и вызовы API эмулируются локально в консоли.',
   },
   projectDraft: {
     title: 'Редактирование черновика',

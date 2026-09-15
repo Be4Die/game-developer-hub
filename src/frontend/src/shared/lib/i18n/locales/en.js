@@ -170,12 +170,17 @@ export default {
   },
   projectWorkspace: {
     draftTab: 'Draft',
+    sandboxTab: 'Sandbox',
     moderationTab: 'Moderation & Chat',
     statsTab: 'Analytics',
     serversTab: 'Game Servers',
     publishedTab: 'Published Version',
     accessTab: 'Collaborators & Access',
     statusBadge: 'Status: {status}',
+  },
+  projectSandbox: {
+    title: 'Game Testing Sandbox',
+    subtitle: 'Isolated game execution environment with WelwiseGames JS-SDK support. All API calls and events are emulated locally in the console.',
   },
   projectDraft: {
     title: 'Edit Draft',

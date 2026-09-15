@@ -3,6 +3,7 @@ import { LoginPage } from '@/pages/login';
 import { ProjectsListPage } from '@/pages/projects-list';
 import { ProjectWorkspacePage } from '@/pages/project-workspace';
 import { ProjectDraftPage } from '@/pages/project-draft';
+import { ProjectSandboxPage } from '@/pages/project-sandbox';
 import { ProjectStatsPage } from '@/pages/project-stats';
 import { ProjectPublishedPage } from '@/pages/project-published';
 import { ServersLayoutPage } from '@/pages/servers-layout';
@@ -60,6 +61,7 @@ export const routes = [
     children: [
       { path: '', redirect: (to) => `/projects/${to.params.id}/draft` },
       { path: 'draft', name: 'draft', component: ProjectDraftPage },
+      { path: 'sandbox', name: 'sandbox', component: ProjectSandboxPage },
       { path: 'stats', name: 'stats', component: ProjectStatsPage },
       { path: 'published', name: 'published', component: ProjectPublishedPage },
       { path: 'access', name: 'project-access', component: ProjectAccessPage },

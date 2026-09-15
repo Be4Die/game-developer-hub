@@ -321,17 +321,24 @@
                 </p>
               </div>
 
-              <a
+              <button
                 v-if="projectData.dev_url"
-                :href="projectData.dev_url"
-                target="_blank"
-                rel="noopener noreferrer"
+                type="button"
                 class="btn-play-dev-lg"
+                @click="isPlayerVisible = !isPlayerVisible"
               >
                 <Gamepad2 class="icon-sm" />
-                <span>{{ t('journal.snapshotModal.openDevBuild') || 'Запустить Dev-билд снимка' }}</span>
-                <ExternalLink class="icon-xs" />
-              </a>
+                <span>{{ isPlayerVisible ? 'Скрыть песочницу' : (t('journal.snapshotModal.openDevBuild') || 'Тестировать сборку снимка') }}</span>
+              </button>
+            </div>
+
+            <!-- Встроенный плеер песочницы для модератора -->
+            <div v-if="isPlayerVisible && projectData.dev_url" class="snapshot-sandbox-wrapper">
+              <GameSandboxPlayer
+                :game-url="projectData.dev_url"
+                :project-id="projectId"
+                :show-devtools="true"
+              />
             </div>
           </div>
         </div>
@@ -493,6 +500,7 @@ import { getUserDisplayName } from '@/entities/user';
 import { getMediaUrl } from '@/entities/project';
 import MediaLightboxModal from '@/entities/moderation/ui/MediaLightboxModal.vue';
 import ModerationVerdictCard from '@/entities/moderation/ui/ModerationVerdictCard.vue';
+import { GameSandboxPlayer } from '@/features/game-sandbox';
 
 const route = useRoute();
 const router = useRouter();
@@ -508,6 +516,7 @@ const mediaData = ref({});
 const verdictData = ref({});
 const chatMessages = ref([]);
 const lightboxData = ref(null);
+const isPlayerVisible = ref(false);
 
 const isServerAccess = computed(() => {
   const t = verdictData.value.request_type;
@@ -1580,5 +1589,12 @@ onMounted(() => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.snapshot-sandbox-wrapper {
+  margin-top: 16px;
+  height: 560px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>
