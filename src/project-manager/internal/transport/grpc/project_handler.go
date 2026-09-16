@@ -599,3 +599,97 @@ func (h *ProjectHandler) ListBlockedUsers(ctx context.Context, _ *pb.ProjectList
 	}
 	return resp, nil
 }
+
+// ─── Внутриигровые покупки (IAP) ───────────────────────────────
+
+// ListGameItems возвращает список товаров для игры.
+func (h *ProjectHandler) ListGameItems(ctx context.Context, req *pb.ProjectListGameItemsRequest) (*pb.ProjectListGameItemsResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	items, err := h.svc.ListGameItems(ctx, req.GetProjectId(), userID)
+	if err != nil {
+		return nil, domainError(err, "list game items")
+	}
+	resp := &pb.ProjectListGameItemsResponse{
+		Items: make([]*pb.GameItem, len(items)),
+	}
+	for i, it := range items {
+		resp.Items[i] = gameItemToProto(it)
+	}
+	return resp, nil
+}
+
+// GetGameItem возвращает конкретный товар.
+func (h *ProjectHandler) GetGameItem(ctx context.Context, req *pb.ProjectGetGameItemRequest) (*pb.ProjectGetGameItemResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	item, err := h.svc.GetGameItem(ctx, req.GetProjectId(), req.GetGameItemId(), userID)
+	if err != nil {
+		return nil, domainError(err, "get game item")
+	}
+	return &pb.ProjectGetGameItemResponse{Item: gameItemToProto(item)}, nil
+}
+
+// CreateGameItem создает новый товар для игры.
+func (h *ProjectHandler) CreateGameItem(ctx context.Context, req *pb.ProjectCreateGameItemRequest) (*pb.ProjectCreateGameItemResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	item := &domain.GameItem{
+		ProjectID:   req.GetProjectId(),
+		GameItemID:  req.GetGameItemId(),
+		Name:        req.GetName(),
+		Description: req.GetDescription(),
+		ImageURL:    req.GetImageUrl(),
+		PriceCoins:  req.GetPriceCoins(),
+		IsActive:    req.GetIsActive(),
+	}
+
+	created, err := h.svc.CreateGameItem(ctx, item, userID)
+	if err != nil {
+		return nil, domainError(err, "create game item")
+	}
+	return &pb.ProjectCreateGameItemResponse{Item: gameItemToProto(created)}, nil
+}
+
+// UpdateGameItem обновляет существующий товар.
+func (h *ProjectHandler) UpdateGameItem(ctx context.Context, req *pb.ProjectUpdateGameItemRequest) (*pb.ProjectUpdateGameItemResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	item := &domain.GameItem{
+		ProjectID:   req.GetProjectId(),
+		GameItemID:  req.GetGameItemId(),
+		Name:        req.GetName(),
+		Description: req.GetDescription(),
+		ImageURL:    req.GetImageUrl(),
+		PriceCoins:  req.GetPriceCoins(),
+		IsActive:    req.GetIsActive(),
+	}
+
+	updated, err := h.svc.UpdateGameItem(ctx, item, userID)
+	if err != nil {
+		return nil, domainError(err, "update game item")
+	}
+	return &pb.ProjectUpdateGameItemResponse{Item: gameItemToProto(updated)}, nil
+}
+
+// DeleteGameItem удаляет или деактивирует товар.
+func (h *ProjectHandler) DeleteGameItem(ctx context.Context, req *pb.ProjectDeleteGameItemRequest) (*pb.ProjectDeleteGameItemResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+	if err := h.svc.DeleteGameItem(ctx, req.GetProjectId(), req.GetGameItemId(), userID); err != nil {
+		return nil, domainError(err, "delete game item")
+	}
+	return &pb.ProjectDeleteGameItemResponse{Success: true}, nil
+}

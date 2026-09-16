@@ -49,6 +49,11 @@ const (
 	ProjectService_BlockUser_FullMethodName               = "/project_manager.v1.ProjectService/BlockUser"
 	ProjectService_UnblockUser_FullMethodName             = "/project_manager.v1.ProjectService/UnblockUser"
 	ProjectService_ListBlockedUsers_FullMethodName        = "/project_manager.v1.ProjectService/ListBlockedUsers"
+	ProjectService_ListGameItems_FullMethodName           = "/project_manager.v1.ProjectService/ListGameItems"
+	ProjectService_GetGameItem_FullMethodName             = "/project_manager.v1.ProjectService/GetGameItem"
+	ProjectService_CreateGameItem_FullMethodName          = "/project_manager.v1.ProjectService/CreateGameItem"
+	ProjectService_UpdateGameItem_FullMethodName          = "/project_manager.v1.ProjectService/UpdateGameItem"
+	ProjectService_DeleteGameItem_FullMethodName          = "/project_manager.v1.ProjectService/DeleteGameItem"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -91,6 +96,12 @@ type ProjectServiceClient interface {
 	BlockUser(ctx context.Context, in *ProjectBlockUserRequest, opts ...grpc.CallOption) (*ProjectBlockUserResponse, error)
 	UnblockUser(ctx context.Context, in *ProjectUnblockUserRequest, opts ...grpc.CallOption) (*ProjectUnblockUserResponse, error)
 	ListBlockedUsers(ctx context.Context, in *ProjectListBlockedUsersRequest, opts ...grpc.CallOption) (*ProjectListBlockedUsersResponse, error)
+	// Внутриигровые покупки (IAP)
+	ListGameItems(ctx context.Context, in *ProjectListGameItemsRequest, opts ...grpc.CallOption) (*ProjectListGameItemsResponse, error)
+	GetGameItem(ctx context.Context, in *ProjectGetGameItemRequest, opts ...grpc.CallOption) (*ProjectGetGameItemResponse, error)
+	CreateGameItem(ctx context.Context, in *ProjectCreateGameItemRequest, opts ...grpc.CallOption) (*ProjectCreateGameItemResponse, error)
+	UpdateGameItem(ctx context.Context, in *ProjectUpdateGameItemRequest, opts ...grpc.CallOption) (*ProjectUpdateGameItemResponse, error)
+	DeleteGameItem(ctx context.Context, in *ProjectDeleteGameItemRequest, opts ...grpc.CallOption) (*ProjectDeleteGameItemResponse, error)
 }
 
 type projectServiceClient struct {
@@ -407,6 +418,56 @@ func (c *projectServiceClient) ListBlockedUsers(ctx context.Context, in *Project
 	return out, nil
 }
 
+func (c *projectServiceClient) ListGameItems(ctx context.Context, in *ProjectListGameItemsRequest, opts ...grpc.CallOption) (*ProjectListGameItemsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectListGameItemsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListGameItems_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) GetGameItem(ctx context.Context, in *ProjectGetGameItemRequest, opts ...grpc.CallOption) (*ProjectGetGameItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectGetGameItemResponse)
+	err := c.cc.Invoke(ctx, ProjectService_GetGameItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) CreateGameItem(ctx context.Context, in *ProjectCreateGameItemRequest, opts ...grpc.CallOption) (*ProjectCreateGameItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectCreateGameItemResponse)
+	err := c.cc.Invoke(ctx, ProjectService_CreateGameItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UpdateGameItem(ctx context.Context, in *ProjectUpdateGameItemRequest, opts ...grpc.CallOption) (*ProjectUpdateGameItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectUpdateGameItemResponse)
+	err := c.cc.Invoke(ctx, ProjectService_UpdateGameItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) DeleteGameItem(ctx context.Context, in *ProjectDeleteGameItemRequest, opts ...grpc.CallOption) (*ProjectDeleteGameItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectDeleteGameItemResponse)
+	err := c.cc.Invoke(ctx, ProjectService_DeleteGameItem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -447,6 +508,12 @@ type ProjectServiceServer interface {
 	BlockUser(context.Context, *ProjectBlockUserRequest) (*ProjectBlockUserResponse, error)
 	UnblockUser(context.Context, *ProjectUnblockUserRequest) (*ProjectUnblockUserResponse, error)
 	ListBlockedUsers(context.Context, *ProjectListBlockedUsersRequest) (*ProjectListBlockedUsersResponse, error)
+	// Внутриигровые покупки (IAP)
+	ListGameItems(context.Context, *ProjectListGameItemsRequest) (*ProjectListGameItemsResponse, error)
+	GetGameItem(context.Context, *ProjectGetGameItemRequest) (*ProjectGetGameItemResponse, error)
+	CreateGameItem(context.Context, *ProjectCreateGameItemRequest) (*ProjectCreateGameItemResponse, error)
+	UpdateGameItem(context.Context, *ProjectUpdateGameItemRequest) (*ProjectUpdateGameItemResponse, error)
+	DeleteGameItem(context.Context, *ProjectDeleteGameItemRequest) (*ProjectDeleteGameItemResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -546,6 +613,21 @@ func (UnimplementedProjectServiceServer) UnblockUser(context.Context, *ProjectUn
 }
 func (UnimplementedProjectServiceServer) ListBlockedUsers(context.Context, *ProjectListBlockedUsersRequest) (*ProjectListBlockedUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListBlockedUsers not implemented")
+}
+func (UnimplementedProjectServiceServer) ListGameItems(context.Context, *ProjectListGameItemsRequest) (*ProjectListGameItemsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListGameItems not implemented")
+}
+func (UnimplementedProjectServiceServer) GetGameItem(context.Context, *ProjectGetGameItemRequest) (*ProjectGetGameItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetGameItem not implemented")
+}
+func (UnimplementedProjectServiceServer) CreateGameItem(context.Context, *ProjectCreateGameItemRequest) (*ProjectCreateGameItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateGameItem not implemented")
+}
+func (UnimplementedProjectServiceServer) UpdateGameItem(context.Context, *ProjectUpdateGameItemRequest) (*ProjectUpdateGameItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateGameItem not implemented")
+}
+func (UnimplementedProjectServiceServer) DeleteGameItem(context.Context, *ProjectDeleteGameItemRequest) (*ProjectDeleteGameItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteGameItem not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -1086,6 +1168,96 @@ func _ProjectService_ListBlockedUsers_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_ListGameItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectListGameItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListGameItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListGameItems_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListGameItems(ctx, req.(*ProjectListGameItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_GetGameItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectGetGameItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).GetGameItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_GetGameItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).GetGameItem(ctx, req.(*ProjectGetGameItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_CreateGameItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectCreateGameItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).CreateGameItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_CreateGameItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).CreateGameItem(ctx, req.(*ProjectCreateGameItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UpdateGameItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectUpdateGameItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UpdateGameItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UpdateGameItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UpdateGameItem(ctx, req.(*ProjectUpdateGameItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_DeleteGameItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProjectDeleteGameItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).DeleteGameItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_DeleteGameItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).DeleteGameItem(ctx, req.(*ProjectDeleteGameItemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1204,6 +1376,26 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListBlockedUsers",
 			Handler:    _ProjectService_ListBlockedUsers_Handler,
+		},
+		{
+			MethodName: "ListGameItems",
+			Handler:    _ProjectService_ListGameItems_Handler,
+		},
+		{
+			MethodName: "GetGameItem",
+			Handler:    _ProjectService_GetGameItem_Handler,
+		},
+		{
+			MethodName: "CreateGameItem",
+			Handler:    _ProjectService_CreateGameItem_Handler,
+		},
+		{
+			MethodName: "UpdateGameItem",
+			Handler:    _ProjectService_UpdateGameItem_Handler,
+		},
+		{
+			MethodName: "DeleteGameItem",
+			Handler:    _ProjectService_DeleteGameItem_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

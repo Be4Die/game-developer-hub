@@ -464,6 +464,75 @@ message ProjectListBlockedUsersResponse {
   repeated UserAccessBlock blocks = 1;
 }
 
+// ─── Внутриигровые покупки (IAP) ───────────────────────────────
+
+message GameItem {
+  int64 id = 1;
+  int64 project_id = 2;
+  string game_item_id = 3;
+  string name = 4;
+  string description = 5;
+  string image_url = 6;
+  int64 price_coins = 7;
+  bool is_active = 8;
+  string created_at = 9;
+  string updated_at = 10;
+}
+
+message ProjectListGameItemsRequest {
+  int64 project_id = 1;
+}
+
+message ProjectListGameItemsResponse {
+  repeated GameItem items = 1;
+}
+
+message ProjectGetGameItemRequest {
+  int64 project_id = 1;
+  string game_item_id = 2;
+}
+
+message ProjectGetGameItemResponse {
+  GameItem item = 1;
+}
+
+message ProjectCreateGameItemRequest {
+  int64 project_id = 1;
+  string game_item_id = 2;
+  string name = 3;
+  string description = 4;
+  string image_url = 5;
+  int64 price_coins = 6;
+  bool is_active = 7;
+}
+
+message ProjectCreateGameItemResponse {
+  GameItem item = 1;
+}
+
+message ProjectUpdateGameItemRequest {
+  int64 project_id = 1;
+  string game_item_id = 2;
+  string name = 3;
+  string description = 4;
+  string image_url = 5;
+  int64 price_coins = 6;
+  bool is_active = 7;
+}
+
+message ProjectUpdateGameItemResponse {
+  GameItem item = 1;
+}
+
+message ProjectDeleteGameItemRequest {
+  int64 project_id = 1;
+  string game_item_id = 2;
+}
+
+message ProjectDeleteGameItemResponse {
+  bool success = 1;
+}
+
 // ─── Service ──────────────────────────────────────────
 
 service ProjectService {
@@ -558,5 +627,22 @@ service ProjectService {
   }
   rpc ListBlockedUsers(ProjectListBlockedUsersRequest) returns (ProjectListBlockedUsersResponse) {
     option (google.api.http) = { get: "/api/v1/access/blocks" };
+  }
+
+  // Внутриигровые покупки (IAP)
+  rpc ListGameItems(ProjectListGameItemsRequest) returns (ProjectListGameItemsResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{project_id}/purchases/items" };
+  }
+  rpc GetGameItem(ProjectGetGameItemRequest) returns (ProjectGetGameItemResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{project_id}/purchases/items/{game_item_id}" };
+  }
+  rpc CreateGameItem(ProjectCreateGameItemRequest) returns (ProjectCreateGameItemResponse) {
+    option (google.api.http) = { post: "/api/v1/projects/{project_id}/purchases/items", body: "*" };
+  }
+  rpc UpdateGameItem(ProjectUpdateGameItemRequest) returns (ProjectUpdateGameItemResponse) {
+    option (google.api.http) = { put: "/api/v1/projects/{project_id}/purchases/items/{game_item_id}", body: "*" };
+  }
+  rpc DeleteGameItem(ProjectDeleteGameItemRequest) returns (ProjectDeleteGameItemResponse) {
+    option (google.api.http) = { delete: "/api/v1/projects/{project_id}/purchases/items/{game_item_id}" };
   }
 }

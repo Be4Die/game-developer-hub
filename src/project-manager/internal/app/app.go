@@ -167,6 +167,16 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log.Info("using in-memory stub moderation client")
 	}
 
+	// ─── Клиент сервиса покупок IAP (HTTP или Stub) ─────────────
+	var purchaseClient domain.PurchaseClient
+	if cfg.PurchaseService.Driver == "http" && cfg.PurchaseService.URL != "" {
+		purchaseClient = client.NewHTTPPurchaseClient(cfg.PurchaseService.URL, cfg.PurchaseService.Timeout)
+		log.Info("connected to external purchase service", slog.String("url", cfg.PurchaseService.URL))
+	} else {
+		purchaseClient = client.NewStubPurchaseClient(log)
+		log.Info("using in-memory stub purchase client for local development")
+	}
+
 	// ─── Сервисы ────────────────────────────────────────────────
 	projectService := service.NewProjectService(
 		projectRepo,
@@ -183,7 +193,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		deployer,
 		locker,
 		cfg.Storage.MaxBuildVersions,
-	).WithPlatformProxyHosts(cfg.Deployment.PlatformProxyHosts)
+	).
+		WithPlatformProxyHosts(cfg.Deployment.PlatformProxyHosts).
+		WithPurchaseClient(purchaseClient)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)

@@ -670,3 +670,111 @@ func (r *mockBlockRepo) ListBlocked(ctx context.Context, userID string) ([]*doma
 	return res, nil
 }
 
+type mockPurchaseClient struct {
+	mu     sync.RWMutex
+	items  map[int64]map[string]*domain.GameItem
+	nextID int64
+}
+
+func newMockPurchaseClient() *mockPurchaseClient {
+	return &mockPurchaseClient{
+		items: make(map[int64]map[string]*domain.GameItem),
+	}
+}
+
+func (m *mockPurchaseClient) ListItems(_ context.Context, gameID int64) ([]*domain.GameItem, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	gm, ok := m.items[gameID]
+	if !ok {
+		return []*domain.GameItem{}, nil
+	}
+	res := make([]*domain.GameItem, 0, len(gm))
+	for _, it := range gm {
+		cp := *it
+		res = append(res, &cp)
+	}
+	return res, nil
+}
+
+func (m *mockPurchaseClient) GetItem(_ context.Context, gameID int64, gameItemID string) (*domain.GameItem, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	gm, ok := m.items[gameID]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	it, ok := gm[gameItemID]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	cp := *it
+	return &cp, nil
+}
+
+func (m *mockPurchaseClient) CreateItem(_ context.Context, item *domain.GameItem) (*domain.GameItem, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	gm, ok := m.items[item.ProjectID]
+	if !ok {
+		gm = make(map[string]*domain.GameItem)
+		m.items[item.ProjectID] = gm
+	}
+	if _, ok := gm[item.GameItemID]; ok {
+		return nil, domain.ErrAlreadyExists
+	}
+	id := atomic.AddInt64(&m.nextID, 1)
+	it := &domain.GameItem{
+		ID:          id,
+		ProjectID:   item.ProjectID,
+		GameItemID:  item.GameItemID,
+		Name:        item.Name,
+		Description: item.Description,
+		ImageURL:    item.ImageURL,
+		PriceCoins:  item.PriceCoins,
+		IsActive:    item.IsActive,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	gm[item.GameItemID] = it
+	cp := *it
+	return &cp, nil
+}
+
+func (m *mockPurchaseClient) UpdateItem(_ context.Context, item *domain.GameItem) (*domain.GameItem, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	gm, ok := m.items[item.ProjectID]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	ex, ok := gm[item.GameItemID]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	ex.Name = item.Name
+	ex.Description = item.Description
+	if item.ImageURL != "" {
+		ex.ImageURL = item.ImageURL
+	}
+	ex.PriceCoins = item.PriceCoins
+	ex.IsActive = item.IsActive
+	ex.UpdatedAt = time.Now()
+	cp := *ex
+	return &cp, nil
+}
+
+func (m *mockPurchaseClient) DeleteItem(_ context.Context, gameID int64, gameItemID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	gm, ok := m.items[gameID]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	if _, ok := gm[gameItemID]; !ok {
+		return domain.ErrNotFound
+	}
+	delete(gm, gameItemID)
+	return nil
+}
+

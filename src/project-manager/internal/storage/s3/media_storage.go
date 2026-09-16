@@ -45,6 +45,12 @@ func (s *MediaStorage) getFileName(mediaType string) (string, error) {
 	case "video":
 		return "video.mp4", nil
 	default:
+		if strings.HasPrefix(mediaType, "item:") {
+			itemID := strings.TrimPrefix(mediaType, "item:")
+			if itemID != "" {
+				return fmt.Sprintf("items/%s.png", itemID), nil
+			}
+		}
 		return "", domain.ErrInvalidInput
 	}
 }
@@ -60,12 +66,12 @@ func validateMediaMime(r io.Reader, mediaType string) (string, []byte, error) {
 	}
 
 	contentType := http.DetectContentType(buf[:n])
-	switch mediaType {
-	case "icon", "cover":
+	switch {
+	case mediaType == "icon" || mediaType == "cover" || strings.HasPrefix(mediaType, "item:"):
 		if !strings.HasPrefix(contentType, "image/") {
 			return "", nil, fmt.Errorf("%w: expected image, detected %s", domain.ErrInvalidInput, contentType)
 		}
-	case "video":
+	case mediaType == "video":
 		if !strings.HasPrefix(contentType, "video/") && contentType != "application/octet-stream" {
 			return "", nil, fmt.Errorf("%w: expected video, detected %s", domain.ErrInvalidInput, contentType)
 		}

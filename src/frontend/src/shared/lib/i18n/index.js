@@ -65,3 +65,6 @@ export function useLocale() {
     supportedLocales: SUPPORTED_LOCALES,
   };
 }
+
+export { useI18n } from 'vue-i18n';
+

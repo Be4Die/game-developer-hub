@@ -576,3 +576,72 @@ func TestUnit_ProjectService_ListProjectsIncludesShared(t *testing.T) {
 	assert.True(t, ownerList[0].IsOwner)
 	assert.Equal(t, domain.AllPermissions(), ownerList[0].CurrentUserPermissions)
 }
+
+func TestUnit_ProjectService_InAppPurchases(t *testing.T) {
+	ctx := context.Background()
+	svc, pRepo, rRepo := setupTestProjectService(t)
+	_, _ = pRepo, rRepo
+
+	// Создаем StubPurchaseClient и внедряем в svc
+	stub := newMockPurchaseClient()
+	svc.WithPurchaseClient(stub)
+
+	// Создаем проект
+	p, err := svc.CreateProject(ctx, "owner-1", "Моя игра", "My Game", false)
+	require.NoError(t, err)
+
+	// 1. Посторонний пользователь не имеет доступа
+	_, err = svc.ListGameItems(ctx, p.ID, "intruder")
+	require.ErrorIs(t, err, domain.ErrForbidden)
+
+	// 2. Владелец может запросить список — сначала пуст
+	items, err := svc.ListGameItems(ctx, p.ID, "owner-1")
+	require.NoError(t, err)
+	require.Empty(t, items)
+
+	// 3. Валидация: некорректная цена <= 0
+	_, err = svc.CreateGameItem(ctx, &domain.GameItem{
+		ProjectID:  p.ID,
+		GameItemID: "gold_100",
+		Name:       "Золото",
+		PriceCoins: 0,
+	}, "owner-1")
+	require.ErrorIs(t, err, domain.ErrInvalidInput)
+
+	// 4. Успешное создание товара владельцем
+	created, err := svc.CreateGameItem(ctx, &domain.GameItem{
+		ProjectID:   p.ID,
+		GameItemID:  "gold_100",
+		Name:        "100 золотых монет",
+		Description: "Стартовый набор",
+		PriceCoins:  50,
+		IsActive:    true,
+	}, "owner-1")
+	require.NoError(t, err)
+	require.Equal(t, "gold_100", created.GameItemID)
+	require.Equal(t, int64(50), created.PriceCoins)
+
+	// 5. Загрузка изображения для товара
+	imgURL, err := svc.UploadItemImage(ctx, p.ID, "gold_100", "owner-1", bytes.NewReader([]byte("fake-png-content")))
+	require.NoError(t, err)
+	require.Equal(t, "games/1/items/gold_100.png", imgURL)
+
+	// 6. Обновление товара
+	created.PriceCoins = 45
+	updated, err := svc.UpdateGameItem(ctx, created, "owner-1")
+	require.NoError(t, err)
+	require.Equal(t, int64(45), updated.PriceCoins)
+
+	// 7. Получение товара
+	fetched, err := svc.GetGameItem(ctx, p.ID, "gold_100", "owner-1")
+	require.NoError(t, err)
+	require.Equal(t, "100 золотых монет", fetched.Name)
+
+	// 8. Удаление товара
+	err = svc.DeleteGameItem(ctx, p.ID, "gold_100", "owner-1")
+	require.NoError(t, err)
+
+	itemsAfter, err := svc.ListGameItems(ctx, p.ID, "owner-1")
+	require.NoError(t, err)
+	require.Empty(t, itemsAfter)
+}

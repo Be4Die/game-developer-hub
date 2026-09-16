@@ -4358,6 +4358,674 @@ func (x *ProjectListBlockedUsersResponse) GetBlocks() []*UserAccessBlock {
 	return nil
 }
 
+type GameItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProjectId     int64                  `protobuf:"varint,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GameItemId    string                 `protobuf:"bytes,3,opt,name=game_item_id,json=gameItemId,proto3" json:"game_item_id,omitempty"`
+	Name          string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	ImageUrl      string                 `protobuf:"bytes,6,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	PriceCoins    int64                  `protobuf:"varint,7,opt,name=price_coins,json=priceCoins,proto3" json:"price_coins,omitempty"`
+	IsActive      bool                   `protobuf:"varint,8,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GameItem) Reset() {
+	*x = GameItem{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GameItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameItem) ProtoMessage() {}
+
+func (x *GameItem) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameItem.ProtoReflect.Descriptor instead.
+func (*GameItem) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *GameItem) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *GameItem) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *GameItem) GetGameItemId() string {
+	if x != nil {
+		return x.GameItemId
+	}
+	return ""
+}
+
+func (x *GameItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *GameItem) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *GameItem) GetImageUrl() string {
+	if x != nil {
+		return x.ImageUrl
+	}
+	return ""
+}
+
+func (x *GameItem) GetPriceCoins() int64 {
+	if x != nil {
+		return x.PriceCoins
+	}
+	return 0
+}
+
+func (x *GameItem) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *GameItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *GameItem) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ProjectListGameItemsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectListGameItemsRequest) Reset() {
+	*x = ProjectListGameItemsRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectListGameItemsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectListGameItemsRequest) ProtoMessage() {}
+
+func (x *ProjectListGameItemsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectListGameItemsRequest.ProtoReflect.Descriptor instead.
+func (*ProjectListGameItemsRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *ProjectListGameItemsRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+type ProjectListGameItemsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*GameItem            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectListGameItemsResponse) Reset() {
+	*x = ProjectListGameItemsResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectListGameItemsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectListGameItemsResponse) ProtoMessage() {}
+
+func (x *ProjectListGameItemsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectListGameItemsResponse.ProtoReflect.Descriptor instead.
+func (*ProjectListGameItemsResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *ProjectListGameItemsResponse) GetItems() []*GameItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type ProjectGetGameItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GameItemId    string                 `protobuf:"bytes,2,opt,name=game_item_id,json=gameItemId,proto3" json:"game_item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectGetGameItemRequest) Reset() {
+	*x = ProjectGetGameItemRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectGetGameItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectGetGameItemRequest) ProtoMessage() {}
+
+func (x *ProjectGetGameItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectGetGameItemRequest.ProtoReflect.Descriptor instead.
+func (*ProjectGetGameItemRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *ProjectGetGameItemRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *ProjectGetGameItemRequest) GetGameItemId() string {
+	if x != nil {
+		return x.GameItemId
+	}
+	return ""
+}
+
+type ProjectGetGameItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          *GameItem              `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectGetGameItemResponse) Reset() {
+	*x = ProjectGetGameItemResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectGetGameItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectGetGameItemResponse) ProtoMessage() {}
+
+func (x *ProjectGetGameItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectGetGameItemResponse.ProtoReflect.Descriptor instead.
+func (*ProjectGetGameItemResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *ProjectGetGameItemResponse) GetItem() *GameItem {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+type ProjectCreateGameItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GameItemId    string                 `protobuf:"bytes,2,opt,name=game_item_id,json=gameItemId,proto3" json:"game_item_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ImageUrl      string                 `protobuf:"bytes,5,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	PriceCoins    int64                  `protobuf:"varint,6,opt,name=price_coins,json=priceCoins,proto3" json:"price_coins,omitempty"`
+	IsActive      bool                   `protobuf:"varint,7,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectCreateGameItemRequest) Reset() {
+	*x = ProjectCreateGameItemRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectCreateGameItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectCreateGameItemRequest) ProtoMessage() {}
+
+func (x *ProjectCreateGameItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectCreateGameItemRequest.ProtoReflect.Descriptor instead.
+func (*ProjectCreateGameItemRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *ProjectCreateGameItemRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *ProjectCreateGameItemRequest) GetGameItemId() string {
+	if x != nil {
+		return x.GameItemId
+	}
+	return ""
+}
+
+func (x *ProjectCreateGameItemRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProjectCreateGameItemRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ProjectCreateGameItemRequest) GetImageUrl() string {
+	if x != nil {
+		return x.ImageUrl
+	}
+	return ""
+}
+
+func (x *ProjectCreateGameItemRequest) GetPriceCoins() int64 {
+	if x != nil {
+		return x.PriceCoins
+	}
+	return 0
+}
+
+func (x *ProjectCreateGameItemRequest) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+type ProjectCreateGameItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          *GameItem              `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectCreateGameItemResponse) Reset() {
+	*x = ProjectCreateGameItemResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectCreateGameItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectCreateGameItemResponse) ProtoMessage() {}
+
+func (x *ProjectCreateGameItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectCreateGameItemResponse.ProtoReflect.Descriptor instead.
+func (*ProjectCreateGameItemResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *ProjectCreateGameItemResponse) GetItem() *GameItem {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+type ProjectUpdateGameItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GameItemId    string                 `protobuf:"bytes,2,opt,name=game_item_id,json=gameItemId,proto3" json:"game_item_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ImageUrl      string                 `protobuf:"bytes,5,opt,name=image_url,json=imageUrl,proto3" json:"image_url,omitempty"`
+	PriceCoins    int64                  `protobuf:"varint,6,opt,name=price_coins,json=priceCoins,proto3" json:"price_coins,omitempty"`
+	IsActive      bool                   `protobuf:"varint,7,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectUpdateGameItemRequest) Reset() {
+	*x = ProjectUpdateGameItemRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectUpdateGameItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectUpdateGameItemRequest) ProtoMessage() {}
+
+func (x *ProjectUpdateGameItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectUpdateGameItemRequest.ProtoReflect.Descriptor instead.
+func (*ProjectUpdateGameItemRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *ProjectUpdateGameItemRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *ProjectUpdateGameItemRequest) GetGameItemId() string {
+	if x != nil {
+		return x.GameItemId
+	}
+	return ""
+}
+
+func (x *ProjectUpdateGameItemRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProjectUpdateGameItemRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ProjectUpdateGameItemRequest) GetImageUrl() string {
+	if x != nil {
+		return x.ImageUrl
+	}
+	return ""
+}
+
+func (x *ProjectUpdateGameItemRequest) GetPriceCoins() int64 {
+	if x != nil {
+		return x.PriceCoins
+	}
+	return 0
+}
+
+func (x *ProjectUpdateGameItemRequest) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+type ProjectUpdateGameItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          *GameItem              `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectUpdateGameItemResponse) Reset() {
+	*x = ProjectUpdateGameItemResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectUpdateGameItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectUpdateGameItemResponse) ProtoMessage() {}
+
+func (x *ProjectUpdateGameItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectUpdateGameItemResponse.ProtoReflect.Descriptor instead.
+func (*ProjectUpdateGameItemResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *ProjectUpdateGameItemResponse) GetItem() *GameItem {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+type ProjectDeleteGameItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GameItemId    string                 `protobuf:"bytes,2,opt,name=game_item_id,json=gameItemId,proto3" json:"game_item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectDeleteGameItemRequest) Reset() {
+	*x = ProjectDeleteGameItemRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectDeleteGameItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectDeleteGameItemRequest) ProtoMessage() {}
+
+func (x *ProjectDeleteGameItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectDeleteGameItemRequest.ProtoReflect.Descriptor instead.
+func (*ProjectDeleteGameItemRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *ProjectDeleteGameItemRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *ProjectDeleteGameItemRequest) GetGameItemId() string {
+	if x != nil {
+		return x.GameItemId
+	}
+	return ""
+}
+
+type ProjectDeleteGameItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectDeleteGameItemResponse) Reset() {
+	*x = ProjectDeleteGameItemResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectDeleteGameItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectDeleteGameItemResponse) ProtoMessage() {}
+
+func (x *ProjectDeleteGameItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectDeleteGameItemResponse.ProtoReflect.Descriptor instead.
+func (*ProjectDeleteGameItemResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *ProjectDeleteGameItemResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
 var File_project_manager_v1_project_proto protoreflect.FileDescriptor
 
 const file_project_manager_v1_project_proto_rawDesc = "" +
@@ -4683,7 +5351,69 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\" \n" +
 	"\x1eProjectListBlockedUsersRequest\"^\n" +
 	"\x1fProjectListBlockedUsersResponse\x12;\n" +
-	"\x06blocks\x18\x01 \x03(\v2#.project_manager.v1.UserAccessBlockR\x06blocks*\xa0\x01\n" +
+	"\x06blocks\x18\x01 \x03(\v2#.project_manager.v1.UserAccessBlockR\x06blocks\"\xaa\x02\n" +
+	"\bGameItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\x03R\tprojectId\x12 \n" +
+	"\fgame_item_id\x18\x03 \x01(\tR\n" +
+	"gameItemId\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1b\n" +
+	"\timage_url\x18\x06 \x01(\tR\bimageUrl\x12\x1f\n" +
+	"\vprice_coins\x18\a \x01(\x03R\n" +
+	"priceCoins\x12\x1b\n" +
+	"\tis_active\x18\b \x01(\bR\bisActive\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\n" +
+	" \x01(\tR\tupdatedAt\"<\n" +
+	"\x1bProjectListGameItemsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\"R\n" +
+	"\x1cProjectListGameItemsResponse\x122\n" +
+	"\x05items\x18\x01 \x03(\v2\x1c.project_manager.v1.GameItemR\x05items\"\\\n" +
+	"\x19ProjectGetGameItemRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12 \n" +
+	"\fgame_item_id\x18\x02 \x01(\tR\n" +
+	"gameItemId\"N\n" +
+	"\x1aProjectGetGameItemResponse\x120\n" +
+	"\x04item\x18\x01 \x01(\v2\x1c.project_manager.v1.GameItemR\x04item\"\xf0\x01\n" +
+	"\x1cProjectCreateGameItemRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12 \n" +
+	"\fgame_item_id\x18\x02 \x01(\tR\n" +
+	"gameItemId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x1b\n" +
+	"\timage_url\x18\x05 \x01(\tR\bimageUrl\x12\x1f\n" +
+	"\vprice_coins\x18\x06 \x01(\x03R\n" +
+	"priceCoins\x12\x1b\n" +
+	"\tis_active\x18\a \x01(\bR\bisActive\"Q\n" +
+	"\x1dProjectCreateGameItemResponse\x120\n" +
+	"\x04item\x18\x01 \x01(\v2\x1c.project_manager.v1.GameItemR\x04item\"\xf0\x01\n" +
+	"\x1cProjectUpdateGameItemRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12 \n" +
+	"\fgame_item_id\x18\x02 \x01(\tR\n" +
+	"gameItemId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x1b\n" +
+	"\timage_url\x18\x05 \x01(\tR\bimageUrl\x12\x1f\n" +
+	"\vprice_coins\x18\x06 \x01(\x03R\n" +
+	"priceCoins\x12\x1b\n" +
+	"\tis_active\x18\a \x01(\bR\bisActive\"Q\n" +
+	"\x1dProjectUpdateGameItemResponse\x120\n" +
+	"\x04item\x18\x01 \x01(\v2\x1c.project_manager.v1.GameItemR\x04item\"_\n" +
+	"\x1cProjectDeleteGameItemRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12 \n" +
+	"\fgame_item_id\x18\x02 \x01(\tR\n" +
+	"gameItemId\"9\n" +
+	"\x1dProjectDeleteGameItemResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess*\xa0\x01\n" +
 	"\rProjectStatus\x12\x1e\n" +
 	"\x1aPROJECT_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PROJECT_STATUS_DRAFT\x10\x01\x12\x1a\n" +
@@ -4704,7 +5434,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x19INVITATION_STATUS_PENDING\x10\x01\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_ACCEPTED\x10\x02\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_DECLINED\x10\x03\x12\x1e\n" +
-	"\x1aINVITATION_STATUS_CANCELED\x10\x042\x92#\n" +
+	"\x1aINVITATION_STATUS_CANCELED\x10\x042\xa4*\n" +
 	"\x0eProjectService\x12z\n" +
 	"\x06Create\x12(.project_manager.v1.ProjectCreateRequest\x1a).project_manager.v1.ProjectCreateResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/projects\x12s\n" +
 	"\x03Get\x12%.project_manager.v1.ProjectGetRequest\x1a&.project_manager.v1.ProjectGetResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/projects/{id}\x12q\n" +
@@ -4736,7 +5466,12 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x12ListSharedProjects\x124.project_manager.v1.ProjectListSharedProjectsRequest\x1a5.project_manager.v1.ProjectListSharedProjectsResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/projects/shared\x12\x88\x01\n" +
 	"\tBlockUser\x12+.project_manager.v1.ProjectBlockUserRequest\x1a,.project_manager.v1.ProjectBlockUserResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/access/blocks\x12\x9d\x01\n" +
 	"\vUnblockUser\x12-.project_manager.v1.ProjectUnblockUserRequest\x1a..project_manager.v1.ProjectUnblockUserResponse\"/\x82\xd3\xe4\x93\x02)*'/api/v1/access/blocks/{blocked_user_id}\x12\x9a\x01\n" +
-	"\x10ListBlockedUsers\x122.project_manager.v1.ProjectListBlockedUsersRequest\x1a3.project_manager.v1.ProjectListBlockedUsersResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/access/blocksB\xdd\x01\n" +
+	"\x10ListBlockedUsers\x122.project_manager.v1.ProjectListBlockedUsersRequest\x1a3.project_manager.v1.ProjectListBlockedUsersResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/access/blocks\x12\xa9\x01\n" +
+	"\rListGameItems\x12/.project_manager.v1.ProjectListGameItemsRequest\x1a0.project_manager.v1.ProjectListGameItemsResponse\"5\x82\xd3\xe4\x93\x02/\x12-/api/v1/projects/{project_id}/purchases/items\x12\xb2\x01\n" +
+	"\vGetGameItem\x12-.project_manager.v1.ProjectGetGameItemRequest\x1a..project_manager.v1.ProjectGetGameItemResponse\"D\x82\xd3\xe4\x93\x02>\x12</api/v1/projects/{project_id}/purchases/items/{game_item_id}\x12\xaf\x01\n" +
+	"\x0eCreateGameItem\x120.project_manager.v1.ProjectCreateGameItemRequest\x1a1.project_manager.v1.ProjectCreateGameItemResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/projects/{project_id}/purchases/items\x12\xbe\x01\n" +
+	"\x0eUpdateGameItem\x120.project_manager.v1.ProjectUpdateGameItemRequest\x1a1.project_manager.v1.ProjectUpdateGameItemResponse\"G\x82\xd3\xe4\x93\x02A:\x01*\x1a</api/v1/projects/{project_id}/purchases/items/{game_item_id}\x12\xbb\x01\n" +
+	"\x0eDeleteGameItem\x120.project_manager.v1.ProjectDeleteGameItemRequest\x1a1.project_manager.v1.ProjectDeleteGameItemResponse\"D\x82\xd3\xe4\x93\x02>*</api/v1/projects/{project_id}/purchases/items/{game_item_id}B\xdd\x01\n" +
 	"\x16com.project_manager.v1B\fProjectProtoP\x01ZPgithub.com/Be4Die/game-developer-hub/protos/project_manager/v1;project_managerv1\xa2\x02\x03PXX\xaa\x02\x11ProjectManager.V1\xca\x02\x11ProjectManager\\V1\xe2\x02\x1dProjectManager\\V1\\GPBMetadata\xea\x02\x12ProjectManager::V1b\x06proto3"
 
 var (
@@ -4752,7 +5487,7 @@ func file_project_manager_v1_project_proto_rawDescGZIP() []byte {
 }
 
 var file_project_manager_v1_project_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 69)
+var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
 var file_project_manager_v1_project_proto_goTypes = []any{
 	(ProjectStatus)(0),                             // 0: project_manager.v1.ProjectStatus
 	(DeploymentEnvironment)(0),                     // 1: project_manager.v1.DeploymentEnvironment
@@ -4827,6 +5562,17 @@ var file_project_manager_v1_project_proto_goTypes = []any{
 	(*ProjectUnblockUserResponse)(nil),             // 70: project_manager.v1.ProjectUnblockUserResponse
 	(*ProjectListBlockedUsersRequest)(nil),         // 71: project_manager.v1.ProjectListBlockedUsersRequest
 	(*ProjectListBlockedUsersResponse)(nil),        // 72: project_manager.v1.ProjectListBlockedUsersResponse
+	(*GameItem)(nil),                               // 73: project_manager.v1.GameItem
+	(*ProjectListGameItemsRequest)(nil),            // 74: project_manager.v1.ProjectListGameItemsRequest
+	(*ProjectListGameItemsResponse)(nil),           // 75: project_manager.v1.ProjectListGameItemsResponse
+	(*ProjectGetGameItemRequest)(nil),              // 76: project_manager.v1.ProjectGetGameItemRequest
+	(*ProjectGetGameItemResponse)(nil),             // 77: project_manager.v1.ProjectGetGameItemResponse
+	(*ProjectCreateGameItemRequest)(nil),           // 78: project_manager.v1.ProjectCreateGameItemRequest
+	(*ProjectCreateGameItemResponse)(nil),          // 79: project_manager.v1.ProjectCreateGameItemResponse
+	(*ProjectUpdateGameItemRequest)(nil),           // 80: project_manager.v1.ProjectUpdateGameItemRequest
+	(*ProjectUpdateGameItemResponse)(nil),          // 81: project_manager.v1.ProjectUpdateGameItemResponse
+	(*ProjectDeleteGameItemRequest)(nil),           // 82: project_manager.v1.ProjectDeleteGameItemRequest
+	(*ProjectDeleteGameItemResponse)(nil),          // 83: project_manager.v1.ProjectDeleteGameItemResponse
 }
 var file_project_manager_v1_project_proto_depIdxs = []int32{
 	0,  // 0: project_manager.v1.Project.status:type_name -> project_manager.v1.ProjectStatus
@@ -4854,71 +5600,85 @@ var file_project_manager_v1_project_proto_depIdxs = []int32{
 	43, // 22: project_manager.v1.ProjectUpdateMemberPermissionsResponse.member:type_name -> project_manager.v1.ProjectMember
 	46, // 23: project_manager.v1.ProjectListSharedProjectsResponse.projects:type_name -> project_manager.v1.SharedProjectItem
 	45, // 24: project_manager.v1.ProjectListBlockedUsersResponse.blocks:type_name -> project_manager.v1.UserAccessBlock
-	9,  // 25: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
-	11, // 26: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
-	13, // 27: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
-	15, // 28: project_manager.v1.ProjectService.ListPublished:input_type -> project_manager.v1.ProjectListPublishedRequest
-	17, // 29: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
-	19, // 30: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
-	21, // 31: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
-	22, // 32: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
-	25, // 33: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
-	27, // 34: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
-	29, // 35: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
-	30, // 36: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
-	33, // 37: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
-	35, // 38: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
-	37, // 39: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
-	39, // 40: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
-	41, // 41: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
-	47, // 42: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
-	49, // 43: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
-	51, // 44: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
-	53, // 45: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
-	55, // 46: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
-	57, // 47: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
-	59, // 48: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
-	61, // 49: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
-	63, // 50: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
-	65, // 51: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
-	67, // 52: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
-	69, // 53: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
-	71, // 54: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
-	10, // 55: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
-	12, // 56: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
-	14, // 57: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
-	16, // 58: project_manager.v1.ProjectService.ListPublished:output_type -> project_manager.v1.ProjectListPublishedResponse
-	18, // 59: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
-	20, // 60: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
-	24, // 61: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	24, // 62: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	26, // 63: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
-	28, // 64: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
-	32, // 65: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	32, // 66: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	34, // 67: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
-	36, // 68: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
-	38, // 69: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
-	40, // 70: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
-	42, // 71: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
-	48, // 72: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
-	50, // 73: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
-	52, // 74: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
-	54, // 75: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
-	56, // 76: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
-	58, // 77: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
-	60, // 78: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
-	62, // 79: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
-	64, // 80: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
-	66, // 81: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
-	68, // 82: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
-	70, // 83: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
-	72, // 84: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
-	55, // [55:85] is the sub-list for method output_type
-	25, // [25:55] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	73, // 25: project_manager.v1.ProjectListGameItemsResponse.items:type_name -> project_manager.v1.GameItem
+	73, // 26: project_manager.v1.ProjectGetGameItemResponse.item:type_name -> project_manager.v1.GameItem
+	73, // 27: project_manager.v1.ProjectCreateGameItemResponse.item:type_name -> project_manager.v1.GameItem
+	73, // 28: project_manager.v1.ProjectUpdateGameItemResponse.item:type_name -> project_manager.v1.GameItem
+	9,  // 29: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
+	11, // 30: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
+	13, // 31: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
+	15, // 32: project_manager.v1.ProjectService.ListPublished:input_type -> project_manager.v1.ProjectListPublishedRequest
+	17, // 33: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
+	19, // 34: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
+	21, // 35: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
+	22, // 36: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
+	25, // 37: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
+	27, // 38: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
+	29, // 39: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
+	30, // 40: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
+	33, // 41: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
+	35, // 42: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
+	37, // 43: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
+	39, // 44: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
+	41, // 45: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
+	47, // 46: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
+	49, // 47: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
+	51, // 48: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
+	53, // 49: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
+	55, // 50: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
+	57, // 51: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
+	59, // 52: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
+	61, // 53: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
+	63, // 54: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
+	65, // 55: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
+	67, // 56: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
+	69, // 57: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
+	71, // 58: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
+	74, // 59: project_manager.v1.ProjectService.ListGameItems:input_type -> project_manager.v1.ProjectListGameItemsRequest
+	76, // 60: project_manager.v1.ProjectService.GetGameItem:input_type -> project_manager.v1.ProjectGetGameItemRequest
+	78, // 61: project_manager.v1.ProjectService.CreateGameItem:input_type -> project_manager.v1.ProjectCreateGameItemRequest
+	80, // 62: project_manager.v1.ProjectService.UpdateGameItem:input_type -> project_manager.v1.ProjectUpdateGameItemRequest
+	82, // 63: project_manager.v1.ProjectService.DeleteGameItem:input_type -> project_manager.v1.ProjectDeleteGameItemRequest
+	10, // 64: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
+	12, // 65: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
+	14, // 66: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
+	16, // 67: project_manager.v1.ProjectService.ListPublished:output_type -> project_manager.v1.ProjectListPublishedResponse
+	18, // 68: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
+	20, // 69: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
+	24, // 70: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	24, // 71: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	26, // 72: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
+	28, // 73: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
+	32, // 74: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	32, // 75: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	34, // 76: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
+	36, // 77: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
+	38, // 78: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
+	40, // 79: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
+	42, // 80: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
+	48, // 81: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
+	50, // 82: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
+	52, // 83: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
+	54, // 84: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
+	56, // 85: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
+	58, // 86: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
+	60, // 87: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
+	62, // 88: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
+	64, // 89: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
+	66, // 90: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
+	68, // 91: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
+	70, // 92: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
+	72, // 93: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
+	75, // 94: project_manager.v1.ProjectService.ListGameItems:output_type -> project_manager.v1.ProjectListGameItemsResponse
+	77, // 95: project_manager.v1.ProjectService.GetGameItem:output_type -> project_manager.v1.ProjectGetGameItemResponse
+	79, // 96: project_manager.v1.ProjectService.CreateGameItem:output_type -> project_manager.v1.ProjectCreateGameItemResponse
+	81, // 97: project_manager.v1.ProjectService.UpdateGameItem:output_type -> project_manager.v1.ProjectUpdateGameItemResponse
+	83, // 98: project_manager.v1.ProjectService.DeleteGameItem:output_type -> project_manager.v1.ProjectDeleteGameItemResponse
+	64, // [64:99] is the sub-list for method output_type
+	29, // [29:64] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_project_manager_v1_project_proto_init() }
@@ -4941,7 +5701,7 @@ func file_project_manager_v1_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_manager_v1_project_proto_rawDesc), len(file_project_manager_v1_project_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   69,
+			NumMessages:   80,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

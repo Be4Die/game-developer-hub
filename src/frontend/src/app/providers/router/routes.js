@@ -24,6 +24,7 @@ import { AdminDevelopersPage } from '@/pages/admin-developers';
 import { AdminModeratorsPage } from '@/pages/admin-moderators';
 import { AdminModeratorDetailPage } from '@/pages/admin-moderator-detail';
 import { ProjectAccessPage } from '@/pages/project-access';
+import { ProjectPurchasesPage } from '@/pages/project-purchases';
 import { CatalogPage } from '@/pages/catalog';
 
 export const routes = [
@@ -62,6 +63,7 @@ export const routes = [
       { path: '', redirect: (to) => `/projects/${to.params.id}/draft` },
       { path: 'draft', name: 'draft', component: ProjectDraftPage },
       { path: 'sandbox', name: 'sandbox', component: ProjectSandboxPage },
+      { path: 'purchases', name: 'project-purchases', component: ProjectPurchasesPage },
       { path: 'stats', name: 'stats', component: ProjectStatsPage },
       { path: 'published', name: 'published', component: ProjectPublishedPage },
       { path: 'access', name: 'project-access', component: ProjectAccessPage },

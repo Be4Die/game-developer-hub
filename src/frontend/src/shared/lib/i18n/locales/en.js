@@ -171,6 +171,7 @@ export default {
   projectWorkspace: {
     draftTab: 'Draft',
     sandboxTab: 'Sandbox',
+    purchasesTab: 'In-App Purchases',
     moderationTab: 'Moderation & Chat',
     statsTab: 'Analytics',
     serversTab: 'Game Servers',
@@ -181,6 +182,47 @@ export default {
   projectSandbox: {
     title: 'Game Testing Sandbox',
     subtitle: 'Isolated game execution environment with WelwiseGames JS-SDK support. All API calls and events are emulated locally in the console.',
+  },
+  purchases: {
+    title: 'In-App Purchases',
+    subtitle: 'Manage in-game items, donations, and currency packages integrated with WelwiseGames SDK',
+    actions: {
+      addItem: 'Add Item',
+    },
+    banner: {
+      title: 'Monetization with WelwiseGames SDK',
+      desc: 'Items from this catalog are automatically made available to your game via purchases.getAvailableItems(). When a player purchases an item via purchases.purchaseItem(), the platform charges the player coins and confirms the purchase to your game.',
+    },
+    empty: {
+      title: 'No items in the catalog yet',
+      desc: 'Create in-game items or coin bundles to enable in-game monetization in your project.',
+    },
+    table: {
+      item: 'Item',
+      itemId: 'Item ID',
+      price: 'Price',
+      status: 'Status',
+    },
+    modal: {
+      createTitle: 'New In-Game Item',
+      editTitle: 'Edit In-Game Item',
+    },
+    fields: {
+      icon: 'Item Icon',
+      itemId: 'In-Game Identifier (Item ID)',
+      name: 'Item Name',
+      desc: 'Item Description',
+      price: 'Price (in coins)',
+      isActive: 'Item is active',
+    },
+    hints: {
+      itemId: 'Unique string key used in JS-SDK calls (e.g., pack_coins_100)',
+      isActive: 'Inactive items are hidden from purchases.getAvailableItems()',
+    },
+    delete: {
+      title: 'Delete Item',
+      confirmText: 'Are you sure you want to delete the item "{name}" (ID: {id})? Players will no longer be able to purchase it.',
+    },
   },
   projectDraft: {
     title: 'Edit Draft',

@@ -49,6 +49,9 @@
         <router-link :to="`/projects/${id}/sandbox`" class="nav-btn" active-class="active">
           <Gamepad2 class="icon-sm" /> {{ t('projectWorkspace.sandboxTab') }}
         </router-link>
+        <router-link :to="`/projects/${id}/purchases`" class="nav-btn" active-class="active">
+          <ShoppingBag class="icon-sm" /> {{ t('projectWorkspace.purchasesTab') }}
+        </router-link>
         <router-link
           v-if="isPublished"
           :to="`/projects/${id}/published`"
@@ -177,6 +180,7 @@ import {
   Users,
   Gamepad2,
   MessageSquare,
+  ShoppingBag,
 } from 'lucide-vue-next';
 import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';

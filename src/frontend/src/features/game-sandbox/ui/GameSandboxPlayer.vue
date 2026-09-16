@@ -158,6 +158,7 @@
       <!-- БОКОВАЯ ПАНЕЛЬ DEVTOOLS -->
       <div v-if="showDevtools && isDevtoolsOpen" class="devtools-sidebar">
         <GameSandboxDevtools
+          :project-id="props.projectId"
           :logs="logs"
           :app-env="appEnv"
           :player-storage="playerStorage"

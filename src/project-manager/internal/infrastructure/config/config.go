@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -19,14 +20,22 @@ const (
 
 // Config структура всей конфигурации сервиса.
 type Config struct {
-	Env        string `yaml:"env" env:"ENV" env-default:"local"`
-	GRPC       GRPCConfig
-	DB         DBConfig
-	Valkey     ValkeyConfig
-	Storage    StorageConfig
-	Deployment DeploymentConfig
-	Moderation ModerationConfig
-	JWT        JWTConfig
+	Env             string `yaml:"env" env:"ENV" env-default:"local"`
+	GRPC            GRPCConfig
+	DB              DBConfig
+	Valkey          ValkeyConfig
+	Storage         StorageConfig
+	Deployment      DeploymentConfig
+	Moderation      ModerationConfig
+	PurchaseService PurchaseServiceConfig `yaml:"purchase_service"`
+	JWT             JWTConfig
+}
+
+// PurchaseServiceConfig настройки подключения к сервису внутриигровых покупок (IAP).
+type PurchaseServiceConfig struct {
+	Driver  string        `yaml:"driver" env:"PURCHASE_SERVICE_DRIVER" env-default:"stub"` // stub | http
+	URL     string        `yaml:"url" env:"PURCHASE_SERVICE_URL" env-default:""`
+	Timeout time.Duration `yaml:"timeout" env:"PURCHASE_SERVICE_TIMEOUT" env-default:"5s"`
 }
 
 // ModerationConfig настройки подключения к сервису модерации.

@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/domain"
 	"github.com/Be4Die/game-developer-hub/project-manager/internal/infrastructure/valkey"
@@ -13,16 +15,17 @@ import (
 
 // ProjectService реализует бизнес-логику управления проектами, черновиками и сборками.
 type ProjectService struct {
-	projectRepo      domain.ProjectRepo
-	draftRepo        domain.DraftRepo
-	buildRepo        domain.BuildRepo
-	releaseRepo      domain.ReleaseRepo
-	deploymentRepo   domain.DeploymentRepo
-	memberRepo       domain.MemberRepo
-	invitationRepo   domain.InvitationRepo
-	blockRepo        domain.BlockRepo
-	moderationClient domain.ModerationClient
-	buildStorage     domain.BuildStorage
+	projectRepo        domain.ProjectRepo
+	draftRepo          domain.DraftRepo
+	buildRepo          domain.BuildRepo
+	releaseRepo        domain.ReleaseRepo
+	deploymentRepo     domain.DeploymentRepo
+	memberRepo         domain.MemberRepo
+	invitationRepo     domain.InvitationRepo
+	blockRepo          domain.BlockRepo
+	moderationClient   domain.ModerationClient
+	purchaseClient     domain.PurchaseClient
+	buildStorage       domain.BuildStorage
 	mediaStorage       domain.MediaStorage
 	deployer           domain.Deployer
 	locker             domain.Locker
@@ -69,6 +72,12 @@ func NewProjectService(
 		locker:           locker,
 		maxVersions:      maxVersions,
 	}
+}
+
+// WithPurchaseClient внедряет клиент сервиса внутриигровых покупок (IAP).
+func (s *ProjectService) WithPurchaseClient(client domain.PurchaseClient) *ProjectService {
+	s.purchaseClient = client
+	return s
 }
 
 // WithPlatformProxyHosts конфигурирует список хостов платформы для CSP онлайн-игр.
@@ -492,6 +501,18 @@ func (s *ProjectService) UploadMediaStream(ctx context.Context, projectID int64,
 	filePath, err := s.mediaStorage.SaveMediaStream(ctx, projectID, mediaType, reader)
 	if err != nil {
 		return "", fmt.Errorf("ProjectService.UploadMedia save: %w", err)
+	}
+
+	if strings.HasPrefix(mediaType, "item:") {
+		itemID := strings.TrimPrefix(mediaType, "item:")
+		imageURL := fmt.Sprintf("games/%d/items/%s.png", projectID, itemID)
+		if s.purchaseClient != nil {
+			if item, err := s.purchaseClient.GetItem(ctx, projectID, itemID); err == nil && item != nil {
+				item.ImageURL = imageURL
+				_, _ = s.purchaseClient.UpdateItem(ctx, item)
+			}
+		}
+		return imageURL, nil
 	}
 
 	if err := s.draftRepo.UpdateMedia(ctx, projectID, mediaType, filePath); err != nil {
@@ -1003,4 +1024,133 @@ func (s *ProjectService) ListBlockedUsers(ctx context.Context, userID string) ([
 		return nil, nil
 	}
 	return s.blockRepo.ListBlocked(ctx, userID)
+}
+
+// ─── Внутриигровые покупки (IAP) ───────────────────────────────
+
+// ListGameItems возвращает список товаров проекта. Доступно всем участникам проекта.
+func (s *ProjectService) ListGameItems(ctx context.Context, projectID int64, userID string) ([]*domain.GameItem, error) {
+	if _, err := s.CheckAccess(ctx, projectID, userID, ""); err != nil {
+		return nil, err
+	}
+	if s.purchaseClient == nil {
+		return []*domain.GameItem{}, nil
+	}
+	return s.purchaseClient.ListItems(ctx, projectID)
+}
+
+// GetGameItem возвращает товар по его game_item_id.
+func (s *ProjectService) GetGameItem(ctx context.Context, projectID int64, gameItemID, userID string) (*domain.GameItem, error) {
+	if _, err := s.CheckAccess(ctx, projectID, userID, ""); err != nil {
+		return nil, err
+	}
+	if s.purchaseClient == nil {
+		return nil, domain.ErrNotFound
+	}
+	return s.purchaseClient.GetItem(ctx, projectID, gameItemID)
+}
+
+// CreateGameItem создает новый товар проекта. Требует права PermEditInfo.
+func (s *ProjectService) CreateGameItem(ctx context.Context, item *domain.GameItem, userID string) (*domain.GameItem, error) {
+	if item == nil {
+		return nil, domain.ErrInvalidInput
+	}
+	if _, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo); err != nil {
+		return nil, err
+	}
+
+	item.GameItemID = strings.TrimSpace(item.GameItemID)
+	item.Name = strings.TrimSpace(item.Name)
+	item.Description = strings.TrimSpace(item.Description)
+
+	if item.GameItemID == "" || len(item.GameItemID) > 64 {
+		return nil, fmt.Errorf("%w: game_item_id must be between 1 and 64 characters", domain.ErrInvalidInput)
+	}
+	nameRunes := utf8.RuneCountInString(item.Name)
+	if nameRunes == 0 || nameRunes > 50 {
+		return nil, fmt.Errorf("%w: name must be between 1 and 50 characters", domain.ErrInvalidInput)
+	}
+	if utf8.RuneCountInString(item.Description) > 200 {
+		return nil, fmt.Errorf("%w: description must not exceed 200 characters", domain.ErrInvalidInput)
+	}
+	if item.PriceCoins <= 0 {
+		return nil, fmt.Errorf("%w: price_coins must be greater than 0", domain.ErrInvalidInput)
+	}
+
+	if s.purchaseClient == nil {
+		return nil, fmt.Errorf("purchase client not configured")
+	}
+	return s.purchaseClient.CreateItem(ctx, item)
+}
+
+// UpdateGameItem обновляет товар проекта. Требует права PermEditInfo.
+func (s *ProjectService) UpdateGameItem(ctx context.Context, item *domain.GameItem, userID string) (*domain.GameItem, error) {
+	if item == nil {
+		return nil, domain.ErrInvalidInput
+	}
+	if _, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo); err != nil {
+		return nil, err
+	}
+
+	item.GameItemID = strings.TrimSpace(item.GameItemID)
+	item.Name = strings.TrimSpace(item.Name)
+	item.Description = strings.TrimSpace(item.Description)
+
+	if item.GameItemID == "" {
+		return nil, fmt.Errorf("%w: game_item_id is required", domain.ErrInvalidInput)
+	}
+	nameRunes := utf8.RuneCountInString(item.Name)
+	if nameRunes == 0 || nameRunes > 50 {
+		return nil, fmt.Errorf("%w: name must be between 1 and 50 characters", domain.ErrInvalidInput)
+	}
+	if utf8.RuneCountInString(item.Description) > 200 {
+		return nil, fmt.Errorf("%w: description must not exceed 200 characters", domain.ErrInvalidInput)
+	}
+	if item.PriceCoins <= 0 {
+		return nil, fmt.Errorf("%w: price_coins must be greater than 0", domain.ErrInvalidInput)
+	}
+
+	if s.purchaseClient == nil {
+		return nil, fmt.Errorf("purchase client not configured")
+	}
+	return s.purchaseClient.UpdateItem(ctx, item)
+}
+
+// DeleteGameItem удаляет или деактивирует товар проекта. Требует права PermEditInfo.
+func (s *ProjectService) DeleteGameItem(ctx context.Context, projectID int64, gameItemID, userID string) error {
+	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo); err != nil {
+		return err
+	}
+	if s.purchaseClient == nil {
+		return fmt.Errorf("purchase client not configured")
+	}
+	return s.purchaseClient.DeleteItem(ctx, projectID, gameItemID)
+}
+
+// UploadItemImage загружает изображение товара и сохраняет его в games/{project_id}/items/{game_item_id}.png.
+func (s *ProjectService) UploadItemImage(ctx context.Context, projectID int64, gameItemID, userID string, reader io.Reader) (string, error) {
+	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermUploadMedia); err != nil {
+		return "", err
+	}
+	gameItemID = strings.TrimSpace(gameItemID)
+	if gameItemID == "" {
+		return "", domain.ErrInvalidInput
+	}
+
+	mediaType := "item:" + gameItemID
+	if _, err := s.mediaStorage.SaveMediaStream(ctx, projectID, mediaType, reader); err != nil {
+		return "", fmt.Errorf("ProjectService.UploadItemImage save: %w", err)
+	}
+
+	imageURL := fmt.Sprintf("games/%d/items/%s.png", projectID, gameItemID)
+
+	// Если товар уже существует, обновляем его image_url
+	if s.purchaseClient != nil {
+		if item, err := s.purchaseClient.GetItem(ctx, projectID, gameItemID); err == nil && item != nil {
+			item.ImageURL = imageURL
+			_, _ = s.purchaseClient.UpdateItem(ctx, item)
+		}
+	}
+
+	return imageURL, nil
 }

@@ -54,6 +54,11 @@ deployment:
 moderation:
   addr: "" # при пустом адресе используется in-memory StubModerationClient
 
+purchase_service:
+  driver: "stub" # "stub" (по умолчанию, in-memory заглушка для локальной разработки) или "http"
+  url: ""        # адрес реального PurchaseService (при driver: "http")
+  timeout: "5s"
+
 jwt:
   secret: "dev-jwt-secret-for-local-testing"
   issuer: "sso"

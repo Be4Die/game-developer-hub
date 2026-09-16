@@ -38,6 +38,12 @@ func (s *MediaStorage) getFileName(mediaType string) (string, error) {
 	case "video":
 		return "video.mp4", nil
 	default:
+		if strings.HasPrefix(mediaType, "item:") {
+			itemID := strings.TrimPrefix(mediaType, "item:")
+			if itemID != "" {
+				return filepath.Join("items", itemID+".png"), nil
+			}
+		}
 		return "", domain.ErrInvalidInput
 	}
 }
@@ -61,12 +67,12 @@ func validateMediaMime(path string, mediaType string) error {
 	}
 
 	contentType := http.DetectContentType(buf[:n])
-	switch mediaType {
-	case "icon", "cover":
+	switch {
+	case mediaType == "icon" || mediaType == "cover" || strings.HasPrefix(mediaType, "item:"):
 		if !strings.HasPrefix(contentType, "image/") {
 			return fmt.Errorf("%w: expected image, detected %s", domain.ErrInvalidInput, contentType)
 		}
-	case "video":
+	case mediaType == "video":
 		if !strings.HasPrefix(contentType, "video/") && contentType != "application/octet-stream" {
 			return fmt.Errorf("%w: expected video, detected %s", domain.ErrInvalidInput, contentType)
 		}
@@ -87,6 +93,9 @@ func (s *MediaStorage) SaveMediaStream(_ context.Context, projectID int64, media
 	}
 
 	targetPath := filepath.Join(dir, fileName)
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0o750); err != nil {
+		return "", fmt.Errorf("mkdir target: %w", err)
+	}
 	tmpFile, err := os.CreateTemp(dir, "media-*.tmp")
 	if err != nil {
 		return "", fmt.Errorf("create temp: %w", err)

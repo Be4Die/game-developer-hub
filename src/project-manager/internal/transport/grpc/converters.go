@@ -177,3 +177,21 @@ func sharedProjectToProto(sp *domain.SharedProject) *pb.SharedProjectItem {
 		JoinedAt:    formatTime(sp.JoinedAt),
 	}
 }
+
+func gameItemToProto(item *domain.GameItem) *pb.GameItem {
+	if item == nil {
+		return nil
+	}
+	return &pb.GameItem{
+		Id:          item.ID,
+		ProjectId:   item.ProjectID,
+		GameItemId:  item.GameItemID,
+		Name:        item.Name,
+		Description: item.Description,
+		ImageUrl:    item.ImageURL,
+		PriceCoins:  item.PriceCoins,
+		IsActive:    item.IsActive,
+		CreatedAt:   formatTime(item.CreatedAt),
+		UpdatedAt:   formatTime(item.UpdatedAt),
+	}
+}

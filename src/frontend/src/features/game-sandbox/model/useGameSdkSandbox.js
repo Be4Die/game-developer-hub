@@ -1,4 +1,5 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { listGameItems } from '@/entities/purchases';
 
 /**
  * useGameSdkSandbox
@@ -98,27 +99,37 @@ export function useGameSdkSandbox(options = {}) {
     timerId: null,
   });
 
-  // Эмулятор внутриигровых покупок (In-App Purchases)
-  const purchaseCatalog = ref([
-    {
-      itemId: 'gold_pack_100',
-      name: 'Мешок золота (100 монет)',
-      priceCoins: 50,
-      description: 'Базовый набор для прокачки',
-    },
-    {
-      itemId: 'energy_boost',
-      name: 'Эликсир выносливости',
-      priceCoins: 25,
-      description: 'Мгновенно восстанавливает 100% энергии',
-    },
-    {
-      itemId: 'vip_pass_30d',
-      name: 'VIP-билет на 30 дней',
-      priceCoins: 300,
-      description: 'Удваивает награды за уровни',
-    },
-  ]);
+  // Эмулятор внутриигровых покупок (In-App Purchases) - загрузка из каталога проекта
+  const purchaseCatalog = ref([]);
+  const isCatalogLoading = ref(false);
+
+  async function loadProjectPurchases() {
+    if (!projectId || projectId === 'test-project') {
+      purchaseCatalog.value = [];
+      return;
+    }
+    isCatalogLoading.value = true;
+    try {
+      const items = await listGameItems(projectId);
+      purchaseCatalog.value = (items || [])
+        .filter((it) => it.is_active !== false)
+        .map((it) => ({
+          itemId: it.game_item_id,
+          name: it.name,
+          description: it.description,
+          imageUrl: it.image_url,
+          priceCoins: it.price_coins,
+          isActive: it.is_active,
+        }));
+    } catch (e) {
+      console.warn('Failed to load project purchase items for sandbox:', e);
+      purchaseCatalog.value = [];
+    } finally {
+      isCatalogLoading.value = false;
+    }
+  }
+
+  loadProjectPurchases();
 
   const purchaseModal = ref({
     isOpen: false,
