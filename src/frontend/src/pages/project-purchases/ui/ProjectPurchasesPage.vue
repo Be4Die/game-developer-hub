@@ -12,20 +12,6 @@
       </button>
     </div>
 
-    <!-- Информационная плашка -->
-    <div class="info-banner">
-      <div class="info-banner-icon">
-        <Coins class="icon-md text-warning" />
-      </div>
-      <div class="info-banner-text">
-        <div class="info-banner-title">{{ t('purchases.banner.title') }}</div>
-        <div class="info-banner-desc">{{ t('purchases.banner.desc') }}</div>
-      </div>
-      <div class="rate-badge">
-        <span>1 монета = 1 ₽</span>
-      </div>
-    </div>
-
     <!-- Лоадер загрузки -->
     <div v-if="loading" class="state-container">
       <Loader2 class="spinner-md spin" />
@@ -88,9 +74,9 @@
               </td>
               <td class="col-price">
                 <div class="price-val">
-                  <Coins class="icon-xs text-warning" />
+                  <Coins class="icon-xs text-primary" />
                   <span class="price-num">{{ item.price_coins }}</span>
-                  <span class="price-unit">монет</span>
+                  <span class="price-unit">WCoin</span>
                 </div>
               </td>
               <td class="col-status">
@@ -125,6 +111,17 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Краткая справка внизу страницы: бейдж и 1 строка пояснения -->
+    <div class="purchases-footer-note">
+      <div class="rate-badge">
+        <Coins class="icon-xs text-primary" />
+        <span>1 WCoin = 1 ₽</span>
+      </div>
+      <span class="footer-note-text text-muted">
+        {{ t('purchases.footerNote') }}
+      </span>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ / РЕДАКТИРОВАНИЕ -->
@@ -189,10 +186,7 @@
 
           <!-- Внутриигровой ID -->
           <div class="form-group">
-            <div class="label-with-hint">
-              <label class="form-label">{{ t('purchases.fields.itemId') }} <span class="req">*</span></label>
-              <span class="field-hint text-muted">{{ t('purchases.hints.itemId') }}</span>
-            </div>
+            <label class="form-label">{{ t('purchases.fields.itemId') }} <span class="req">*</span></label>
             <input
               v-model="form.game_item_id"
               type="text"
@@ -252,9 +246,8 @@
                 placeholder="50"
                 required
               />
-              <span class="input-suffix">монет (₽)</span>
+              <span class="input-suffix">WCoin</span>
             </div>
-            <div class="field-subhint text-muted">1 монета равняется 1 российскому рублю при оплате игроком.</div>
           </div>
 
           <!-- Активность товара -->
@@ -514,7 +507,7 @@ onMounted(() => {
 .page-title {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
   margin: 0;
 }
 
@@ -527,70 +520,57 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--color-primary, #f59e0b);
-  color: #121316;
-  font-weight: 600;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
+  font-weight: 500;
   font-size: 13px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   border: none;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .btn-primary-action:hover {
-  opacity: 0.9;
+  background: var(--primary-hover, #79c0ff);
 }
 
-/* Баннер */
-.info-banner {
+/* Подвал: краткая справка */
+.purchases-footer-note {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  border-radius: 8px;
-  padding: 12px 18px;
-}
-
-.info-banner-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.info-banner-text {
-  flex: 1;
-}
-
-.info-banner-title {
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary, #ffffff);
-}
-
-.info-banner-desc {
-  font-size: 12px;
-  color: var(--text-secondary, #9ca3af);
-  margin-top: 2px;
 }
 
 .rate-badge {
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #fbbf24;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.28);
+  color: var(--primary, #58a6ff);
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 20px;
   white-space: nowrap;
 }
 
+.footer-note-text {
+  color: var(--text-muted, #8b949e);
+  font-size: 12px;
+}
+
 /* Карточка таблицы */
 .purchases-table-card {
-  background: var(--bg-card, #1c1e24);
-  border: 1px solid var(--border-color, #2d3139);
-  border-radius: 10px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-lg, 10px);
   overflow: hidden;
 }
 
@@ -627,16 +607,16 @@ onMounted(() => {
 }
 
 .data-table th {
-  background: var(--bg-surface, #181a1f);
-  color: var(--text-secondary, #9ca3af);
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-muted, #8b949e);
   font-weight: 600;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color, #2d3139);
+  border-bottom: 1px solid var(--border, #30363d);
 }
 
 .data-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--border-color, #2d3139);
+  border-bottom: 1px solid var(--border, #30363d);
   vertical-align: middle;
 }
 
@@ -653,9 +633,9 @@ onMounted(() => {
 .item-icon-box {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
-  background: var(--bg-surface, #181a1f);
-  border: 1px solid var(--border-color, #2d3139);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -677,11 +657,12 @@ onMounted(() => {
 
 .item-name {
   font-weight: 600;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
 }
 
 .item-desc {
   font-size: 12px;
+  color: var(--text-muted, #8b949e);
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -689,12 +670,13 @@ onMounted(() => {
 }
 
 .item-slug-code {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color, #2d3139);
+  background: rgba(88, 166, 255, 0.08);
+  border: 1px solid rgba(88, 166, 255, 0.2);
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 12px;
-  color: #93c5fd;
+  color: var(--primary, #58a6ff);
+  font-family: monospace;
 }
 
 .price-val {
@@ -702,7 +684,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   font-weight: 600;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
 }
 
 .price-num {
@@ -711,8 +693,8 @@ onMounted(() => {
 
 .price-unit {
   font-size: 11px;
-  color: var(--text-secondary, #9ca3af);
-  font-weight: normal;
+  color: var(--text-muted, #8b949e);
+  font-weight: 500;
 }
 
 .badge-status-active {
@@ -749,7 +731,7 @@ onMounted(() => {
 .btn-icon-sm {
   background: transparent;
   border: none;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-muted, #8b949e);
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
@@ -757,8 +739,8 @@ onMounted(() => {
 }
 
 .btn-icon-sm:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, #ffffff);
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-main, #f0f6fc);
 }
 
 .btn-icon-sm.btn-delete:hover {
@@ -782,9 +764,9 @@ onMounted(() => {
 .modal-card {
   width: 100%;
   max-width: 520px;
-  background: var(--bg-card, #1c1e24);
-  border: 1px solid var(--border-color, #2d3139);
-  border-radius: 12px;
+  background: var(--bg-card, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-lg, 10px);
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   animation: modal-pop 0.2s ease-out;
@@ -810,8 +792,8 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color, #2d3139);
-  background: var(--bg-surface, #181a1f);
+  border-bottom: 1px solid var(--border, #30363d);
+  background: var(--bg-card, #161b22);
 }
 
 .modal-title-group {
@@ -822,21 +804,24 @@ onMounted(() => {
 
 .modal-title {
   font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
   margin: 0;
 }
 
 .btn-close {
   background: transparent;
   border: none;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-muted, #8b949e);
   cursor: pointer;
   padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
 }
 
 .btn-close:hover {
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
+  background: var(--bg-tertiary, #21262d);
 }
 
 .modal-body {
@@ -861,52 +846,61 @@ onMounted(() => {
 
 .form-label {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary, #ffffff);
+  font-weight: 500;
+  color: var(--text-main, #f0f6fc);
 }
 
 .req {
-  color: #ef4444;
+  color: var(--danger, #f85149);
 }
 
-.label-with-counter,
-.label-with-hint {
+.label-with-counter {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.char-counter,
-.field-hint {
+.char-counter {
   font-size: 11px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-muted, #8b949e);
 }
 
 .counter-warn {
-  color: #f59e0b;
+  color: var(--danger, #f85149);
 }
 
 .form-input,
 .form-textarea {
-  background: var(--bg-surface, #14161a);
-  border: 1px solid var(--border-color, #2d3139);
-  border-radius: 6px;
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
   padding: 9px 12px;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
   font-size: 13px;
   font-family: inherit;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: var(--color-primary, #f59e0b);
+  border-color: var(--primary, #58a6ff);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
 }
 
 .form-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Скрываем стандартные стрелки number input для чистого вида */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .input-with-suffix {
@@ -917,20 +911,16 @@ onMounted(() => {
 
 .input-with-suffix .form-input {
   width: 100%;
-  padding-right: 90px;
+  padding-right: 70px;
 }
 
 .input-suffix {
   position: absolute;
   right: 12px;
   font-size: 12px;
-  color: var(--text-secondary, #9ca3af);
+  color: var(--text-muted, #8b949e);
+  font-weight: 500;
   pointer-events: none;
-}
-
-.field-subhint {
-  font-size: 11px;
-  margin-top: 2px;
 }
 
 /* Загрузка иконки */
@@ -943,9 +933,9 @@ onMounted(() => {
 .icon-preview-box {
   width: 64px;
   height: 64px;
-  border-radius: 10px;
-  background: var(--bg-surface, #14161a);
-  border: 1px solid var(--border-color, #2d3139);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -979,22 +969,25 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color, #2d3139);
-  color: var(--text-primary, #ffffff);
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-main, #f0f6fc);
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   align-self: flex-start;
+  transition: all 0.15s ease;
 }
 
 .btn-secondary-sm:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover, #30363d);
+  border-color: var(--border-secondary, #484f58);
 }
 
 .upload-hint {
   font-size: 11px;
+  color: var(--text-muted, #8b949e);
 }
 
 /* Чекбокс активности */
@@ -1007,24 +1000,63 @@ onMounted(() => {
   align-items: flex-start;
   gap: 10px;
   cursor: pointer;
+  user-select: none;
 }
 
 .styled-checkbox {
-  margin-top: 2px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border, #30363d);
+  border-radius: 4px;
+  background: var(--bg-secondary, #0d1117);
   cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.styled-checkbox:hover {
+  border-color: var(--primary, #58a6ff);
+}
+
+.styled-checkbox:focus-visible {
+  border-color: var(--primary, #58a6ff);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.25);
+}
+
+.styled-checkbox:checked {
+  background: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.styled-checkbox:checked::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
 .checkbox-title {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-main, #f0f6fc);
 }
 
 .checkbox-sub {
   display: block;
   font-size: 11px;
   margin-top: 2px;
+  color: var(--text-muted, #8b949e);
 }
 
 .form-error-alert {
@@ -1032,7 +1064,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #ef4444;
@@ -1044,41 +1076,43 @@ onMounted(() => {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-color, #2d3139);
+  padding-top: 14px;
+  border-top: 1px solid var(--border, #30363d);
 }
 
 .btn-cancel {
   background: transparent;
-  border: 1px solid var(--border-color, #2d3139);
-  color: var(--text-secondary, #9ca3af);
+  border: 1px solid var(--border, #30363d);
+  color: var(--text-muted, #8b949e);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   font-size: 13px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #ffffff);
+  background: var(--bg-tertiary, #21262d);
+  color: var(--text-main, #f0f6fc);
 }
 
 .btn-save-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--color-primary, #f59e0b);
-  color: #121316;
-  font-weight: 600;
+  background: var(--primary, #58a6ff);
+  color: #ffffff;
+  font-weight: 500;
   padding: 8px 18px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   border: none;
   font-size: 13px;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .btn-save-primary:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--primary-hover, #79c0ff);
 }
 
 .btn-danger-confirm {

@@ -228,48 +228,6 @@
             </label>
           </div>
         </div>
-
-        <div class="devtools-section">
-          <div class="section-head-between">
-            <h4 class="section-title">Каталог товаров (In-App Purchases)</h4>
-            <router-link
-              v-if="projectId"
-              :to="{ name: 'project-purchases', params: { id: projectId } }"
-              class="link-action-xs"
-              target="_blank"
-            >
-              <ExternalLink class="icon-xs" />
-              <span>Управление</span>
-            </router-link>
-          </div>
-          <p class="section-desc">
-            {{ purchaseCatalog.length > 0
-              ? `Загружено ${purchaseCatalog.length} товаров из проекта для метода purchases.getAvailableItems().`
-              : 'В каталоге проекта пока нет товаров.'
-            }}
-          </p>
-          <div v-if="purchaseCatalog.length > 0" class="catalog-list">
-            <div v-for="item in purchaseCatalog" :key="item.itemId" class="catalog-item">
-              <div class="catalog-item-info">
-                <div class="item-name">{{ item.name }}</div>
-                <div class="item-id-sub text-muted">ID: {{ item.itemId }}</div>
-              </div>
-              <div class="item-price">{{ item.priceCoins }} монет</div>
-            </div>
-          </div>
-          <div v-else class="empty-catalog-notice">
-            <span>Товары настраиваются во вкладке «Покупки». Добавьте товары в проект, чтобы тестировать SDK.</span>
-            <router-link
-              v-if="projectId"
-              :to="{ name: 'project-purchases', params: { id: projectId } }"
-              class="btn-manage-purchases"
-              target="_blank"
-            >
-              <ExternalLink class="icon-xs" />
-              <span>Перейти в Покупки</span>
-            </router-link>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -285,7 +243,6 @@ import {
   Trash2,
   RotateCcw,
   Info,
-  ExternalLink,
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -737,87 +694,5 @@ const filteredLogs = computed(() => {
   font-size: 12px;
   color: var(--text-main, #f0f2f5);
   cursor: pointer;
-}
-
-.catalog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.catalog-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  background: var(--bg-input, #131418);
-  border-radius: 4px;
-}
-
-.item-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-main, #fff);
-}
-
-.item-price {
-  font-size: 11px;
-  color: #fbbf24;
-}
-
-.link-action-xs {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--primary, #3b82f6);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.link-action-xs:hover {
-  text-decoration: underline;
-  color: #60a5fa;
-}
-
-.empty-catalog-notice {
-  font-size: 11px;
-  color: var(--text-muted, #7e8494);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.btn-manage-purchases {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  padding: 4px 10px;
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 4px;
-  color: var(--primary, #3b82f6);
-  font-size: 11px;
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.15s ease;
-}
-
-.btn-manage-purchases:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: var(--primary, #3b82f6);
-}
-
-.catalog-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.item-id-sub {
-  font-size: 10px;
-  font-family: monospace;
 }
 </style>

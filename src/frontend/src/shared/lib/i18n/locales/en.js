@@ -189,17 +189,14 @@ export default {
     actions: {
       addItem: 'Add Item',
     },
-    banner: {
-      title: 'Monetization with WelwiseGames SDK',
-      desc: 'Items from this catalog are automatically made available to your game via purchases.getAvailableItems(). When a player purchases an item via purchases.purchaseItem(), the platform charges the player coins and confirms the purchase to your game.',
-    },
+    footerNote: 'Items from this catalog synchronize with the game via purchases.getAvailableItems()',
     empty: {
       title: 'No items in the catalog yet',
       desc: 'Create in-game items or coin bundles to enable in-game monetization in your project.',
     },
     table: {
       item: 'Item',
-      itemId: 'Item ID',
+      itemId: 'Identifier',
       price: 'Price',
       status: 'Status',
     },
@@ -209,14 +206,13 @@ export default {
     },
     fields: {
       icon: 'Item Icon',
-      itemId: 'In-Game Identifier (Item ID)',
+      itemId: 'Identifier',
       name: 'Item Name',
       desc: 'Item Description',
-      price: 'Price (in coins)',
+      price: 'Price',
       isActive: 'Item is active',
     },
     hints: {
-      itemId: 'Unique string key used in JS-SDK calls (e.g., pack_coins_100)',
       isActive: 'Inactive items are hidden from purchases.getAvailableItems()',
     },
     delete: {
