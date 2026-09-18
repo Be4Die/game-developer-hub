@@ -55,6 +55,7 @@ export default {
     adminPanel: 'Администрирование',
     developers: 'Разработчики',
     moderators: 'Модераторы',
+    docs: 'Документация',
     profile: 'Профиль',
     logout: 'Выйти',
     toggleTheme: 'Переключить тему',

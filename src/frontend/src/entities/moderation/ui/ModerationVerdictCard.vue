@@ -21,9 +21,16 @@
         class="violation-item"
       >
         <div class="violation-head">
-          <span v-if="item.rule_code || item.ruleCode" class="rule-badge">
-            Пункт {{ item.rule_code || item.ruleCode }}
-          </span>
+          <router-link
+            v-if="item.rule_code || item.ruleCode"
+            :to="`/docs/rules#${(item.rule_code || item.ruleCode).toUpperCase()}`"
+            class="rule-badge-link"
+            :title="`Открыть регламент: Пункт ${item.rule_code || item.ruleCode}`"
+          >
+            <BookOpen class="icon-xs" />
+            <span>Пункт {{ item.rule_code || item.ruleCode }}</span>
+            <ExternalLink class="icon-xs link-arrow" />
+          </router-link>
           <span v-if="item.rule_title || item.ruleTitle" class="rule-title">
             «{{ item.rule_title || item.ruleTitle }}»
           </span>
@@ -164,7 +171,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { AlertOctagon, Maximize2, Paperclip, MessageSquare } from 'lucide-vue-next';
+import { AlertOctagon, Maximize2, Paperclip, MessageSquare, BookOpen, ExternalLink } from 'lucide-vue-next';
 import { formatDateTime } from '../model/helpers';
 import { formatBytes } from '@/shared/lib/mediaCompressor';
 import MediaLightboxModal from './MediaLightboxModal.vue';
@@ -358,6 +365,37 @@ function openLightbox(att) {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.rule-badge-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.rule-badge-link:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.link-arrow {
+  opacity: 0.7;
+}
+
+.rule-badge-link:hover .link-arrow {
+  opacity: 1;
 }
 
 .rule-badge {

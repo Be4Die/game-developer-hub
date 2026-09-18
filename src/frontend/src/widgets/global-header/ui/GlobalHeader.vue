@@ -6,52 +6,56 @@
       </router-link>
       <nav class="main-nav">
         <template v-if="isDeveloper">
-          <router-link to="/projects" class="nav-item" active-class="active">
+          <router-link to="/projects" class="nav-item" :class="{ active: isNavActive('projects') }">
             <FolderGit2 class="icon-sm" /> {{ t('header.projects') }}
           </router-link>
-          <router-link to="/nodes" class="nav-item" active-class="active">
+          <router-link to="/nodes" class="nav-item" :class="{ active: isNavActive('nodes') }">
             <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
         </template>
         <template v-if="isModerator">
-          <router-link to="/catalog" class="nav-item" active-class="active">
+          <router-link to="/catalog" class="nav-item" :class="{ active: isNavActive('catalog') }">
             <LayoutGrid class="icon-sm" /> {{ t('header.catalog') }}
           </router-link>
-          <router-link to="/moderator/queue" class="nav-item" active-class="active">
+          <router-link to="/moderator/queue" class="nav-item" :class="{ active: isNavActive('moderation') }">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
-          <router-link to="/moderator/chats" class="nav-item" active-class="active">
+          <router-link to="/moderator/chats" class="nav-item" :class="{ active: isNavActive('moderatorChats') }">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>
-          <router-link to="/moderator/journal" class="nav-item" active-class="active">
+          <router-link to="/moderator/journal" class="nav-item" :class="{ active: isNavActive('moderationJournal') }">
             <BookOpen class="icon-sm" /> {{ t('header.moderationJournal') }}
           </router-link>
         </template>
         <template v-if="isAdmin">
-          <router-link to="/catalog" class="nav-item" active-class="active">
+          <router-link to="/catalog" class="nav-item" :class="{ active: isNavActive('catalog') }">
             <LayoutGrid class="icon-sm" /> {{ t('header.catalog') }}
           </router-link>
-          <router-link to="/moderator/queue" class="nav-item" active-class="active">
+          <router-link to="/moderator/queue" class="nav-item" :class="{ active: isNavActive('moderation') }">
             <CheckSquare class="icon-sm" /> {{ t('header.moderation') }}
           </router-link>
-          <router-link to="/nodes" class="nav-item" active-class="active">
+          <router-link to="/nodes" class="nav-item" :class="{ active: isNavActive('nodes') }">
             <Server class="icon-sm" /> {{ t('header.gameServers') }}
           </router-link>
-          <router-link to="/moderator/chats" class="nav-item" active-class="active">
+          <router-link to="/moderator/chats" class="nav-item" :class="{ active: isNavActive('moderatorChats') }">
             <MessageSquare class="icon-sm" /> {{ t('header.moderatorChats') }}
           </router-link>
-          <router-link to="/moderator/journal" class="nav-item" active-class="active">
+          <router-link to="/moderator/journal" class="nav-item" :class="{ active: isNavActive('moderationJournal') }">
             <BookOpen class="icon-sm" /> {{ t('header.moderationJournal') }}
           </router-link>
-          <router-link to="/admin/developers" class="nav-item" active-class="active">
+          <router-link to="/admin/developers" class="nav-item" :class="{ active: isNavActive('developers') }">
             <Users class="icon-sm" /> {{ t('header.developers') }}
           </router-link>
-          <router-link to="/admin/moderators" class="nav-item" active-class="active">
+          <router-link to="/admin/moderators" class="nav-item" :class="{ active: isNavActive('moderators') }">
             <ShieldCheck class="icon-sm" /> {{ t('header.moderators') }}
           </router-link>
         </template>
+        <!-- Документация и правила платформы -->
+        <router-link to="/docs" class="nav-item" :class="{ active: isNavActive('docs') }">
+          <BookText class="icon-sm" /> {{ t('header.docs') || 'Документация' }}
+        </router-link>
         <!-- Переход в профиль в общей панели навигации -->
-        <router-link v-if="isAuthed" to="/profile" class="nav-item" active-class="active">
+        <router-link v-if="isAuthed" to="/profile" class="nav-item" :class="{ active: isNavActive('profile') }">
           <User class="icon-sm" /> {{ t('header.profile') }}
           <span v-if="incomingCount > 0" class="header-badge">{{ incomingCount }}</span>
         </router-link>
@@ -84,12 +88,12 @@ import {
   User,
   CheckSquare,
   MessageSquare,
-  Archive,
   BookOpen,
   LayoutGrid,
   LogOut,
   Users,
   ShieldCheck,
+  BookText,
 } from 'lucide-vue-next';
 
 const { t } = useI18n();
@@ -118,6 +122,44 @@ const isModerator = computed(() => {
 const isDeveloper = computed(() => {
   return !isAdmin.value && !isModerator.value;
 });
+
+function isNavActive(navKey) {
+  const p = route.path;
+  switch (navKey) {
+    case 'projects':
+      return p.startsWith('/projects');
+    case 'nodes':
+      return p.startsWith('/nodes');
+    case 'catalog':
+      return p === '/catalog' || p.startsWith('/admin/catalog') || p.startsWith('/moderator/catalog');
+    case 'moderation':
+      return (
+        p.startsWith('/moderator/queue') ||
+        p.startsWith('/moderator/projects') ||
+        p.startsWith('/moderator/platform-servers') ||
+        p.startsWith('/admin/platform-servers')
+      );
+    case 'moderatorChats':
+      return p.startsWith('/moderator/chats');
+    case 'moderationJournal':
+      return (
+        p.startsWith('/moderator/journal') ||
+        p.startsWith('/moderator/archive') ||
+        p.startsWith('/moderator/snapshots') ||
+        p.startsWith('/admin/journal')
+      );
+    case 'developers':
+      return p.startsWith('/admin/developers');
+    case 'moderators':
+      return p.startsWith('/admin/moderators');
+    case 'docs':
+      return p.startsWith('/docs') || p.startsWith('/rules');
+    case 'profile':
+      return p.startsWith('/profile') || p.startsWith('/access') || p.startsWith('/settings');
+    default:
+      return false;
+  }
+}
 
 const incomingCount = ref(0);
 

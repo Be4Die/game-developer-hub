@@ -6,7 +6,14 @@
         ⏳ {{ t('projects.moderation') }} — Заявка проверяется модератором.
       </div>
       <div v-else-if="isRejected && rejectionReason" class="card rejection-notice">
-        <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
+        <div class="rejection-notice-flex">
+          <div>
+            <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
+          </div>
+          <router-link to="/docs/rules" class="btn-rules-link">
+            <span>Регламент платформы</span> ↗
+          </router-link>
+        </div>
       </div>
 
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
@@ -869,6 +876,35 @@ function downloadBuild(version) {
   font-size: 0.9rem;
   line-height: 1.5;
   border-radius: var(--radius-md, 8px);
+}
+
+.rejection-notice-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-rules-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(185, 28, 28, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(185, 28, 28, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-rules-link:hover {
+  background: #b91c1c;
+  color: #ffffff;
 }
 
 .approval-notice {

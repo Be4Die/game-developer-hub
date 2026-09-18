@@ -26,6 +26,7 @@ import { AdminModeratorDetailPage } from '@/pages/admin-moderator-detail';
 import { ProjectAccessPage } from '@/pages/project-access';
 import { ProjectPurchasesPage } from '@/pages/project-purchases';
 import { CatalogPage } from '@/pages/catalog';
+import { DocsPage } from '@/pages/docs';
 
 export const routes = [
   {
@@ -230,5 +231,23 @@ export const routes = [
     component: AdminModeratorDetailPage,
     props: true,
     meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/docs',
+    redirect: '/docs/getting-started/overview',
+  },
+  {
+    path: '/docs/:section',
+    name: 'docs-section',
+    component: DocsPage,
+  },
+  {
+    path: '/docs/:section/:article',
+    name: 'docs-article',
+    component: DocsPage,
+  },
+  {
+    path: '/rules',
+    redirect: '/docs/rules/rules-catalog',
   },
 ];

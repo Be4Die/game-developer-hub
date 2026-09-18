@@ -36,23 +36,34 @@
             </button>
           </div>
 
+          <!-- Быстрый выбор правила из регламента -->
+          <div class="input-group field-rule-search">
+            <label class="input-label">Пункт регламента платформы (быстрый выбор):</label>
+            <RuleSearchSelect
+              v-model="item.ruleCode"
+              placeholder="Поиск по регламенту (напр. SEC-04, SRV-02, квоты...)"
+              @select="onRuleSelected(item, $event)"
+              @clear="onRuleCleared(item)"
+            />
+          </div>
+
           <div class="rule-inputs-row">
             <div class="input-group field-rule-code">
-              <label class="input-label">№ правила</label>
+              <label class="input-label">№ правила <span class="req">*</span></label>
               <input
                 v-model="item.ruleCode"
                 type="text"
                 class="input-control code-input"
-                placeholder="Напр. 2.3.1"
+                placeholder="Напр. SEC-04"
               />
             </div>
             <div class="input-group field-rule-title">
-              <label class="input-label">Название правила платформы</label>
+              <label class="input-label">Название правила платформы <span class="req">*</span></label>
               <input
                 v-model="item.ruleTitle"
                 type="text"
                 class="input-control"
-                placeholder="Напр. Сексуализированный контент"
+                placeholder="Напр. Несанкционированные сетевые запросы"
               />
             </div>
           </div>
@@ -154,7 +165,7 @@ import {
   X,
   Loader2,
 } from 'lucide-vue-next';
-import { moderationApi } from '@/entities/moderation/api/moderationApi';
+import { moderationApi, RuleSearchSelect } from '@/entities/moderation';
 import {
   validateChatFile,
   compressImageIfNeeded,
@@ -186,6 +197,19 @@ const violations = ref([
     uploading: false,
   },
 ]);
+
+function onRuleSelected(item, rule) {
+  item.ruleCode = rule.code;
+  item.ruleTitle = rule.title;
+  if (!item.description.trim()) {
+    item.description = rule.summary;
+  }
+}
+
+function onRuleCleared(item) {
+  item.ruleCode = '';
+  item.ruleTitle = '';
+}
 
 function addViolation() {
   violations.value.push({

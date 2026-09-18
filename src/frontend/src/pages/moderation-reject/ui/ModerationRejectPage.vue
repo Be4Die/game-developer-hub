@@ -96,19 +96,17 @@
                 </button>
               </div>
 
-              <!-- Быстрый выбор типового правила -->
-              <div class="quick-rule-picker">
-                <span class="quick-label">Быстрый шаблон:</span>
-                <button
-                  v-for="preset in RULE_PRESETS"
-                  :key="preset.code"
-                  type="button"
-                  class="preset-chip"
-                  :class="{ active: item.ruleCode === preset.code }"
-                  @click="applyPreset(item, preset)"
-                >
-                  {{ preset.code }} ({{ preset.title }})
-                </button>
+              <!-- Выбор правила из каталога регламента с поиском -->
+              <div class="rule-selector-field">
+                <label class="form-label">
+                  Выберите пункт из регламента платформы (или введите вручную):
+                </label>
+                <RuleSearchSelect
+                  v-model="item.ruleCode"
+                  placeholder="Начните вводить: SEC-04, SRV-02, квоты, вызовы, баг..."
+                  @select="onRuleSelected(item, $event)"
+                  @clear="onRuleCleared(item)"
+                />
               </div>
 
               <div class="form-grid-two">
@@ -226,7 +224,7 @@
 
         <!-- Нижняя панель действий -->
         <div class="bottom-actions-panel">
-          <div class="validation-tip" v-if="!canSubmit">
+          <div v-if="!canSubmit" class="validation-tip">
             <AlertCircle class="icon-xs text-muted" />
             <span>Заполните код, название и описание хотя бы для одного нарушения.</span>
           </div>
@@ -278,7 +276,7 @@ import {
   AlertCircle,
   XCircle,
 } from 'lucide-vue-next';
-import { moderationApi } from '@/entities/moderation';
+import { moderationApi, RuleSearchSelect } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
 import { getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
@@ -292,29 +290,6 @@ const loadingProject = ref(true);
 const submitting = ref(false);
 const activeRequest = ref(null);
 const projectData = ref(null);
-
-const RULE_PRESETS = [
-  {
-    code: 'SEC-04',
-    title: 'Несанкционированные сетевые запросы',
-    desc: 'Клиент игры отправляет нешифрованные фоновые HTTP-запросы к внешним хостам без согласия пользователя.',
-  },
-  {
-    code: 'POL-12',
-    title: 'Несоответствие заявленному возрастному рейтингу',
-    desc: 'В игре обнаружены сцены, превышающие допустимый уровень агрессии/контента для выбранной возрастной категории.',
-  },
-  {
-    code: 'BUG-01',
-    title: 'Критическая ошибка / непроходимость',
-    desc: 'При прохождении уровня возникает блокирующая ошибка или падение сборки.',
-  },
-  {
-    code: 'UI-03',
-    title: 'Проблемы с управлением или адаптивностью',
-    desc: 'Кнопки управления перекрывают игровой экран или не реагируют на нажатия.',
-  },
-];
 
 const violations = ref([
   {
@@ -364,12 +339,17 @@ const canSubmit = computed(() => {
   );
 });
 
-function applyPreset(item, preset) {
-  item.ruleCode = preset.code;
-  item.ruleTitle = preset.title;
+function onRuleSelected(item, rule) {
+  item.ruleCode = rule.code;
+  item.ruleTitle = rule.title;
   if (!item.description.trim()) {
-    item.description = preset.desc;
+    item.description = rule.summary;
   }
+}
+
+function onRuleCleared(item) {
+  item.ruleCode = '';
+  item.ruleTitle = '';
 }
 
 function addViolation() {
@@ -776,35 +756,8 @@ onMounted(() => {
   background: rgba(248, 81, 73, 0.15);
 }
 
-.quick-rule-picker {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-bottom: 4px;
-}
-
-.quick-label {
-  font-size: 11px;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.preset-chip {
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-muted, #b0b8c4);
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.preset-chip:hover,
-.preset-chip.active {
-  border-color: #f85149;
-  color: var(--text-main, #f0f6fc);
-  background: rgba(248, 81, 73, 0.1);
+.rule-selector-field {
+  margin-bottom: 12px;
 }
 
 .form-grid-two {

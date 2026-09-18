@@ -55,6 +55,7 @@ export default {
     adminPanel: 'Administration',
     developers: 'Developers',
     moderators: 'Moderators',
+    docs: 'Documentation',
     profile: 'Profile',
     logout: 'Log out',
     toggleTheme: 'Toggle theme',
