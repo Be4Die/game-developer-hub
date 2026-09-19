@@ -217,17 +217,17 @@ const releaseVersion = computed<string>(() => {
 
 const iconUrl = computed<string | null>(() => {
   const path = releaseData.value?.icon_path;
-  return path ? getMediaUrl(path) : null;
+  return path ? getMediaUrl(path, projectId.value) : null;
 });
 
 const coverUrl = computed<string | null>(() => {
   const path = releaseData.value?.cover_path;
-  return path ? getMediaUrl(path) : null;
+  return path ? getMediaUrl(path, projectId.value) : null;
 });
 
 const videoUrl = computed<string | null>(() => {
   const path = releaseData.value?.video_path;
-  return path ? getMediaUrl(path) : null;
+  return path ? getMediaUrl(path, projectId.value) : null;
 });
 
 async function loadData(): Promise<void> {

@@ -391,19 +391,19 @@ const isRejected = computed<boolean>(() => {
 const projectIconUrl = computed<string>(() => {
   const path = projectData.value?.iconPath || projectData.value?.icon_path;
   if (!path) return '';
-  return getMediaUrl(path);
+  return getMediaUrl(path, projectId.value);
 });
 
 const projectCoverUrl = computed<string>(() => {
   const path = projectData.value?.coverPath || projectData.value?.cover_path;
   if (!path) return '';
-  return getMediaUrl(path);
+  return getMediaUrl(path, projectId.value);
 });
 
 const projectVideoUrl = computed<string>(() => {
   const path = projectData.value?.videoPath || projectData.value?.video_path;
   if (!path) return '';
-  return getMediaUrl(path);
+  return getMediaUrl(path, projectId.value);
 });
 
 const isProjectOnline = computed<boolean>(() => {

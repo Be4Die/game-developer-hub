@@ -154,7 +154,7 @@
                   <div class="game-icon-box">
                     <img
                       v-if="req.iconPath"
-                      :src="getMediaUrl(req.iconPath)"
+                      :src="getMediaUrl(req.iconPath, req.projectId)"
                       alt="Icon"
                       class="game-icon-img"
                     />

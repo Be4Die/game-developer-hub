@@ -34,7 +34,7 @@ export function statusLabel(status?: string | number | null): string {
   return map[norm] || t('projects.draft');
 }
 
-export function getMediaUrl(path?: string | null): string {
+export function getMediaUrl(path?: string | null, projectId?: string | number | null): string {
   if (!path) return '';
   if (
     path.startsWith('http://') ||
@@ -50,14 +50,23 @@ export function getMediaUrl(path?: string | null): string {
   if (path.startsWith('/media/')) {
     return path;
   }
-  if (path.includes('projects/')) {
-    const projKey = path.replace(/^(\.\/|\/)?(data\/)?/, '');
-    return `/${projKey.startsWith('media/') ? projKey : 'media/' + projKey}`;
+
+  // Normalize slashes and trim leading ./ or /
+  let clean = path.replace(/^(\.\/|\/)+/, '');
+
+  // If path is just a bare filename without directories (e.g. "video.mp4", "icon.png") and projectId is provided
+  if (!clean.includes('/') && projectId) {
+    clean = `${projectId}/${clean}`;
   }
-  const clean = path
-    .replace(/^(\.\/|\/)?(data\/projects\/|projects\/)?/, '')
-    .replace(/^media\//, '');
-  return `/media/projects/${clean}`;
+
+  // Strip filesystem prefixes like data/projects/media/, data/media/, projects/media/, data/projects/
+  clean = clean.replace(/^(data\/projects\/media\/|data\/media\/|projects\/media\/)/, '');
+  clean = clean.replace(/^(data\/projects\/)/, '');
+
+  // Strip leading media/ if present
+  clean = clean.replace(/^media\//, '');
+
+  return `/media/${clean}`;
 }
 
 export function hasPermission(project?: Partial<Project> | null, perm?: string): boolean {

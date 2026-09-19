@@ -73,7 +73,7 @@
                   <div class="game-icon-box">
                     <img
                       v-if="game.icon_path"
-                      :src="getMediaUrl(game.icon_path)"
+                      :src="getMediaUrl(game.icon_path, (game as any).id || (game as any).project_id)"
                       alt="Icon"
                       class="game-icon-img"
                     />

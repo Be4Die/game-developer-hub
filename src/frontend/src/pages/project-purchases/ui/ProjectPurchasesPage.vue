@@ -52,7 +52,7 @@
                   <div class="item-icon-box">
                     <img
                       v-if="item.image_url"
-                      :src="getMediaUrl(item.image_url)"
+                      :src="getMediaUrl(item.image_url, projectId)"
                       alt="Icon"
                       class="item-icon-img"
                       @error="onImageError"
@@ -401,7 +401,7 @@ function openEditModal(item: GameItem): void {
   form.image_url = item.image_url || '';
   form.price_coins = item.price_coins;
   form.is_active = item.is_active !== false;
-  iconPreview.value = item.image_url ? (getMediaUrl(item.image_url) || '') : '';
+  iconPreview.value = item.image_url ? (getMediaUrl(item.image_url, projectId) || '') : '';
   showModal.value = true;
 }
 

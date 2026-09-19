@@ -281,7 +281,7 @@
                   <div class="project-cell">
                     <img
                       v-if="item.project_icon"
-                      :src="getMediaUrl(item.project_icon)"
+                      :src="getMediaUrl(item.project_icon, item.project_id)"
                       class="project-thumb"
                       alt=""
                     />

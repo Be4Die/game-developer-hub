@@ -565,20 +565,20 @@ const iconUrl = computed<string>(() => {
   const m = mediaData.value.icon;
   if (!m) return '';
   if (m.thumbnail_data) return m.thumbnail_data;
-  return getMediaUrl(m.original_url);
+  return getMediaUrl(m.original_url, projectId.value);
 });
 
 const coverUrl = computed<string>(() => {
   const m = mediaData.value.cover;
   if (!m) return '';
   if (m.thumbnail_data) return m.thumbnail_data;
-  return getMediaUrl(m.original_url);
+  return getMediaUrl(m.original_url, projectId.value);
 });
 
 const videoUrl = computed<string>(() => {
   const m = mediaData.value.video;
   if (!m) return '';
-  return getMediaUrl(m.original_url);
+  return getMediaUrl(m.original_url, projectId.value);
 });
 
 function goToLiveProject(): void {

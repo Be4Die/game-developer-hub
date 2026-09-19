@@ -107,7 +107,7 @@ func (s *MediaStorage) SaveMediaStream(ctx context.Context, projectID int64, med
 		return "", fmt.Errorf("s3 upload %s: %w", key, err)
 	}
 
-	return fileName, nil
+	return key, nil
 }
 
 // SaveMedia сохраняет промо-файл из среза байтов.

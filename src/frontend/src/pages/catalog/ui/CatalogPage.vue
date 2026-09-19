@@ -120,7 +120,7 @@
                   <div class="game-icon-box">
                     <img
                       v-if="getGameIcon(game)"
-                      :src="getMediaUrl(getGameIcon(game))"
+                      :src="getMediaUrl(getGameIcon(game), (game as any).id || (game as any).project_id)"
                       alt="Icon"
                       class="game-icon-img"
                     />

@@ -646,15 +646,15 @@ async function loadProject(keepStaged = false): Promise<void> {
 
     if (!keepStaged || !pendingFiles.icon) {
       media.value.icon = !!iconPath;
-      mediaUrls.value.icon = iconPath ? getMediaUrl(iconPath) : '';
+      mediaUrls.value.icon = iconPath ? getMediaUrl(iconPath, projectId.value) : '';
     }
     if (!keepStaged || !pendingFiles.cover) {
       media.value.cover = !!coverPath;
-      mediaUrls.value.cover = coverPath ? getMediaUrl(coverPath) : '';
+      mediaUrls.value.cover = coverPath ? getMediaUrl(coverPath, projectId.value) : '';
     }
     if (!keepStaged || !pendingFiles.video) {
       media.value.video = !!videoPath;
-      mediaUrls.value.video = videoPath ? getMediaUrl(videoPath) : '';
+      mediaUrls.value.video = videoPath ? getMediaUrl(videoPath, projectId.value) : '';
     }
 
     activeBuildVersion.value =

@@ -332,7 +332,7 @@ const projectVersion = computed<string>(() => {
 const projectIconUrl = computed<string>(() => {
   const p = projectData.value?.iconPath || projectData.value?.icon_path;
   if (!p) return '';
-  return getMediaUrl(p);
+  return getMediaUrl(p, projectId.value);
 });
 
 const devDisplayName = computed<string>(() => {

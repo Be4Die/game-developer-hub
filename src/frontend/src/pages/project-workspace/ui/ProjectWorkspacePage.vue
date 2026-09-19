@@ -263,7 +263,7 @@ const projectTitle = computed<string>(() => {
 const projectIconUrl = computed<string | null>(() => {
   const path = project.value?.icon_path || project.value?.draft?.icon_path;
   if (!path) return null;
-  return getMediaUrl(path);
+  return getMediaUrl(path, project.value?.id);
 });
 
 const isPublished = computed<boolean>(() => {

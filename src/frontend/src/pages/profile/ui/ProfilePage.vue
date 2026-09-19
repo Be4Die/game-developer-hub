@@ -309,7 +309,7 @@
                   <div class="inv-project-icon">
                     <img
                       v-if="inv.project_icon"
-                      :src="getMediaUrl(inv.project_icon)"
+                      :src="getMediaUrl(inv.project_icon, inv.project_id)"
                       alt="Icon"
                       class="inv-icon-img"
                     />
