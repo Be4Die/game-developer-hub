@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div class="modal-overlay" @click.self="$emit('close')">
+    <div class="modal-overlay" @click.self="emit('close')">
       <div class="modal card backups-modal">
         <!-- Заголовок модального окна -->
         <div class="modal-header">
@@ -13,7 +13,7 @@
               <span class="service-name-tag">{{ service.name }}</span>
             </div>
           </div>
-          <button class="close-btn" @click="$emit('close')">&times;</button>
+          <button class="close-btn" @click="emit('close')">&times;</button>
         </div>
 
         <!-- Сообщения об ошибке -->
@@ -76,7 +76,7 @@
               @change="handleFileChange"
             />
 
-            <div v-if="!uploadFile" class="dropzone-content" @click="$refs.fileInputRef.click()">
+            <div v-if="!uploadFile" class="dropzone-content" @click="triggerFileInput">
               <UploadCloud class="dropzone-icon" />
               <p class="dropzone-title">Перетащите файл бэкапа сюда или <span>выберите на компьютере</span></p>
               <p class="dropzone-hint">Поддерживаются: .sql, .sql.gz, .tar.gz, .rdb (до 2 ГБ)</p>
@@ -247,18 +247,15 @@
 </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { showToast } from '@/shared/lib';
 import {
   Database,
   Layers,
   HardDrive,
-  Download,
   RotateCcw,
-  Trash2,
   UploadCloud,
-  Check,
   AlertTriangle,
   Plus,
   FileArchive,
@@ -272,35 +269,40 @@ import {
   uploadServiceBackup,
   toggleServiceAutoBackup,
 } from '@/entities/node/api/nodeApi';
+import type { NodeService } from '@/shared/types';
 
-const props = defineProps({
-  nodeId: {
-    type: [Number, String],
-    required: true,
-  },
-  service: {
-    type: Object,
-    required: true,
-  },
-});
+interface Props {
+  nodeId: number | string;
+  service: NodeService | Record<string, any>;
+}
 
-defineEmits(['close']);
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
+
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+function triggerFileInput() {
+  fileInputRef.value?.click();
+}
 
 const autoBackupEnabled = ref(props.service.auto_backup_enabled || false);
-const backups = ref([]);
+const backups = ref<any[]>([]);
 const loading = ref(false);
 const creating = ref(false);
-const error = ref(null);
+const error = ref<string | null>(null);
 const showUploadForm = ref(false);
-const uploadFile = ref(null);
+const uploadFile = ref<File | null>(null);
 const uploading = ref(false);
 const uploadProgress = ref(0);
 const restoreImmediately = ref(false);
 const showRestoreConfirm = ref(false);
-const targetRestoreBackup = ref(null);
-const restoringBackupId = ref(null);
-const deletingBackupId = ref(null);
-const downloadingBackupId = ref(null);
+const targetRestoreBackup = ref<any>(null);
+const restoringBackupId = ref<string | null>(null);
+const deletingBackupId = ref<string | null>(null);
+const downloadingBackupId = ref<string | null>(null);
 const isServiceOnline = computed(() => props.service?.status === 'running');
 
 async function handleToggleAutoBackup() {
@@ -311,8 +313,8 @@ async function handleToggleAutoBackup() {
     } else {
       showToast('Авторезервирование отключено', 'info');
     }
-  } catch (err) {
-    showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'error');
+  } catch (err: any) {
+    showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'danger');
     autoBackupEnabled.value = !autoBackupEnabled.value;
   }
 }
@@ -323,7 +325,7 @@ async function loadBackups() {
   try {
     const res = await listServiceBackups(props.nodeId, props.service.name);
     backups.value = res;
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.response?.data?.message || err.message || 'Ошибка загрузки бэкапов';
   } finally {
     loading.value = false;
@@ -337,14 +339,14 @@ async function handleCreateBackup() {
     const backup = await createServiceBackup(props.nodeId, props.service.name);
     showToast(`Бэкап создан (${formatBytes(backup?.size_bytes || 0)})`, 'success');
     await loadBackups();
-  } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Ошибка создания бэкапа', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || err.message || 'Ошибка создания бэкапа', 'danger');
   } finally {
     creating.value = false;
   }
 }
 
-function promptRestore(b) {
+function promptRestore(b: any) {
   targetRestoreBackup.value = b;
   showRestoreConfirm.value = true;
 }
@@ -358,14 +360,14 @@ async function confirmRestore() {
     await restoreServiceBackup(props.nodeId, props.service.name, b.backup_id);
     showToast(`Данные сервиса ${props.service.name} успешно восстановлены`, 'success');
     showRestoreConfirm.value = false;
-  } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Ошибка восстановления', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || err.message || 'Ошибка восстановления', 'danger');
   } finally {
     restoringBackupId.value = null;
   }
 }
 
-async function handleDelete(b) {
+async function handleDelete(b: any) {
   if (!confirm(`Удалить резервную копию ${b.file_name || b.backup_id}?`)) {
     return;
   }
@@ -375,32 +377,33 @@ async function handleDelete(b) {
     await deleteServiceBackup(props.nodeId, props.service.name, b.backup_id);
     backups.value = backups.value.filter((item) => item.backup_id !== b.backup_id);
     showToast('Резервная копия удалена', 'success');
-  } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Ошибка удаления бэкапа', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || err.message || 'Ошибка удаления бэкапа', 'danger');
   } finally {
     deletingBackupId.value = null;
   }
 }
 
-async function handleDownload(b) {
+async function handleDownload(b: any) {
   downloadingBackupId.value = b.backup_id;
   try {
     await downloadServiceBackup(props.nodeId, props.service.name, b.backup_id, b.file_name);
-  } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Ошибка скачивания', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || err.message || 'Ошибка скачивания', 'danger');
   } finally {
     downloadingBackupId.value = null;
   }
 }
 
-function handleFileChange(e) {
-  const file = e.target.files?.[0];
+function handleFileChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (file) {
     uploadFile.value = file;
   }
 }
 
-function handleDrop(e) {
+function handleDrop(e: DragEvent) {
   const file = e.dataTransfer?.files?.[0];
   if (file) {
     uploadFile.value = file;
@@ -419,12 +422,12 @@ async function submitUpload() {
   uploadProgress.value = 0;
   error.value = null;
   try {
-    const backup = await uploadServiceBackup(
+    await uploadServiceBackup(
       props.nodeId,
       props.service.name,
       uploadFile.value,
       restoreImmediately.value,
-      (p) => {
+      (p: number) => {
         uploadProgress.value = p;
       }
     );
@@ -436,15 +439,15 @@ async function submitUpload() {
     );
     cancelUpload();
     await loadBackups();
-  } catch (err) {
-    showToast(err.response?.data?.message || err.message || 'Ошибка загрузки файла', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || err.message || 'Ошибка загрузки файла', 'danger');
   } finally {
     uploading.value = false;
   }
 }
 
 // Форматирование
-function formatBytes(bytes) {
+function formatBytes(bytes: number) {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -452,7 +455,7 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function formatDate(val) {
+function formatDate(val: any) {
   if (!val) return '—';
   const d = new Date(val);
   if (isNaN(d.getTime())) return val;
@@ -465,18 +468,18 @@ function formatDate(val) {
   });
 }
 
-function formatBackupType(type) {
+function formatBackupType(type: any) {
   if (type === 'BACKUP_TYPE_UPLOADED' || type === 2) return 'Загруженный';
   if (type === 'BACKUP_TYPE_SCHEDULED' || type === 3) return 'Авто';
   return 'Ручной';
 }
 
-function getTypeBadgeClass(type) {
+function getTypeBadgeClass(type: any) {
   if (type === 'BACKUP_TYPE_UPLOADED' || type === 2) return 'badge-info';
   return 'badge-manual';
 }
 
-function formatStatus(status) {
+function formatStatus(status: any) {
   if (status === 'BACKUP_STATUS_READY' || status === 2) return 'Готов';
   if (status === 'BACKUP_STATUS_CREATING' || status === 1) return 'Создание...';
   if (status === 'BACKUP_STATUS_RESTORING' || status === 4) return 'Восстановление...';
@@ -484,14 +487,14 @@ function formatStatus(status) {
   return 'Готов';
 }
 
-function getStatusBadgeClass(status) {
+function getStatusBadgeClass(status: any) {
   if (status === 'BACKUP_STATUS_READY' || status === 2) return 'success';
   if (status === 'BACKUP_STATUS_CREATING' || status === 1 || status === 'BACKUP_STATUS_RESTORING' || status === 4) return 'warning';
   if (status === 'BACKUP_STATUS_FAILED' || status === 3) return 'danger';
   return 'success';
 }
 
-function getServiceIcon(type) {
+function getServiceIcon(type: string) {
   switch (type) {
     case 'postgres':
     case 'mysql':
@@ -505,7 +508,7 @@ function getServiceIcon(type) {
   }
 }
 
-function getServiceBgColor(type) {
+function getServiceBgColor(type: string) {
   switch (type) {
     case 'postgres':
       return 'rgba(51, 103, 145, 0.2)';
@@ -520,7 +523,7 @@ function getServiceBgColor(type) {
   }
 }
 
-function getServiceColor(type) {
+function getServiceColor(type: string) {
   switch (type) {
     case 'postgres':
       return '#336791';

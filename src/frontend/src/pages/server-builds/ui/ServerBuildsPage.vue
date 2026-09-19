@@ -91,7 +91,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Upload, Trash2, AlertCircle } from 'lucide-vue-next';
@@ -99,38 +99,43 @@ import { listServerBuilds, deleteServerBuild } from '@/entities/build';
 import { listInstances } from '@/entities/instance';
 import { ServerBuildUploadModal } from '@/features/upload-server-build';
 import { formatBytes, formatDate, showToast } from '@/shared/lib';
+import type { Build } from '@/shared/types';
+
+interface DeleteTarget extends Build {
+  _inUse?: boolean;
+}
 
 const { t } = useI18n();
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-});
+const props = defineProps<{
+  gameId: string | number;
+}>();
 
-const builds = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const showUploadForm = ref(false);
-const deleteTarget = ref(null);
-const deleting = ref(false);
+const builds = ref<Build[]>([]);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const showUploadForm = ref<boolean>(false);
+const deleteTarget = ref<DeleteTarget | null>(null);
+const deleting = ref<boolean>(false);
 
-async function fetchBuilds() {
+async function fetchBuilds(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
     builds.value = await listServerBuilds(props.gameId);
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {
     loading.value = false;
   }
 }
 
-function onBuildUploaded() {
+function onBuildUploaded(): void {
   showUploadForm.value = false;
   fetchBuilds();
 }
 
-async function confirmDelete(b) {
+async function confirmDelete(b: Build): Promise<void> {
   try {
     const instances = await listInstances(props.gameId);
     const inUse = instances.some(
@@ -142,17 +147,20 @@ async function confirmDelete(b) {
   }
 }
 
-async function doDelete() {
+async function doDelete(): Promise<void> {
+  if (!deleteTarget.value || !deleteTarget.value.build_version) return;
   deleting.value = true;
   try {
     await deleteServerBuild(props.gameId, deleteTarget.value.build_version);
     showToast(`Билд ${deleteTarget.value.build_version} удалён`);
     deleteTarget.value = null;
     await fetchBuilds();
-  } catch (e) {
+  } catch (e: any) {
     if (e.response?.status === 409) {
       showToast('Билд используется работающими инстансами', 'error');
-      deleteTarget.value._inUse = true;
+      if (deleteTarget.value) {
+        deleteTarget.value._inUse = true;
+      }
     } else {
       showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error');
     }

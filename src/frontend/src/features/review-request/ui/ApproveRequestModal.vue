@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal-card">
       <div class="modal-header">
         <CheckCircle2 class="icon-md text-success" />
@@ -19,7 +19,7 @@
         ></textarea>
       </div>
       <div class="modal-actions">
-        <button class="btn-cancel" @click="$emit('cancel')">Отмена</button>
+        <button class="btn-cancel" @click="emit('cancel')">Отмена</button>
         <button class="btn-confirm-approve" :disabled="loading" @click="onConfirm">
           {{ loading ? 'Одобрение...' : '✓ Подтвердить одобрение' }}
         </button>
@@ -28,15 +28,22 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { CheckCircle2 } from 'lucide-vue-next';
 
-defineProps({
-  loading: { type: Boolean, default: false },
+interface Props {
+  loading?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  loading: false,
 });
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits<{
+  (e: 'confirm', comment: string): void;
+  (e: 'cancel'): void;
+}>();
 
 const comment = ref('Проект проверен и одобрен к публикации.');
 

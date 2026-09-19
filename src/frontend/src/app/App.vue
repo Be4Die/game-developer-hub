@@ -21,7 +21,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -35,7 +35,11 @@ const router = useRouter();
 const route = useRoute();
 const { state: authState, loadUser } = useAuth();
 
-const userRole = computed(() => ROLE_MAP[authState.user?.role] || 'Пользователь');
+const userRole = computed<string>(() => {
+  const role = authState.user?.role;
+  if (role == null) return 'Пользователь';
+  return (ROLE_MAP as Record<string | number, string>)[role] || 'Пользователь';
+});
 
 onMounted(() => {
   loadUser();

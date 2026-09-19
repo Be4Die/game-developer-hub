@@ -164,7 +164,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -184,43 +184,55 @@ import {
 } from 'lucide-vue-next';
 import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
+import type { Project } from '@/shared/types';
 
+interface Props {
+  id: string | number;
+}
+
+const props = defineProps<Props>();
 const { t } = useI18n();
-const props = defineProps({
-  id: { type: [String, Number], default: null },
-});
 const route = useRoute();
 const router = useRouter();
 
 // Состояние сворачивания чата (по умолчанию скрыт) и счетчик непрочитанных
-const isChatOpen = ref(false);
-const unreadChatCount = ref(0);
+const isChatOpen = ref<boolean>(false);
+const unreadChatCount = ref<number>(0);
 
 // ─── Project data (shared with child tabs) ───────────────────
-const project = ref(null);
+const project = ref<Project | null>(null);
 provide('project', project);
 
-const isOwner = computed(() => project.value?.is_owner !== false);
-const permissions = computed(() => project.value?.current_user_permissions || []);
-const canEditInfo = computed(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
-const canUploadMedia = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
-const canUploadBuild = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
-const canViewStats = computed(() => isOwner.value || permissions.value.includes('PERM_VIEW_STATS'));
-const canManageServers = computed(() => isOwner.value || permissions.value.includes('PERM_MANAGE_SERVERS'));
-const canSubmitModeration = computed(
+const isOwner = computed<boolean>(() => project.value?.is_owner !== false);
+const permissions = computed<string[]>(() => project.value?.current_user_permissions || []);
+const canEditInfo = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
+const canUploadMedia = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
+const canUploadBuild = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
+const canViewStats = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_VIEW_STATS'));
+const canManageServers = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_MANAGE_SERVERS'));
+const canSubmitModeration = computed<boolean>(
   () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
 );
 
-const isOnline = computed(() => {
+const isOnline = computed<boolean>(() => {
   return project.value?.draft?.is_online ?? project.value?.is_online ?? false;
 });
 
-const collaboratorPermissionsText = computed(() => {
+const collaboratorPermissionsText = computed<string>(() => {
   if (isOwner.value) return '';
   return permissions.value.map((p) => permissionLabel(p)).join(', ');
 });
 
-const draftActions = ref({
+interface DraftActions {
+  save: (() => Promise<any> | any) | null;
+  submit: (() => Promise<any> | any) | null;
+  isSaving: boolean;
+  isSubmitting: boolean;
+  isUnderReview: boolean;
+  isApproved: boolean;
+}
+
+const draftActions = ref<DraftActions>({
   save: null,
   submit: null,
   isSaving: false,
@@ -230,7 +242,7 @@ const draftActions = ref({
 });
 provide('draftActions', draftActions);
 
-async function loadProject() {
+async function loadProject(): Promise<void> {
   try {
     project.value = await getProject(props.id);
   } catch (err) {
@@ -240,7 +252,7 @@ async function loadProject() {
 
 watch(() => props.id, loadProject, { immediate: true });
 
-const projectTitle = computed(() => {
+const projectTitle = computed<string>(() => {
   return (
     project.value?.title_ru ||
     project.value?.title_en ||
@@ -248,13 +260,13 @@ const projectTitle = computed(() => {
   );
 });
 
-const projectIconUrl = computed(() => {
+const projectIconUrl = computed<string | null>(() => {
   const path = project.value?.icon_path || project.value?.draft?.icon_path;
   if (!path) return null;
   return getMediaUrl(path);
 });
 
-const isPublished = computed(() => {
+const isPublished = computed<boolean>(() => {
   return (
     project.value?.status === 3 ||
     project.value?.status === 'PROJECT_STATUS_PUBLISHED' ||
@@ -287,11 +299,11 @@ watch(
   }
 );
 
-function openDevGame() {
+function openDevGame(): void {
   router.push(`/projects/${props.id}/sandbox`);
 }
 
-function openProdGame() {
+function openProdGame(): void {
   const url =
     project.value?.release?.prod_url ||
     project.value?.prod_url ||
@@ -299,7 +311,7 @@ function openProdGame() {
   window.open(url, '_blank');
 }
 
-async function handleSidebarSave() {
+async function handleSidebarSave(): Promise<void> {
   if (draftActions.value.save) {
     draftActions.value.isSaving = true;
     try {
@@ -310,7 +322,7 @@ async function handleSidebarSave() {
   }
 }
 
-async function handleSidebarSubmit() {
+async function handleSidebarSubmit(): Promise<void> {
   if (!canSubmitModeration.value) return;
   if (draftActions.value.submit) {
     await draftActions.value.submit();

@@ -180,28 +180,29 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, inject } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Image as ImageIcon, Film, Download, Globe, Gamepad2 } from 'lucide-vue-next';
 import { getProject, getPublished, getMediaUrl } from '@/entities/project';
+import type { Project } from '@/shared/types';
 
 const { t } = useI18n();
 const route = useRoute();
-const projectId = computed(() => route.params.id);
+const projectId = computed<string>(() => String(route.params.id || ''));
 
-const sharedProject = inject('project', null);
-const directRelease = ref(null);
-const loading = ref(false);
+const sharedProject = inject<Ref<Project | null> | null>('project', null);
+const directRelease = ref<any | null>(null);
+const loading = ref<boolean>(false);
 
-const releaseData = computed(() => {
+const releaseData = computed<any | null>(() => {
   if (directRelease.value) return directRelease.value;
   if (sharedProject?.value?.release) return sharedProject.value.release;
   return sharedProject?.value || null;
 });
 
-const isProjectOnline = computed(() => {
+const isProjectOnline = computed<boolean>(() => {
   return Boolean(
     releaseData.value?.is_online ??
     releaseData.value?.isOnline ??
@@ -210,26 +211,26 @@ const isProjectOnline = computed(() => {
   );
 });
 
-const releaseVersion = computed(() => {
+const releaseVersion = computed<string>(() => {
   return releaseData.value?.version || releaseData.value?.active_build_version || '';
 });
 
-const iconUrl = computed(() => {
+const iconUrl = computed<string | null>(() => {
   const path = releaseData.value?.icon_path;
   return path ? getMediaUrl(path) : null;
 });
 
-const coverUrl = computed(() => {
+const coverUrl = computed<string | null>(() => {
   const path = releaseData.value?.cover_path;
   return path ? getMediaUrl(path) : null;
 });
 
-const videoUrl = computed(() => {
+const videoUrl = computed<string | null>(() => {
   const path = releaseData.value?.video_path;
   return path ? getMediaUrl(path) : null;
 });
 
-async function loadData() {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
     const rel = await getPublished(projectId.value);
@@ -245,7 +246,7 @@ async function loadData() {
   }
 }
 
-function downloadBuild(version) {
+function downloadBuild(version: string): void {
   if (!version) return;
   const link = document.createElement('a');
   link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;

@@ -76,33 +76,33 @@
                 </span>
                 <span
                   class="mode-badge"
-                  :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
-                  :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                  :class="req.snapshot?.isOnline ? 'mode-online' : 'mode-offline'"
+                  :title="req.snapshot?.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
                 >
-                  <Globe v-if="req.snapshot.isOnline" class="icon-xxs" />
+                  <Globe v-if="req.snapshot?.isOnline" class="icon-xxs" />
                   <Gamepad2 v-else class="icon-xxs" />
-                  <span>{{ req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                  <span>{{ req.snapshot?.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
                 </span>
               </div>
               <span class="request-time">{{ formatDateTime(req.submittedAt) }}</span>
             </div>
 
             <h3 class="request-title">
-              {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
+              {{ req.snapshot?.titleRu || req.snapshot?.titleEn || `Проект #${req.projectId}` }}
             </h3>
             <p class="request-desc">
               {{
-                req.snapshot.aboutRu ||
-                req.snapshot.aboutEn ||
-                req.snapshot.about ||
+                req.snapshot?.aboutRu ||
+                req.snapshot?.aboutEn ||
+                req.snapshot?.about ||
                 'Описание не указано'
               }}
             </p>
 
             <div class="request-meta-row">
               <span class="meta-tag">Проект: #{{ req.projectId }}</span>
-              <span v-if="req.snapshot.activeBuildVersion" class="meta-tag">
-                Версия: v{{ req.snapshot.activeBuildVersion }}
+              <span v-if="req.snapshot?.activeBuildVersion" class="meta-tag">
+                Версия: v{{ req.snapshot?.activeBuildVersion }}
               </span>
               <button class="btn-claim-inline" @click.stop="openProject(req.projectId)">
                 К проверке →
@@ -142,25 +142,25 @@
                 <span class="badge badge-info">В проверке</span>
                 <span
                   class="mode-badge"
-                  :class="req.snapshot.isOnline ? 'mode-online' : 'mode-offline'"
-                  :title="req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
+                  :class="req.snapshot?.isOnline ? 'mode-online' : 'mode-offline'"
+                  :title="req.snapshot?.isOnline ? t('projects.modeOnline') : t('projects.modeOffline')"
                 >
-                  <Globe v-if="req.snapshot.isOnline" class="icon-xxs" />
+                  <Globe v-if="req.snapshot?.isOnline" class="icon-xxs" />
                   <Gamepad2 v-else class="icon-xxs" />
-                  <span>{{ req.snapshot.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
+                  <span>{{ req.snapshot?.isOnline ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
                 </span>
               </div>
               <span class="request-time">{{ formatDateTime(req.submittedAt) }}</span>
             </div>
 
             <h3 class="request-title">
-              {{ req.snapshot.titleRu || req.snapshot.titleEn || `Проект #${req.projectId}` }}
+              {{ req.snapshot?.titleRu || req.snapshot?.titleEn || `Проект #${req.projectId}` }}
             </h3>
             <p class="request-desc">
               {{
-                req.snapshot.aboutRu ||
-                req.snapshot.aboutEn ||
-                req.snapshot.about ||
+                req.snapshot?.aboutRu ||
+                req.snapshot?.aboutEn ||
+                req.snapshot?.about ||
                 'Описание не указано'
               }}
             </p>
@@ -185,7 +185,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -207,14 +207,15 @@ import {
   REQUEST_STATUS,
   formatDateTime,
 } from '@/entities/moderation';
+import type { ModerationRequest } from '@/shared/types';
 
 const { t } = useI18n();
 const router = useRouter();
-const loading = ref(false);
+const loading = ref<boolean>(false);
 
-const pendingRequests = computed(() =>
+const pendingRequests = computed<ModerationRequest[]>(() =>
   moderationStore.requests.filter(
-    (r) =>
+    (r: any) =>
       r.status === REQUEST_STATUS.PENDING ||
       r.status === 'REQUEST_STATUS_PENDING' ||
       r.status === 1 ||
@@ -222,9 +223,9 @@ const pendingRequests = computed(() =>
   )
 );
 
-const inReviewRequests = computed(() =>
+const inReviewRequests = computed<ModerationRequest[]>(() =>
   moderationStore.requests.filter(
-    (r) =>
+    (r: any) =>
       r.status === REQUEST_STATUS.IN_REVIEW ||
       r.status === 'REQUEST_STATUS_IN_REVIEW' ||
       r.status === 2 ||
@@ -232,10 +233,10 @@ const inReviewRequests = computed(() =>
   )
 );
 
-const approvedCount = computed(
+const approvedCount = computed<number>(
   () =>
     moderationStore.requests.filter(
-      (r) =>
+      (r: any) =>
         r.status === REQUEST_STATUS.APPROVED ||
         r.status === 'REQUEST_STATUS_APPROVED' ||
         r.status === 3 ||
@@ -243,7 +244,7 @@ const approvedCount = computed(
     ).length
 );
 
-async function loadData() {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
     await moderationStore.loadRequests({ limit: 100 });
@@ -252,7 +253,8 @@ async function loadData() {
   }
 }
 
-function openProject(projectId) {
+function openProject(projectId?: string | number): void {
+  if (!projectId) return;
   router.push(`/moderator/projects/${projectId}`);
 }
 

@@ -615,7 +615,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -643,7 +643,6 @@ import {
 } from 'lucide-vue-next';
 import {
   moderationApi,
-  normalizeRequest,
   formatDateTime,
   formatCpu,
   formatMemory,
@@ -658,49 +657,49 @@ const router = useRouter();
 const route = useRoute();
 const { state: authState } = useAuth();
 
-const isAdmin = computed(() => {
+const isAdmin = computed<boolean>(() => {
   const r = authState.user?.role;
   return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
 });
 
-const currentUserId = computed(() => authState.user?.id || authState.user?.email || '');
+const currentUserId = computed<string>(() => String(authState.user?.id || authState.user?.email || ''));
 
-const requests = ref([]);
-const loading = ref(true);
-const claimingId = ref(null);
+const requests = ref<any[]>([]);
+const loading = ref<boolean>(true);
+const claimingId = ref<string | number | null>(null);
 
-const typeFilter = ref(
+const typeFilter = ref<string>(
   route.query.type === 'server' || route.query.type === 'servers'
     ? 'server'
     : route.query.type === 'project' || route.query.type === 'publication'
       ? 'publication'
       : 'all'
 );
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const modeFilter = ref('all');
-const sortBy = ref('newest');
-const currentPage = ref(1);
-const pageSize = ref(10);
+const searchQuery = ref<string>('');
+const statusFilter = ref<string>('all');
+const modeFilter = ref<string>('all');
+const sortBy = ref<string>('newest');
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
 // Серверные модальные окна
-const approvingServerTarget = ref(null);
-const approveServerQuota = ref(2);
-const approveUnlimitedTotalCpu = ref(true);
-const approveTotalCpu = ref(2.0);
-const approveUnlimitedTotalRam = ref(true);
-const approveTotalRam = ref(4096);
-const approveUnlimitedInstanceCpu = ref(true);
-const approveInstanceCpu = ref(1.0);
-const approveUnlimitedInstanceRam = ref(true);
-const approveInstanceRam = ref(1024);
-const approveComment = ref('');
-const rejectingServerTarget = ref(null);
-const rejectServerReason = ref('');
-const submittingServerReview = ref(false);
-const serverReviewError = ref('');
+const approvingServerTarget = ref<any | null>(null);
+const approveServerQuota = ref<number>(2);
+const approveUnlimitedTotalCpu = ref<boolean>(true);
+const approveTotalCpu = ref<number>(2.0);
+const approveUnlimitedTotalRam = ref<boolean>(true);
+const approveTotalRam = ref<number>(4096);
+const approveUnlimitedInstanceCpu = ref<boolean>(true);
+const approveInstanceCpu = ref<number>(1.0);
+const approveUnlimitedInstanceRam = ref<boolean>(true);
+const approveInstanceRam = ref<number>(1024);
+const approveComment = ref<string>('');
+const rejectingServerTarget = ref<any | null>(null);
+const rejectServerReason = ref<string>('');
+const submittingServerReview = ref<boolean>(false);
+const serverReviewError = ref<string>('');
 
-async function loadQueue() {
+async function loadQueue(): Promise<void> {
   loading.value = true;
   try {
     const [modRes, projRes] = await Promise.allSettled([
@@ -709,16 +708,16 @@ async function loadQueue() {
     ]);
 
     // Карта проектов для извлечения названий и иконок
-    const projectMap = {};
-    if (projRes.status === 'fulfilled' && projRes.value?.projects) {
-      projRes.value.projects.forEach((p) => {
+    const projectMap: Record<string | number, any> = {};
+    if (projRes.status === 'fulfilled' && (projRes.value as any)?.projects) {
+      (projRes.value as any).projects.forEach((p: any) => {
         projectMap[p.id] = p;
       });
     }
 
-    const unifiedList = [];
-    if (modRes.status === 'fulfilled' && modRes.value?.requests) {
-      for (const r of modRes.value.requests) {
+    const unifiedList: any[] = [];
+    if (modRes.status === 'fulfilled' && (modRes.value as any)?.requests) {
+      for (const r of (modRes.value as any).requests) {
         const pInfo = projectMap[r.projectId];
         const isServer =
           r.type === 2 ||
@@ -757,7 +756,7 @@ async function loadQueue() {
     }
 
     requests.value = unifiedList;
-  } catch (err) {
+  } catch {
     showToast(t('common.error'), 'danger');
   } finally {
     loading.value = false;
@@ -766,7 +765,7 @@ async function loadQueue() {
 
 onMounted(loadQueue);
 
-function resetFilters() {
+function resetFilters(): void {
   typeFilter.value = 'all';
   searchQuery.value = '';
   statusFilter.value = 'all';
@@ -775,7 +774,7 @@ function resetFilters() {
   currentPage.value = 1;
 }
 
-const filteredRequests = computed(() => {
+const filteredRequests = computed<any[]>(() => {
   let list = [...requests.value];
 
   // Фильтр по типу заявки
@@ -820,9 +819,9 @@ const filteredRequests = computed(() => {
 
   // Сортировка
   if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+    list.sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime());
   } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.submittedAt || 0) - new Date(b.submittedAt || 0));
+    list.sort((a, b) => new Date(a.submittedAt || 0).getTime() - new Date(b.submittedAt || 0).getTime());
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
   }
@@ -830,52 +829,56 @@ const filteredRequests = computed(() => {
   return list;
 });
 
-const totalPages = computed(() =>
+const totalPages = computed<number>(() =>
   Math.max(1, Math.ceil(filteredRequests.value.length / pageSize.value))
 );
 
-const paginatedRequests = computed(() => {
+const paginatedRequests = computed<any[]>(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredRequests.value.slice(start, start + pageSize.value);
 });
 
-function isPending(status) {
+function isPending(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.PENDING ||
+    Number(status) === REQUEST_STATUS.PENDING ||
     status === 1 ||
     status === 'REQUEST_STATUS_PENDING' ||
     status === 'pending'
   );
 }
 
-function isInReview(status) {
+function isInReview(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.IN_REVIEW ||
+    Number(status) === REQUEST_STATUS.IN_REVIEW ||
     status === 2 ||
     status === 'REQUEST_STATUS_IN_REVIEW' ||
     status === 'in_review'
   );
 }
 
-function isApproved(status) {
+function isApproved(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.APPROVED ||
+    Number(status) === REQUEST_STATUS.APPROVED ||
     status === 3 ||
     status === 'REQUEST_STATUS_APPROVED' ||
     status === 'approved'
   );
 }
 
-function isRejected(status) {
+function isRejected(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.REJECTED ||
+    Number(status) === REQUEST_STATUS.REJECTED ||
     status === 4 ||
     status === 'REQUEST_STATUS_REJECTED' ||
     status === 'rejected'
   );
 }
 
-function reqStatusLabel(status) {
+function reqStatusLabel(status: any): string {
   if (isPending(status)) return t('moderation.pending');
   if (isInReview(status)) return t('moderation.inReview');
   if (isApproved(status)) return t('projects.approved');
@@ -883,7 +886,7 @@ function reqStatusLabel(status) {
   return t('common.unknown');
 }
 
-function reqStatusClass(status) {
+function reqStatusClass(status: any): string {
   if (isPending(status)) return 'status-pending';
   if (isInReview(status)) return 'status-in-review';
   if (isApproved(status)) return 'status-approved';
@@ -891,24 +894,24 @@ function reqStatusClass(status) {
   return 'status-neutral';
 }
 
-function openProject(projectId) {
+function openProject(projectId: string | number): void {
   router.push(`/moderator/projects/${projectId}`);
 }
 
-async function claimAndOpen(req) {
+async function claimAndOpen(req: any): Promise<void> {
   claimingId.value = req.id;
   try {
     await moderationApi.claimRequest(req.id);
     showToast(t('moderation.claimBtn') + ' — успешно', 'success');
     openProject(req.projectId);
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     claimingId.value = null;
   }
 }
 
-function openApproveServerModal(req) {
+function openApproveServerModal(req: any): void {
   approvingServerTarget.value = req;
   approveServerQuota.value = req.maxInstances || 2;
 
@@ -928,13 +931,13 @@ function openApproveServerModal(req) {
   serverReviewError.value = '';
 }
 
-function openRejectServerModal(req) {
+function openRejectServerModal(req: any): void {
   rejectingServerTarget.value = req;
   rejectServerReason.value = '';
   serverReviewError.value = '';
 }
 
-async function submitApproveServer() {
+async function submitApproveServer(): Promise<void> {
   if (!approvingServerTarget.value) return;
   submittingServerReview.value = true;
   serverReviewError.value = '';
@@ -951,14 +954,14 @@ async function submitApproveServer() {
     showToast('Доступ к серверам успешно одобрен', 'success');
     approvingServerTarget.value = null;
     await loadQueue();
-  } catch (err) {
+  } catch (err: any) {
     serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка одобрения';
   } finally {
     submittingServerReview.value = false;
   }
 }
 
-async function submitRejectServer() {
+async function submitRejectServer(): Promise<void> {
   if (!rejectingServerTarget.value) return;
   if (!rejectServerReason.value.trim()) {
     serverReviewError.value = 'Укажите причину отказа';
@@ -974,7 +977,7 @@ async function submitRejectServer() {
     showToast('Заявка на доступ отклонена', 'info');
     rejectingServerTarget.value = null;
     await loadQueue();
-  } catch (err) {
+  } catch (err: any) {
     serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка отклонения';
   } finally {
     submittingServerReview.value = false;

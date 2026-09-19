@@ -174,8 +174,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import {
   Maximize2,
   Minimize2,
@@ -191,28 +191,25 @@ import {
 import { useGameSdkSandbox } from '../model/useGameSdkSandbox';
 import GameSandboxDevtools from './GameSandboxDevtools.vue';
 
-const props = defineProps({
-  gameUrl: {
-    type: String,
-    required: true,
-  },
-  projectId: {
-    type: [String, Number],
-    required: true,
-  },
-  showDevtools: {
-    type: Boolean,
-    default: true,
-  },
+interface Props {
+  gameUrl: string;
+  projectId: string | number;
+  showDevtools?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showDevtools: true,
 });
 
-const gameIframe = ref(null);
-const playerContainer = ref(null);
-const iframeKey = ref(0);
-const isFullscreen = ref(false);
-const isReloading = ref(false);
-const isDevtoolsOpen = ref(true);
-const currentViewport = ref('fit'); // 'fit' | 'desktop' | 'mobile-portrait' | 'mobile-landscape'
+type ViewportPreset = 'fit' | 'desktop' | 'mobile-portrait' | 'mobile-landscape';
+
+const gameIframe = ref<HTMLIFrameElement | null>(null);
+const playerContainer = ref<HTMLDivElement | null>(null);
+const iframeKey = ref<number>(0);
+const isFullscreen = ref<boolean>(false);
+const isReloading = ref<boolean>(false);
+const isDevtoolsOpen = ref<boolean>(true);
+const currentViewport = ref<ViewportPreset>('fit');
 
 // Подключаем хост-адаптер Sandbox SDK
 const {
@@ -233,7 +230,7 @@ const {
   iframeRef: gameIframe,
 });
 
-function setViewport(preset) {
+function setViewport(preset: ViewportPreset): void {
   currentViewport.value = preset;
 }
 
@@ -251,7 +248,7 @@ const viewportStyle = computed(() => {
   }
 });
 
-function reloadIframe() {
+function reloadIframe(): void {
   isReloading.value = true;
   iframeKey.value += 1;
   setTimeout(() => {
@@ -259,7 +256,7 @@ function reloadIframe() {
   }, 400);
 }
 
-function toggleFullscreen() {
+function toggleFullscreen(): void {
   if (!playerContainer.value) return;
 
   if (!document.fullscreenElement) {
@@ -273,8 +270,16 @@ function toggleFullscreen() {
   }
 }
 
-document.addEventListener('fullscreenchange', () => {
+function handleFullscreenChange(): void {
   isFullscreen.value = !!document.fullscreenElement;
+}
+
+onMounted(() => {
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', handleFullscreenChange);
 });
 </script>
 

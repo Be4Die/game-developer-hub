@@ -256,7 +256,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -281,17 +281,25 @@ import { getProject, getMediaUrl } from '@/entities/project';
 import { getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
+interface ViolationItem {
+  ruleCode: string;
+  ruleTitle: string;
+  description: string;
+  attachments: any[];
+  uploading: boolean;
+}
+
 const route = useRoute();
 const router = useRouter();
 
-const projectId = computed(() => Number(route.params.projectId));
+const projectId = computed<number>(() => Number(route.params.projectId));
 
-const loadingProject = ref(true);
-const submitting = ref(false);
-const activeRequest = ref(null);
-const projectData = ref(null);
+const loadingProject = ref<boolean>(true);
+const submitting = ref<boolean>(false);
+const activeRequest = ref<any | null>(null);
+const projectData = ref<any | null>(null);
 
-const violations = ref([
+const violations = ref<ViolationItem[]>([
   {
     ruleCode: '',
     ruleTitle: '',
@@ -301,9 +309,9 @@ const violations = ref([
   },
 ]);
 
-const generalComment = ref('');
+const generalComment = ref<string>('');
 
-const projectTitle = computed(() => {
+const projectTitle = computed<string>(() => {
   return (
     projectData.value?.titleRu ||
     projectData.value?.title_ru ||
@@ -313,7 +321,7 @@ const projectTitle = computed(() => {
   );
 });
 
-const projectVersion = computed(() => {
+const projectVersion = computed<string>(() => {
   return (
     projectData.value?.activeBuildVersion ||
     projectData.value?.active_build_version ||
@@ -321,25 +329,25 @@ const projectVersion = computed(() => {
   );
 });
 
-const projectIconUrl = computed(() => {
+const projectIconUrl = computed<string>(() => {
   const p = projectData.value?.iconPath || projectData.value?.icon_path;
   if (!p) return '';
   return getMediaUrl(p);
 });
 
-const devDisplayName = computed(() => {
+const devDisplayName = computed<string>(() => {
   const uid = activeRequest.value?.ownerId || projectData.value?.owner_id;
   return getUserDisplayName(uid);
 });
 
-const canSubmit = computed(() => {
+const canSubmit = computed<boolean>(() => {
   if (violations.value.length === 0) return false;
   return violations.value.every(
     (v) => v.ruleCode.trim() && v.ruleTitle.trim() && v.description.trim()
   );
 });
 
-function onRuleSelected(item, rule) {
+function onRuleSelected(item: ViolationItem, rule: any): void {
   item.ruleCode = rule.code;
   item.ruleTitle = rule.title;
   if (!item.description.trim()) {
@@ -347,12 +355,12 @@ function onRuleSelected(item, rule) {
   }
 }
 
-function onRuleCleared(item) {
+function onRuleCleared(item: ViolationItem): void {
   item.ruleCode = '';
   item.ruleTitle = '';
 }
 
-function addViolation() {
+function addViolation(): void {
   violations.value.push({
     ruleCode: '',
     ruleTitle: '',
@@ -362,23 +370,23 @@ function addViolation() {
   });
 }
 
-function removeViolation(idx) {
+function removeViolation(idx: number): void {
   if (violations.value.length > 1) {
     violations.value.splice(idx, 1);
   }
 }
 
-function removeAttachment(item, idx) {
+function removeAttachment(item: ViolationItem, idx: number): void {
   item.attachments.splice(idx, 1);
 }
 
-function isVideo(att) {
+function isVideo(att: any): boolean {
   const mt = att.mime_type || att.type || '';
   const n = att.file_name || att.name || '';
   return mt.startsWith('video/') || n.endsWith('.mp4') || n.endsWith('.webm');
 }
 
-function formatSize(bytes) {
+function formatSize(bytes?: number): string {
   if (!bytes) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -386,8 +394,8 @@ function formatSize(bytes) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-async function handleFileUpload(e, item) {
-  const file = e.target.files?.[0];
+async function handleFileUpload(e: any, item: ViolationItem): Promise<void> {
+  const file: File | undefined = e.target.files?.[0];
   if (!file) return;
 
   const isVid = file.type.startsWith('video/');
@@ -425,7 +433,7 @@ async function handleFileUpload(e, item) {
   }
 }
 
-async function loadProject() {
+async function loadProject(): Promise<void> {
   loadingProject.value = true;
   try {
     const data = await moderationApi.getLatestByProject(projectId.value);
@@ -444,11 +452,11 @@ async function loadProject() {
   }
 }
 
-function goBack() {
+function goBack(): void {
   router.push(`/moderator/projects/${projectId.value}`);
 }
 
-async function handleSubmit() {
+async function handleSubmit(): Promise<void> {
   if (!canSubmit.value || submitting.value) return;
 
   submitting.value = true;
@@ -470,7 +478,7 @@ async function handleSubmit() {
 
     showToast('Проект отклонен, вердикт с замечаниями отправлен разработчику', 'success');
     router.push(`/moderator/projects/${projectId.value}`);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to reject project:', err);
     const msg = err.response?.data?.message || err.message || 'Ошибка отправки решения';
     showToast(`Не удалось отклонить проект: ${msg}`, 'danger');

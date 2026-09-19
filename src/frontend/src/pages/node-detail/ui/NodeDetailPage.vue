@@ -632,7 +632,7 @@
     <!-- Модальное окно развертывания сервиса -->
     <CreateServiceModal
       v-if="showCreateServiceModal"
-      :node-id="node.id"
+      :node-id="node.id || props.nodeId"
       @created="onServiceCreated"
       @cancel="showCreateServiceModal = false"
     />
@@ -640,7 +640,7 @@
     <!-- Модальное окно резервных копий сервиса -->
     <ServiceBackupsModal
       v-if="showBackupsModal && selectedBackupService"
-      :node-id="node.id"
+      :node-id="node.id || props.nodeId"
       :service="selectedBackupService"
       @close="closeBackupsModal"
     />
@@ -796,7 +796,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -837,45 +837,54 @@ import {
 import { listProjects } from '@/entities/project';
 import { CreateServiceModal, ServiceBackupsModal, RoleTransitionModal } from '@/features/manage-nodes';
 import { formatBytes, formatDateTime, showToast } from '@/shared/lib';
+import type { NodeInfo, Instance } from '@/shared/types';
 
-const props = defineProps({
-  nodeId: { type: [String, Number], required: true },
-});
+interface NodeUsageMetrics {
+  cpu_usage_percent: number;
+  memory_used_bytes: number;
+  disk_used_bytes: number;
+  network_bytes_per_sec: number;
+  active_instance_count: number;
+}
+
+const props = defineProps<{
+  nodeId: string | number;
+}>();
 const router = useRouter();
 const { t } = useI18n();
 
-const node = ref({});
-const projectsMap = ref({});
-const usage = ref({
+const node = ref<Partial<NodeInfo> & Record<string, any>>({});
+const projectsMap = ref<Record<string | number, string>>({});
+const usage = ref<NodeUsageMetrics>({
   cpu_usage_percent: 0,
   memory_used_bytes: 0,
   disk_used_bytes: 0,
   network_bytes_per_sec: 0,
   active_instance_count: 0,
 });
-const nodeInstances = ref([]);
-const instancesLoading = ref(true);
-const services = ref([]);
-const servicesLoading = ref(false);
-const error = ref(null);
-const showDeleteConfirm = ref(false);
-const deleting = ref(false);
-const authToken = ref('');
-const authError = ref(null);
-const authorizing = ref(false);
+const nodeInstances = ref<Instance[]>([]);
+const instancesLoading = ref<boolean>(true);
+const services = ref<any[]>([]);
+const servicesLoading = ref<boolean>(false);
+const error = ref<string | null>(null);
+const showDeleteConfirm = ref<boolean>(false);
+const deleting = ref<boolean>(false);
+const authToken = ref<string>('');
+const authError = ref<string | null>(null);
+const authorizing = ref<boolean>(false);
 
-const showIngressModal = ref(false);
-const savingIngress = ref(false);
-const ingressError = ref(null);
-const verifyingDomain = ref(false);
-const domainVerificationResult = ref(null);
-const skipDnsCheck = ref(false);
-const ingressForm = ref({
+const showIngressModal = ref<boolean>(false);
+const savingIngress = ref<boolean>(false);
+const ingressError = ref<string | null>(null);
+const verifyingDomain = ref<boolean>(false);
+const domainVerificationResult = ref<any | null>(null);
+const skipDnsCheck = ref<boolean>(false);
+const ingressForm = ref<{ mode: string; customDomain: string }>({
   mode: 'platform_proxy',
   customDomain: '',
 });
 
-function openIngressModal() {
+function openIngressModal(): void {
   ingressForm.value = {
     mode: node.value?.ingress_mode || 'platform_proxy',
     customDomain: node.value?.custom_domain || '',
@@ -886,12 +895,12 @@ function openIngressModal() {
   showIngressModal.value = true;
 }
 
-function onDomainInput() {
+function onDomainInput(): void {
   domainVerificationResult.value = null;
   ingressError.value = null;
 }
 
-async function checkDomainDNS() {
+async function checkDomainDNS(): Promise<void> {
   const domainToTest = ingressForm.value.customDomain.trim();
   if (!domainToTest) return;
   verifyingDomain.value = true;
@@ -902,7 +911,7 @@ async function checkDomainDNS() {
     if (res.valid) {
       skipDnsCheck.value = false;
     }
-  } catch (err) {
+  } catch (err: any) {
     const msg = err.response?.data?.message || err.message || 'Не удалось выполнить проверку DNS';
     domainVerificationResult.value = {
       valid: false,
@@ -915,7 +924,7 @@ async function checkDomainDNS() {
   }
 }
 
-async function saveIngressSettings() {
+async function saveIngressSettings(): Promise<void> {
   savingIngress.value = true;
   ingressError.value = null;
   try {
@@ -928,7 +937,7 @@ async function saveIngressSettings() {
     node.value = updated;
     showToast('Настройки маршрутизации обновлены', 'success');
     showIngressModal.value = false;
-  } catch (err) {
+  } catch (err: any) {
     const msg = err.response?.data?.message || err.message || 'Ошибка обновления маршрутизации';
     ingressError.value = msg;
     if (msg.includes('DNS') || msg.includes('IP') || msg.includes('domain mismatch')) {
@@ -944,24 +953,24 @@ async function saveIngressSettings() {
   }
 }
 
-const updatingRole = ref(false);
-const showTransitionModal = ref(false);
-const pendingTargetRole = ref('');
-const transitionProcessing = ref(false);
-const actionServiceId = ref(null);
-const showCreateServiceModal = ref(false);
-const togglingAdminer = ref(false);
-const showDeleteServiceConfirm = ref(false);
-const serviceToDelete = ref(null);
-const deleteVolumeOnService = ref(true);
-const deletingService = ref(false);
-const copiedServiceId = ref(null);
+const updatingRole = ref<boolean>(false);
+const showTransitionModal = ref<boolean>(false);
+const pendingTargetRole = ref<string>('');
+const transitionProcessing = ref<boolean>(false);
+const actionServiceId = ref<string | number | null>(null);
+const showCreateServiceModal = ref<boolean>(false);
+const togglingAdminer = ref<boolean>(false);
+const showDeleteServiceConfirm = ref<boolean>(false);
+const serviceToDelete = ref<any | null>(null);
+const deleteVolumeOnService = ref<boolean>(true);
+const deletingService = ref<boolean>(false);
+const copiedServiceId = ref<string | number | null>(null);
 
-const showBackupsModal = ref(false);
-const selectedBackupService = ref(null);
-const backupsEnabled = computed(() => !!node.value?.backups_enabled);
+const showBackupsModal = ref<boolean>(false);
+const selectedBackupService = ref<any | null>(null);
+const backupsEnabled = computed<boolean>(() => !!node.value?.backups_enabled);
 
-async function toggleBackups() {
+async function toggleBackups(): Promise<void> {
   try {
     const newValue = !backupsEnabled.value;
     node.value = await toggleNodeBackups(props.nodeId, newValue);
@@ -970,62 +979,61 @@ async function toggleBackups() {
     } else {
       showToast('Система резервного копирования отключена', 'info');
     }
-  } catch (err) {
+  } catch (err: any) {
     showToast('Ошибка: ' + (err.response?.data?.message || err.message), 'error');
   }
 }
 
-
-function isBackupSupported(svc) {
+function isBackupSupported(svc: any): boolean {
   if (!svc) return false;
   return svc.service_type !== 'adminer' && svc.service_type !== 'pgadmin';
 }
 
-function openBackupsModal(svc) {
+function openBackupsModal(svc: any): void {
   selectedBackupService.value = svc;
   showBackupsModal.value = true;
 }
 
-function closeBackupsModal() {
+function closeBackupsModal(): void {
   showBackupsModal.value = false;
   selectedBackupService.value = null;
 }
 
-const isUnauthorized = computed(
+const isUnauthorized = computed<boolean>(
   () => node.value.status === 'NODE_STATUS_UNAUTHORIZED' || node.value.status === 'unauthorized',
 );
-const currentRole = computed(() => {
+const currentRole = computed<string>(() => {
   const r = String(node.value.role || 'mixed').toLowerCase();
   if (r.includes('compute')) return 'compute';
   if (r.includes('storage')) return 'storage';
   return 'mixed';
 });
-const activeCount = computed(() => usage.value.active_instance_count ?? 0);
+const activeCount = computed<number>(() => usage.value.active_instance_count ?? 0);
 
 // Отделяем сервисы баз данных и томов от веб-панели управления
-const isAdminer = (s) =>
+const isAdminer = (s: any): boolean =>
   s.service_type === 'adminer' || s.type === 'adminer' || s.name === 'adminer';
 
-const storageServices = computed(() =>
+const storageServices = computed<any[]>(() =>
   services.value.filter((s) => !isAdminer(s)),
 );
-const adminerService = computed(() =>
+const adminerService = computed<any | undefined>(() =>
   services.value.find((s) => isAdminer(s)),
 );
 
-let usageInterval = null;
+let usageInterval: ReturnType<typeof setInterval> | null = null;
 
-async function fetchNode() {
+async function fetchNode(): Promise<void> {
   error.value = null;
   try {
     const resp = await getNode(props.nodeId);
     node.value = resp?.node || resp || {};
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.response?.data?.message ?? e.message;
   }
 }
 
-async function fetchUsage() {
+async function fetchUsage(): Promise<void> {
   try {
     const data = await getNodeUsage(props.nodeId);
     usage.value = data;
@@ -1034,7 +1042,7 @@ async function fetchUsage() {
   }
 }
 
-async function fetchInstances() {
+async function fetchInstances(): Promise<void> {
   instancesLoading.value = true;
   try {
     const instances = await listNodeInstances(props.nodeId);
@@ -1046,7 +1054,7 @@ async function fetchInstances() {
   }
 }
 
-async function fetchServices() {
+async function fetchServices(): Promise<void> {
   servicesLoading.value = true;
   try {
     services.value = await listNodeServices(props.nodeId);
@@ -1057,11 +1065,11 @@ async function fetchServices() {
   }
 }
 
-async function loadProjects() {
+async function loadProjects(): Promise<void> {
   try {
     const res = await listProjects();
-    const map = {};
-    (res.projects || []).forEach((p) => {
+    const map: Record<string | number, string> = {};
+    (res.projects || []).forEach((p: any) => {
       map[p.id] = p.title || p.name;
     });
     projectsMap.value = map;
@@ -1070,14 +1078,17 @@ async function loadProjects() {
   }
 }
 
-function getGameTitle(gid) {
+function getGameTitle(gid?: string | number): string {
+  if (gid === undefined || gid === null) {
+    return '—';
+  }
   if (projectsMap.value && projectsMap.value[gid]) {
     return projectsMap.value[gid];
   }
   return `Игра #${gid}`;
 }
 
-async function setRole(newRole) {
+async function setRole(newRole: string): Promise<void> {
   if (currentRole.value === newRole || updatingRole.value) return;
 
   // Если переключаемся в Storage, а на ноде есть игровые серверы -> требуем подтверждения вытеснения
@@ -1098,7 +1109,7 @@ async function setRole(newRole) {
   await applyRoleChange(newRole);
 }
 
-async function applyRoleChange(newRole, options = {}) {
+async function applyRoleChange(newRole: string, options: Record<string, any> = {}): Promise<void> {
   updatingRole.value = true;
   try {
     const updated = await updateNodeRole(props.nodeId, newRole, options);
@@ -1106,7 +1117,7 @@ async function applyRoleChange(newRole, options = {}) {
     const localizedRoleName = t(`servers.nodeRoles.${newRole}`) || newRole;
     showToast(`Режим узла изменен на «${localizedRoleName}»`, 'success');
     await Promise.all([fetchInstances(), fetchServices()]);
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка обновления режима', 'error');
     throw e;
   } finally {
@@ -1114,26 +1125,26 @@ async function applyRoleChange(newRole, options = {}) {
   }
 }
 
-function closeTransitionModal() {
+function closeTransitionModal(): void {
   if (transitionProcessing.value) return;
   showTransitionModal.value = false;
   pendingTargetRole.value = '';
 }
 
-async function handleConfirmRoleTransition(options) {
+async function handleConfirmRoleTransition(options: Record<string, any>): Promise<void> {
   transitionProcessing.value = true;
   try {
     await applyRoleChange(pendingTargetRole.value, options);
     showTransitionModal.value = false;
     pendingTargetRole.value = '';
-  } catch (e) {
+  } catch {
     // Error notification handled in applyRoleChange
   } finally {
     transitionProcessing.value = false;
   }
 }
 
-async function handleStartService(svc) {
+async function handleStartService(svc: any): Promise<void> {
   if (actionServiceId.value === svc.id) return;
   actionServiceId.value = svc.id;
   try {
@@ -1143,14 +1154,14 @@ async function handleStartService(svc) {
       services.value[idx] = updated;
     }
     showToast(`Сервис ${svc.name} успешно запущен`, 'success');
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка запуска сервиса', 'error');
   } finally {
     actionServiceId.value = null;
   }
 }
 
-async function handleStopService(svc) {
+async function handleStopService(svc: any): Promise<void> {
   if (actionServiceId.value === svc.id) return;
   actionServiceId.value = svc.id;
   try {
@@ -1160,14 +1171,14 @@ async function handleStopService(svc) {
       services.value[idx] = updated;
     }
     showToast(`Сервис ${svc.name} остановлен`, 'success');
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка остановки сервиса', 'error');
   } finally {
     actionServiceId.value = null;
   }
 }
 
-function onServiceCreated(newService) {
+function onServiceCreated(newService: any): void {
   showCreateServiceModal.value = false;
   if (newService) {
     services.value.push(newService);
@@ -1176,7 +1187,7 @@ function onServiceCreated(newService) {
   }
 }
 
-async function toggleAdminer() {
+async function toggleAdminer(): Promise<void> {
   if (togglingAdminer.value) return;
   togglingAdminer.value = true;
 
@@ -1188,7 +1199,7 @@ async function toggleAdminer() {
       showToast('Веб-панель AdminerEvo отключена', 'success');
       services.value = services.value.filter((s) => s.id !== targetId);
       await fetchServices();
-    } catch (e) {
+    } catch (e: any) {
       showToast(e.response?.data?.message || e.message || 'Ошибка отключения веб-панели', 'error');
     } finally {
       togglingAdminer.value = false;
@@ -1205,7 +1216,7 @@ async function toggleAdminer() {
       await createNodeService(props.nodeId, payload);
       showToast('Веб-панель AdminerEvo успешно подключена', 'success');
       await fetchServices();
-    } catch (e) {
+    } catch (e: any) {
       showToast(e.response?.data?.message || e.message || 'Ошибка подключения веб-панели', 'error');
     } finally {
       togglingAdminer.value = false;
@@ -1213,7 +1224,7 @@ async function toggleAdminer() {
   }
 }
 
-async function startAdminer() {
+async function startAdminer(): Promise<void> {
   if (togglingAdminer.value || !adminerService.value) return;
   togglingAdminer.value = true;
   try {
@@ -1223,20 +1234,20 @@ async function startAdminer() {
       services.value[idx] = updated;
     }
     showToast('Веб-панель AdminerEvo успешно запущена', 'success');
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка запуска веб-панели', 'error');
   } finally {
     togglingAdminer.value = false;
   }
 }
 
-function confirmDeleteService(svc) {
+function confirmDeleteService(svc: any): void {
   serviceToDelete.value = svc;
   deleteVolumeOnService.value = true;
   showDeleteServiceConfirm.value = true;
 }
 
-async function doDeleteService() {
+async function doDeleteService(): Promise<void> {
   if (!serviceToDelete.value) return;
   deletingService.value = true;
   try {
@@ -1244,14 +1255,14 @@ async function doDeleteService() {
     showToast('Сервис удален', 'success');
     services.value = services.value.filter((s) => s.id !== serviceToDelete.value.id);
     showDeleteServiceConfirm.value = false;
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка удаления сервиса', 'error');
   } finally {
     deletingService.value = false;
   }
 }
 
-function copyUri(serviceId, uri) {
+function copyUri(serviceId: string | number, uri: string): void {
   if (!uri) return;
   navigator.clipboard.writeText(uri).then(() => {
     copiedServiceId.value = serviceId;
@@ -1264,7 +1275,7 @@ function copyUri(serviceId, uri) {
   });
 }
 
-function getServiceIcon(type) {
+function getServiceIcon(type: string): any {
   switch (type) {
     case 'postgres':
       return Database;
@@ -1281,7 +1292,7 @@ function getServiceIcon(type) {
   }
 }
 
-function getServiceColor(type) {
+function getServiceColor(type: string): string {
   switch (type) {
     case 'postgres':
       return '#336791';
@@ -1298,7 +1309,7 @@ function getServiceColor(type) {
   }
 }
 
-function getServiceBgColor(type) {
+function getServiceBgColor(type: string): string {
   switch (type) {
     case 'postgres':
       return 'rgba(51, 103, 145, 0.15)';
@@ -1315,7 +1326,7 @@ function getServiceBgColor(type) {
   }
 }
 
-function formatServiceType(type) {
+function formatServiceType(type: string): string {
   switch (type) {
     case 'postgres':
       return 'PostgreSQL 16';
@@ -1332,7 +1343,7 @@ function formatServiceType(type) {
   }
 }
 
-function getAdminerUrl(svc) {
+function getAdminerUrl(svc: any): string {
   if (!svc) return '#';
   let host = window.location.hostname || 'localhost';
   if (node.value && node.value.address) {
@@ -1353,20 +1364,22 @@ function getAdminerUrl(svc) {
     try {
       const parsed = new URL(svc.connection_uri);
       if (parsed.port) port = Number(parsed.port);
-    } catch {}
+    } catch {
+      // ignore URL parse error
+    }
   }
   if (!port) port = 8080;
 
   return `http://${host}:${port}`;
 }
 
-function isAdminerSupported(svc) {
+function isAdminerSupported(svc: any): boolean {
   if (!svc) return false;
   const type = String(svc.service_type || svc.type || '').toLowerCase();
   return type === 'postgres' || type === 'postgresql' || type === 'mysql' || type === 'mariadb';
 }
 
-function parseDbCredentials(svc) {
+function parseDbCredentials(svc: any): { username: string; password: string; database: string } {
   if (!svc) return { username: '', password: '', database: '' };
   const uri = svc.connection_uri || '';
   let username = '';
@@ -1399,7 +1412,7 @@ function parseDbCredentials(svc) {
   return { username, password, database };
 }
 
-function getAdminerDbUrl(svc) {
+function getAdminerDbUrl(svc: any): string {
   if (!adminerService.value) return '#';
   const baseUrl = getAdminerUrl(adminerService.value);
   if (!baseUrl || baseUrl === '#') return '#';
@@ -1424,7 +1437,7 @@ function getAdminerDbUrl(svc) {
   return `${baseUrl}/?${params.toString()}`;
 }
 
-async function submitAuthorize() {
+async function submitAuthorize(): Promise<void> {
   if (!authToken.value) return;
   authorizing.value = true;
   authError.value = null;
@@ -1435,7 +1448,7 @@ async function submitAuthorize() {
     });
     showToast('Нода авторизована', 'success');
     await fetchNode();
-  } catch (e) {
+  } catch (e: any) {
     if (e.response?.status === 401) {
       authError.value = 'Неверный API-ключ ноды';
     } else if (e.response?.status === 409) {
@@ -1448,13 +1461,13 @@ async function submitAuthorize() {
   }
 }
 
-async function doDelete() {
+async function doDelete(): Promise<void> {
   deleting.value = true;
   try {
     await deleteNode(props.nodeId);
     showToast('Нода удалена', 'success');
     router.push('/nodes');
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error');
   } finally {
     deleting.value = false;

@@ -105,7 +105,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Play, Square, AlertCircle } from 'lucide-vue-next';
@@ -114,28 +114,29 @@ import { listInstances, stopInstance, resumeInstance } from '@/entities/instance
 import { listServerBuilds } from '@/entities/build';
 import { StartInstanceModal } from '@/features/manage-instances';
 import { formatDate, showToast } from '@/shared/lib';
+import type { Instance, Build } from '@/shared/types';
 
 const { t } = useI18n();
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-});
+const props = defineProps<{
+  gameId: string | number;
+}>();
 
-const instances = ref([]);
-const availableBuilds = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const statusFilter = ref('all');
-const showStartForm = ref(false);
-const stoppingId = ref(null);
-const resumingId = ref(null);
+const instances = ref<Instance[]>([]);
+const availableBuilds = ref<Build[]>([]);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const statusFilter = ref<string>('all');
+const showStartForm = ref<boolean>(false);
+const stoppingId = ref<string | number | null>(null);
+const resumingId = ref<string | number | null>(null);
 
-const filteredInstances = computed(() => {
+const filteredInstances = computed<Instance[]>(() => {
   if (statusFilter.value === 'all') return instances.value;
   return instances.value.filter((i) => i.status === statusFilter.value);
 });
 
-async function fetchInstances() {
+async function fetchInstances(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
@@ -143,14 +144,14 @@ async function fetchInstances() {
       props.gameId,
       statusFilter.value === 'all' ? undefined : statusFilter.value
     );
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {
     loading.value = false;
   }
 }
 
-async function fetchBuilds() {
+async function fetchBuilds(): Promise<void> {
   try {
     availableBuilds.value = await listServerBuilds(props.gameId);
   } catch {
@@ -158,31 +159,31 @@ async function fetchBuilds() {
   }
 }
 
-function onInstanceStarted() {
+function onInstanceStarted(): void {
   showStartForm.value = false;
   fetchInstances();
 }
 
-async function handleStop(inst) {
+async function handleStop(inst: Instance): Promise<void> {
   stoppingId.value = inst.id;
   try {
     await stopInstance(props.gameId, inst.id);
     showToast(`Инстанс ${inst.name || inst.id} останавливается...`);
     await fetchInstances();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка остановки', 'error');
   } finally {
     stoppingId.value = null;
   }
 }
 
-async function handleResume(inst) {
+async function handleResume(inst: Instance): Promise<void> {
   resumingId.value = inst.id;
   try {
     await resumeInstance(props.gameId, inst.id);
     showToast(`Инстанс ${inst.name || inst.id} запускается...`);
     await fetchInstances();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка запуска', 'error');
   } finally {
     resumingId.value = null;

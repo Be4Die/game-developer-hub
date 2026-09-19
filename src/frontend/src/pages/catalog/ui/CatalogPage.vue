@@ -276,7 +276,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -307,27 +307,27 @@ const { t } = useI18n();
 const router = useRouter();
 const { state: authState } = useAuth();
 
-const games = ref([]);
-const loading = ref(true);
+const games = ref<any[]>([]);
+const loading = ref<boolean>(true);
 
-const searchQuery = ref('');
-const modeFilter = ref('all');
-const sortBy = ref('newest');
+const searchQuery = ref<string>('');
+const modeFilter = ref<string>('all');
+const sortBy = ref<string>('newest');
 
 // Модальное окно отзыва
-const showRevokeModal = ref(false);
-const targetGame = ref(null);
-const revokeReason = ref('');
-const reasonError = ref('');
-const banDeveloper = ref(false);
-const revoking = ref(false);
+const showRevokeModal = ref<boolean>(false);
+const targetGame = ref<any | null>(null);
+const revokeReason = ref<string>('');
+const reasonError = ref<string>('');
+const banDeveloper = ref<boolean>(false);
+const revoking = ref<boolean>(false);
 
-const isAdmin = computed(() => {
+const isAdmin = computed<boolean>(() => {
   const r = authState.user?.role;
   return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
 });
 
-async function loadGames() {
+async function loadGames(): Promise<void> {
   loading.value = true;
   try {
     const res = await listPublishedProjects({ limit: 100, offset: 0 });
@@ -341,13 +341,13 @@ async function loadGames() {
 
 onMounted(loadGames);
 
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
   modeFilter.value = 'all';
   sortBy.value = 'newest';
 }
 
-function isGameOnline(p) {
+function isGameOnline(p: any): boolean {
   return Boolean(
     p.release?.is_online ??
     p.release?.isOnline ??
@@ -358,7 +358,7 @@ function isGameOnline(p) {
   );
 }
 
-function getGameTitle(p) {
+function getGameTitle(p: any): string {
   return (
     p.release?.title_ru ||
     p.release?.title_en ||
@@ -370,7 +370,7 @@ function getGameTitle(p) {
   );
 }
 
-function getGameVersion(p) {
+function getGameVersion(p: any): string {
   return (
     p.release?.version ||
     p.draft?.active_build_version ||
@@ -379,23 +379,23 @@ function getGameVersion(p) {
   );
 }
 
-function getGameIcon(p) {
+function getGameIcon(p: any): string {
   return p.release?.icon_path || p.draft?.icon_path || p.icon_path || '';
 }
 
-function getGameCover(p) {
+function getGameCover(p: any): string {
   return p.release?.cover_path || p.draft?.cover_path || p.cover_path || '';
 }
 
-function getProdUrl(p) {
+function getProdUrl(p: any): string {
   return p.release?.prod_url || p.prod_url || '';
 }
 
-function getPublishedAt(p) {
+function getPublishedAt(p: any): any {
   return p.release?.published_at || p.updated_at || p.created_at;
 }
 
-function formatDateTime(val) {
+function formatDateTime(val: any): string {
   if (!val) return '—';
   try {
     const d = new Date(val);
@@ -412,7 +412,7 @@ function formatDateTime(val) {
   }
 }
 
-const filteredGames = computed(() => {
+const filteredGames = computed<any[]>(() => {
   let list = [...games.value];
 
   // Фильтр по сетевому режиму
@@ -442,11 +442,11 @@ const filteredGames = computed(() => {
   // Сортировка
   if (sortBy.value === 'newest') {
     list.sort(
-      (a, b) => new Date(getPublishedAt(b) || 0) - new Date(getPublishedAt(a) || 0)
+      (a, b) => new Date(getPublishedAt(b) || 0).getTime() - new Date(getPublishedAt(a) || 0).getTime()
     );
   } else if (sortBy.value === 'oldest') {
     list.sort(
-      (a, b) => new Date(getPublishedAt(a) || 0) - new Date(getPublishedAt(b) || 0)
+      (a, b) => new Date(getPublishedAt(a) || 0).getTime() - new Date(getPublishedAt(b) || 0).getTime()
     );
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => getGameTitle(a).localeCompare(getGameTitle(b)));
@@ -455,11 +455,11 @@ const filteredGames = computed(() => {
   return list;
 });
 
-function openProject(projectId) {
+function openProject(projectId: string | number): void {
   router.push(`/moderator/projects/${projectId}`);
 }
 
-function openRevokeModal(game) {
+function openRevokeModal(game: any): void {
   targetGame.value = game;
   revokeReason.value = '';
   reasonError.value = '';
@@ -467,13 +467,13 @@ function openRevokeModal(game) {
   showRevokeModal.value = true;
 }
 
-function closeRevokeModal() {
+function closeRevokeModal(): void {
   if (revoking.value) return;
   showRevokeModal.value = false;
   targetGame.value = null;
 }
 
-async function confirmRevoke() {
+async function confirmRevoke(): Promise<void> {
   if (!revokeReason.value.trim()) {
     reasonError.value = t('catalog.revokeModal.reasonRequired');
     return;
@@ -482,6 +482,11 @@ async function confirmRevoke() {
   revoking.value = true;
 
   const game = targetGame.value;
+  if (!game) {
+    revoking.value = false;
+    return;
+  }
+
   try {
     // 1. Физическое снятие игры с публикации (UndeployProd + Deactivate release + Status draft)
     await unpublish(game.id);
@@ -513,7 +518,7 @@ async function confirmRevoke() {
     showRevokeModal.value = false;
     targetGame.value = null;
     await loadGames();
-  } catch (err) {
+  } catch (err: any) {
     showToast(
       err.response?.data?.message || 'Не удалось отозвать игру из каталога',
       'danger'

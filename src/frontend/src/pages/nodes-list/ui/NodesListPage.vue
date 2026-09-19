@@ -242,7 +242,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { Plus, Trash2, AlertCircle, Server, X, ChevronDown, RotateCcw, Shield, ShieldCheck } from 'lucide-vue-next';
 import { StatusBadge } from '@/shared/ui';
@@ -250,25 +250,26 @@ import { RegisterNodeModal } from '@/features/manage-nodes';
 import { listNodes, deleteNode, updateNodePlatform } from '@/entities/node';
 import { useAuth } from '@/entities/user';
 import { formatBytes, formatTime, showToast } from '@/shared/lib';
+import type { NodeInfo } from '@/shared/types';
 
 const { state: authState } = useAuth();
-const isAdmin = computed(() => {
+const isAdmin = computed<boolean>(() => {
   const r = authState.user?.role;
   return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
 });
 
-const nodes = ref([]);
-const loading = ref(true);
-const error = ref(null);
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const showRegisterForm = ref(false);
-const deleteTarget = ref(null);
-const deleting = ref(false);
-const deletingId = ref(null);
-const updatingPlatformId = ref(null);
+const nodes = ref<NodeInfo[]>([]);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const searchQuery = ref<string>('');
+const statusFilter = ref<string>('all');
+const showRegisterForm = ref<boolean>(false);
+const deleteTarget = ref<NodeInfo | null>(null);
+const deleting = ref<boolean>(false);
+const deletingId = ref<string | number | null>(null);
+const updatingPlatformId = ref<string | number | null>(null);
 
-const filteredNodes = computed(() => {
+const filteredNodes = computed<NodeInfo[]>(() => {
   let list = [...nodes.value];
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
@@ -281,7 +282,7 @@ const filteredNodes = computed(() => {
   if (statusFilter.value === 'platform') {
     list = list.filter((n) => n.is_platform);
   } else if (statusFilter.value !== 'all') {
-    const statusMap = {
+    const statusMap: Record<string, string> = {
       unauthorized: 'NODE_STATUS_UNAUTHORIZED',
       online: 'NODE_STATUS_ONLINE',
       offline: 'NODE_STATUS_OFFLINE',
@@ -293,18 +294,18 @@ const filteredNodes = computed(() => {
   return list;
 });
 
-const availableNodes = computed(() =>
+const availableNodes = computed<NodeInfo[]>(() =>
   nodes.value.filter(
     (n) => n.status === 'NODE_STATUS_UNAUTHORIZED' && (!n.owner_id || n.owner_id === '')
   )
 );
 
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
   statusFilter.value = 'all';
 }
 
-async function fetchNodes() {
+async function fetchNodes(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
@@ -312,14 +313,14 @@ async function fetchNodes() {
       ? undefined
       : statusFilter.value;
     nodes.value = await listNodes(apiStatus);
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {
     loading.value = false;
   }
 }
 
-async function togglePlatformStatus(node) {
+async function togglePlatformStatus(node: NodeInfo): Promise<void> {
   updatingPlatformId.value = node.id;
   try {
     const updated = await updateNodePlatform(node.id, !node.is_platform);
@@ -328,27 +329,28 @@ async function togglePlatformStatus(node) {
       node.is_platform ? 'Нода добавлена в пул платформы' : 'Нода исключена из пула платформы',
       'success'
     );
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка обновления статуса ноды', 'danger');
   } finally {
     updatingPlatformId.value = null;
   }
 }
 
-function openRegisterModal() {
+function openRegisterModal(): void {
   showRegisterForm.value = true;
 }
 
-function onNodeRegistered() {
+function onNodeRegistered(): void {
   showRegisterForm.value = false;
   fetchNodes();
 }
 
-function confirmDelete(node) {
+function confirmDelete(node: NodeInfo): void {
   deleteTarget.value = node;
 }
 
-async function doDelete() {
+async function doDelete(): Promise<void> {
+  if (!deleteTarget.value) return;
   deleting.value = true;
   deletingId.value = deleteTarget.value.id;
   try {
@@ -356,7 +358,7 @@ async function doDelete() {
     showToast('Нода успешно удалена', 'success');
     deleteTarget.value = null;
     await fetchNodes();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка удаления', 'danger');
   } finally {
     deleting.value = false;

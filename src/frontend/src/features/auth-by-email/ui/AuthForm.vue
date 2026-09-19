@@ -1,7 +1,7 @@
 <template>
   <div class="auth-card">
-    <div v-if="authState.error" class="alert alert-danger">
-      {{ authState.error }}
+    <div v-if="displayError" class="alert alert-danger">
+      {{ displayError }}
     </div>
     <div v-if="successMessage" class="alert alert-success">
       {{ successMessage }}
@@ -132,21 +132,25 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue';
+<script setup lang="ts">
+import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAuth, verifyEmail, resendVerificationEmail } from '@/entities/user';
 
-const emit = defineEmits(['success']);
+const emit = defineEmits<{
+  (e: 'success'): void;
+}>();
 
 const { t } = useI18n();
 const router = useRouter();
 const { state: authState, login, register } = useAuth();
 
-const mode = ref('login');
+const mode = ref<'login' | 'register' | 'verify'>('login');
 const successMessage = ref('');
 const emailError = ref('');
+const localError = ref('');
+const displayError = computed(() => localError.value || authState.error);
 const passwordStrength = ref({ percent: 0, text: '', class: '' });
 const form = reactive({
   email: '',
@@ -176,27 +180,27 @@ function checkPasswordStrength() {
     return;
   }
   let score = 0;
-  if (pwd.length >= 6) score++;
-  if (pwd.length >= 10) score++;
+  if (pwd.length >= 8) score++;
   if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
   if (/\d/.test(pwd)) score++;
   if (/[^a-zA-Z0-9]/.test(pwd)) score++;
 
-  if (score <= 2) {
-    passwordStrength.value = { percent: 35, text: '•••', class: 'weak' };
-  } else if (score === 3) {
-    passwordStrength.value = { percent: 65, text: '••••', class: 'medium' };
+  if (score <= 1) {
+    passwordStrength.value = { percent: 25, text: t('auth.passwordWeak'), class: 'weak' };
+  } else if (score <= 3) {
+    passwordStrength.value = { percent: 65, text: t('auth.passwordMedium'), class: 'medium' };
   } else {
-    passwordStrength.value = { percent: 100, text: '•••••', class: 'strong' };
+    passwordStrength.value = { percent: 100, text: t('auth.passwordStrong'), class: 'strong' };
   }
 }
 
 async function handleLogin() {
+  localError.value = '';
   try {
     const res = await login({ email: form.email, password: form.password });
     emit('success');
 
-    const role = res.user?.role || authState.user?.role;
+    const role = res?.user?.role || authState.user?.role;
     if (role === 'USER_ROLE_ADMIN' || role === 3) {
       router.push('/catalog');
     } else if (role === 'USER_ROLE_MODERATOR' || role === 2) {
@@ -210,6 +214,7 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
+  localError.value = '';
   try {
     await register({
       email: form.email,
@@ -224,22 +229,24 @@ async function handleRegister() {
 }
 
 async function handleVerify() {
+  localError.value = '';
   try {
     await verifyEmail(form.verification_code);
     successMessage.value = t('auth.loginSuccess');
     mode.value = 'login';
     form.password = '';
-  } catch (err) {
-    authState.error = err.response?.data?.message || t('common.error');
+  } catch (err: any) {
+    localError.value = err.response?.data?.message || t('common.error');
   }
 }
 
 async function resendCode() {
+  localError.value = '';
   try {
     await resendVerificationEmail(form.email);
     successMessage.value = t('auth.resetSuccess');
   } catch (err) {
-    authState.error = t('common.error');
+    localError.value = t('common.error');
   }
 }
 </script>

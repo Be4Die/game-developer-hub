@@ -347,7 +347,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -368,31 +368,32 @@ import {
 } from 'lucide-vue-next';
 import { searchUsers, setUserStatus, deleteUser } from '@/entities/user';
 import { formatProjectDate, showToast } from '@/shared/lib';
+import type { User } from '@/shared/types';
 
 const { t } = useI18n();
 
-const loading = ref(false);
-const allUsers = ref([]);
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const sortBy = ref('newest');
-const currentPage = ref(1);
-const pageSize = ref(10);
+const loading = ref<boolean>(false);
+const allUsers = ref<User[]>([]);
+const searchQuery = ref<string>('');
+const statusFilter = ref<'all' | 'active' | 'suspended' | 'deleted'>('all');
+const sortBy = ref<'newest' | 'oldest' | 'name'>('newest');
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
-const actionPendingId = ref(null);
-const statusTargetModal = ref(null);
-const deleteTargetModal = ref(null);
+const actionPendingId = ref<string | number | null>(null);
+const statusTargetModal = ref<User | null>(null);
+const deleteTargetModal = ref<User | null>(null);
 
 onMounted(() => {
   loadUsers();
 });
 
-async function loadUsers() {
+async function loadUsers(): Promise<void> {
   loading.value = true;
   try {
     const res = await searchUsers({ query: '', limit: 100 });
     allUsers.value = res.users || [];
-  } catch (err) {
+  } catch {
     allUsers.value = [];
     showToast('Не удалось загрузить список пользователей', 'danger');
   } finally {
@@ -401,14 +402,14 @@ async function loadUsers() {
 }
 
 // Фильтруем только разработчиков (исключаем модераторов и админа)
-const developers = computed(() => {
+const developers = computed<User[]>(() => {
   return allUsers.value.filter((u) => {
     const r = u.role;
     return r === 'USER_ROLE_DEVELOPER' || r === 'developer' || r === 1 || (!r && !isModOrAdmin(u));
   });
 });
 
-function isModOrAdmin(u) {
+function isModOrAdmin(u: User): boolean {
   const r = u.role;
   return (
     r === 'USER_ROLE_ADMIN' ||
@@ -420,7 +421,7 @@ function isModOrAdmin(u) {
   );
 }
 
-const filteredDevelopers = computed(() => {
+const filteredDevelopers = computed<User[]>(() => {
   let list = [...developers.value];
 
   // Поиск
@@ -430,7 +431,7 @@ const filteredDevelopers = computed(() => {
       (u) =>
         (u.display_name && u.display_name.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.id && u.id.toLowerCase().includes(q))
+        (u.id && String(u.id).toLowerCase().includes(q))
     );
   }
 
@@ -450,22 +451,22 @@ const filteredDevelopers = computed(() => {
       (a.display_name || a.email || '').localeCompare(b.display_name || b.email || '')
     );
   } else if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    list.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
   }
 
   return list;
 });
 
-const totalPages = computed(() => Math.ceil(filteredDevelopers.value.length / pageSize.value) || 1);
-const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
+const totalPages = computed<number>(() => Math.ceil(filteredDevelopers.value.length / pageSize.value) || 1);
+const pageStart = computed<number>(() => (currentPage.value - 1) * pageSize.value);
 
-const paginatedDevelopers = computed(() => {
+const paginatedDevelopers = computed<User[]>(() => {
   return filteredDevelopers.value.slice(pageStart.value, pageStart.value + pageSize.value);
 });
 
-const visiblePages = computed(() => {
+const visiblePages = computed<(number | string)[]>(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   if (total <= 7) {
@@ -480,48 +481,48 @@ const visiblePages = computed(() => {
   return [1, '...', current - 1, current, current + 1, '...', total];
 });
 
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
   statusFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
 }
 
-function isUserActive(st) {
+function isUserActive(st?: string | number): boolean {
   return st === 'USER_STATUS_ACTIVE' || st === 'active' || st === 1 || !st;
 }
 
-function isUserSuspended(st) {
+function isUserSuspended(st?: string | number): boolean {
   return st === 'USER_STATUS_SUSPENDED' || st === 'suspended' || st === 2;
 }
 
-function isUserDeleted(st) {
+function isUserDeleted(st?: string | number): boolean {
   return st === 'USER_STATUS_DELETED' || st === 'deleted' || st === 3;
 }
 
-function statusBadgeClass(st) {
+function statusBadgeClass(st?: string | number): string {
   if (isUserSuspended(st)) return 'status-suspended';
   if (isUserDeleted(st)) return 'status-deleted';
   return 'status-active';
 }
 
-function statusLabel(st) {
+function statusLabel(st?: string | number): string {
   if (isUserSuspended(st)) return 'Заблокирован';
   if (isUserDeleted(st)) return 'Удалён';
   return 'Активен';
 }
 
-function openStatusModal(user, action) {
+function openStatusModal(user: User, action: string): void {
   if (action === 'suspend') {
     statusTargetModal.value = user;
   }
 }
 
-function openDeleteModal(user) {
+function openDeleteModal(user: User): void {
   deleteTargetModal.value = user;
 }
 
-async function handleSetStatus(user, newStatus) {
+async function handleSetStatus(user: User, newStatus: string): Promise<void> {
   actionPendingId.value = user.id;
   try {
     await setUserStatus(user.id, newStatus);
@@ -529,21 +530,21 @@ async function handleSetStatus(user, newStatus) {
     showToast(`Пользователь "${user.display_name || user.email}" ${actionWord}`, 'success');
     statusTargetModal.value = null;
     await loadUsers();
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || 'Ошибка изменения статуса', 'danger');
   } finally {
     actionPendingId.value = null;
   }
 }
 
-async function handleSoftDelete(user) {
+async function handleSoftDelete(user: User): Promise<void> {
   actionPendingId.value = user.id;
   try {
     await deleteUser(user.id);
     showToast(`Пользователь "${user.display_name || user.email}" удалён`, 'success');
     deleteTargetModal.value = null;
     await loadUsers();
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || 'Не удалось удалить пользователя', 'danger');
   } finally {
     actionPendingId.value = null;

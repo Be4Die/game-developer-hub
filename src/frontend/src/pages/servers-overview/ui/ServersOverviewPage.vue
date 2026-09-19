@@ -399,7 +399,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Upload, Play, AlertCircle, Server, Sparkles, Send, MessageSquare } from 'lucide-vue-next';
@@ -411,20 +411,21 @@ import { listNodes } from '@/entities/node';
 import { moderationApi, formatCpu, formatMemory } from '@/entities/moderation';
 import { getQueueCount } from '@/entities/policy';
 import { formatDate, showToast } from '@/shared/lib';
+import type { Instance, NodeInfo, Build } from '@/shared/types';
 
 const { t } = useI18n();
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-});
+const props = defineProps<{
+  gameId: string | number;
+}>();
 
-const builds = ref([]);
-const instances = ref([]);
-const nodes = ref([]);
-const platformAccess = ref(null);
-const loading = ref(true);
-const error = ref(null);
-const queueCount = ref(0);
+const builds = ref<Build[]>([]);
+const instances = ref<Instance[]>([]);
+const nodes = ref<NodeInfo[]>([]);
+const platformAccess = ref<any | null>(null);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const queueCount = ref<number>(0);
 
 const showRequestModal = ref(false);
 const requestReason = ref('');
@@ -521,7 +522,7 @@ async function submitPlatformRequest() {
     showRequestModal.value = false;
     showToast('Заявка на доступ к серверам платформы успешно отправлена', 'success');
     nodes.value = await listNodes(null, props.gameId).catch(() => nodes.value);
-  } catch (e) {
+  } catch (e: any) {
     requestError.value = e.response?.data?.message ?? 'Ошибка отправки заявки';
   } finally {
     submittingRequest.value = false;
@@ -532,7 +533,7 @@ async function fetchQueueCount() {
   try {
     const count = await getQueueCount(props.gameId);
     queueCount.value = Number(count);
-  } catch (e) {
+  } catch {
     queueCount.value = 0;
   }
 }
@@ -547,12 +548,12 @@ async function fetchAll() {
       listNodes(null, props.gameId).catch(() => []),
       moderationApi.getServerAccess(props.gameId).catch(() => null),
     ]);
-    builds.value = b;
+    builds.value = b as any;
     instances.value = i;
     nodes.value = n;
     platformAccess.value = paRes?.request || null;
     await fetchQueueCount();
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.message;
   } finally {
     loading.value = false;

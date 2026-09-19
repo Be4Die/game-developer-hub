@@ -6,7 +6,7 @@
         <label>Image file (TAR, max 2GB)</label>
         <div class="file-drop" @dragover.prevent @drop.prevent="onDrop">
           <input ref="fileInput" type="file" accept=".tar,.tar.gz" hidden @change="onFileSelect" />
-          <button class="btn-outline" @click="$refs.fileInput.click()">
+          <button class="btn-outline" @click="triggerFileInput">
             {{ t('common.upload') }}
           </button>
           <span class="file-name">{{ uploadForm.file?.name ?? 'or drag and drop here' }}</span>
@@ -53,7 +53,7 @@
       >
         {{ t('common.upload') }}
       </button>
-      <button class="btn-outline" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
+      <button class="btn-outline" @click="emit('cancel')">{{ t('common.cancel') }}</button>
     </div>
     <div v-if="uploading" class="upload-progress">
       <div class="progress-info">
@@ -67,25 +67,42 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { uploadServerBuild } from '@/entities/build';
 import { showToast } from '@/shared/lib';
 
+interface Props {
+  gameId: string | number;
+}
+
 const { t } = useI18n();
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-});
+const props = defineProps<Props>();
 
-const emit = defineEmits(['uploaded', 'cancel']);
+const emit = defineEmits<{
+  (e: 'uploaded'): void;
+  (e: 'cancel'): void;
+}>();
 
 const uploading = ref(false);
 const uploadProgress = ref(0);
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-const uploadForm = ref({
+function triggerFileInput() {
+  fileInput.value?.click();
+}
+
+interface UploadFormState {
+  file: File | null;
+  build_version: string;
+  protocol: string;
+  internal_port: number;
+  max_players: number;
+}
+
+const uploadForm = ref<UploadFormState>({
   file: null,
   build_version: '',
   protocol: 'websocket',
@@ -93,19 +110,21 @@ const uploadForm = ref({
   max_players: 16,
 });
 
-function onFileSelect(e) {
-  uploadForm.value.file = e.target.files[0] || null;
+function onFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement;
+  uploadForm.value.file = target.files?.[0] || null;
 }
 
-function onDrop(e) {
-  const file = e.dataTransfer.files[0];
+function onDrop(e: DragEvent) {
+  const file = e.dataTransfer?.files?.[0];
   if (file) uploadForm.value.file = file;
 }
 
 async function submitBuild() {
+  const form = uploadForm.value;
+  if (!form.file) return;
   uploading.value = true;
   uploadProgress.value = 0;
-  const form = uploadForm.value;
   const fd = new FormData();
   fd.append('image', form.file);
   fd.append('build_version', form.build_version);
@@ -114,7 +133,7 @@ async function submitBuild() {
   fd.append('max_players', String(form.max_players));
 
   try {
-    await uploadServerBuild(props.gameId, fd, (e) => {
+    await uploadServerBuild(props.gameId, fd, (e: any) => {
       if (e.total) uploadProgress.value = Math.round((e.loaded / e.total) * 100);
     });
     showToast('Билд успешно загружен', 'success');
@@ -126,8 +145,8 @@ async function submitBuild() {
       max_players: 16,
     };
     emit('uploaded');
-  } catch (e) {
-    showToast(e.response?.data?.message ?? 'Ошибка загрузки билда', 'error');
+  } catch (e: any) {
+    showToast(e.response?.data?.message ?? 'Ошибка загрузки билда', 'danger');
   } finally {
     uploading.value = false;
   }

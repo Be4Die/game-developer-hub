@@ -48,24 +48,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { createLogStream, fetchLogs } from '@/entities/instance';
+import type { LogEntry } from '@/shared/types';
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-  instanceId: { type: [String, Number], required: true },
-});
+interface Props {
+  gameId: string | number;
+  instanceId: string | number;
+}
 
-const terminal = ref(null);
-const follow = ref(true);
-const tail = ref(100);
-const sourceFilter = ref('all');
-const entries = ref([]);
-const connected = ref(false);
-let eventSource = null;
+const props = defineProps<Props>();
 
-function connect() {
+const terminal = ref<HTMLElement | null>(null);
+const follow = ref<boolean>(true);
+const tail = ref<number>(100);
+const sourceFilter = ref<string>('all');
+const entries = ref<LogEntry[]>([]);
+const connected = ref<boolean>(false);
+let eventSource: EventSource | null = null;
+
+function connect(): void {
   disconnect();
   entries.value = [];
 
@@ -93,10 +96,10 @@ function connect() {
       source: sourceFilter.value,
     });
 
-    eventSource.addEventListener('log', (e) => {
+    eventSource.addEventListener('log', (e: MessageEvent) => {
       connected.value = true;
       try {
-        const entry = JSON.parse(e.data);
+        const entry: LogEntry = JSON.parse(e.data);
         entries.value.push(entry);
         if (entries.value.length > 500) entries.value = entries.value.slice(-300);
         nextTick(scrollToBottom);
@@ -117,7 +120,7 @@ function connect() {
   }
 }
 
-function disconnect() {
+function disconnect(): void {
   if (eventSource) {
     eventSource.close();
     eventSource = null;
@@ -125,16 +128,17 @@ function disconnect() {
   connected.value = false;
 }
 
-function reconnect() {
+function reconnect(): void {
   connect();
 }
 
-const filteredEntries = computed(() => {
+const filteredEntries = computed<LogEntry[]>(() => {
   if (sourceFilter.value === 'all') return entries.value;
   return entries.value.filter((e) => e.source === sourceFilter.value);
 });
 
-function formatLogTime(ts) {
+function formatLogTime(ts?: string): string {
+  if (!ts) return '';
   const d = new Date(ts);
   return d.toLocaleTimeString('ru-RU', {
     hour: '2-digit',
@@ -143,13 +147,13 @@ function formatLogTime(ts) {
   });
 }
 
-function scrollToBottom() {
+function scrollToBottom(): void {
   if (follow.value && terminal.value) {
     terminal.value.scrollTop = terminal.value.scrollHeight;
   }
 }
 
-function onScroll() {
+function onScroll(): void {
   if (!terminal.value) return;
   const { scrollTop, scrollHeight, clientHeight } = terminal.value;
   if (scrollHeight - scrollTop - clientHeight > 50) {
@@ -157,13 +161,13 @@ function onScroll() {
   }
 }
 
-function clearLogs() {
+function clearLogs(): void {
   entries.value = [];
 }
 
-function copyLogs() {
+function copyLogs(): void {
   const text = filteredEntries.value
-    .map((e) => `${formatLogTime(e.timestamp)} [${e.source}] ${e.message}`)
+    .map((e) => `${formatLogTime(e.timestamp)} [${e.source || ''}] ${e.message}`)
     .join('\n');
   navigator.clipboard.writeText(text).catch(() => {});
 }

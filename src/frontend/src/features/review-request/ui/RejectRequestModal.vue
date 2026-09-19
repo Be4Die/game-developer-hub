@@ -1,12 +1,12 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal-card">
       <div class="modal-header">
         <div class="header-left">
           <AlertTriangle class="icon-md text-danger" />
           <h3>Отклонить проект и отправить замечания</h3>
         </div>
-        <button class="btn-close-modal" @click="$emit('cancel')">
+        <button class="btn-close-modal" @click="emit('cancel')">
           <X class="icon-sm" />
         </button>
       </div>
@@ -140,7 +140,7 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-cancel" :disabled="loading" @click="$emit('cancel')">Отмена</button>
+        <button class="btn-cancel" :disabled="loading" @click="emit('cancel')">Отмена</button>
         <button
           class="btn-confirm-reject"
           :disabled="!canSubmit || loading"
@@ -153,7 +153,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
   AlertTriangle,
@@ -172,23 +172,33 @@ import {
   formatBytes,
 } from '@/shared/lib/mediaCompressor';
 import { showToast } from '@/shared/lib';
+import type { ChatAttachment } from '@/shared/types';
 
-const props = defineProps({
-  projectId: {
-    type: [Number, String],
-    required: true,
-  },
-  loading: {
-    type: Boolean,
-    default: false,
-  },
+interface Props {
+  projectId: number | string;
+  loading?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  loading: false,
 });
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits<{
+  (e: 'confirm', payload: { reason: string; violations: any[] }): void;
+  (e: 'cancel'): void;
+}>();
 
 const generalComment = ref('');
 
-const violations = ref([
+interface ViolationItem {
+  ruleCode: string;
+  ruleTitle: string;
+  description: string;
+  attachments: ChatAttachment[];
+  uploading: boolean;
+}
+
+const violations = ref<ViolationItem[]>([
   {
     ruleCode: '',
     ruleTitle: '',
@@ -198,7 +208,7 @@ const violations = ref([
   },
 ]);
 
-function onRuleSelected(item, rule) {
+function onRuleSelected(item: ViolationItem, rule: any) {
   item.ruleCode = rule.code;
   item.ruleTitle = rule.title;
   if (!item.description.trim()) {
@@ -206,7 +216,7 @@ function onRuleSelected(item, rule) {
   }
 }
 
-function onRuleCleared(item) {
+function onRuleCleared(item: ViolationItem) {
   item.ruleCode = '';
   item.ruleTitle = '';
 }
@@ -221,35 +231,36 @@ function addViolation() {
   });
 }
 
-function removeViolation(index) {
+function removeViolation(index: number) {
   if (violations.value.length > 1) {
     violations.value.splice(index, 1);
   }
 }
 
-function removeAttachment(item, aIdx) {
+function removeAttachment(item: ViolationItem, aIdx: number) {
   item.attachments.splice(aIdx, 1);
 }
 
-function isVideo(att) {
+function isVideo(att: any) {
   const mime = (att.mime_type || att.type || '').toLowerCase();
   const name = (att.file_name || att.name || '').toLowerCase();
   return mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.webm');
 }
 
-function formatSize(bytes) {
+function formatSize(bytes: number) {
   return formatBytes(bytes);
 }
 
-async function handleFileUpload(event, item) {
-  const file = event.target.files?.[0];
-  event.target.value = ''; // сброс инпута
+async function handleFileUpload(event: Event, item: ViolationItem) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  target.value = ''; // сброс инпута
   if (!file) return;
 
   // 1. Валидация
   const validation = validateChatFile(file);
   if (!validation.valid) {
-    showToast(validation.error, 'danger');
+    showToast(validation.error || 'Invalid file', 'danger');
     return;
   }
 
@@ -265,7 +276,7 @@ async function handleFileUpload(event, item) {
     const uploaded = await moderationApi.uploadAttachment(props.projectId, processedFile);
     item.attachments.push(uploaded);
     showToast('Файл успешно прикреплен', 'success');
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to upload attachment:', err);
     const msg =
       err.response?.data?.message ||

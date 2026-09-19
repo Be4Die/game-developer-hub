@@ -17,17 +17,21 @@
   </span>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { HelpCircle } from 'lucide-vue-next';
 
-defineProps({
-  position: { type: String, default: 'top' },
+interface Props {
+  position?: 'top' | 'bottom' | 'left' | 'right' | string;
+}
+
+withDefaults(defineProps<Props>(), {
+  position: 'top',
 });
 
 const show = ref(false);
 
-function toggle() {
+function toggle(): void {
   show.value = !show.value;
 }
 </script>

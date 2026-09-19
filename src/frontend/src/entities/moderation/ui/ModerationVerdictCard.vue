@@ -169,21 +169,20 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { AlertOctagon, Maximize2, Paperclip, MessageSquare, BookOpen, ExternalLink } from 'lucide-vue-next';
 import { formatDateTime } from '../model/helpers';
 import { formatBytes } from '@/shared/lib/mediaCompressor';
 import MediaLightboxModal from './MediaLightboxModal.vue';
 
-const props = defineProps({
-  message: {
-    type: Object,
-    required: true,
-  },
-});
+interface Props {
+  message: Record<string, any>;
+}
 
-const lightboxMedia = ref(null);
+const props = defineProps<Props>();
+
+const lightboxMedia = ref<any>(null);
 
 const formattedTime = computed(() => {
   return formatDateTime(props.message.created_at || props.message.createdAt);
@@ -202,7 +201,7 @@ const payload = computed(() => {
   return p || {};
 });
 
-const parsedViolations = computed(() => {
+const parsedViolations = computed<any[]>(() => {
   if (Array.isArray(payload.value.violations) && payload.value.violations.length > 0) {
     return payload.value.violations;
   }
@@ -232,23 +231,23 @@ const fallbackContent = computed(() => {
 
 // Вложения, прикрепленные к сообщению на верхнем уровне, но не вошедшие в пункты нарушений
 const rootAttachments = computed(() => {
-  const allAtts = props.message.attachments || [];
+  const allAtts: any[] = props.message.attachments || [];
   if (!allAtts.length) return [];
   const violationAttIds = new Set();
   parsedViolations.value.forEach((v) => {
-    (v.attachments || []).forEach((a) => violationAttIds.add(a.id));
-    (v.attachment_ids || v.attachmentIds || []).forEach((id) => violationAttIds.add(id));
+    (v.attachments || []).forEach((a: any) => violationAttIds.add(a.id));
+    (v.attachment_ids || v.attachmentIds || []).forEach((id: any) => violationAttIds.add(id));
   });
   return allAtts.filter((a) => !violationAttIds.has(a.id));
 });
 
-function isVideo(att) {
+function isVideo(att: any) {
   const mime = (att.mime_type || att.mimeType || '').toLowerCase();
   const name = (att.file_name || att.fileName || '').toLowerCase();
   return mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.webm');
 }
 
-function isImage(att) {
+function isImage(att: any) {
   const mime = (att.mime_type || att.mimeType || '').toLowerCase();
   const name = (att.file_name || att.fileName || '').toLowerCase();
   return (
@@ -260,7 +259,7 @@ function isImage(att) {
   );
 }
 
-function getMediaUrl(att) {
+function getMediaUrl(att: any) {
   if (att.thumbnail_data || att.thumbnailData) {
     return att.thumbnail_data || att.thumbnailData;
   }
@@ -273,7 +272,7 @@ function getMediaUrl(att) {
   return base;
 }
 
-function getDownloadUrl(att) {
+function getDownloadUrl(att: any) {
   const token = localStorage.getItem('gdh_access_token');
   const base = att.download_url || `/api/v1/projects/${props.message.project_id || props.message.projectId}/chat/attachments/${att.id}/download`;
   if (token && !base.includes('token=')) {
@@ -283,11 +282,11 @@ function getDownloadUrl(att) {
   return base;
 }
 
-function formatSize(bytes) {
+function formatSize(bytes: number) {
   return formatBytes(bytes);
 }
 
-function openLightbox(att) {
+function openLightbox(att: any) {
   lightboxMedia.value = att;
 }
 </script>

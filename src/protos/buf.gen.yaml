@@ -25,3 +25,13 @@ plugins:
     out: ../gateway/docs
     opt:
       - allow_merge=true
+
+  - local: ../frontend/node_modules/.bin/protoc-gen-ts_proto
+    out: ../frontend/src/shared/types/generated
+    opt:
+      - stringEnums=true
+      - esModuleInterop=true
+      - onlyTypes=true
+      - useDate=string
+      - snakeToCamel=false
+      - outputServices=false

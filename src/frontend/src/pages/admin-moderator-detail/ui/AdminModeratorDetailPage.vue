@@ -393,7 +393,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -414,32 +414,34 @@ import { getUser, searchUsers } from '@/entities/user';
 import { moderationApi, formatDurationSeconds } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { formatProjectDate, formatDateTime, showToast } from '@/shared/lib';
+import type { User } from '@/shared/types';
 
-const props = defineProps({
-  id: {
-    type: String,
-    default: '',
-  },
+interface Props {
+  id?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  id: '',
 });
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const moderatorId = computed(() => props.id || route.params.id);
+const moderatorId = computed<string>(() => (props.id || (route.params.id as string) || ''));
 
-const moderator = ref({});
-const stats = ref({});
-const activityItems = ref([]);
-const totalActivity = ref(0);
+const moderator = ref<Partial<User>>({});
+const stats = ref<Record<string, any>>({});
+const activityItems = ref<any[]>([]);
+const totalActivity = ref<number>(0);
 
-const loadingStats = ref(false);
-const loadingActivity = ref(false);
+const loadingStats = ref<boolean>(false);
+const loadingActivity = ref<boolean>(false);
 
-const actionTypeFilter = ref('');
-const searchQuery = ref('');
-const currentPage = ref(1);
-const pageSize = ref(10);
+const actionTypeFilter = ref<string>('');
+const searchQuery = ref<string>('');
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
 onMounted(() => {
   if (moderatorId.value) {
@@ -447,17 +449,17 @@ onMounted(() => {
   }
 });
 
-async function refreshAll() {
+async function refreshAll(): Promise<void> {
   await Promise.all([loadModeratorInfo(), loadStats(), loadActivity()]);
 }
 
-async function loadModeratorInfo() {
+async function loadModeratorInfo(): Promise<void> {
   try {
     const res = await getUser(moderatorId.value);
     if (res && res.user) {
       moderator.value = res.user;
-    } else if (res && res.id) {
-      moderator.value = res;
+    } else if (res && (res as any).id) {
+      moderator.value = res as unknown as User;
     } else {
       await fallbackSearchModerator();
     }
@@ -466,7 +468,7 @@ async function loadModeratorInfo() {
   }
 }
 
-async function fallbackSearchModerator() {
+async function fallbackSearchModerator(): Promise<void> {
   try {
     const sRes = await searchUsers({ query: moderatorId.value, limit: 10 });
     const found = (sRes.users || []).find((u) => u.id === moderatorId.value);
@@ -480,7 +482,7 @@ async function fallbackSearchModerator() {
   }
 }
 
-async function loadStats() {
+async function loadStats(): Promise<void> {
   loadingStats.value = true;
   try {
     const res = await moderationApi.getModeratorStats(moderatorId.value);
@@ -493,7 +495,7 @@ async function loadStats() {
   }
 }
 
-async function loadActivity() {
+async function loadActivity(): Promise<void> {
   loadingActivity.value = true;
   try {
     const offset = (currentPage.value - 1) * pageSize.value;
@@ -514,35 +516,35 @@ async function loadActivity() {
   }
 }
 
-function handleFilterChange() {
+function handleFilterChange(): void {
   currentPage.value = 1;
   loadActivity();
 }
 
-function handlePageSizeChange() {
+function handlePageSizeChange(): void {
   currentPage.value = 1;
   loadActivity();
 }
 
-function goToPage(page) {
+function goToPage(page: number): void {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   loadActivity();
 }
 
-function resetJournalFilters() {
+function resetJournalFilters(): void {
   searchQuery.value = '';
   actionTypeFilter.value = '';
   currentPage.value = 1;
   loadActivity();
 }
 
-function goToProject(projectId) {
+function goToProject(projectId?: string | number): void {
   if (!projectId) return;
   router.push(`/moderator/projects/${projectId}`);
 }
 
-const filteredActivity = computed(() => {
+const filteredActivity = computed<any[]>(() => {
   let list = activityItems.value;
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.trim().toLowerCase();
@@ -557,11 +559,11 @@ const filteredActivity = computed(() => {
   return list;
 });
 
-const totalPages = computed(() => {
+const totalPages = computed<number>(() => {
   return Math.max(1, Math.ceil(totalActivity.value / pageSize.value));
 });
 
-const visiblePages = computed(() => {
+const visiblePages = computed<(number | string)[]>(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   if (total <= 7) {
@@ -576,21 +578,21 @@ const visiblePages = computed(() => {
   return [1, '...', current - 1, current, current + 1, '...', total];
 });
 
-function isUserDeleted(st) {
+function isUserDeleted(st?: string | number): boolean {
   return st === 'USER_STATUS_DELETED' || st === 'deleted' || st === 3;
 }
 
-function statusBadgeClass(st) {
+function statusBadgeClass(st?: string | number): string {
   if (isUserDeleted(st)) return 'status-deleted';
   return 'status-active';
 }
 
-function statusLabel(st) {
+function statusLabel(st?: string | number): string {
   if (isUserDeleted(st)) return 'Удалён';
   return 'Активен';
 }
 
-function actionBadgeClass(actionType) {
+function actionBadgeClass(actionType?: string): string {
   switch (actionType) {
     case 'chat_message':
       return 'action-chat';
@@ -607,7 +609,7 @@ function actionBadgeClass(actionType) {
   }
 }
 
-function getActionLabel(actionType) {
+function getActionLabel(actionType?: string): string {
   switch (actionType) {
     case 'chat_message':
       return t('moderation.actionChatMessage');

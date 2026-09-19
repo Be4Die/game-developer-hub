@@ -5,7 +5,7 @@
   </button>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { Sun, Moon } from 'lucide-vue-next';
 import { useTheme } from '@/shared/lib';

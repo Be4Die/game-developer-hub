@@ -212,7 +212,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -241,16 +241,16 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 const router = useRouter();
 
-const chats = ref([]);
-const loading = ref(true);
+const chats = ref<any[]>([]);
+const loading = ref<boolean>(true);
 
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const sortBy = ref('newest');
-const currentPage = ref(1);
-const pageSize = ref(10);
+const searchQuery = ref<string>('');
+const statusFilter = ref<string>('all');
+const sortBy = ref<string>('newest');
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
-async function loadChats() {
+async function loadChats(): Promise<void> {
   loading.value = true;
   try {
     const [chatsRes, reqsRes] = await Promise.all([
@@ -258,16 +258,16 @@ async function loadChats() {
       moderationApi.listRequests({ limit: 100 }),
     ]);
 
-    const reqsMap = new Map();
-    (reqsRes.requests || []).forEach((r) => {
+    const reqsMap = new Map<number | string, any>();
+    (reqsRes.requests || []).forEach((r: any) => {
       const norm = normalizeRequest(r);
-      if (norm && !reqsMap.has(norm.projectId)) {
+      if (norm && norm.projectId != null && !reqsMap.has(norm.projectId)) {
         reqsMap.set(norm.projectId, norm);
       }
     });
 
-    const rawChats = chatsRes.chats || [];
-    chats.value = rawChats.map((c) => {
+    const rawChats = (chatsRes as any)?.chats || [];
+    chats.value = rawChats.map((c: any) => {
       const pId = Number(c.project_id || c.projectId);
       const req = reqsMap.get(pId);
       const lastMsg = c.last_message || c.lastMessage || {};
@@ -283,7 +283,7 @@ async function loadChats() {
         ownerId: req?.ownerId || '',
       };
     });
-  } catch (err) {
+  } catch {
     showToast(t('common.error'), 'danger');
   } finally {
     loading.value = false;
@@ -292,14 +292,14 @@ async function loadChats() {
 
 onMounted(loadChats);
 
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
   statusFilter.value = 'all';
   sortBy.value = 'newest';
   currentPage.value = 1;
 }
 
-const filteredChats = computed(() => {
+const filteredChats = computed<any[]>(() => {
   let list = [...chats.value];
 
   // Фильтр по статусу диалога
@@ -329,14 +329,14 @@ const filteredChats = computed(() => {
   // Сортировка
   if (sortBy.value === 'newest') {
     list.sort((a, b) => {
-      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0);
-      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0);
+      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0).getTime();
+      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0).getTime();
       return dateB - dateA;
     });
   } else if (sortBy.value === 'oldest') {
     list.sort((a, b) => {
-      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0);
-      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0);
+      const dateA = new Date(a.lastMessage?.created_at || a.lastMessage?.createdAt || 0).getTime();
+      const dateB = new Date(b.lastMessage?.created_at || b.lastMessage?.createdAt || 0).getTime();
       return dateA - dateB;
     });
   } else if (sortBy.value === 'title') {
@@ -350,30 +350,30 @@ const filteredChats = computed(() => {
   return list;
 });
 
-const totalPages = computed(() =>
+const totalPages = computed<number>(() =>
   Math.max(1, Math.ceil(filteredChats.value.length / pageSize.value))
 );
 
-const paginatedChats = computed(() => {
+const paginatedChats = computed<any[]>(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredChats.value.slice(start, start + pageSize.value);
 });
 
-function dialogStatusLabel(state) {
+function dialogStatusLabel(state?: string): string {
   if (state === 'unanswered') return t('moderation.unanswered');
   if (state === 'in_dialog') return t('moderation.inDialog');
   if (state === 'resolved') return t('moderation.resolvedDialog');
   return t('common.unknown');
 }
 
-function dialogStatusClass(state) {
+function dialogStatusClass(state?: string): string {
   if (state === 'unanswered') return 'status-unanswered';
   if (state === 'in_dialog') return 'status-in-dialog';
   if (state === 'resolved') return 'status-resolved';
   return 'status-neutral';
 }
 
-function formatLastMessage(content) {
+function formatLastMessage(content?: string): string {
   if (!content || !content.trim()) return '—';
   const clean = content.trim().replace(/\s+/g, ' ');
   if (clean.length > 300) {
@@ -382,7 +382,7 @@ function formatLastMessage(content) {
   return clean;
 }
 
-function openChat(projectId) {
+function openChat(projectId: string | number): void {
   router.push(`/moderator/projects/${projectId}`);
 }
 </script>

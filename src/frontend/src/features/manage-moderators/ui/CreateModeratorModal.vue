@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-wrap">
@@ -9,7 +9,7 @@
             <p class="modal-subtitle">Создание учётной записи сотрудника модерации</p>
           </div>
         </div>
-        <button class="modal-close" @click="$emit('cancel')">
+        <button class="modal-close" @click="emit('cancel')">
           <X class="icon-sm" />
         </button>
       </div>
@@ -64,7 +64,7 @@
             type="button"
             class="btn-modal-secondary"
             :disabled="loading"
-            @click="$emit('cancel')"
+            @click="emit('cancel')"
           >
             Отмена
           </button>
@@ -79,13 +79,16 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { ShieldCheck, X, Loader2 } from 'lucide-vue-next';
 import { createModerator } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
-const emit = defineEmits(['created', 'cancel']);
+const emit = defineEmits<{
+  (e: 'created', user: any): void;
+  (e: 'cancel'): void;
+}>();
 
 const loading = ref(false);
 const form = reactive({
@@ -107,7 +110,7 @@ async function handleCreate() {
       'success'
     );
     emit('created', res.user);
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || 'Не удалось создать модератора', 'danger');
   } finally {
     loading.value = false;

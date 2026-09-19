@@ -12,7 +12,7 @@
           v-if="activeTab === 'logs'"
           class="btn-icon-xs"
           title="Очистить лог"
-          @click="$emit('clear-logs')"
+          @click="emit('clear-logs')"
         >
           <Trash2 class="icon-xs" />
         </button>
@@ -136,7 +136,7 @@
               type="text"
               class="input-sm"
               placeholder="dev-player-1"
-              @input="$emit('update-env', { ...appEnv, playerId: $event.target.value })"
+              @input="onPlayerIdInput"
             />
           </div>
 
@@ -146,7 +146,7 @@
               <select
                 :value="appEnv.language"
                 class="select-sm"
-                @change="$emit('update-env', { ...appEnv, language: $event.target.value })"
+                @change="onLanguageChange"
               >
                 <option value="ru">Русский (ru)</option>
                 <option value="en">English (en)</option>
@@ -157,7 +157,7 @@
               <select
                 :value="appEnv.deviceType"
                 class="select-sm"
-                @change="$emit('update-env', { ...appEnv, deviceType: $event.target.value })"
+                @change="onDeviceTypeChange"
               >
                 <option value="desktop">Desktop</option>
                 <option value="mobile">Mobile</option>
@@ -173,7 +173,7 @@
             <button
               class="btn-danger-xs"
               title="Очистить все сохранения игры"
-              @click="$emit('clear-storage')"
+              @click="emit('clear-storage')"
             >
               <RotateCcw class="icon-xs" />
               <span>Сбросить сейв</span>
@@ -202,7 +202,7 @@
                 :key="sec"
                 class="pill-btn"
                 :class="{ active: adConfig.autoCloseSeconds === sec }"
-                @click="$emit('update-ad-config', { ...adConfig, autoCloseSeconds: sec })"
+                @click="onAutoCloseClick(sec)"
               >
                 {{ sec === 0 ? 'Мгновенно' : `${sec} сек` }}
               </button>
@@ -214,7 +214,7 @@
               <input
                 :checked="adConfig.simulateError"
                 type="checkbox"
-                @change="$emit('update-ad-config', { ...adConfig, simulateError: $event.target.checked })"
+                @change="onSimulateErrorChange"
               />
               <span>Симулировать ошибку показа (AdBlock / Network Error)</span>
             </label>
@@ -222,7 +222,7 @@
               <input
                 :checked="adConfig.rewardedGranted"
                 type="checkbox"
-                @change="$emit('update-ad-config', { ...adConfig, rewardedGranted: $event.target.checked })"
+                @change="onRewardedGrantedChange"
               />
               <span>Начислять вознаграждение за Rewarded-видео</span>
             </label>
@@ -233,7 +233,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
   Terminal,
@@ -244,42 +244,66 @@ import {
   RotateCcw,
   Info,
 } from 'lucide-vue-next';
+import type { SandboxLogEntry } from '../model/useGameSdkSandbox';
 
-const props = defineProps({
-  projectId: {
-    type: [String, Number],
-    default: null,
-  },
-  logs: {
-    type: Array,
-    default: () => [],
-  },
-  appEnv: {
-    type: Object,
-    required: true,
-  },
-  playerStorage: {
-    type: Object,
-    default: () => ({}),
-  },
-  adConfig: {
-    type: Object,
-    required: true,
-  },
-  purchaseCatalog: {
-    type: Array,
-    default: () => [],
-  },
+interface Props {
+  projectId?: string | number | null;
+  logs?: SandboxLogEntry[];
+  appEnv: Record<string, any>;
+  playerStorage?: Record<string, any>;
+  adConfig: Record<string, any>;
+  purchaseCatalog?: any[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  projectId: null,
+  logs: () => [],
+  playerStorage: () => ({}),
+  purchaseCatalog: () => [],
 });
 
-defineEmits(['clear-logs', 'clear-storage', 'update-env', 'update-ad-config']);
+const emit = defineEmits<{
+  (e: 'clear-logs'): void;
+  (e: 'clear-storage'): void;
+  (e: 'update-env', value: Record<string, any>): void;
+  (e: 'update-ad-config', value: Record<string, any>): void;
+}>();
 
-const activeTab = ref('logs');
+function onPlayerIdInput(e: Event) {
+  const target = e.target as HTMLInputElement;
+  emit('update-env', { ...props.appEnv, playerId: target.value });
+}
+
+function onLanguageChange(e: Event) {
+  const target = e.target as HTMLSelectElement;
+  emit('update-env', { ...props.appEnv, language: target.value });
+}
+
+function onDeviceTypeChange(e: Event) {
+  const target = e.target as HTMLSelectElement;
+  emit('update-env', { ...props.appEnv, deviceType: target.value });
+}
+
+function onAutoCloseClick(sec: number) {
+  emit('update-ad-config', { ...props.adConfig, autoCloseSeconds: sec });
+}
+
+function onSimulateErrorChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  emit('update-ad-config', { ...props.adConfig, simulateError: target.checked });
+}
+
+function onRewardedGrantedChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  emit('update-ad-config', { ...props.adConfig, rewardedGranted: target.checked });
+}
+
+const activeTab = ref<'logs' | 'storage' | 'scenarios'>('logs');
 const searchQuery = ref('');
-const currentCategory = ref('all');
-const expandedLogs = ref(new Set());
+const currentCategory = ref<'all' | 'adv' | 'data' | 'purchase'>('all');
+const expandedLogs = ref(new Set<string>());
 
-function toggleExpandLog(id) {
+function toggleExpandLog(id: string) {
   if (expandedLogs.value.has(id)) {
     expandedLogs.value.delete(id);
   } else {

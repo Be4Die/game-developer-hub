@@ -1,12 +1,12 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal card service-modal">
       <div class="modal-header">
         <div>
           <h3>Развернуть сервис хранения</h3>
           <p class="modal-subtitle">Выберите тип сервиса данных или персистентного тома для ноды</p>
         </div>
-        <button class="close-btn" @click="$emit('cancel')">&times;</button>
+        <button class="close-btn" @click="emit('cancel')">&times;</button>
       </div>
 
       <div class="service-type-grid">
@@ -213,7 +213,7 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-outline" @click="$emit('cancel')">Отмена</button>
+        <button class="btn-outline" @click="emit('cancel')">Отмена</button>
         <button
           class="btn-primary"
           :disabled="creating || !form.name.trim() || (accessMode === 'specific' && !selectedProjectIds.length)"
@@ -226,15 +226,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import {
   Database,
   Layers,
   Server,
   FolderPlus,
-  Globe,
-  Lock,
   ChevronDown,
   ChevronUp,
 } from 'lucide-vue-next';
@@ -242,22 +240,27 @@ import { createNodeService } from '@/entities/node';
 import { listProjects } from '@/entities/project';
 import { showToast } from '@/shared/lib';
 
-const props = defineProps({
-  nodeId: { type: [Number, String], required: true },
-});
+interface Props {
+  nodeId: number | string;
+}
 
-const emit = defineEmits(['created', 'cancel']);
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'created', service: any): void;
+  (e: 'cancel'): void;
+}>();
 
 const creating = ref(false);
-const error = ref(null);
+const error = ref<string | null>(null);
 const showAdvanced = ref(false);
 
-const accessMode = ref('all');
-const selectedProjectIds = ref([]);
-const projects = ref([]);
+const accessMode = ref<'all' | 'specific'>('all');
+const selectedProjectIds = ref<(string | number)[]>([]);
+const projects = ref<any[]>([]);
 const loadingProjects = ref(false);
 const isDropdownOpen = ref(false);
-const dropdownRef = ref(null);
+const dropdownRef = ref<HTMLElement | null>(null);
 
 const serviceTypes = [
   {
@@ -294,7 +297,15 @@ const serviceTypes = [
   },
 ];
 
-const form = reactive({
+interface FormState {
+  service_type: string;
+  name: string;
+  db_name: string;
+  password: string;
+  port: number | null;
+}
+
+const form = reactive<FormState>({
   service_type: 'postgres',
   name: 'game-postgres',
   db_name: '',
@@ -315,7 +326,7 @@ function getNamePlaceholder() {
   }
 }
 
-function selectServiceType(type) {
+function selectServiceType(type: string) {
   form.service_type = type;
   if (!form.name || serviceTypes.some((s) => form.name === `game-${s.type}`)) {
     if (type === 'volume') {
@@ -334,17 +345,17 @@ function clearSelectedProjects() {
   selectedProjectIds.value = [];
 }
 
-function getProjectTitle(id) {
+function getProjectTitle(id: string | number) {
   const p = projects.value.find((item) => item.id === id);
   return p ? (p.title || p.name || 'Без названия') : 'Проект #' + id;
 }
 
-function removeProject(id) {
+function removeProject(id: string | number) {
   selectedProjectIds.value = selectedProjectIds.value.filter((i) => i !== id);
 }
 
-function handleClickOutside(event) {
-  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+function handleClickOutside(event: MouseEvent) {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     isDropdownOpen.value = false;
   }
 }
@@ -377,7 +388,7 @@ async function submitCreate() {
   error.value = null;
 
   try {
-    let allowedGameIds = [];
+    let allowedGameIds: number[] = [];
     if (accessMode.value === 'specific') {
       allowedGameIds = selectedProjectIds.value.map(Number);
     }
@@ -397,7 +408,7 @@ async function submitCreate() {
       'success',
     );
     emit('created', created);
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.response?.data?.message || err.message || 'Ошибка развертывания сервиса';
   } finally {
     creating.value = false;

@@ -12,7 +12,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { LogoIcon } from '@/shared/ui';
 import { ThemeToggle } from '@/features/theme-switcher';
 import { LocaleSwitcher } from '@/features/locale-switcher';

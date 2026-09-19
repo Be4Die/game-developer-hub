@@ -134,7 +134,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ArrowLeft, Square, AlertCircle, RotateCcw, Trash2, Play } from 'lucide-vue-next';
@@ -149,34 +149,35 @@ import {
   resumeInstance,
 } from '@/entities/instance';
 import { formatDateTime, showToast } from '@/shared/lib';
+import type { Instance, InstanceUsage } from '@/shared/types';
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-  instanceId: { type: [String, Number], required: true },
-});
+const props = defineProps<{
+  gameId: string | number;
+  instanceId: string | number;
+}>();
 const router = useRouter();
 
-const instance = ref({});
-const usage = ref({
+const instance = ref<Partial<Instance> & Record<string, any>>({});
+const usage = ref<InstanceUsage & Record<string, any>>({
   cpu_usage_percent: 0,
   memory_used_bytes: 0,
   disk_used_bytes: 0,
   network_bytes_per_sec: 0,
 });
-const loading = ref(true);
-const error = ref(null);
-const stopping = ref(false);
-const deleting = ref(false);
-const restarting = ref(false);
-const resuming = ref(false);
-const showDeleteDialog = ref(false);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const stopping = ref<boolean>(false);
+const deleting = ref<boolean>(false);
+const restarting = ref<boolean>(false);
+const resuming = ref<boolean>(false);
+const showDeleteDialog = ref<boolean>(false);
 
-let usageInterval = null;
+let usageInterval: ReturnType<typeof setInterval> | null = null;
 
-const statusKey = computed(() => {
+const statusKey = computed<string>(() => {
   const s = instance.value.status;
   if (typeof s === 'number' || /^\d+$/.test(String(s))) {
-    const map = {
+    const map: Record<number, string> = {
       0: 'unspecified',
       1: 'starting',
       2: 'running',
@@ -197,22 +198,22 @@ const statusKey = computed(() => {
   return '';
 });
 
-const isRunning = computed(() => statusKey.value === 'running');
-const isStopped = computed(() => statusKey.value === 'stopped' || statusKey.value === 'crashed');
+const isRunning = computed<boolean>(() => statusKey.value === 'running');
+const isStopped = computed<boolean>(() => statusKey.value === 'stopped' || statusKey.value === 'crashed');
 
-async function fetchInstance() {
+async function fetchInstance(): Promise<void> {
   error.value = null;
   try {
     const resp = await getInstance(props.gameId, props.instanceId);
     instance.value = resp?.instance || resp || {};
-  } catch (e) {
+  } catch (e: any) {
     error.value = e.response?.data?.message ?? e.message;
   } finally {
     loading.value = false;
   }
 }
 
-async function fetchUsage() {
+async function fetchUsage(): Promise<void> {
   try {
     const data = await getInstanceUsage(props.gameId, props.instanceId);
     usage.value = data;
@@ -221,56 +222,56 @@ async function fetchUsage() {
   }
 }
 
-async function handleStop() {
+async function handleStop(): Promise<void> {
   stopping.value = true;
   try {
     await stopInstance(props.gameId, props.instanceId);
     showToast('Инстанс останавливается...');
     await fetchInstance();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка остановки', 'error');
   } finally {
     stopping.value = false;
   }
 }
 
-async function handleRestart() {
+async function handleRestart(): Promise<void> {
   restarting.value = true;
   try {
     await restartInstance(props.gameId, props.instanceId);
     showToast('Инстанс перезапускается...');
     await fetchInstance();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка перезапуска', 'error');
   } finally {
     restarting.value = false;
   }
 }
 
-async function handleResume() {
+async function handleResume(): Promise<void> {
   resuming.value = true;
   try {
     await resumeInstance(props.gameId, props.instanceId);
     showToast('Инстанс запускается...');
     await fetchInstance();
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка запуска', 'error');
   } finally {
     resuming.value = false;
   }
 }
 
-function handleDelete() {
+function handleDelete(): void {
   showDeleteDialog.value = true;
 }
 
-async function onDeleteConfirm() {
+async function onDeleteConfirm(): Promise<void> {
   deleting.value = true;
   try {
     await deleteInstance(props.gameId, props.instanceId);
     showToast('Инстанс удалён');
     router.push(`/projects/${props.gameId}/servers/instances`);
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error');
   } finally {
     deleting.value = false;
@@ -284,7 +285,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  clearInterval(usageInterval);
+  if (usageInterval) {
+    clearInterval(usageInterval);
+  }
 });
 </script>
 

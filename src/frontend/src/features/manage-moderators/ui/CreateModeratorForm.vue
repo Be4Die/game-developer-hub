@@ -43,12 +43,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { createModerator } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 
-const emit = defineEmits(['created']);
+const emit = defineEmits<{
+  (e: 'created', user: any): void;
+}>();
 
 const loading = ref(false);
 const createdEmail = ref('');
@@ -66,14 +68,14 @@ async function handleCreate() {
       password: form.password,
       display_name: form.display_name,
     });
-    createdEmail.value = res.user.email;
-    showToast(`Модератор "${res.user.display_name}" успешно создан`, 'success');
+    createdEmail.value = res.user?.email || '';
+    showToast(`Модератор "${res.user?.display_name}" успешно создан`, 'success');
     form.login = '';
     form.display_name = '';
     form.password = '';
     emit('created', res.user);
-  } catch (err) {
-    showToast(err.response?.data?.message || 'Не удалось создать модератора', 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || 'Не удалось создать модератора', 'danger');
   } finally {
     loading.value = false;
   }

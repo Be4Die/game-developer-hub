@@ -1,0 +1,23 @@
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  PROJECTS: '/projects',
+  PROJECT_DETAIL: (id: string | number = ':id') => `/projects/${id}`,
+  PROJECT_DRAFT: (id: string | number = ':id') => `/projects/${id}/draft`,
+  PROJECT_STATS: (id: string | number = ':id') => `/projects/${id}/stats`,
+  PROJECT_PUBLISHED: (id: string | number = ':id') => `/projects/${id}/published`,
+  PROJECT_SERVERS: (id: string | number = ':id') => `/projects/${id}/servers`,
+  PROJECT_SERVER_BUILDS: (id: string | number = ':id') => `/projects/${id}/servers/builds`,
+  PROJECT_SERVER_INSTANCES: (id: string | number = ':id') => `/projects/${id}/servers/instances`,
+  PROJECT_INSTANCE_DETAIL: (gameId: string | number = ':id', instanceId: string | number = ':instanceId') =>
+    `/projects/${gameId}/servers/instances/${instanceId}`,
+  NODES: '/nodes',
+  NODE_DETAIL: (nodeId: string | number = ':nodeId') => `/nodes/${nodeId}`,
+  MODERATOR: '/moderator',
+  MODERATOR_QUEUE: '/moderator/queue',
+  MODERATION_PROJECT: (projectId: string | number = ':projectId') => `/moderator/projects/${projectId}`,
+  PROFILE: '/profile',
+  SETTINGS: '/settings',
+  ADMIN_DASHBOARD: '/admin/dashboard',
+} as const;

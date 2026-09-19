@@ -172,7 +172,7 @@
                 <button
                   type="button"
                   class="btn-secondary-sm"
-                  @click="$refs.fileInputRef.click()"
+                  @click="fileInputRef?.click()"
                 >
                   <UploadCloud class="icon-xs" />
                   <span>{{ iconPreview ? 'Заменить иконку' : 'Загрузить файл' }}</span>
@@ -303,7 +303,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import {
@@ -327,26 +327,36 @@ import {
   updateGameItem,
   deleteGameItem,
   uploadItemImage,
+  type GameItem,
 } from '@/entities/purchases';
 
 const route = useRoute();
-const projectId = route.params.id;
+const projectId = String(route.params.id || '');
 const { t } = useI18n();
 
-const items = ref([]);
-const loading = ref(true);
-const saving = ref(false);
-const deleting = ref(false);
-const showModal = ref(false);
-const isEditing = ref(false);
-const modalError = ref('');
-const itemToDelete = ref(null);
+const items = ref<GameItem[]>([]);
+const loading = ref<boolean>(true);
+const saving = ref<boolean>(false);
+const deleting = ref<boolean>(false);
+const showModal = ref<boolean>(false);
+const isEditing = ref<boolean>(false);
+const modalError = ref<string>('');
+const itemToDelete = ref<GameItem | null>(null);
 
-const fileInputRef = ref(null);
-const selectedFile = ref(null);
-const iconPreview = ref('');
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedFile = ref<File | null>(null);
+const iconPreview = ref<string>('');
 
-const form = reactive({
+interface FormState {
+  game_item_id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  price_coins: number;
+  is_active: boolean;
+}
+
+const form = reactive<FormState>({
   game_item_id: '',
   name: '',
   description: '',
@@ -355,7 +365,7 @@ const form = reactive({
   is_active: true,
 });
 
-async function loadItems() {
+async function loadItems(): Promise<void> {
   loading.value = true;
   try {
     const data = await listGameItems(projectId);
@@ -367,7 +377,7 @@ async function loadItems() {
   }
 }
 
-function openCreateModal() {
+function openCreateModal(): void {
   isEditing.value = false;
   modalError.value = '';
   selectedFile.value = null;
@@ -381,7 +391,7 @@ function openCreateModal() {
   showModal.value = true;
 }
 
-function openEditModal(item) {
+function openEditModal(item: GameItem): void {
   isEditing.value = true;
   modalError.value = '';
   selectedFile.value = null;
@@ -390,19 +400,20 @@ function openEditModal(item) {
   form.description = item.description || '';
   form.image_url = item.image_url || '';
   form.price_coins = item.price_coins;
-  form.is_active = item.is_active;
-  iconPreview.value = item.image_url ? getMediaUrl(item.image_url) : '';
+  form.is_active = item.is_active !== false;
+  iconPreview.value = item.image_url ? (getMediaUrl(item.image_url) || '') : '';
   showModal.value = true;
 }
 
-function closeModal() {
+function closeModal(): void {
   showModal.value = false;
   selectedFile.value = null;
   iconPreview.value = '';
 }
 
-function onFileSelected(event) {
-  const file = event.target.files?.[0];
+function onFileSelected(event: Event): void {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (!file) return;
 
   if (file.size > 2 * 1024 * 1024) {
@@ -414,11 +425,14 @@ function onFileSelected(event) {
   iconPreview.value = URL.createObjectURL(file);
 }
 
-function onImageError(e) {
-  e.target.style.display = 'none';
+function onImageError(e: Event): void {
+  const target = e.target as HTMLElement;
+  if (target) {
+    target.style.display = 'none';
+  }
 }
 
-async function saveItem() {
+async function saveItem(): Promise<void> {
   modalError.value = '';
 
   const idPattern = /^[a-zA-Z0-9_-]+$/;
@@ -437,7 +451,7 @@ async function saveItem() {
 
   saving.value = true;
   try {
-    let savedItem;
+    let savedItem: GameItem;
     if (isEditing.value) {
       savedItem = await updateGameItem(projectId, form.game_item_id, form);
     } else {
@@ -458,7 +472,7 @@ async function saveItem() {
 
     closeModal();
     await loadItems();
-  } catch (err) {
+  } catch (err: any) {
     console.error('Save item error:', err);
     modalError.value = err.response?.data?.message || err.message || 'Ошибка сохранения товара';
   } finally {
@@ -466,11 +480,11 @@ async function saveItem() {
   }
 }
 
-function openDeleteConfirm(item) {
+function openDeleteConfirm(item: GameItem): void {
   itemToDelete.value = item;
 }
 
-async function confirmDelete() {
+async function confirmDelete(): Promise<void> {
   if (!itemToDelete.value) return;
   deleting.value = true;
   try {

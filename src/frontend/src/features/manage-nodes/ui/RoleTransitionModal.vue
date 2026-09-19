@@ -70,47 +70,42 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
 import {
   STORAGE_TRANSITION_STOP,
   STORAGE_TRANSITION_DELETE,
   COMPUTE_TRANSITION_TERMINATE,
 } from '@/entities/node';
+import type { NodeInfo, NodeService } from '@/shared/types';
 
-const props = defineProps({
-  node: {
-    type: Object,
-    required: true,
-  },
-  targetRole: {
-    type: String,
-    required: true,
-  },
-  instances: {
-    type: Array,
-    default: () => [],
-  },
-  services: {
-    type: Array,
-    default: () => [],
-  },
-  processing: {
-    type: Boolean,
-    default: false,
-  },
+interface Props {
+  node: NodeInfo | Record<string, any>;
+  targetRole: string;
+  instances?: any[];
+  services?: (NodeService | Record<string, any>)[];
+  processing?: boolean;
+}
+
+const { t } = useI18n();
+
+const props = withDefaults(defineProps<Props>(), {
+  instances: () => [],
+  services: () => [],
+  processing: false,
 });
 
-const emit = defineEmits(['close', 'confirm']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'confirm', payload: any): void;
+}>();
 
-const selectedAction = ref('stop');
+const selectedAction = ref<'stop' | 'delete'>('stop');
 
 const servicesList = computed(() => {
   if (!props.services || !props.services.length) return '';
-  return props.services.map((s) => s.name).join(', ');
+  return props.services.map((s: any) => s.name).join(', ');
 });
 
 function handleCancel() {

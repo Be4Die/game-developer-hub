@@ -34,7 +34,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { Sun, Moon, Check } from 'lucide-vue-next';
 import { useTheme } from '@/shared/lib';
@@ -42,7 +42,7 @@ import { useTheme } from '@/shared/lib';
 const { t } = useI18n();
 const { isDark, setTheme } = useTheme();
 
-function selectTheme(value) {
+function selectTheme(value: 'light' | 'dark') {
   setTheme(value);
 }
 </script>

@@ -19,21 +19,25 @@
   </div>
 </template>
 
-<script setup>
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed, type Component } from 'vue';
 import { Cpu, Layers, HardDrive, Network, Activity } from 'lucide-vue-next';
 
-const props = defineProps({
-  label: { type: String, required: true },
-  value: { type: [Number, String], default: null },
-  max: { type: Number, default: null },
-  unit: { type: String, default: '' },
-  type: {
-    type: String,
-    default: 'percent',
-    validator: (v) => ['percent', 'bytes', 'raw'].includes(v),
-  },
-  icon: { type: [Object, Function], default: null },
+interface Props {
+  label: string;
+  value?: number | string | null;
+  max?: number | null;
+  unit?: string;
+  type?: 'percent' | 'bytes' | 'raw' | string;
+  icon?: Component | object | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  value: null,
+  max: null,
+  unit: '',
+  type: 'percent',
+  icon: null,
 });
 
 const resolvedIcon = computed(() => {
@@ -46,17 +50,19 @@ const resolvedIcon = computed(() => {
   return Activity;
 });
 
-const percent = computed(() => {
+const percent = computed<number | null>(() => {
   if (props.type === 'percent' && typeof props.value === 'number') return props.value;
-  if (props.type === 'bytes' && props.max) return (props.value / props.max) * 100;
+  if (props.type === 'bytes' && props.max && typeof props.value === 'number') {
+    return (props.value / props.max) * 100;
+  }
   return null;
 });
 
-function clampPercent(v) {
+function clampPercent(v: number): number {
   return Math.min(100, Math.max(0, v));
 }
 
-const barColor = computed(() => {
+const barColor = computed<string>(() => {
   const p = percent.value;
   if (p == null) return '';
   if (p >= 90) return 'bar-danger';
@@ -64,7 +70,7 @@ const barColor = computed(() => {
   return 'bar-ok';
 });
 
-function formatBytes(b) {
+function formatBytes(b: number | null): string {
   if (b == null) return '—';
   if (b < 1024) return b + ' B';
   if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
@@ -72,14 +78,15 @@ function formatBytes(b) {
   return (b / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 }
 
-const displayValue = computed(() => {
+const displayValue = computed<string>(() => {
   if (props.value == null) return '—';
   if (props.type === 'percent') return Number(props.value).toFixed(1) + '%';
   if (props.type === 'bytes') {
-    const used = formatBytes(props.value);
+    const numVal = typeof props.value === 'number' ? props.value : Number(props.value);
+    const used = formatBytes(isNaN(numVal) ? null : numVal);
     return props.max ? `${used} / ${formatBytes(props.max)}` : used;
   }
-  return props.value + props.unit;
+  return String(props.value) + props.unit;
 });
 </script>
 

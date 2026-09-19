@@ -471,7 +471,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -506,28 +506,28 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const requestId = computed(() => Number(route.params.requestId));
+const requestId = computed<number>(() => Number(route.params.requestId));
 
-const loading = ref(true);
-const error = ref(null);
-const snapshotMeta = ref({});
-const projectData = ref({});
-const mediaData = ref({});
-const verdictData = ref({});
-const chatMessages = ref([]);
-const lightboxData = ref(null);
-const isPlayerVisible = ref(false);
+const loading = ref<boolean>(true);
+const error = ref<string | null>(null);
+const snapshotMeta = ref<any>({});
+const projectData = ref<any>({});
+const mediaData = ref<any>({});
+const verdictData = ref<any>({});
+const chatMessages = ref<any[]>([]);
+const lightboxData = ref<{ src: string; fileName: string; downloadUrl: string } | null>(null);
+const isPlayerVisible = ref<boolean>(false);
 
-const isServerAccess = computed(() => {
+const isServerAccess = computed<boolean>(() => {
   const t = verdictData.value.request_type;
   return t === 2 || t === 'REQUEST_TYPE_SERVER_ACCESS' || Number(verdictData.value.max_instances) > 0;
 });
 
-const projectId = computed(() => {
-  return projectData.value.id || snapshotMeta.value.projectId || snapshotMeta.value.project_id || '';
+const projectId = computed<string>(() => {
+  return String(projectData.value.id || snapshotMeta.value.projectId || snapshotMeta.value.project_id || '');
 });
 
-const isSnapshotOnline = computed(() => {
+const isSnapshotOnline = computed<boolean>(() => {
   return Boolean(
     projectData.value.is_online ??
     projectData.value.isOnline ??
@@ -538,56 +538,56 @@ const isSnapshotOnline = computed(() => {
   );
 });
 
-const status = computed(() => {
+const status = computed<any>(() => {
   return verdictData.value.status ?? snapshotMeta.value.status ?? 0;
 });
 
-const statusText = computed(() => {
+const statusText = computed<string>(() => {
   return getStatusText(status.value);
 });
 
-const statusBadgeClass = computed(() => {
+const statusBadgeClass = computed<string>(() => {
   return getStatusBadgeClass(status.value);
 });
 
-const isApproved = computed(() => {
+const isApproved = computed<boolean>(() => {
   const s = status.value;
   return s === 3 || s === 'REQUEST_STATUS_APPROVED' || s === 'approved';
 });
 
-const isRejected = computed(() => {
+const isRejected = computed<boolean>(() => {
   const s = status.value;
   return s === 4 || s === 'REQUEST_STATUS_REJECTED' || s === 'rejected';
 });
 
 // Вычисление URL медиа с поддержкой превью из снимка и fallback на original_url
-const iconUrl = computed(() => {
+const iconUrl = computed<string>(() => {
   const m = mediaData.value.icon;
   if (!m) return '';
   if (m.thumbnail_data) return m.thumbnail_data;
   return getMediaUrl(m.original_url);
 });
 
-const coverUrl = computed(() => {
+const coverUrl = computed<string>(() => {
   const m = mediaData.value.cover;
   if (!m) return '';
   if (m.thumbnail_data) return m.thumbnail_data;
   return getMediaUrl(m.original_url);
 });
 
-const videoUrl = computed(() => {
+const videoUrl = computed<string>(() => {
   const m = mediaData.value.video;
   if (!m) return '';
   return getMediaUrl(m.original_url);
 });
 
-function goToLiveProject() {
+function goToLiveProject(): void {
   if (projectId.value) {
     router.push(`/moderator/projects/${projectId.value}`);
   }
 }
 
-function openLightbox(src, fileName = '', downloadUrl = '') {
+function openLightbox(src: string, fileName = '', downloadUrl = ''): void {
   if (!src) return;
   lightboxData.value = {
     src,
@@ -596,11 +596,11 @@ function openLightbox(src, fileName = '', downloadUrl = '') {
   };
 }
 
-function closeLightbox() {
+function closeLightbox(): void {
   lightboxData.value = null;
 }
 
-function isRejectionVerdict(msg) {
+function isRejectionVerdict(msg: any): boolean {
   const msgType = Number(msg.message_type ?? msg.messageType);
   if (msgType === 5) return true;
   let p = msg.payload;
@@ -614,15 +614,15 @@ function isRejectionVerdict(msg) {
   return p && (p.type === 'moderation_verdict' || Array.isArray(p.violations));
 }
 
-function isSystemMsg(msg) {
+function isSystemMsg(msg: any): boolean {
   if (isRejectionVerdict(msg)) return false;
   const role = msg.sender_role ?? msg.senderRole;
   const type = Number(msg.message_type ?? msg.messageType);
   return role === 3 || role === 'SENDER_ROLE_SYSTEM' || type === 2 || type === 3 || type === 4 || msg.is_system;
 }
 
-const effectiveChatMessages = computed(() => {
-  const msgs = (chatMessages.value || []).map((m) => ({
+const effectiveChatMessages = computed<any[]>(() => {
+  const msgs: any[] = (chatMessages.value || []).map((m: any) => ({
     ...m,
     project_id: m.project_id || projectId.value,
   }));
@@ -664,40 +664,40 @@ const effectiveChatMessages = computed(() => {
   return msgs;
 });
 
-function isModMsg(msg) {
+function isModMsg(msg: any): boolean {
   const role = msg.sender_role ?? msg.senderRole;
   return role === 2 || role === 'SENDER_ROLE_MODERATOR';
 }
 
-function isImgAttachment(att) {
+function isImgAttachment(att: any): boolean {
   const mime = (att.mime_type || att.mimeType || '').toLowerCase();
   const name = (att.file_name || att.fileName || '').toLowerCase();
   return mime.startsWith('image/') || name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.webp');
 }
 
-function isVideoAttachment(att) {
+function isVideoAttachment(att: any): boolean {
   const mime = (att.mime_type || att.mimeType || '').toLowerCase();
   const name = (att.file_name || att.fileName || '').toLowerCase();
   return mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.webm');
 }
 
-function getAttachmentPreview(att) {
+function getAttachmentPreview(att: any): string {
   if (att.thumbnail_data) return att.thumbnail_data;
   if (att.url) return att.url;
   return `/api/v1/projects/${projectId.value}/chat/attachments/${att.id}`;
 }
 
-function getAttachmentDownloadUrl(att) {
+function getAttachmentDownloadUrl(att: any): string {
   if (att.download_url) return att.download_url;
   return `/api/v1/projects/${projectId.value}/chat/attachments/${att.id}/download`;
 }
 
-function formatShortHash(hash) {
+function formatShortHash(hash?: string): string {
   if (!hash || hash.length < 12) return hash || '—';
   return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
 }
 
-function formatBytes(bytes) {
+function formatBytes(bytes?: number): string {
   if (!bytes || bytes <= 0) return '0 Б';
   const k = 1024;
   const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
@@ -705,7 +705,7 @@ function formatBytes(bytes) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function formatTime(val) {
+function formatTime(val?: string | number | Date): string {
   if (!val) return '';
   try {
     const d = new Date(val);
@@ -716,7 +716,7 @@ function formatTime(val) {
   }
 }
 
-async function fetchSnapshot() {
+async function fetchSnapshot(): Promise<void> {
   loading.value = true;
   error.value = null;
   try {
@@ -727,7 +727,7 @@ async function fetchSnapshot() {
     mediaData.value = payload.media || {};
     verdictData.value = payload.verdict || {};
     chatMessages.value = payload.chat_transcript || [];
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to load snapshot:', err);
     error.value = err.response?.data?.message || err.message || 'Ошибка загрузки аудит-снимка';
   } finally {

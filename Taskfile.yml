@@ -49,7 +49,7 @@ includes:
 tasks:
   # ==================== Proto ====================
   proto:
-    desc: "Generate Go code from proto files"
+    desc: "Generate Go and TypeScript code from proto files"
     dir: src/protos
     cmds:
       - task: proto:clean
@@ -66,6 +66,8 @@ tasks:
     dir: src/protos
     cmds:
       - cmd: find . -name "*.pb.go" -type f -delete
+        platforms: [linux, darwin]
+      - cmd: find ../frontend/src/shared/types/generated -mindepth 1 -not -name "index.ts" -delete
         platforms: [linux, darwin]
       - cmd: powershell -Command "Get-ChildItem -Recurse -Filter '*.pb.go' | Remove-Item -Force"
         platforms: [windows]

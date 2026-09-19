@@ -46,7 +46,7 @@
       </div>
 
       <div class="staged-file-actions">
-        <button type="button" class="btn-action-text" @click="$refs.fileZip.click()">
+        <button type="button" class="btn-action-text" @click="triggerFileInput">
           {{ t('projectDraft.replaceFile') }}
         </button>
         <button type="button" class="btn-action-text text-danger" @click="removeStagedFile">
@@ -63,7 +63,7 @@
       @dragover.prevent="onDragOver"
       @dragleave.prevent="onDragLeave"
       @drop.prevent="onDrop"
-      @click="$refs.fileZip.click()"
+      @click="triggerFileInput"
     >
       <div class="upload-prompt-content">
         <div class="upload-icon-circle">
@@ -75,7 +75,7 @@
         <span class="upload-prompt-sub">
           {{ t('projectDraft.uploadFormats') }}
         </span>
-        <button type="button" class="btn-select-file" @click.stop="$refs.fileZip.click()">
+        <button type="button" class="btn-select-file" @click.stop="triggerFileInput">
           {{ t('projectDraft.selectFile') }}
         </button>
       </div>
@@ -109,7 +109,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { UploadCloud, FileArchive, Loader2 } from 'lucide-vue-next';
@@ -118,18 +118,22 @@ import pako from 'pako';
 import { uploadClientBuild } from '@/entities/build';
 import { showToast } from '@/shared/lib';
 
+interface Props {
+  projectId: string | number;
+}
+
 const { t } = useI18n();
 
-const props = defineProps({
-  projectId: { type: [String, Number], required: true },
-});
+const props = defineProps<Props>();
 
-const emit = defineEmits(['buildUploaded']);
+const emit = defineEmits<{
+  (e: 'buildUploaded', version: string): void;
+}>();
 
-const fileZip = ref(null);
+const fileZip = ref<HTMLInputElement | null>(null);
 const newBuildVersion = ref('');
-const stagedFile = ref(null);
-const buildStatus = ref('idle');
+const stagedFile = ref<File | null>(null);
+const buildStatus = ref<'idle' | 'uploading'>('idle');
 const buildProgress = ref(0);
 const isDragging = ref(false);
 
@@ -137,7 +141,11 @@ const canUpload = computed(() => {
   return !!newBuildVersion.value.trim() && !!stagedFile.value && buildStatus.value !== 'uploading';
 });
 
-function formatFileSize(bytes) {
+function triggerFileInput() {
+  fileZip.value?.click();
+}
+
+function formatFileSize(bytes: number) {
   if (!bytes) return '0 B';
   const k = 1024;
   const sizes = ['B', 'КБ', 'МБ', 'ГБ'];
@@ -145,17 +153,17 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-function onDragOver(e) {
+function onDragOver(e: DragEvent) {
   e.preventDefault();
   isDragging.value = true;
 }
 
-function onDragLeave(e) {
+function onDragLeave(e: DragEvent) {
   e.preventDefault();
   isDragging.value = false;
 }
 
-function onDrop(e) {
+function onDrop(e: DragEvent) {
   e.preventDefault();
   isDragging.value = false;
   const files = e.dataTransfer?.files;
@@ -164,7 +172,7 @@ function onDrop(e) {
   }
 }
 
-function stageFile(file) {
+function stageFile(file: File) {
   if (!file) return;
 
   const name = file.name.toLowerCase();
@@ -181,12 +189,13 @@ function stageFile(file) {
   showToast(`Файл "${file.name}" выбран`, 'info');
 }
 
-function handleZipSelected(event) {
-  const file = event.target.files[0];
+function handleZipSelected(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (file) {
     stageFile(file);
   }
-  event.target.value = '';
+  target.value = '';
 }
 
 function removeStagedFile() {
@@ -194,7 +203,7 @@ function removeStagedFile() {
   if (fileZip.value) fileZip.value.value = '';
 }
 
-async function checkZipForIndexHtml(arrayBuffer) {
+async function checkZipForIndexHtml(arrayBuffer: ArrayBuffer) {
   const zip = await JSZip.loadAsync(arrayBuffer);
   let hasIndex = false;
   zip.forEach((relativePath) => {
@@ -208,7 +217,7 @@ async function checkZipForIndexHtml(arrayBuffer) {
   }
 }
 
-function checkTarGzForIndexHtml(arrayBuffer) {
+function checkTarGzForIndexHtml(arrayBuffer: ArrayBuffer) {
   const inflated = pako.inflate(new Uint8Array(arrayBuffer));
   let offset = 0;
   while (offset < inflated.length) {
@@ -243,6 +252,10 @@ async function startUpload() {
   }
 
   const file = stagedFile.value;
+  if (!file) {
+    showToast('Прикрепите архив со сборкой (.zip или .tar.gz)', 'danger');
+    return;
+  }
   const version = newBuildVersion.value.trim();
   const name = file.name.toLowerCase();
   const isZip = name.endsWith('.zip');
@@ -260,7 +273,7 @@ async function startUpload() {
     } else {
       checkTarGzForIndexHtml(buffer);
     }
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.message || 'Ошибка валидации архива', 'danger');
     return;
   }
@@ -279,7 +292,7 @@ async function startUpload() {
     if (fileZip.value) fileZip.value.value = '';
     showToast(`Версия v${version} успешно загружена и развернута в Dev!`, 'success');
     emit('buildUploaded', version);
-  } catch (err) {
+  } catch (err: any) {
     buildStatus.value = 'idle';
     showToast(err.response?.data?.message || err.message || 'Ошибка загрузки билда', 'danger');
   }

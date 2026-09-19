@@ -243,7 +243,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -267,6 +267,7 @@ import {
   parseSenderRole,
   parseMessageType,
 } from '../model/helpers';
+import type { ChatMessage, ChatAttachment } from '@/shared/types';
 import { useAuth } from '@/entities/user';
 import { showToast } from '@/shared/lib';
 import {
@@ -277,35 +278,31 @@ import {
 import ModerationVerdictCard from './ModerationVerdictCard.vue';
 import MediaLightboxModal from './MediaLightboxModal.vue';
 
+interface Props {
+  projectId: number | string;
+  autoPollInterval?: number;
+  readonly?: boolean;
+  collapsible?: boolean;
+  isOpen?: boolean;
+}
+
 const { t } = useI18n();
 
-const props = defineProps({
-  projectId: {
-    type: [Number, String],
-    required: true,
-  },
-  autoPollInterval: {
-    type: Number,
-    default: 4000,
-  },
-  readonly: {
-    type: Boolean,
-    default: false,
-  },
-  collapsible: {
-    type: Boolean,
-    default: false,
-  },
-  isOpen: {
-    type: Boolean,
-    default: true,
-  },
+const props = withDefaults(defineProps<Props>(), {
+  autoPollInterval: 4000,
+  readonly: false,
+  collapsible: false,
+  isOpen: true,
 });
 
-const emit = defineEmits(['dialogStatusChanged', 'collapse', 'unreadCountChanged']);
+const emit = defineEmits<{
+  (e: 'dialogStatusChanged', status: string): void;
+  (e: 'collapse'): void;
+  (e: 'unreadCountChanged', count: number): void;
+}>();
 
 const { state: authState } = useAuth();
-const currentUserId = computed(() => authState.user?.id || authState.user?.sub || '');
+const currentUserId = computed(() => authState.user?.id || (authState.user as any)?.sub || '');
 const currentUserRole = computed(() => authState.user?.role || '');
 
 const isAdmin = computed(() => {
@@ -327,21 +324,21 @@ const isModeratorOrAdmin = computed(() => {
   );
 });
 
-const messages = ref([]);
+const messages = ref<ChatMessage[]>([]);
 const loading = ref(false);
 const sending = ref(false);
 const closingDialog = ref(false);
 const inputContent = ref('');
-const messagesContainer = ref(null);
-const fileInputRef = ref(null);
+const messagesContainer = ref<HTMLElement | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 // Вложения
-const pendingAttachments = ref([]);
+const pendingAttachments = ref<ChatAttachment[]>([]);
 const uploadingCount = ref(0);
 const isDragging = ref(false);
-const lightboxMedia = ref(null);
+const lightboxMedia = ref<{ att: any; msg: any } | null>(null);
 
-let pollTimer = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 const dialogState = computed(() => {
   return determineDialogState(messages.value);
@@ -392,7 +389,7 @@ const showResolveButton = computed(() => {
   );
 });
 
-function isRejectionVerdict(msg) {
+function isRejectionVerdict(msg: any) {
   const msgType = parseMessageType(msg.message_type ?? msg.messageType);
   if (msgType === 5) return true;
   let p = msg.payload;
@@ -406,14 +403,14 @@ function isRejectionVerdict(msg) {
   return p && (p.type === 'moderation_verdict' || Array.isArray(p.violations));
 }
 
-function isSystemMessage(msg) {
+function isSystemMessage(msg: any) {
   if (isRejectionVerdict(msg)) return false;
   const msgType = parseMessageType(msg.message_type ?? msg.messageType);
   const senderRole = parseSenderRole(msg.sender_role ?? msg.senderRole);
   return msg.is_system || msgType > 1 || senderRole === 3 || msg.sender_id === 'system';
 }
 
-function isOwn(msg) {
+function isOwn(msg: any) {
   if (!currentUserId.value) return false;
   return String(msg.sender_id) === String(currentUserId.value);
 }
@@ -448,21 +445,21 @@ function updateUnreadCount() {
 
   // Если чат свернут / закрыт
   const savedLastRead = localStorage.getItem(storageKey.value);
-  let unread = 0;
+  let unread: number;
   if (savedLastRead === null) {
     // Еще ни разу не открывали чат для этого проекта:
     // непрочитанными являются все сообщения не от текущего пользователя
-    unread = messages.value.filter((m) => !isOwn(m)).length;
+    unread = messages.value.filter((m: any) => !isOwn(m)).length;
   } else {
     const lastReadId = Number(savedLastRead) || 0;
-    unread = messages.value.filter((m) => !isOwn(m) && (Number(m.id) || 0) > lastReadId).length;
+    unread = messages.value.filter((m: any) => !isOwn(m) && (Number(m.id) || 0) > lastReadId).length;
   }
 
   unreadCount.value = unread;
   emit('unreadCountChanged', unread);
 }
 
-function formatSenderRole(msg) {
+function formatSenderRole(msg: any) {
   const r = parseSenderRole(msg.sender_role ?? msg.senderRole);
   if (r === 3 || msg.sender_id === 'system') return 'Система';
   if (isOwn(msg)) return 'Вы';
@@ -471,21 +468,21 @@ function formatSenderRole(msg) {
   return 'Пользователь';
 }
 
-function formatTime(isoStr) {
+function formatTime(isoStr: any) {
   return formatDateTime(isoStr);
 }
 
-function formatSize(bytes) {
+function formatSize(bytes: any) {
   return formatBytes(bytes);
 }
 
-function isVideo(att) {
+function isVideo(att: any) {
   const mime = (att.mime_type || att.mimeType || att.type || '').toLowerCase();
   const name = (att.file_name || att.fileName || att.name || '').toLowerCase();
   return mime.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.webm');
 }
 
-function isImage(att) {
+function isImage(att: any) {
   const mime = (att.mime_type || att.mimeType || att.type || '').toLowerCase();
   const name = (att.file_name || att.fileName || att.name || '').toLowerCase();
   return (
@@ -497,7 +494,7 @@ function isImage(att) {
   );
 }
 
-function getMediaUrl(att, msg) {
+function getMediaUrl(att: any, msg?: any) {
   const token = localStorage.getItem('gdh_access_token');
   const projId = msg?.project_id || msg?.projectId || props.projectId;
   const base = att.url || `/api/v1/projects/${projId}/chat/attachments/${att.id}`;
@@ -508,7 +505,7 @@ function getMediaUrl(att, msg) {
   return base;
 }
 
-function getDownloadUrl(att, msg) {
+function getDownloadUrl(att: any, msg?: any) {
   const token = localStorage.getItem('gdh_access_token');
   const projId = msg?.project_id || msg?.projectId || props.projectId;
   const base = att.download_url || `/api/v1/projects/${projId}/chat/attachments/${att.id}/download`;
@@ -519,18 +516,18 @@ function getDownloadUrl(att, msg) {
   return base;
 }
 
-function openLightbox(att, msg) {
+function openLightbox(att: any, msg?: any) {
   lightboxMedia.value = { att, msg };
 }
 
-function removePendingAttachment(index) {
+function removePendingAttachment(index: number) {
   pendingAttachments.value.splice(index, 1);
 }
 
-async function processAndUploadFile(file) {
+async function processAndUploadFile(file: File) {
   const validation = validateChatFile(file);
   if (!validation.valid) {
-    showToast(validation.error, 'danger');
+    showToast(validation.error || 'Invalid file', 'danger');
     return;
   }
 
@@ -543,7 +540,7 @@ async function processAndUploadFile(file) {
     const uploaded = await moderationApi.uploadAttachment(props.projectId, processedFile);
     pendingAttachments.value.push(uploaded);
     showToast('Файл прикреплен', 'success');
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to upload attachment:', err);
     const msg =
       err.response?.data?.message ||
@@ -554,19 +551,20 @@ async function processAndUploadFile(file) {
   }
 }
 
-function handleFileSelect(e) {
-  const files = Array.from(e.target.files || []);
-  e.target.value = '';
+function handleFileSelect(e: Event) {
+  const target = e.target as HTMLInputElement | null;
+  const files = Array.from(target?.files || []);
+  if (target) target.value = '';
   files.forEach(processAndUploadFile);
 }
 
-function handleDrop(e) {
+function handleDrop(e: DragEvent) {
   isDragging.value = false;
   const files = Array.from(e.dataTransfer?.files || []);
   files.forEach(processAndUploadFile);
 }
 
-function handlePaste(e) {
+function handlePaste(e: ClipboardEvent) {
   const items = e.clipboardData?.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {
@@ -635,7 +633,7 @@ async function handleCloseDialog() {
     showToast(t('moderation.closeDialogSuccess'), 'success');
     await fetchMessages(true);
     scrollToBottom();
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     closingDialog.value = false;

@@ -24,28 +24,26 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import { Download, X } from 'lucide-vue-next';
 
-defineProps({
-  src: {
-    type: String,
-    required: true,
-  },
-  fileName: {
-    type: String,
-    default: '',
-  },
-  downloadUrl: {
-    type: String,
-    default: '',
-  },
+interface Props {
+  src: string;
+  fileName?: string;
+  downloadUrl?: string;
+}
+
+withDefaults(defineProps<Props>(), {
+  fileName: '',
+  downloadUrl: '',
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
 
-function handleKeyDown(e) {
+function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     emit('close');
   }

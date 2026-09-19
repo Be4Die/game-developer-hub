@@ -29,15 +29,15 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { LayoutDashboard, Package, Play } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
-defineProps({
-  gameId: { type: [String, Number], required: true },
-});
+defineProps<{
+  gameId: string | number;
+}>();
 </script>
 
 <style scoped>

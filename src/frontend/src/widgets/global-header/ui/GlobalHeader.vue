@@ -75,7 +75,7 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -101,29 +101,29 @@ const router = useRouter();
 const route = useRoute();
 const { state: authState, logout } = useAuth();
 
-const isAuthed = computed(() => !!authState.user);
-const displayName = computed(
+const isAuthed = computed<boolean>(() => !!authState.user);
+const displayName = computed<string>(
   () => authState.user?.display_name || authState.user?.email?.split('@')[0] || t('roles.user')
 );
-const userEmail = computed(() => authState.user?.email || '');
+const userEmail = computed<string>(() => authState.user?.email || '');
 
 const userRole = computed(() => authState.user?.role);
 
-const isAdmin = computed(() => {
+const isAdmin = computed<boolean>(() => {
   const r = userRole.value;
   return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
 });
 
-const isModerator = computed(() => {
+const isModerator = computed<boolean>(() => {
   const r = userRole.value;
   return r === 'USER_ROLE_MODERATOR' || r === 'moderator' || r === 2;
 });
 
-const isDeveloper = computed(() => {
+const isDeveloper = computed<boolean>(() => {
   return !isAdmin.value && !isModerator.value;
 });
 
-function isNavActive(navKey) {
+function isNavActive(navKey: string): boolean {
   const p = route.path;
   switch (navKey) {
     case 'projects':
@@ -161,9 +161,9 @@ function isNavActive(navKey) {
   }
 }
 
-const incomingCount = ref(0);
+const incomingCount = ref<number>(0);
 
-async function refreshIncomingCount() {
+async function refreshIncomingCount(): Promise<void> {
   if (isAuthed.value && isDeveloper.value) {
     try {
       const invs = await listIncomingInvitations();
@@ -185,7 +185,7 @@ watch(
   }
 );
 
-async function handleLogout() {
+async function handleLogout(): Promise<void> {
   try {
     await logout();
   } catch {

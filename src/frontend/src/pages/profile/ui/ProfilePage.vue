@@ -430,7 +430,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -463,19 +463,20 @@ import {
 } from '@/entities/project';
 import { ThemeCardSelector } from '@/features/theme-switcher';
 import { showToast, setLocale, formatDate } from '@/shared/lib';
+import type { User as UserType } from '@/shared/types';
 
 const { t, locale } = useI18n();
 const { state: authState, updateCurrentUser } = useAuth();
 
 const currentLocale = computed(() => locale.value);
 
-const user = computed(() => authState.user || {});
+const user = computed<Partial<UserType>>(() => authState.user || {});
 const userDisplayName = computed(
   () => user.value.display_name || user.value.email?.split('@')[0] || t('roles.user')
 );
 const userEmail = computed(() => user.value.email || '');
 
-const isModeratorOrAdmin = computed(() => {
+const isModeratorOrAdmin = computed<boolean>(() => {
   const role = user.value.role;
   return (
     role === 'USER_ROLE_MODERATOR' ||
@@ -487,12 +488,12 @@ const isModeratorOrAdmin = computed(() => {
   );
 });
 
-const isModerator = computed(() => {
+const isModerator = computed<boolean>(() => {
   const role = user.value.role;
   return role === 'USER_ROLE_MODERATOR' || role === 'moderator' || role === 2;
 });
 
-const localizedRoleName = computed(() => {
+const localizedRoleName = computed<string>(() => {
   const role = user.value.role;
   if (role === 'USER_ROLE_ADMIN' || role === 'admin' || role === 3) {
     return t('roles.admin');
@@ -503,21 +504,21 @@ const localizedRoleName = computed(() => {
   return t('roles.developer');
 });
 
-const roleBadgeClass = computed(() => {
+const roleBadgeClass = computed<string>(() => {
   const role = user.value.role;
   if (role === 'USER_ROLE_ADMIN' || role === 'admin' || role === 3) return 'role-admin';
   if (role === 'USER_ROLE_MODERATOR' || role === 'moderator' || role === 2) return 'role-moderator';
   return 'role-developer';
 });
 
-const registeredDate = computed(() => {
+const registeredDate = computed<string>(() => {
   if (!user.value.created_at) return '';
   return formatDate(user.value.created_at);
 });
 
 // Display name form (для разработчиков)
-const displayNameForm = ref(user.value.display_name || '');
-const nameSaving = ref(false);
+const displayNameForm = ref<string>(user.value.display_name || '');
+const nameSaving = ref<boolean>(false);
 
 watch(
   () => user.value.display_name,
@@ -529,13 +530,13 @@ watch(
   { immediate: true }
 );
 
-const isNameChanged = computed(() => {
+const isNameChanged = computed<boolean>(() => {
   const current = (user.value.display_name || '').trim();
   const form = displayNameForm.value.trim();
   return form.length > 0 && form !== current;
 });
 
-async function handleUpdateDisplayName() {
+async function handleUpdateDisplayName(): Promise<void> {
   if (!isNameChanged.value || isModeratorOrAdmin.value) return;
   nameSaving.value = true;
   try {
@@ -543,7 +544,7 @@ async function handleUpdateDisplayName() {
     const updatedUser = res.user || { display_name: displayNameForm.value.trim() };
     updateCurrentUser(updatedUser);
     showToast(t('profile.profileUpdated'), 'success');
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     nameSaving.value = false;
@@ -556,9 +557,9 @@ const passwordForm = reactive({
   newPassword: '',
   confirmPassword: '',
 });
-const passwordSaving = ref(false);
+const passwordSaving = ref<boolean>(false);
 
-const isPasswordFormFilled = computed(() => {
+const isPasswordFormFilled = computed<boolean>(() => {
   return (
     passwordForm.currentPassword.length > 0 &&
     passwordForm.newPassword.length >= 6 &&
@@ -566,7 +567,7 @@ const isPasswordFormFilled = computed(() => {
   );
 });
 
-async function handleChangePassword() {
+async function handleChangePassword(): Promise<void> {
   if (isModeratorOrAdmin.value) return;
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     showToast(t('auth.errorPasswordMismatch'), 'danger');
@@ -583,25 +584,25 @@ async function handleChangePassword() {
     passwordForm.newPassword = '';
     passwordForm.confirmPassword = '';
     showToast(t('profile.passwordChanged'), 'success');
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     passwordSaving.value = false;
   }
 }
 
-function selectLanguage(lang) {
-  setLocale(lang);
+function selectLanguage(lang: 'ru' | 'en' | string): void {
+  setLocale(lang as any);
 }
 
 // ─── Incoming Invitations & Blacklist ─────────────────────────
-const incomingList = ref([]);
-const invitesLoading = ref(false);
-const blockedUsersList = ref([]);
-const blacklistLoading = ref(false);
-const actionInProgress = ref(null);
+const incomingList = ref<any[]>([]);
+const invitesLoading = ref<boolean>(false);
+const blockedUsersList = ref<any[]>([]);
+const blacklistLoading = ref<boolean>(false);
+const actionInProgress = ref<string | number | null>(null);
 
-async function loadIncoming() {
+async function loadIncoming(): Promise<void> {
   if (isModeratorOrAdmin.value) return;
   invitesLoading.value = true;
   try {
@@ -613,7 +614,7 @@ async function loadIncoming() {
   }
 }
 
-async function loadBlacklist() {
+async function loadBlacklist(): Promise<void> {
   if (isModeratorOrAdmin.value) return;
   blacklistLoading.value = true;
   try {
@@ -625,7 +626,7 @@ async function loadBlacklist() {
   }
 }
 
-async function handleRespondInvite(invitationId, accept) {
+async function handleRespondInvite(invitationId: string | number, accept: boolean): Promise<void> {
   actionInProgress.value = invitationId;
   try {
     await respondInvitation(invitationId, accept);
@@ -634,41 +635,41 @@ async function handleRespondInvite(invitationId, accept) {
       'success'
     );
     await loadIncoming();
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     actionInProgress.value = null;
   }
 }
 
-async function handleUnblock(userId) {
+async function handleUnblock(userId: string | number): Promise<void> {
   actionInProgress.value = userId;
   try {
     await unblockUser(userId);
     showToast(t('access.messages.userUnblocked'), 'success');
     await loadBlacklist();
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     actionInProgress.value = null;
   }
 }
 
-async function promptBlockFromInvite(userId, userName) {
+async function promptBlockFromInvite(userId: string | number, userName: string): Promise<void> {
   if (!confirm(`${t('access.modals.blockConfirmTitle')} (${userName})`)) return;
   actionInProgress.value = userId;
   try {
     await blockUser(userId);
     showToast(t('access.messages.userBlocked'), 'success');
     await Promise.all([loadIncoming(), loadBlacklist()]);
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     actionInProgress.value = null;
   }
 }
 
-function hasAllPermissions(perms) {
+function hasAllPermissions(perms: any): boolean {
   if (!perms || !Array.isArray(perms) || perms.length === 0) return false;
   return ALL_PERMISSIONS.every((p) => perms.includes(p));
 }

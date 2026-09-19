@@ -22,36 +22,53 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, watch } from 'vue';
 
-const props = defineProps({
-  modelValue: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['update:modelValue']);
+interface Pair {
+  key: string;
+  value: string;
+}
 
-const pairs = reactive(Object.entries(props.modelValue).map(([key, value]) => ({ key, value })));
+const props = withDefaults(
+  defineProps<{
+    modelValue?: Record<string, any>;
+  }>(),
+  {
+    modelValue: () => ({}),
+  }
+);
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: Record<string, string>): void;
+}>();
+
+const pairs = reactive<Pair[]>(
+  Object.entries(props.modelValue || {}).map(([key, value]) => ({ key, value: String(value ?? '') }))
+);
 
 watch(
   () => props.modelValue,
   (val) => {
     pairs.length = 0;
-    Object.entries(val).forEach(([key, value]) => pairs.push({ key, value }));
+    if (val) {
+      Object.entries(val).forEach(([key, value]) => pairs.push({ key, value: String(value ?? '') }));
+    }
   },
   { deep: true }
 );
 
-function add() {
+function add(): void {
   pairs.push({ key: '', value: '' });
 }
 
-function remove(index) {
+function remove(index: number): void {
   pairs.splice(index, 1);
   emitUpdate();
 }
 
-function emitUpdate() {
-  const obj = {};
+function emitUpdate(): void {
+  const obj: Record<string, string> = {};
   for (const p of pairs) {
     if (p.key) obj[p.key] = p.value;
   }

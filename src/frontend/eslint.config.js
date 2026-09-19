@@ -1,12 +1,13 @@
 import js from '@eslint/js';
 import pluginVue from 'eslint-plugin-vue';
+import vueTs from '@vue/eslint-config-typescript';
 import skipFormatting from 'eslint-config-prettier';
 import globals from 'globals';
 
 export default [
   {
     name: 'app/files-to-lint',
-    files: ['**/*.{js,mjs,jsx,vue}'],
+    files: ['**/*.{js,mjs,jsx,ts,tsx,vue}'],
   },
 
   {
@@ -22,6 +23,7 @@ export default [
 
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
+  ...vueTs(),
 
   {
     languageOptions: {
@@ -35,7 +37,8 @@ export default [
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/no-v-html': 'warn',
-      'no-unused-vars': [
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
         'warn',
         {
           argsIgnorePattern: '^_',
@@ -43,6 +46,7 @@ export default [
           caughtErrors: 'none',
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
       'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     },

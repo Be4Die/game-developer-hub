@@ -42,34 +42,35 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, inject, onMounted } from 'vue';
+<script setup lang="ts">
+import { ref, computed, inject, onMounted, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
 import { listClientBuilds } from '@/entities/build';
+import type { Project, ClientBuild } from '@/shared/types';
 
 const { t } = useI18n();
 const route = useRoute();
-const project = inject('project', ref(null));
+const project = inject<Ref<Project | null> | null>('project', null);
 
-const projectId = computed(() => {
-  return route.params.id || project.value?.id || '';
+const projectId = computed<string | number>(() => {
+  return (route.params.id as string) || project?.value?.id || '';
 });
 
-const activeVersion = computed(() => {
+const activeVersion = computed<string>(() => {
   return (
-    project.value?.draft?.active_build_version ||
-    project.value?.active_build_version ||
+    project?.value?.draft?.active_build_version ||
+    project?.value?.active_build_version ||
     '1.0.0'
   );
 });
 
-const selectedVersion = ref('');
-const buildsList = ref([]);
+const selectedVersion = ref<string>('');
+const buildsList = ref<ClientBuild[]>([]);
 
 // Загружаем список доступных сборок игры
-async function loadBuilds() {
+async function loadBuilds(): Promise<void> {
   if (!projectId.value) return;
   try {
     const list = await listClientBuilds(projectId.value);
@@ -86,7 +87,7 @@ onMounted(() => {
   loadBuilds();
 });
 
-const currentPlayUrl = computed(() => {
+const currentPlayUrl = computed<string>(() => {
   const id = projectId.value;
   if (!id) return '';
 
@@ -97,8 +98,8 @@ const currentPlayUrl = computed(() => {
 
   // По умолчанию: dev-симлинк черновика проекта
   return (
-    project.value?.draft?.dev_url ||
-    project.value?.dev_url ||
+    project?.value?.draft?.dev_url ||
+    project?.value?.dev_url ||
     `/games/${id}/dev/index.html`
   );
 });

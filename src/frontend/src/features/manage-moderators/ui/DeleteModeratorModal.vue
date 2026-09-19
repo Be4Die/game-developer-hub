@@ -1,6 +1,6 @@
 <template>
   <transition name="modal-fade">
-    <div v-if="target" class="modal-overlay" @click.self="$emit('cancel')">
+    <div v-if="target" class="modal-overlay" @click.self="emit('cancel')">
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title-wrap">
@@ -10,7 +10,7 @@
               <p class="modal-subtitle">Подтверждение удаления учётной записи</p>
             </div>
           </div>
-          <button class="modal-close" @click="$emit('cancel')">
+          <button class="modal-close" @click="emit('cancel')">
             <X class="icon-sm" />
           </button>
         </div>
@@ -25,7 +25,7 @@
         </p>
 
         <div class="modal-actions">
-          <button class="btn-modal-secondary" :disabled="deleting" @click="$emit('cancel')">
+          <button class="btn-modal-secondary" :disabled="deleting" @click="emit('cancel')">
             Отмена
           </button>
           <button class="btn-modal-danger" :disabled="deleting" @click="handleDelete">
@@ -39,17 +39,26 @@
   </transition>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { Trash2, X, Loader2 } from 'lucide-vue-next';
 import { deleteUser } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import type { User } from '@/shared/types';
 
-const props = defineProps({
-  target: { type: Object, default: null },
+interface Props {
+  target?: User | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  target: null,
 });
 
-const emit = defineEmits(['deleted', 'cancel']);
+const emit = defineEmits<{
+  (e: 'deleted', id: string): void;
+  (e: 'cancel'): void;
+}>();
+
 const deleting = ref(false);
 
 async function handleDelete() {
@@ -59,7 +68,7 @@ async function handleDelete() {
     await deleteUser(props.target.id);
     showToast(`Модератор "${props.target.display_name || props.target.email}" удалён`, 'success');
     emit('deleted', props.target.id);
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'danger');
   } finally {
     deleting.value = false;

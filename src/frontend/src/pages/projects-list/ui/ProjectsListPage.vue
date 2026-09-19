@@ -215,7 +215,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -247,24 +247,25 @@ import {
 } from '@/entities/project';
 import { ProjectFilters } from '@/features/manage-projects';
 import { formatProjectDate, showToast } from '@/shared/lib';
+import type { Project } from '@/shared/types';
 
 const { t } = useI18n();
 const router = useRouter();
-const games = ref([]);
-const totalProjects = ref(0);
-const loading = ref(false);
-const creating = ref(false);
+const games = ref<Project[]>([]);
+const totalProjects = ref<number>(0);
+const loading = ref<boolean>(false);
+const creating = ref<boolean>(false);
 
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const roleFilter = ref('all');
-const modeFilter = ref('all');
-const sortBy = ref('newest');
+const searchQuery = ref<string>('');
+const statusFilter = ref<string>('all');
+const roleFilter = ref<string>('all');
+const modeFilter = ref<string>('all');
+const sortBy = ref<string>('newest');
 
-const currentPage = ref(1);
-const pageSize = ref(10);
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
-async function loadProjects() {
+async function loadProjects(): Promise<void> {
   loading.value = true;
   try {
     const res = await listProjects({ limit: 100, offset: 0 });
@@ -277,7 +278,7 @@ async function loadProjects() {
   }
 }
 
-const createNewGame = async () => {
+const createNewGame = async (): Promise<void> => {
   creating.value = true;
   try {
     const project = await createProject({
@@ -295,11 +296,11 @@ const createNewGame = async () => {
   }
 };
 
-const openProject = (id) => {
+const openProject = (id: string | number): void => {
   router.push(`/projects/${id}/draft`);
 };
 
-const confirmDeleteProject = async (game) => {
+const confirmDeleteProject = async (game: any): Promise<void> => {
   const title = game.title_ru || game.title_en || `#${game.id}`;
   if (!confirm(`Вы действительно хотите удалить проект «${title}» и все его сборки?`)) {
     return;
@@ -314,7 +315,7 @@ const confirmDeleteProject = async (game) => {
   }
 };
 
-const confirmLeaveProject = async (game) => {
+const confirmLeaveProject = async (game: any): Promise<void> => {
   const title = game.title_ru || game.title_en || `#${game.id}`;
   if (!confirm(`Вы действительно хотите покинуть проект «${title}»? Вы потеряете доступ к совместной разработке.`)) {
     return;
@@ -324,12 +325,12 @@ const confirmLeaveProject = async (game) => {
     games.value = games.value.filter((g) => g.id !== game.id);
     totalProjects.value = Math.max(0, totalProjects.value - 1);
     showToast(t('access.messages.leftProject') || 'Вы покинули проект', 'success');
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.response?.data?.message || 'Ошибка при выходе из проекта', 'danger');
   }
 };
 
-const resetFilters = () => {
+const resetFilters = (): void => {
   searchQuery.value = '';
   statusFilter.value = 'all';
   roleFilter.value = 'all';
@@ -338,7 +339,7 @@ const resetFilters = () => {
   currentPage.value = 1;
 };
 
-const filteredGames = computed(() => {
+const filteredGames = computed<Project[]>(() => {
   let list = [...games.value];
 
   if (searchQuery.value.trim()) {
@@ -352,7 +353,7 @@ const filteredGames = computed(() => {
   }
 
   if (statusFilter.value !== 'all') {
-    const statusMap = { draft: 1, pending: 2, published: 3, approved: 4, rejected: 5 };
+    const statusMap: Record<string, number> = { draft: 1, pending: 2, published: 3, approved: 4, rejected: 5 };
     const targetStatus = statusMap[statusFilter.value];
     list = list.filter((g) => normalizeProjectStatus(g.status) === targetStatus);
   }
@@ -370,9 +371,9 @@ const filteredGames = computed(() => {
   }
 
   if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    list.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
   } else if (sortBy.value === 'title') {
     list.sort((a, b) =>
       (a.title_ru || a.title_en || '').localeCompare(b.title_ru || b.title_en || '')
@@ -382,14 +383,14 @@ const filteredGames = computed(() => {
   return list;
 });
 
-const totalPages = computed(() => Math.ceil(filteredGames.value.length / pageSize.value) || 1);
-const pageStart = computed(() => (currentPage.value - 1) * pageSize.value);
+const totalPages = computed<number>(() => Math.ceil(filteredGames.value.length / pageSize.value) || 1);
+const pageStart = computed<number>(() => (currentPage.value - 1) * pageSize.value);
 
-const paginatedGames = computed(() => {
+const paginatedGames = computed<Project[]>(() => {
   return filteredGames.value.slice(pageStart.value, pageStart.value + pageSize.value);
 });
 
-const visiblePages = computed(() => {
+const visiblePages = computed<(number | string)[]>(() => {
   const total = totalPages.value;
   const current = currentPage.value;
   if (total <= 7) {

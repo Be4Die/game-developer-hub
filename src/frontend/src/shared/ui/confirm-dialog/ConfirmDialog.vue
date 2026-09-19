@@ -22,27 +22,40 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { AlertTriangle, AlertCircle, HelpCircle } from 'lucide-vue-next';
 
+interface Props {
+  modelValue?: boolean;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'warning' | 'danger' | 'info' | string;
+}
+
 const { t } = useI18n();
 
-const props = defineProps({
-  modelValue: { type: Boolean, default: false },
-  title: { type: String, default: '' },
-  message: { type: String, default: '' },
-  confirmText: { type: String, default: '' },
-  cancelText: { type: String, default: '' },
-  type: { type: String, default: 'warning' }, // warning | danger | info
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  title: '',
+  message: '',
+  confirmText: '',
+  cancelText: '',
+  type: 'warning',
 });
 
 const dialogTitle = computed(() => props.title || t('common.confirm'));
 const dialogConfirmText = computed(() => props.confirmText || t('common.confirm'));
 const dialogCancelText = computed(() => props.cancelText || t('common.cancel'));
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}>();
 
 const confirmClass = computed(() => {
   switch (props.type) {

@@ -329,7 +329,7 @@
             class="btn-add-game-primary"
             :class="{ 'btn-danger': confirmModal.isDanger }"
             :disabled="confirmModal.submitting"
-            @click="confirmModal.onConfirm"
+            @click="handleConfirmClick"
           >
             <span v-if="confirmModal.submitting" class="spinner-sm"></span>
             <span v-else>{{ confirmModal.confirmText }}</span>
@@ -340,7 +340,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -371,17 +371,27 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 const route = useRoute();
 
-const projectId = computed(() => route.params.id);
+const projectId = computed<string>(() => String(route.params.id || ''));
 
-const loading = ref(true);
-const actionInProgress = ref(null);
-const members = ref([]);
-const pendingInvites = ref([]);
+const loading = ref<boolean>(true);
+const actionInProgress = ref<string | number | null>(null);
+const members = ref<any[]>([]);
+const pendingInvites = ref<any[]>([]);
 
 // ─── Modal States ─────────────────────────────────────────────
-const searchHighlightedIndex = ref(-1);
+const searchHighlightedIndex = ref<number>(-1);
 
-const inviteModal = reactive({
+interface InviteModalState {
+  open: boolean;
+  query: string;
+  selectedUser: any | null;
+  searchResults: any[];
+  searching: boolean;
+  permissions: string[];
+  submitting: boolean;
+}
+
+const inviteModal = reactive<InviteModalState>({
   open: false,
   query: '',
   selectedUser: null,
@@ -391,14 +401,31 @@ const inviteModal = reactive({
   submitting: false,
 });
 
-const editPermsModal = reactive({
+interface EditPermsModalState {
+  open: boolean;
+  member: any | null;
+  permissions: string[];
+  submitting: boolean;
+}
+
+const editPermsModal = reactive<EditPermsModalState>({
   open: false,
   member: null,
   permissions: [],
   submitting: false,
 });
 
-const confirmModal = reactive({
+interface ConfirmModalState {
+  open: boolean;
+  title: string;
+  desc: string;
+  confirmText: string;
+  isDanger: boolean;
+  submitting: boolean;
+  onConfirm: (() => Promise<void>) | null;
+}
+
+const confirmModal = reactive<ConfirmModalState>({
   open: false,
   title: '',
   desc: '',
@@ -409,7 +436,7 @@ const confirmModal = reactive({
 });
 
 // ─── Data Loading ─────────────────────────────────────────────
-async function loadData() {
+async function loadData(): Promise<void> {
   if (!projectId.value) return;
   loading.value = true;
   try {
@@ -421,7 +448,7 @@ async function loadData() {
   }
 }
 
-async function loadMembersList() {
+async function loadMembersList(): Promise<void> {
   try {
     members.value = await listMembers(projectId.value);
   } catch {
@@ -429,11 +456,11 @@ async function loadMembersList() {
   }
 }
 
-async function loadPendingList() {
+async function loadPendingList(): Promise<void> {
   try {
     const list = await listOutgoingInvitations(projectId.value);
     pendingInvites.value = list.filter(
-      (inv) => Number(inv.project_id) === Number(projectId.value)
+      (inv: any) => Number(inv.project_id) === Number(projectId.value)
     );
   } catch {
     pendingInvites.value = [];
@@ -445,12 +472,12 @@ onMounted(() => {
 });
 
 // ─── Permissions Helpers ──────────────────────────────────────
-function hasAllPermissions(perms) {
+function hasAllPermissions(perms: any): boolean {
   if (!perms || !Array.isArray(perms) || perms.length === 0) return false;
   return ALL_PERMISSIONS.every((p) => perms.includes(p));
 }
 
-function togglePermission(list, perm) {
+function togglePermission(list: string[], perm: string): void {
   const idx = list.indexOf(perm);
   if (idx > -1) {
     list.splice(idx, 1);
@@ -459,24 +486,24 @@ function togglePermission(list, perm) {
   }
 }
 
-function selectAllPerms() {
+function selectAllPerms(): void {
   inviteModal.permissions = [...ALL_PERMISSIONS];
 }
 
-function clearAllPerms() {
+function clearAllPerms(): void {
   inviteModal.permissions = [];
 }
 
-function selectAllEditPerms() {
+function selectAllEditPerms(): void {
   editPermsModal.permissions = [...ALL_PERMISSIONS];
 }
 
-function clearAllEditPerms() {
+function clearAllEditPerms(): void {
   editPermsModal.permissions = [];
 }
 
 // ─── Invite Modal Handlers ────────────────────────────────────
-function openInviteModal() {
+function openInviteModal(): void {
   inviteModal.query = '';
   inviteModal.selectedUser = null;
   inviteModal.searchResults = [];
@@ -485,12 +512,12 @@ function openInviteModal() {
   inviteModal.open = true;
 }
 
-function closeInviteModal() {
+function closeInviteModal(): void {
   inviteModal.open = false;
 }
 
-let searchTimer = null;
-function onSearchUserInput() {
+let searchTimer: any = null;
+function onSearchUserInput(): void {
   clearTimeout(searchTimer);
   const q = inviteModal.query.trim();
   if (!q) {
@@ -503,7 +530,7 @@ function onSearchUserInput() {
     try {
       const res = await searchUsers({ query: q, limit: 10 });
       const users = res.users || [];
-      inviteModal.searchResults = users.filter((u) => {
+      inviteModal.searchResults = users.filter((u: any) => {
         const isSystem =
           u.role === 'USER_ROLE_MODERATOR' ||
           u.role === 'moderator' ||
@@ -523,20 +550,20 @@ function onSearchUserInput() {
   }, 300);
 }
 
-function onSearchKeyDown() {
+function onSearchKeyDown(): void {
   if (inviteModal.searchResults.length === 0) return;
   searchHighlightedIndex.value =
     (searchHighlightedIndex.value + 1) % inviteModal.searchResults.length;
 }
 
-function onSearchKeyUp() {
+function onSearchKeyUp(): void {
   if (inviteModal.searchResults.length === 0) return;
   searchHighlightedIndex.value =
     (searchHighlightedIndex.value - 1 + inviteModal.searchResults.length) %
     inviteModal.searchResults.length;
 }
 
-function onSearchKeyEnter() {
+function onSearchKeyEnter(): void {
   if (
     searchHighlightedIndex.value >= 0 &&
     searchHighlightedIndex.value < inviteModal.searchResults.length
@@ -545,24 +572,24 @@ function onSearchKeyEnter() {
   }
 }
 
-function closeSearchDropdown() {
+function closeSearchDropdown(): void {
   inviteModal.searchResults = [];
   searchHighlightedIndex.value = -1;
 }
 
-function selectUserToInvite(user) {
+function selectUserToInvite(user: any): void {
   inviteModal.selectedUser = user;
   inviteModal.searchResults = [];
   inviteModal.query = '';
   searchHighlightedIndex.value = -1;
 }
 
-function clearSelectedUser() {
+function clearSelectedUser(): void {
   inviteModal.selectedUser = null;
   searchHighlightedIndex.value = -1;
 }
 
-async function submitInvitation() {
+async function submitInvitation(): Promise<void> {
   const targetEmail = inviteModal.selectedUser?.email || inviteModal.query.trim();
   const targetId = inviteModal.selectedUser?.id || '';
   if (!targetEmail && !targetId) {
@@ -579,7 +606,7 @@ async function submitInvitation() {
       u.role === 'admin' ||
       u.role === 3;
     if (isSystem) {
-      showToast(t('access.messages.cannotInviteSystemUser'), 'error');
+      showToast(t('access.messages.cannotInviteSystemUser'), 'danger');
       return;
     }
   }
@@ -598,20 +625,20 @@ async function submitInvitation() {
     showToast(t('access.messages.inviteSent'), 'success');
     closeInviteModal();
     await loadPendingList();
-  } catch (err) {
+  } catch (err: any) {
     const msg = err.response?.data?.message || err.message || '';
     if (msg.includes('system user') || msg.includes('cannot invite system user')) {
-      showToast(t('access.messages.cannotInviteSystemUser'), 'error');
+      showToast(t('access.messages.cannotInviteSystemUser'), 'danger');
     } else if (msg.includes('blocked') || msg.includes('user is blocked')) {
-      showToast(t('access.messages.userIsBlocked'), 'error');
+      showToast(t('access.messages.userIsBlocked'), 'danger');
     } else if (msg.includes('already member')) {
-      showToast(t('access.messages.alreadyMember'), 'error');
+      showToast(t('access.messages.alreadyMember'), 'danger');
     } else if (msg.includes('already invited')) {
-      showToast(t('access.messages.alreadyInvited'), 'error');
+      showToast(t('access.messages.alreadyInvited'), 'danger');
     } else if (msg.includes('cannot invite self')) {
-      showToast(t('access.messages.cannotInviteSelf'), 'error');
+      showToast(t('access.messages.cannotInviteSelf'), 'danger');
     } else {
-      showToast(msg || t('common.error'), 'error');
+      showToast(msg || t('common.error'), 'danger');
     }
   } finally {
     inviteModal.submitting = false;
@@ -619,19 +646,19 @@ async function submitInvitation() {
 }
 
 // ─── Edit Permissions Handlers ────────────────────────────────
-function openEditPermissionsModal(member) {
+function openEditPermissionsModal(member: any): void {
   editPermsModal.member = member;
   editPermsModal.permissions = [...(member.permissions || [])];
   editPermsModal.open = true;
 }
 
-function closeEditPermsModal() {
+function closeEditPermsModal(): void {
   editPermsModal.open = false;
   editPermsModal.member = null;
   editPermsModal.permissions = [];
 }
 
-async function submitEditPermissions() {
+async function submitEditPermissions(): Promise<void> {
   if (editPermsModal.permissions.length === 0) {
     showToast(t('access.messages.selectPermsWarning'), 'warning');
     return;
@@ -646,15 +673,15 @@ async function submitEditPermissions() {
     showToast(t('access.messages.permissionsUpdated'), 'success');
     closeEditPermsModal();
     await loadMembersList();
-  } catch (err) {
-    showToast(err.response?.data?.message || t('common.error'), 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     editPermsModal.submitting = false;
   }
 }
 
 // ─── Member Removal & Invite Cancellation ─────────────────────
-function promptRemoveMember(member) {
+function promptRemoveMember(member: any): void {
   confirmModal.title = t('access.modals.removeConfirmTitle');
   confirmModal.desc = `${member.user_name || member.user_email}: ${t('access.modals.removeConfirmDesc')}`;
   confirmModal.confirmText = t('access.actions.removeMember');
@@ -666,8 +693,8 @@ function promptRemoveMember(member) {
       showToast(t('access.messages.memberRemoved'), 'success');
       closeConfirmModal();
       await loadMembersList();
-    } catch (err) {
-      showToast(err.response?.data?.message || t('common.error'), 'error');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || t('common.error'), 'danger');
     } finally {
       confirmModal.submitting = false;
     }
@@ -675,25 +702,31 @@ function promptRemoveMember(member) {
   confirmModal.open = true;
 }
 
-async function handleCancelInvitation(invitationId) {
+async function handleCancelInvitation(invitationId: string | number): Promise<void> {
   actionInProgress.value = invitationId;
   try {
     await cancelInvitation(invitationId);
     showToast(t('access.messages.inviteCanceled'), 'success');
     await loadPendingList();
-  } catch (err) {
-    showToast(err.response?.data?.message || t('common.error'), 'error');
+  } catch (err: any) {
+    showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
     actionInProgress.value = null;
   }
 }
 
-function closeConfirmModal() {
+function handleConfirmClick(): void {
+  if (confirmModal.onConfirm) {
+    confirmModal.onConfirm();
+  }
+}
+
+function closeConfirmModal(): void {
   confirmModal.open = false;
   confirmModal.onConfirm = null;
 }
 
-function formatDate(dateStr) {
+function formatDate(dateStr?: string | null): string {
   if (!dateStr) return '—';
   try {
     const d = new Date(dateStr);

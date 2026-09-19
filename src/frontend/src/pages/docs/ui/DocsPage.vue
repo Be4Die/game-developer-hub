@@ -356,7 +356,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
@@ -385,46 +385,48 @@ import {
   getSectionById,
   getArticleById,
   formatDocDate,
+  type DocSection,
+  type DocArticle,
 } from '@/entities/documentation';
 import { showToast } from '@/shared/lib';
 
 const route = useRoute();
 const router = useRouter();
 
-const currentSectionId = ref('getting-started');
-const currentArticleId = ref('');
-const expandedSections = ref({
+const currentSectionId = ref<string>('getting-started');
+const currentArticleId = ref<string>('');
+const expandedSections = ref<Record<string, boolean>>({
   'getting-started': true,
   orchestration: true,
   sdk: true,
   rules: true,
 });
 
-const sidebarSearch = ref('');
-const rulesSearchQuery = ref('');
-const selectedRuleCategory = ref('all');
-const highlightedRuleCode = ref('');
-const copiedRuleCode = ref('');
-const copiedSnippetId = ref('');
-const activeTabIndices = ref({});
-const contentScrollRef = ref(null);
+const sidebarSearch = ref<string>('');
+const rulesSearchQuery = ref<string>('');
+const selectedRuleCategory = ref<string>('all');
+const highlightedRuleCode = ref<string>('');
+const copiedRuleCode = ref<string>('');
+const copiedSnippetId = ref<string>('');
+const activeTabIndices = ref<Record<string, number>>({});
+const contentScrollRef = ref<HTMLElement | null>(null);
 
 const ruleCategories = computed(() => getRulesByCategory());
 
-const currentSection = computed(() => {
+const currentSection = computed<DocSection | undefined>(() => {
   return getSectionById(currentSectionId.value) || DOCS_SECTIONS[0];
 });
 
-const currentArticle = computed(() => {
+const currentArticle = computed<DocArticle | null>(() => {
   if (!currentArticleId.value) return null;
-  return getArticleById(currentSectionId.value, currentArticleId.value);
+  return getArticleById(currentSectionId.value, currentArticleId.value) || null;
 });
 
-const isInsideNestedArticle = computed(() => {
+const isInsideNestedArticle = computed<boolean>(() => {
   return !!currentArticle.value;
 });
 
-const isRulesCatalogView = computed(() => {
+const isRulesCatalogView = computed<boolean>(() => {
   if (currentSectionId.value === 'rules') {
     if (!currentArticleId.value || currentArticleId.value === 'rules-catalog') {
       return true;
@@ -433,7 +435,7 @@ const isRulesCatalogView = computed(() => {
   return false;
 });
 
-const formattedSectionDate = computed(() => {
+const formattedSectionDate = computed<string>(() => {
   return formatDocDate(currentSection.value?.lastUpdated);
 });
 
@@ -441,11 +443,11 @@ const currentArticleLastUpdated = computed(() => {
   return currentArticle.value?.lastUpdated || currentSection.value?.lastUpdated;
 });
 
-const formattedArticleDate = computed(() => {
+const formattedArticleDate = computed<string>(() => {
   return formatDocDate(currentArticleLastUpdated.value);
 });
 
-const filteredSections = computed(() => {
+const filteredSections = computed<DocSection[]>(() => {
   if (!sidebarSearch.value.trim()) return DOCS_SECTIONS;
   const q = sidebarSearch.value.trim().toLowerCase();
   return DOCS_SECTIONS.filter(
@@ -479,7 +481,7 @@ const articleNavList = computed(() => {
   return currentSection.value?.articles || [];
 });
 
-const currentArticleIndex = computed(() => {
+const currentArticleIndex = computed<number>(() => {
   if (!currentArticleId.value) return -1;
   return articleNavList.value.findIndex((a) => a.id === currentArticleId.value);
 });
@@ -498,11 +500,11 @@ const nextArticle = computed(() => {
   return null;
 });
 
-function isSectionExpanded(sectionId) {
+function isSectionExpanded(sectionId: string): boolean {
   return expandedSections.value[sectionId] !== false;
 }
 
-function getSectionIcon(iconName) {
+function getSectionIcon(iconName?: string): any {
   switch (iconName) {
     case 'Sparkles':
       return Sparkles;
@@ -517,7 +519,7 @@ function getSectionIcon(iconName) {
   }
 }
 
-function handleRootSectionClick(section) {
+function handleRootSectionClick(section: DocSection): void {
   currentSectionId.value = section.id;
   expandedSections.value[section.id] = !expandedSections.value[section.id];
   // При клике на раздел переходим к первому материалу или разделу
@@ -529,14 +531,14 @@ function handleRootSectionClick(section) {
   }
 }
 
-function navigateToSectionRoot(sectionId) {
+function navigateToSectionRoot(sectionId: string): void {
   currentSectionId.value = sectionId;
   currentArticleId.value = '';
   router.push(`/docs/${sectionId}`);
   scrollToTop();
 }
 
-function navigateToArticle(sectionId, articleId) {
+function navigateToArticle(sectionId: string, articleId: string): void {
   currentSectionId.value = sectionId;
   currentArticleId.value = articleId;
   expandedSections.value[sectionId] = true;
@@ -544,7 +546,7 @@ function navigateToArticle(sectionId, articleId) {
   scrollToTop();
 }
 
-function scrollToTop() {
+function scrollToTop(): void {
   nextTick(() => {
     if (contentScrollRef.value) {
       contentScrollRef.value.scrollTop = 0;
@@ -552,12 +554,12 @@ function scrollToTop() {
   });
 }
 
-function resetRuleFilters() {
+function resetRuleFilters(): void {
   rulesSearchQuery.value = '';
   selectedRuleCategory.value = 'all';
 }
 
-function copyRuleDirectLink(code) {
+function copyRuleDirectLink(code: string): void {
   const url = `${window.location.origin}/docs/rules/rules-catalog#${code}`;
   navigator.clipboard.writeText(url);
   copiedRuleCode.value = code;
@@ -569,7 +571,7 @@ function copyRuleDirectLink(code) {
   }, 2000);
 }
 
-function copySnippet(text, id) {
+function copySnippet(text: string, id: string): void {
   if (!text) return;
   navigator.clipboard.writeText(text);
   copiedSnippetId.value = id;
@@ -581,7 +583,7 @@ function copySnippet(text, id) {
   }, 2000);
 }
 
-function renderMarkdown(text) {
+function renderMarkdown(text: string): string {
   if (!text) return '';
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -591,9 +593,9 @@ function renderMarkdown(text) {
     .replace(/\n(\d+)\. /g, '<br/>$1. ');
 }
 
-function syncRouteState() {
-  const sectionParam = route.params.section;
-  const articleParam = route.params.article;
+function syncRouteState(): void {
+  const sectionParam = route.params.section as string | undefined;
+  const articleParam = route.params.article as string | undefined;
 
   if (sectionParam) {
     currentSectionId.value = sectionParam;

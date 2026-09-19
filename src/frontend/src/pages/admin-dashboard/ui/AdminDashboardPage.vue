@@ -130,31 +130,31 @@
     <DeleteModeratorModal
       v-if="deleteTarget"
       :target="deleteTarget"
-      :deleting="deleting"
-      @confirm="handleDelete"
+      @deleted="handleModeratorDeleted"
       @cancel="deleteTarget = null"
     />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { searchUsers, deleteUser } from '@/entities/user';
+import { searchUsers } from '@/entities/user';
 import { CreateModeratorForm, DeleteModeratorModal } from '@/features/manage-moderators';
-import { formatDate, showToast } from '@/shared/lib';
+import { formatDate } from '@/shared/lib';
+import type { User } from '@/shared/types';
 
 const { t } = useI18n();
 
-const activeTab = ref('users');
-const loading = ref(false);
-const deleting = ref(false);
-const deleteTarget = ref(null);
-const searchQuery = ref('');
-const allUsers = ref([]);
-let searchTimeout = null;
+const activeTab = ref<'users' | 'moderators'>('users');
+const loading = ref<boolean>(false);
+const deleting = ref<boolean>(false);
+const deleteTarget = ref<User | null>(null);
+const searchQuery = ref<string>('');
+const allUsers = ref<User[]>([]);
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const users = computed(() => {
+const users = computed<User[]>(() => {
   if (!searchQuery.value) return allUsers.value;
   const q = searchQuery.value.toLowerCase();
   return allUsers.value.filter(
@@ -164,16 +164,16 @@ const users = computed(() => {
   );
 });
 
-const moderators = computed(() =>
+const moderators = computed<User[]>(() =>
   allUsers.value.filter((u) => u.role === 'USER_ROLE_MODERATOR' || u.role === 'moderator')
 );
 
-function debouncedSearch() {
-  clearTimeout(searchTimeout);
+function debouncedSearch(): void {
+  if (searchTimeout) clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => loadUsers(), 300);
 }
 
-async function loadUsers() {
+async function loadUsers(): Promise<void> {
   loading.value = true;
   try {
     const res = await searchUsers({ query: searchQuery.value, limit: 100 });
@@ -185,7 +185,7 @@ async function loadUsers() {
   }
 }
 
-function roleClass(role) {
+function roleClass(role?: string | number): string {
   switch (role) {
     case 'USER_ROLE_ADMIN':
     case 'admin':
@@ -198,7 +198,7 @@ function roleClass(role) {
   }
 }
 
-function roleLabel(role) {
+function roleLabel(role?: string | number): string {
   switch (role) {
     case 'USER_ROLE_ADMIN':
     case 'admin':
@@ -213,7 +213,7 @@ function roleLabel(role) {
   }
 }
 
-function statusBadgeClass(status) {
+function statusBadgeClass(status?: string | number): string {
   switch (status) {
     case 'USER_STATUS_ACTIVE':
     case 'active':
@@ -223,7 +223,7 @@ function statusBadgeClass(status) {
   }
 }
 
-function statusLabel(status) {
+function statusLabel(status?: string | number): string {
   switch (status) {
     case 'USER_STATUS_ACTIVE':
     case 'active':
@@ -238,23 +238,13 @@ function statusLabel(status) {
   }
 }
 
-function confirmDelete(mod) {
+function confirmDelete(mod: User): void {
   deleteTarget.value = mod;
 }
 
-async function handleDelete() {
-  if (!deleteTarget.value) return;
-  deleting.value = true;
-  try {
-    await deleteUser(deleteTarget.value.id);
-    showToast(`Модератор "${deleteTarget.value.display_name}" удалён`, 'success');
-    deleteTarget.value = null;
-    await loadUsers();
-  } catch (err) {
-    showToast(err.response?.data?.message || 'Не удалось удалить модератора', 'error');
-  } finally {
-    deleting.value = false;
-  }
+function handleModeratorDeleted(): void {
+  deleteTarget.value = null;
+  loadUsers();
 }
 
 onMounted(() => {

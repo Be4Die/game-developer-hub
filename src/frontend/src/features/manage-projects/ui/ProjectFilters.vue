@@ -9,13 +9,13 @@
           :value="searchQuery"
           :placeholder="t('common.name')"
           class="filter-input"
-          @input="$emit('update:searchQuery', $event.target.value)"
+          @input="onSearchInput"
         />
         <button
           v-if="searchQuery"
           class="clear-input-btn"
           title="Очистить"
-          @click="$emit('update:searchQuery', '')"
+          @click="emit('update:searchQuery', '')"
         >
           <X class="icon-xs" />
         </button>
@@ -29,7 +29,7 @@
         <select
           :value="statusFilter"
           class="filter-select"
-          @change="$emit('update:statusFilter', $event.target.value)"
+          @change="onStatusChange"
         >
           <option value="all">—</option>
           <option value="draft">{{ t('projects.draft') }}</option>
@@ -48,7 +48,7 @@
         <select
           :value="roleFilter"
           class="filter-select"
-          @change="$emit('update:roleFilter', $event.target.value)"
+          @change="onRoleChange"
         >
           <option value="all">{{ t('common.all') }}</option>
           <option value="owned">{{ t('access.statuses.owner') }}</option>
@@ -65,7 +65,7 @@
         <select
           :value="modeFilter"
           class="filter-select"
-          @change="$emit('update:modeFilter', $event.target.value)"
+          @change="onModeChange"
         >
           <option value="all">{{ t('projects.allModes') }}</option>
           <option value="online">{{ t('projects.modeOnline') }}</option>
@@ -82,7 +82,7 @@
         <select
           :value="sortBy"
           class="filter-select"
-          @change="$emit('update:sortBy', $event.target.value)"
+          @change="onSortChange"
         >
           <option value="newest">{{ t('stats.today') }} / {{ t('common.created') }}</option>
           <option value="oldest">{{ t('common.created') }} ↑</option>
@@ -97,44 +97,73 @@
       v-if="searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
       class="btn-reset-filters"
       title="Сбросить фильтры"
-      @click="$emit('reset')"
+      @click="emit('reset')"
     >
       <RotateCcw class="icon-xs" />
       <span>{{ t('common.reset') }}</span>
     </button>
 
     <!-- Кнопка создания игры -->
-    <button class="btn-add-game" :disabled="creating" @click="$emit('create')">
+    <button class="btn-add-game" :disabled="creating" @click="emit('create')">
       <span v-if="creating" class="spinner-btn"></span>
       <span>{{ creating ? t('common.saving') : t('projects.createBtn') }}</span>
     </button>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { X, ChevronDown, RotateCcw } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
-defineProps({
-  searchQuery: { type: String, default: '' },
-  statusFilter: { type: String, default: 'all' },
-  roleFilter: { type: String, default: 'all' },
-  modeFilter: { type: String, default: 'all' },
-  sortBy: { type: String, default: 'newest' },
-  creating: { type: Boolean, default: false },
+interface Props {
+  searchQuery?: string;
+  statusFilter?: string;
+  roleFilter?: string;
+  modeFilter?: string;
+  sortBy?: string;
+  creating?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  searchQuery: '',
+  statusFilter: 'all',
+  roleFilter: 'all',
+  modeFilter: 'all',
+  sortBy: 'newest',
+  creating: false,
 });
 
-defineEmits([
-  'update:searchQuery',
-  'update:statusFilter',
-  'update:roleFilter',
-  'update:modeFilter',
-  'update:sortBy',
-  'reset',
-  'create',
-]);
+const emit = defineEmits<{
+  (e: 'update:searchQuery', val: string): void;
+  (e: 'update:statusFilter', val: string): void;
+  (e: 'update:roleFilter', val: string): void;
+  (e: 'update:modeFilter', val: string): void;
+  (e: 'update:sortBy', val: string): void;
+  (e: 'reset'): void;
+  (e: 'create'): void;
+}>();
+
+function onSearchInput(e: Event) {
+  emit('update:searchQuery', (e.target as HTMLInputElement).value);
+}
+
+function onStatusChange(e: Event) {
+  emit('update:statusFilter', (e.target as HTMLSelectElement).value);
+}
+
+function onRoleChange(e: Event) {
+  emit('update:roleFilter', (e.target as HTMLSelectElement).value);
+}
+
+function onModeChange(e: Event) {
+  emit('update:modeFilter', (e.target as HTMLSelectElement).value);
+}
+
+function onSortChange(e: Event) {
+  emit('update:sortBy', (e.target as HTMLSelectElement).value);
+}
 </script>
 
 <style scoped>

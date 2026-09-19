@@ -323,7 +323,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -369,18 +369,18 @@ import { showToast } from '@/shared/lib';
 const { t } = useI18n();
 const router = useRouter();
 
-const requests = ref([]);
-const loading = ref(true);
+const requests = ref<any[]>([]);
+const loading = ref<boolean>(true);
 
-const searchQuery = ref('');
-const statusFilter = ref('all');
-const typeFilter = ref('all');
-const modeFilter = ref('all');
-const sortBy = ref('newest');
-const currentPage = ref(1);
-const pageSize = ref(10);
+const searchQuery = ref<string>('');
+const statusFilter = ref<string>('all');
+const typeFilter = ref<string>('all');
+const modeFilter = ref<string>('all');
+const sortBy = ref<string>('newest');
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(10);
 
-async function loadArchive() {
+async function loadArchive(): Promise<void> {
   loading.value = true;
   try {
     const res = await moderationApi.listRequests({ limit: 100, offset: 0 });
@@ -389,10 +389,10 @@ async function loadArchive() {
     const resolved = raw
       .map(normalizeRequest)
       .filter(
-        (r) =>
-          r.status === REQUEST_STATUS.APPROVED ||
-          r.status === REQUEST_STATUS.REJECTED ||
-          r.status === REQUEST_STATUS.CANCELLED ||
+        (r: any) =>
+          Number(r.status) === REQUEST_STATUS.APPROVED ||
+          Number(r.status) === REQUEST_STATUS.REJECTED ||
+          Number(r.status) === REQUEST_STATUS.CANCELLED ||
           r.status === 3 ||
           r.status === 4 ||
           r.status === 5 ||
@@ -404,7 +404,7 @@ async function loadArchive() {
           r.status === 'cancelled'
       );
     requests.value = resolved;
-  } catch (err) {
+  } catch {
     showToast(t('common.error'), 'danger');
   } finally {
     loading.value = false;
@@ -413,7 +413,7 @@ async function loadArchive() {
 
 onMounted(loadArchive);
 
-function resetFilters() {
+function resetFilters(): void {
   searchQuery.value = '';
   statusFilter.value = 'all';
   typeFilter.value = 'all';
@@ -422,7 +422,7 @@ function resetFilters() {
   currentPage.value = 1;
 }
 
-const filteredRequests = computed(() => {
+const filteredRequests = computed<any[]>(() => {
   let list = [...requests.value];
 
   // Фильтр по статусу
@@ -444,17 +444,17 @@ const filteredRequests = computed(() => {
 
   // Фильтр по режиму сети
   if (modeFilter.value === 'online') {
-    list = list.filter((r) => Boolean(r.snapshot.isOnline));
+    list = list.filter((r) => Boolean(r.snapshot?.isOnline));
   } else if (modeFilter.value === 'offline') {
-    list = list.filter((r) => !Boolean(r.snapshot.isOnline));
+    list = list.filter((r) => !r.snapshot?.isOnline);
   }
 
   // Поиск
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase().trim();
     list = list.filter((r) => {
-      const titleRu = (r.snapshot.titleRu || '').toLowerCase();
-      const titleEn = (r.snapshot.titleEn || '').toLowerCase();
+      const titleRu = (r.snapshot?.titleRu || '').toLowerCase();
+      const titleEn = (r.snapshot?.titleEn || '').toLowerCase();
       const pId = String(r.projectId);
       const reqId = String(r.id);
       const owner = (r.ownerId || '').toLowerCase();
@@ -479,16 +479,16 @@ const filteredRequests = computed(() => {
   // Сортировка
   if (sortBy.value === 'newest') {
     list.sort(
-      (a, b) => new Date(b.reviewedAt || b.submittedAt) - new Date(a.reviewedAt || a.submittedAt)
+      (a, b) => new Date(b.reviewedAt || b.submittedAt).getTime() - new Date(a.reviewedAt || a.submittedAt).getTime()
     );
   } else if (sortBy.value === 'oldest') {
     list.sort(
-      (a, b) => new Date(a.reviewedAt || a.submittedAt) - new Date(b.reviewedAt || b.submittedAt)
+      (a, b) => new Date(a.reviewedAt || a.submittedAt).getTime() - new Date(b.reviewedAt || b.submittedAt).getTime()
     );
   } else if (sortBy.value === 'title') {
     list.sort((a, b) => {
-      const nameA = a.snapshot.titleRu || a.snapshot.titleEn || '';
-      const nameB = b.snapshot.titleRu || b.snapshot.titleEn || '';
+      const nameA = a.snapshot?.titleRu || a.snapshot?.titleEn || '';
+      const nameB = b.snapshot?.titleRu || b.snapshot?.titleEn || '';
       return nameA.localeCompare(nameB);
     });
   }
@@ -496,61 +496,64 @@ const filteredRequests = computed(() => {
   return list;
 });
 
-const totalPages = computed(() =>
+const totalPages = computed<number>(() =>
   Math.max(1, Math.ceil(filteredRequests.value.length / pageSize.value))
 );
 
-const paginatedRequests = computed(() => {
+const paginatedRequests = computed<any[]>(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   return filteredRequests.value.slice(start, start + pageSize.value);
 });
 
-function isApproved(status) {
+function isApproved(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.APPROVED ||
+    Number(status) === REQUEST_STATUS.APPROVED ||
     status === 3 ||
     status === 'REQUEST_STATUS_APPROVED' ||
     status === 'approved'
   );
 }
 
-function isRejected(status) {
+function isRejected(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.REJECTED ||
+    Number(status) === REQUEST_STATUS.REJECTED ||
     status === 4 ||
     status === 'REQUEST_STATUS_REJECTED' ||
     status === 'rejected'
   );
 }
 
-function isCancelled(status) {
+function isCancelled(status: any): boolean {
+  if (status === null || status === undefined) return false;
   return (
-    status === REQUEST_STATUS.CANCELLED ||
+    Number(status) === REQUEST_STATUS.CANCELLED ||
     status === 5 ||
     status === 'REQUEST_STATUS_CANCELLED' ||
     status === 'cancelled'
   );
 }
 
-function verdictLabel(status) {
+function verdictLabel(status: any): string {
   if (isApproved(status)) return t('journal.snapshotModal.approved');
   if (isRejected(status)) return t('journal.snapshotModal.rejected');
   if (isCancelled(status)) return t('journal.snapshotModal.cancelled');
   return t('common.unknown');
 }
 
-function verdictClass(status) {
+function verdictClass(status: any): string {
   if (isApproved(status)) return 'status-approved';
   if (isRejected(status)) return 'status-rejected';
   if (isCancelled(status)) return 'status-neutral';
   return 'status-neutral';
 }
 
-function openProject(projectId) {
+function openProject(projectId: string | number): void {
   router.push(`/moderator/projects/${projectId}`);
 }
 
-function openSnapshot(req) {
+function openSnapshot(req: any): void {
   router.push(`/moderator/journal/${req.id}`);
 }
 </script>

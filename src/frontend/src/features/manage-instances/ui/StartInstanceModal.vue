@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal card">
       <h3>{{ t('servers.startInstance') }}</h3>
       <div class="form-grid">
@@ -65,33 +65,49 @@
         >
           {{ starting ? t('common.loading') : t('servers.startInstance') }}
         </button>
-        <button class="btn-outline" @click="$emit('cancel')">{{ t('common.cancel') }}</button>
+        <button class="btn-outline" @click="emit('cancel')">{{ t('common.cancel') }}</button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Database } from 'lucide-vue-next';
 import { KeyValueEditor } from '@/shared/ui';
 import { startInstance } from '@/entities/instance';
 import { showToast } from '@/shared/lib';
+import type { ServerBuild } from '@/shared/types';
+
+interface Props {
+  gameId: string | number;
+  availableBuilds?: ServerBuild[];
+}
 
 const { t } = useI18n();
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-  availableBuilds: { type: Array, default: () => [] },
+const props = withDefaults(defineProps<Props>(), {
+  availableBuilds: () => [],
 });
 
-const emit = defineEmits(['started', 'cancel']);
+const emit = defineEmits<{
+  (e: 'started'): void;
+  (e: 'cancel'): void;
+}>();
 
 const starting = ref(false);
-const startError = ref(null);
+const startError = ref<string | null>(null);
 
-const startForm = reactive({
+interface StartFormState {
+  build_version: string;
+  name: string;
+  max_players: number | null;
+  env_vars: Record<string, string>;
+  args: string[];
+}
+
+const startForm = reactive<StartFormState>({
   build_version: '',
   name: '',
   max_players: null,
@@ -102,7 +118,7 @@ const startForm = reactive({
 async function submitStart() {
   starting.value = true;
   startError.value = null;
-  const payload = {
+  const payload: any = {
     build_version: startForm.build_version,
   };
   if (startForm.name) payload.name = startForm.name;
@@ -125,7 +141,7 @@ async function submitStart() {
       args: [],
     });
     emit('started');
-  } catch (e) {
+  } catch (e: any) {
     if (e.response?.status === 409) {
       startError.value = 'Недостаточно ресурсов на доступных нодах';
     } else {

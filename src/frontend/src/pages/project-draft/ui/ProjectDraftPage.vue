@@ -434,8 +434,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, watch, inject, reactive } from 'vue';
+<script setup lang="ts">
+import { ref, computed, onMounted, watch, inject, reactive, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
@@ -459,24 +459,37 @@ import { listClientBuilds } from '@/entities/build';
 import { moderationApi, REQUEST_STATUS } from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
+import type { Project } from '@/shared/types';
+
+type MediaType = 'icon' | 'cover' | 'video';
 
 const { t } = useI18n();
 const route = useRoute();
-const projectId = computed(() => route.params.id);
+const projectId = computed<string>(() => String(route.params.id || ''));
 
-const sharedProject = inject('project', null);
-const draftActions = inject('draftActions', null);
+const sharedProject = inject<Ref<Project | null> | null>('project', null);
+const draftActions = inject<Ref<any> | null>('draftActions', null);
 
-const isOwner = computed(() => sharedProject?.value?.is_owner !== false);
-const permissions = computed(() => sharedProject?.value?.current_user_permissions || []);
-const canEditInfo = computed(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
-const canUploadMedia = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
-const canUploadBuild = computed(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
-const canSubmitModeration = computed(
+const isOwner = computed<boolean>(() => sharedProject?.value?.is_owner !== false);
+const permissions = computed<string[]>(() => sharedProject?.value?.current_user_permissions || []);
+const canEditInfo = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
+const canUploadMedia = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
+const canUploadBuild = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
+const canSubmitModeration = computed<boolean>(
   () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
 );
 
-const meta = ref({
+interface MetaState {
+  title_ru: string;
+  title_en: string;
+  seo_ru: string;
+  seo_en: string;
+  about_ru: string;
+  about_en: string;
+  is_online: boolean;
+}
+
+const meta = ref<MetaState>({
   title_ru: '',
   title_en: '',
   seo_ru: '',
@@ -486,34 +499,35 @@ const meta = ref({
   is_online: false,
 });
 
-function selectNetworkMode(isOnline) {
+function selectNetworkMode(isOnline: boolean): void {
   if (!canEditInfo.value) return;
   meta.value.is_online = isOnline;
 }
 
-const media = ref({ icon: false, cover: false, video: false });
-const mediaUrls = ref({ icon: '', cover: '', video: '' });
-const pendingFiles = reactive({ icon: null, cover: null, video: null });
-const uploading = reactive({ icon: false, cover: false, video: false });
-const dragStates = reactive({ icon: false, cover: false, video: false });
+const media = ref<Record<MediaType, boolean>>({ icon: false, cover: false, video: false });
+const mediaUrls = ref<Record<MediaType, string>>({ icon: '', cover: '', video: '' });
+const pendingFiles = reactive<Record<MediaType, File | null>>({ icon: null, cover: null, video: null });
+const uploading = reactive<Record<MediaType, boolean>>({ icon: false, cover: false, video: false });
+const dragStates = reactive<Record<MediaType, boolean>>({ icon: false, cover: false, video: false });
 
-const fileIcon = ref(null);
-const fileCoverMain = ref(null);
-const fileVideo = ref(null);
+const fileIcon = ref<HTMLInputElement | null>(null);
+const fileCoverMain = ref<HTMLInputElement | null>(null);
+const fileVideo = ref<HTMLInputElement | null>(null);
 
-const activeBuildVersion = ref('');
-const submitting = ref(false);
-const moderationRequest = ref(null);
-const moderationStatus = ref(null);
-const rejectionReason = ref('');
-const recentBuilds = ref([]);
-const projectData = ref(null);
+const activeBuildVersion = ref<string>('');
+const submitting = ref<boolean>(false);
+const moderationRequest = ref<any | null>(null);
+const moderationStatus = ref<string | number | null>(null);
+const rejectionReason = ref<string>('');
+const recentBuilds = ref<any[]>([]);
+const projectData = ref<Project | null>(null);
 
-const isUnderReview = computed(() => {
+const isUnderReview = computed<boolean>(() => {
   const st = moderationStatus.value;
+  if (st === null || st === undefined) return false;
   return (
-    st === REQUEST_STATUS.PENDING ||
-    st === REQUEST_STATUS.IN_REVIEW ||
+    Number(st) === REQUEST_STATUS.PENDING ||
+    Number(st) === REQUEST_STATUS.IN_REVIEW ||
     st === 'REQUEST_STATUS_PENDING' ||
     st === 'REQUEST_STATUS_IN_REVIEW' ||
     st === 'pending' ||
@@ -521,9 +535,10 @@ const isUnderReview = computed(() => {
   );
 });
 
-const isRejected = computed(() => {
+const isRejected = computed<boolean>(() => {
   const st = moderationStatus.value;
-  return st === REQUEST_STATUS.REJECTED || st === 'REQUEST_STATUS_REJECTED' || st === 'rejected';
+  if (st === null || st === undefined) return false;
+  return Number(st) === REQUEST_STATUS.REJECTED || st === 'REQUEST_STATUS_REJECTED' || st === 'rejected';
 });
 
 if (draftActions) {
@@ -545,23 +560,23 @@ if (draftActions) {
   );
 }
 
-function triggerFileInput(type) {
+function triggerFileInput(type: MediaType): void {
   if (type === 'icon' && fileIcon.value) fileIcon.value.click();
   if (type === 'cover' && fileCoverMain.value) fileCoverMain.value.click();
   if (type === 'video' && fileVideo.value) fileVideo.value.click();
 }
 
-function onDragOver(type, e) {
+function onDragOver(type: MediaType, e: DragEvent): void {
   e.preventDefault();
   dragStates[type] = true;
 }
 
-function onDragLeave(type, e) {
+function onDragLeave(type: MediaType, e: DragEvent): void {
   e.preventDefault();
   dragStates[type] = false;
 }
 
-function onDrop(type, e) {
+function onDrop(type: MediaType, e: DragEvent): void {
   e.preventDefault();
   dragStates[type] = false;
   const file = e.dataTransfer?.files?.[0];
@@ -570,7 +585,7 @@ function onDrop(type, e) {
   }
 }
 
-function removeMedia(type) {
+function removeMedia(type: MediaType): void {
   if (pendingFiles[type]) {
     pendingFiles[type] = null;
   }
@@ -585,11 +600,11 @@ function removeMedia(type) {
   showToast(t('projectDraft.removeFile') + ': ' + t(`projectDraft.${type}Title`), 'info');
 }
 
-function handleMediaError(type) {
+function handleMediaError(type: MediaType): void {
   console.warn(`Media failed to load for ${type}: ${mediaUrls.value[type]}`);
 }
 
-async function loadModerationStatus() {
+async function loadModerationStatus(): Promise<void> {
   const pId = parseInt(projectId.value, 10);
   if (!pId) return;
   try {
@@ -608,7 +623,7 @@ async function loadModerationStatus() {
   }
 }
 
-async function loadProject(keepStaged = false) {
+async function loadProject(keepStaged = false): Promise<void> {
   try {
     const project = await getProject(projectId.value);
     projectData.value = project;
@@ -620,8 +635,7 @@ async function loadProject(keepStaged = false) {
       title_en: project.draft?.title_en || project.title_en || '',
       seo_ru: project.draft?.seo_ru || project.seo_ru || '',
       seo_en: project.draft?.seo_en || project.seo_en || '',
-      about_ru:
-        project.draft?.about_ru || project.about_ru || project.draft?.about || project.about || '',
+      about_ru: project.draft?.about_ru || project.about_ru || '',
       about_en: project.draft?.about_en || project.about_en || '',
       is_online: project.draft?.is_online ?? project.is_online ?? false,
     };
@@ -659,7 +673,7 @@ async function loadProject(keepStaged = false) {
 
 onMounted(() => loadProject(false));
 
-async function submitForModeration() {
+async function submitForModeration(): Promise<void> {
   if (!canSubmitModeration.value) {
     showToast('Недостаточно прав для отправки на модерацию', 'danger');
     return;
@@ -683,24 +697,25 @@ async function submitForModeration() {
     await submitProjectForModeration(pId);
     await loadModerationStatus();
     showToast('Заявка на модерацию успешно отправлена!', 'success');
-  } catch (e) {
+  } catch (e: any) {
     showToast(e.response?.data?.message || e.message || 'Ошибка отправки на модерацию', 'danger');
   } finally {
     submitting.value = false;
   }
 }
 
-async function saveMeta(silent = false) {
+async function saveMeta(silent = false): Promise<void> {
   try {
     // 1. Сначала загружаем все локально прикрепленные медиафайлы (если есть права)
     if (canUploadMedia.value) {
-      for (const type of ['icon', 'cover', 'video']) {
-        if (pendingFiles[type]) {
+      for (const type of ['icon', 'cover', 'video'] as MediaType[]) {
+        const file = pendingFiles[type];
+        if (file) {
           uploading[type] = true;
           try {
-            await uploadMedia(projectId.value, type, pendingFiles[type]);
+            await uploadMedia(projectId.value, type, file);
             pendingFiles[type] = null;
-          } catch (uploadErr) {
+          } catch (uploadErr: any) {
             showToast(
               `Ошибка загрузки медиафайла (${type}): ${uploadErr.message || uploadErr}`,
               'danger'
@@ -715,7 +730,7 @@ async function saveMeta(silent = false) {
 
     // 2. Обновляем текстовые метаданные черновика (если есть права)
     if (canEditInfo.value || canUploadBuild.value) {
-      const payload = {};
+      const payload: Record<string, any> = {};
       if (canEditInfo.value) {
         Object.assign(payload, meta.value);
       }
@@ -744,7 +759,7 @@ async function saveMeta(silent = false) {
   }
 }
 
-function validateImageDimensions(file, expectedWidth, expectedHeight) {
+function validateImageDimensions(file: File, expectedWidth: number, expectedHeight: number): Promise<boolean> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -767,14 +782,15 @@ function validateImageDimensions(file, expectedWidth, expectedHeight) {
   });
 }
 
-const handleFileInput = async (type, event) => {
-  const file = event.target.files[0];
+const handleFileInput = async (type: MediaType, event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (!file) return;
   await stageMedia(type, file);
-  event.target.value = '';
+  target.value = '';
 };
 
-async function stageMedia(type, file) {
+async function stageMedia(type: MediaType, file: File): Promise<void> {
   if (!file) return;
   try {
     if (type === 'icon') {
@@ -796,22 +812,22 @@ async function stageMedia(type, file) {
     media.value[type] = true;
 
     showToast(`Файл "${file.name}" выбран. Нажмите "Сохранить", чтобы загрузить.`, 'info');
-  } catch (err) {
+  } catch (err: any) {
     showToast(err.message || 'Ошибка выбора файла', 'danger');
   }
 }
 
-async function onBuildUploaded(version) {
+async function onBuildUploaded(version: string): Promise<void> {
   activeBuildVersion.value = version;
   await loadProject(true);
 }
 
-function setActiveBuild(version) {
+function setActiveBuild(version: string): void {
   activeBuildVersion.value = version;
   showToast(`Активная версия изменена на ${version}`, 'success');
 }
 
-function downloadBuild(version) {
+function downloadBuild(version: string): void {
   if (!version) return;
   const link = document.createElement('a');
   link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;

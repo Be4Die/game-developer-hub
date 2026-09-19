@@ -269,7 +269,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { Settings2, ChevronDown, ChevronRight } from 'lucide-vue-next';
 import { Tooltip } from '@/shared/ui';
@@ -282,21 +282,27 @@ import {
   nodePreferenceLabel,
 } from '@/entities/policy';
 import { showToast } from '@/shared/lib';
+import type { OrchestrationPolicy, ServerBuild, NodeInfo } from '@/shared/types';
 
-const props = defineProps({
-  gameId: { type: [String, Number], required: true },
-  builds: { type: Array, default: () => [] },
-  nodes: { type: Array, default: () => [] },
+interface Props {
+  gameId: string | number;
+  builds?: ServerBuild[];
+  nodes?: NodeInfo[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  builds: () => [],
+  nodes: () => [],
 });
 
 const expanded = ref(false);
 const loading = ref(false);
 const editing = ref(false);
 const saving = ref(false);
-const saveError = ref(null);
+const saveError = ref<string | null>(null);
 
-const policy = ref(null);
-const draft = ref({});
+const policy = ref<OrchestrationPolicy | null>(null);
+const draft = ref<Partial<OrchestrationPolicy>>({});
 
 const onlineNodeList = computed(() =>
   props.nodes.filter((n) => n.status === 'online' || n.status === 'NODE_STATUS_ONLINE')
@@ -333,7 +339,7 @@ async function savePolicy() {
     policy.value = data;
     editing.value = false;
     showToast('Политика обновлена', 'success');
-  } catch (e) {
+  } catch (e: any) {
     saveError.value = e.response?.data?.message ?? 'Ошибка сохранения политики';
   } finally {
     saving.value = false;

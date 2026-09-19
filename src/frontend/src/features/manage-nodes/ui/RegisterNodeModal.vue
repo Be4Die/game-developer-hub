@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('cancel')">
+  <div class="modal-overlay" @click.self="emit('cancel')">
     <div class="modal card">
       <h3>Подключить ноду</h3>
       <div class="tabs">
@@ -117,26 +117,33 @@
         <button class="btn-primary" :disabled="registering || !canSubmit" @click="submitRegister">
           {{ registering ? 'Подключение...' : 'Подключить' }}
         </button>
-        <button class="btn-outline" @click="$emit('cancel')">Отмена</button>
+        <button class="btn-outline" @click="emit('cancel')">Отмена</button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { registerNode } from '@/entities/node';
 import { showToast } from '@/shared/lib';
 
-defineProps({
-  availableNodes: { type: Array, default: () => [] },
+interface Props {
+  availableNodes?: any[];
+}
+
+withDefaults(defineProps<Props>(), {
+  availableNodes: () => [],
 });
 
-const emit = defineEmits(['registered', 'cancel']);
+const emit = defineEmits<{
+  (e: 'registered'): void;
+  (e: 'cancel'): void;
+}>();
 
-const registerTab = ref('available');
+const registerTab = ref<'available' | 'manual'>('available');
 const registering = ref(false);
-const registerError = ref(null);
+const registerError = ref<string | null>(null);
 const showAdvancedIngress = ref(false);
 
 const availableForm = ref({
@@ -180,9 +187,9 @@ const addressNetworkHint = computed(() => {
 
 const canSubmit = computed(() => {
   if (registerTab.value === 'available') {
-    return availableForm.value.node_id && availableForm.value.token;
+    return !!(availableForm.value.node_id && availableForm.value.token);
   }
-  return manualForm.value.address && manualForm.value.token;
+  return !!(manualForm.value.address && manualForm.value.token);
 });
 
 async function submitRegister() {
@@ -190,7 +197,7 @@ async function submitRegister() {
   registerError.value = null;
 
   try {
-    let payload;
+    let payload: any;
     if (registerTab.value === 'available') {
       payload = {
         node_id: availableForm.value.node_id,
@@ -208,7 +215,7 @@ async function submitRegister() {
     await registerNode(payload);
     showToast('Нода успешно подключена', 'success');
     emit('registered');
-  } catch (e) {
+  } catch (e: any) {
     if (e.response?.status === 401) {
       registerError.value = 'Неверный ключ авторизации ноды';
     } else if (e.response?.status === 409) {

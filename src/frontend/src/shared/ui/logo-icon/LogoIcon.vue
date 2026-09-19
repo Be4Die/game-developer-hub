@@ -37,13 +37,21 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  size: { type: Number, default: 32 },
-  textSize: { type: Number, default: 18 },
-  showText: { type: Boolean, default: true },
-  showSub: { type: Boolean, default: false },
-  noHover: { type: Boolean, default: false },
+<script setup lang="ts">
+interface Props {
+  size?: number;
+  textSize?: number;
+  showText?: boolean;
+  showSub?: boolean;
+  noHover?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  size: 32,
+  textSize: 18,
+  showText: true,
+  showSub: false,
+  noHover: false,
 });
 </script>
 

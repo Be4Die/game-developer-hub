@@ -110,7 +110,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { Search, X, ChevronDown, AlertCircle } from 'lucide-vue-next';
 import {
@@ -119,21 +119,24 @@ import {
   getRuleByCode,
 } from '@/entities/documentation';
 
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: '',
-  },
-  placeholder: {
-    type: String,
-    default: '',
-  },
+interface Props {
+  modelValue?: string;
+  placeholder?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+  placeholder: '',
 });
 
-const emit = defineEmits(['update:modelValue', 'select', 'clear']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void;
+  (e: 'select', rule: any): void;
+  (e: 'clear'): void;
+}>();
 
-const containerRef = ref(null);
-const searchInputRef = ref(null);
+const containerRef = ref<HTMLElement | null>(null);
+const searchInputRef = ref<HTMLInputElement | null>(null);
 const isOpen = ref(false);
 const searchQuery = ref('');
 const selectedCategory = ref('all');
@@ -145,7 +148,7 @@ const selectedRule = computed(() => {
 });
 
 const filteredRules = computed(() => {
-  let list = PLATFORM_RULES;
+  let list = PLATFORM_RULES as any[];
 
   if (selectedCategory.value !== 'all') {
     list = list.filter((r) => r.category === selectedCategory.value);
@@ -166,7 +169,7 @@ const filteredRules = computed(() => {
   return list;
 });
 
-function toggleDropdown() {
+function toggleDropdown(): void {
   if (isOpen.value) {
     closeDropdown();
   } else {
@@ -174,31 +177,31 @@ function toggleDropdown() {
   }
 }
 
-function openDropdown() {
+function openDropdown(): void {
   isOpen.value = true;
   nextTick(() => {
     searchInputRef.value?.focus();
   });
 }
 
-function closeDropdown() {
+function closeDropdown(): void {
   isOpen.value = false;
   searchQuery.value = '';
 }
 
-function selectRule(rule) {
+function selectRule(rule: any): void {
   emit('update:modelValue', rule.code);
   emit('select', rule);
   closeDropdown();
 }
 
-function clearSelection() {
+function clearSelection(): void {
   emit('update:modelValue', '');
   emit('clear');
 }
 
-function handleClickOutside(e) {
-  if (containerRef.value && !containerRef.value.contains(e.target)) {
+function handleClickOutside(e: MouseEvent): void {
+  if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
     closeDropdown();
   }
 }

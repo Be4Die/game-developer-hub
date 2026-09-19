@@ -2,22 +2,27 @@
   <span class="status-badge" :class="statusClass">{{ label }}</span>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+interface Props {
+  status: string | number;
+  type?: 'instance' | 'node' | 'role' | 'service' | 'platform_access' | string;
+}
+
 const { t, te } = useI18n();
 
-const props = defineProps({
-  status: { type: [String, Number], required: true },
-  type: {
-    type: String,
-    default: 'instance',
-    validator: (v) => ['instance', 'node', 'role', 'service', 'platform_access'].includes(v),
-  },
+const props = withDefaults(defineProps<Props>(), {
+  type: 'instance',
 });
 
-const platformAccessMap = {
+interface StatusMeta {
+  label: string;
+  cls: string;
+}
+
+const platformAccessMap: Record<string, StatusMeta> = {
   PLATFORM_ACCESS_STATUS_UNSPECIFIED: { label: 'Неизвестно', cls: 'muted' },
   PLATFORM_ACCESS_STATUS_PENDING: { label: 'На рассмотрении', cls: 'warning' },
   PLATFORM_ACCESS_STATUS_APPROVED: { label: 'Доступ открыт', cls: 'success' },
@@ -33,7 +38,7 @@ const platformAccessMap = {
   rejected: { label: 'Отклонено', cls: 'danger' },
 };
 
-const instanceMap = {
+const instanceMap: Record<string, StatusMeta> = {
   starting: { label: 'Запускается', cls: 'warning' },
   running: { label: 'Работает', cls: 'success' },
   stopping: { label: 'Останавливается', cls: 'warning' },
@@ -48,7 +53,7 @@ const instanceMap = {
   INSTANCE_STATUS_CRASHED: { label: 'Авария', cls: 'danger' },
 };
 
-const nodeMap = {
+const nodeMap: Record<string, StatusMeta> = {
   unauthorized: { label: 'Не авторизована', cls: 'warning' },
   online: { label: 'В сети', cls: 'success' },
   offline: { label: 'Не в сети', cls: 'muted' },
@@ -67,7 +72,7 @@ const roleLabels = computed(() => ({
   storage: te('servers.nodeRoles.storage') ? t('servers.nodeRoles.storage') : 'Storage',
 }));
 
-const roleMap = computed(() => ({
+const roleMap = computed<Record<string, StatusMeta>>(() => ({
   mixed: { label: roleLabels.value.mixed, cls: 'primary' },
   compute: { label: roleLabels.value.compute, cls: 'neutral' },
   storage: { label: roleLabels.value.storage, cls: 'warning' },
@@ -77,7 +82,7 @@ const roleMap = computed(() => ({
   NODE_ROLE_STORAGE: { label: roleLabels.value.storage, cls: 'warning' },
 }));
 
-const serviceMap = {
+const serviceMap: Record<string, StatusMeta> = {
   running: { label: 'Работает', cls: 'success' },
   starting: { label: 'Запуск...', cls: 'warning' },
   stopped: { label: 'Остановлен', cls: 'muted' },
@@ -90,7 +95,7 @@ const serviceMap = {
   SERVICE_STATUS_FAILED: { label: 'Ошибка', cls: 'danger' },
 };
 
-const map = computed(() => {
+const map = computed<Record<string, StatusMeta>>(() => {
   if (props.type === 'node') return nodeMap;
   if (props.type === 'role') return roleMap.value;
   if (props.type === 'service') return serviceMap;
@@ -99,12 +104,12 @@ const map = computed(() => {
 });
 
 // Convert numeric status to proto enum string if needed
-const statusKey = computed(() => {
+const statusKey = computed<string>(() => {
   const status = props.status;
   if (typeof status === 'number' || /^\d+$/.test(String(status))) {
     const numStatus = Number(status);
     if (props.type === 'platform_access') {
-      const numPlatformMap = {
+      const numPlatformMap: Record<number, string> = {
         0: 'REQUEST_STATUS_UNSPECIFIED',
         1: 'REQUEST_STATUS_PENDING',
         2: 'REQUEST_STATUS_APPROVED',
@@ -114,7 +119,7 @@ const statusKey = computed(() => {
       return numPlatformMap[numStatus] || 'REQUEST_STATUS_UNSPECIFIED';
     }
     if (props.type === 'role') {
-      const numRoleMap = {
+      const numRoleMap: Record<number, string> = {
         0: 'NODE_ROLE_UNSPECIFIED',
         1: 'NODE_ROLE_MIXED',
         2: 'NODE_ROLE_COMPUTE',
@@ -123,7 +128,7 @@ const statusKey = computed(() => {
       return numRoleMap[numStatus] || 'NODE_ROLE_UNSPECIFIED';
     }
     if (props.type === 'service') {
-      const numServiceMap = {
+      const numServiceMap: Record<number, string> = {
         0: 'SERVICE_STATUS_UNSPECIFIED',
         1: 'SERVICE_STATUS_STARTING',
         2: 'SERVICE_STATUS_RUNNING',
@@ -133,7 +138,7 @@ const statusKey = computed(() => {
       return numServiceMap[numStatus] || 'SERVICE_STATUS_UNSPECIFIED';
     }
     if (props.type === 'node') {
-      const nodeStatusMap = {
+      const nodeStatusMap: Record<number, string> = {
         0: 'NODE_STATUS_UNSPECIFIED',
         1: 'NODE_STATUS_UNAUTHORIZED',
         2: 'NODE_STATUS_ONLINE',
@@ -142,7 +147,7 @@ const statusKey = computed(() => {
       };
       return nodeStatusMap[numStatus] || 'NODE_STATUS_UNSPECIFIED';
     }
-    const instanceStatusMap = {
+    const instanceStatusMap: Record<number, string> = {
       0: 'INSTANCE_STATUS_UNSPECIFIED',
       1: 'INSTANCE_STATUS_STARTING',
       2: 'INSTANCE_STATUS_RUNNING',
@@ -152,7 +157,7 @@ const statusKey = computed(() => {
     };
     return instanceStatusMap[numStatus] || 'INSTANCE_STATUS_UNSPECIFIED';
   }
-  return status;
+  return String(status);
 });
 
 const label = computed(() => map.value[statusKey.value]?.label ?? String(props.status ?? '—'));

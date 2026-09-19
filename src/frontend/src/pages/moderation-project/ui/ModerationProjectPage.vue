@@ -294,7 +294,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -328,78 +328,85 @@ const route = useRoute();
 const router = useRouter();
 const { state: authState } = useAuth();
 
-const isAdmin = computed(() => {
+const isAdmin = computed<boolean>(() => {
   const r = authState.user?.role;
   return r === 'USER_ROLE_ADMIN' || r === 'admin' || r === 3;
 });
 
-const projectId = computed(() => route.params.projectId);
+const projectId = computed<string>(() => String(route.params.projectId));
 
-const activeRequest = ref(null);
-const projectData = ref(null);
-const loading = ref(true);
-const actionLoading = ref(false);
-const showApproveModal = ref(false);
-const noRequestMode = ref(false);
+const activeRequest = ref<any | null>(null);
+const projectData = ref<any | null>(null);
+const loading = ref<boolean>(true);
+const actionLoading = ref<boolean>(false);
+const showApproveModal = ref<boolean>(false);
+const noRequestMode = ref<boolean>(false);
 
-const requestStatus = computed(() => activeRequest.value?.status);
+const requestStatus = computed<any>(() => activeRequest.value?.status);
 
-const isPending = computed(() => {
+const isPending = computed<boolean>(() => {
   const st = requestStatus.value;
+  if (st === null || st === undefined) return false;
   return (
-    st === REQUEST_STATUS.PENDING || st === 'REQUEST_STATUS_PENDING' || st === 1 || st === 'pending'
+    Number(st) === REQUEST_STATUS.PENDING ||
+    st === 'REQUEST_STATUS_PENDING' ||
+    st === 1 ||
+    st === 'pending'
   );
 });
 
-const isInReview = computed(() => {
+const isInReview = computed<boolean>(() => {
   const st = requestStatus.value;
+  if (st === null || st === undefined) return false;
   return (
-    st === REQUEST_STATUS.IN_REVIEW ||
+    Number(st) === REQUEST_STATUS.IN_REVIEW ||
     st === 'REQUEST_STATUS_IN_REVIEW' ||
     st === 2 ||
     st === 'in_review'
   );
 });
 
-const isApproved = computed(() => {
+const isApproved = computed<boolean>(() => {
   const st = requestStatus.value;
+  if (st === null || st === undefined) return false;
   return (
-    st === REQUEST_STATUS.APPROVED ||
+    Number(st) === REQUEST_STATUS.APPROVED ||
     st === 'REQUEST_STATUS_APPROVED' ||
     st === 3 ||
     st === 'approved'
   );
 });
 
-const isRejected = computed(() => {
+const isRejected = computed<boolean>(() => {
   const st = requestStatus.value;
+  if (st === null || st === undefined) return false;
   return (
-    st === REQUEST_STATUS.REJECTED ||
+    Number(st) === REQUEST_STATUS.REJECTED ||
     st === 'REQUEST_STATUS_REJECTED' ||
     st === 4 ||
     st === 'rejected'
   );
 });
 
-const projectIconUrl = computed(() => {
+const projectIconUrl = computed<string>(() => {
   const path = projectData.value?.iconPath || projectData.value?.icon_path;
   if (!path) return '';
   return getMediaUrl(path);
 });
 
-const projectCoverUrl = computed(() => {
+const projectCoverUrl = computed<string>(() => {
   const path = projectData.value?.coverPath || projectData.value?.cover_path;
   if (!path) return '';
   return getMediaUrl(path);
 });
 
-const projectVideoUrl = computed(() => {
+const projectVideoUrl = computed<string>(() => {
   const path = projectData.value?.videoPath || projectData.value?.video_path;
   if (!path) return '';
   return getMediaUrl(path);
 });
 
-const isProjectOnline = computed(() => {
+const isProjectOnline = computed<boolean>(() => {
   return !!(
     projectData.value?.isOnline ||
     projectData.value?.is_online ||
@@ -408,7 +415,7 @@ const isProjectOnline = computed(() => {
   );
 });
 
-async function loadProjectInfo() {
+async function loadProjectInfo(): Promise<void> {
   loading.value = true;
   noRequestMode.value = false;
   try {
@@ -429,18 +436,18 @@ async function loadProjectInfo() {
           titleEn: p.title_en,
           seoRu: p.seo_ru,
           seoEn: p.seo_en,
-          aboutRu: p.about_ru || p.about,
+          aboutRu: p.about_ru || (p as any).about,
           aboutEn: p.about_en,
-          about: p.about_ru || p.about,
+          about: p.about_ru || (p as any).about,
           iconPath: p.icon_path,
           coverPath: p.cover_path,
           videoPath: p.video_path,
           devUrl: p.dev_url,
           activeBuildVersion: p.active_build_version || '1.0.0',
-          ownerId: p.owner_id || p.ownerId,
-          isOnline: Boolean(p.is_online ?? p.isOnline),
+          ownerId: p.owner_id || (p as any).ownerId,
+          isOnline: Boolean(p.is_online ?? (p as any).isOnline),
         };
-      } catch (err) {
+      } catch {
         showToast('Проект не найден', 'warning');
         router.push('/moderator/queue');
       }
@@ -453,40 +460,40 @@ async function loadProjectInfo() {
   }
 }
 
-function openDevPreview() {
+function openDevPreview(): void {
   const devUrl = projectData.value?.devUrl || `/games/${projectId.value}/dev/index.html`;
   window.open(devUrl, '_blank');
 }
 
-async function handleClaim() {
+async function handleClaim(): Promise<void> {
   if (!activeRequest.value) return;
   actionLoading.value = true;
   try {
     const updated = await moderationStore.claimRequest(activeRequest.value.id);
     activeRequest.value = updated;
     showToast('Проект взят в работу', 'success');
-  } catch (err) {
+  } catch {
     showToast('Ошибка при взятии проекта в работу', 'danger');
   } finally {
     actionLoading.value = false;
   }
 }
 
-async function handleApprove(comment) {
+async function handleApprove(comment?: string): Promise<void> {
   actionLoading.value = true;
   try {
     await moderationStore.approveRequest(projectId.value, comment);
     showApproveModal.value = false;
     showToast('Проект одобрен и опубликован', 'success');
     await loadProjectInfo();
-  } catch (err) {
+  } catch {
     showToast('Ошибка при одобрении проекта', 'danger');
   } finally {
     actionLoading.value = false;
   }
 }
 
-function goToRejectPage() {
+function goToRejectPage(): void {
   router.push(`/moderator/projects/${projectId.value}/reject`);
 }
 
