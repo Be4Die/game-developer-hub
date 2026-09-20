@@ -3,11 +3,6 @@
     <!-- ВЕРХНИЙ ТУЛБАР УПРАВЛЕНИЯ -->
     <div class="sandbox-toolbar">
       <div class="toolbar-left">
-        <div class="status-indicator">
-          <span class="status-dot"></span>
-          <span class="status-text">Песочница WelwiseGames</span>
-        </div>
-
         <!-- Переключатель видового экрана (Эмулятор устройств) -->
         <div class="viewport-presets">
           <button
@@ -65,11 +60,11 @@
           v-if="showDevtools"
           class="tool-btn"
           :class="{ active: isDevtoolsOpen }"
-          title="Открыть панель SDK DevTools"
+          title="Открыть панель инструментов"
           @click="isDevtoolsOpen = !isDevtoolsOpen"
         >
           <Terminal class="icon-xs" />
-          <span>DevTools</span>
+          <span>Инструменты</span>
           <span v-if="logs.length" class="badge-pill">{{ logs.length }}</span>
         </button>
       </div>
@@ -321,27 +316,6 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-right: 12px;
-  border-right: 1px solid var(--border-color, #2d3139);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-}
-
-.status-text {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main, #fff);
-}
 
 .viewport-presets {
   display: flex;

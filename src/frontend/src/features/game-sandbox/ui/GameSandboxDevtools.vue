@@ -1,24 +1,5 @@
 <template>
   <div class="sandbox-devtools">
-    <!-- Заголовок панели -->
-    <div class="devtools-header">
-      <div class="devtools-title-group">
-        <Terminal class="icon-sm text-primary" />
-        <span class="devtools-title">SDK DevTools</span>
-        <span class="badge-count">{{ logs.length }}</span>
-      </div>
-      <div class="header-actions">
-        <button
-          v-if="activeTab === 'logs'"
-          class="btn-icon-xs"
-          title="Очистить лог"
-          @click="emit('clear-logs')"
-        >
-          <Trash2 class="icon-xs" />
-        </button>
-      </div>
-    </div>
-
     <!-- Вкладки панели -->
     <div class="devtools-tabs">
       <button
@@ -35,7 +16,7 @@
         @click="activeTab = 'storage'"
       >
         <Database class="icon-xs" />
-        <span>Игрок и Сейвы</span>
+        <span>Данные</span>
       </button>
       <button
         class="tab-btn"
@@ -43,7 +24,7 @@
         @click="activeTab = 'scenarios'"
       >
         <Sliders class="icon-xs" />
-        <span>Реклама и QA</span>
+        <span>Реклама</span>
       </button>
     </div>
 
@@ -52,12 +33,21 @@
       <!-- ВКЛАДКА 1: ЛОГ СОБЫТИЙ -->
       <div v-if="activeTab === 'logs'" class="tab-pane logs-pane">
         <div class="logs-filter-bar">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Фильтр событий..."
-            class="filter-input-sm"
-          />
+          <div class="logs-search-row">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Фильтр событий..."
+              class="filter-input-sm"
+            />
+            <button
+              class="btn-clear-logs"
+              title="Очистить консоль"
+              @click="emit('clear-logs')"
+            >
+              <Eraser class="icon-xs" />
+            </button>
+          </div>
           <div class="quick-filters">
             <button
               class="tag-filter-btn"
@@ -124,13 +114,13 @@
         </div>
       </div>
 
-      <!-- ВКЛАДКА 2: ИГРОК И СЕЙВЫ -->
+      <!-- ВКЛАДКА 2: ДАННЫЕ -->
       <div v-else-if="activeTab === 'storage'" class="tab-pane storage-pane">
         <!-- Настройки окружения игрока -->
         <div class="devtools-section">
-          <h4 class="section-title">Окружение (AppEnvironment)</h4>
+          <h4 class="section-title">Окружение</h4>
           <div class="form-group-sm">
-            <label>PlayerId (Идентификатор игрока):</label>
+            <label>Идентификатор:</label>
             <input
               :value="appEnv.playerId"
               type="text"
@@ -142,7 +132,7 @@
 
           <div class="form-row-sm">
             <div class="form-group-sm">
-              <label>Язык (Language):</label>
+              <label>Язык:</label>
               <select
                 :value="appEnv.language"
                 class="select-sm"
@@ -153,7 +143,7 @@
               </select>
             </div>
             <div class="form-group-sm">
-              <label>Тип устройства:</label>
+              <label>Устройство:</label>
               <select
                 :value="appEnv.deviceType"
                 class="select-sm"
@@ -166,33 +156,23 @@
           </div>
         </div>
 
-        <!-- Облачные сохранения -->
-        <div class="devtools-section">
-          <div class="section-head-between">
-            <h4 class="section-title">Облачные сохранения (Cloud Saves)</h4>
-            <button
-              class="btn-danger-xs"
-              title="Очистить все сохранения игры"
-              @click="emit('clear-storage')"
-            >
-              <RotateCcw class="icon-xs" />
-              <span>Сбросить сейв</span>
-            </button>
-          </div>
-
-          <div v-if="hasSavedData" class="storage-viewer">
-            <pre class="json-preview">{{ JSON.stringify(playerStorage, null, 2) }}</pre>
-          </div>
-          <div v-else class="empty-storage-notice">
-            <span>Сохранения отсутствуют (игра ещё не вызывала player.setData)</span>
-          </div>
+        <!-- Кнопка сброса под блоком окружения отдельной строкой -->
+        <div class="storage-action-row">
+          <button
+            class="btn-reset-storage"
+            title="Очистить все сохранения игры"
+            @click="emit('clear-storage')"
+          >
+            <RotateCcw class="icon-xs" />
+            <span>Сбросить данные</span>
+          </button>
         </div>
       </div>
 
-      <!-- ВКЛАДКА 3: РЕКЛАМА И СЦЕНАРИИ QA -->
+      <!-- ВКЛАДКА 3: РЕКЛАМА -->
       <div v-else-if="activeTab === 'scenarios'" class="tab-pane scenarios-pane">
         <div class="devtools-section">
-          <h4 class="section-title">Эмуляция рекламы (Ad Simulator)</h4>
+          <h4 class="section-title">Эмуляция рекламы</h4>
 
           <div class="form-group-sm">
             <label>Длительность автозакрытия:</label>
@@ -214,14 +194,16 @@
               <input
                 :checked="adConfig.simulateError"
                 type="checkbox"
+                class="styled-checkbox"
                 @change="onSimulateErrorChange"
               />
-              <span>Симулировать ошибку показа (AdBlock / Network Error)</span>
+              <span>Симулировать ошибку показа</span>
             </label>
             <label class="checkbox-label">
               <input
                 :checked="adConfig.rewardedGranted"
                 type="checkbox"
+                class="styled-checkbox"
                 @change="onRewardedGrantedChange"
               />
               <span>Начислять вознаграждение за Rewarded-видео</span>
@@ -236,11 +218,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
-  Terminal,
   Activity,
   Database,
   Sliders,
-  Trash2,
+  Eraser,
   RotateCcw,
   Info,
 } from 'lucide-vue-next';
@@ -311,9 +292,6 @@ function toggleExpandLog(id: string) {
   }
 }
 
-const hasSavedData = computed(() => {
-  return props.playerStorage && Object.keys(props.playerStorage).length > 0;
-});
 
 const filteredLogs = computed(() => {
   let list = props.logs;
@@ -350,49 +328,6 @@ const filteredLogs = computed(() => {
   font-family: inherit;
   font-size: 13px;
   overflow: hidden;
-}
-
-.devtools-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-color, #2d3139);
-  background: var(--bg-surface, #181a1f);
-}
-
-.devtools-title-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.devtools-title {
-  font-weight: 600;
-  color: var(--text-main, #f0f2f5);
-}
-
-.badge-count {
-  padding: 1px 6px;
-  background: var(--bg-hover, #2b2f38);
-  border-radius: 10px;
-  font-size: 11px;
-  color: var(--text-muted, #9ba1ad);
-}
-
-.btn-icon-xs {
-  background: transparent;
-  border: none;
-  color: var(--text-muted, #9ba1ad);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-}
-
-.btn-icon-xs:hover {
-  color: var(--text-main, #fff);
-  background: var(--bg-hover, #2b2f38);
 }
 
 .devtools-tabs {
@@ -448,6 +383,33 @@ const filteredLogs = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.logs-search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-clear-logs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--bg-input, #131418);
+  border: 1px solid var(--border-color, #2d3139);
+  border-radius: 6px;
+  color: var(--text-muted, #9ba1ad);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.btn-clear-logs:hover {
+  background: var(--bg-hover, #2b2f38);
+  border-color: var(--primary, #3b82f6);
+  color: var(--primary, #3b82f6);
 }
 
 .filter-input-sm {
@@ -657,29 +619,31 @@ const filteredLogs = computed(() => {
   outline: none;
 }
 
-.btn-danger-xs {
+.storage-action-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  background: rgba(239, 68, 68, 0.15);
+  padding-top: 4px;
+}
+
+.btn-reset-storage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.12);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 4px;
-  font-size: 11px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.btn-danger-xs:hover {
-  background: rgba(239, 68, 68, 0.25);
-}
-
-.empty-storage-notice {
-  font-size: 11px;
-  color: var(--text-muted, #7e8494);
-  font-style: italic;
-  padding: 6px 0;
+.btn-reset-storage:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
 }
 
 .radio-pill-group {
@@ -708,15 +672,58 @@ const filteredLogs = computed(() => {
 .checkbox-group-sm {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .checkbox-label {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 12px;
   color: var(--text-main, #f0f2f5);
   cursor: pointer;
+  user-select: none;
+}
+
+.styled-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color, #383c46);
+  border-radius: 4px;
+  background: var(--bg-input, #131418);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  margin: 0;
+}
+
+.styled-checkbox:hover {
+  border-color: var(--primary, #3b82f6);
+}
+
+.styled-checkbox:focus-visible {
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.styled-checkbox:checked {
+  background: var(--primary, #3b82f6);
+  border-color: var(--primary, #3b82f6);
+}
+
+.styled-checkbox:checked::after {
+  content: '';
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 </style>

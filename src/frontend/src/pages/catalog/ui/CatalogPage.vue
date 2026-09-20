@@ -3,6 +3,19 @@
     <div class="main-content-wrap">
       <!-- Панель фильтров, поиска и переключения вида -->
       <div class="filters-toolbar">
+        <!-- Сброс фильтров -->
+        <div class="filter-field field-reset">
+          <label class="field-label">{{ t('common.reset') }}</label>
+          <button
+            class="btn-reset-filters-icon"
+            :disabled="!hasActiveFilters"
+            :title="t('common.reset')"
+            @click="resetFilters"
+          >
+            <RotateCcw class="icon-xs" />
+          </button>
+        </div>
+
         <!-- Поиск -->
         <div class="filter-field field-search">
           <label class="field-label">{{ t('common.search') }}</label>
@@ -49,17 +62,6 @@
             <ChevronDown class="icon-xs select-arrow" />
           </div>
         </div>
-
-        <!-- Сброс фильтров -->
-        <button
-          v-if="searchQuery || modeFilter !== 'all' || sortBy !== 'newest'"
-          class="btn-reset-filters"
-          title="Сбросить фильтры"
-          @click="resetFilters"
-        >
-          <RotateCcw class="icon-xs" />
-          <span>{{ t('common.reset') }}</span>
-        </button>
 
         <!-- Кнопка обновления -->
         <button class="btn-refresh" :disabled="loading" title="Обновить" @click="loadGames">
@@ -313,6 +315,10 @@ const loading = ref<boolean>(true);
 const searchQuery = ref<string>('');
 const modeFilter = ref<string>('all');
 const sortBy = ref<string>('newest');
+
+const hasActiveFilters = computed<boolean>(() => {
+  return !!(searchQuery.value.trim() || modeFilter.value !== 'all' || sortBy.value !== 'newest');
+});
 
 // Модальное окно отзыва
 const showRevokeModal = ref<boolean>(false);
@@ -667,20 +673,34 @@ async function confirmRevoke(): Promise<void> {
   color: var(--primary, #58a6ff);
 }
 
-.btn-reset-filters {
+.field-reset {
+  flex-shrink: 0;
+}
+
+.btn-reset-filters-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
   height: 36px;
-  padding: 0 12px;
   background: transparent;
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
   color: var(--text-muted, #b0b8c4);
-  font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
+}
+
+.btn-reset-filters-icon:hover:not(:disabled) {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .btn-refresh {

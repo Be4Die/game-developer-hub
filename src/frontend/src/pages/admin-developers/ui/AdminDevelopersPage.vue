@@ -3,6 +3,19 @@
     <div class="main-content-wrap">
       <!-- Панель фильтров и поиска в стиле консоли -->
       <div class="filters-toolbar">
+        <!-- Сброс фильтров -->
+        <div class="filter-field field-reset">
+          <label class="field-label">{{ t('common.reset') }}</label>
+          <button
+            class="btn-reset-filters-icon"
+            :disabled="!hasActiveFilters"
+            :title="t('common.reset')"
+            @click="resetFilters"
+          >
+            <RotateCcw class="icon-xs" />
+          </button>
+        </div>
+
         <!-- Поиск по названию / email / ID -->
         <div class="filter-field field-name">
           <label class="field-label">{{ t('common.name') }}</label>
@@ -29,7 +42,7 @@
           <label class="field-label">{{ t('common.status') }}</label>
           <div class="select-wrapper">
             <select v-model="statusFilter" class="filter-select">
-              <option value="all">—</option>
+              <option value="all">{{ t('common.all') }}</option>
               <option value="active">Активные</option>
               <option value="suspended">Заблокированные</option>
               <option value="deleted">Удалённые</option>
@@ -50,17 +63,6 @@
             <ChevronDown class="icon-xs select-arrow" />
           </div>
         </div>
-
-        <!-- Сброс фильтров -->
-        <button
-          v-if="searchQuery || statusFilter !== 'all' || sortBy !== 'newest'"
-          class="btn-reset-filters"
-          title="Сбросить фильтры"
-          @click="resetFilters"
-        >
-          <RotateCcw class="icon-xs" />
-          <span>{{ t('common.reset') }}</span>
-        </button>
       </div>
 
       <!-- Состояние загрузки -->
@@ -380,6 +382,10 @@ const sortBy = ref<'newest' | 'oldest' | 'name'>('newest');
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(10);
 
+const hasActiveFilters = computed<boolean>(() => {
+  return !!(searchQuery.value.trim() || statusFilter.value !== 'all' || sortBy.value !== 'newest');
+});
+
 const actionPendingId = ref<string | number | null>(null);
 const statusTargetModal = ref<User | null>(null);
 const deleteTargetModal = ref<User | null>(null);
@@ -679,28 +685,34 @@ async function handleSoftDelete(user: User): Promise<void> {
   height: 14px;
 }
 
-.btn-reset-filters {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--bg-secondary, #161b22);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-main, #f0f6fc);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s;
-  white-space: nowrap;
+.field-reset {
+  flex-shrink: 0;
 }
 
-.btn-reset-filters:hover {
+.btn-reset-filters-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--bg-secondary, #161b22);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #b0b8c4);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.btn-reset-filters-icon:hover:not(:disabled) {
   background: var(--bg-tertiary, #21262d);
-  border-color: var(--border-secondary, #484f58);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .btn-reset {

@@ -3,6 +3,19 @@
     <div class="main-content-wrap">
       <!-- Панель фильтрации и поиска (консольный стиль) -->
       <div class="filters-toolbar">
+        <!-- Сброс фильтров -->
+        <div class="filter-field field-reset">
+          <label class="field-label">{{ t('common.reset') }}</label>
+          <button
+            class="btn-reset-filters-icon"
+            :disabled="!hasActiveFilters"
+            :title="t('common.reset')"
+            @click="resetFilters"
+          >
+            <RotateCcw class="icon-xs" />
+          </button>
+        </div>
+
         <!-- Поиск по названию, ID, разработчику, причине -->
         <div class="filter-field field-search">
           <label class="field-label">{{ t('common.search') }}</label>
@@ -76,17 +89,6 @@
             <ChevronDown class="icon-xs select-arrow" />
           </div>
         </div>
-
-        <!-- Кнопка сброса фильтров -->
-        <button
-          v-if="searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
-          class="btn-reset-filters"
-          title="Сбросить фильтры"
-          @click="resetFilters"
-        >
-          <RotateCcw class="icon-xs" />
-          <span>{{ t('common.reset') }}</span>
-        </button>
 
         <!-- Кнопка обновления -->
         <button class="btn-refresh" :disabled="loading" title="Обновить" @click="loadArchive">
@@ -379,6 +381,16 @@ const modeFilter = ref<string>('all');
 const sortBy = ref<string>('newest');
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(10);
+
+const hasActiveFilters = computed<boolean>(() => {
+  return !!(
+    searchQuery.value.trim() ||
+    statusFilter.value !== 'all' ||
+    typeFilter.value !== 'all' ||
+    modeFilter.value !== 'all' ||
+    sortBy.value !== 'newest'
+  );
+});
 
 async function loadArchive(): Promise<void> {
   loading.value = true;
@@ -683,20 +695,34 @@ function openSnapshot(req: any): void {
   color: var(--text-tertiary, #8b949e);
 }
 
-.btn-reset-filters {
+.field-reset {
+  flex-shrink: 0;
+}
+
+.btn-reset-filters-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
   height: 36px;
-  padding: 0 12px;
   background: transparent;
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
   color: var(--text-muted, #b0b8c4);
-  font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
+}
+
+.btn-reset-filters-icon:hover:not(:disabled) {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .btn-refresh {

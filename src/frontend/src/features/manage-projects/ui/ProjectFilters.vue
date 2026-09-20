@@ -1,5 +1,18 @@
 <template>
   <div class="filters-toolbar">
+    <!-- Кнопка сброса фильтров -->
+    <div class="filter-field field-reset">
+      <label class="field-label">{{ t('common.reset') }}</label>
+      <button
+        class="btn-reset-filters-icon"
+        :disabled="!hasActiveFilters"
+        :title="t('common.reset')"
+        @click="emit('reset')"
+      >
+        <RotateCcw class="icon-xs" />
+      </button>
+    </div>
+
     <!-- Поле фильтрации по названию (растягивается на всё доступное пространство) -->
     <div class="filter-field field-name">
       <label class="field-label">{{ t('common.name') }}</label>
@@ -31,7 +44,7 @@
           class="filter-select"
           @change="onStatusChange"
         >
-          <option value="all">—</option>
+          <option value="all">{{ t('common.all') }}</option>
           <option value="draft">{{ t('projects.draft') }}</option>
           <option value="pending">{{ t('projects.moderation') }}</option>
           <option value="published">{{ t('projects.published') }}</option>
@@ -75,34 +88,6 @@
       </div>
     </div>
 
-    <!-- Селектор сортировки -->
-    <div class="filter-field field-sort">
-      <label class="field-label">{{ t('common.actions') }}</label>
-      <div class="select-wrapper">
-        <select
-          :value="sortBy"
-          class="filter-select"
-          @change="onSortChange"
-        >
-          <option value="newest">{{ t('stats.today') }} / {{ t('common.created') }}</option>
-          <option value="oldest">{{ t('common.created') }} ↑</option>
-          <option value="title">{{ t('common.name') }} (A–Z)</option>
-        </select>
-        <ChevronDown class="icon-xs select-arrow" />
-      </div>
-    </div>
-
-    <!-- Кнопка сброса фильтров -->
-    <button
-      v-if="searchQuery || statusFilter !== 'all' || roleFilter !== 'all' || modeFilter !== 'all' || sortBy !== 'newest'"
-      class="btn-reset-filters"
-      title="Сбросить фильтры"
-      @click="emit('reset')"
-    >
-      <RotateCcw class="icon-xs" />
-      <span>{{ t('common.reset') }}</span>
-    </button>
-
     <!-- Кнопка создания игры -->
     <button class="btn-add-game" :disabled="creating" @click="emit('create')">
       <span v-if="creating" class="spinner-btn"></span>
@@ -112,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { X, ChevronDown, RotateCcw } from 'lucide-vue-next';
 
@@ -122,16 +108,14 @@ interface Props {
   statusFilter?: string;
   roleFilter?: string;
   modeFilter?: string;
-  sortBy?: string;
   creating?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   searchQuery: '',
   statusFilter: 'all',
   roleFilter: 'all',
   modeFilter: 'all',
-  sortBy: 'newest',
   creating: false,
 });
 
@@ -140,10 +124,18 @@ const emit = defineEmits<{
   (e: 'update:statusFilter', val: string): void;
   (e: 'update:roleFilter', val: string): void;
   (e: 'update:modeFilter', val: string): void;
-  (e: 'update:sortBy', val: string): void;
   (e: 'reset'): void;
   (e: 'create'): void;
 }>();
+
+const hasActiveFilters = computed(() => {
+  return !!(
+    props.searchQuery.trim() ||
+    props.statusFilter !== 'all' ||
+    props.roleFilter !== 'all' ||
+    props.modeFilter !== 'all'
+  );
+});
 
 function onSearchInput(e: Event) {
   emit('update:searchQuery', (e.target as HTMLInputElement).value);
@@ -159,10 +151,6 @@ function onRoleChange(e: Event) {
 
 function onModeChange(e: Event) {
   emit('update:modeFilter', (e.target as HTMLSelectElement).value);
-}
-
-function onSortChange(e: Event) {
-  emit('update:sortBy', (e.target as HTMLSelectElement).value);
 }
 </script>
 
@@ -196,8 +184,12 @@ function onSortChange(e: Event) {
   flex-shrink: 0;
 }
 
-.field-sort {
-  width: 190px;
+.field-mode {
+  width: 175px;
+  flex-shrink: 0;
+}
+
+.field-reset {
   flex-shrink: 0;
 }
 
@@ -281,26 +273,30 @@ function onSortChange(e: Event) {
   color: var(--text-tertiary, #8b949e);
 }
 
-.btn-reset-filters {
+.btn-reset-filters-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
   height: 36px;
-  padding: 0 12px;
   background: transparent;
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
   color: var(--text-muted, #b0b8c4);
-  font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
 }
 
-.btn-reset-filters:hover {
+.btn-reset-filters-icon:hover:not(:disabled) {
   background: var(--bg-tertiary, #21262d);
-  color: var(--text-main, #f0f6fc);
-  border-color: var(--border-secondary, #484f58);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .btn-add-game {

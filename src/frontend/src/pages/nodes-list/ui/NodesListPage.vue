@@ -3,6 +3,19 @@
     <div class="main-content-wrap">
       <!-- Панель фильтров и действий -->
       <div class="filters-toolbar">
+        <!-- Кнопка сброса фильтров -->
+        <div class="filter-field field-reset">
+          <label class="field-label">Сброс</label>
+          <button
+            class="btn-reset-filters-icon"
+            :disabled="!hasActiveFilters"
+            title="Сбросить фильтры"
+            @click="resetFilters"
+          >
+            <RotateCcw class="icon-xs" />
+          </button>
+        </div>
+
         <!-- Поиск по адресу или региону -->
         <div class="filter-field field-search">
           <label class="field-label">Адрес / Регион</label>
@@ -29,27 +42,16 @@
           <label class="field-label">Статус</label>
           <div class="select-wrapper">
             <select v-model="statusFilter" class="filter-select" @change="fetchNodes">
-              <option value="all">—</option>
+              <option value="all">Все</option>
               <option value="online">В сети</option>
               <option value="offline">Не в сети</option>
               <option value="unauthorized">Не авторизована</option>
               <option value="maintenance">Обслуживание</option>
-              <option value="platform">⭐ Платформенные</option>
+              <option value="platform">Платформенные</option>
             </select>
             <ChevronDown class="icon-xs select-arrow" />
           </div>
         </div>
-
-        <!-- Кнопка сброса фильтров -->
-        <button
-          v-if="searchQuery || statusFilter !== 'all'"
-          class="btn-reset-filters"
-          title="Сбросить фильтры"
-          @click="resetFilters"
-        >
-          <RotateCcw class="icon-xs" />
-          <span>Сбросить</span>
-        </button>
 
         <!-- Кнопка подключения ноды -->
         <button class="btn-add-node" @click="openRegisterModal">
@@ -76,6 +78,7 @@
           <thead>
             <tr>
               <th class="col-addr">Адрес</th>
+              <th class="col-traffic">Трафик</th>
               <th class="col-region">Регион</th>
               <th class="col-role">Режим</th>
               <th class="col-status">Статус</th>
@@ -100,26 +103,19 @@
                   <span class="node-address">{{ node.address }}</span>
                   <span
                     v-if="node.is_platform"
-                    class="ingress-badge platform"
+                    class="platform-tag"
                     title="Общедоступная нода платформы (общий пул)"
                   >
-                    ⭐ Платформа
-                  </span>
-                  <span
-                    v-if="node.ingress_mode === 'direct'"
-                    class="ingress-badge direct"
-                    :title="'Прямой домен: ' + (node.custom_domain || node.address)"
-                  >
-                    ⚡ Прямой
-                  </span>
-                  <span
-                    v-else
-                    class="ingress-badge proxy"
-                    title="Трафик сессий идет через безопасный WSS-прокси платформы"
-                  >
-                    🌐 Прокси
+                    (Платформа)
                   </span>
                 </div>
+              </td>
+
+              <!-- Трафик -->
+              <td class="col-traffic">
+                <span class="cell-text">
+                  {{ node.ingress_mode === 'direct' ? 'Прямой' : 'Прокси' }}
+                </span>
               </td>
 
               <!-- Регион -->
@@ -129,12 +125,12 @@
 
               <!-- Роль -->
               <td class="col-role">
-                <StatusBadge :status="node.role || 'mixed'" type="role" />
+                <span class="cell-text">{{ getNodeRoleLabel(node.role) }}</span>
               </td>
 
               <!-- Статус -->
               <td class="col-status">
-                <StatusBadge :status="node.status" type="node" />
+                <span class="cell-text">{{ getNodeStatusLabel(node.status) }}</span>
               </td>
 
               <!-- CPU -->
@@ -245,7 +241,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { Plus, Trash2, AlertCircle, Server, X, ChevronDown, RotateCcw, Shield, ShieldCheck } from 'lucide-vue-next';
-import { StatusBadge } from '@/shared/ui';
 import { RegisterNodeModal } from '@/features/manage-nodes';
 import { listNodes, deleteNode, updateNodePlatform } from '@/entities/node';
 import { useAuth } from '@/entities/user';
@@ -268,6 +263,10 @@ const deleteTarget = ref<NodeInfo | null>(null);
 const deleting = ref<boolean>(false);
 const deletingId = ref<string | number | null>(null);
 const updatingPlatformId = ref<string | number | null>(null);
+
+const hasActiveFilters = computed<boolean>(() => {
+  return !!(searchQuery.value.trim() || statusFilter.value !== 'all');
+});
 
 const filteredNodes = computed<NodeInfo[]>(() => {
   let list = [...nodes.value];
@@ -375,6 +374,40 @@ watch(showRegisterForm, async (show) => {
     }
   }
 });
+
+function getNodeRoleLabel(role?: string): string {
+  switch (role) {
+    case 'compute':
+    case 'NODE_ROLE_COMPUTE':
+      return 'Compute';
+    case 'storage':
+    case 'NODE_ROLE_STORAGE':
+      return 'Storage';
+    case 'mixed':
+    case 'NODE_ROLE_MIXED':
+    default:
+      return 'Mixed';
+  }
+}
+
+function getNodeStatusLabel(status: string): string {
+  switch (status) {
+    case 'online':
+    case 'NODE_STATUS_ONLINE':
+      return 'В сети';
+    case 'offline':
+    case 'NODE_STATUS_OFFLINE':
+      return 'Не в сети';
+    case 'unauthorized':
+    case 'NODE_STATUS_UNAUTHORIZED':
+      return 'Не авторизована';
+    case 'maintenance':
+    case 'NODE_STATUS_MAINTENANCE':
+      return 'Обслуживание';
+    default:
+      return status || '—';
+  }
+}
 
 onMounted(fetchNodes);
 </script>
@@ -499,26 +532,34 @@ onMounted(fetchNodes);
   color: var(--text-tertiary, #8b949e);
 }
 
-.btn-reset-filters {
+.field-reset {
+  flex-shrink: 0;
+}
+
+.btn-reset-filters-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
   height: 36px;
-  padding: 0 12px;
   background: transparent;
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
   color: var(--text-muted, #b0b8c4);
-  font-size: 13px;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
 }
 
-.btn-reset-filters:hover {
+.btn-reset-filters-icon:hover:not(:disabled) {
   background: var(--bg-tertiary, #21262d);
-  color: var(--text-main, #f0f6fc);
-  border-color: var(--border-secondary, #484f58);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .btn-add-node {
@@ -642,36 +683,44 @@ onMounted(fetchNodes);
 }
 
 .nodes-table th.col-addr {
-  width: 28%;
+  width: 20%;
   padding-left: 8px;
 }
 
+.nodes-table th.col-traffic {
+  width: 11%;
+}
+
 .nodes-table th.col-region {
-  width: 12%;
+  width: 10%;
+}
+
+.nodes-table th.col-role {
+  width: 9%;
 }
 
 .nodes-table th.col-status {
-  width: 14%;
+  width: 11%;
 }
 
 .nodes-table th.col-cpu {
-  width: 10%;
+  width: 8%;
 }
 
 .nodes-table th.col-ram {
-  width: 10%;
+  width: 8%;
 }
 
 .nodes-table th.col-disk {
-  width: 10%;
+  width: 8%;
 }
 
 .nodes-table th.col-agent {
-  width: 8%;
+  width: 6%;
 }
 
 .nodes-table th.col-ping {
-  width: 8%;
+  width: 7%;
 }
 
 .nodes-table th.col-actions {
@@ -718,33 +767,10 @@ onMounted(fetchNodes);
   color: var(--text-main, #f0f6fc);
 }
 
-.ingress-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 4px;
-  line-height: 1.4;
-}
-
-.ingress-badge.platform {
-  background: rgba(234, 179, 8, 0.15);
-  color: #eab308;
-  border: 1px solid rgba(234, 179, 8, 0.35);
-  font-weight: 600;
-}
-
-.ingress-badge.direct {
-  background: rgba(46, 160, 67, 0.15);
-  color: #3fb950;
-  border: 1px solid rgba(46, 160, 67, 0.3);
-}
-
-.ingress-badge.proxy {
-  background: rgba(56, 139, 253, 0.15);
-  color: #58a6ff;
-  border: 1px solid rgba(56, 139, 253, 0.3);
+.platform-tag {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary, #8b949e);
 }
 
 .text-warning {

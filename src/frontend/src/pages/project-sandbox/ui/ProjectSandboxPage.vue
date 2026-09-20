@@ -1,21 +1,8 @@
 <template>
   <div class="tab-content tab-fade-in sandbox-page-layout">
-    <!-- Шапка страницы песочницы -->
-    <div class="sandbox-page-header">
-      <div class="header-main">
-        <div class="title-with-badge">
-          <h1 class="page-title">{{ t('projectSandbox.title') || 'Песочница тестирования игры' }}</h1>
-          <span class="version-tag">
-            Версия: <strong>v{{ activeVersion || '1.0.0' }}</strong>
-          </span>
-        </div>
-        <p class="page-subtitle">
-          {{ t('projectSandbox.subtitle') || 'Изолированная среда выполнения игры с поддержкой WelwiseGames JS-SDK. Все события и вызовы API эмулируются локально в консоли.' }}
-        </p>
-      </div>
-
-      <!-- Селектор версий сборок для тестирования -->
-      <div v-if="buildsList.length > 1" class="version-selector-group">
+    <!-- Селектор версий сборок для тестирования (если их больше одной) -->
+    <div v-if="buildsList.length > 1" class="sandbox-page-header">
+      <div class="version-selector-group">
         <label class="selector-label">Сборка для запуска:</label>
         <div class="select-wrapper">
           <select v-model="selectedVersion" class="version-select">
@@ -123,48 +110,6 @@ const currentPlayUrl = computed<string>(() => {
   flex-wrap: wrap;
 }
 
-.header-main {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.title-with-badge {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-main, #f0f2f5);
-}
-
-.version-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  background: var(--bg-hover, #2b2f38);
-  border: 1px solid var(--border-color, #383c46);
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--text-muted, #9ba1ad);
-}
-
-.version-tag strong {
-  color: var(--primary, #3b82f6);
-}
-
-.page-subtitle {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-muted, #9ba1ad);
-  max-width: 780px;
-  line-height: 1.4;
-}
 
 .version-selector-group {
   display: flex;

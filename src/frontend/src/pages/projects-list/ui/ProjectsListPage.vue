@@ -7,7 +7,6 @@
         v-model:status-filter="statusFilter"
         v-model:role-filter="roleFilter"
         v-model:mode-filter="modeFilter"
-        v-model:sort-by="sortBy"
         :creating="creating"
         @reset="resetFilters"
         @create="createNewGame"
@@ -54,6 +53,7 @@
           <thead>
             <tr>
               <th class="col-game">{{ t('projects.projectNameLabel') }}</th>
+              <th class="col-mode">{{ t('projects.mode') }}</th>
               <th class="col-access">{{ t('projects.accessColumn') }}</th>
               <th class="col-date">{{ t('common.updated') }}</th>
               <th class="col-status">{{ t('common.status') }}</th>
@@ -65,6 +65,7 @@
               v-for="game in paginatedGames"
               :key="game.id"
               class="table-row"
+              :class="statusClass(game.status)"
               @click="openProject(game.id)"
             >
               <!-- 1 колонка: Игра (Иконка + Название) -->
@@ -83,41 +84,34 @@
                   </div>
                   <div class="game-title">
                     <span class="game-title-text">{{ game.title_ru || game.title_en || '—' }}</span>
-                    <span
-                      class="mode-badge"
-                      :class="game.is_online ? 'mode-online' : 'mode-offline'"
-                      :title="game.is_online ? t('projects.modeOnline') : t('projects.modeOffline')"
-                    >
-                      <Globe v-if="game.is_online" class="icon-xxs" />
-                      <Gamepad2 v-else class="icon-xxs" />
-                      <span>{{ game.is_online ? t('projects.modeOnline') : t('projects.modeOffline') }}</span>
-                    </span>
                   </div>
                 </div>
               </td>
 
-              <!-- 2 колонка: Доступ -->
-              <td class="col-access">
-                <span v-if="game.is_owner !== false" class="access-pill access-owner">
-                  <User class="icon-xs" />
-                  <span>{{ t('access.statuses.owner') }}</span>
-                </span>
-                <span v-else class="access-pill access-shared" title="Совместный доступ">
-                  <Users class="icon-xs" />
-                  <span>{{ t('access.statuses.member') }}</span>
+              <!-- 2 колонка: Режим -->
+              <td class="col-mode">
+                <span class="cell-text">
+                  {{ game.is_online ? t('projects.modeOnline') : t('projects.modeOffline') }}
                 </span>
               </td>
 
-              <!-- 3 колонка: Дата обновления -->
+              <!-- 3 колонка: Доступ -->
+              <td class="col-access">
+                <span class="cell-text">
+                  {{ game.is_owner !== false ? t('access.statuses.owner') : t('access.statuses.member') }}
+                </span>
+              </td>
+
+              <!-- 4 колонка: Дата обновления -->
               <td class="col-date">
                 <span class="date-text">
                   {{ formatProjectDate(game.updated_at || game.created_at) }}
                 </span>
               </td>
 
-              <!-- 3 колонка: Статус -->
+              <!-- 5 колонка: Статус -->
               <td class="col-status">
-                <span class="status-pill" :class="statusClass(game.status)">
+                <span class="status-text" :class="statusClass(game.status)">
                   {{ statusLabel(game.status) }}
                 </span>
               </td>
@@ -222,11 +216,8 @@ import { useI18n } from 'vue-i18n';
 import {
   Plus,
   Gamepad2,
-  Globe,
   Search,
   Trash2,
-  User,
-  Users,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -260,7 +251,6 @@ const searchQuery = ref<string>('');
 const statusFilter = ref<string>('all');
 const roleFilter = ref<string>('all');
 const modeFilter = ref<string>('all');
-const sortBy = ref<string>('newest');
 
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(10);
@@ -335,7 +325,6 @@ const resetFilters = (): void => {
   statusFilter.value = 'all';
   roleFilter.value = 'all';
   modeFilter.value = 'all';
-  sortBy.value = 'newest';
   currentPage.value = 1;
 };
 
@@ -370,15 +359,7 @@ const filteredGames = computed<Project[]>(() => {
     list = list.filter((g) => !g.is_online);
   }
 
-  if (sortBy.value === 'newest') {
-    list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-  } else if (sortBy.value === 'oldest') {
-    list.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-  } else if (sortBy.value === 'title') {
-    list.sort((a, b) =>
-      (a.title_ru || a.title_en || '').localeCompare(b.title_ru || b.title_en || '')
-    );
-  }
+  list.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
 
   return list;
 });
@@ -509,20 +490,24 @@ onMounted(loadProjects);
 }
 
 .yandex-games-table th.col-game {
-  width: 38%;
+  width: 32%;
   padding-left: 8px;
 }
 
+.yandex-games-table th.col-mode {
+  width: 14%;
+}
+
 .yandex-games-table th.col-access {
-  width: 16%;
+  width: 14%;
 }
 
 .yandex-games-table th.col-date {
-  width: 20%;
+  width: 16%;
 }
 
 .yandex-games-table th.col-status {
-  width: 16%;
+  width: 14%;
 }
 
 .yandex-games-table th.col-actions {
@@ -612,33 +597,9 @@ onMounted(loadProjects);
   white-space: nowrap;
 }
 
-.mode-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 2px 7px;
-  border-radius: 4px;
-  line-height: 1.3;
-  white-space: nowrap;
-}
-
-.mode-badge.mode-online {
-  color: #38bdf8;
-  background: rgba(14, 165, 233, 0.12);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-}
-
-.mode-badge.mode-offline {
-  color: #94a3b8;
-  background: rgba(148, 163, 184, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-}
-
-.icon-xxs {
-  width: 12px;
-  height: 12px;
+.cell-text {
+  font-size: 13px;
+  color: var(--text-secondary, #c9d1d9);
 }
 
 .date-text {
@@ -647,49 +608,64 @@ onMounted(loadProjects);
   color: var(--text-muted, #b0b8c4);
 }
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 4px;
-  font-size: 12px;
+.status-text {
+  font-size: 13px;
   font-weight: 500;
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-  color: var(--text-muted, #b0b8c4);
   white-space: nowrap;
-}
-
-.status-draft {
-  background: var(--bg-tertiary, #21262d);
-  border-color: var(--border, #30363d);
   color: var(--text-muted, #b0b8c4);
 }
 
-.status-pending {
-  background: rgba(245, 176, 39, 0.12);
-  border-color: rgba(245, 176, 39, 0.35);
+.status-text.status-draft {
+  color: var(--text-muted, #b0b8c4);
+}
+
+.status-text.status-pending {
   color: #f5b027;
 }
 
-.status-published {
-  background: rgba(46, 204, 113, 0.12);
-  border-color: rgba(46, 204, 113, 0.35);
+.status-text.status-published {
   color: #2ecc71;
 }
 
-.status-approved {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.35);
+.status-text.status-approved {
   color: #3b82f6;
 }
 
-.status-rejected {
-  background: rgba(248, 81, 73, 0.12);
-  border-color: rgba(248, 81, 73, 0.35);
+.status-text.status-rejected {
   color: #f85149;
+}
+
+/* Подсветка фона строки по статусу (у черновика фон не меняется) */
+.table-row.status-draft {
+  background: transparent;
+}
+
+.table-row.status-pending {
+  background: rgba(245, 176, 39, 0.08);
+}
+.table-row.status-pending:hover {
+  background: rgba(245, 176, 39, 0.15);
+}
+
+.table-row.status-published {
+  background: rgba(46, 204, 113, 0.08);
+}
+.table-row.status-published:hover {
+  background: rgba(46, 204, 113, 0.15);
+}
+
+.table-row.status-approved {
+  background: rgba(59, 130, 246, 0.08);
+}
+.table-row.status-approved:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.table-row.status-rejected {
+  background: rgba(248, 81, 73, 0.08);
+}
+.table-row.status-rejected:hover {
+  background: rgba(248, 81, 73, 0.15);
 }
 
 .row-actions {
@@ -741,30 +717,6 @@ onMounted(loadProjects);
 
 .text-warning-hover:hover {
   color: var(--warning, #d29922) !important;
-}
-
-.access-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 6px;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.access-owner {
-  color: var(--text-secondary, #c9d1d9);
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border, #30363d);
-}
-
-.access-shared {
-  color: #a371f7;
-  background: rgba(163, 113, 247, 0.12);
-  border: 1px solid rgba(163, 113, 247, 0.35);
 }
 
 /* Пагинация прикреплена к низу */

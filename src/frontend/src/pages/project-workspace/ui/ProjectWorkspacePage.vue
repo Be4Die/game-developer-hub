@@ -30,14 +30,10 @@
           </div>
         </div>
 
-        <div class="game-links-row">
-          <button v-if="isPublished" class="btn-prod-link" @click="openProdGame">
+        <div v-if="isPublished" class="game-links-row">
+          <button class="btn-prod-link" @click="openProdGame">
             <ExternalLink class="icon-xs" />
             <span>Игра (Prod)</span>
-          </button>
-          <button class="btn-dev-link" @click="openDevGame">
-            <ExternalLink class="icon-xs" />
-            <span>{{ t('projectDraft.openGameDev') }}</span>
           </button>
         </div>
       </div>
@@ -299,9 +295,6 @@ watch(
   }
 );
 
-function openDevGame(): void {
-  router.push(`/projects/${props.id}/sandbox`);
-}
 
 function openProdGame(): void {
   const url =
@@ -448,7 +441,6 @@ async function handleSidebarSubmit(): Promise<void> {
   width: 100%;
 }
 
-.btn-dev-link,
 .btn-prod-link {
   display: inline-flex;
   align-items: center;
@@ -461,18 +453,6 @@ async function handleSidebarSubmit(): Promise<void> {
   cursor: pointer;
   transition: all 0.15s ease;
   width: 100%;
-}
-
-.btn-dev-link {
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  color: var(--text-main);
-}
-
-.btn-dev-link:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--bg-card);
 }
 
 .btn-prod-link {

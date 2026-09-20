@@ -175,6 +175,19 @@
 
         <!-- Панель фильтров журнала -->
         <div class="filters-toolbar">
+          <!-- Сброс фильтров -->
+          <div class="filter-field field-reset">
+            <label class="field-label">{{ t('common.reset') }}</label>
+            <button
+              class="btn-reset-filters-icon"
+              :disabled="!hasActiveFilters"
+              :title="t('common.reset')"
+              @click="resetJournalFilters"
+            >
+              <RotateCcw class="icon-xs" />
+            </button>
+          </div>
+
           <!-- Поиск по названию игры, ID или содержанию -->
           <div class="filter-field field-search">
             <label class="field-label">Поиск</label>
@@ -211,17 +224,6 @@
               <ChevronDown class="icon-xs select-arrow" />
             </div>
           </div>
-
-          <!-- Сброс фильтров -->
-          <button
-            v-if="searchQuery || actionTypeFilter !== ''"
-            class="btn-reset-filters"
-            title="Сбросить фильтры"
-            @click="resetJournalFilters"
-          >
-            <RotateCcw class="icon-xs" />
-            <span>{{ t('common.reset') }}</span>
-          </button>
         </div>
 
         <!-- Состояние загрузки журнала -->
@@ -442,6 +444,10 @@ const actionTypeFilter = ref<string>('');
 const searchQuery = ref<string>('');
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(10);
+
+const hasActiveFilters = computed<boolean>(() => {
+  return !!(searchQuery.value.trim() || actionTypeFilter.value !== '');
+});
 
 onMounted(() => {
   if (moderatorId.value) {
@@ -1075,24 +1081,34 @@ function getActionLabel(actionType?: string): string {
   color: var(--text-main, #f0f6fc);
 }
 
-.btn-reset-filters {
+.field-reset {
+  flex-shrink: 0;
+}
+
+.btn-reset-filters-icon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 38px;
   height: 38px;
-  padding: 0 14px;
   background: transparent;
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
-  color: var(--text-secondary, #8b949e);
-  font-size: 13px;
+  color: var(--text-muted, #b0b8c4);
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 
-.btn-reset-filters:hover {
-  background: var(--bg-secondary, #161b22);
-  color: var(--text-main, #f0f6fc);
+.btn-reset-filters-icon:hover:not(:disabled) {
+  background: var(--bg-tertiary, #21262d);
+  color: var(--primary, #58a6ff);
+  border-color: var(--primary, #58a6ff);
+}
+
+.btn-reset-filters-icon:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* Таблица журнала */
