@@ -15,20 +15,6 @@
           </h2>
         </div>
 
-        <div v-if="project" class="role-access-badge-wrap">
-          <span v-if="isOwner" class="badge-role-owner">
-            {{ t('access.statuses.owner') }}
-          </span>
-          <span
-            v-else
-            class="badge-role-collab"
-            :title="collaboratorPermissionsText"
-          >
-            <Users class="icon-xs" />
-            <span>{{ t('access.statuses.collaborator') }}</span>
-          </span>
-        </div>
-
         <div v-if="isPublished" class="game-links-row">
           <button class="btn-prod-link" @click="openProdGame">
             <ExternalLink class="icon-xs" />
@@ -177,7 +163,7 @@ import {
   MessageSquare,
   ShoppingBag,
 } from 'lucide-vue-next';
-import { getProject, getMediaUrl, permissionLabel } from '@/entities/project';
+import { getProject, getMediaUrl } from '@/entities/project';
 import { ProjectChat } from '@/entities/moderation';
 import type { Project } from '@/shared/types';
 
@@ -211,11 +197,6 @@ const canSubmitModeration = computed<boolean>(
 
 const isOnline = computed<boolean>(() => {
   return project.value?.draft?.is_online ?? project.value?.is_online ?? false;
-});
-
-const collaboratorPermissionsText = computed<string>(() => {
-  if (isOwner.value) return '';
-  return permissions.value.map((p) => permissionLabel(p)).join(', ');
 });
 
 interface DraftActions {
@@ -327,35 +308,6 @@ async function handleSidebarSubmit(): Promise<void> {
 </script>
 
 <style scoped>
-.role-access-badge-wrap {
-  display: flex;
-  align-items: center;
-}
-
-.badge-role-owner {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.badge-role-collab {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  background: var(--bg-tertiary);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  cursor: help;
-}
-
 .game-workspace {
   position: relative;
   display: flex;
@@ -378,17 +330,18 @@ async function handleSidebarSubmit(): Promise<void> {
 }
 
 .game-header {
-  padding: 16px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .game-identity-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .game-icon-box {
