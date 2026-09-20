@@ -15,6 +15,24 @@
           </h2>
         </div>
 
+        <!-- Бейджи: Режим доступа и Статус проекта в одну строку -->
+        <div v-if="project" class="project-badges-row">
+          <span
+            class="project-badge badge-access"
+            :class="isOwner ? 'access-owner' : 'access-member'"
+            :title="isOwner ? t('access.statuses.owner') : collaboratorPermissionsText || t('access.statuses.member')"
+          >
+            {{ isOwner ? t('access.statuses.owner') : t('access.statuses.member') }}
+          </span>
+          <span
+            class="project-badge"
+            :class="projectStatusClass"
+            :title="projectStatusTitle"
+          >
+            {{ projectStatusLabel }}
+          </span>
+        </div>
+
         <div v-if="isPublished" class="game-links-row">
           <button class="btn-prod-link" @click="openProdGame">
             <ExternalLink class="icon-xs" />
@@ -163,8 +181,8 @@ import {
   MessageSquare,
   ShoppingBag,
 } from 'lucide-vue-next';
-import { getProject, getMediaUrl } from '@/entities/project';
-import { ProjectChat } from '@/entities/moderation';
+import { getProject, getMediaUrl, permissionLabel, normalizeProjectStatus } from '@/entities/project';
+import { ProjectChat, moderationApi, REQUEST_STATUS } from '@/entities/moderation';
 import type { Project } from '@/shared/types';
 
 interface Props {
@@ -199,13 +217,19 @@ const isOnline = computed<boolean>(() => {
   return project.value?.draft?.is_online ?? project.value?.is_online ?? false;
 });
 
+const collaboratorPermissionsText = computed<string>(() => {
+  if (isOwner.value) return '';
+  return permissions.value.map((p) => permissionLabel(p)).join(', ');
+});
+
 interface DraftActions {
   save: (() => Promise<any> | any) | null;
   submit: (() => Promise<any> | any) | null;
   isSaving: boolean;
   isSubmitting: boolean;
   isUnderReview: boolean;
-  isApproved: boolean;
+  isRejected?: boolean;
+  rejectionReason?: string;
 }
 
 const draftActions = ref<DraftActions>({
@@ -214,9 +238,45 @@ const draftActions = ref<DraftActions>({
   isSaving: false,
   isSubmitting: false,
   isUnderReview: false,
-  isApproved: false,
+  isRejected: false,
+  rejectionReason: '',
 });
 provide('draftActions', draftActions);
+
+const moderationStatus = ref<string | number | null>(null);
+const rejectionReason = ref<string>('');
+
+async function loadModeration(): Promise<void> {
+  const pId = parseInt(String(props.id), 10);
+  if (!pId) return;
+  try {
+    const data = await moderationApi.getLatestByProject(pId);
+    if (data && data.request) {
+      // Учитываем только заявки на публикацию игры (не серверные квоты)
+      const reqType = data.request.type ?? (data.request as any).request_type;
+      const isPublication =
+        reqType === undefined ||
+        reqType === null ||
+        Number(reqType) === 1 ||
+        reqType === 'REQUEST_TYPE_PROJECT_PUBLICATION' ||
+        reqType === 'project_publication';
+
+      if (isPublication) {
+        moderationStatus.value = data.request.status;
+        rejectionReason.value = data.request.rejection_reason || data.request.rejectionReason || '';
+      } else {
+        moderationStatus.value = null;
+        rejectionReason.value = '';
+      }
+    } else {
+      moderationStatus.value = null;
+      rejectionReason.value = '';
+    }
+  } catch {
+    moderationStatus.value = null;
+    rejectionReason.value = '';
+  }
+}
 
 async function loadProject(): Promise<void> {
   try {
@@ -224,6 +284,7 @@ async function loadProject(): Promise<void> {
   } catch (err) {
     // silently fail, fallback to id
   }
+  await loadModeration();
 }
 
 watch(() => props.id, loadProject, { immediate: true });
@@ -248,6 +309,62 @@ const isPublished = computed<boolean>(() => {
     project.value?.status === 'PROJECT_STATUS_PUBLISHED' ||
     !!project.value?.release
   );
+});
+
+const isUnderReview = computed<boolean>(() => {
+  if (draftActions.value.isUnderReview) return true;
+  if (isPublished.value) return false;
+  const st = moderationStatus.value;
+  if (st !== null && st !== undefined) {
+    return (
+      Number(st) === REQUEST_STATUS.PENDING ||
+      Number(st) === REQUEST_STATUS.IN_REVIEW ||
+      st === 'REQUEST_STATUS_PENDING' ||
+      st === 'REQUEST_STATUS_IN_REVIEW' ||
+      st === 'pending' ||
+      st === 'in_review'
+    );
+  }
+  return normalizeProjectStatus(project.value?.status) === 2;
+});
+
+const isRejected = computed<boolean>(() => {
+  if (isPublished.value || isUnderReview.value) return false;
+  if (draftActions.value.isRejected) return true;
+  const st = moderationStatus.value;
+  if (st !== null && st !== undefined) {
+    return (
+      Number(st) === REQUEST_STATUS.REJECTED ||
+      st === 'REQUEST_STATUS_REJECTED' ||
+      st === 'rejected'
+    );
+  }
+  return normalizeProjectStatus(project.value?.status) === 4 || normalizeProjectStatus(project.value?.status) === 5;
+});
+
+const projectStatusLabel = computed<string>(() => {
+  if (isPublished.value) return t('projects.published');
+  if (isUnderReview.value) return t('projects.moderation');
+  if (isRejected.value) return t('projects.rejected');
+  return t('projects.draft');
+});
+
+const projectStatusClass = computed<string>(() => {
+  if (isPublished.value) return 'badge-status-published';
+  if (isUnderReview.value) return 'badge-status-pending';
+  if (isRejected.value) return 'badge-status-rejected';
+  return 'badge-status-draft';
+});
+
+const effectiveRejectionReason = computed<string>(() => {
+  return draftActions.value.rejectionReason || rejectionReason.value || '';
+});
+
+const projectStatusTitle = computed<string>(() => {
+  if (isRejected.value && effectiveRejectionReason.value) {
+    return `${t('projects.rejected')}: ${effectiveRejectionReason.value}`;
+  }
+  return projectStatusLabel.value;
 });
 
 const isSandboxTab = computed<boolean>(() => {
@@ -330,11 +447,11 @@ async function handleSidebarSubmit(): Promise<void> {
 }
 
 .game-header {
-  padding: 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .game-identity-row {
@@ -342,6 +459,66 @@ async function handleSidebarSubmit(): Promise<void> {
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.project-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.project-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2.5px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  border-radius: var(--radius-sm, 4px);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  user-select: none;
+}
+
+/* Бейджи доступа/роли */
+.badge-access.access-owner {
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--primary, #58a6ff);
+  border: 1px solid rgba(88, 166, 255, 0.28);
+}
+
+.badge-access.access-member {
+  background: rgba(139, 148, 158, 0.12);
+  color: #c9d1d9;
+  border: 1px solid rgba(139, 148, 158, 0.28);
+}
+
+/* Бейджи статуса проекта */
+.badge-status-draft {
+  background: rgba(139, 148, 158, 0.12);
+  color: #8b949e;
+  border: 1px solid rgba(139, 148, 158, 0.28);
+}
+
+.badge-status-pending {
+  background: rgba(245, 176, 39, 0.12);
+  color: #f5b027;
+  border: 1px solid rgba(245, 176, 39, 0.32);
+}
+
+.badge-status-published {
+  background: rgba(46, 204, 113, 0.12);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.32);
+}
+
+.badge-status-rejected {
+  background: rgba(248, 81, 73, 0.12);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.32);
+  cursor: help;
 }
 
 .game-icon-box {

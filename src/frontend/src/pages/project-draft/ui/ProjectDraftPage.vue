@@ -1,21 +1,6 @@
 <template>
   <div class="tab-fade-in">
     <div class="form-grid">
-      <!-- Уведомления статуса модерации (если есть) -->
-      <div v-if="isUnderReview" class="card review-notice">
-        ⏳ {{ t('projects.moderation') }} — Заявка проверяется модератором.
-      </div>
-      <div v-else-if="isRejected && rejectionReason" class="card rejection-notice">
-        <div class="rejection-notice-flex">
-          <div>
-            <strong>{{ t('moderation.rejectReasonLabel') }}</strong> {{ rejectionReason }}
-          </div>
-          <router-link to="/docs/rules" class="btn-rules-link">
-            <span>Регламент платформы</span> ↗
-          </router-link>
-        </div>
-      </div>
-
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
         <div class="section-head section-head-with-actions">
@@ -558,6 +543,20 @@ if (draftActions) {
     },
     { immediate: true }
   );
+  watch(
+    isRejected,
+    (v) => {
+      if (draftActions.value) draftActions.value.isRejected = v;
+    },
+    { immediate: true }
+  );
+  watch(
+    rejectionReason,
+    (v) => {
+      if (draftActions.value) draftActions.value.rejectionReason = v;
+    },
+    { immediate: true }
+  );
 }
 
 function triggerFileInput(type: MediaType): void {
@@ -610,9 +609,23 @@ async function loadModerationStatus(): Promise<void> {
   try {
     const data = await moderationApi.getLatestByProject(pId);
     if (data && data.request) {
-      moderationRequest.value = data.request;
-      moderationStatus.value = data.request.status;
-      rejectionReason.value = data.request.rejection_reason || data.request.rejectionReason || '';
+      const reqType = data.request.type ?? (data.request as any).request_type;
+      const isPublication =
+        reqType === undefined ||
+        reqType === null ||
+        Number(reqType) === 1 ||
+        reqType === 'REQUEST_TYPE_PROJECT_PUBLICATION' ||
+        reqType === 'project_publication';
+
+      if (isPublication) {
+        moderationRequest.value = data.request;
+        moderationStatus.value = data.request.status;
+        rejectionReason.value = data.request.rejection_reason || data.request.rejectionReason || '';
+      } else {
+        moderationRequest.value = null;
+        moderationStatus.value = null;
+        rejectionReason.value = '';
+      }
     } else {
       moderationRequest.value = null;
       moderationStatus.value = null;
@@ -882,99 +895,6 @@ function downloadBuild(version: string): void {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-}
-
-.rejection-notice {
-  padding: 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  border-radius: var(--radius-md, 8px);
-}
-
-.rejection-notice-flex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.btn-rules-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(185, 28, 28, 0.1);
-  color: #b91c1c;
-  border: 1px solid rgba(185, 28, 28, 0.3);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btn-rules-link:hover {
-  background: #b91c1c;
-  color: #ffffff;
-}
-
-.approval-notice {
-  padding: 16px;
-  background: var(--success-light);
-  border: 1px solid var(--success);
-  color: var(--success);
-  font-size: 0.9rem;
-  border-radius: var(--radius-md, 8px);
-}
-
-.review-notice {
-  background: var(--bg-secondary);
-  border-left: 4px solid var(--info, #3b82f6);
-  padding: 12px 16px;
-  color: var(--text-main);
-  font-size: 0.9rem;
-  border-radius: var(--radius-md, 8px);
-}
-
-.published-info-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-left: 4px solid #10b981;
-  padding: 12px 16px;
-  color: var(--text-main);
-  border-radius: var(--radius-md, 8px);
-}
-
-.notice-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #10b981;
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.notice-content {
-  flex: 1;
-}
-
-.notice-sub {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
 }
 
 .section-head {
