@@ -83,7 +83,7 @@
                     </div>
                   </div>
                   <div class="game-title">
-                    <span class="game-title-text">{{ game.title_ru || game.title_en || '—' }}</span>
+                    <span class="game-title-text" :title="game.title_ru || game.title_en || ''">{{ game.title_ru || game.title_en || '—' }}</span>
                   </div>
                 </div>
               </td>
@@ -475,8 +475,10 @@ onMounted(loadProjects);
 
 .yandex-games-table {
   width: 100%;
+  min-width: 780px;
   border-collapse: collapse;
   text-align: left;
+  table-layout: fixed;
 }
 
 .yandex-games-table th {
@@ -490,16 +492,16 @@ onMounted(loadProjects);
 }
 
 .yandex-games-table th.col-game {
-  width: 32%;
+  width: 44%;
   padding-left: 8px;
 }
 
 .yandex-games-table th.col-mode {
-  width: 14%;
+  width: 11%;
 }
 
 .yandex-games-table th.col-access {
-  width: 14%;
+  width: 11%;
 }
 
 .yandex-games-table th.col-date {
@@ -507,11 +509,11 @@ onMounted(loadProjects);
 }
 
 .yandex-games-table th.col-status {
-  width: 14%;
+  width: 12%;
 }
 
 .yandex-games-table th.col-actions {
-  width: 10%;
+  width: 6%;
   text-align: right;
   padding-right: 12px;
 }
@@ -533,6 +535,7 @@ onMounted(loadProjects);
 
 .table-row td.col-game {
   padding-left: 8px;
+  overflow: hidden;
 }
 
 .table-row td.col-actions {
@@ -544,6 +547,8 @@ onMounted(loadProjects);
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
+  width: 100%;
 }
 
 .game-icon-box {
@@ -588,13 +593,16 @@ onMounted(loadProjects);
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
   line-height: 1.3;
+  min-width: 0;
+  flex: 1;
 }
 
 .game-title-text {
-  max-width: 260px;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .cell-text {

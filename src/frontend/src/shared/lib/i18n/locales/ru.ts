@@ -160,7 +160,7 @@ export default {
     viewPublished: 'Смотреть страницу',
     mode: 'Режим',
     networkMode: 'Сетевой режим',
-    allModes: 'Все режимы',
+    allModes: 'Все',
     modeOnline: 'Онлайн',
     modeOffline: 'Одиночная',
     onlineBadge: 'Онлайн',
@@ -198,12 +198,14 @@ export default {
     table: {
       item: 'Товар',
       itemId: 'Идентификатор',
+      desc: 'Описание',
       price: 'Стоимость',
       status: 'Статус',
     },
     modal: {
       createTitle: 'Новый внутриигровой товар',
       editTitle: 'Редактирование товара',
+      viewTitle: 'Детали товара',
     },
     fields: {
       icon: 'Иконка товара',

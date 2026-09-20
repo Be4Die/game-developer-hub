@@ -10,24 +10,23 @@
               <span>Draft</span>
             </div>
           </div>
-          <div class="game-title-wrap">
-            <h2 class="game-title-short" :title="projectTitle">
-              {{ projectTitle }}
-            </h2>
-            <div v-if="project" class="role-access-badge-wrap">
-              <span v-if="isOwner" class="badge-role-owner">
-                {{ t('access.statuses.owner') }}
-              </span>
-              <span
-                v-else
-                class="badge-role-collab"
-                :title="collaboratorPermissionsText"
-              >
-                <Users class="icon-xs" />
-                <span>{{ t('access.statuses.collaborator') }}</span>
-              </span>
-            </div>
-          </div>
+          <h2 class="game-title-short" :title="projectTitle">
+            {{ projectTitle }}
+          </h2>
+        </div>
+
+        <div v-if="project" class="role-access-badge-wrap">
+          <span v-if="isOwner" class="badge-role-owner">
+            {{ t('access.statuses.owner') }}
+          </span>
+          <span
+            v-else
+            class="badge-role-collab"
+            :title="collaboratorPermissionsText"
+          >
+            <Users class="icon-xs" />
+            <span>{{ t('access.statuses.collaborator') }}</span>
+          </span>
         </div>
 
         <div v-if="isPublished" class="game-links-row">
@@ -125,7 +124,7 @@
     </aside>
 
     <!-- ЦЕНТР (Подгружает табы) -->
-    <main class="content-area">
+    <main class="content-area" :class="{ 'is-sandbox': isSandboxTab }">
       <router-view />
     </main>
 
@@ -270,6 +269,10 @@ const isPublished = computed<boolean>(() => {
   );
 });
 
+const isSandboxTab = computed<boolean>(() => {
+  return route.name === 'sandbox' || route.path.endsWith('/sandbox');
+});
+
 // Редирект с "published" на "draft", если проект загружен и не опубликован
 watch(
   () => [route.name, project.value?.status, project.value?.release],
@@ -325,12 +328,13 @@ async function handleSidebarSubmit(): Promise<void> {
 
 <style scoped>
 .role-access-badge-wrap {
-  margin-top: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .badge-role-owner {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 2px 8px;
   font-size: 11px;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -342,7 +346,7 @@ async function handleSidebarSubmit(): Promise<void> {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
+  padding: 2px 8px;
   font-size: 11px;
   font-weight: 600;
   border-radius: var(--radius-sm);
@@ -378,7 +382,7 @@ async function handleSidebarSubmit(): Promise<void> {
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .game-identity-row {
@@ -419,19 +423,21 @@ async function handleSidebarSubmit(): Promise<void> {
   text-transform: uppercase;
 }
 
-.game-title-wrap {
-  flex: 1;
-  min-width: 0;
-}
-
 .game-title-short {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.25;
   color: var(--text-main);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
 }
 
 .game-links-row {
@@ -567,10 +573,16 @@ async function handleSidebarSubmit(): Promise<void> {
 /* Центральная область */
 .content-area {
   flex: 1;
+  min-width: 0;
   height: 100%;
   overflow-y: auto;
   padding: 28px 40px;
   box-sizing: border-box;
+}
+
+.content-area.is-sandbox {
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Правый сайдбар с чатом */

@@ -232,11 +232,11 @@ function setViewport(preset: ViewportPreset): void {
 const viewportStyle = computed(() => {
   switch (currentViewport.value) {
     case 'desktop':
-      return { width: '1280px', height: '720px', maxWidth: '100%', maxHeight: '100%' };
+      return { width: '1280px', height: '720px', maxWidth: '100%', maxHeight: '100%', aspectRatio: '16 / 9' };
     case 'mobile-portrait':
-      return { width: '375px', height: '667px' };
+      return { width: '375px', height: '667px', maxWidth: '100%', maxHeight: '100%', aspectRatio: '9 / 16' };
     case 'mobile-landscape':
-      return { width: '667px', height: '375px' };
+      return { width: '667px', height: '375px', maxWidth: '100%', maxHeight: '100%', aspectRatio: '16 / 9' };
     case 'fit':
     default:
       return { width: '100%', height: '100%' };
@@ -283,11 +283,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 580px;
+  width: 100%;
+  min-height: 0;
   background: var(--bg-surface, #121316);
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid var(--border-color, #2d3139);
+  border: none;
 }
 
 .game-sandbox-container.is-fullscreen {
@@ -302,11 +303,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 8px 16px;
   background: var(--bg-card, #1a1c22);
   border-bottom: 1px solid var(--border-color, #2d3139);
   gap: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .toolbar-left,
@@ -388,19 +390,24 @@ onUnmounted(() => {
 .sandbox-main {
   display: flex;
   flex: 1;
+  min-height: 0;
+  min-width: 0;
   position: relative;
   overflow: hidden;
 }
 
 .game-viewport-stage {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #0d0e11;
   padding: 16px;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+  box-sizing: border-box;
 }
 
 .frame-wrapper {
@@ -413,6 +420,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   transition: width 0.2s ease, height 0.2s ease;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
 }
 
 .game-iframe {

@@ -96,29 +96,33 @@ const currentPlayUrl = computed<string>(() => {
 .sandbox-page-layout {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 72px);
-  padding: 16px 20px 20px;
-  gap: 16px;
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  gap: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .sandbox-page-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 16px;
+  background: var(--bg-card, #1c1e24);
+  border-bottom: 1px solid var(--border-color, #2d3139);
+  flex-shrink: 0;
 }
-
 
 .version-selector-group {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg-card, #1c1e24);
+  background: var(--bg-surface, #131418);
   border: 1px solid var(--border-color, #2d3139);
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 .selector-label {
@@ -127,10 +131,10 @@ const currentPlayUrl = computed<string>(() => {
 }
 
 .version-select {
-  padding: 4px 8px;
+  padding: 3px 8px;
   background: var(--bg-surface, #131418);
   border: 1px solid var(--border-color, #2d3139);
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--text-main, #fff);
   font-size: 12px;
   outline: none;
@@ -140,8 +144,12 @@ const currentPlayUrl = computed<string>(() => {
 .sandbox-player-wrapper {
   flex: 1;
   min-height: 0;
-  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
 }
 </style>

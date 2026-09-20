@@ -160,7 +160,7 @@ export default {
     viewPublished: 'View Page',
     mode: 'Mode',
     networkMode: 'Network Mode',
-    allModes: 'All modes',
+    allModes: 'All',
     modeOnline: 'Online',
     modeOffline: 'Single-player',
     onlineBadge: 'Online',
@@ -198,12 +198,14 @@ export default {
     table: {
       item: 'Item',
       itemId: 'Identifier',
+      desc: 'Description',
       price: 'Price',
       status: 'Status',
     },
     modal: {
       createTitle: 'New In-Game Item',
       editTitle: 'Edit In-Game Item',
+      viewTitle: 'Item Details',
     },
     fields: {
       icon: 'Item Icon',

@@ -1,7 +1,6 @@
 <template>
-  <div class="tab-content tab-fade-in">
-    <div class="page-header-row">
-      <h1 class="page-title">{{ t('projectWorkspace.accessTab') }}</h1>
+  <div class="tab-content tab-fade-in access-page">
+    <div v-if="!loading && hasMembersOrInvites" class="access-toolbar">
       <button class="btn-add-game-primary" @click="openInviteModal">
         <UserPlus class="icon-sm" />
         <span>{{ t('access.actions.invite') }}</span>
@@ -17,7 +16,7 @@
     <!-- Members & Invites Table -->
     <div v-else class="access-table-card">
       <div
-        v-if="members.length === 0 && pendingInvites.length === 0"
+        v-if="!hasMembersOrInvites"
         class="empty-state"
       >
         <div class="empty-icon-wrap">
@@ -32,7 +31,7 @@
       </div>
 
       <div v-else class="table-wrapper">
-        <table class="yandex-games-table">
+        <table class="project-table">
           <thead>
             <tr>
               <th class="col-user">{{ t('access.table.user') }}</th>
@@ -67,7 +66,7 @@
                 </div>
               </td>
               <td class="col-status">
-                <span class="status-pill status-active">{{ t('access.statuses.member') }}</span>
+                <span class="status-text status-active">{{ t('access.statuses.member') }}</span>
               </td>
               <td class="col-date">
                 <span class="date-text">{{ formatDate(m.created_at) }}</span>
@@ -119,13 +118,10 @@
                 </div>
               </td>
               <td class="col-status">
-                <span class="status-pill status-pending">{{ t('access.statuses.pending') }}</span>
+                <span class="status-text status-pending">{{ t('access.statuses.pending') }}</span>
               </td>
               <td class="col-date">
-                <span class="date-text">
-                  <Clock class="icon-xs" style="margin-right: 4px; vertical-align: middle;" />
-                  {{ formatDate(inv.created_at) }}
-                </span>
+                <span class="date-text">{{ formatDate(inv.created_at) }}</span>
               </td>
               <td class="col-actions">
                 <div class="row-actions">
@@ -352,7 +348,6 @@ import {
   X,
   Search,
   Sliders,
-  Clock,
   ShieldCheck,
 } from 'lucide-vue-next';
 import {
@@ -377,6 +372,10 @@ const loading = ref<boolean>(true);
 const actionInProgress = ref<string | number | null>(null);
 const members = ref<any[]>([]);
 const pendingInvites = ref<any[]>([]);
+
+const hasMembersOrInvites = computed<boolean>(
+  () => members.value.length > 0 || pendingInvites.value.length > 0
+);
 
 // ─── Modal States ─────────────────────────────────────────────
 const searchHighlightedIndex = ref<number>(-1);
@@ -751,29 +750,17 @@ function formatDate(dateStr?: string | null): string {
 }
 
 .tab-content {
-  padding: 32px;
+  padding: 24px 32px;
   max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.page-header-row {
+.access-toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-main, #f0f6fc);
-}
-
-.page-subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-muted, #8b949e);
+  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 
 .access-table-card {
@@ -784,7 +771,7 @@ function formatDate(dateStr?: string | null): string {
 }
 
 .empty-state {
-  padding: 48px 24px;
+  padding: 60px 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -821,37 +808,45 @@ function formatDate(dateStr?: string | null): string {
   overflow-x: auto;
 }
 
-.yandex-games-table {
+.project-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
-.yandex-games-table th {
+.project-table th {
   color: var(--text-tertiary, #8b949e);
   font-size: 13px;
   font-weight: 500;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border, #30363d);
-  background: var(--bg-secondary, #0d1117);
+  background: rgba(255, 255, 255, 0.02);
   white-space: nowrap;
 }
 
-.yandex-games-table th.col-user { width: 28%; }
-.yandex-games-table th.col-perms { width: 34%; }
-.yandex-games-table th.col-status { width: 14%; }
-.yandex-games-table th.col-date { width: 14%; }
-.yandex-games-table th.col-actions { width: 10%; text-align: right; padding-right: 16px; }
+.project-table th.col-user { width: 30%; }
+.project-table th.col-perms { width: 28%; }
+.project-table th.col-status { width: 18%; }
+.project-table th.col-date { width: 18%; white-space: nowrap; }
+.project-table th.col-actions { width: 6%; text-align: right; padding-right: 16px; }
 
 .table-row {
   border-bottom: 1px solid var(--border, #21262d);
   transition: background-color 0.15s ease;
 }
 .table-row:hover {
-  background: var(--bg-secondary, #161b22);
+  background: rgba(255, 255, 255, 0.025);
 }
+
+.project-table tr:last-child td {
+  border-bottom: none;
+}
+
 .table-row td {
   padding: 12px 16px;
   vertical-align: middle;
+}
+.table-row td.col-date {
+  white-space: nowrap;
 }
 .table-row td.col-actions {
   text-align: right;
@@ -868,8 +863,8 @@ function formatDate(dateStr?: string | null): string {
   gap: 2px;
 }
 .user-name {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-main, #f0f6fc);
 }
 .user-email {
@@ -880,25 +875,29 @@ function formatDate(dateStr?: string | null): string {
 .date-text {
   font-size: 13px;
   font-weight: 400;
-  color: var(--text-muted, #b0b8c4);
+  color: var(--text-muted, #8b949e);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .perms-badges-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
 }
 
 .badge-role-collab {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: var(--bg-tertiary, #21262d);
-  color: var(--primary, #58a6ff);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #c9d1d9);
   border: 1px solid var(--border, #30363d);
   white-space: nowrap;
 }
@@ -906,68 +905,56 @@ function formatDate(dateStr?: string | null): string {
 .badge-full-access {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 6px;
-  background: rgba(88, 166, 255, 0.12);
-  color: #58a6ff;
-  border: 1px solid rgba(88, 166, 255, 0.35);
-  cursor: default;
-  transition: all 0.15s ease;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary, #58a6ff);
   white-space: nowrap;
 }
-.badge-full-access:hover {
-  background: rgba(88, 166, 255, 0.2);
-  border-color: rgba(88, 166, 255, 0.55);
-}
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 4px;
-  font-size: 12px;
+/* Статусы - чистая типографика в едином стиле */
+.status-text {
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
 }
-.status-pending {
-  background: rgba(245, 176, 39, 0.12);
-  border: 1px solid rgba(245, 176, 39, 0.35);
-  color: #f5b027;
+
+.status-text.status-active {
+  color: var(--text-secondary, #c9d1d9);
 }
-.status-active {
-  background: rgba(46, 204, 113, 0.12);
-  border: 1px solid rgba(46, 204, 113, 0.35);
-  color: #2ecc71;
+
+.status-text.status-pending {
+  color: #f5b027;
 }
 
 .row-actions {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .btn-icon {
-  background: none;
+  background: transparent;
   border: none;
   padding: 6px;
   cursor: pointer;
-  color: var(--text-tertiary, #8b949e);
+  color: var(--text-muted, #8b949e);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
+
 .btn-icon:hover {
   color: var(--text-main, #f0f6fc);
-  background: var(--bg-tertiary, #21262d);
+  background: rgba(255, 255, 255, 0.06);
 }
-.text-danger-hover:hover { color: var(--danger, #f85149) !important; }
+
+.btn-icon.text-danger-hover:hover {
+  color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
+}
 
 /* Modals */
 .modal-overlay {

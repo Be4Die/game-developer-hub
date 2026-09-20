@@ -1,12 +1,12 @@
 <template>
   <div class="tab-content tab-fade-in purchases-page">
-    <!-- Шапка страницы -->
-    <div class="page-header-row">
-      <div>
-        <h1 class="page-title">{{ t('purchases.title') }}</h1>
-        <p class="page-subtitle text-muted">{{ t('purchases.subtitle') }}</p>
+    <!-- Верхняя панель: курс валюты и действие добавления -->
+    <div v-if="!loading" class="purchases-toolbar">
+      <div class="rate-badge" title="1 WCoin = 1 рубль">
+        <Coins class="icon-xs text-primary" />
+        <span>1 WCoin = 1 ₽</span>
       </div>
-      <button class="btn-primary-action" @click="openCreateModal">
+      <button v-if="items.length > 0" class="btn-primary-action" @click="openCreateModal">
         <Plus class="icon-sm" />
         <span>{{ t('purchases.actions.addItem') }}</span>
       </button>
@@ -35,18 +35,24 @@
 
       <!-- Таблица товаров -->
       <div v-else class="table-wrapper">
-        <table class="data-table">
+        <table class="project-table">
           <thead>
             <tr>
               <th class="col-item">{{ t('purchases.table.item') }}</th>
               <th class="col-id">{{ t('purchases.table.itemId') }}</th>
+              <th class="col-desc">{{ t('purchases.table.desc') }}</th>
               <th class="col-price">{{ t('purchases.table.price') }}</th>
               <th class="col-status">{{ t('purchases.table.status') }}</th>
               <th class="col-actions"></th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in items" :key="item.id || item.game_item_id" class="table-row">
+            <tr
+              v-for="item in items"
+              :key="item.id || item.game_item_id"
+              class="table-row table-row-clickable"
+              @click="openViewModal(item)"
+            >
               <td class="col-item">
                 <div class="item-meta">
                   <div class="item-icon-box">
@@ -61,47 +67,42 @@
                       <ShoppingBag class="icon-xs text-muted" />
                     </div>
                   </div>
-                  <div class="item-text">
-                    <div class="item-name">{{ item.name }}</div>
-                    <div v-if="item.description" class="item-desc text-muted" :title="item.description">
-                      {{ item.description }}
-                    </div>
-                  </div>
+                  <span class="item-name" :title="item.name">{{ item.name }}</span>
                 </div>
               </td>
               <td class="col-id">
-                <code class="item-slug-code">{{ item.game_item_id }}</code>
+                <span class="item-id-text" :title="item.game_item_id">{{ item.game_item_id }}</span>
+              </td>
+              <td class="col-desc">
+                <div v-if="item.description" class="item-desc-cell" :title="item.description">
+                  {{ item.description }}
+                </div>
+                <span v-else class="text-muted">—</span>
               </td>
               <td class="col-price">
                 <div class="price-val">
-                  <Coins class="icon-xs text-primary" />
                   <span class="price-num">{{ item.price_coins }}</span>
                   <span class="price-unit">WCoin</span>
                 </div>
               </td>
               <td class="col-status">
-                <span v-if="item.is_active" class="badge-status-active">
-                  <CheckCircle class="icon-xs" />
-                  <span>Активен</span>
-                </span>
-                <span v-else class="badge-status-inactive">
-                  <XCircle class="icon-xs" />
-                  <span>Скрыт</span>
+                <span class="status-text" :class="item.is_active !== false ? 'status-active' : 'status-inactive'">
+                  {{ item.is_active !== false ? 'Активен' : 'Скрыт' }}
                 </span>
               </td>
-              <td class="col-actions">
-                <div class="actions-row">
+              <td class="col-actions" @click.stop>
+                <div class="row-actions">
                   <button
-                    class="btn-icon-sm"
+                    class="btn-icon"
                     title="Редактировать товар"
-                    @click="openEditModal(item)"
+                    @click.stop="openEditModal(item)"
                   >
                     <Edit2 class="icon-xs" />
                   </button>
                   <button
-                    class="btn-icon-sm btn-delete"
+                    class="btn-icon text-danger-hover"
                     title="Удалить товар"
-                    @click="openDeleteConfirm(item)"
+                    @click.stop="openDeleteConfirm(item)"
                   >
                     <Trash2 class="icon-xs" />
                   </button>
@@ -111,17 +112,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Краткая справка внизу страницы: бейдж и 1 строка пояснения -->
-    <div class="purchases-footer-note">
-      <div class="rate-badge">
-        <Coins class="icon-xs text-primary" />
-        <span>1 WCoin = 1 ₽</span>
-      </div>
-      <span class="footer-note-text text-muted">
-        {{ t('purchases.footerNote') }}
-      </span>
     </div>
 
     <!-- МОДАЛЬНОЕ ОКНО: СОЗДАНИЕ / РЕДАКТИРОВАНИЕ -->
@@ -254,10 +244,7 @@
           <div class="form-group-checkbox">
             <label class="checkbox-row">
               <input v-model="form.is_active" type="checkbox" class="styled-checkbox" />
-              <div class="checkbox-text">
-                <span class="checkbox-title">{{ t('purchases.fields.isActive') }}</span>
-                <span class="checkbox-sub text-muted">{{ t('purchases.hints.isActive') }}</span>
-              </div>
+              <span class="checkbox-title">{{ t('purchases.fields.isActive') }}</span>
             </label>
           </div>
 
@@ -300,6 +287,96 @@
         </div>
       </div>
     </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО: ДЕТАЛИ ТОВАРА (READONLY) -->
+    <div v-if="viewItem" class="modal-backdrop" @click.self="closeViewModal">
+      <div class="modal-card modal-view-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <ShoppingBag class="icon-sm text-primary" />
+            <h3 class="modal-title">{{ t('purchases.modal.viewTitle') }}</h3>
+          </div>
+          <button class="btn-close" @click="closeViewModal">
+            <X class="icon-sm" />
+          </button>
+        </div>
+
+        <div class="modal-body view-details-body">
+          <!-- 1 строка: идентификатор (без синего акцента) + иконка копирования -->
+          <div class="view-id-row">
+            <span class="view-id-label">{{ t('purchases.fields.itemId') }}:</span>
+            <span class="view-id-code">{{ viewItem.game_item_id }}</span>
+            <button
+              type="button"
+              class="btn-copy-icon-only"
+              :title="copiedId ? t('common.copied') : t('common.copy')"
+              @click="copyItemId(viewItem.game_item_id)"
+            >
+              <Check v-if="copiedId" class="icon-xs text-success" />
+              <Copy v-else class="icon-xs" />
+            </button>
+          </div>
+
+          <!-- 2-3 строка: слева картинка, справа строка 2 (статус, дата время) и строка 3 (название, стоимость) -->
+          <div class="view-hero-card">
+            <!-- Картинка (занимает высоту строк 2-3) -->
+            <div class="view-hero-media">
+              <img
+                v-if="viewItem.image_url"
+                :src="getMediaUrl(viewItem.image_url, projectId)"
+                alt="Icon"
+                class="view-media-img"
+                @error="onImageError"
+              />
+              <div v-else class="view-media-placeholder">
+                <ShoppingBag class="icon-md text-muted" />
+              </div>
+            </div>
+
+            <div class="view-hero-content">
+              <!-- 2 строка (чуть меньше размером): статус активен или нет, дата время -->
+              <div class="view-sub-row">
+                <span class="status-indicator-pill" :class="viewItem.is_active !== false ? 'pill-active' : 'pill-inactive'">
+                  <span class="status-dot"></span>
+                  {{ viewItem.is_active !== false ? 'Активен' : 'Скрыт' }}
+                </span>
+                <span v-if="viewItem.created_at" class="view-meta-date text-muted">
+                  {{ formatDateTime(viewItem.created_at) }}
+                </span>
+              </div>
+
+              <!-- 3 строка: название, стоимость (у стоимости убрать иконку и в скобках приписку в рублях) -->
+              <div class="view-main-row">
+                <h4 class="view-item-name" :title="viewItem.name">{{ viewItem.name }}</h4>
+                <div class="view-price-clean">
+                  <span class="view-price-num">{{ viewItem.price_coins }}</span>
+                  <span class="view-price-unit">WCoin</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 строка: описание -->
+          <div class="view-desc-section">
+            <div class="view-desc-label">{{ t('purchases.fields.desc') }}</div>
+            <div class="view-desc-panel">
+              <p v-if="viewItem.description" class="view-desc-content">{{ viewItem.description }}</p>
+              <span v-else class="view-desc-empty text-muted">Описание не указано</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" @click="closeViewModal">
+            {{ t('common.close') }}
+          </button>
+          <button type="button" class="btn-primary-action btn-edit-action" @click="editFromView">
+            <Edit2 class="icon-xs" />
+            <span>{{ t('common.edit') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -318,8 +395,11 @@ import {
   UploadCloud,
   AlertCircle,
   Loader2,
+  Copy,
+  Check,
 } from 'lucide-vue-next';
 import { useI18n } from 'vue-i18n';
+import { formatDate, formatDateTime } from '@/shared/lib';
 import { getMediaUrl } from '@/entities/project';
 import {
   listGameItems,
@@ -342,6 +422,9 @@ const showModal = ref<boolean>(false);
 const isEditing = ref<boolean>(false);
 const modalError = ref<string>('');
 const itemToDelete = ref<GameItem | null>(null);
+const viewItem = ref<GameItem | null>(null);
+const copiedId = ref<boolean>(false);
+let copiedTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -498,6 +581,37 @@ async function confirmDelete(): Promise<void> {
   }
 }
 
+function openViewModal(item: GameItem): void {
+  viewItem.value = item;
+  copiedId.value = false;
+}
+
+function closeViewModal(): void {
+  viewItem.value = null;
+  copiedId.value = false;
+  if (copiedTimeout) {
+    clearTimeout(copiedTimeout);
+    copiedTimeout = null;
+  }
+}
+
+function copyItemId(id: string): void {
+  navigator.clipboard.writeText(id).then(() => {
+    copiedId.value = true;
+    if (copiedTimeout) clearTimeout(copiedTimeout);
+    copiedTimeout = setTimeout(() => {
+      copiedId.value = false;
+    }, 2000);
+  });
+}
+
+function editFromView(): void {
+  if (!viewItem.value) return;
+  const item = viewItem.value;
+  closeViewModal();
+  openEditModal(item);
+}
+
 onMounted(() => {
   loadItems();
 });
@@ -508,26 +622,33 @@ onMounted(() => {
   padding: 24px 32px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.page-header-row {
+.purchases-toolbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+  min-height: 38px;
 }
 
-.page-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-main, #f0f6fc);
-  margin: 0;
-}
-
-.page-subtitle {
+.rate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.28);
+  color: var(--primary, #58a6ff);
   font-size: 13px;
-  margin-top: 4px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 
 .btn-primary-action {
@@ -549,42 +670,11 @@ onMounted(() => {
   background: var(--primary-hover, #79c0ff);
 }
 
-/* Подвал: краткая справка */
-.purchases-footer-note {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  background: var(--bg-card, #161b22);
-  border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-md, 8px);
-  font-size: 13px;
-}
-
-.rate-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(88, 166, 255, 0.12);
-  border: 1px solid rgba(88, 166, 255, 0.28);
-  color: var(--primary, #58a6ff);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-
-.footer-note-text {
-  color: var(--text-muted, #8b949e);
-  font-size: 12px;
-}
-
-/* Карточка таблицы */
+/* Карточка таблицы внутри проекта */
 .purchases-table-card {
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
-  border-radius: var(--radius-lg, 10px);
+  border-radius: var(--radius-md, 8px);
   overflow: hidden;
 }
 
@@ -611,44 +701,78 @@ onMounted(() => {
 
 .table-wrapper {
   overflow-x: auto;
+  width: 100%;
 }
 
-.data-table {
+.project-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 13px;
+  table-layout: fixed;
+  min-width: 820px;
 }
 
-.data-table th {
-  background: var(--bg-tertiary, #21262d);
-  color: var(--text-muted, #8b949e);
-  font-weight: 600;
+.project-table th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-tertiary, #8b949e);
+  font-size: 13px;
+  font-weight: 500;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border, #30363d);
+  white-space: nowrap;
 }
 
-.data-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border, #30363d);
+.project-table th.col-item { width: 22%; }
+.project-table th.col-id { width: 16%; }
+.project-table th.col-desc { width: 24%; }
+.project-table th.col-price { width: 14%; }
+.project-table th.col-status { width: 14%; white-space: nowrap; }
+.project-table th.col-actions { width: 10%; text-align: right; padding-right: 16px; white-space: nowrap; }
+
+.project-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #21262d);
   vertical-align: middle;
 }
 
-.table-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+.project-table td.col-status {
+  white-space: nowrap;
+}
+
+.project-table td.col-actions {
+  text-align: right;
+  padding-right: 16px;
+  white-space: nowrap;
+}
+
+.table-row {
+  transition: background-color 0.15s ease;
+}
+
+.table-row-clickable {
+  cursor: pointer;
+}
+
+.table-row-clickable:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.project-table tr:last-child td {
+  border-bottom: none;
 }
 
 .item-meta {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .item-icon-box {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm, 6px);
-  background: var(--bg-secondary, #0d1117);
+  background: var(--bg-tertiary, #21262d);
   border: 1px solid var(--border, #30363d);
   display: flex;
   align-items: center;
@@ -663,42 +787,49 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.item-text {
+.item-icon-placeholder {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
 }
 
 .item-name {
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
-}
-
-.item-desc {
-  font-size: 12px;
-  color: var(--text-muted, #8b949e);
-  max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.item-slug-code {
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--primary, #58a6ff);
-  font-family: monospace;
+.item-desc-cell {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  line-height: 1.4;
+  font-size: 13px;
+  color: var(--text-muted, #8b949e);
+}
+
+.item-id-text {
+  font-size: 13px;
+  color: var(--text-muted, #8b949e);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .price-val {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  align-items: baseline;
+  gap: 4px;
   font-weight: 600;
   color: var(--text-main, #f0f6fc);
+  font-size: 13px;
 }
 
 .price-num {
@@ -706,60 +837,54 @@ onMounted(() => {
 }
 
 .price-unit {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted, #8b949e);
+  font-weight: 400;
+}
+
+/* Статус: чистая типографика (единый стиль) */
+.status-text {
+  font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
-.badge-status-active {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
+.status-text.status-active {
+  color: #2ecc71;
 }
 
-.badge-status-inactive {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(156, 163, 175, 0.12);
-  color: #9ca3af;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
+.status-text.status-inactive {
+  color: var(--text-muted, #8b949e);
 }
 
-.actions-row {
+.row-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 
-.btn-icon-sm {
+.btn-icon {
   background: transparent;
   border: none;
   color: var(--text-muted, #8b949e);
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 
-.btn-icon-sm:hover {
-  background: var(--bg-tertiary, #21262d);
+.btn-icon:hover {
   color: var(--text-main, #f0f6fc);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.btn-icon-sm.btn-delete:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+.btn-icon.text-danger-hover:hover {
+  color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
 }
 
 /* Модальное окно */
@@ -777,7 +902,7 @@ onMounted(() => {
 
 .modal-card {
   width: 100%;
-  max-width: 520px;
+  max-width: 580px;
   background: var(--bg-card, #161b22);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-lg, 10px);
@@ -893,6 +1018,12 @@ onMounted(() => {
   font-size: 13px;
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-textarea {
+  resize: none;
+  min-height: 76px;
+  max-width: 100%;
 }
 
 .form-input:focus,
@@ -1011,7 +1142,7 @@ input[type="number"] {
 
 .checkbox-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   cursor: pointer;
   user-select: none;
@@ -1028,7 +1159,6 @@ input[type="number"] {
   cursor: pointer;
   outline: none;
   transition: all 0.15s ease;
-  margin-top: 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1062,15 +1192,8 @@ input[type="number"] {
 .checkbox-title {
   display: block;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-main, #f0f6fc);
-}
-
-.checkbox-sub {
-  display: block;
-  font-size: 11px;
-  margin-top: 2px;
-  color: var(--text-muted, #8b949e);
 }
 
 .form-error-alert {
@@ -1090,8 +1213,12 @@ input[type="number"] {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 14px;
+  padding: 14px 20px;
   border-top: 1px solid var(--border, #30363d);
+}
+
+.modal-body .modal-footer {
+  padding: 14px 0 0 0;
 }
 
 .btn-cancel {
@@ -1145,6 +1272,240 @@ input[type="number"] {
 
 .btn-danger-confirm:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+/* Модальное окно: Детали товара (readonly) */
+.modal-card.modal-view-card {
+  max-width: 520px;
+}
+
+.view-details-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 1 строка: идентификатор (нейтральный, без синего) + иконка копирования */
+.view-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.view-id-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #8b949e);
+  white-space: nowrap;
+}
+
+.view-id-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  color: var(--text-secondary, #c9d1d9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.btn-copy-icon-only {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #8b949e);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.btn-copy-icon-only:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f0f6fc);
+  border-color: var(--border, #30363d);
+}
+
+/* 2-3 строка: слева картинка, справа статус+дата и название+стоимость */
+.view-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-md, 8px);
+}
+
+.view-hero-media {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-tertiary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.view-media-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-hero-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 2 строка (чуть меньше размером): статус, дата/время */
+.view-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.view-meta-date {
+  font-size: 12px;
+  color: var(--text-muted, #8b949e);
+  white-space: nowrap;
+}
+
+.status-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.status-indicator-pill.pill-active {
+  background: rgba(46, 204, 113, 0.12);
+  color: #2ecc71;
+}
+
+.status-indicator-pill.pill-inactive {
+  background: rgba(139, 148, 158, 0.12);
+  color: #8b949e;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 3 строка: название и стоимость */
+.view-main-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.view-item-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main, #f0f6fc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-price-clean {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--text-main, #f0f6fc);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.view-price-num {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.view-price-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted, #8b949e);
+}
+
+/* 4 строка: описание */
+.view-desc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.view-desc-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted, #8b949e);
+}
+
+.view-desc-panel {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 12px;
+  min-height: 48px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.view-desc-content {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main, #f0f6fc);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.view-desc-empty {
+  font-size: 13px;
+  font-style: italic;
+}
+
+.btn-edit-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
 }
 
 .state-container {

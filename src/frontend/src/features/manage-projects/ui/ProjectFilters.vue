@@ -80,7 +80,7 @@
           class="filter-select"
           @change="onModeChange"
         >
-          <option value="all">{{ t('projects.allModes') }}</option>
+          <option value="all">{{ t('common.all') }}</option>
           <option value="online">{{ t('projects.modeOnline') }}</option>
           <option value="offline">{{ t('projects.modeOffline') }}</option>
         </select>
@@ -91,6 +91,7 @@
     <!-- Кнопка создания игры -->
     <button class="btn-add-game" :disabled="creating" @click="emit('create')">
       <span v-if="creating" class="spinner-btn"></span>
+      <Plus v-else class="icon-sm" />
       <span>{{ creating ? t('common.saving') : t('projects.createBtn') }}</span>
     </button>
   </div>
@@ -99,7 +100,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { X, ChevronDown, RotateCcw } from 'lucide-vue-next';
+import { X, ChevronDown, RotateCcw, Plus } from 'lucide-vue-next';
 
 const { t } = useI18n();
 
