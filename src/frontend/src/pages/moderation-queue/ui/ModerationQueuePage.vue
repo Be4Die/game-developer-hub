@@ -148,7 +148,7 @@
               v-for="req in paginatedRequests"
               :key="req.type + '-' + req.id"
               class="table-row"
-              @click="openProject(req.projectId)"
+              @click="handleRowClick(req)"
             >
               <!-- 1 колонка: Игра / Проект + тип заявки -->
               <td class="col-game">
@@ -311,32 +311,14 @@
 
                   <!-- Действия для серверов платформы -->
                   <template v-else>
-                    <template v-if="isPending(req.status)">
-                      <button
-                        class="btn-approve-sm"
-                        title="Одобрить доступ"
-                        @click="openApproveServerModal(req)"
-                      >
-                        <Check class="icon-xs" />
-                        <span>Одобрить</span>
-                      </button>
-                      <button
-                        class="btn-reject-sm"
-                        title="Отклонить заявку"
-                        @click="openRejectServerModal(req)"
-                      >
-                        <X class="icon-xs" />
-                        <span>Отклонить</span>
-                      </button>
-                    </template>
                     <button
-                      v-else
                       class="btn-inspect-sm"
-                      title="Просмотр проекта"
-                      @click="openProject(req.projectId)"
+                      :title="isPending(req.status) ? 'Рассмотреть заявку на серверы' : 'Просмотр заявки на серверы'"
+                      @click="openServerReviewModal(req)"
                     >
-                      <Eye class="icon-xs" />
-                      <span>Просмотр</span>
+                      <Sliders v-if="isPending(req.status)" class="icon-xs" />
+                      <Eye v-else class="icon-xs" />
+                      <span>{{ isPending(req.status) ? 'Рассмотреть' : 'Просмотр' }}</span>
                     </button>
                   </template>
                 </div>
@@ -389,227 +371,316 @@
         </div>
       </div>
 
-      <!-- Модальное окно: Одобрение доступа к серверам -->
+      <!-- Модальное окно: Рассмотрение заявки на доступ к серверам -->
       <div
-        v-if="approvingServerTarget"
+        v-if="serverReviewTarget"
         class="modal-overlay"
-        @click.self="approvingServerTarget = null"
+        @click.self="serverReviewTarget = null"
       >
         <div class="modal-card modal-card-wide">
           <div class="modal-header">
-            <h3>Одобрить доступ к серверам платформы</h3>
-            <button class="btn-close" @click="approvingServerTarget = null">
+            <div class="modal-header-title-row">
+              <h3>Заявка на доступ к серверам платформы</h3>
+              <span class="status-pill" :class="reqStatusClass(serverReviewTarget.status)">
+                {{ reqStatusLabel(serverReviewTarget.status) }}
+              </span>
+            </div>
+            <button class="btn-close" @click="serverReviewTarget = null">
               <X class="icon-sm" />
             </button>
           </div>
           <div class="modal-body">
+            <!-- Блок информации о проекте и запросе -->
             <div class="project-info-banner">
-              <div class="project-info-title">
-                Проект: <strong>{{ approvingServerTarget.title }}</strong> (ID: {{ approvingServerTarget.projectId }})
+              <div class="project-info-top">
+                <div class="project-info-title-group">
+                  <div class="game-icon-box sm">
+                    <img
+                      v-if="serverReviewTarget.iconPath"
+                      :src="getMediaUrl(serverReviewTarget.iconPath, serverReviewTarget.projectId)"
+                      alt="Icon"
+                      class="game-icon-img"
+                    />
+                    <Server v-else class="icon-xs text-warning" />
+                  </div>
+                  <div>
+                    <div class="project-info-title">
+                      <strong>{{ serverReviewTarget.title }}</strong>
+                      <span class="project-id-chip">#{{ serverReviewTarget.projectId }}</span>
+                    </div>
+                    <div class="project-info-dev">
+                      Разработчик: <strong>{{ serverReviewTarget.ownerId ? getUserDisplayName(serverReviewTarget.ownerId) : '—' }}</strong>
+                      <span class="dot-separator">•</span>
+                      <span>{{ formatDateTime(serverReviewTarget.submittedAt) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  class="btn-inspect-sm"
+                  title="Открыть страницу проекта"
+                  @click="openProject(serverReviewTarget.projectId)"
+                >
+                  <span>Проект</span>
+                  <ExternalLink class="icon-xs" />
+                </button>
               </div>
-              <p v-if="approvingServerTarget.reason" class="modal-reason-quote">
-                <strong>Обоснование разработчика:</strong> «{{ approvingServerTarget.reason }}»
-              </p>
+
+              <!-- Обоснование разработчика -->
+              <div class="server-reason-quote">
+                <div class="server-reason-label">Обоснование разработчика:</div>
+                <p>«{{ serverReviewTarget.reason || 'Запрос доступа к мощностям платформы' }}»</p>
+              </div>
+
+              <!-- Запрошенные ресурсы -->
               <div class="requested-summary-line">
                 <span class="req-sum-label">Запрошено разработчиком:</span>
-                <span class="req-sum-val">{{ approvingServerTarget.maxInstances }} инст.</span>
-                <span class="req-sum-val">Всего CPU: {{ formatCpu(approvingServerTarget.maxTotalCpuMillis) }}</span>
-                <span class="req-sum-val">Всего RAM: {{ formatMemory(approvingServerTarget.maxTotalMemoryMb) }}</span>
+                <span class="req-sum-val">{{ serverReviewTarget.maxInstances }} инст.</span>
+                <span class="req-sum-val">Всего CPU: {{ formatCpu(serverReviewTarget.maxTotalCpuMillis) }}</span>
+                <span class="req-sum-val">Всего RAM: {{ formatMemory(serverReviewTarget.maxTotalMemoryMb) }}</span>
+                <span
+                  v-if="serverReviewTarget.maxInstanceCpuMillis || serverReviewTarget.maxInstanceMemoryMb"
+                  class="req-sum-val"
+                >
+                  На инстанс: {{ formatCpu(serverReviewTarget.maxInstanceCpuMillis) }} / {{ formatMemory(serverReviewTarget.maxInstanceMemoryMb) }}
+                </span>
               </div>
             </div>
 
-            <!-- Форма настройки утверждённой квоты -->
-            <div class="moderator-quota-form">
-              <div class="form-group mb-12">
-                <label class="form-label">Утверждённое число серверов (инстансов) *</label>
-                <input
-                  v-model.number="approveServerQuota"
-                  type="number"
-                  min="1"
-                  max="50"
-                  class="form-input"
-                />
-                <span class="field-hint">Максимум одновременно работающих серверов на мощностях платформы</span>
+            <!-- Если заявка ожидает решения (Pending) -->
+            <template v-if="isPending(serverReviewTarget.status)">
+              <!-- Переключатель решения -->
+              <div class="decision-tabs">
+                <button
+                  type="button"
+                  class="decision-tab-btn"
+                  :class="{ active: serverDecisionTab === 'approve' }"
+                  @click="serverDecisionTab = 'approve'"
+                >
+                  <Check class="icon-xs" />
+                  <span>Одобрить выделение квот</span>
+                </button>
+                <button
+                  type="button"
+                  class="decision-tab-btn decision-tab-reject"
+                  :class="{ active: serverDecisionTab === 'reject' }"
+                  @click="serverDecisionTab = 'reject'"
+                >
+                  <X class="icon-xs" />
+                  <span>Отклонить заявку</span>
+                </button>
               </div>
 
-              <!-- Суммарные ресурсы проекта -->
-              <div class="quota-group-card">
-                <h4 class="quota-group-title">Суммарный лимит на весь проект</h4>
-                <div class="quota-inputs-row">
-                  <div class="form-group flex-1">
-                    <div class="label-with-toggle">
-                      <label class="form-label">Всего CPU (ядер)</label>
-                      <label class="toggle-label">
-                        <input type="checkbox" v-model="approveUnlimitedTotalCpu" />
-                        <span>Без огр.</span>
-                      </label>
-                    </div>
-                    <input
-                      v-if="!approveUnlimitedTotalCpu"
-                      v-model.number="approveTotalCpu"
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      max="64"
-                      class="form-input"
-                    />
-                    <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                  </div>
+              <!-- Вкладка: Одобрение -->
+              <div v-if="serverDecisionTab === 'approve'" class="moderator-quota-form">
+                <div class="form-group mb-12">
+                  <label class="form-label">Утверждённое число серверов (инстансов) *</label>
+                  <input
+                    v-model.number="approveServerQuota"
+                    type="number"
+                    min="1"
+                    max="50"
+                    class="form-input"
+                  />
+                  <span class="field-hint">Максимум одновременно работающих серверов на мощностях платформы</span>
+                </div>
 
-                  <div class="form-group flex-1">
-                    <div class="label-with-toggle">
-                      <label class="form-label">Всего RAM (МБ)</label>
-                      <label class="toggle-label">
-                        <input type="checkbox" v-model="approveUnlimitedTotalRam" />
-                        <span>Без огр.</span>
-                      </label>
+                <!-- Суммарные ресурсы проекта -->
+                <div class="quota-group-card">
+                  <h4 class="quota-group-title">Суммарный лимит на весь проект</h4>
+                  <div class="quota-inputs-row">
+                    <div class="form-group flex-1">
+                      <div class="label-with-toggle">
+                        <label class="form-label">Всего CPU (ядер)</label>
+                        <label class="toggle-label">
+                          <input type="checkbox" v-model="approveUnlimitedTotalCpu" />
+                          <span>Без огр.</span>
+                        </label>
+                      </div>
+                      <input
+                        v-if="!approveUnlimitedTotalCpu"
+                        v-model.number="approveTotalCpu"
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        max="64"
+                        class="form-input"
+                      />
+                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
                     </div>
-                    <input
-                      v-if="!approveUnlimitedTotalRam"
-                      v-model.number="approveTotalRam"
-                      type="number"
-                      step="256"
-                      min="256"
-                      max="131072"
-                      class="form-input"
-                    />
-                    <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+
+                    <div class="form-group flex-1">
+                      <div class="label-with-toggle">
+                        <label class="form-label">Всего RAM (МБ)</label>
+                        <label class="toggle-label">
+                          <input type="checkbox" v-model="approveUnlimitedTotalRam" />
+                          <span>Без огр.</span>
+                        </label>
+                      </div>
+                      <input
+                        v-if="!approveUnlimitedTotalRam"
+                        v-model.number="approveTotalRam"
+                        type="number"
+                        step="256"
+                        min="256"
+                        max="131072"
+                        class="form-input"
+                      />
+                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Лимиты на 1 инстанс -->
+                <div class="quota-group-card">
+                  <h4 class="quota-group-title">Лимит на 1 отдельный инстанс (сервер)</h4>
+                  <div class="quota-inputs-row">
+                    <div class="form-group flex-1">
+                      <div class="label-with-toggle">
+                        <label class="form-label">CPU на инстанс</label>
+                        <label class="toggle-label">
+                          <input type="checkbox" v-model="approveUnlimitedInstanceCpu" />
+                          <span>Без огр.</span>
+                        </label>
+                      </div>
+                      <input
+                        v-if="!approveUnlimitedInstanceCpu"
+                        v-model.number="approveInstanceCpu"
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        max="32"
+                        class="form-input"
+                      />
+                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                    </div>
+
+                    <div class="form-group flex-1">
+                      <div class="label-with-toggle">
+                        <label class="form-label">RAM на инстанс (МБ)</label>
+                        <label class="toggle-label">
+                          <input type="checkbox" v-model="approveUnlimitedInstanceRam" />
+                          <span>Без огр.</span>
+                        </label>
+                      </div>
+                      <input
+                        v-if="!approveUnlimitedInstanceRam"
+                        v-model.number="approveInstanceRam"
+                        type="number"
+                        step="256"
+                        min="256"
+                        max="32768"
+                        class="form-input"
+                      />
+                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Комментарий модератора -->
+                <div class="form-group">
+                  <label class="form-label">Комментарий модератора (необязательно)</label>
+                  <textarea
+                    v-model="approveComment"
+                    rows="2"
+                    class="form-textarea"
+                    placeholder="Например: Выделено на период закрытого тестирования..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Вкладка: Отклонение -->
+              <div v-else class="reject-server-form">
+                <div class="form-group">
+                  <label class="form-label">Причина отказа для разработчика *</label>
+                  <textarea
+                    v-model="rejectServerReason"
+                    rows="4"
+                    class="form-textarea"
+                    placeholder="Укажите подробную причину отказа или рекомендации по оптимизации..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div v-if="serverReviewError" class="alert-error">
+                <AlertCircle class="icon-xs" />
+                <span>{{ serverReviewError }}</span>
+              </div>
+            </template>
+
+            <!-- Если заявка уже рассмотрена (Approved / Rejected) -->
+            <template v-else>
+              <div v-if="isApproved(serverReviewTarget.status)" class="resolved-info-card approved-card">
+                <div class="resolved-badge-line">
+                  <CheckCircle2 class="icon-sm text-success" />
+                  <strong>Заявка одобрена</strong>
+                  <span v-if="serverReviewTarget.moderatorId" class="sub-mod">
+                    (Модератор: {{ getUserDisplayName(serverReviewTarget.moderatorId) }})
+                  </span>
+                </div>
+                <div class="resolved-details-grid">
+                  <div>Утверждённая квота: <strong>{{ serverReviewTarget.maxInstances }} инст.</strong></div>
+                  <div>
+                    Лимит ресурсов: <strong>{{ formatCpu(serverReviewTarget.maxTotalCpuMillis, true) }} / {{ formatMemory(serverReviewTarget.maxTotalMemoryMb, true) }}</strong>
+                  </div>
+                  <div v-if="serverReviewTarget.moderatorComment" class="resolved-comment">
+                    Комментарий модератора: «{{ serverReviewTarget.moderatorComment }}»
                   </div>
                 </div>
               </div>
 
-              <!-- Лимиты на 1 инстанс -->
-              <div class="quota-group-card">
-                <h4 class="quota-group-title">Лимит на 1 отдельный инстанс (сервер)</h4>
-                <div class="quota-inputs-row">
-                  <div class="form-group flex-1">
-                    <div class="label-with-toggle">
-                      <label class="form-label">CPU на инстанс</label>
-                      <label class="toggle-label">
-                        <input type="checkbox" v-model="approveUnlimitedInstanceCpu" />
-                        <span>Без огр.</span>
-                      </label>
-                    </div>
-                    <input
-                      v-if="!approveUnlimitedInstanceCpu"
-                      v-model.number="approveInstanceCpu"
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      max="32"
-                      class="form-input"
-                    />
-                    <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                  </div>
-
-                  <div class="form-group flex-1">
-                    <div class="label-with-toggle">
-                      <label class="form-label">RAM на инстанс (МБ)</label>
-                      <label class="toggle-label">
-                        <input type="checkbox" v-model="approveUnlimitedInstanceRam" />
-                        <span>Без огр.</span>
-                      </label>
-                    </div>
-                    <input
-                      v-if="!approveUnlimitedInstanceRam"
-                      v-model.number="approveInstanceRam"
-                      type="number"
-                      step="256"
-                      min="256"
-                      max="32768"
-                      class="form-input"
-                    />
-                    <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+              <div v-else-if="isRejected(serverReviewTarget.status)" class="resolved-info-card rejected-card">
+                <div class="resolved-badge-line">
+                  <AlertCircle class="icon-sm text-danger" />
+                  <strong>Заявка отклонена</strong>
+                  <span v-if="serverReviewTarget.moderatorId" class="sub-mod">
+                    (Модератор: {{ getUserDisplayName(serverReviewTarget.moderatorId) }})
+                  </span>
+                </div>
+                <div class="resolved-details-grid">
+                  <div class="resolved-comment text-danger">
+                    Причина отказа: «{{ serverReviewTarget.rejectionReason || 'Отказ' }}»
                   </div>
                 </div>
               </div>
-
-              <!-- Комментарий модератора -->
-              <div class="form-group">
-                <label class="form-label">Комментарий модератора (необязательно)</label>
-                <textarea
-                  v-model="approveComment"
-                  rows="2"
-                  class="form-textarea"
-                  placeholder="Например: Выделено на период закрытого тестирования..."
-                ></textarea>
-              </div>
-            </div>
-
-            <div v-if="serverReviewError" class="alert-error">
-              <AlertCircle class="icon-xs" />
-              <span>{{ serverReviewError }}</span>
-            </div>
+            </template>
           </div>
+
           <div class="modal-footer">
-            <button
-              class="btn-secondary-sm"
-              :disabled="submittingServerReview"
-              @click="approvingServerTarget = null"
-            >
-              Отмена
-            </button>
-            <button
-              class="btn-primary-sm"
-              :disabled="submittingServerReview || approveServerQuota < 1"
-              @click="submitApproveServer"
-            >
-              <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
-              <Check v-else class="icon-xs" />
-              <span>Подтвердить одобрение</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Модальное окно: Отклонение доступа к серверам -->
-      <div
-        v-if="rejectingServerTarget"
-        class="modal-overlay"
-        @click.self="rejectingServerTarget = null"
-      >
-        <div class="modal-card">
-          <div class="modal-header">
-            <h3>Отклонить заявку на серверы</h3>
-            <button class="btn-close" @click="rejectingServerTarget = null">
-              <X class="icon-sm" />
-            </button>
-          </div>
-          <div class="modal-body">
-            <p class="modal-intro">
-              Проект: <strong>{{ rejectingServerTarget.title }}</strong>
-            </p>
-            <div class="form-group">
-              <label class="form-label">Причина отказа для разработчика:</label>
-              <textarea
-                v-model="rejectServerReason"
-                rows="3"
-                class="form-textarea"
-                placeholder="Укажите подробную причину отказа или рекомендации по оптимизации..."
-              ></textarea>
-            </div>
-            <div v-if="serverReviewError" class="alert-error">
-              <AlertCircle class="icon-xs" />
-              <span>{{ serverReviewError }}</span>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-              class="btn-secondary-sm"
-              :disabled="submittingServerReview"
-              @click="rejectingServerTarget = null"
-            >
-              Отмена
-            </button>
-            <button
-              class="btn-danger-sm"
-              :disabled="submittingServerReview || !rejectServerReason.trim()"
-              @click="submitRejectServer"
-            >
-              <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
-              <X v-else class="icon-xs" />
-              <span>Отклонить заявку</span>
-            </button>
+            <template v-if="isPending(serverReviewTarget.status)">
+              <button
+                class="btn-secondary-sm"
+                :disabled="submittingServerReview"
+                @click="serverReviewTarget = null"
+              >
+                Отмена
+              </button>
+              <button
+                v-if="serverDecisionTab === 'approve'"
+                class="btn-primary-sm"
+                :disabled="submittingServerReview || approveServerQuota < 1"
+                @click="submitApproveServer"
+              >
+                <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
+                <Check v-else class="icon-xs" />
+                <span>Подтвердить одобрение</span>
+              </button>
+              <button
+                v-else
+                class="btn-danger-sm"
+                :disabled="submittingServerReview || !rejectServerReason.trim()"
+                @click="submitRejectServer"
+              >
+                <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
+                <X v-else class="icon-xs" />
+                <span>Отклонить заявку</span>
+              </button>
+            </template>
+            <template v-else>
+              <button class="btn-secondary-sm" @click="serverReviewTarget = null">
+                Закрыть
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -642,6 +713,8 @@ import {
   Server,
   Check,
   AlertCircle,
+  Sliders,
+  ExternalLink,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -695,7 +768,8 @@ const hasActiveFilters = computed<boolean>(() => {
 });
 
 // Серверные модальные окна
-const approvingServerTarget = ref<any | null>(null);
+const serverReviewTarget = ref<any | null>(null);
+const serverDecisionTab = ref<'approve' | 'reject'>('approve');
 const approveServerQuota = ref<number>(2);
 const approveUnlimitedTotalCpu = ref<boolean>(true);
 const approveTotalCpu = ref<number>(2.0);
@@ -706,7 +780,6 @@ const approveInstanceCpu = ref<number>(1.0);
 const approveUnlimitedInstanceRam = ref<boolean>(true);
 const approveInstanceRam = ref<number>(1024);
 const approveComment = ref<string>('');
-const rejectingServerTarget = ref<any | null>(null);
 const rejectServerReason = ref<string>('');
 const submittingServerReview = ref<boolean>(false);
 const serverReviewError = ref<string>('');
@@ -923,8 +996,17 @@ async function claimAndOpen(req: any): Promise<void> {
   }
 }
 
-function openApproveServerModal(req: any): void {
-  approvingServerTarget.value = req;
+function handleRowClick(req: any): void {
+  if (req.type === 'server') {
+    openServerReviewModal(req);
+  } else {
+    openProject(req.projectId);
+  }
+}
+
+function openServerReviewModal(req: any): void {
+  serverReviewTarget.value = req;
+  serverDecisionTab.value = 'approve';
   approveServerQuota.value = req.maxInstances || 2;
 
   approveUnlimitedTotalCpu.value = !req.maxTotalCpuMillis || req.maxTotalCpuMillis <= 0;
@@ -940,21 +1022,16 @@ function openApproveServerModal(req: any): void {
   approveInstanceRam.value = req.maxInstanceMemoryMb || 1024;
 
   approveComment.value = '';
-  serverReviewError.value = '';
-}
-
-function openRejectServerModal(req: any): void {
-  rejectingServerTarget.value = req;
   rejectServerReason.value = '';
   serverReviewError.value = '';
 }
 
 async function submitApproveServer(): Promise<void> {
-  if (!approvingServerTarget.value) return;
+  if (!serverReviewTarget.value) return;
   submittingServerReview.value = true;
   serverReviewError.value = '';
   try {
-    await moderationApi.reviewServerAccess(approvingServerTarget.value.id, {
+    await moderationApi.reviewServerAccess(serverReviewTarget.value.id, {
       approved: true,
       maxInstances: Number(approveServerQuota.value) || 2,
       maxTotalCpuMillis: approveUnlimitedTotalCpu.value ? 0 : Math.round((Number(approveTotalCpu.value) || 0) * 1000),
@@ -964,7 +1041,7 @@ async function submitApproveServer(): Promise<void> {
       moderatorComment: approveComment.value.trim(),
     });
     showToast('Доступ к серверам успешно одобрен', 'success');
-    approvingServerTarget.value = null;
+    serverReviewTarget.value = null;
     await loadQueue();
   } catch (err: any) {
     serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка одобрения';
@@ -974,7 +1051,7 @@ async function submitApproveServer(): Promise<void> {
 }
 
 async function submitRejectServer(): Promise<void> {
-  if (!rejectingServerTarget.value) return;
+  if (!serverReviewTarget.value) return;
   if (!rejectServerReason.value.trim()) {
     serverReviewError.value = 'Укажите причину отказа';
     return;
@@ -982,12 +1059,12 @@ async function submitRejectServer(): Promise<void> {
   submittingServerReview.value = true;
   serverReviewError.value = '';
   try {
-    await moderationApi.reviewServerAccess(rejectingServerTarget.value.id, {
+    await moderationApi.reviewServerAccess(serverReviewTarget.value.id, {
       approved: false,
       rejectionReason: rejectServerReason.value.trim(),
     });
     showToast('Заявка на доступ отклонена', 'info');
-    rejectingServerTarget.value = null;
+    serverReviewTarget.value = null;
     await loadQueue();
   } catch (err: any) {
     serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка отклонения';
@@ -1787,49 +1864,6 @@ async function submitRejectServer(): Promise<void> {
   font-size: 11px;
 }
 
-/* Кнопки действий для серверов */
-.btn-approve-sm {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 10px;
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-approve-sm:hover {
-  background: rgba(34, 197, 94, 0.25);
-  border-color: #4ade80;
-}
-
-.btn-reject-sm {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 10px;
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: var(--radius-sm, 6px);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-reject-sm:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: #f87171;
-}
-
 /* Модальные окна */
 .modal-overlay {
   position: fixed;
@@ -1860,22 +1894,174 @@ async function submitRejectServer(): Promise<void> {
 }
 
 .modal-card.modal-card-wide {
-  max-width: 580px;
+  max-width: 620px;
+}
+
+.modal-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .project-info-banner {
   background: var(--bg-secondary, #0d1117);
   border: 1px solid var(--border, #30363d);
   border-radius: var(--radius-sm, 6px);
-  padding: 12px 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-info-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.project-info-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.game-icon-box.sm {
+  width: 36px;
+  height: 36px;
+}
+
+.project-id-chip {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.project-info-dev {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+  margin-top: 2px;
+}
+
+.dot-separator {
+  margin: 0 6px;
+  color: var(--text-tertiary, #8b949e);
+}
+
+.server-reason-quote {
+  background: var(--bg-card, #161b22);
+  border-left: 3px solid var(--primary, #58a6ff);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.server-reason-quote p {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-secondary, #c9d1d9);
+  line-height: 1.4;
+}
+
+.server-reason-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, #8b949e);
+  font-style: normal;
+  margin-bottom: 4px;
+}
+
+.decision-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-secondary, #0d1117);
+  padding: 4px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border, #30363d);
+}
+
+.decision-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-tertiary, #8b949e);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.decision-tab-btn:hover {
+  color: var(--text-main, #f0f6fc);
+}
+
+.decision-tab-btn.active {
+  background: rgba(35, 134, 54, 0.15);
+  color: #3fb950;
+  border-color: rgba(46, 160, 67, 0.4);
+}
+
+.decision-tab-btn.decision-tab-reject.active {
+  background: rgba(248, 81, 73, 0.12);
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.35);
+}
+
+.resolved-info-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border, #30363d);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resolved-info-card.approved-card {
+  background: rgba(35, 134, 54, 0.08);
+  border-color: rgba(46, 160, 67, 0.3);
+}
+
+.resolved-info-card.rejected-card {
+  background: rgba(248, 81, 73, 0.08);
+  border-color: rgba(248, 81, 73, 0.3);
+}
+
+.resolved-badge-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-main, #f0f6fc);
+}
+
+.resolved-details-grid {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary, #c9d1d9);
 }
 
-.project-info-title {
-  font-size: 13px;
-  color: var(--text-main, #f0f6fc);
+.resolved-comment {
+  font-style: italic;
+  margin-top: 4px;
+  padding: 6px 10px;
+  background: var(--bg-secondary, #0d1117);
+  border-radius: 4px;
+  border-left: 2px solid var(--border, #30363d);
+}
+
+.sub-mod {
+  font-size: 11px;
+  color: var(--text-tertiary, #8b949e);
+  margin-left: auto;
 }
 
 .requested-summary-line {
