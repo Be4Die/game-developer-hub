@@ -266,8 +266,11 @@ func TestUnit_ProjectService_RejectDraft(t *testing.T) {
 	}
 
 	updatedProj, _ := pRepo.Get(ctx, p.ID)
-	if updatedProj.Status != domain.ProjectStatusDraft {
-		t.Errorf("expected project status Draft after reject, got: %v", updatedProj.Status)
+	if updatedProj.Status != domain.ProjectStatusRejected {
+		t.Errorf("expected project status Rejected after reject, got: %v", updatedProj.Status)
+	}
+	if updatedProj.IsUnderReview {
+		t.Errorf("expected is_under_review to be false after reject")
 	}
 }
 
@@ -644,4 +647,123 @@ func TestUnit_ProjectService_InAppPurchases(t *testing.T) {
 	itemsAfter, err := svc.ListGameItems(ctx, p.ID, "owner-1")
 	require.NoError(t, err)
 	require.Empty(t, itemsAfter)
+}
+
+func TestUnit_ProjectService_ModerationLocking(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, pRepo, _ := setupTestProjectService(t)
+	mockPurchase := newMockPurchaseClient()
+	svc.WithPurchaseClient(mockPurchase)
+
+	p, err := svc.CreateProject(ctx, "owner-lock", "Блокировка", "Locking", false)
+	require.NoError(t, err)
+
+	// Блокируем проект
+	err = pRepo.UpdateUnderReview(ctx, p.ID, true)
+	require.NoError(t, err)
+
+	// 1. UpdateDraft должно вернуть ErrProjectLockedInModeration
+	err = svc.UpdateDraft(ctx, p.ID, "owner-lock", domain.DraftMeta{TitleRu: "Новое название"})
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 2. UploadBuildStream должно вернуть ErrProjectLockedInModeration
+	_, _, err = svc.UploadBuildStream(ctx, p.ID, "owner-lock", "v1.0.0", bytes.NewReader([]byte("fake")))
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 3. DeleteBuild должно вернуть ErrProjectLockedInModeration
+	err = svc.DeleteBuild(ctx, p.ID, "owner-lock", "v1.0.0")
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 4. UploadMediaStream должно вернуть ErrProjectLockedInModeration
+	_, err = svc.UploadMediaStream(ctx, p.ID, "owner-lock", "icon", bytes.NewReader([]byte("fake")))
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 5. CreateGameItem должно вернуть ErrProjectLockedInModeration
+	_, err = svc.CreateGameItem(ctx, &domain.GameItem{
+		ProjectID:  p.ID,
+		GameItemID: "locked_item",
+		Name:       "Locked Item",
+		PriceCoins: 10,
+	}, "owner-lock")
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 6. UpdateGameItem должно вернуть ErrProjectLockedInModeration
+	_, err = svc.UpdateGameItem(ctx, &domain.GameItem{
+		ProjectID:  p.ID,
+		GameItemID: "locked_item",
+		Name:       "Locked Item",
+		PriceCoins: 20,
+	}, "owner-lock")
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 7. DeleteGameItem должно вернуть ErrProjectLockedInModeration
+	err = svc.DeleteGameItem(ctx, p.ID, "locked_item", "owner-lock")
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+
+	// 8. UploadItemImage должно вернуть ErrProjectLockedInModeration
+	_, err = svc.UploadItemImage(ctx, p.ID, "locked_item", "owner-lock", bytes.NewReader([]byte("fake")))
+	require.ErrorIs(t, err, domain.ErrProjectLockedInModeration)
+}
+
+func TestUnit_ProjectService_PublishedGameUpdateWorkflow(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, pRepo, rRepo := setupTestProjectService(t)
+
+	p, err := svc.CreateProject(ctx, "owner-pub", "Игра Апдейт", "Game Update", false)
+	require.NoError(t, err)
+
+	// Создаем черновик, готовый к модерации
+	dRepo := svc.draftRepo
+	err = dRepo.Update(ctx, &domain.Draft{
+		ProjectID:          p.ID,
+		TitleRu:            "Игра Апдейт",
+		TitleEn:            "Game Update",
+		AboutRu:            "Описание",
+		AboutEn:            "Description",
+		ActiveBuildVersion: "1.0.0",
+		IconPath:           "games/1/icon.png",
+		CoverPath:          "games/1/cover.png",
+		DevURL:             "https://dev.welwise.online/games/1/",
+	})
+	require.NoError(t, err)
+
+	// Имитируем активный опубликованный релиз
+	err = pRepo.UpdateStatus(ctx, p.ID, domain.ProjectStatusPublished)
+	require.NoError(t, err)
+	relID, err := rRepo.Create(ctx, &domain.Release{
+		ProjectID: p.ID,
+		Version:   "1.0.0",
+		TitleRu:   "Игра Апдейт",
+		TitleEn:   "Game Update",
+		IsActive:  true,
+	})
+	require.NoError(t, err)
+	require.Greater(t, relID, int64(0))
+
+	// 1. Отправка обновления на модерацию
+	reqID, err := svc.SubmitForModeration(ctx, p.ID, "owner-pub")
+	require.NoError(t, err)
+	require.Greater(t, reqID, int64(0))
+
+	// Проверяем: статус должен остаться Published, но IsUnderReview = true
+	pAfterSubmit, err := pRepo.Get(ctx, p.ID)
+	require.NoError(t, err)
+	require.Equal(t, domain.ProjectStatusPublished, pAfterSubmit.Status)
+	require.True(t, pAfterSubmit.IsUnderReview)
+
+	// 2. Отклонение обновления модератором
+	err = svc.RejectDraft(ctx, p.ID)
+	require.NoError(t, err)
+
+	// Проверяем: статус остался Published, IsUnderReview стал false
+	pAfterReject, err := pRepo.Get(ctx, p.ID)
+	require.NoError(t, err)
+	require.Equal(t, domain.ProjectStatusPublished, pAfterReject.Status)
+	require.False(t, pAfterReject.IsUnderReview)
 }

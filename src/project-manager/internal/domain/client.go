@@ -26,6 +26,8 @@ type ProjectSnapshot struct {
 	ActiveBuildVersion string
 	DevURL             string
 	IsOnline           bool
+	Items              []*GameItem
+	IsUpdate           bool
 }
 
 // ModerationRequestInfo содержит статус заявки на модерацию.

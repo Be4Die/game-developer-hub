@@ -14,6 +14,7 @@ type ProjectRepo interface {
 	CountPublished(ctx context.Context) (int, error)
 	UpdateStatus(ctx context.Context, id int64, status ProjectStatus) error
 	UpdateIsOnline(ctx context.Context, id int64, isOnline bool) error
+	UpdateUnderReview(ctx context.Context, id int64, isUnderReview bool) error
 	Delete(ctx context.Context, id int64) error
 }
 

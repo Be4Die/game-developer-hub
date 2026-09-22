@@ -20,6 +20,7 @@ enum RequestType {
   REQUEST_TYPE_UNSPECIFIED = 0;
   REQUEST_TYPE_PROJECT_PUBLICATION = 1; // Публикация проекта
   REQUEST_TYPE_SERVER_ACCESS = 2;       // Доступ к серверам платформы
+  REQUEST_TYPE_PROJECT_UPDATE = 3;      // Обновление опубликованного проекта
 }
 
 // SenderRole роль отправителя сообщения в чате проекта.
@@ -40,6 +41,16 @@ enum MessageType {
   MESSAGE_TYPE_REJECTED = 5;
 }
 
+// GameItemSnapshot слепок внутриигрового товара для проверки модератором.
+message GameItemSnapshot {
+  string game_item_id = 1;
+  string name = 2;
+  string description = 3;
+  string image_url = 4;
+  int64 price_coins = 5;
+  bool is_active = 6;
+}
+
 // ProjectSnapshot снимок состояния черновика на момент отправки на модерацию.
 message ProjectSnapshot {
   int64 project_id = 1;
@@ -55,6 +66,7 @@ message ProjectSnapshot {
   string dev_url = 11;
   string about_en = 12;
   bool is_online = 13;
+  repeated GameItemSnapshot items = 14;
 }
 
 // ModerationRequest сущность запроса на модерацию проекта.
@@ -122,6 +134,7 @@ message SubmitDraftRequest {
   int64 project_id = 1;
   string owner_id = 2;
   ProjectSnapshot snapshot = 3;
+  RequestType type = 4;
 }
 
 message SubmitDraftResponse {

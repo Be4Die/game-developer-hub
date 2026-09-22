@@ -23,6 +23,13 @@
                 <span class="project-id-tag">Проект #{{ projectId }}</span>
                 <span
                   v-if="activeRequest"
+                  class="type-badge"
+                  :class="isUpdateRequest ? 'type-badge-update' : 'type-badge-publication'"
+                >
+                  {{ isUpdateRequest ? 'Обновление игры' : 'Публикация игры' }}
+                </span>
+                <span
+                  v-if="activeRequest"
                   class="status-badge"
                   :class="getStatusBadgeClass(requestStatus)"
                 >
@@ -203,7 +210,10 @@
           <div class="build-test-row">
             <div class="build-info-block">
               <span class="build-version-tag">
-                Версия сборки: <strong>v{{ projectData.activeBuildVersion || '1.0.0' }}</strong>
+                Версия черновика: <strong>v{{ projectData.activeBuildVersion || '1.0.0' }}</strong>
+              </span>
+              <span v-if="isUpdateRequest && currentProdVersion" class="build-version-tag prod-version-tag">
+                Текущая в Prod: <strong>v{{ currentProdVersion }}</strong>
               </span>
               <p class="build-desc">
                 Проверьте работоспособность игры, управление, отсутствие критических ошибок и
@@ -211,11 +221,79 @@
               </p>
             </div>
 
-            <button class="btn-play-dev-lg" @click="openDevPreview">
-              <Gamepad2 class="icon-sm" />
-              <span>{{ t('moderation.runDevBuild') }}</span>
-              <ExternalLink class="icon-xs" />
-            </button>
+            <div class="build-buttons-group">
+              <button class="btn-play-dev-lg" @click="openDevPreview">
+                <Gamepad2 class="icon-sm" />
+                <span>{{ isUpdateRequest ? 'Тестировать Dev' : t('moderation.runDevBuild') }}</span>
+                <ExternalLink class="icon-xs" />
+              </button>
+
+              <button v-if="isUpdateRequest && currentProdUrl" class="btn-play-prod-lg" @click="openProdPreview">
+                <Globe class="icon-sm" />
+                <span>Текущий Prod</span>
+                <ExternalLink class="icon-xs" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- КАРТОЧКА: ВНУТРИИГРОВЫЕ ТОВАРЫ (IAP) -->
+        <div class="card section-card">
+          <div class="section-head section-head-with-actions">
+            <h3>Внутриигровые товары (IAP)</h3>
+            <span class="badge-count">{{ snapshotItems.length }} шт.</span>
+          </div>
+
+          <div v-if="snapshotItems.length === 0" class="iap-empty-note">
+            <ShoppingBag class="icon-sm text-muted" />
+            <span>В данном снимке модерации внутриигровые товары отсутствуют.</span>
+          </div>
+
+          <div v-else class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Товар</th>
+                  <th>ID товара</th>
+                  <th>Описание</th>
+                  <th>Цена</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in snapshotItems" :key="item.game_item_id || item.gameItemId">
+                  <td class="col-item">
+                    <div class="item-meta">
+                      <div class="item-icon-box">
+                        <img
+                          v-if="item.image_url || item.imageUrl"
+                          :src="getMediaUrl(item.image_url || item.imageUrl, projectId)"
+                          alt="Icon"
+                          class="item-icon-img"
+                        />
+                        <div v-else class="item-icon-placeholder">
+                          <ShoppingBag class="icon-xs text-muted" />
+                        </div>
+                      </div>
+                      <span class="item-name">{{ item.name }}</span>
+                    </div>
+                  </td>
+                  <td><code>{{ item.game_item_id || item.gameItemId }}</code></td>
+                  <td class="col-desc">{{ item.description || '—' }}</td>
+                  <td class="col-price">
+                    <span class="price-num">{{ item.price_coins || item.priceCoins }}</span> WCoin
+                  </td>
+                  <td>
+                    <span
+                      class="status-text"
+                      :class="(item.is_active ?? item.isActive) !== false ? 'status-active' : 'status-inactive'"
+                    >
+                      {{ (item.is_active ?? item.isActive) !== false ? 'Активен' : 'Скрыт' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -308,6 +386,7 @@ import {
   Image,
   Video,
   ExternalLink,
+  ShoppingBag,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -337,10 +416,35 @@ const projectId = computed<string>(() => String(route.params.projectId));
 
 const activeRequest = ref<any | null>(null);
 const projectData = ref<any | null>(null);
+const fullProject = ref<any | null>(null);
 const loading = ref<boolean>(true);
 const actionLoading = ref<boolean>(false);
 const showApproveModal = ref<boolean>(false);
 const noRequestMode = ref<boolean>(false);
+
+const isUpdateRequest = computed<boolean>(() => {
+  const t = activeRequest.value?.type ?? (activeRequest.value as any)?.request_type;
+  return Number(t) === 3 || t === 'REQUEST_TYPE_PROJECT_UPDATE' || t === 'project_update';
+});
+
+const snapshotItems = computed<any[]>(() => {
+  const s = activeRequest.value?.snapshot;
+  return s?.items || s?.Items || projectData.value?.items || [];
+});
+
+const currentProdUrl = computed<string>(() => {
+  return fullProject.value?.release?.prod_url || (fullProject.value as any)?.prod_url || '';
+});
+
+const currentProdVersion = computed<string>(() => {
+  return fullProject.value?.release?.version || '';
+});
+
+function openProdPreview(): void {
+  if (currentProdUrl.value) {
+    window.open(currentProdUrl.value, '_blank');
+  }
+}
 
 const requestStatus = computed<any>(() => activeRequest.value?.status);
 
@@ -426,6 +530,11 @@ async function loadProjectInfo(): Promise<void> {
         ...(data.request.snapshot || {}),
         isOnline: Boolean(data.request.snapshot?.isOnline ?? data.request.snapshot?.is_online),
       };
+      try {
+        fullProject.value = await getProject(projectId.value);
+      } catch {
+        // non-critical
+      }
     } else {
       noRequestMode.value = true;
       activeRequest.value = null;
@@ -1071,5 +1180,147 @@ onMounted(() => {
     width: 100%;
     height: 500px;
   }
+}
+
+.type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+
+.type-badge-update {
+  background: rgba(163, 113, 247, 0.15);
+  color: #a371f7;
+  border: 1px solid rgba(163, 113, 247, 0.35);
+}
+
+.type-badge-publication {
+  background: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.35);
+}
+
+.prod-version-tag {
+  background: rgba(56, 139, 253, 0.1);
+  color: var(--primary, #58a6ff);
+  border-color: rgba(56, 139, 253, 0.3);
+  margin-left: 8px;
+}
+
+.build-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-play-prod-lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  background: rgba(46, 160, 67, 0.12);
+  border: 1px solid rgba(46, 160, 67, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  color: #3fb950;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-play-prod-lg:hover {
+  background: rgba(46, 160, 67, 0.2);
+  border-color: #3fb950;
+}
+
+.badge-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--bg-secondary, #21262d);
+  color: var(--text-muted, #8b949e);
+  border: 1px solid var(--border, #30363d);
+}
+
+.iap-empty-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--text-tertiary, #8b949e);
+  font-size: 13px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #8b949e);
+  border-bottom: 1px solid var(--border, #30363d);
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border, #21262d);
+  vertical-align: middle;
+}
+
+.col-item {
+  min-width: 180px;
+}
+
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.item-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-secondary, #21262d);
+  border: 1px solid var(--border, #30363d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-name {
+  font-weight: 500;
+  color: var(--text-main, #f0f6fc);
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-active {
+  color: #3fb950;
+}
+
+.status-inactive {
+  color: var(--text-tertiary, #8b949e);
 }
 </style>

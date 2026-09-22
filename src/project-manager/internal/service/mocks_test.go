@@ -138,6 +138,17 @@ func (m *mockProjectRepo) UpdateIsOnline(ctx context.Context, id int64, isOnline
 	return nil
 }
 
+func (m *mockProjectRepo) UpdateUnderReview(ctx context.Context, id int64, isUnderReview bool) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	p, ok := m.projects[id]
+	if !ok {
+		return domain.ErrNotFound
+	}
+	p.IsUnderReview = isUnderReview
+	return nil
+}
+
 func (m *mockProjectRepo) Delete(ctx context.Context, id int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

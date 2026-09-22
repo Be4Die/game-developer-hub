@@ -64,9 +64,31 @@ func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) co
 // SubmitDraft отправляет снимок черновика на модерацию через gRPC RPC.
 func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
 	outCtx := forwardContext(ctx, snapshot.OwnerID, "developer")
+
+	var items []*modpb.GameItemSnapshot
+	for _, itm := range snapshot.Items {
+		if itm == nil {
+			continue
+		}
+		items = append(items, &modpb.GameItemSnapshot{
+			GameItemId:  itm.GameItemID,
+			Name:        itm.Name,
+			Description: itm.Description,
+			PriceCoins:  itm.PriceCoins,
+			ImageUrl:    itm.ImageURL,
+			IsActive:    itm.IsActive,
+		})
+	}
+
+	reqType := modpb.RequestType_REQUEST_TYPE_PROJECT_PUBLICATION
+	if snapshot.IsUpdate {
+		reqType = modpb.RequestType_REQUEST_TYPE_PROJECT_UPDATE
+	}
+
 	req := &modpb.SubmitDraftRequest{
 		ProjectId: snapshot.ProjectID,
 		OwnerId:   snapshot.OwnerID,
+		Type:      reqType,
 		Snapshot: &modpb.ProjectSnapshot{
 			ProjectId:          snapshot.ProjectID,
 			TitleRu:            snapshot.TitleRu,
@@ -81,6 +103,7 @@ func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 			ActiveBuildVersion: snapshot.ActiveBuildVersion,
 			DevUrl:             snapshot.DevURL,
 			IsOnline:           snapshot.IsOnline,
+			Items:              items,
 		},
 	}
 

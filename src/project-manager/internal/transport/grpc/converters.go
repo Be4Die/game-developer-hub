@@ -20,12 +20,13 @@ func projectToProto(p *domain.Project) *pb.Project {
 	}
 
 	proto := &pb.Project{
-		Id:        p.ID,
-		OwnerId:   p.OwnerID,
-		Status:    pb.ProjectStatus(p.Status),
-		CreatedAt: formatTime(p.CreatedAt),
-		UpdatedAt: formatTime(p.UpdatedAt),
-		IsOnline:  p.IsOnline,
+		Id:            p.ID,
+		OwnerId:       p.OwnerID,
+		Status:        pb.ProjectStatus(p.Status),
+		CreatedAt:     formatTime(p.CreatedAt),
+		UpdatedAt:     formatTime(p.UpdatedAt),
+		IsOnline:      p.IsOnline,
+		IsUnderReview: p.IsUnderReview,
 	}
 
 	if p.Draft != nil {

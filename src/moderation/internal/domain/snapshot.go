@@ -35,8 +35,9 @@ type SnapshotProjectData struct {
 	AboutEn       string `json:"about_en"`
 	BuildVersion  string `json:"build_version"`
 	DevURL        string `json:"dev_url"`
-	ProdURL       string `json:"prod_url,omitempty"`
-	IsOnline      bool   `json:"is_online"`
+	ProdURL       string              `json:"prod_url,omitempty"`
+	IsOnline      bool                `json:"is_online"`
+	Items         []*GameItemSnapshot `json:"items,omitempty"`
 }
 
 // SnapshotMediaData медиа-материалы проекта со слепками и контрольными суммами.

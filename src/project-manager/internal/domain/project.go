@@ -29,4 +29,5 @@ type Project struct {
 	Release                *Release
 	CurrentUserPermissions []string
 	IsOwner                bool
+	IsUnderReview          bool
 }

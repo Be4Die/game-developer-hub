@@ -23,23 +23,35 @@ const (
 	RequestTypeUnspecified        RequestType = 0
 	RequestTypeProjectPublication RequestType = 1 // Публикация проекта
 	RequestTypeServerAccess       RequestType = 2 // Доступ к серверам платформы
+	RequestTypeProjectUpdate      RequestType = 3 // Обновление опубликованного проекта
 )
+
+// GameItemSnapshot фиксирует неизменяемый снимок данных внутриигрового товара на момент отправки на модерацию.
+type GameItemSnapshot struct {
+	GameItemID  string `json:"game_item_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	PriceCoins  int64  `json:"price_coins"`
+	ImageURL    string `json:"image_url"`
+	IsActive    bool   `json:"is_active"`
+}
 
 // ProjectSnapshot фиксирует неизменяемый снимок данных черновика на момент отправки на модерацию.
 type ProjectSnapshot struct {
-	ProjectID          int64  `json:"project_id"`
-	TitleRu            string `json:"title_ru"`
-	TitleEn            string `json:"title_en"`
-	SeoRu              string `json:"seo_ru"`
-	SeoEn              string `json:"seo_en"`
-	AboutRu            string `json:"about_ru"`
-	AboutEn            string `json:"about_en"`
-	IconPath           string `json:"icon_path"`
-	CoverPath          string `json:"cover_path"`
-	VideoPath          string `json:"video_path"`
-	ActiveBuildVersion string `json:"active_build_version"`
-	DevURL             string `json:"dev_url"`
-	IsOnline           bool   `json:"is_online"`
+	ProjectID          int64               `json:"project_id"`
+	TitleRu            string              `json:"title_ru"`
+	TitleEn            string              `json:"title_en"`
+	SeoRu              string              `json:"seo_ru"`
+	SeoEn              string              `json:"seo_en"`
+	AboutRu            string              `json:"about_ru"`
+	AboutEn            string              `json:"about_en"`
+	IconPath           string              `json:"icon_path"`
+	CoverPath          string              `json:"cover_path"`
+	VideoPath          string              `json:"video_path"`
+	ActiveBuildVersion string              `json:"active_build_version"`
+	DevURL             string              `json:"dev_url"`
+	IsOnline           bool                `json:"is_online"`
+	Items              []*GameItemSnapshot `json:"items,omitempty"`
 }
 
 // ModerationRequest представляет заявку на модерацию игрового проекта.

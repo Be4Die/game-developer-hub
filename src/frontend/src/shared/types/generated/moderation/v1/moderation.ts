@@ -26,6 +26,8 @@ export enum RequestType {
   REQUEST_TYPE_PROJECT_PUBLICATION = "REQUEST_TYPE_PROJECT_PUBLICATION",
   /** REQUEST_TYPE_SERVER_ACCESS - Доступ к серверам платформы */
   REQUEST_TYPE_SERVER_ACCESS = "REQUEST_TYPE_SERVER_ACCESS",
+  /** REQUEST_TYPE_PROJECT_UPDATE - Обновление опубликованного проекта */
+  REQUEST_TYPE_PROJECT_UPDATE = "REQUEST_TYPE_PROJECT_UPDATE",
   UNRECOGNIZED = "UNRECOGNIZED",
 }
 
@@ -49,6 +51,16 @@ export enum MessageType {
   UNRECOGNIZED = "UNRECOGNIZED",
 }
 
+/** GameItemSnapshot слепок внутриигрового товара для проверки модератором. */
+export interface GameItemSnapshot {
+  game_item_id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  price_coins: number;
+  is_active: boolean;
+}
+
 /** ProjectSnapshot снимок состояния черновика на момент отправки на модерацию. */
 export interface ProjectSnapshot {
   project_id: number;
@@ -64,6 +76,7 @@ export interface ProjectSnapshot {
   dev_url: string;
   about_en: string;
   is_online: boolean;
+  items: GameItemSnapshot[];
 }
 
 /** ModerationRequest сущность запроса на модерацию проекта. */
@@ -129,6 +142,7 @@ export interface SubmitDraftRequest {
   project_id: number;
   owner_id: string;
   snapshot: ProjectSnapshot | undefined;
+  type: RequestType;
 }
 
 export interface SubmitDraftResponse {

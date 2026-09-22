@@ -261,6 +261,7 @@ type Project struct {
 	CurrentUserPermissions []string               `protobuf:"bytes,20,rep,name=current_user_permissions,json=currentUserPermissions,proto3" json:"current_user_permissions,omitempty"`
 	IsOwner                bool                   `protobuf:"varint,21,opt,name=is_owner,json=isOwner,proto3" json:"is_owner,omitempty"`
 	IsOnline               bool                   `protobuf:"varint,22,opt,name=is_online,json=isOnline,proto3" json:"is_online,omitempty"`
+	IsUnderReview          bool                   `protobuf:"varint,23,opt,name=is_under_review,json=isUnderReview,proto3" json:"is_under_review,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -445,6 +446,13 @@ func (x *Project) GetIsOwner() bool {
 func (x *Project) GetIsOnline() bool {
 	if x != nil {
 		return x.IsOnline
+	}
+	return false
+}
+
+func (x *Project) GetIsUnderReview() bool {
+	if x != nil {
+		return x.IsUnderReview
 	}
 	return false
 }
@@ -5030,7 +5038,7 @@ var File_project_manager_v1_project_proto protoreflect.FileDescriptor
 
 const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\n" +
-	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\xf0\x05\n" +
+	" project_manager/v1/project.proto\x12\x12project_manager.v1\x1a\x1cgoogle/api/annotations.proto\"\x98\x06\n" +
 	"\aProject\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\tR\aownerId\x12\x19\n" +
@@ -5058,7 +5066,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\babout_en\x18\x13 \x01(\tR\aaboutEn\x128\n" +
 	"\x18current_user_permissions\x18\x14 \x03(\tR\x16currentUserPermissions\x12\x19\n" +
 	"\bis_owner\x18\x15 \x01(\bR\aisOwner\x12\x1b\n" +
-	"\tis_online\x18\x16 \x01(\bR\bisOnline\"\xa9\x03\n" +
+	"\tis_online\x18\x16 \x01(\bR\bisOnline\x12&\n" +
+	"\x0fis_under_review\x18\x17 \x01(\bR\risUnderReview\"\xa9\x03\n" +
 	"\fProjectDraft\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x19\n" +

@@ -68,6 +68,7 @@ export interface Project {
   current_user_permissions: string[];
   is_owner: boolean;
   is_online: boolean;
+  is_under_review: boolean;
 }
 
 /** ProjectDraft рабочее состояние черновика проекта. */

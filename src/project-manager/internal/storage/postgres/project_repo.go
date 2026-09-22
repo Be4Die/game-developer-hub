@@ -24,12 +24,12 @@ func NewProjectRepo(pool *pgxpool.Pool) *ProjectRepo {
 // Create создаёт новый проект в базе данных и возвращает его ID.
 func (r *ProjectRepo) Create(ctx context.Context, p *domain.Project) (int64, error) {
 	const query = `
-		INSERT INTO projects (owner_id, status, is_online)
-		VALUES ($1, $2, $3)
+		INSERT INTO projects (owner_id, status, is_online, is_under_review)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id
 	`
 	var id int64
-	err := r.pool.QueryRow(ctx, query, p.OwnerID, p.Status, p.IsOnline).Scan(&id)
+	err := r.pool.QueryRow(ctx, query, p.OwnerID, p.Status, p.IsOnline, p.IsUnderReview).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("postgres.ProjectRepo.Create: %w", err)
 	}
@@ -39,7 +39,7 @@ func (r *ProjectRepo) Create(ctx context.Context, p *domain.Project) (int64, err
 // Get загружает проект по его идентификатору. Возвращает ErrNotFound при отсутствии.
 func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.is_under_review, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
 		       d.dev_url, d.is_online, d.updated_at
@@ -62,7 +62,7 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 
 	row := r.pool.QueryRow(ctx, query, id)
 	err := row.Scan(
-		&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
+		&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.IsUnderReview, &p.CreatedAt, &p.UpdatedAt,
 		&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 		&iconPath, &coverPath, &videoPath, &activeVer,
 		&devURL, &draftIsOnline, &draftUpdatedAt,
@@ -124,7 +124,7 @@ func (r *ProjectRepo) Get(ctx context.Context, id int64) (*domain.Project, error
 // ListByOwner возвращает список проектов пользователя с пагинацией.
 func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.is_under_review, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
 		       d.dev_url, d.is_online, d.updated_at
@@ -155,7 +155,7 @@ func (r *ProjectRepo) ListByOwner(ctx context.Context, ownerID string, limit, of
 			draftUpdatedAt       *time.Time
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.IsUnderReview, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
 			&devURL, &draftIsOnline, &draftUpdatedAt,
@@ -231,7 +231,7 @@ func (r *ProjectRepo) CountByOwner(ctx context.Context, ownerID string) (int, er
 // ListForUser возвращает список проектов, к которым пользователь имеет доступ (владелец или участник).
 func (r *ProjectRepo) ListForUser(ctx context.Context, userID string, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.is_under_review, p.created_at, p.updated_at,
 		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
 		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
 		       d.dev_url, d.is_online, d.updated_at,
@@ -265,7 +265,7 @@ func (r *ProjectRepo) ListForUser(ctx context.Context, userID string, limit, off
 			memberPerms          []string
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.IsUnderReview, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
 			&devURL, &draftIsOnline, &draftUpdatedAt,
@@ -354,14 +354,23 @@ func (r *ProjectRepo) CountForUser(ctx context.Context, userID string) (int, err
 // ListPublished возвращает список опубликованных проектов с пагинацией.
 func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*domain.Project, error) {
 	const query = `
-		SELECT p.id, p.owner_id, p.status, p.is_online, p.created_at, p.updated_at,
-		       d.title_ru, d.title_en, d.seo_ru, d.seo_en, d.about_ru, d.about_en,
-		       d.icon_path, d.cover_path, d.video_path, d.active_build_version,
-		       d.dev_url, d.is_online, d.updated_at
+		SELECT p.id, p.owner_id, p.status, p.is_online, p.is_under_review, p.created_at, p.updated_at,
+		       COALESCE(r.title_ru, d.title_ru, ''),
+		       COALESCE(r.title_en, d.title_en, ''),
+		       COALESCE(r.seo_ru, d.seo_ru, ''),
+		       COALESCE(r.seo_en, d.seo_en, ''),
+		       COALESCE(r.about_ru, d.about_ru, ''),
+		       COALESCE(r.about_en, d.about_en, ''),
+		       COALESCE(r.icon_path, d.icon_path, ''),
+		       COALESCE(r.cover_path, d.cover_path, ''),
+		       COALESCE(r.video_path, d.video_path, ''),
+		       COALESCE(r.version, d.active_build_version, ''),
+		       COALESCE(r.prod_url, d.dev_url, ''),
+		       p.is_online, d.updated_at
 		FROM projects p
+		JOIN project_releases r ON r.project_id = p.id AND r.is_active = TRUE
 		LEFT JOIN project_drafts d ON d.project_id = p.id
-		WHERE p.status = 3
-		ORDER BY p.updated_at DESC
+		ORDER BY r.published_at DESC
 		LIMIT $1 OFFSET $2
 	`
 	rows, err := r.pool.Query(ctx, query, limit, offset)
@@ -385,12 +394,12 @@ func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 			draftUpdatedAt       *time.Time
 		)
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.CreatedAt, &p.UpdatedAt,
+			&p.ID, &p.OwnerID, &p.Status, &p.IsOnline, &p.IsUnderReview, &p.CreatedAt, &p.UpdatedAt,
 			&titleRu, &titleEn, &seoRu, &seoEn, &aboutRu, &aboutEn,
 			&iconPath, &coverPath, &videoPath, &activeVer,
 			&devURL, &draftIsOnline, &draftUpdatedAt,
 		); err != nil {
-			return nil, fmt.Errorf("postgres.ProjectRepo.ListPublished scan: %w", err)
+			return nil, fmt.Errorf("postgres.ProjectRepo.ListPublished rows scan: %w", err)
 		}
 
 		if draftUpdatedAt != nil || titleRu != nil {
@@ -449,13 +458,26 @@ func (r *ProjectRepo) ListPublished(ctx context.Context, limit, offset int) ([]*
 
 // CountPublished возвращает общее количество опубликованных проектов.
 func (r *ProjectRepo) CountPublished(ctx context.Context) (int, error) {
-	const query = `SELECT COUNT(*) FROM projects WHERE status = 3`
+	const query = `SELECT COUNT(DISTINCT project_id) FROM project_releases WHERE is_active = TRUE`
 	var count int
 	err := r.pool.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("postgres.ProjectRepo.CountPublished: %w", err)
 	}
 	return count, nil
+}
+
+// UpdateUnderReview обновляет признак нахождения проекта на проверке модератором.
+func (r *ProjectRepo) UpdateUnderReview(ctx context.Context, id int64, isUnderReview bool) error {
+	const query = `UPDATE projects SET is_under_review = $1, updated_at = NOW() WHERE id = $2`
+	tag, err := r.pool.Exec(ctx, query, isUnderReview, id)
+	if err != nil {
+		return fmt.Errorf("postgres.ProjectRepo.UpdateUnderReview: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
 
 // UpdateStatus обновляет статус жизненного цикла проекта.

@@ -47,7 +47,7 @@ func (h *ModerationHandler) SubmitDraft(ctx context.Context, req *pb.SubmitDraft
 	}
 
 	snapshot := snapshotFromProto(req.GetSnapshot())
-	modReq, err := h.svc.SubmitDraft(ctx, req.GetProjectId(), ownerID, snapshot)
+	modReq, err := h.svc.SubmitDraft(ctx, req.GetProjectId(), ownerID, snapshot, domain.RequestType(req.GetType()))
 	if err != nil {
 		return nil, domainError(err, "submit draft")
 	}

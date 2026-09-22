@@ -92,6 +92,8 @@
           :disabled="
             draftActions.isSaving ||
             draftActions.isSubmitting ||
+            draftActions.isUnderReview ||
+            project?.is_under_review ||
             (!canEditInfo && !canUploadMedia && !canUploadBuild)
           "
           @click="handleSidebarSave"
@@ -252,14 +254,17 @@ async function loadModeration(): Promise<void> {
   try {
     const data = await moderationApi.getLatestByProject(pId);
     if (data && data.request) {
-      // Учитываем только заявки на публикацию игры (не серверные квоты)
+      // Учитываем только заявки на публикацию или обновление игры (не серверные квоты)
       const reqType = data.request.type ?? (data.request as any).request_type;
       const isPublication =
         reqType === undefined ||
         reqType === null ||
         Number(reqType) === 1 ||
+        Number(reqType) === 3 ||
         reqType === 'REQUEST_TYPE_PROJECT_PUBLICATION' ||
-        reqType === 'project_publication';
+        reqType === 'REQUEST_TYPE_PROJECT_UPDATE' ||
+        reqType === 'project_publication' ||
+        reqType === 'project_update';
 
       if (isPublication) {
         moderationStatus.value = data.request.status;
@@ -312,8 +317,8 @@ const isPublished = computed<boolean>(() => {
 });
 
 const isUnderReview = computed<boolean>(() => {
+  if (project.value?.is_under_review) return true;
   if (draftActions.value.isUnderReview) return true;
-  if (isPublished.value) return false;
   const st = moderationStatus.value;
   if (st !== null && st !== undefined) {
     return (
@@ -343,6 +348,7 @@ const isRejected = computed<boolean>(() => {
 });
 
 const projectStatusLabel = computed<string>(() => {
+  if (isPublished.value && isUnderReview.value) return t('projects.publishedUpdateInReview') || 'Опубликовано (на проверке)';
   if (isPublished.value) return t('projects.published');
   if (isUnderReview.value) return t('projects.moderation');
   if (isRejected.value) return t('projects.rejected');
@@ -350,6 +356,7 @@ const projectStatusLabel = computed<string>(() => {
 });
 
 const projectStatusClass = computed<string>(() => {
+  if (isPublished.value && isUnderReview.value) return 'badge-status-pending';
   if (isPublished.value) return 'badge-status-published';
   if (isUnderReview.value) return 'badge-status-pending';
   if (isRejected.value) return 'badge-status-rejected';

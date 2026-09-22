@@ -55,6 +55,7 @@ message Project {
   repeated string current_user_permissions = 20;
   bool is_owner = 21;
   bool is_online = 22;
+  bool is_under_review = 23;
 }
 
 // ProjectDraft рабочее состояние черновика проекта.

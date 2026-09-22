@@ -7,6 +7,12 @@
       </button>
     </div>
 
+    <!-- Уведомление о модерации -->
+    <div v-if="isUnderReview" class="moderation-notice-banner">
+      <AlertCircle class="icon-sm text-warning" />
+      <span>{{ t('servers.underReviewNotice') || 'Проект находится на проверке у модератора. Серверное окружение используется для тестирования игры модератором.' }}</span>
+    </div>
+
     <!-- Ошибка -->
     <div v-if="error" class="error-banner">
       <AlertCircle class="icon-sm" /> {{ error }}
@@ -92,14 +98,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Upload, Trash2, AlertCircle } from 'lucide-vue-next';
 import { listServerBuilds, deleteServerBuild } from '@/entities/build';
 import { listInstances } from '@/entities/instance';
 import { ServerBuildUploadModal } from '@/features/upload-server-build';
 import { formatBytes, formatDate, showToast } from '@/shared/lib';
-import type { Build } from '@/shared/types';
+import type { Build, Project } from '@/shared/types';
 
 interface DeleteTarget extends Build {
   _inUse?: boolean;
@@ -110,6 +116,9 @@ const { t } = useI18n();
 const props = defineProps<{
   gameId: string | number;
 }>();
+
+const sharedProject = inject<Ref<Project | null> | null>('project', null);
+const isUnderReview = computed<boolean>(() => sharedProject?.value?.is_under_review === true);
 
 const builds = ref<Build[]>([]);
 const loading = ref<boolean>(true);
@@ -309,5 +318,18 @@ code {
 .text-danger {
   color: var(--danger);
   font-weight: 600;
+}
+
+.moderation-notice-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-main, #f0f6fc);
+  font-size: 0.88rem;
 }
 </style>

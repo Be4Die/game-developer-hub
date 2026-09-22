@@ -1,12 +1,23 @@
 <template>
   <div class="tab-content tab-fade-in purchases-page">
+    <!-- БАННЕР БЛОКИРОВКИ НА МОДЕРАЦИИ -->
+    <div v-if="isLocked" class="purchases-lock-banner">
+      <AlertCircle class="icon-sm text-warning" />
+      <div class="lock-banner-content">
+        <div class="lock-banner-title">Товары зафиксированы на время модерации</div>
+        <div class="lock-banner-desc">
+          Проект находится на проверке у модератора. Добавление, редактирование и удаление товаров заблокировано до решения модератора.
+        </div>
+      </div>
+    </div>
+
     <!-- Верхняя панель: курс валюты и действие добавления -->
     <div v-if="!loading" class="purchases-toolbar">
       <div class="rate-badge" title="1 WCoin = 1 рубль">
         <Coins class="icon-xs text-primary" />
         <span>1 WCoin = 1 ₽</span>
       </div>
-      <button v-if="items.length > 0" class="btn-primary-action" @click="openCreateModal">
+      <button v-if="items.length > 0" class="btn-primary-action" :disabled="isLocked" @click="!isLocked && openCreateModal()">
         <Plus class="icon-sm" />
         <span>{{ t('purchases.actions.addItem') }}</span>
       </button>
@@ -27,7 +38,7 @@
         </div>
         <h3>{{ t('purchases.empty.title') }}</h3>
         <p class="text-muted">{{ t('purchases.empty.desc') }}</p>
-        <button class="btn-primary-action" @click="openCreateModal">
+        <button class="btn-primary-action" :disabled="isLocked" @click="!isLocked && openCreateModal()">
           <Plus class="icon-sm" />
           <span>{{ t('purchases.actions.addItem') }}</span>
         </button>
@@ -94,15 +105,17 @@
                 <div class="row-actions">
                   <button
                     class="btn-icon"
+                    :disabled="isLocked"
                     title="Редактировать товар"
-                    @click.stop="openEditModal(item)"
+                    @click.stop="!isLocked && openEditModal(item)"
                   >
                     <Edit2 class="icon-xs" />
                   </button>
                   <button
                     class="btn-icon text-danger-hover"
+                    :disabled="isLocked"
                     title="Удалить товар"
-                    @click.stop="openDeleteConfirm(item)"
+                    @click.stop="!isLocked && openDeleteConfirm(item)"
                   >
                     <Trash2 class="icon-xs" />
                   </button>
@@ -253,7 +266,7 @@
             <button type="button" class="btn-cancel" @click="closeModal">
               {{ t('common.cancel') }}
             </button>
-            <button type="submit" class="btn-save-primary" :disabled="saving">
+            <button type="submit" class="btn-save-primary" :disabled="saving || isLocked">
               <Loader2 v-if="saving" class="icon-xs spin" />
               <span>{{ saving ? t('common.saving') : t('common.save') }}</span>
             </button>
@@ -280,7 +293,7 @@
           <button type="button" class="btn-cancel" @click="itemToDelete = null">
             {{ t('common.cancel') }}
           </button>
-          <button type="button" class="btn-danger-confirm" :disabled="deleting" @click="confirmDelete">
+          <button type="button" class="btn-danger-confirm" :disabled="deleting || isLocked" @click="confirmDelete">
             <Loader2 v-if="deleting" class="icon-xs spin" />
             <span>{{ deleting ? t('common.deleting') : t('common.delete') }}</span>
           </button>
@@ -381,7 +394,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, inject, computed, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import {
   ShoppingBag,
@@ -409,10 +422,14 @@ import {
   uploadItemImage,
   type GameItem,
 } from '@/entities/purchases';
+import type { Project } from '@/shared/types';
 
 const route = useRoute();
 const projectId = String(route.params.id || '');
 const { t } = useI18n();
+
+const sharedProject = inject<Ref<Project | null> | null>('project', null);
+const isLocked = computed<boolean>(() => sharedProject?.value?.is_under_review === true);
 
 const items = ref<GameItem[]>([]);
 const loading = ref<boolean>(true);
@@ -1529,5 +1546,29 @@ input[type="number"] {
   to {
     transform: rotate(360deg);
   }
+}
+.purchases-lock-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-main, #f0f6fc);
+}
+
+.lock-banner-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #d29922;
+  margin-bottom: 4px;
+}
+
+.lock-banner-desc {
+  font-size: 0.86rem;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.4;
 }
 </style>

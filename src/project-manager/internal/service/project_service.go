@@ -306,8 +306,12 @@ func (s *ProjectService) UpdateDraft(ctx context.Context, projectID int64, userI
 	}
 	defer unlock()
 
-	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo); err != nil {
+	p, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo)
+	if err != nil {
 		return err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return domain.ErrProjectLockedInModeration
 	}
 
 	draft, err := s.draftRepo.Get(ctx, projectID)
@@ -380,9 +384,12 @@ func (s *ProjectService) UploadBuildStream(ctx context.Context, projectID int64,
 	}
 	defer unlock()
 
-	_, err = s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild)
+	p, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild)
 	if err != nil {
 		return nil, "", err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return nil, "", domain.ErrProjectLockedInModeration
 	}
 
 	// Проверка на дубликат версии
@@ -466,8 +473,12 @@ func (s *ProjectService) DeleteBuild(ctx context.Context, projectID int64, owner
 	}
 	defer unlock()
 
-	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild); err != nil {
+	p, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadBuild)
+	if err != nil {
 		return err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return domain.ErrProjectLockedInModeration
 	}
 
 	b, err := s.buildRepo.Get(ctx, projectID, version)
@@ -494,8 +505,12 @@ func (s *ProjectService) UploadMediaStream(ctx context.Context, projectID int64,
 	}
 	defer unlock()
 
-	if _, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadMedia); err != nil {
+	p, err := s.CheckAccess(ctx, projectID, ownerID, domain.PermUploadMedia)
+	if err != nil {
 		return "", err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return "", domain.ErrProjectLockedInModeration
 	}
 
 	filePath, err := s.mediaStorage.SaveMediaStream(ctx, projectID, mediaType, reader)
@@ -539,7 +554,7 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 	if err != nil {
 		return 0, err
 	}
-	if p.Status == domain.ProjectStatusPending {
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
 		return 0, domain.ErrAlreadyInModeration
 	}
 
@@ -551,6 +566,16 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 
 	if err := draft.IsReadyForModeration(); err != nil {
 		return 0, err
+	}
+
+	activeRelease, _ := s.releaseRepo.GetActive(ctx, projectID)
+	isUpdate := (activeRelease != nil)
+
+	var items []*domain.GameItem
+	if s.purchaseClient != nil {
+		if itms, err := s.purchaseClient.ListItems(ctx, projectID); err == nil {
+			items = itms
+		}
 	}
 
 	snapshot := &domain.ProjectSnapshot{
@@ -568,6 +593,8 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 		ActiveBuildVersion: draft.ActiveBuildVersion,
 		DevURL:             draft.DevURL,
 		IsOnline:           draft.IsOnline,
+		Items:              items,
+		IsUpdate:           isUpdate,
 	}
 
 	requestID, err := s.moderationClient.SubmitDraft(ctx, snapshot)
@@ -575,7 +602,13 @@ func (s *ProjectService) SubmitForModeration(ctx context.Context, projectID int6
 		return 0, fmt.Errorf("ProjectService.SubmitForModeration submit draft: %w", err)
 	}
 
-	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPending)
+	if err := s.projectRepo.UpdateUnderReview(ctx, projectID, true); err != nil {
+		return 0, fmt.Errorf("ProjectService.SubmitForModeration update under review: %w", err)
+	}
+
+	if !isUpdate {
+		_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPending)
+	}
 
 	return requestID, nil
 }
@@ -647,6 +680,7 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 	release.ID = relID
 
 	_ = s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, s.resolveAllowedHosts(draft.IsOnline))
+	_ = s.projectRepo.UpdateUnderReview(ctx, projectID, false)
 	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
 		ProjectID:   projectID,
@@ -666,7 +700,13 @@ func (s *ProjectService) RejectDraft(ctx context.Context, projectID int64) error
 	}
 	defer unlock()
 
-	return s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusDraft)
+	_ = s.projectRepo.UpdateUnderReview(ctx, projectID, false)
+
+	if activeRelease, err := s.releaseRepo.GetActive(ctx, projectID); err == nil && activeRelease != nil {
+		return s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
+	}
+
+	return s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusRejected)
 }
 
 // GetPublished возвращает активный опубликованный релиз проекта.
@@ -1055,8 +1095,12 @@ func (s *ProjectService) CreateGameItem(ctx context.Context, item *domain.GameIt
 	if item == nil {
 		return nil, domain.ErrInvalidInput
 	}
-	if _, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo); err != nil {
+	p, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo)
+	if err != nil {
 		return nil, err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return nil, domain.ErrProjectLockedInModeration
 	}
 
 	item.GameItemID = strings.TrimSpace(item.GameItemID)
@@ -1088,8 +1132,12 @@ func (s *ProjectService) UpdateGameItem(ctx context.Context, item *domain.GameIt
 	if item == nil {
 		return nil, domain.ErrInvalidInput
 	}
-	if _, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo); err != nil {
+	p, err := s.CheckAccess(ctx, item.ProjectID, userID, domain.PermEditInfo)
+	if err != nil {
 		return nil, err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return nil, domain.ErrProjectLockedInModeration
 	}
 
 	item.GameItemID = strings.TrimSpace(item.GameItemID)
@@ -1118,8 +1166,12 @@ func (s *ProjectService) UpdateGameItem(ctx context.Context, item *domain.GameIt
 
 // DeleteGameItem удаляет или деактивирует товар проекта. Требует права PermEditInfo.
 func (s *ProjectService) DeleteGameItem(ctx context.Context, projectID int64, gameItemID, userID string) error {
-	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo); err != nil {
+	p, err := s.CheckAccess(ctx, projectID, userID, domain.PermEditInfo)
+	if err != nil {
 		return err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return domain.ErrProjectLockedInModeration
 	}
 	if s.purchaseClient == nil {
 		return fmt.Errorf("purchase client not configured")
@@ -1129,8 +1181,12 @@ func (s *ProjectService) DeleteGameItem(ctx context.Context, projectID int64, ga
 
 // UploadItemImage загружает изображение товара и сохраняет его в games/{project_id}/items/{game_item_id}.png.
 func (s *ProjectService) UploadItemImage(ctx context.Context, projectID int64, gameItemID, userID string, reader io.Reader) (string, error) {
-	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermUploadMedia); err != nil {
+	p, err := s.CheckAccess(ctx, projectID, userID, domain.PermUploadMedia)
+	if err != nil {
 		return "", err
+	}
+	if p.IsUnderReview || p.Status == domain.ProjectStatusPending {
+		return "", domain.ErrProjectLockedInModeration
 	}
 	gameItemID = strings.TrimSpace(gameItemID)
 	if gameItemID == "" {

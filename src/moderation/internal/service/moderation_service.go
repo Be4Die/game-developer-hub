@@ -58,12 +58,17 @@ func (s *ModerationService) SetOrchestratorClient(client domain.OrchestratorClie
 }
 
 // SubmitDraft создает новый запрос на модерацию со снимком метаданных и фиксирует системное событие в чате.
-func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ownerID string, snapshot domain.ProjectSnapshot) (*domain.ModerationRequest, error) {
+func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ownerID string, snapshot domain.ProjectSnapshot, reqType ...domain.RequestType) (*domain.ModerationRequest, error) {
+	t := domain.RequestTypeProjectPublication
+	if len(reqType) > 0 && reqType[0] != domain.RequestTypeUnspecified {
+		t = reqType[0]
+	}
+
 	req := &domain.ModerationRequest{
 		ProjectID: projectID,
 		OwnerID:   ownerID,
 		Status:    domain.RequestStatusPending,
-		Type:      domain.RequestTypeProjectPublication,
+		Type:      t,
 		Snapshot:  snapshot,
 	}
 
@@ -73,6 +78,11 @@ func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ow
 	}
 	req.ID = id
 
+	chatContent := "Черновик отправлен на модерацию"
+	if t == domain.RequestTypeProjectUpdate {
+		chatContent = "Черновик обновления отправлен на модерацию"
+	}
+
 	// Запись системного события в чат проекта
 	sysMsg := &domain.ChatMessage{
 		ProjectID:   projectID,
@@ -80,7 +90,7 @@ func (s *ModerationService) SubmitDraft(ctx context.Context, projectID int64, ow
 		SenderID:    "system",
 		SenderRole:  domain.SenderRoleSystem,
 		MessageType: domain.MessageTypeSubmitted,
-		Content:     "Черновик отправлен на модерацию",
+		Content:     chatContent,
 		Payload: map[string]any{
 			"active_build_version": snapshot.ActiveBuildVersion,
 			"dev_url":              snapshot.DevURL,
@@ -798,6 +808,7 @@ func (s *ModerationService) buildAndSaveSnapshot(
 			DevURL:        snapData.DevURL,
 			ProdURL:       prodURL,
 			IsOnline:      snapData.IsOnline,
+			Items:         snapData.Items,
 		},
 		Media: domain.SnapshotMediaData{
 			Icon:  iconItem,

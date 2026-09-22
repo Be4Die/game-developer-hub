@@ -12,8 +12,18 @@ export type ModerationRequestType =
   | 'REQUEST_TYPE_UNSPECIFIED'
   | 'REQUEST_TYPE_PROJECT_PUBLICATION'
   | 'REQUEST_TYPE_SERVER_ACCESS'
+  | 'REQUEST_TYPE_PROJECT_UPDATE'
   | number
   | string;
+
+export interface GameItemSnapshot {
+  game_item_id: string;
+  name: string;
+  description?: string;
+  price_coins: number;
+  image_url?: string;
+  is_active?: boolean;
+}
 
 export interface ModerationViolation {
   rule_id?: string;

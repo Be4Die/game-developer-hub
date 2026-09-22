@@ -29,6 +29,8 @@ func domainError(err error, action string) error {
 		return status.Errorf(codes.FailedPrecondition, "%s: draft not ready", action)
 	case errors.Is(err, domain.ErrAlreadyInModeration):
 		return status.Errorf(codes.AlreadyExists, "%s: already in moderation", action)
+	case errors.Is(err, domain.ErrProjectLockedInModeration):
+		return status.Errorf(codes.FailedPrecondition, "%s: project is locked under moderation", action)
 	case errors.Is(err, domain.ErrNoActiveBuild):
 		return status.Errorf(codes.FailedPrecondition, "%s: no active build", action)
 	case errors.Is(err, domain.ErrUserBlocked):

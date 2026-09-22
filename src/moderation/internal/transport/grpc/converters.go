@@ -37,21 +37,38 @@ func requestToProto(r *domain.ModerationRequest) *pb.ModerationRequest {
 		ModeratorComment:     r.ModeratorComment,
 		RejectionReason:      r.RejectionReason,
 		SubmittedAt:     formatTime(r.SubmittedAt),
-		Snapshot: &pb.ProjectSnapshot{
-			ProjectId:          r.Snapshot.ProjectID,
-			TitleRu:            r.Snapshot.TitleRu,
-			TitleEn:            r.Snapshot.TitleEn,
-			SeoRu:              r.Snapshot.SeoRu,
-			SeoEn:              r.Snapshot.SeoEn,
-			AboutRu:            r.Snapshot.AboutRu,
-			AboutEn:            r.Snapshot.AboutEn,
-			IconPath:           r.Snapshot.IconPath,
-			CoverPath:          r.Snapshot.CoverPath,
-			VideoPath:          r.Snapshot.VideoPath,
-			ActiveBuildVersion: r.Snapshot.ActiveBuildVersion,
-			DevUrl:             r.Snapshot.DevURL,
-			IsOnline:           r.Snapshot.IsOnline,
-		},
+		Snapshot: func() *pb.ProjectSnapshot {
+			var items []*pb.GameItemSnapshot
+			for _, itm := range r.Snapshot.Items {
+				if itm == nil {
+					continue
+				}
+				items = append(items, &pb.GameItemSnapshot{
+					GameItemId:  itm.GameItemID,
+					Name:        itm.Name,
+					Description: itm.Description,
+					PriceCoins:  itm.PriceCoins,
+					ImageUrl:    itm.ImageURL,
+					IsActive:    itm.IsActive,
+				})
+			}
+			return &pb.ProjectSnapshot{
+				ProjectId:          r.Snapshot.ProjectID,
+				TitleRu:            r.Snapshot.TitleRu,
+				TitleEn:            r.Snapshot.TitleEn,
+				SeoRu:              r.Snapshot.SeoRu,
+				SeoEn:              r.Snapshot.SeoEn,
+				AboutRu:            r.Snapshot.AboutRu,
+				AboutEn:            r.Snapshot.AboutEn,
+				IconPath:           r.Snapshot.IconPath,
+				CoverPath:          r.Snapshot.CoverPath,
+				VideoPath:          r.Snapshot.VideoPath,
+				ActiveBuildVersion: r.Snapshot.ActiveBuildVersion,
+				DevUrl:             r.Snapshot.DevURL,
+				IsOnline:           r.Snapshot.IsOnline,
+				Items:              items,
+			}
+		}(),
 	}
 
 	if r.StartedReviewAt != nil {
@@ -134,6 +151,20 @@ func snapshotFromProto(p *pb.ProjectSnapshot) domain.ProjectSnapshot {
 	if p == nil {
 		return domain.ProjectSnapshot{}
 	}
+	var items []*domain.GameItemSnapshot
+	for _, itm := range p.GetItems() {
+		if itm == nil {
+			continue
+		}
+		items = append(items, &domain.GameItemSnapshot{
+			GameItemID:  itm.GetGameItemId(),
+			Name:        itm.GetName(),
+			Description: itm.GetDescription(),
+			PriceCoins:  itm.GetPriceCoins(),
+			ImageURL:    itm.GetImageUrl(),
+			IsActive:    itm.GetIsActive(),
+		})
+	}
 	return domain.ProjectSnapshot{
 		ProjectID:          p.GetProjectId(),
 		TitleRu:            p.GetTitleRu(),
@@ -148,6 +179,7 @@ func snapshotFromProto(p *pb.ProjectSnapshot) domain.ProjectSnapshot {
 		ActiveBuildVersion: p.GetActiveBuildVersion(),
 		DevURL:             p.GetDevUrl(),
 		IsOnline:           p.GetIsOnline(),
+		Items:              items,
 	}
 }
 

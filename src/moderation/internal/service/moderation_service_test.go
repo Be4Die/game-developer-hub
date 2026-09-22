@@ -666,3 +666,58 @@ func TestUnit_ModerationService_ServerAccessSnapshot(t *testing.T) {
 	}
 }
 
+func TestUnit_ModerationService_SubmitDraftUpdate(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, reqRepo, msgRepo, _ := setupTestModerationService(t)
+
+	items := []*domain.GameItemSnapshot{
+		{
+			GameItemID:  "coin_100",
+			Name:        "100 монет",
+			Description: "Пакет монет",
+			PriceCoins:  100,
+			ImageURL:    "games/200/items/coin_100.png",
+			IsActive:    true,
+		},
+	}
+
+	snapshot := domain.ProjectSnapshot{
+		ProjectID:          200,
+		TitleRu:            "Игра Апдейт",
+		ActiveBuildVersion: "2.0.0",
+		Items:              items,
+	}
+
+	req, err := svc.SubmitDraft(ctx, 200, "dev-200", snapshot, domain.RequestTypeProjectUpdate)
+	if err != nil {
+		t.Fatalf("submit draft update failed: %v", err)
+	}
+
+	if req.Type != domain.RequestTypeProjectUpdate {
+		t.Errorf("expected RequestTypeProjectUpdate (3), got: %v", req.Type)
+	}
+
+	saved, err := reqRepo.Get(ctx, req.ID)
+	if err != nil {
+		t.Fatalf("get saved request failed: %v", err)
+	}
+	if saved.Type != domain.RequestTypeProjectUpdate {
+		t.Errorf("expected saved RequestTypeProjectUpdate (3), got: %v", saved.Type)
+	}
+	if len(saved.Snapshot.Items) != 1 || saved.Snapshot.Items[0].GameItemID != "coin_100" {
+		t.Errorf("expected snapshot items preserved, got: %+v", saved.Snapshot.Items)
+	}
+
+	messages, _, err := msgRepo.ListByProject(ctx, 200, 10, 0)
+	if err != nil || len(messages) == 0 {
+		t.Fatalf("expected chat message for update, got none")
+	}
+	if messages[0].Content != "Черновик обновления отправлен на модерацию" {
+		t.Errorf("expected update message, got: %s", messages[0].Content)
+	}
+}
+
+

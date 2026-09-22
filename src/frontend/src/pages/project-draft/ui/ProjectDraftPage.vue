@@ -1,5 +1,18 @@
 <template>
   <div class="tab-fade-in">
+    <!-- БАННЕР БЛОКИРОВКИ НА МОДЕРАЦИИ -->
+    <div v-if="isLocked" class="moderation-alert-banner">
+      <div class="alert-icon-wrap">
+        <AlertCircle class="icon-sm text-warning" />
+      </div>
+      <div class="alert-content">
+        <div class="alert-title">{{ t('projectDraft.lockedTitle') || 'Проект находится на проверке' }}</div>
+        <div class="alert-desc">
+          {{ t('projectDraft.lockedDesc') || 'Проект передан модератору. Внесение изменений в черновик, медиа-материалы и сборки заблокировано до принятия решения.' }}
+        </div>
+      </div>
+    </div>
+
     <div class="form-grid">
       <!-- БЛОК 1: МЕТАДАННЫЕ -->
       <div class="card form-section">
@@ -432,6 +445,7 @@ import {
   Download,
   Gamepad2,
   Globe,
+  AlertCircle,
 } from 'lucide-vue-next';
 import {
   getProject,
@@ -455,13 +469,34 @@ const projectId = computed<string>(() => String(route.params.id || ''));
 const sharedProject = inject<Ref<Project | null> | null>('project', null);
 const draftActions = inject<Ref<any> | null>('draftActions', null);
 
+const projectData = ref<Project | null>(null);
+const moderationStatus = ref<string | number | null>(null);
+
+const isUnderReview = computed<boolean>(() => {
+  if (sharedProject?.value?.is_under_review || projectData.value?.is_under_review) {
+    return true;
+  }
+  const st = moderationStatus.value;
+  if (st === null || st === undefined) return false;
+  return (
+    Number(st) === REQUEST_STATUS.PENDING ||
+    Number(st) === REQUEST_STATUS.IN_REVIEW ||
+    st === 'REQUEST_STATUS_PENDING' ||
+    st === 'REQUEST_STATUS_IN_REVIEW' ||
+    st === 'pending' ||
+    st === 'in_review'
+  );
+});
+
+const isLocked = computed<boolean>(() => isUnderReview.value || sharedProject?.value?.is_under_review === true);
+
 const isOwner = computed<boolean>(() => sharedProject?.value?.is_owner !== false);
 const permissions = computed<string[]>(() => sharedProject?.value?.current_user_permissions || []);
-const canEditInfo = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_EDIT_INFO'));
-const canUploadMedia = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA'));
-const canUploadBuild = computed<boolean>(() => isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD'));
+const canEditInfo = computed<boolean>(() => !isLocked.value && (isOwner.value || permissions.value.includes('PERM_EDIT_INFO')));
+const canUploadMedia = computed<boolean>(() => !isLocked.value && (isOwner.value || permissions.value.includes('PERM_UPLOAD_MEDIA')));
+const canUploadBuild = computed<boolean>(() => !isLocked.value && (isOwner.value || permissions.value.includes('PERM_UPLOAD_BUILD')));
 const canSubmitModeration = computed<boolean>(
-  () => isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION')
+  () => !isLocked.value && (isOwner.value || permissions.value.includes('PERM_SUBMIT_MODERATION'))
 );
 
 interface MetaState {
@@ -502,23 +537,8 @@ const fileVideo = ref<HTMLInputElement | null>(null);
 const activeBuildVersion = ref<string>('');
 const submitting = ref<boolean>(false);
 const moderationRequest = ref<any | null>(null);
-const moderationStatus = ref<string | number | null>(null);
 const rejectionReason = ref<string>('');
 const recentBuilds = ref<any[]>([]);
-const projectData = ref<Project | null>(null);
-
-const isUnderReview = computed<boolean>(() => {
-  const st = moderationStatus.value;
-  if (st === null || st === undefined) return false;
-  return (
-    Number(st) === REQUEST_STATUS.PENDING ||
-    Number(st) === REQUEST_STATUS.IN_REVIEW ||
-    st === 'REQUEST_STATUS_PENDING' ||
-    st === 'REQUEST_STATUS_IN_REVIEW' ||
-    st === 'pending' ||
-    st === 'in_review'
-  );
-});
 
 const isRejected = computed<boolean>(() => {
   const st = moderationStatus.value;
@@ -1356,5 +1376,37 @@ function downloadBuild(version: string): void {
 .mode-toggle-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.moderation-alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-main, #f0f6fc);
+}
+
+.moderation-alert-banner .alert-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.moderation-alert-banner .alert-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #d29922;
+  margin-bottom: 4px;
+}
+
+.moderation-alert-banner .alert-desc {
+  font-size: 0.86rem;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.4;
 }
 </style>

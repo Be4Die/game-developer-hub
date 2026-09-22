@@ -29,6 +29,9 @@ var (
 	// ErrAlreadyInModeration возвращается при попытке повторно отправить черновик, уже находящийся на проверке.
 	ErrAlreadyInModeration = errors.New("project is already pending moderation")
 
+	// ErrProjectLockedInModeration возвращается при попытке редактирования данных проекта во время модерации.
+	ErrProjectLockedInModeration = errors.New("project is locked during moderation review")
+
 	// ErrNotApproved возвращается при попытке публикации игры, не прошедшей модерацию.
 	ErrNotApproved = errors.New("project is not approved for publication")
 
