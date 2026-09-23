@@ -273,52 +273,38 @@
               <!-- 7 колонка: Действия -->
               <td class="col-actions" @click.stop>
                 <div class="row-actions">
-                  <!-- Действия для проектов -->
-                  <template v-if="req.type === 'project'">
+                  <!-- Унифицированные действия для проектов и серверов платформы -->
+                  <template v-if="isAdmin || (!isPending(req.status) && !isInReview(req.status))">
                     <button
-                      v-if="isAdmin"
                       class="btn-inspect-sm"
-                      title="Просмотр проекта"
-                      @click="openProject(req.projectId)"
+                      :title="req.type === 'server' ? 'Просмотр заявки на серверы' : 'Просмотр проекта'"
+                      @click="openProject(req.projectId, req.id, req.type)"
                     >
                       <Eye class="icon-xs" />
                       <span>Просмотр</span>
                     </button>
-                    <template v-else>
-                      <button
-                        v-if="isPending(req.status)"
-                        class="btn-claim-sm"
-                        :disabled="claimingId === req.id"
-                        :title="t('moderation.claimBtn')"
-                        @click="claimAndOpen(req)"
-                      >
-                        <Loader2 v-if="claimingId === req.id" class="icon-xs spin" />
-                        <CheckSquare v-else class="icon-xs" />
-                        <span>{{ t('moderation.claimBtn') }}</span>
-                      </button>
-
-                      <button
-                        v-else
-                        class="btn-inspect-sm"
-                        :title="t('moderation.continueBtn')"
-                        @click="openProject(req.projectId)"
-                      >
-                        <ArrowRight class="icon-xs" />
-                        <span>{{ t('moderation.continueBtn') }}</span>
-                      </button>
-                    </template>
                   </template>
-
-                  <!-- Действия для серверов платформы -->
                   <template v-else>
                     <button
-                      class="btn-inspect-sm"
-                      :title="isPending(req.status) ? 'Рассмотреть заявку на серверы' : 'Просмотр заявки на серверы'"
-                      @click="openServerReviewModal(req)"
+                      v-if="isPending(req.status)"
+                      class="btn-claim-sm"
+                      :disabled="claimingId === req.id"
+                      :title="t('moderation.claimBtn')"
+                      @click="claimAndOpen(req)"
                     >
-                      <Sliders v-if="isPending(req.status)" class="icon-xs" />
-                      <Eye v-else class="icon-xs" />
-                      <span>{{ isPending(req.status) ? 'Рассмотреть' : 'Просмотр' }}</span>
+                      <Loader2 v-if="claimingId === req.id" class="icon-xs spin" />
+                      <CheckSquare v-else class="icon-xs" />
+                      <span>{{ t('moderation.claimBtn') }}</span>
+                    </button>
+
+                    <button
+                      v-else
+                      class="btn-inspect-sm"
+                      :title="t('moderation.continueBtn')"
+                      @click="openProject(req.projectId, req.id, req.type)"
+                    >
+                      <ArrowRight class="icon-xs" />
+                      <span>{{ t('moderation.continueBtn') }}</span>
                     </button>
                   </template>
                 </div>
@@ -371,319 +357,6 @@
         </div>
       </div>
 
-      <!-- Модальное окно: Рассмотрение заявки на доступ к серверам -->
-      <div
-        v-if="serverReviewTarget"
-        class="modal-overlay"
-        @click.self="serverReviewTarget = null"
-      >
-        <div class="modal-card modal-card-wide">
-          <div class="modal-header">
-            <div class="modal-header-title-row">
-              <h3>Заявка на доступ к серверам платформы</h3>
-              <span class="status-pill" :class="reqStatusClass(serverReviewTarget.status)">
-                {{ reqStatusLabel(serverReviewTarget.status) }}
-              </span>
-            </div>
-            <button class="btn-close" @click="serverReviewTarget = null">
-              <X class="icon-sm" />
-            </button>
-          </div>
-          <div class="modal-body">
-            <!-- Блок информации о проекте и запросе -->
-            <div class="project-info-banner">
-              <div class="project-info-top">
-                <div class="project-info-title-group">
-                  <div class="game-icon-box sm">
-                    <img
-                      v-if="serverReviewTarget.iconPath"
-                      :src="getMediaUrl(serverReviewTarget.iconPath, serverReviewTarget.projectId)"
-                      alt="Icon"
-                      class="game-icon-img"
-                    />
-                    <Server v-else class="icon-xs text-warning" />
-                  </div>
-                  <div>
-                    <div class="project-info-title">
-                      <strong>{{ serverReviewTarget.title }}</strong>
-                      <span class="project-id-chip">#{{ serverReviewTarget.projectId }}</span>
-                    </div>
-                    <div class="project-info-dev">
-                      Разработчик: <strong>{{ serverReviewTarget.ownerId ? getUserDisplayName(serverReviewTarget.ownerId) : '—' }}</strong>
-                      <span class="dot-separator">•</span>
-                      <span>{{ formatDateTime(serverReviewTarget.submittedAt) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  class="btn-inspect-sm"
-                  title="Открыть страницу проекта"
-                  @click="openProject(serverReviewTarget.projectId)"
-                >
-                  <span>Проект</span>
-                  <ExternalLink class="icon-xs" />
-                </button>
-              </div>
-
-              <!-- Обоснование разработчика -->
-              <div class="server-reason-quote">
-                <div class="server-reason-label">Обоснование разработчика:</div>
-                <p>«{{ serverReviewTarget.reason || 'Запрос доступа к мощностям платформы' }}»</p>
-              </div>
-
-              <!-- Запрошенные ресурсы -->
-              <div class="requested-summary-line">
-                <span class="req-sum-label">Запрошено разработчиком:</span>
-                <span class="req-sum-val">{{ serverReviewTarget.maxInstances }} инст.</span>
-                <span class="req-sum-val">Всего CPU: {{ formatCpu(serverReviewTarget.maxTotalCpuMillis) }}</span>
-                <span class="req-sum-val">Всего RAM: {{ formatMemory(serverReviewTarget.maxTotalMemoryMb) }}</span>
-                <span
-                  v-if="serverReviewTarget.maxInstanceCpuMillis || serverReviewTarget.maxInstanceMemoryMb"
-                  class="req-sum-val"
-                >
-                  На инстанс: {{ formatCpu(serverReviewTarget.maxInstanceCpuMillis) }} / {{ formatMemory(serverReviewTarget.maxInstanceMemoryMb) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Если заявка ожидает решения (Pending) -->
-            <template v-if="isPending(serverReviewTarget.status)">
-              <!-- Переключатель решения -->
-              <div class="decision-tabs">
-                <button
-                  type="button"
-                  class="decision-tab-btn"
-                  :class="{ active: serverDecisionTab === 'approve' }"
-                  @click="serverDecisionTab = 'approve'"
-                >
-                  <Check class="icon-xs" />
-                  <span>Одобрить выделение квот</span>
-                </button>
-                <button
-                  type="button"
-                  class="decision-tab-btn decision-tab-reject"
-                  :class="{ active: serverDecisionTab === 'reject' }"
-                  @click="serverDecisionTab = 'reject'"
-                >
-                  <X class="icon-xs" />
-                  <span>Отклонить заявку</span>
-                </button>
-              </div>
-
-              <!-- Вкладка: Одобрение -->
-              <div v-if="serverDecisionTab === 'approve'" class="moderator-quota-form">
-                <div class="form-group mb-12">
-                  <label class="form-label">Утверждённое число серверов (инстансов) *</label>
-                  <input
-                    v-model.number="approveServerQuota"
-                    type="number"
-                    min="1"
-                    max="50"
-                    class="form-input"
-                  />
-                  <span class="field-hint">Максимум одновременно работающих серверов на мощностях платформы</span>
-                </div>
-
-                <!-- Суммарные ресурсы проекта -->
-                <div class="quota-group-card">
-                  <h4 class="quota-group-title">Суммарный лимит на весь проект</h4>
-                  <div class="quota-inputs-row">
-                    <div class="form-group flex-1">
-                      <div class="label-with-toggle">
-                        <label class="form-label">Всего CPU (ядер)</label>
-                        <label class="toggle-label">
-                          <input type="checkbox" v-model="approveUnlimitedTotalCpu" />
-                          <span>Без огр.</span>
-                        </label>
-                      </div>
-                      <input
-                        v-if="!approveUnlimitedTotalCpu"
-                        v-model.number="approveTotalCpu"
-                        type="number"
-                        step="0.5"
-                        min="0.5"
-                        max="64"
-                        class="form-input"
-                      />
-                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                    </div>
-
-                    <div class="form-group flex-1">
-                      <div class="label-with-toggle">
-                        <label class="form-label">Всего RAM (МБ)</label>
-                        <label class="toggle-label">
-                          <input type="checkbox" v-model="approveUnlimitedTotalRam" />
-                          <span>Без огр.</span>
-                        </label>
-                      </div>
-                      <input
-                        v-if="!approveUnlimitedTotalRam"
-                        v-model.number="approveTotalRam"
-                        type="number"
-                        step="256"
-                        min="256"
-                        max="131072"
-                        class="form-input"
-                      />
-                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Лимиты на 1 инстанс -->
-                <div class="quota-group-card">
-                  <h4 class="quota-group-title">Лимит на 1 отдельный инстанс (сервер)</h4>
-                  <div class="quota-inputs-row">
-                    <div class="form-group flex-1">
-                      <div class="label-with-toggle">
-                        <label class="form-label">CPU на инстанс</label>
-                        <label class="toggle-label">
-                          <input type="checkbox" v-model="approveUnlimitedInstanceCpu" />
-                          <span>Без огр.</span>
-                        </label>
-                      </div>
-                      <input
-                        v-if="!approveUnlimitedInstanceCpu"
-                        v-model.number="approveInstanceCpu"
-                        type="number"
-                        step="0.5"
-                        min="0.5"
-                        max="32"
-                        class="form-input"
-                      />
-                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                    </div>
-
-                    <div class="form-group flex-1">
-                      <div class="label-with-toggle">
-                        <label class="form-label">RAM на инстанс (МБ)</label>
-                        <label class="toggle-label">
-                          <input type="checkbox" v-model="approveUnlimitedInstanceRam" />
-                          <span>Без огр.</span>
-                        </label>
-                      </div>
-                      <input
-                        v-if="!approveUnlimitedInstanceRam"
-                        v-model.number="approveInstanceRam"
-                        type="number"
-                        step="256"
-                        min="256"
-                        max="32768"
-                        class="form-input"
-                      />
-                      <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Комментарий модератора -->
-                <div class="form-group">
-                  <label class="form-label">Комментарий модератора (необязательно)</label>
-                  <textarea
-                    v-model="approveComment"
-                    rows="2"
-                    class="form-textarea"
-                    placeholder="Например: Выделено на период закрытого тестирования..."
-                  ></textarea>
-                </div>
-              </div>
-
-              <!-- Вкладка: Отклонение -->
-              <div v-else class="reject-server-form">
-                <div class="form-group">
-                  <label class="form-label">Причина отказа для разработчика *</label>
-                  <textarea
-                    v-model="rejectServerReason"
-                    rows="4"
-                    class="form-textarea"
-                    placeholder="Укажите подробную причину отказа или рекомендации по оптимизации..."
-                  ></textarea>
-                </div>
-              </div>
-
-              <div v-if="serverReviewError" class="alert-error">
-                <AlertCircle class="icon-xs" />
-                <span>{{ serverReviewError }}</span>
-              </div>
-            </template>
-
-            <!-- Если заявка уже рассмотрена (Approved / Rejected) -->
-            <template v-else>
-              <div v-if="isApproved(serverReviewTarget.status)" class="resolved-info-card approved-card">
-                <div class="resolved-badge-line">
-                  <CheckCircle2 class="icon-sm text-success" />
-                  <strong>Заявка одобрена</strong>
-                  <span v-if="serverReviewTarget.moderatorId" class="sub-mod">
-                    (Модератор: {{ getUserDisplayName(serverReviewTarget.moderatorId) }})
-                  </span>
-                </div>
-                <div class="resolved-details-grid">
-                  <div>Утверждённая квота: <strong>{{ serverReviewTarget.maxInstances }} инст.</strong></div>
-                  <div>
-                    Лимит ресурсов: <strong>{{ formatCpu(serverReviewTarget.maxTotalCpuMillis, true) }} / {{ formatMemory(serverReviewTarget.maxTotalMemoryMb, true) }}</strong>
-                  </div>
-                  <div v-if="serverReviewTarget.moderatorComment" class="resolved-comment">
-                    Комментарий модератора: «{{ serverReviewTarget.moderatorComment }}»
-                  </div>
-                </div>
-              </div>
-
-              <div v-else-if="isRejected(serverReviewTarget.status)" class="resolved-info-card rejected-card">
-                <div class="resolved-badge-line">
-                  <AlertCircle class="icon-sm text-danger" />
-                  <strong>Заявка отклонена</strong>
-                  <span v-if="serverReviewTarget.moderatorId" class="sub-mod">
-                    (Модератор: {{ getUserDisplayName(serverReviewTarget.moderatorId) }})
-                  </span>
-                </div>
-                <div class="resolved-details-grid">
-                  <div class="resolved-comment text-danger">
-                    Причина отказа: «{{ serverReviewTarget.rejectionReason || 'Отказ' }}»
-                  </div>
-                </div>
-              </div>
-            </template>
-          </div>
-
-          <div class="modal-footer">
-            <template v-if="isPending(serverReviewTarget.status)">
-              <button
-                class="btn-secondary-sm"
-                :disabled="submittingServerReview"
-                @click="serverReviewTarget = null"
-              >
-                Отмена
-              </button>
-              <button
-                v-if="serverDecisionTab === 'approve'"
-                class="btn-primary-sm"
-                :disabled="submittingServerReview || approveServerQuota < 1"
-                @click="submitApproveServer"
-              >
-                <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
-                <Check v-else class="icon-xs" />
-                <span>Подтвердить одобрение</span>
-              </button>
-              <button
-                v-else
-                class="btn-danger-sm"
-                :disabled="submittingServerReview || !rejectServerReason.trim()"
-                @click="submitRejectServer"
-              >
-                <Loader2 v-if="submittingServerReview" class="icon-xs spin" />
-                <X v-else class="icon-xs" />
-                <span>Отклонить заявку</span>
-              </button>
-            </template>
-            <template v-else>
-              <button class="btn-secondary-sm" @click="serverReviewTarget = null">
-                Закрыть
-              </button>
-            </template>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -766,23 +439,6 @@ const hasActiveFilters = computed<boolean>(() => {
     typeFilter.value !== 'all'
   );
 });
-
-// Серверные модальные окна
-const serverReviewTarget = ref<any | null>(null);
-const serverDecisionTab = ref<'approve' | 'reject'>('approve');
-const approveServerQuota = ref<number>(2);
-const approveUnlimitedTotalCpu = ref<boolean>(true);
-const approveTotalCpu = ref<number>(2.0);
-const approveUnlimitedTotalRam = ref<boolean>(true);
-const approveTotalRam = ref<number>(4096);
-const approveUnlimitedInstanceCpu = ref<boolean>(true);
-const approveInstanceCpu = ref<number>(1.0);
-const approveUnlimitedInstanceRam = ref<boolean>(true);
-const approveInstanceRam = ref<number>(1024);
-const approveComment = ref<string>('');
-const rejectServerReason = ref<string>('');
-const submittingServerReview = ref<boolean>(false);
-const serverReviewError = ref<string>('');
 
 async function loadQueue(): Promise<void> {
   loading.value = true;
@@ -979,8 +635,18 @@ function reqStatusClass(status: any): string {
   return 'status-neutral';
 }
 
-function openProject(projectId: string | number): void {
-  router.push(`/moderator/projects/${projectId}`);
+function openProject(projectId: string | number, requestId?: string | number, type?: string): void {
+  if (type === 'server' || requestId) {
+    router.push({
+      path: `/moderator/projects/${projectId}`,
+      query: {
+        ...(requestId ? { requestId: String(requestId) } : {}),
+        ...(type ? { type } : {}),
+      },
+    });
+  } else {
+    router.push(`/moderator/projects/${projectId}`);
+  }
 }
 
 async function claimAndOpen(req: any): Promise<void> {
@@ -988,7 +654,7 @@ async function claimAndOpen(req: any): Promise<void> {
   try {
     await moderationApi.claimRequest(req.id);
     showToast(t('moderation.claimBtn') + ' — успешно', 'success');
-    openProject(req.projectId);
+    openProject(req.projectId, req.id, req.type);
   } catch (err: any) {
     showToast(err.response?.data?.message || t('common.error'), 'danger');
   } finally {
@@ -997,80 +663,7 @@ async function claimAndOpen(req: any): Promise<void> {
 }
 
 function handleRowClick(req: any): void {
-  if (req.type === 'server') {
-    openServerReviewModal(req);
-  } else {
-    openProject(req.projectId);
-  }
-}
-
-function openServerReviewModal(req: any): void {
-  serverReviewTarget.value = req;
-  serverDecisionTab.value = 'approve';
-  approveServerQuota.value = req.maxInstances || 2;
-
-  approveUnlimitedTotalCpu.value = !req.maxTotalCpuMillis || req.maxTotalCpuMillis <= 0;
-  approveTotalCpu.value = req.maxTotalCpuMillis ? req.maxTotalCpuMillis / 1000 : 2.0;
-
-  approveUnlimitedTotalRam.value = !req.maxTotalMemoryMb || req.maxTotalMemoryMb <= 0;
-  approveTotalRam.value = req.maxTotalMemoryMb || 4096;
-
-  approveUnlimitedInstanceCpu.value = !req.maxInstanceCpuMillis || req.maxInstanceCpuMillis <= 0;
-  approveInstanceCpu.value = req.maxInstanceCpuMillis ? req.maxInstanceCpuMillis / 1000 : 1.0;
-
-  approveUnlimitedInstanceRam.value = !req.maxInstanceMemoryMb || req.maxInstanceMemoryMb <= 0;
-  approveInstanceRam.value = req.maxInstanceMemoryMb || 1024;
-
-  approveComment.value = '';
-  rejectServerReason.value = '';
-  serverReviewError.value = '';
-}
-
-async function submitApproveServer(): Promise<void> {
-  if (!serverReviewTarget.value) return;
-  submittingServerReview.value = true;
-  serverReviewError.value = '';
-  try {
-    await moderationApi.reviewServerAccess(serverReviewTarget.value.id, {
-      approved: true,
-      maxInstances: Number(approveServerQuota.value) || 2,
-      maxTotalCpuMillis: approveUnlimitedTotalCpu.value ? 0 : Math.round((Number(approveTotalCpu.value) || 0) * 1000),
-      maxTotalMemoryMb: approveUnlimitedTotalRam.value ? 0 : Number(approveTotalRam.value) || 0,
-      maxInstanceCpuMillis: approveUnlimitedInstanceCpu.value ? 0 : Math.round((Number(approveInstanceCpu.value) || 0) * 1000),
-      maxInstanceMemoryMb: approveUnlimitedInstanceRam.value ? 0 : Number(approveInstanceRam.value) || 0,
-      moderatorComment: approveComment.value.trim(),
-    });
-    showToast('Доступ к серверам успешно одобрен', 'success');
-    serverReviewTarget.value = null;
-    await loadQueue();
-  } catch (err: any) {
-    serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка одобрения';
-  } finally {
-    submittingServerReview.value = false;
-  }
-}
-
-async function submitRejectServer(): Promise<void> {
-  if (!serverReviewTarget.value) return;
-  if (!rejectServerReason.value.trim()) {
-    serverReviewError.value = 'Укажите причину отказа';
-    return;
-  }
-  submittingServerReview.value = true;
-  serverReviewError.value = '';
-  try {
-    await moderationApi.reviewServerAccess(serverReviewTarget.value.id, {
-      approved: false,
-      rejectionReason: rejectServerReason.value.trim(),
-    });
-    showToast('Заявка на доступ отклонена', 'info');
-    serverReviewTarget.value = null;
-    await loadQueue();
-  } catch (err: any) {
-    serverReviewError.value = err.response?.data?.message || err.message || 'Ошибка отклонения';
-  } finally {
-    submittingServerReview.value = false;
-  }
+  openProject(req.projectId, req.id, req.type);
 }
 </script>
 

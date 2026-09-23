@@ -32,7 +32,14 @@
 
             <div class="top-badges-group">
               <span
-                v-if="activeRequest"
+                v-if="activeRequest && isServerRequest"
+                class="badge-chip badge-server"
+              >
+                <Server class="icon-xxs" />
+                <span>Серверы</span>
+              </span>
+              <span
+                v-else-if="activeRequest"
                 class="badge-chip"
                 :class="isUpdateRequest ? 'badge-update' : 'badge-pub'"
               >
@@ -97,9 +104,9 @@
 
         <!-- Правый блок: Кнопка отметки шага + Кнопка чата (обе растянуты на две строки) -->
         <div class="top-actions-cell">
-          <!-- Кнопка явной пометки текущего шага "Проверен" (для шагов 1..4) -->
+          <!-- Кнопка явной пометки текущего шага "Проверен" (для шагов 1..preVerdictStepId) -->
           <button
-            v-if="currentStep <= 4"
+            v-if="currentStep <= preVerdictStepId"
             type="button"
             class="top-verify-btn-tall"
             :class="{ 'is-verified': verifiedSteps[currentStep] }"
@@ -392,28 +399,194 @@
           </div>
         </div>
 
-        <!-- ШАГ 5: РЕШЕНИЕ МОДЕРАТОРА (ОДОБРЕНИЕ / ОТКЛОНЕНИЕ) -->
-        <div v-show="currentStep === 5" class="step-pane step-pane-scrollable">
+        <!-- ШАГ 5 (ДЛЯ СЕРВЕРНЫХ ЗАЯВОК): ЗАПРОС НА МОЩНОСТИ -->
+        <div v-if="isServerRequest" v-show="currentStep === 5" class="step-pane step-pane-scrollable">
           <div class="pane-content-wrapper">
-            <!-- Если заявка уже одобрена или отклонена ранее -->
-            <div v-if="isApproved || isRejected" class="card verdict-result-card">
+            <!-- Заголовок и карточка обоснования -->
+            <div class="card">
               <div class="section-head">
                 <div class="head-title-row">
-                  <CheckCircle2 v-if="isApproved" class="icon-md text-success" />
-                  <XCircle v-else class="icon-md text-danger" />
-                  <h3>{{ isApproved ? 'Проект проверен и одобрен' : 'Проект проверен и отклонен' }}</h3>
+                  <Server class="icon-sm text-warning" />
+                  <h3>Запрос на доступ к серверам платформы</h3>
                 </div>
-                <span class="badge-chip" :class="getStatusBadgeClass(requestStatus)">
-                  {{ getStatusText(requestStatus) }}
-                </span>
               </div>
-              <div v-if="activeRequest?.rejectionReason || activeRequest?.moderatorComment" class="verdict-summary-comment">
-                <p class="summary-label">Комментарий решения:</p>
-                <div class="data-box multiline">
-                  {{ activeRequest?.rejectionReason || activeRequest?.moderatorComment }}
+
+              <!-- Обоснование разработчика -->
+              <div class="server-reason-quote-box">
+                <div class="server-reason-label">Обоснование разработчика:</div>
+                <p class="server-reason-text">
+                  «{{ activeRequest?.reason || 'Запрос доступа к мощностям платформы' }}»
+                </p>
+              </div>
+
+              <!-- Запрошенные ресурсы -->
+              <div class="resource-metrics-grid">
+                <div class="metric-card">
+                  <div class="metric-icon-wrap">
+                    <Server class="icon-sm text-primary" />
+                  </div>
+                  <div class="metric-content">
+                    <span class="metric-label">Серверов (инстансов)</span>
+                    <strong class="metric-val">{{ activeRequest?.maxInstances ?? 2 }} шт.</strong>
+                  </div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-icon-wrap">
+                    <Cpu class="icon-sm text-info" />
+                  </div>
+                  <div class="metric-content">
+                    <span class="metric-label">Всего CPU</span>
+                    <strong class="metric-val">{{ formatCpu(activeRequest?.maxTotalCpuMillis) }}</strong>
+                  </div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-icon-wrap">
+                    <HardDrive class="icon-sm text-success" />
+                  </div>
+                  <div class="metric-content">
+                    <span class="metric-label">Всего RAM</span>
+                    <strong class="metric-val">{{ formatMemory(activeRequest?.maxTotalMemoryMb) }}</strong>
+                  </div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-icon-wrap">
+                    <Sliders class="icon-sm text-warning" />
+                  </div>
+                  <div class="metric-content">
+                    <span class="metric-label">На один инстанс</span>
+                    <strong class="metric-val">
+                      {{ formatCpu(activeRequest?.maxInstanceCpuMillis) }} / {{ formatMemory(activeRequest?.maxInstanceMemoryMb) }}
+                    </strong>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Список серверных сборок игры -->
+            <div class="card">
+              <div class="section-head">
+                <div class="head-title-row">
+                  <HardDrive class="icon-sm text-primary" />
+                  <h3>Серверные сборки игры</h3>
+                </div>
+                <span class="badge-chip badge-neutral">{{ serverBuilds.length }} сборок</span>
+              </div>
+
+              <div v-if="serverBuildsLoading" class="server-builds-loading">
+                <div class="spinner-sm"></div>
+                <span>Загрузка серверных сборок...</span>
+              </div>
+
+              <div v-else-if="serverBuilds.length === 0" class="empty-server-builds">
+                <p>Серверные сборки пока не загружены разработчиком.</p>
+              </div>
+
+              <div v-else class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Версия</th>
+                      <th>Образ / Тег</th>
+                      <th>Порт</th>
+                      <th>Игроки</th>
+                      <th>Размер</th>
+                      <th>Загружена</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="b in serverBuilds" :key="b.id || b.version || b.build_version">
+                      <td>
+                        <strong>{{ b.version || b.build_version || '—' }}</strong>
+                      </td>
+                      <td>
+                        <span class="font-mono text-xs">{{ b.image ? (b.image + (b.image_tag ? ':' + b.image_tag : '')) : '—' }}</span>
+                      </td>
+                      <td>{{ b.internal_port || b.port || '—' }}</td>
+                      <td>{{ b.max_players || '—' }}</td>
+                      <td>{{ b.file_size_bytes || b.size_bytes ? formatSize(b.file_size_bytes || b.size_bytes) : '—' }}</td>
+                      <td>{{ b.created_at ? formatDateTime(b.created_at) : '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ШАГ ВЕРДИКТА: РЕШЕНИЕ МОДЕРАТОРА -->
+        <div v-show="currentStep === verdictStepId" class="step-pane step-pane-scrollable">
+          <div class="pane-content-wrapper">
+            <!-- Если заявка уже одобрена или отклонена ранее -->
+            <template v-if="isApproved || isRejected">
+              <!-- Завершенная заявка на серверы -->
+              <div v-if="isServerRequest" class="card verdict-result-card">
+                <div class="section-head">
+                  <div class="head-title-row">
+                    <CheckCircle2 v-if="isApproved" class="icon-md text-success" />
+                    <XCircle v-else class="icon-md text-danger" />
+                    <h3>{{ isApproved ? 'Заявка на мощности серверов одобрена' : 'Заявка на мощности серверов отклонена' }}</h3>
+                  </div>
+                  <span class="badge-chip" :class="getStatusBadgeClass(requestStatus)">
+                    {{ getStatusText(requestStatus) }}
+                  </span>
+                </div>
+
+                <div v-if="isApproved" class="resolved-server-details">
+                  <div class="resolved-server-row">
+                    <span class="resolved-label">Утверждённая квота инстансов:</span>
+                    <span class="resolved-val font-bold">{{ activeRequest?.maxInstances }} шт.</span>
+                  </div>
+                  <div class="resolved-server-row">
+                    <span class="resolved-label">Суммарные лимиты:</span>
+                    <span class="resolved-val">
+                      {{ formatCpu(activeRequest?.maxTotalCpuMillis, true) }} CPU / {{ formatMemory(activeRequest?.maxTotalMemoryMb, true) }} RAM
+                    </span>
+                  </div>
+                  <div class="resolved-server-row">
+                    <span class="resolved-label">Лимиты на 1 инстанс:</span>
+                    <span class="resolved-val">
+                      {{ formatCpu(activeRequest?.maxInstanceCpuMillis, true) }} CPU / {{ formatMemory(activeRequest?.maxInstanceMemoryMb, true) }} RAM
+                    </span>
+                  </div>
+                  <div v-if="activeRequest?.moderatorComment" class="verdict-summary-comment mt-12">
+                    <p class="summary-label">Комментарий модератора:</p>
+                    <div class="data-box multiline">
+                      {{ activeRequest.moderatorComment }}
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="rejection-box mt-12">
+                  <p class="summary-label text-danger">Причина отказа разработчику:</p>
+                  <div class="data-box multiline rejection-text">
+                    {{ activeRequest?.rejectionReason || 'Отказ' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Завершенная заявка на публикацию проекта -->
+              <div v-else class="card verdict-result-card">
+                <div class="section-head">
+                  <div class="head-title-row">
+                    <CheckCircle2 v-if="isApproved" class="icon-md text-success" />
+                    <XCircle v-else class="icon-md text-danger" />
+                    <h3>{{ isApproved ? 'Проект проверен и одобрен' : 'Проект проверен и отклонен' }}</h3>
+                  </div>
+                  <span class="badge-chip" :class="getStatusBadgeClass(requestStatus)">
+                    {{ getStatusText(requestStatus) }}
+                  </span>
+                </div>
+                <div v-if="activeRequest?.rejectionReason || activeRequest?.moderatorComment" class="verdict-summary-comment">
+                  <p class="summary-label">Комментарий решения:</p>
+                  <div class="data-box multiline">
+                    {{ activeRequest?.rejectionReason || activeRequest?.moderatorComment }}
+                  </div>
+                </div>
+              </div>
+            </template>
 
             <!-- Если заявка в статусе Pending (еще не взята в работу) -->
             <div v-else-if="isPending" class="card verdict-pending-card">
@@ -435,8 +608,198 @@
 
             <!-- Если заявка In Review: Активное вынесение вердикта -->
             <template v-else>
-              <!-- РЕЖИМ 1: ОДОБРЕНИЕ -->
-              <div v-if="verdictMode === 'approve'" class="card approve-flow-card">
+              <!-- СЕРВЕРНАЯ ЗАЯВКА: РЕЖИМЫ ОДОБРЕНИЯ И ОТКЛОНЕНИЯ -->
+              <template v-if="isServerRequest">
+                <!-- РЕЖИМ 1: ОДОБРЕНИЕ СЕРВЕРНОЙ ЗАЯВКИ (ВЫДЕЛЕНИЕ КВОТ) -->
+                <div v-if="verdictMode === 'approve'" class="card approve-flow-card">
+                  <div class="section-head">
+                    <div class="head-title-row">
+                      <CheckCircle2 class="icon-sm text-success" />
+                      <h3>Одобрение выделения мощностей серверов</h3>
+                    </div>
+                  </div>
+
+                  <div class="approve-banner">
+                    <p>
+                      Укажите утвержденное количество одновременно работающих серверов и лимиты ресурсов для проекта.
+                    </p>
+                  </div>
+
+                  <div class="form-group mb-16">
+                    <label class="form-label">Утверждённое число серверов (инстансов) *</label>
+                    <input
+                      v-model.number="approveServerQuota"
+                      type="number"
+                      min="1"
+                      max="50"
+                      class="form-input"
+                    />
+                    <span class="field-hint">Максимум одновременно работающих серверов на мощностях платформы</span>
+                  </div>
+
+                  <!-- Суммарные ресурсы проекта -->
+                  <div class="quota-group-card">
+                    <h4 class="quota-group-title">Суммарный лимит на весь проект</h4>
+                    <div class="quota-inputs-row">
+                      <div class="form-group flex-1">
+                        <div class="label-with-toggle">
+                          <label class="form-label">Всего CPU (ядер)</label>
+                          <label class="toggle-label">
+                            <input type="checkbox" v-model="approveUnlimitedTotalCpu" />
+                            <span>Без огр.</span>
+                          </label>
+                        </div>
+                        <input
+                          v-if="!approveUnlimitedTotalCpu"
+                          v-model.number="approveTotalCpu"
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="64"
+                          class="form-input"
+                        />
+                        <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                      </div>
+
+                      <div class="form-group flex-1">
+                        <div class="label-with-toggle">
+                          <label class="form-label">Всего RAM (МБ)</label>
+                          <label class="toggle-label">
+                            <input type="checkbox" v-model="approveUnlimitedTotalRam" />
+                            <span>Без огр.</span>
+                          </label>
+                        </div>
+                        <input
+                          v-if="!approveUnlimitedTotalRam"
+                          v-model.number="approveTotalRam"
+                          type="number"
+                          step="256"
+                          min="256"
+                          max="131072"
+                          class="form-input"
+                        />
+                        <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Лимиты на 1 инстанс -->
+                  <div class="quota-group-card">
+                    <h4 class="quota-group-title">Лимит на 1 отдельный инстанс (сервер)</h4>
+                    <div class="quota-inputs-row">
+                      <div class="form-group flex-1">
+                        <div class="label-with-toggle">
+                          <label class="form-label">CPU на инстанс</label>
+                          <label class="toggle-label">
+                            <input type="checkbox" v-model="approveUnlimitedInstanceCpu" />
+                            <span>Без огр.</span>
+                          </label>
+                        </div>
+                        <input
+                          v-if="!approveUnlimitedInstanceCpu"
+                          v-model.number="approveInstanceCpu"
+                          type="number"
+                          step="0.5"
+                          min="0.5"
+                          max="32"
+                          class="form-input"
+                        />
+                        <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                      </div>
+
+                      <div class="form-group flex-1">
+                        <div class="label-with-toggle">
+                          <label class="form-label">RAM на инстанс (МБ)</label>
+                          <label class="toggle-label">
+                            <input type="checkbox" v-model="approveUnlimitedInstanceRam" />
+                            <span>Без огр.</span>
+                          </label>
+                        </div>
+                        <input
+                          v-if="!approveUnlimitedInstanceRam"
+                          v-model.number="approveInstanceRam"
+                          type="number"
+                          step="256"
+                          min="256"
+                          max="32768"
+                          class="form-input"
+                        />
+                        <div v-else class="unlimited-placeholder">∞ Без ограничений</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Комментарий модератора -->
+                  <div class="form-group">
+                    <label class="form-label">Комментарий модератора (необязательно):</label>
+                    <textarea
+                      v-model="approveComment"
+                      class="form-textarea"
+                      rows="3"
+                      placeholder="Например: Квоты выделены на период закрытого бета-тестирования."
+                      @input="saveToStorage"
+                    ></textarea>
+                  </div>
+
+                  <div class="verdict-card-actions">
+                    <button
+                      type="button"
+                      class="btn-submit-approve"
+                      :disabled="actionLoading || approveServerQuota < 1"
+                      @click="handleApproveServer"
+                    >
+                      <Loader2 v-if="actionLoading" class="icon-xs spin" />
+                      <CheckCircle2 v-else class="icon-xs" />
+                      <span>{{ actionLoading ? 'Одобрение...' : '✓ Подтвердить одобрение и выделить мощности' }}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- РЕЖИМ 2: ОТКЛОНЕНИЕ СЕРВЕРНОЙ ЗАЯВКИ -->
+                <div v-else-if="verdictMode === 'reject'" class="card reject-flow-container">
+                  <div class="section-head">
+                    <div class="head-title-row">
+                      <XCircle class="icon-sm text-danger" />
+                      <h3>Отклонение заявки на мощности серверов</h3>
+                    </div>
+                  </div>
+
+                  <div class="reject-prompt-banner">
+                    <p>
+                      Укажите причину отказа или рекомендации разработчику по оптимизации сетевой части игры.
+                    </p>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Причина отказа для разработчика *:</label>
+                    <textarea
+                      v-model="rejectServerReason"
+                      class="form-textarea"
+                      rows="5"
+                      placeholder="Укажите подробную причину отказа или рекомендации по оптимизации сервера..."
+                      @input="saveToStorage"
+                    ></textarea>
+                  </div>
+
+                  <div class="verdict-card-actions">
+                    <button
+                      type="button"
+                      class="btn-submit-reject"
+                      :disabled="actionLoading || !rejectServerReason.trim()"
+                      @click="handleRejectServer"
+                    >
+                      <Loader2 v-if="actionLoading" class="icon-xs spin" />
+                      <XCircle v-else class="icon-xs" />
+                      <span>{{ actionLoading ? 'Отклонение...' : '✕ Отклонить заявку на мощности' }}</span>
+                    </button>
+                  </div>
+                </div>
+              </template>
+
+              <!-- ОБЫЧНАЯ ЗАЯВКА НА ПУБЛИКАЦИЮ ПРОЕКТА -->
+              <template v-else>
+                <!-- РЕЖИМ 1: ОДОБРЕНИЕ -->
+                <div v-if="verdictMode === 'approve'" class="card approve-flow-card">
                 <div class="section-head">
                   <div class="head-title-row">
                     <CheckCircle2 class="icon-sm text-success" />
@@ -670,6 +1033,7 @@
                 </div>
               </div>
             </template>
+          </template>
           </div>
         </div>
       </div>
@@ -720,9 +1084,9 @@
         <!-- Правая часть: действия перехода / решения -->
         <div class="nav-right">
 
-          <!-- Шаги 1-3: Кнопка "Далее" -->
+          <!-- Шаги до предвердиктного: Кнопка "Далее" -->
           <button
-            v-if="currentStep < 4"
+            v-if="currentStep < preVerdictStepId"
             type="button"
             class="btn-nav btn-primary"
             @click="nextStep"
@@ -731,8 +1095,8 @@
             <ChevronRight class="icon-sm" />
           </button>
 
-          <!-- Шаг 4 (Песочница): Выбор решения "Одобрить" / "Отклонить" -> переход на Шаг 5 -->
-          <template v-else-if="currentStep === 4">
+          <!-- Предвердиктный шаг: Выбор решения "Одобрить" / "Отклонить" -> переход на шаг вердикта -->
+          <template v-else-if="currentStep === preVerdictStepId">
             <!-- Если Pending -->
             <button
               v-if="isPending"
@@ -745,7 +1109,7 @@
               <span>{{ t('moderation.claimBtn') }}</span>
             </button>
 
-            <!-- Если In Review: Кнопки Одобрить и Отклонить (ведут на шаг 5) -->
+            <!-- Если In Review: Кнопки Одобрить и Отклонить (ведут на шаг вердикта) -->
             <div v-else-if="isInReview" class="step-verdict-actions">
               <button
                 type="button"
@@ -773,22 +1137,22 @@
               v-else
               type="button"
               class="btn-nav btn-secondary"
-              @click="goToStep(5)"
+              @click="goToStep(verdictStepId)"
             >
               <span>К решению</span>
               <ChevronRight class="icon-sm" />
             </button>
           </template>
 
-          <!-- Шаг 5: Быстрые действия в футере (дублирование кнопок подтверждения) -->
-          <template v-else-if="currentStep === 5">
+          <!-- Шаг вердикта: Быстрые действия в футере (дублирование кнопок подтверждения) -->
+          <template v-else-if="currentStep === verdictStepId">
             <template v-if="isInReview">
               <button
                 v-if="verdictMode === 'approve'"
                 type="button"
                 class="btn-verdict btn-approve-action"
-                :disabled="actionLoading"
-                @click="handleApprove"
+                :disabled="actionLoading || (isServerRequest && approveServerQuota < 1)"
+                @click="isServerRequest ? handleApproveServer() : handleApprove()"
               >
                 <Loader2 v-if="actionLoading" class="icon-xs spin" />
                 <CheckCircle2 v-else class="icon-xs" />
@@ -799,8 +1163,8 @@
                 v-else
                 type="button"
                 class="btn-verdict btn-reject-action"
-                :disabled="!canSubmitReject || actionLoading"
-                @click="handleReject"
+                :disabled="actionLoading || (isServerRequest ? !rejectServerReason.trim() : !canSubmitReject)"
+                @click="isServerRequest ? handleRejectServer() : handleReject()"
               >
                 <Loader2 v-if="actionLoading" class="icon-xs spin" />
                 <XCircle v-else class="icon-xs" />
@@ -886,6 +1250,10 @@ import {
   User,
   Calendar,
   Circle,
+  Server,
+  Cpu,
+  HardDrive,
+  Sliders,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -893,13 +1261,17 @@ import {
   getStatusText,
   getStatusBadgeClass,
   REQUEST_STATUS,
+  REQUEST_TYPE,
   formatDateTime,
+  formatCpu,
+  formatMemory,
   ProjectChat,
   MediaLightboxModal,
   RuleSearchSelect,
 } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
 import { useAuth, getUserDisplayName } from '@/entities/user';
+import { listServerBuilds } from '@/entities/build';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
 import { showToast } from '@/shared/lib';
 
@@ -923,22 +1295,55 @@ const isAdmin = computed<boolean>(() => {
 
 const projectId = computed<string>(() => String(route.params.projectId));
 
-// Определение 5 шагов модерации
-const steps = [
-  { id: 1, title: 'Информация', fullTitle: 'Основная информация' },
-  { id: 2, title: 'Медиа', fullTitle: 'Медиа и материалы' },
-  { id: 3, title: 'Товары', fullTitle: 'Внутриигровые товары' },
-  { id: 4, title: 'Песочница', fullTitle: 'Песочница игры' },
-  { id: 5, title: 'Решение', fullTitle: 'Решение' },
-];
+const activeRequest = ref<any | null>(null);
+const projectData = ref<any | null>(null);
+const fullProject = ref<any | null>(null);
+const loading = ref<boolean>(true);
+const actionLoading = ref<boolean>(false);
+const noRequestMode = ref<boolean>(false);
 
-// Состояние пошаговой навигации (1..5)
+const isServerRequest = computed<boolean>(() => {
+  if (route.query.type === 'server' || route.query.type === 'server_access') return true;
+  const tr = activeRequest.value?.type ?? (activeRequest.value as any)?.request_type;
+  return (
+    Number(tr) === REQUEST_TYPE.SERVER_ACCESS ||
+    tr === 'REQUEST_TYPE_SERVER_ACCESS' ||
+    tr === 'server_access' ||
+    tr === 'server'
+  );
+});
+
+// Определение шагов модерации (5 шагов для проекта, 6 шагов для запроса мощностей серверов)
+const steps = computed(() => {
+  if (isServerRequest.value) {
+    return [
+      { id: 1, title: 'Информация', fullTitle: 'Основная информация' },
+      { id: 2, title: 'Медиа', fullTitle: 'Медиа и материалы' },
+      { id: 3, title: 'Товары', fullTitle: 'Внутриигровые товары' },
+      { id: 4, title: 'Песочница', fullTitle: 'Песочница игры' },
+      { id: 5, title: 'Мощности', fullTitle: 'Запрос на мощности' },
+      { id: 6, title: 'Решение', fullTitle: 'Решение по мощностям' },
+    ];
+  }
+  return [
+    { id: 1, title: 'Информация', fullTitle: 'Основная информация' },
+    { id: 2, title: 'Медиа', fullTitle: 'Медиа и материалы' },
+    { id: 3, title: 'Товары', fullTitle: 'Внутриигровые товары' },
+    { id: 4, title: 'Песочница', fullTitle: 'Песочница игры' },
+    { id: 5, title: 'Решение', fullTitle: 'Решение' },
+  ];
+});
+
+const preVerdictStepId = computed<number>(() => steps.value.length - 1);
+const verdictStepId = computed<number>(() => steps.value.length);
+
+// Состояние пошаговой навигации
 const currentStep = ref<number>(1);
 
 // Независимый учёт проверенности шагов (шаг не сбрасывается при переходе назад)
 const verifiedSteps = ref<Record<number, boolean>>({});
 
-// Состояние формы вердикта (Шаг 5)
+// Состояние формы вердикта
 const verdictMode = ref<'approve' | 'reject'>('approve');
 const approveComment = ref<string>('Проект проверен и одобрен к публикации.');
 const violations = ref<ViolationItem[]>([
@@ -951,6 +1356,22 @@ const violations = ref<ViolationItem[]>([
   },
 ]);
 const generalComment = ref<string>('');
+
+// Состояние вердикта по мощностям серверов
+const approveServerQuota = ref<number>(2);
+const approveUnlimitedTotalCpu = ref<boolean>(true);
+const approveTotalCpu = ref<number>(2.0);
+const approveUnlimitedTotalRam = ref<boolean>(true);
+const approveTotalRam = ref<number>(4096);
+const approveUnlimitedInstanceCpu = ref<boolean>(true);
+const approveInstanceCpu = ref<number>(1.0);
+const approveUnlimitedInstanceRam = ref<boolean>(true);
+const approveInstanceRam = ref<number>(1024);
+const rejectServerReason = ref<string>('');
+
+// Серверные сборки
+const serverBuilds = ref<any[]>([]);
+const serverBuildsLoading = ref<boolean>(false);
 
 // Состояние чата
 const isChatOpen = ref<boolean>(true);
@@ -967,13 +1388,6 @@ function openLightbox(src: string, fileName?: string): void {
     downloadUrl: src,
   };
 }
-
-const activeRequest = ref<any | null>(null);
-const projectData = ref<any | null>(null);
-const fullProject = ref<any | null>(null);
-const loading = ref<boolean>(true);
-const actionLoading = ref<boolean>(false);
-const noRequestMode = ref<boolean>(false);
 
 const isUpdateRequest = computed<boolean>(() => {
   const tr = activeRequest.value?.type ?? (activeRequest.value as any)?.request_type;
@@ -1095,7 +1509,7 @@ function toggleStepVerified(stepId: number): void {
 }
 
 function nextStep(): void {
-  if (currentStep.value < 5) {
+  if (currentStep.value < verdictStepId.value) {
     currentStep.value++;
     syncStepState();
   }
@@ -1109,7 +1523,7 @@ function prevStep(): void {
 }
 
 function goToStep(step: number): void {
-  if (step >= 1 && step <= 5) {
+  if (step >= 1 && step <= verdictStepId.value) {
     currentStep.value = step;
     syncStepState();
   }
@@ -1117,7 +1531,7 @@ function goToStep(step: number): void {
 
 function openVerdict(mode: 'approve' | 'reject'): void {
   verdictMode.value = mode;
-  currentStep.value = 5;
+  currentStep.value = verdictStepId.value;
   syncStepState();
 }
 
@@ -1235,6 +1649,8 @@ function saveToStorage(): void {
       JSON.stringify({
         verdictMode: verdictMode.value,
         approveComment: approveComment.value,
+        rejectServerReason: rejectServerReason.value,
+        approveServerQuota: approveServerQuota.value,
         violations: violations.value.map((v) => ({ ...v, uploading: false })),
         generalComment: generalComment.value,
       })
@@ -1264,6 +1680,12 @@ function loadFromStorage(): void {
       if (typeof parsed.approveComment === 'string') {
         approveComment.value = parsed.approveComment;
       }
+      if (typeof parsed.rejectServerReason === 'string') {
+        rejectServerReason.value = parsed.rejectServerReason;
+      }
+      if (typeof parsed.approveServerQuota === 'number') {
+        approveServerQuota.value = parsed.approveServerQuota;
+      }
       if (Array.isArray(parsed.violations) && parsed.violations.length > 0) {
         violations.value = parsed.violations;
       }
@@ -1279,11 +1701,12 @@ function loadFromStorage(): void {
       verdictMode.value = urlVerdict;
     }
 
-    if (urlStep >= 1 && urlStep <= 5) {
+    const maxStep = verdictStepId.value;
+    if (urlStep >= 1 && urlStep <= maxStep) {
       currentStep.value = urlStep;
     } else {
       const savedStep = Number(localStorage.getItem(keys.step));
-      if (savedStep >= 1 && savedStep <= 5) {
+      if (savedStep >= 1 && savedStep <= maxStep) {
         currentStep.value = savedStep;
       }
     }
@@ -1309,7 +1732,7 @@ function syncStepState(): void {
     query: {
       ...route.query,
       step: String(currentStep.value),
-      verdict: currentStep.value === 5 ? verdictMode.value : undefined,
+      verdict: currentStep.value === verdictStepId.value ? verdictMode.value : undefined,
     },
   });
 }
@@ -1318,7 +1741,7 @@ watch(
   () => route.query.step,
   (newStep) => {
     const s = Number(newStep);
-    if (s >= 1 && s <= 5 && s !== currentStep.value) {
+    if (s >= 1 && s <= verdictStepId.value && s !== currentStep.value) {
       currentStep.value = s;
     }
   }
@@ -1333,19 +1756,81 @@ watch(
   }
 );
 
+function initServerQuotaFields(req: any): void {
+  if (!req) return;
+  approveServerQuota.value = req.maxInstances || req.max_instances || 2;
+
+  const totalCpuMillis = req.maxTotalCpuMillis ?? req.max_total_cpu_millis;
+  approveUnlimitedTotalCpu.value = !totalCpuMillis || totalCpuMillis <= 0;
+  approveTotalCpu.value = totalCpuMillis && totalCpuMillis > 0 ? totalCpuMillis / 1000 : 2.0;
+
+  const totalRamMb = req.maxTotalMemoryMb ?? req.max_total_memory_mb;
+  approveUnlimitedTotalRam.value = !totalRamMb || totalRamMb <= 0;
+  approveTotalRam.value = totalRamMb && totalRamMb > 0 ? totalRamMb : 4096;
+
+  const instCpuMillis = req.maxInstanceCpuMillis ?? req.max_instance_cpu_millis;
+  approveUnlimitedInstanceCpu.value = !instCpuMillis || instCpuMillis <= 0;
+  approveInstanceCpu.value = instCpuMillis && instCpuMillis > 0 ? instCpuMillis / 1000 : 1.0;
+
+  const instRamMb = req.maxInstanceMemoryMb ?? req.max_instance_memory_mb;
+  approveUnlimitedInstanceRam.value = !instRamMb || instRamMb <= 0;
+  approveInstanceRam.value = instRamMb && instRamMb > 0 ? instRamMb : 1024;
+
+  if (req.moderatorComment || req.moderator_comment) {
+    approveComment.value = req.moderatorComment || req.moderator_comment;
+  }
+  if (req.rejectionReason || req.rejection_reason) {
+    rejectServerReason.value = req.rejectionReason || req.rejection_reason;
+  }
+}
+
+async function fetchServerBuilds(): Promise<void> {
+  serverBuildsLoading.value = true;
+  try {
+    const list = await listServerBuilds(projectId.value);
+    serverBuilds.value = list || [];
+  } catch (err) {
+    console.warn('Failed to load server builds:', err);
+    serverBuilds.value = [];
+  } finally {
+    serverBuildsLoading.value = false;
+  }
+}
+
 async function loadProjectInfo(): Promise<void> {
   loading.value = true;
   noRequestMode.value = false;
   try {
-    const data = await moderationApi.getLatestByProject(projectId.value);
+    const qRequestId = route.query.requestId ? String(route.query.requestId) : '';
+    const isServerQuery = route.query.type === 'server' || route.query.type === 'server_access';
+
+    let data: any = null;
+    if (qRequestId) {
+      data = await moderationApi.getRequest(qRequestId);
+    } else if (isServerQuery) {
+      data = await moderationApi.getServerAccess(projectId.value);
+    } else {
+      data = await moderationApi.getLatestByProject(projectId.value);
+    }
+
     if (data && data.request) {
       activeRequest.value = data.request;
       projectData.value = {
         ...(data.request.snapshot || {}),
         isOnline: Boolean(data.request.snapshot?.isOnline ?? data.request.snapshot?.is_online),
       };
+      if (isServerRequest.value) {
+        initServerQuotaFields(data.request);
+      }
       try {
         fullProject.value = await getProject(projectId.value);
+        if (!projectData.value.titleRu && fullProject.value) {
+          projectData.value = {
+            ...fullProject.value,
+            ...projectData.value,
+            isOnline: Boolean(fullProject.value.is_online ?? projectData.value.isOnline),
+          };
+        }
       } catch {
         // non-critical
       }
@@ -1354,6 +1839,7 @@ async function loadProjectInfo(): Promise<void> {
       activeRequest.value = null;
       try {
         const p = await getProject(projectId.value);
+        fullProject.value = p;
         projectData.value = {
           titleRu: p.title_ru,
           titleEn: p.title_en,
@@ -1375,12 +1861,63 @@ async function loadProjectInfo(): Promise<void> {
         router.push('/moderator/queue');
       }
     }
+
+    if (isServerRequest.value) {
+      fetchServerBuilds();
+    }
   } catch (err) {
     console.error('Failed to load project request:', err);
     showToast('Не удалось загрузить данные проекта', 'danger');
   } finally {
     loading.value = false;
     loadFromStorage();
+  }
+}
+
+async function handleApproveServer(): Promise<void> {
+  if (!activeRequest.value) return;
+  actionLoading.value = true;
+  try {
+    await moderationApi.reviewServerAccess(activeRequest.value.id, {
+      approved: true,
+      maxInstances: Number(approveServerQuota.value) || 2,
+      maxTotalCpuMillis: approveUnlimitedTotalCpu.value ? 0 : Math.round((Number(approveTotalCpu.value) || 0) * 1000),
+      maxTotalMemoryMb: approveUnlimitedTotalRam.value ? 0 : Number(approveTotalRam.value) || 0,
+      maxInstanceCpuMillis: approveUnlimitedInstanceCpu.value ? 0 : Math.round((Number(approveInstanceCpu.value) || 0) * 1000),
+      maxInstanceMemoryMb: approveUnlimitedInstanceRam.value ? 0 : Number(approveInstanceRam.value) || 0,
+      moderatorComment: approveComment.value.trim(),
+    });
+    showToast('Доступ к серверам успешно одобрен', 'success');
+    clearDraftStorage();
+    await loadProjectInfo();
+  } catch (err: any) {
+    const msg = err.response?.data?.message || err.message || 'Ошибка одобрения';
+    showToast(msg, 'danger');
+  } finally {
+    actionLoading.value = false;
+  }
+}
+
+async function handleRejectServer(): Promise<void> {
+  if (!activeRequest.value) return;
+  if (!rejectServerReason.value.trim()) {
+    showToast('Укажите причину отказа', 'warning');
+    return;
+  }
+  actionLoading.value = true;
+  try {
+    await moderationApi.reviewServerAccess(activeRequest.value.id, {
+      approved: false,
+      rejectionReason: rejectServerReason.value.trim(),
+    });
+    showToast('Заявка на доступ к серверам отклонена', 'info');
+    clearDraftStorage();
+    await loadProjectInfo();
+  } catch (err: any) {
+    const msg = err.response?.data?.message || err.message || 'Ошибка отклонения';
+    showToast(msg, 'danger');
+  } finally {
+    actionLoading.value = false;
   }
 }
 
@@ -2915,5 +3452,218 @@ onMounted(() => {
   margin: 0 0 6px;
   font-size: 12px;
   color: var(--text-tertiary);
+}
+
+/* Стилизация заявки на серверные мощности */
+.badge-server {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.server-reason-quote-box {
+  background: var(--bg-secondary);
+  border-left: 3px solid #f59e0b;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm, 6px);
+  margin-bottom: 20px;
+}
+
+.server-reason-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.server-reason-text {
+  font-size: 14px;
+  color: var(--text-main);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.resource-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+}
+
+.metric-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+}
+
+.metric-val {
+  font-size: 14px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.server-builds-loading,
+.empty-server-builds {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-tertiary);
+  font-size: 13.5px;
+}
+
+.quota-group-card {
+  background: var(--bg-secondary, #0d1117);
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.quota-group-title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, #8b949e);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quota-inputs-row {
+  display: flex;
+  gap: 16px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.label-with-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.label-with-toggle .form-label {
+  margin-bottom: 0 !important;
+}
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-tertiary, #8b949e);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input {
+  cursor: pointer;
+}
+
+.unlimited-placeholder {
+  padding: 8px 12px;
+  background: var(--bg-card, #161b22);
+  border: 1px dashed var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 12.5px;
+  color: var(--text-tertiary, #8b949e);
+  text-align: center;
+}
+
+.reject-prompt-banner {
+  background: rgba(248, 81, 73, 0.08);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.reject-prompt-banner p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.resolved-server-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.resolved-server-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+}
+
+.resolved-label {
+  color: var(--text-tertiary);
+}
+
+.resolved-val {
+  color: var(--text-main);
+}
+
+.rejection-box {
+  margin-top: 16px;
+}
+
+.rejection-text {
+  color: #f85149;
+  border-color: rgba(248, 81, 73, 0.3);
 }
 </style>
