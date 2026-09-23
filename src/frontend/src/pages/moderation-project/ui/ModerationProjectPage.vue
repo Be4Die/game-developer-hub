@@ -464,55 +464,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Список серверных сборок игры -->
-            <div class="card">
-              <div class="section-head">
-                <div class="head-title-row">
-                  <HardDrive class="icon-sm text-primary" />
-                  <h3>Серверные сборки игры</h3>
-                </div>
-                <span class="badge-chip badge-neutral">{{ serverBuilds.length }} сборок</span>
-              </div>
-
-              <div v-if="serverBuildsLoading" class="server-builds-loading">
-                <div class="spinner-sm"></div>
-                <span>Загрузка серверных сборок...</span>
-              </div>
-
-              <div v-else-if="serverBuilds.length === 0" class="empty-server-builds">
-                <p>Серверные сборки пока не загружены разработчиком.</p>
-              </div>
-
-              <div v-else class="table-responsive">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Версия</th>
-                      <th>Образ / Тег</th>
-                      <th>Порт</th>
-                      <th>Игроки</th>
-                      <th>Размер</th>
-                      <th>Загружена</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="b in serverBuilds" :key="b.id || b.version || b.build_version">
-                      <td>
-                        <strong>{{ b.version || b.build_version || '—' }}</strong>
-                      </td>
-                      <td>
-                        <span class="font-mono text-xs">{{ b.image ? (b.image + (b.image_tag ? ':' + b.image_tag : '')) : '—' }}</span>
-                      </td>
-                      <td>{{ b.internal_port || b.port || '—' }}</td>
-                      <td>{{ b.max_players || '—' }}</td>
-                      <td>{{ b.file_size_bytes || b.size_bytes ? formatSize(b.file_size_bytes || b.size_bytes) : '—' }}</td>
-                      <td>{{ b.created_at ? formatDateTime(b.created_at) : '—' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1271,7 +1222,6 @@ import {
 } from '@/entities/moderation';
 import { getProject, getMediaUrl } from '@/entities/project';
 import { useAuth, getUserDisplayName } from '@/entities/user';
-import { listServerBuilds } from '@/entities/build';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
 import { showToast } from '@/shared/lib';
 
@@ -1368,10 +1318,6 @@ const approveInstanceCpu = ref<number>(1.0);
 const approveUnlimitedInstanceRam = ref<boolean>(true);
 const approveInstanceRam = ref<number>(1024);
 const rejectServerReason = ref<string>('');
-
-// Серверные сборки
-const serverBuilds = ref<any[]>([]);
-const serverBuildsLoading = ref<boolean>(false);
 
 // Состояние чата
 const isChatOpen = ref<boolean>(true);
@@ -1784,19 +1730,6 @@ function initServerQuotaFields(req: any): void {
   }
 }
 
-async function fetchServerBuilds(): Promise<void> {
-  serverBuildsLoading.value = true;
-  try {
-    const list = await listServerBuilds(projectId.value);
-    serverBuilds.value = list || [];
-  } catch (err) {
-    console.warn('Failed to load server builds:', err);
-    serverBuilds.value = [];
-  } finally {
-    serverBuildsLoading.value = false;
-  }
-}
-
 async function loadProjectInfo(): Promise<void> {
   loading.value = true;
   noRequestMode.value = false;
@@ -1860,10 +1793,6 @@ async function loadProjectInfo(): Promise<void> {
         showToast('Проект не найден', 'warning');
         router.push('/moderator/queue');
       }
-    }
-
-    if (isServerRequest.value) {
-      fetchServerBuilds();
     }
   } catch (err) {
     console.error('Failed to load project request:', err);
@@ -3536,17 +3465,6 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.server-builds-loading,
-.empty-server-builds {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 32px 16px;
-  color: var(--text-tertiary);
-  font-size: 13.5px;
 }
 
 .quota-group-card {
