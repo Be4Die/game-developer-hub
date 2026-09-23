@@ -18,7 +18,6 @@ import { ModerationQueuePage } from '@/pages/moderation-queue';
 import { ModeratorChatsPage } from '@/pages/moderator-chats';
 import { ModerationArchivePage } from '@/pages/moderation-archive';
 import { ModerationProjectPage } from '@/pages/moderation-project';
-import { ModerationRejectPage } from '@/pages/moderation-reject';
 import { ModerationSnapshotPage } from '@/pages/moderation-snapshot';
 import { ProfilePage } from '@/pages/profile';
 import { AdminDevelopersPage } from '@/pages/admin-developers';
@@ -178,9 +177,11 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/moderator/projects/:projectId/reject',
-    name: 'moderation-reject',
-    component: ModerationRejectPage,
-    meta: { requiresAuth: true },
+    redirect: (to) => ({
+      name: 'moderation-project',
+      params: { projectId: to.params.projectId },
+      query: { step: '5', verdict: 'reject' },
+    }),
   },
   {
     path: '/moderator/journal/:requestId',
