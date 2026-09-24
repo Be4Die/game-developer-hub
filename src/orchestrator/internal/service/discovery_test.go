@@ -12,7 +12,8 @@ import (
 // ─── Mocks for DiscoveryService ─────────────────────────────────────────────
 
 type discMockInstanceRepo struct {
-	listByGameFn func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error)
+	listByGameFn  func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error)
+	countByGameFn func(ctx context.Context, gameID int64) (int, error)
 }
 
 func (m *discMockInstanceRepo) Create(ctx context.Context, instance *domain.Instance) error {
@@ -35,6 +36,9 @@ func (m *discMockInstanceRepo) Update(ctx context.Context, instance *domain.Inst
 }
 func (m *discMockInstanceRepo) Delete(ctx context.Context, id int64) error { return nil }
 func (m *discMockInstanceRepo) CountByGame(ctx context.Context, gameID int64) (int, error) {
+	if m.countByGameFn != nil {
+		return m.countByGameFn(ctx, gameID)
+	}
 	return 0, nil
 }
 func (m *discMockInstanceRepo) GetNextID(ctx context.Context) (int64, error) {
@@ -512,5 +516,71 @@ func TestDiscoveryService_DiscoverServers_StartingInstances(t *testing.T) {
 	}
 	if result.Status != domain.DiscoveryStatusStarting {
 		t.Fatalf("expected status STARTING, got %v", result.Status)
+	}
+}
+
+func TestDiscoveryService_DiscoverServers_StoppedInstancesDoNotBlockAutoStart(t *testing.T) {
+	// 5 остановленных инстансов в базе данных
+	instanceRepo := &discMockInstanceRepo{
+		listByGameFn: func(ctx context.Context, gameID int64, status *domain.InstanceStatus) ([]*domain.Instance, error) {
+			if status != nil {
+				return []*domain.Instance{}, nil // нет running и нет starting
+			}
+			return []*domain.Instance{
+				{ID: 1, Status: domain.InstanceStatusStopped},
+				{ID: 2, Status: domain.InstanceStatusStopped},
+				{ID: 3, Status: domain.InstanceStatusStopped},
+				{ID: 4, Status: domain.InstanceStatusStopped},
+				{ID: 5, Status: domain.InstanceStatusStopped},
+			}, nil
+		},
+		countByGameFn: func(ctx context.Context, gameID int64) (int, error) {
+			// CountByGame возвращает количество только активных (running/starting) инстансов = 0
+			return 0, nil
+		},
+	}
+
+	var started atomic.Bool
+	instanceSvc := &discMockInstanceStarter{
+		startInstanceFn: func(ctx context.Context, params StartInstanceParams) (*domain.Instance, error) {
+			started.Store(true)
+			return &domain.Instance{ID: 99}, nil
+		},
+	}
+
+	policyRepo := &discMockGamePolicyRepo{
+		getFn: func(ctx context.Context, gameID int64) (*domain.GamePolicy, error) {
+			return &domain.GamePolicy{
+				GameID:              gameID,
+				OwnerID:             "test-user",
+				Mode:                domain.OrchestrationModeScaleToZero,
+				TargetInstances:     1,
+				DefaultBuildVersion: "latest",
+				MaxInstancesPerGame: 5,
+				ScaleBehavior:       domain.ScaleBehaviorSpawn,
+			}, nil
+		},
+	}
+
+	buildRepo := &discMockBuildStorage{
+		listByGameFn: func(ctx context.Context, gameID int64, limit int) ([]*domain.ServerBuild, error) {
+			return []*domain.ServerBuild{{Version: "v1.0.0"}}, nil
+		},
+	}
+
+	svc := newTestDiscoveryService(instanceRepo, &discMockInstanceState{}, &discMockNodeRepo{}, buildRepo, policyRepo, instanceSvc)
+
+	result, err := svc.DiscoverServers(context.Background(), 42, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != domain.DiscoveryStatusStarting {
+		t.Fatalf("expected status STARTING despite 5 stopped instances, got %v (%s)", result.Status, result.Message)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	if !started.Load() {
+		t.Error("expected auto-start to be triggered when active count is 0, even if stopped instances exist")
 	}
 }

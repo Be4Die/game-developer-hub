@@ -221,6 +221,7 @@ func (r *Runtime) CreateContainer(ctx context.Context, opts domain.ContainerOpts
 				{HostPort: hostPortString(opts.HostPort)},
 			},
 		},
+		ExtraHosts: []string{"host.docker.internal:host-gateway"},
 	}
 
 	if len(opts.Binds) > 0 {

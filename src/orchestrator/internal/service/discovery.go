@@ -191,9 +191,9 @@ func (s *DiscoveryService) DiscoverServers(ctx context.Context, gameID int64, pl
 // canAutoStart выполняет быструю синхронную проверку возможности запуска
 // без сетевых вызовов (лимит инстансов и наличие билда).
 func (s *DiscoveryService) canAutoStart(ctx context.Context, gameID int64, policy *domain.GamePolicy) (bool, string) {
-	// Проверка лимита инстансов.
-	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
+	// Проверка лимита активных инстансов.
+	count, err := s.instanceRepo.CountByGame(ctx, gameID)
+	if err == nil && int64(count) >= int64(policy.MaxInstancesPerGame) {
 		return false, "Maximum instance limit reached for this game"
 	}
 
@@ -217,9 +217,9 @@ func (s *DiscoveryService) canAutoStart(ctx context.Context, gameID int64, polic
 // autoStartInstance запускает инстанс для игры на основе политики.
 // Вызывается асинхронно из DiscoverServers.
 func (s *DiscoveryService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
-	// Дополнительная проверка лимита (race condition).
-	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
+	// Дополнительная проверка лимита активных инстансов (race condition).
+	count, err := s.instanceRepo.CountByGame(ctx, gameID)
+	if err == nil && int64(count) >= int64(policy.MaxInstancesPerGame) {
 		return
 	}
 

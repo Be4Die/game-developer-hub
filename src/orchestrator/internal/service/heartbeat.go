@@ -419,12 +419,12 @@ func (s *HeartbeatService) EnforcePolicies(ctx context.Context) {
 
 // autoStartInstance запускает инстанс для игры на основе политики.
 func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, policy *domain.GamePolicy) {
-	// Проверяем лимит инстансов из политики (все статусы).
-	all, _ := s.instanceRepo.ListByGame(ctx, gameID, nil)
-	if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
+	// Проверяем лимит активных инстансов из политики.
+	count, err := s.instanceRepo.CountByGame(ctx, gameID)
+	if err == nil && int64(count) >= int64(policy.MaxInstancesPerGame) {
 		s.log.Warn("autoStartInstance: max_instances_per_game reached",
 			slog.Int64("game_id", gameID),
-			slog.Int("current", len(all)),
+			slog.Int("current", count),
 			slog.Int("max", int(policy.MaxInstancesPerGame)),
 		)
 		return
@@ -455,7 +455,7 @@ func (s *HeartbeatService) autoStartInstance(ctx context.Context, gameID int64, 
 		params.MaxPlayers = &mp
 	}
 
-	_, err := s.instanceSvc.StartInstance(ctx, params)
+	_, err = s.instanceSvc.StartInstance(ctx, params)
 	if err != nil {
 		s.log.Warn("autoStartInstance failed",
 			slog.Int64("game_id", gameID),
@@ -546,9 +546,9 @@ func (s *HeartbeatService) enforceScaleUp(ctx context.Context) {
 			continue
 		}
 
-		// Считаем текущее общее количество инстансов (все статусы) для лимита.
-		all, _ := s.instanceRepo.ListByGame(ctx, policy.GameID, nil)
-		if int64(len(all)) >= int64(policy.MaxInstancesPerGame) {
+		// Считаем текущее количество активных инстансов для лимита.
+		count, err := s.instanceRepo.CountByGame(ctx, policy.GameID)
+		if err == nil && int64(count) >= int64(policy.MaxInstancesPerGame) {
 			continue
 		}
 
