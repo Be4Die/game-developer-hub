@@ -238,6 +238,14 @@ export default {
     publishedBuildInfo: 'Active production build',
     sending: 'Submitting...',
     moderationSent: 'Project successfully submitted for moderation!',
+    lockedTitle: 'Project is under review',
+    lockedDesc:
+      'The project has been submitted for moderation. Changes to draft, media assets, and builds are locked until a decision is made.',
+    buildsLockedUnderReview:
+      'Build uploading and switching are locked while the project is under moderation review',
+    cancelModeration: 'Withdraw Request',
+    cancellingModeration: 'Withdrawing...',
+    moderationCancelled: 'Moderation request withdrawn successfully!',
     basicInfo: 'Basic Information',
     modeOffline: 'Single-player',
     modeOnline: 'Online Game',

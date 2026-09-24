@@ -2,7 +2,10 @@
   <div class="instances-page tab-fade-in">
     <div class="page-header">
       <h1>
-        {{ t('servers.tabs.instances') }} <span class="counter">{{ instances.length }}/4</span>
+        {{ t('servers.tabs.instances') }}
+        <span class="counter" :title="`Активных: ${activeCount}, Всего: ${instances.length}`">
+          {{ activeCount }} / {{ maxInstances }}
+        </span>
       </h1>
       <div class="header-actions">
         <select v-model="statusFilter" class="filter-select" @change="fetchInstances">
@@ -91,6 +94,15 @@
               >
                 <Play class="icon-sm" />
               </button>
+              <button
+                v-if="inst.status === 'stopped' || inst.status === 'crashed'"
+                class="btn-delete"
+                :disabled="deletingId === inst.id"
+                :title="t('common.delete') || 'Удалить'"
+                @click="handleDelete(inst)"
+              >
+                <Trash2 class="icon-sm" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -116,10 +128,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Play, Square, AlertCircle, Server } from 'lucide-vue-next';
+import { Play, Square, AlertCircle, Server, Trash2 } from 'lucide-vue-next';
 import { StatusBadge, EmptyState } from '@/shared/ui';
 
-import { listInstances, stopInstance, resumeInstance } from '@/entities/instance';
+import { listInstances, stopInstance, resumeInstance, deleteInstance } from '@/entities/instance';
+import { getPolicy } from '@/entities/policy';
 import { listServerBuilds } from '@/entities/build';
 import { StartInstanceModal } from '@/features/manage-instances';
 import { formatDate, showToast } from '@/shared/lib';
@@ -142,6 +155,12 @@ const statusFilter = ref<string>('all');
 const showStartForm = ref<boolean>(false);
 const stoppingId = ref<string | number | null>(null);
 const resumingId = ref<string | number | null>(null);
+const deletingId = ref<string | number | null>(null);
+const maxInstances = ref<number>(5);
+
+const activeCount = computed<number>(() => {
+  return instances.value.filter((i) => i.status === 'running' || i.status === 'starting').length;
+});
 
 const filteredInstances = computed<Instance[]>(() => {
   if (statusFilter.value === 'all') return instances.value;
@@ -202,9 +221,31 @@ async function handleResume(inst: Instance): Promise<void> {
   }
 }
 
-onMounted(() => {
+async function handleDelete(inst: Instance): Promise<void> {
+  if (!confirm(`Удалить инстанс #${inst.id}?`)) return;
+  deletingId.value = inst.id;
+  try {
+    await deleteInstance(props.gameId, inst.id);
+    showToast(`Инстанс #${inst.id} удален`);
+    await fetchInstances();
+  } catch (e: any) {
+    showToast(e.response?.data?.message ?? 'Ошибка удаления', 'error');
+  } finally {
+    deletingId.value = null;
+  }
+}
+
+onMounted(async () => {
   fetchInstances();
   fetchBuilds();
+  try {
+    const policy = await getPolicy(props.gameId);
+    if (policy && policy.max_instances_per_game) {
+      maxInstances.value = policy.max_instances_per_game;
+    }
+  } catch {
+    /* non-critical */
+  }
 });
 </script>
 
@@ -359,6 +400,25 @@ code {
   border-color: var(--success);
 }
 .btn-resume:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-delete {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.btn-delete:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-delete:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }

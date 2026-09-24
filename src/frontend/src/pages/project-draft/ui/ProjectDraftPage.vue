@@ -386,7 +386,13 @@
           @build-uploaded="onBuildUploaded"
         />
         <div v-else class="build-no-perm-notice">
-          <span class="text-muted">{{ t('access.permissions.PERM_UPLOAD_BUILD') }} — нет прав на загрузку новых билдов</span>
+          <span v-if="isLocked" class="text-muted">
+            <Lock class="icon-xs inline-icon" />
+            {{ t('projectDraft.buildsLockedUnderReview') }}
+          </span>
+          <span v-else class="text-muted">
+            {{ t('access.permissions.PERM_UPLOAD_BUILD') }} — нет прав на загрузку новых билдов
+          </span>
         </div>
 
         <!-- Список версий -->
@@ -396,7 +402,8 @@
             v-for="b in recentBuilds"
             :key="b.version"
             class="build-row"
-            :class="{ active: activeBuildVersion === b.version }"
+            :class="{ active: activeBuildVersion === b.version, 'is-locked': isLocked }"
+            :title="isLocked ? t('projectDraft.buildsLockedUnderReview') : undefined"
             @click="canUploadBuild && setActiveBuild(b.version)"
           >
             <div class="build-info">
@@ -446,6 +453,7 @@ import {
   Gamepad2,
   Globe,
   AlertCircle,
+  Lock,
 } from 'lucide-vue-next';
 import {
   getProject,
