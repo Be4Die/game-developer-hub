@@ -1149,7 +1149,7 @@ tasks:
   stack:db:reset:
     desc: "Reset orchestrator and SSO databases (drop, recreate, init)"
     cmds:
-      - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator;"
+      - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator WITH (FORCE);"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
       - task: stack:db:init
 

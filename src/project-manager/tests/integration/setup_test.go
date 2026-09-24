@@ -150,11 +150,13 @@ func createTables(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 
 	ddl := []string{
 		`CREATE TABLE IF NOT EXISTS projects (
-			id          BIGSERIAL PRIMARY KEY,
-			owner_id    TEXT NOT NULL,
-			status      SMALLINT NOT NULL DEFAULT 1,
-			created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+			id              BIGSERIAL PRIMARY KEY,
+			owner_id        TEXT NOT NULL,
+			status          SMALLINT NOT NULL DEFAULT 1,
+			is_online       BOOLEAN NOT NULL DEFAULT FALSE,
+			is_under_review BOOLEAN NOT NULL DEFAULT FALSE,
+			created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS project_drafts (
 			project_id            BIGINT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
@@ -169,6 +171,7 @@ func createTables(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 			video_path            TEXT NOT NULL DEFAULT '',
 			active_build_version  TEXT NOT NULL DEFAULT '',
 			dev_url               TEXT NOT NULL DEFAULT '',
+			is_online             BOOLEAN NOT NULL DEFAULT FALSE,
 			updated_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 		)`,
 		`CREATE TABLE IF NOT EXISTS project_builds (
@@ -196,6 +199,7 @@ func createTables(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 			cover_path            TEXT NOT NULL DEFAULT '',
 			video_path            TEXT NOT NULL DEFAULT '',
 			prod_url              TEXT NOT NULL DEFAULT '',
+			is_online             BOOLEAN NOT NULL DEFAULT FALSE,
 			is_active             BOOLEAN NOT NULL DEFAULT TRUE,
 			published_by          TEXT NOT NULL DEFAULT '',
 			published_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

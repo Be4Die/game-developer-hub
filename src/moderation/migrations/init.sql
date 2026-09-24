@@ -5,25 +5,35 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS moderation_requests (
-    id                    BIGSERIAL PRIMARY KEY,
-    project_id            BIGINT NOT NULL,
-    owner_id              TEXT NOT NULL,
-    moderator_id          TEXT NOT NULL DEFAULT '',
-    status                SMALLINT NOT NULL DEFAULT 1, -- 1=pending, 2=in_review, 3=approved, 4=rejected, 5=cancelled
-    snapshot_meta         JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rejection_reason      TEXT NOT NULL DEFAULT '',
-    submitted_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    started_review_at     TIMESTAMP WITH TIME ZONE,
-    resolved_at           TIMESTAMP WITH TIME ZONE,
-    created_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    id                      BIGSERIAL PRIMARY KEY,
+    project_id              BIGINT NOT NULL,
+    owner_id                TEXT NOT NULL,
+    moderator_id            TEXT NOT NULL DEFAULT '',
+    status                  SMALLINT NOT NULL DEFAULT 1, -- 1=pending, 2=in_review, 3=approved, 4=rejected, 5=cancelled
+    request_type            SMALLINT NOT NULL DEFAULT 1, -- 1=REQUEST_TYPE_PROJECT_PUBLICATION, 2=REQUEST_TYPE_SERVER_ACCESS, 3=REQUEST_TYPE_PROJECT_UPDATE
+    reason                  TEXT NOT NULL DEFAULT '',
+    max_instances           INT NOT NULL DEFAULT 0,
+    max_total_cpu_millis    INT NOT NULL DEFAULT 0,
+    max_total_memory_mb     BIGINT NOT NULL DEFAULT 0,
+    max_instance_cpu_millis INT NOT NULL DEFAULT 0,
+    max_instance_memory_mb  BIGINT NOT NULL DEFAULT 0,
+    moderator_comment       TEXT NOT NULL DEFAULT '',
+    snapshot_meta           JSONB NOT NULL DEFAULT '{}'::jsonb,
+    rejection_reason        TEXT NOT NULL DEFAULT '',
+    submitted_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    started_review_at       TIMESTAMP WITH TIME ZONE,
+    resolved_at             TIMESTAMP WITH TIME ZONE,
+    created_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE moderation_requests IS 'Запросы на модерацию игровых проектов со слепком данных черновика';
 COMMENT ON COLUMN moderation_requests.status IS '1=pending, 2=in_review, 3=approved, 4=rejected, 5=cancelled';
+COMMENT ON COLUMN moderation_requests.request_type IS '1=REQUEST_TYPE_PROJECT_PUBLICATION, 2=REQUEST_TYPE_SERVER_ACCESS, 3=REQUEST_TYPE_PROJECT_UPDATE';
 
 CREATE INDEX IF NOT EXISTS idx_mod_requests_project ON moderation_requests(project_id, submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_mod_requests_status ON moderation_requests(status, submitted_at ASC);
+CREATE INDEX IF NOT EXISTS idx_mod_requests_type ON moderation_requests(request_type);
 CREATE INDEX IF NOT EXISTS idx_mod_requests_moderator ON moderation_requests(moderator_id) WHERE moderator_id != '';
 CREATE INDEX IF NOT EXISTS idx_mod_requests_owner ON moderation_requests(owner_id);
 

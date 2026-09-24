@@ -5,20 +5,24 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS projects (
-    id          BIGSERIAL PRIMARY KEY,
-    owner_id    TEXT NOT NULL,                                       -- ID владельца (пользователь SSO)
-    status      SMALLINT NOT NULL DEFAULT 1,                        -- 1=draft, 2=pending, 3=published, 4=rejected
-    is_online   BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    id              BIGSERIAL PRIMARY KEY,
+    owner_id        TEXT NOT NULL,                                       -- ID владельца (пользователь SSO)
+    status          SMALLINT NOT NULL DEFAULT 1,                        -- 1=draft, 2=pending, 3=published, 4=rejected
+    is_online       BOOLEAN NOT NULL DEFAULT FALSE,
+    is_under_review BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE projects IS 'Проекты игр разработчиков';
 COMMENT ON COLUMN projects.status IS '1=draft, 2=pending, 3=published, 4=rejected';
 COMMENT ON COLUMN projects.is_online IS 'Признак онлайн-игры проекта';
+COMMENT ON COLUMN projects.is_under_review IS 'Флаг нахождения проекта на модерации (блокирует изменения черновика, билдов и товаров)';
 
 CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_is_online ON projects(is_online);
+CREATE INDEX IF NOT EXISTS idx_projects_is_under_review ON projects(is_under_review);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Таблица project_drafts — рабочее состояние черновика проекта

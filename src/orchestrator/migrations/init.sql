@@ -83,10 +83,12 @@ CREATE TABLE IF NOT EXISTS instances (
     status           SMALLINT NOT NULL DEFAULT 1,      -- 1=starting, 2=running, 3=stopping, 4=stopped, 5=crashed
     max_players      INTEGER NOT NULL,
     developer_payload JSONB,                           -- произвольные данные разработчика
-    server_address   TEXT NOT NULL,                    -- адрес для клиентов
-    started_at       TIMESTAMP NOT NULL,
-    created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
+    server_address         TEXT NOT NULL,                    -- адрес для клиентов
+    allocated_cpu_millis   INTEGER NOT NULL DEFAULT 0,
+    allocated_memory_bytes BIGINT NOT NULL DEFAULT 0,
+    started_at             TIMESTAMP NOT NULL,
+    created_at             TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at             TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE instances IS 'Экземпляры игровых серверов';
@@ -193,9 +195,10 @@ CREATE TABLE IF NOT EXISTS node_services (
     connection_uri    TEXT NOT NULL,
     credentials       JSONB NOT NULL DEFAULT '{}',
     status            SMALLINT NOT NULL DEFAULT 1, -- 1=starting, 2=running, 3=stopped, 4=error
-    volume_path       TEXT NOT NULL,
-    created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+    volume_path         TEXT NOT NULL,
+    auto_backup_enabled BOOLEAN NOT NULL DEFAULT false,
+    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE (node_id, name)
 );
 
@@ -209,6 +212,32 @@ CREATE INDEX IF NOT EXISTS idx_node_services_owner ON node_services(owner_id);
 CREATE TRIGGER trigger_node_services_updated_at
     BEFORE UPDATE ON node_services
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица node_service_backups — резервные копии управляемых сервисов
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS node_service_backups (
+    id                BIGSERIAL PRIMARY KEY,
+    backup_id         VARCHAR(100) NOT NULL UNIQUE,
+    node_id           BIGINT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    service_id        BIGINT NOT NULL REFERENCES node_services(id) ON DELETE CASCADE,
+    service_name      VARCHAR(100) NOT NULL,
+    service_type      SMALLINT NOT NULL, -- 1=postgres, 2=redis, 3=mysql, 5=volume
+    file_name         VARCHAR(255) NOT NULL,
+    size_bytes        BIGINT NOT NULL DEFAULT 0,
+    checksum          VARCHAR(64) NOT NULL DEFAULT '',
+    backup_type       SMALLINT NOT NULL DEFAULT 1, -- 1=manual, 2=uploaded, 3=scheduled
+    status            SMALLINT NOT NULL DEFAULT 2, -- 1=creating, 2=ready, 3=failed, 4=restoring
+    created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE node_service_backups IS 'Резервные копии управляемых сервисов и баз данных';
+COMMENT ON COLUMN node_service_backups.backup_type IS '1=manual, 2=uploaded, 3=scheduled';
+COMMENT ON COLUMN node_service_backups.status IS '1=creating, 2=ready, 3=failed, 4=restoring';
+
+CREATE INDEX IF NOT EXISTS idx_node_service_backups_node_service ON node_service_backups(node_id, service_name);
+CREATE INDEX IF NOT EXISTS idx_node_service_backups_created ON node_service_backups(created_at DESC);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Таблица platform_access_requests — заявки разработчиков на доступ к серверам платформы
@@ -236,6 +265,30 @@ CREATE INDEX IF NOT EXISTS idx_platform_req_status ON platform_access_requests(s
 
 CREATE TRIGGER trigger_platform_access_requests_updated_at
     BEFORE UPDATE ON platform_access_requests
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Таблица platform_grants — активные квоты проектов на серверные мощности платформы
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS platform_grants (
+    id                      BIGSERIAL PRIMARY KEY,
+    game_id                 BIGINT NOT NULL UNIQUE,
+    max_instances           INTEGER NOT NULL DEFAULT 5,
+    is_active               BOOLEAN NOT NULL DEFAULT true,
+    max_total_cpu_millis    INT NOT NULL DEFAULT 0,
+    max_total_memory_mb     BIGINT NOT NULL DEFAULT 0,
+    max_instance_cpu_millis INT NOT NULL DEFAULT 0,
+    max_instance_memory_mb  BIGINT NOT NULL DEFAULT 0,
+    created_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at              TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE platform_grants IS 'Активные разрешения (квоты) проектов на использование мощностей платформы';
+CREATE INDEX IF NOT EXISTS idx_platform_grants_game ON platform_grants(game_id);
+
+CREATE TRIGGER trigger_platform_grants_updated_at
+    BEFORE UPDATE ON platform_grants
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─────────────────────────────────────────────────────────────────────────────
