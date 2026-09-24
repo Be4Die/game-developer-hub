@@ -6,7 +6,7 @@
         <div class="sidebar-top-brand">
           <div class="brand-badge-row">
             <BookOpen class="icon-sm text-primary" />
-            <span class="brand-title">База знаний</span>
+            <span class="brand-title">Документация</span>
           </div>
         </div>
 
@@ -360,6 +360,7 @@ import {
   Sparkles,
   Server,
   Code2,
+  Gamepad2,
   ShieldCheck,
   Search,
   X,
@@ -381,6 +382,7 @@ import {
   getSectionById,
   getArticleById,
   formatDocDate,
+  renderDocMarkdown,
   type DocSection,
   type DocArticle,
 } from '@/entities/documentation';
@@ -397,6 +399,7 @@ const expandedSections = ref<Record<string, boolean>>({
   'getting-started': true,
   orchestration: true,
   sdk: true,
+  'unity-plugin': true,
   rules: true,
 });
 
@@ -510,6 +513,8 @@ function getSectionIcon(iconName?: string): any {
       return Server;
     case 'Code2':
       return Code2;
+    case 'Gamepad2':
+      return Gamepad2;
     case 'ShieldCheck':
       return ShieldCheck;
     default:
@@ -583,12 +588,7 @@ function copySnippet(text: string, id: string): void {
 
 function renderMarkdown(text: string): string {
   if (!text) return '';
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code class="inline-code">$1</code>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n- /g, '<br/>• ')
-    .replace(/\n(\d+)\. /g, '<br/>$1. ');
+  return renderDocMarkdown(text);
 }
 
 function syncRouteState(): void {
@@ -929,6 +929,176 @@ onMounted(() => {
   padding: 2px 5px;
   border-radius: 4px;
   color: #ff7b72;
+}
+
+:deep(.doc-p) {
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+:deep(.doc-h2) {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f0f6fc;
+  margin: 28px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border, #30363d);
+}
+
+:deep(.doc-h3) {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f0f6fc;
+  margin: 22px 0 10px;
+}
+
+:deep(.doc-h4) {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6edf3;
+  margin: 16px 0 8px;
+}
+
+:deep(.doc-list) {
+  margin: 8px 0 16px 20px;
+  padding: 0;
+  line-height: 1.7;
+}
+
+:deep(.doc-list li) {
+  margin-bottom: 6px;
+}
+
+:deep(.doc-link) {
+  color: var(--primary, #58a6ff);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(88, 166, 255, 0.4);
+  transition: all 0.15s ease;
+}
+
+:deep(.doc-link:hover) {
+  text-decoration: underline;
+  border-bottom-color: transparent;
+}
+
+:deep(.doc-table-wrapper) {
+  width: 100%;
+  overflow-x: auto;
+  margin: 18px 0;
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-secondary, #161b22);
+}
+
+:deep(.doc-table) {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+:deep(.doc-table th) {
+  background: rgba(255, 255, 255, 0.04);
+  color: #f0f6fc;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border, #30363d);
+  white-space: nowrap;
+}
+
+:deep(.doc-table td) {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #c9d1d9;
+  vertical-align: top;
+}
+
+:deep(.doc-table tr:last-child td) {
+  border-bottom: none;
+}
+
+:deep(.doc-table tr:hover td) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+:deep(.doc-callout) {
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin: 16px 0;
+  border-left: 4px solid;
+}
+
+:deep(.doc-callout.callout-info) {
+  background: rgba(88, 166, 255, 0.08);
+  border-left-color: #58a6ff;
+}
+
+:deep(.doc-callout.callout-warning) {
+  background: rgba(210, 153, 34, 0.1);
+  border-left-color: #d29922;
+}
+
+:deep(.doc-callout.callout-tip) {
+  background: rgba(46, 160, 67, 0.1);
+  border-left-color: #3fb950;
+}
+
+:deep(.doc-callout.callout-important) {
+  background: rgba(248, 81, 73, 0.1);
+  border-left-color: #f85149;
+}
+
+:deep(.callout-header) {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+:deep(.callout-title) {
+  font-weight: 700;
+  font-size: 13px;
+  color: #f0f6fc;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+:deep(.callout-body) {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c9d1d9;
+}
+
+:deep(.doc-media-figure) {
+  margin: 20px 0;
+  border: 1px solid var(--border, #30363d);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0b0f14;
+  text-align: center;
+}
+
+:deep(.doc-media-img) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+:deep(.doc-media-caption) {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-muted, #8b949e);
+  background: var(--bg-secondary, #161b22);
+  border-top: 1px solid var(--border, #30363d);
+}
+
+:deep(.doc-code-block) {
+  background: #090d12;
+  border: 1px solid var(--border, #30363d);
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  margin: 16px 0 20px;
 }
 
 /* ─── ШАПКА КОРНЕВОГО РАЗДЕЛА ─────────────────────────────────── */

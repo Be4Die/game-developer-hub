@@ -1,5 +1,6 @@
 export * from './model/rulesData';
 export * from './model/docsData';
+export * from './lib/markdown';
 
 /**
  * Форматирование ISO-даты в человекочитаемый русский/английский формат.
