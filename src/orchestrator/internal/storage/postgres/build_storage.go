@@ -24,6 +24,28 @@ func NewBuildStorage(pool *pgxpool.Pool) *BuildStorage {
 
 // Create регистрирует новый билд. Возвращает ErrAlreadyExists при дубликате версии.
 func (s *BuildStorage) Create(ctx context.Context, build *domain.ServerBuild) error {
+	if build.ID == 0 {
+		const q = `
+			INSERT INTO server_builds (owner_id, game_id, uploaded_by, version, image_tag,
+			                           protocol, internal_port, max_players,
+			                           file_url, file_size, created_at)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+			RETURNING id
+		`
+		err := s.pool.QueryRow(ctx, q,
+			build.OwnerID, build.GameID, build.UploadedBy, build.Version, build.ImageTag,
+			build.Protocol, build.InternalPort, build.MaxPlayers,
+			build.FileURL, build.FileSize, build.CreatedAt,
+		).Scan(&build.ID)
+		if err != nil {
+			if isPgUniqueViolation(err) {
+				return domain.ErrAlreadyExists
+			}
+			return fmt.Errorf("postgres.BuildStorage.Create: %w", err)
+		}
+		return nil
+	}
+
 	const q = `
 		INSERT INTO server_builds (id, owner_id, game_id, uploaded_by, version, image_tag,
 		                           protocol, internal_port, max_players,
