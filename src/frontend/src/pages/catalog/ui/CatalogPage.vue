@@ -77,30 +77,24 @@
       </div>
 
       <!-- Пустой каталог -->
-      <div
+      <EmptyState
         v-else-if="games.length === 0 && !searchQuery"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <Gamepad2 class="icon-lg text-muted" />
-        </div>
-        <h3>{{ t('catalog.emptyCatalog') }}</h3>
-        <p>{{ t('catalog.emptyCatalogDesc') }}</p>
-        <button class="btn-primary-sm" @click="loadGames">
-          <RefreshCw class="icon-xs" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
-      </div>
+        :icon="Gamepad2"
+        :title="t('catalog.emptyCatalog')"
+        :action-text="t('common.refresh')"
+        :action-icon="RefreshCw"
+        @action="loadGames"
+      />
 
       <!-- Пустой результат поиска -->
-      <div v-else-if="filteredGames.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>{{ t('catalog.emptySearch') }}</p>
-        <button class="btn-reset-filters" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredGames.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- ВИД: ТАБЛИЦА (TABLE) -->
       <div v-else class="table-wrapper">
@@ -304,6 +298,8 @@ import {
 import { moderationApi } from '@/entities/moderation';
 import { useAuth, setUserStatus, getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const router = useRouter();

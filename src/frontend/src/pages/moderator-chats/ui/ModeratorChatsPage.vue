@@ -78,30 +78,24 @@
       </div>
 
       <!-- Пустой список чатов -->
-      <div
+      <EmptyState
         v-else-if="chats.length === 0 && !searchQuery && statusFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <MessageSquare class="icon-lg text-muted" />
-        </div>
-        <h3>{{ t('moderation.noChats') }}</h3>
-        <p>{{ t('moderation.emptyChatsDesc') }}</p>
-        <button class="btn-primary-sm" @click="loadChats">
-          <RefreshCw class="icon-xs" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
-      </div>
+        :icon="MessageSquare"
+        :title="t('moderation.noChats')"
+        :action-text="t('common.refresh')"
+        :action-icon="RefreshCw"
+        @action="loadChats"
+      />
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div v-else-if="filteredChats.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>{{ t('stats.noData') }}</p>
-        <button class="btn-reset-filters" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredChats.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Таблица чатов проектов -->
       <div v-else class="table-wrapper">
@@ -239,6 +233,8 @@ import {
 } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const router = useRouter();

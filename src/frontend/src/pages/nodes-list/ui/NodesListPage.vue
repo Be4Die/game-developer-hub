@@ -192,23 +192,14 @@
       </div>
 
       <!-- Пустое состояние -->
-      <div v-else class="state-container empty-card">
-        <div class="empty-icon-wrap">
-          <Server class="icon-lg" />
-        </div>
-        <h3>Нет вычислительных нод</h3>
-        <p>
-          {{
-            statusFilter !== 'all'
-              ? 'Нет нод с выбранным статусом'
-              : 'Подключите свой сервер для оркестрации игровых инстансов'
-          }}
-        </p>
-        <button class="btn-add-node" @click="openRegisterModal">
-          <Plus class="icon-sm" />
-          <span>Подключить ноду</span>
-        </button>
-      </div>
+      <EmptyState
+        v-else
+        :icon="Server"
+        title="Нет вычислительных нод"
+        action-text="Подключить ноду"
+        :action-icon="Plus"
+        @action="openRegisterModal"
+      />
     </div>
 
     <!-- Модал подключения ноды -->
@@ -245,6 +236,8 @@ import { RegisterNodeModal } from '@/features/manage-nodes';
 import { listNodes, deleteNode, updateNodePlatform } from '@/entities/node';
 import { useAuth } from '@/entities/user';
 import { formatBytes, formatTime, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { NodeInfo } from '@/shared/types';
 
 const { state: authState } = useAuth();

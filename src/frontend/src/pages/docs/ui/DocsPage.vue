@@ -164,18 +164,14 @@
 
             <!-- Список правил платформы -->
             <div class="rules-cards-stack">
-              <div v-if="displayedRules.length === 0" class="no-rules-found">
-                <AlertCircle class="icon-md text-muted" />
-                <h3>Правила не найдены</h3>
-                <p>По запросу «{{ rulesSearchQuery }}» совпадений нет.</p>
-                <button
-                  type="button"
-                  class="btn-reset-search"
-                  @click="resetRuleFilters"
-                >
-                  Сбросить фильтр
-                </button>
-              </div>
+              <EmptyState
+                v-if="displayedRules.length === 0"
+                :icon="AlertCircle"
+                title="Правила не найдены"
+                action-text="Сбросить фильтр"
+                action-variant="reset"
+                @action="resetRuleFilters"
+              />
 
               <div
                 v-for="rule in displayedRules"
@@ -389,6 +385,8 @@ import {
   type DocArticle,
 } from '@/entities/documentation';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const route = useRoute();
 const router = useRouter();

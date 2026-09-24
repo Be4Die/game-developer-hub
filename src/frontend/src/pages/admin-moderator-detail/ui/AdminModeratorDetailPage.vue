@@ -233,24 +233,14 @@
         </div>
 
         <!-- Пустой журнал -->
-        <div v-else-if="filteredActivity.length === 0" class="state-container empty-card">
-          <Search class="icon-md text-muted" />
-          <h3>{{ t('common.empty') }}</h3>
-          <p>
-            {{
-              searchQuery || actionTypeFilter
-                ? 'По заданным критериям действий не найдено.'
-                : t('moderation.noActivity')
-            }}
-          </p>
-          <button
-            v-if="searchQuery || actionTypeFilter"
-            class="btn-reset"
-            @click="resetJournalFilters"
-          >
-            {{ t('common.reset') }}
-          </button>
-        </div>
+        <EmptyState
+          v-else-if="filteredActivity.length === 0"
+          :icon="Search"
+          :title="t('common.empty')"
+          :action-text="searchQuery || actionTypeFilter ? t('common.reset') : undefined"
+          action-variant="reset"
+          @action="resetJournalFilters"
+        />
 
         <!-- Таблица журнала действий -->
         <div v-else class="table-wrapper">
@@ -416,6 +406,8 @@ import { getUser, searchUsers } from '@/entities/user';
 import { moderationApi, formatDurationSeconds } from '@/entities/moderation';
 import { getMediaUrl } from '@/entities/project';
 import { formatProjectDate, formatDateTime, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { User } from '@/shared/types';
 
 interface Props {

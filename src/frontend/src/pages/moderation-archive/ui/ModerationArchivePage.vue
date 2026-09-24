@@ -104,30 +104,24 @@
       </div>
 
       <!-- Пустой журнал -->
-      <div
+      <EmptyState
         v-else-if="requests.length === 0 && !searchQuery && statusFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <BookOpen class="icon-lg text-muted" />
-        </div>
-        <h3>{{ t('journal.emptyJournal') }}</h3>
-        <p>{{ t('journal.emptyJournalDesc') }}</p>
-        <button class="btn-primary-sm" @click="loadArchive">
-          <RefreshCw class="icon-xs" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
-      </div>
+        :icon="BookOpen"
+        :title="t('journal.emptyJournal')"
+        :action-text="t('common.refresh')"
+        :action-icon="RefreshCw"
+        @action="loadArchive"
+      />
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div v-else-if="filteredRequests.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>{{ t('stats.noData') }}</p>
-        <button class="btn-reset-filters" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredRequests.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Таблица журнала решений -->
       <div v-else class="table-wrapper">
@@ -367,6 +361,8 @@ import {
 import { getMediaUrl } from '@/entities/project';
 import { getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const router = useRouter();

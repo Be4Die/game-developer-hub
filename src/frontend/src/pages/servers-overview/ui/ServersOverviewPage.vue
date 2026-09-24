@@ -239,9 +239,12 @@
             </tr>
           </tbody>
         </table>
-        <div v-else-if="!loading" class="empty-state">
-          {{ t('servers.noInstances') }}
-        </div>
+        <EmptyState
+          v-else-if="!loading"
+          :icon="Server"
+          :title="t('servers.noInstances')"
+          compact
+        />
       </div>
     </div>
 
@@ -403,7 +406,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Upload, Play, AlertCircle, Server, Sparkles, Send, MessageSquare } from 'lucide-vue-next';
-import { StatusBadge } from '@/shared/ui';
+import { StatusBadge, EmptyState } from '@/shared/ui';
 import { OrchestrationPolicyEditor } from '@/features/edit-orchestration-policy';
 import { listServerBuilds } from '@/entities/build';
 import { listInstances } from '@/entities/instance';

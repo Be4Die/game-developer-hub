@@ -39,9 +39,11 @@
           <div class="spinner-md"></div>
           <p>{{ t('common.loading') }}</p>
         </div>
-        <div v-else-if="users.length === 0" class="empty-state">
-          {{ t('common.empty') }}
-        </div>
+        <EmptyState
+          v-else-if="users.length === 0"
+          :icon="Users"
+          :title="t('common.empty')"
+        />
         <div v-else class="table-container">
           <table>
             <thead>
@@ -85,8 +87,11 @@
 
       <!-- Moderators List -->
       <div class="card">
-        <h2>Список модераторов</h2>
-        <div v-if="moderators.length === 0" class="empty-state">Нет активных модераторов</div>
+        <EmptyState
+          v-if="moderators.length === 0"
+          :icon="ShieldCheck"
+          title="Нет активных модераторов"
+        />
         <div v-else class="table-container">
           <table>
             <thead>
@@ -139,9 +144,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Users, ShieldCheck } from 'lucide-vue-next';
 import { searchUsers } from '@/entities/user';
 import { CreateModeratorForm, DeleteModeratorModal } from '@/features/manage-moderators';
 import { formatDate } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { User } from '@/shared/types';
 
 const { t } = useI18n();

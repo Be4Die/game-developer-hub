@@ -517,17 +517,14 @@
             </table>
           </div>
 
-          <div v-else class="empty-state-card">
-            <FolderPlus class="empty-icon" />
-            <p class="empty-title">На этой ноде нет развернутых баз данных или томов</p>
-            <p class="empty-desc">
-              Вы можете развернуть PostgreSQL, Redis, MySQL или персистентный том для файлов игры.
-            </p>
-            <button class="btn-primary btn-sm" @click="showCreateServiceModal = true">
-              <Plus class="icon-xs" />
-              <span>Развернуть базу данных</span>
-            </button>
-          </div>
+          <EmptyState
+            v-else
+            :icon="FolderPlus"
+            title="На этой ноде нет развернутых баз данных или томов"
+            action-text="Развернуть базу данных"
+            :action-icon="Plus"
+            @action="showCreateServiceModal = true"
+          />
         </div>
 
         <!-- Активные сервера на ноде (Игровые сервера) -->
@@ -584,11 +581,11 @@
             </table>
           </div>
 
-          <div v-else class="empty-state-card">
-            <Server class="empty-icon" />
-            <p class="empty-title">Нет активных серверов на этой ноде</p>
-            <p class="empty-desc">Когда игроки создают комнаты в играх, инстансы будут отображаться здесь.</p>
-          </div>
+          <EmptyState
+            v-else
+            :icon="Server"
+            title="Нет активных серверов на этой ноде"
+          />
         </div>
       </template>
     </template>
@@ -817,7 +814,7 @@ import {
   Play,
   Square,
 } from 'lucide-vue-next';
-import { StatusBadge, ResourceUsageCard } from '@/shared/ui';
+import { StatusBadge, ResourceUsageCard, EmptyState } from '@/shared/ui';
 import {
   getNode,
   getNodeUsage,

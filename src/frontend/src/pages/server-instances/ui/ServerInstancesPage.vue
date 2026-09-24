@@ -96,9 +96,11 @@
         </tbody>
       </table>
     </div>
-    <div v-else class="empty-state">
-      {{ t('servers.noInstances') }}
-    </div>
+    <EmptyState
+      v-else
+      :icon="Server"
+      :title="t('servers.noInstances')"
+    />
 
     <!-- Модал запуска нового инстанса -->
     <StartInstanceModal
@@ -114,8 +116,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Play, Square, AlertCircle } from 'lucide-vue-next';
-import { StatusBadge } from '@/shared/ui';
+import { Play, Square, AlertCircle, Server } from 'lucide-vue-next';
+import { StatusBadge, EmptyState } from '@/shared/ui';
+
 import { listInstances, stopInstance, resumeInstance } from '@/entities/instance';
 import { listServerBuilds } from '@/entities/build';
 import { StartInstanceModal } from '@/features/manage-instances';

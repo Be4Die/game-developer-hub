@@ -121,10 +121,12 @@
             <span>Загрузка списка резервных копий...</span>
           </div>
 
-          <div v-else-if="!backups.length" class="empty-state">
-            <HardDrive class="empty-icon" />
-            <p class="empty-title">Резервных копий пока нет</p>
-          </div>
+          <EmptyState
+            v-else-if="!backups.length"
+            :icon="HardDrive"
+            title="Резервных копий пока нет"
+            compact
+          />
 
           <div v-else class="table-wrap">
             <table class="data-table">
@@ -250,6 +252,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import {
   Database,
   Layers,

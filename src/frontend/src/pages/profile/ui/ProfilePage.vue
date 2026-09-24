@@ -295,13 +295,12 @@
               <span>{{ t('common.loading') }}</span>
             </div>
 
-            <div v-else-if="incomingList.length === 0" class="empty-state-modern">
-              <div class="empty-icon-circle">
-                <Mail class="icon-md" />
-              </div>
-              <span class="empty-title">{{ t('profile.emptyInvitations') }}</span>
-              <span class="empty-desc">{{ t('profile.emptyInvitationsHint') }}</span>
-            </div>
+            <EmptyState
+              v-else-if="incomingList.length === 0"
+              :icon="Mail"
+              :title="t('profile.emptyInvitations')"
+              compact
+            />
 
             <div v-else class="invitations-stack">
               <div v-for="inv in incomingList" :key="inv.id" class="invitation-item-card">
@@ -397,13 +396,12 @@
               <span>{{ t('common.loading') }}</span>
             </div>
 
-            <div v-else-if="blockedUsersList.length === 0" class="empty-state-modern">
-              <div class="empty-icon-circle">
-                <UserX class="icon-md" />
-              </div>
-              <span class="empty-title">{{ t('profile.emptyBlacklist') }}</span>
-              <span class="empty-desc">{{ t('profile.emptyBlacklistHint') }}</span>
-            </div>
+            <EmptyState
+              v-else-if="blockedUsersList.length === 0"
+              :icon="UserX"
+              :title="t('profile.emptyBlacklist')"
+              compact
+            />
 
             <div v-else class="blacklist-stack">
               <div v-for="b in blockedUsersList" :key="b.id" class="blocked-item-row">
@@ -463,7 +461,9 @@ import {
 } from '@/entities/project';
 import { ThemeCardSelector } from '@/features/theme-switcher';
 import { showToast, setLocale, formatDate } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
 import type { User as UserType } from '@/shared/types';
+
 
 const { t, locale } = useI18n();
 const { state: authState, updateCurrentUser } = useAuth();

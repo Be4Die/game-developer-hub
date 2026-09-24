@@ -4,3 +4,5 @@ export { default as ResourceUsageCard } from './resource-usage-card/ResourceUsag
 export { default as KeyValueEditor } from './key-value-editor/KeyValueEditor.vue';
 export { default as ConfirmDialog } from './confirm-dialog/ConfirmDialog.vue';
 export { default as Tooltip } from './tooltip/Tooltip.vue';
+export { default as EmptyState } from './empty-state/EmptyState.vue';
+

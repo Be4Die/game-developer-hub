@@ -111,11 +111,12 @@
           </div>
         </div>
 
-        <div v-else class="empty-state card">
-          <CheckCircle2 class="icon-lg text-success" />
-          <p>Очередь пуста</p>
-          <span class="subtext">Все новые проекты проверены или взяты в работу</span>
-        </div>
+        <EmptyState
+          v-else
+          :icon="CheckCircle2"
+          icon-class="text-success"
+          title="Очередь пуста"
+        />
       </div>
 
       <!-- Заявки в проверке -->
@@ -175,11 +176,11 @@
           </div>
         </div>
 
-        <div v-else class="empty-state card">
-          <Inbox class="icon-lg text-muted" />
-          <p>Нет проектов в проверке</p>
-          <span class="subtext">Возьмите проект из очереди слева для проведения проверки</span>
-        </div>
+        <EmptyState
+          v-else
+          :icon="Inbox"
+          title="Нет проектов в проверке"
+        />
       </div>
     </div>
   </div>
@@ -208,6 +209,8 @@ import {
   formatDateTime,
 } from '@/entities/moderation';
 import type { ModerationRequest } from '@/shared/types';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const router = useRouter();

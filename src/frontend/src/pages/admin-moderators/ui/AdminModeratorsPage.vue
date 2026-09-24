@@ -77,30 +77,25 @@
       </div>
 
       <!-- Пустой список без модераторов -->
-      <div
+      <EmptyState
         v-else-if="moderators.length === 0 && !searchQuery && statusFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <ShieldCheck class="icon-lg text-warning" />
-        </div>
-        <h3>Модераторы ещё не созданы</h3>
-        <p>Добавьте первых сотрудников модерации для проверки проектов и ведения диалогов.</p>
-        <button class="btn-action-primary" @click="showCreateModal = true">
-          <Plus class="icon-sm" />
-          <span>Добавить модератора</span>
-        </button>
-      </div>
+        :icon="ShieldCheck"
+        icon-class="text-warning"
+        title="Модераторы ещё не созданы"
+        action-text="Добавить модератора"
+        :action-icon="Plus"
+        @action="showCreateModal = true"
+      />
 
       <!-- Пустой список по результатам поиска -->
-      <div v-else-if="filteredModerators.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>По заданным критериям модераторов не найдено.</p>
-        <button class="btn-reset" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredModerators.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Таблица модераторов -->
       <div v-else class="table-wrapper">
@@ -308,6 +303,8 @@ import { searchUsers, setUserStatus } from '@/entities/user';
 import { CreateModeratorModal, DeleteModeratorModal } from '@/features/manage-moderators';
 import { moderationApi, formatDurationSeconds } from '@/entities/moderation';
 import { formatProjectDate, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { User } from '@/shared/types';
 
 const { t } = useI18n();

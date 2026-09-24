@@ -104,30 +104,25 @@
       </div>
 
       <!-- Пустой список заявок -->
-      <div
+      <EmptyState
         v-else-if="requests.length === 0 && !searchQuery && statusFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <CheckCircle2 class="icon-lg text-success" />
-        </div>
-        <h3>{{ t('moderation.noActiveRequests') }}</h3>
-        <p>{{ t('moderation.emptyQueue') }}</p>
-        <button class="btn-primary-sm" @click="loadQueue">
-          <RefreshCw class="icon-xs" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
-      </div>
+        :icon="CheckCircle2"
+        icon-class="text-success"
+        :title="t('moderation.noActiveRequests')"
+        :action-text="t('common.refresh')"
+        :action-icon="RefreshCw"
+        @action="loadQueue"
+      />
 
       <!-- Пустой список по результатам поиска/фильтров -->
-      <div v-else-if="filteredRequests.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>{{ t('stats.noData') }}</p>
-        <button class="btn-reset-filters" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredRequests.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Единая таблица активных заявок на модерацию -->
       <div v-else class="table-wrapper">
@@ -399,6 +394,8 @@ import {
 import { getMediaUrl, listProjects } from '@/entities/project';
 import { useAuth, getUserDisplayName } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const router = useRouter();

@@ -72,30 +72,24 @@
       </div>
 
       <!-- Пустой список без разработчиков -->
-      <div
+      <EmptyState
         v-else-if="developers.length === 0 && !searchQuery && statusFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <Users class="icon-lg text-muted" />
-        </div>
-        <h3>Разработчиков пока нет</h3>
-        <p>Зарегистрированные разработчики игр будут отображаться в этом списке.</p>
-        <button class="btn-reset" @click="loadUsers">
-          <RefreshCw class="icon-xs" />
-          <span>{{ t('common.refresh') }}</span>
-        </button>
-      </div>
+        :icon="Users"
+        title="Разработчиков пока нет"
+        :action-text="t('common.refresh')"
+        :action-icon="RefreshCw"
+        @action="loadUsers"
+      />
 
       <!-- Пустой список по результатам поиска -->
-      <div v-else-if="filteredDevelopers.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>По заданным критериям разработчиков не найдено.</p>
-        <button class="btn-reset" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredDevelopers.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Таблица разработчиков -->
       <div v-else class="table-wrapper">
@@ -370,6 +364,8 @@ import {
 } from 'lucide-vue-next';
 import { searchUsers, setUserStatus, deleteUser } from '@/entities/user';
 import { formatProjectDate, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { User } from '@/shared/types';
 
 const { t } = useI18n();

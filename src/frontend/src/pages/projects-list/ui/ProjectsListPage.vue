@@ -19,33 +19,26 @@
       </div>
 
       <!-- Пустой список без проектов -->
-      <div
+      <EmptyState
         v-else-if="games.length === 0 && !searchQuery && statusFilter === 'all' && roleFilter === 'all' && modeFilter === 'all'"
-        class="state-container empty-card"
-      >
-        <div class="empty-icon-wrap">
-          <Gamepad2 class="icon-lg" />
-        </div>
-        <h3>{{ t('projects.noProjects') }}</h3>
-        <p>
-          {{ t('projects.noProjectsDesc') }}
-        </p>
-        <button class="btn-add-game-primary" :disabled="creating" @click="createNewGame">
-          <span v-if="creating" class="spinner-sm"></span>
-          <Plus v-else class="icon-sm" />
-          {{ creating ? t('common.saving') : t('projects.createBtn') }}
-        </button>
-      </div>
+        :icon="Gamepad2"
+        :title="t('projects.noProjects')"
+        :action-text="creating ? t('common.saving') : t('projects.createBtn')"
+        :action-icon="Plus"
+        :action-loading="creating"
+        :action-disabled="creating"
+        @action="createNewGame"
+      />
 
       <!-- Пустой список по результатам поиска -->
-      <div v-else-if="filteredGames.length === 0" class="state-container empty-card">
-        <Search class="icon-md text-muted" />
-        <h3>{{ t('common.empty') }}</h3>
-        <p>{{ t('stats.noData') }}</p>
-        <button class="btn-reset" @click="resetFilters">
-          {{ t('common.reset') }}
-        </button>
-      </div>
+      <EmptyState
+        v-else-if="filteredGames.length === 0"
+        :icon="Search"
+        :title="t('common.empty')"
+        :action-text="t('common.reset')"
+        action-variant="reset"
+        @action="resetFilters"
+      />
 
       <!-- Основной табличный вид -->
       <div v-else class="table-wrapper">
@@ -238,6 +231,8 @@ import {
 } from '@/entities/project';
 import { ProjectFilters } from '@/features/manage-projects';
 import { formatProjectDate, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { Project } from '@/shared/types';
 
 const { t } = useI18n();

@@ -15,20 +15,14 @@
 
     <!-- Members & Invites Table -->
     <div v-else class="access-table-card">
-      <div
+      <EmptyState
         v-if="!hasMembersOrInvites"
-        class="empty-state"
-      >
-        <div class="empty-icon-wrap">
-          <Users class="icon-lg" />
-        </div>
-        <h3>{{ t('access.messages.noMembersOrInvites') }}</h3>
-        <p class="text-muted">{{ t('access.messages.noMembers') }}</p>
-        <button class="btn-add-game-primary" @click="openInviteModal">
-          <UserPlus class="icon-sm" />
-          <span>{{ t('access.actions.invite') }}</span>
-        </button>
-      </div>
+        :icon="Users"
+        :title="t('access.messages.noMembersOrInvites')"
+        :action-text="t('access.actions.invite')"
+        :action-icon="UserPlus"
+        @action="openInviteModal"
+      />
 
       <div v-else class="table-wrapper">
         <table class="project-table">
@@ -362,6 +356,8 @@ import {
 } from '@/entities/project';
 import { searchUsers } from '@/entities/user';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 const { t } = useI18n();
 const route = useRoute();

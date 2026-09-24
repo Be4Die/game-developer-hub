@@ -360,10 +360,12 @@
 
           <!-- Список замороженных сообщений -->
           <div class="chat-messages-scroll">
-            <div v-if="!effectiveChatMessages.length" class="chat-empty-state">
-              <MessageSquareDashed class="icon-lg text-muted" />
-              <p>В этом тикете нет сохранённых сообщений</p>
-            </div>
+            <EmptyState
+              v-if="!effectiveChatMessages.length"
+              :icon="MessageSquareDashed"
+              title="В этом тикете нет сохранённых сообщений"
+              compact
+            />
 
             <div v-else class="messages-stack">
               <div
@@ -501,6 +503,8 @@ import { getMediaUrl } from '@/entities/project';
 import MediaLightboxModal from '@/entities/moderation/ui/MediaLightboxModal.vue';
 import ModerationVerdictCard from '@/entities/moderation/ui/ModerationVerdictCard.vue';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
+import { EmptyState } from '@/shared/ui';
+
 
 const route = useRoute();
 const router = useRouter();

@@ -32,17 +32,15 @@
     <!-- Основной контент -->
     <div v-else class="purchases-table-card">
       <!-- Пустой список -->
-      <div v-if="items.length === 0" class="empty-state">
-        <div class="empty-icon-wrap">
-          <ShoppingBag class="icon-xl text-muted" />
-        </div>
-        <h3>{{ t('purchases.empty.title') }}</h3>
-        <p class="text-muted">{{ t('purchases.empty.desc') }}</p>
-        <button class="btn-primary-action" :disabled="isLocked" @click="!isLocked && openCreateModal()">
-          <Plus class="icon-sm" />
-          <span>{{ t('purchases.actions.addItem') }}</span>
-        </button>
-      </div>
+      <EmptyState
+        v-if="items.length === 0"
+        :icon="ShoppingBag"
+        :title="t('purchases.empty.title')"
+        :action-text="t('purchases.actions.addItem')"
+        :action-icon="Plus"
+        :action-disabled="isLocked"
+        @action="!isLocked && openCreateModal()"
+      />
 
       <!-- Таблица товаров -->
       <div v-else class="table-wrapper">
@@ -423,6 +421,8 @@ import {
   type GameItem,
 } from '@/entities/purchases';
 import type { Project } from '@/shared/types';
+import { EmptyState } from '@/shared/ui';
+
 
 const route = useRoute();
 const projectId = String(route.params.id || '');

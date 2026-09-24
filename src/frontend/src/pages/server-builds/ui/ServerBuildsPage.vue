@@ -74,7 +74,11 @@
         </tbody>
       </table>
     </div>
-    <div v-else class="empty-state">{{ t('servers.noBuilds') }}</div>
+    <EmptyState
+      v-else
+      :icon="Layers"
+      :title="t('servers.noBuilds')"
+    />
 
     <!-- Диалог подтверждения удаления -->
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
@@ -100,11 +104,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Upload, Trash2, AlertCircle } from 'lucide-vue-next';
+import { Upload, Trash2, AlertCircle, Layers } from 'lucide-vue-next';
 import { listServerBuilds, deleteServerBuild } from '@/entities/build';
 import { listInstances } from '@/entities/instance';
 import { ServerBuildUploadModal } from '@/features/upload-server-build';
 import { formatBytes, formatDate, showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 import type { Build, Project } from '@/shared/types';
 
 interface DeleteTarget extends Build {

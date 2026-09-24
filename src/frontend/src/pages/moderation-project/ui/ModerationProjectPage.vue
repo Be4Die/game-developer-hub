@@ -321,13 +321,11 @@
                 </div>
               </div>
 
-              <div v-if="!snapshotItems.length" class="empty-items-box">
-                <div class="empty-icon-wrap">
-                  <ShoppingBag class="icon-lg text-muted" />
-                </div>
-                <h4>Внутриигровые покупки отсутствуют</h4>
-                <p class="text-muted">В проекте внутриигровые товары не заведены или игра является бесплатной без доната.</p>
-              </div>
+              <EmptyState
+                v-if="!snapshotItems.length"
+                :icon="ShoppingBag"
+                title="Внутриигровые покупки отсутствуют"
+              />
 
               <div v-else class="table-responsive">
                 <table class="table-iap">
@@ -1224,6 +1222,8 @@ import { getProject, getMediaUrl } from '@/entities/project';
 import { useAuth, getUserDisplayName } from '@/entities/user';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
 import { showToast } from '@/shared/lib';
+import { EmptyState } from '@/shared/ui';
+
 
 interface ViolationItem {
   ruleCode: string;
