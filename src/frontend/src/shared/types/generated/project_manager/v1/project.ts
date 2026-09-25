@@ -535,3 +535,123 @@ export interface ProjectDeleteGameItemRequest {
 export interface ProjectDeleteGameItemResponse {
   success: boolean;
 }
+
+export interface GetProjectAnalyticsRequest {
+  project_id: number;
+  date_from: string;
+  date_to: string;
+  aggregation_period: string;
+}
+
+export interface AnalyticsSummary {
+  unique_players: number;
+  total_revenue: number;
+  total_sessions: number;
+  avg_session_minutes: number;
+  d1_retention_rate: number;
+  overall_ctr: number;
+  arpu: number;
+  arppu: number;
+  paying_users_count: number;
+  paying_users_percent: number;
+  total_purchases: number;
+  avg_order_value: number;
+  total_ad_impressions: number;
+  total_promo_impressions: number;
+  total_promo_clicks: number;
+  ltv: number;
+  avg_hours_to_first_purchase: number;
+  rpr_conversion_rate1_to2: number;
+}
+
+export interface AnalyticsRevenuePoint {
+  date: string;
+  total_revenue: number;
+  purchases_count: number;
+}
+
+export interface AnalyticsPlayerPoint {
+  date: string;
+  unique_players_count: number;
+}
+
+export interface AnalyticsSessionPoint {
+  date: string;
+  total_sessions: number;
+  avg_duration_minutes: number;
+  sessions_per_user: number;
+}
+
+export interface AnalyticsCohortRetentionPoint {
+  date: string;
+  d1: number;
+  d3: number;
+  d7: number;
+  d30: number;
+}
+
+export interface AnalyticsAdImpressionPoint {
+  date: string;
+  interstitial: number;
+  rewarded: number;
+  banner: number;
+  total: number;
+}
+
+export interface AnalyticsPromoPoint {
+  date: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}
+
+export interface AnalyticsPromoPlacementPoint {
+  placement: string;
+  placement_name: string;
+  impressions: number;
+  clicks: number;
+  ctr: number;
+}
+
+export interface AnalyticsRepeatPurchaseSegment {
+  segment_name: string;
+  users_count: number;
+  percentage: number;
+}
+
+export interface AnalyticsUserTypeRevenue {
+  new_users_revenue: number;
+  new_users_count: number;
+  returning_users_revenue: number;
+  returning_users_count: number;
+}
+
+export interface AnalyticsLtvPoint {
+  date: string;
+  cohort_size: number;
+  total_revenue: number;
+  ltv: number;
+}
+
+export interface AnalyticsChurnPoint {
+  date: string;
+  churn_rate: number;
+}
+
+export interface GetProjectAnalyticsResponse {
+  project_id: number;
+  date_from: string;
+  date_to: string;
+  summary: AnalyticsSummary | undefined;
+  revenue_items: AnalyticsRevenuePoint[];
+  dau_items: AnalyticsPlayerPoint[];
+  session_items: AnalyticsSessionPoint[];
+  retention_items: AnalyticsCohortRetentionPoint[];
+  churn_items: AnalyticsChurnPoint[];
+  ad_items: AnalyticsAdImpressionPoint[];
+  promo_items: AnalyticsPromoPoint[];
+  promo_placements: AnalyticsPromoPlacementPoint[];
+  rpr_segments: AnalyticsRepeatPurchaseSegment[];
+  user_type_data: AnalyticsUserTypeRevenue | undefined;
+  ltv_items: AnalyticsLtvPoint[];
+}

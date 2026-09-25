@@ -101,6 +101,55 @@ func TestConverters_BuildAndReleaseToProto(t *testing.T) {
 	assert.True(t, pbBuild.IsUnpacked)
 }
 
+func TestConverters_AnalyticsToProto(t *testing.T) {
+	assert.Equal(t, &pb.GetProjectAnalyticsResponse{}, analyticsToProto(nil))
+
+	analytics := &domain.GameAnalytics{
+		ProjectID: 10,
+		DateFrom:  "2026-06-01",
+		DateTo:    "2026-06-07",
+		Summary: domain.AnalyticsSummary{
+			UniquePlayers:     200,
+			TotalRevenue:      50000.0,
+			TotalSessions:     600,
+			AvgSessionMinutes: 15.5,
+			D1RetentionRate:   35.0,
+			OverallCTR:        5.5,
+		},
+		RevenueItems: []domain.RevenuePoint{
+			{Date: "2026-06-01", TotalRevenue: 5000.0, PurchasesCount: 5},
+		},
+		DAUItems: []domain.PlayerPoint{
+			{Date: "2026-06-01", UniquePlayersCount: 80},
+		},
+		SessionItems: []domain.SessionPoint{
+			{Date: "2026-06-01", TotalSessions: 120, AvgDurationMinutes: 14.2, SessionsPerUser: 1.5},
+		},
+		RetentionItems: []domain.CohortRetentionPoint{
+			{Date: "2026-06-01", D1: 35.0, D3: 20.0, D7: 12.0, D30: 4.0},
+		},
+		AdItems: []domain.AdImpressionPoint{
+			{Date: "2026-06-01", Interstitial: 50, Rewarded: 30, Banner: 100, Total: 180},
+		},
+		PromoPlacements: []domain.PromoPlacementPoint{
+			{Placement: "MainPageCatalog", PlacementName: "Каталог", Impressions: 500, Clicks: 35, CTR: 7.0},
+		},
+	}
+
+	protoResp := analyticsToProto(analytics)
+	require.NotNil(t, protoResp)
+	assert.Equal(t, int64(10), protoResp.ProjectId)
+	assert.Equal(t, "2026-06-01", protoResp.DateFrom)
+	assert.Equal(t, int64(200), protoResp.Summary.UniquePlayers)
+	assert.Equal(t, 50000.0, protoResp.Summary.TotalRevenue)
+	assert.Len(t, protoResp.RevenueItems, 1)
+	assert.Len(t, protoResp.DauItems, 1)
+	assert.Len(t, protoResp.SessionItems, 1)
+	assert.Len(t, protoResp.RetentionItems, 1)
+	assert.Len(t, protoResp.AdItems, 1)
+	assert.Len(t, protoResp.PromoPlacements, 1)
+}
+
 func TestDomainError_Mapping(t *testing.T) {
 	tests := []struct {
 		err          error

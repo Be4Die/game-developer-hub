@@ -534,6 +534,128 @@ message ProjectDeleteGameItemResponse {
   bool success = 1;
 }
 
+// ─── Аналитика проекта (игры) ────────────────────────────────
+
+message GetProjectAnalyticsRequest {
+  int64 project_id = 1;
+  string date_from = 2;
+  string date_to = 3;
+  string aggregation_period = 4;
+}
+
+message AnalyticsSummary {
+  int64 unique_players = 1;
+  double total_revenue = 2;
+  int64 total_sessions = 3;
+  double avg_session_minutes = 4;
+  double d1_retention_rate = 5;
+  double overall_ctr = 6;
+  double arpu = 7;
+  double arppu = 8;
+  int64 paying_users_count = 9;
+  double paying_users_percent = 10;
+  int64 total_purchases = 11;
+  double avg_order_value = 12;
+  int64 total_ad_impressions = 13;
+  int64 total_promo_impressions = 14;
+  int64 total_promo_clicks = 15;
+  double ltv = 16;
+  double avg_hours_to_first_purchase = 17;
+  double rpr_conversion_rate1_to2 = 18;
+}
+
+message AnalyticsRevenuePoint {
+  string date = 1;
+  double total_revenue = 2;
+  int64 purchases_count = 3;
+}
+
+message AnalyticsPlayerPoint {
+  string date = 1;
+  int64 unique_players_count = 2;
+}
+
+message AnalyticsSessionPoint {
+  string date = 1;
+  int64 total_sessions = 2;
+  double avg_duration_minutes = 3;
+  double sessions_per_user = 4;
+}
+
+message AnalyticsCohortRetentionPoint {
+  string date = 1;
+  double d1 = 2;
+  double d3 = 3;
+  double d7 = 4;
+  double d30 = 5;
+}
+
+message AnalyticsAdImpressionPoint {
+  string date = 1;
+  int64 interstitial = 2;
+  int64 rewarded = 3;
+  int64 banner = 4;
+  int64 total = 5;
+}
+
+message AnalyticsPromoPoint {
+  string date = 1;
+  int64 impressions = 2;
+  int64 clicks = 3;
+  double ctr = 4;
+}
+
+message AnalyticsPromoPlacementPoint {
+  string placement = 1;
+  string placement_name = 2;
+  int64 impressions = 3;
+  int64 clicks = 4;
+  double ctr = 5;
+}
+
+message AnalyticsRepeatPurchaseSegment {
+  string segment_name = 1;
+  int64 users_count = 2;
+  double percentage = 3;
+}
+
+message AnalyticsUserTypeRevenue {
+  double new_users_revenue = 1;
+  int64 new_users_count = 2;
+  double returning_users_revenue = 3;
+  int64 returning_users_count = 4;
+}
+
+message AnalyticsLtvPoint {
+  string date = 1;
+  int64 cohort_size = 2;
+  double total_revenue = 3;
+  double ltv = 4;
+}
+
+message AnalyticsChurnPoint {
+  string date = 1;
+  double churn_rate = 2;
+}
+
+message GetProjectAnalyticsResponse {
+  int64 project_id = 1;
+  string date_from = 2;
+  string date_to = 3;
+  AnalyticsSummary summary = 4;
+  repeated AnalyticsRevenuePoint revenue_items = 5;
+  repeated AnalyticsPlayerPoint dau_items = 6;
+  repeated AnalyticsSessionPoint session_items = 7;
+  repeated AnalyticsCohortRetentionPoint retention_items = 8;
+  repeated AnalyticsChurnPoint churn_items = 9;
+  repeated AnalyticsAdImpressionPoint ad_items = 10;
+  repeated AnalyticsPromoPoint promo_items = 11;
+  repeated AnalyticsPromoPlacementPoint promo_placements = 12;
+  repeated AnalyticsRepeatPurchaseSegment rpr_segments = 13;
+  AnalyticsUserTypeRevenue user_type_data = 14;
+  repeated AnalyticsLtvPoint ltv_items = 15;
+}
+
 // ─── Service ──────────────────────────────────────────
 
 service ProjectService {
@@ -645,5 +767,10 @@ service ProjectService {
   }
   rpc DeleteGameItem(ProjectDeleteGameItemRequest) returns (ProjectDeleteGameItemResponse) {
     option (google.api.http) = { delete: "/api/v1/projects/{project_id}/purchases/items/{game_item_id}" };
+  }
+
+  // Аналитика проекта
+  rpc GetProjectAnalytics(GetProjectAnalyticsRequest) returns (GetProjectAnalyticsResponse) {
+    option (google.api.http) = { get: "/api/v1/projects/{project_id}/analytics" };
   }
 }

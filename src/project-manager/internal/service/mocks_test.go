@@ -789,3 +789,23 @@ func (m *mockPurchaseClient) DeleteItem(_ context.Context, gameID int64, gameIte
 	return nil
 }
 
+type mockAnalyticsClient struct {
+	calledWithGameID int64
+	calledWithFilter domain.AnalyticsFilter
+	res              *domain.GameAnalytics
+	err              error
+}
+
+func (m *mockAnalyticsClient) GetGameAnalytics(_ context.Context, gameID int64, filter domain.AnalyticsFilter) (*domain.GameAnalytics, error) {
+	m.calledWithGameID = gameID
+	m.calledWithFilter = filter
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.res != nil {
+		return m.res, nil
+	}
+	return &domain.GameAnalytics{ProjectID: gameID}, nil
+}
+
+

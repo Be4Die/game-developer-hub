@@ -25,6 +25,7 @@ type ProjectService struct {
 	blockRepo          domain.BlockRepo
 	moderationClient   domain.ModerationClient
 	purchaseClient     domain.PurchaseClient
+	analyticsClient    domain.AnalyticsClient
 	buildStorage       domain.BuildStorage
 	mediaStorage       domain.MediaStorage
 	deployer           domain.Deployer
@@ -77,6 +78,12 @@ func NewProjectService(
 // WithPurchaseClient внедряет клиент сервиса внутриигровых покупок (IAP).
 func (s *ProjectService) WithPurchaseClient(client domain.PurchaseClient) *ProjectService {
 	s.purchaseClient = client
+	return s
+}
+
+// WithAnalyticsClient внедряет клиент сервиса аналитики (Driver: stub | http).
+func (s *ProjectService) WithAnalyticsClient(client domain.AnalyticsClient) *ProjectService {
+	s.analyticsClient = client
 	return s
 }
 
@@ -1210,3 +1217,18 @@ func (s *ProjectService) UploadItemImage(ctx context.Context, projectID int64, g
 
 	return imageURL, nil
 }
+
+// ─── Аналитика проекта (игры) ────────────────────────────────
+
+// GetProjectAnalytics возвращает подробную аналитику игры за указанный период.
+// Требует права PermViewStats или владения проектом.
+func (s *ProjectService) GetProjectAnalytics(ctx context.Context, projectID int64, userID string, filter domain.AnalyticsFilter) (*domain.GameAnalytics, error) {
+	if _, err := s.CheckAccess(ctx, projectID, userID, domain.PermViewStats); err != nil {
+		return nil, err
+	}
+	if s.analyticsClient == nil {
+		return nil, fmt.Errorf("analytics client is not configured")
+	}
+	return s.analyticsClient.GetGameAnalytics(ctx, projectID, filter)
+}
+

@@ -1,30 +1,30 @@
 <template>
   <div class="tab-content tab-fade-in sandbox-page-layout">
-    <!-- Селектор версий сборок для тестирования (если их больше одной) -->
-    <div v-if="buildsList.length > 1" class="sandbox-page-header">
-      <div class="version-selector-group">
-        <label class="selector-label">Сборка для запуска:</label>
-        <div class="select-wrapper">
-          <select v-model="selectedVersion" class="version-select">
-            <option
-              v-for="b in buildsList"
-              :key="b.version"
-              :value="b.version"
-            >
-              v{{ b.version }} {{ b.version === activeVersion ? '(Активный черновик)' : '' }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
-
     <!-- Встроенный плеер песочницы -->
     <div class="sandbox-player-wrapper">
       <GameSandboxPlayer
         :game-url="currentPlayUrl"
         :project-id="projectId"
         :show-devtools="true"
-      />
+      >
+        <template #toolbar-left>
+          <!-- Селектор версий сборок для тестирования (если их больше одной) -->
+          <div v-if="buildsList.length > 1" class="version-selector-group">
+            <label class="selector-label">Сборка для запуска:</label>
+            <div class="select-wrapper">
+              <select v-model="selectedVersion" class="version-select">
+                <option
+                  v-for="b in buildsList"
+                  :key="b.version"
+                  :value="b.version"
+                >
+                  v{{ b.version }} {{ b.version === activeVersion ? '(Активный черновик)' : '' }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </template>
+      </GameSandboxPlayer>
     </div>
   </div>
 </template>
@@ -32,12 +32,10 @@
 <script setup lang="ts">
 import { ref, computed, inject, onMounted, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { GameSandboxPlayer } from '@/features/game-sandbox';
 import { listClientBuilds } from '@/entities/build';
 import type { Project, ClientBuild } from '@/shared/types';
 
-const { t } = useI18n();
 const route = useRoute();
 const project = inject<Ref<Project | null> | null>('project', null);
 
@@ -105,40 +103,49 @@ const currentPlayUrl = computed<string>(() => {
   overflow: hidden;
 }
 
-.sandbox-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 8px 16px;
-  background: var(--bg-card, #1c1e24);
-  border-bottom: 1px solid var(--border-color, #2d3139);
-  flex-shrink: 0;
-}
-
 .version-selector-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-surface, #131418);
   border: 1px solid var(--border-color, #2d3139);
-  padding: 4px 10px;
+  padding: 2px 8px;
   border-radius: 6px;
+  height: 28px;
+  box-sizing: border-box;
 }
 
 .selector-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted, #9ba1ad);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.select-wrapper {
+  display: flex;
+  align-items: center;
 }
 
 .version-select {
-  padding: 3px 8px;
-  background: var(--bg-surface, #131418);
+  padding: 2px 6px;
+  background: var(--bg-card, #1a1c22);
   border: 1px solid var(--border-color, #2d3139);
   border-radius: 4px;
   color: var(--text-main, #fff);
-  font-size: 12px;
+  font-size: 11px;
   outline: none;
   cursor: pointer;
+  height: 22px;
+  transition: border-color 0.15s ease;
+}
+
+.version-select:hover {
+  border-color: var(--border-color-hover, #424754);
+}
+
+.version-select:focus {
+  border-color: var(--primary, #3b82f6);
 }
 
 .sandbox-player-wrapper {

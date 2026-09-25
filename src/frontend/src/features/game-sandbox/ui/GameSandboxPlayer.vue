@@ -42,9 +42,12 @@
             <span>Альбомный (16:9)</span>
           </button>
         </div>
+
+        <slot name="toolbar-left" />
       </div>
 
       <div class="toolbar-right">
+        <slot name="toolbar-right" />
         <button class="tool-btn" title="Перезагрузить игру" @click="reloadIframe">
           <RefreshCw class="icon-xs" :class="{ spin: isReloading }" />
           <span>Перезапустить</span>

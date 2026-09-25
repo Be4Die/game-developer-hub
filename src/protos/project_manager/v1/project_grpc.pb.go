@@ -54,6 +54,7 @@ const (
 	ProjectService_CreateGameItem_FullMethodName          = "/project_manager.v1.ProjectService/CreateGameItem"
 	ProjectService_UpdateGameItem_FullMethodName          = "/project_manager.v1.ProjectService/UpdateGameItem"
 	ProjectService_DeleteGameItem_FullMethodName          = "/project_manager.v1.ProjectService/DeleteGameItem"
+	ProjectService_GetProjectAnalytics_FullMethodName     = "/project_manager.v1.ProjectService/GetProjectAnalytics"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -102,6 +103,8 @@ type ProjectServiceClient interface {
 	CreateGameItem(ctx context.Context, in *ProjectCreateGameItemRequest, opts ...grpc.CallOption) (*ProjectCreateGameItemResponse, error)
 	UpdateGameItem(ctx context.Context, in *ProjectUpdateGameItemRequest, opts ...grpc.CallOption) (*ProjectUpdateGameItemResponse, error)
 	DeleteGameItem(ctx context.Context, in *ProjectDeleteGameItemRequest, opts ...grpc.CallOption) (*ProjectDeleteGameItemResponse, error)
+	// Аналитика проекта
+	GetProjectAnalytics(ctx context.Context, in *GetProjectAnalyticsRequest, opts ...grpc.CallOption) (*GetProjectAnalyticsResponse, error)
 }
 
 type projectServiceClient struct {
@@ -468,6 +471,16 @@ func (c *projectServiceClient) DeleteGameItem(ctx context.Context, in *ProjectDe
 	return out, nil
 }
 
+func (c *projectServiceClient) GetProjectAnalytics(ctx context.Context, in *GetProjectAnalyticsRequest, opts ...grpc.CallOption) (*GetProjectAnalyticsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProjectAnalyticsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_GetProjectAnalytics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations must embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -514,6 +527,8 @@ type ProjectServiceServer interface {
 	CreateGameItem(context.Context, *ProjectCreateGameItemRequest) (*ProjectCreateGameItemResponse, error)
 	UpdateGameItem(context.Context, *ProjectUpdateGameItemRequest) (*ProjectUpdateGameItemResponse, error)
 	DeleteGameItem(context.Context, *ProjectDeleteGameItemRequest) (*ProjectDeleteGameItemResponse, error)
+	// Аналитика проекта
+	GetProjectAnalytics(context.Context, *GetProjectAnalyticsRequest) (*GetProjectAnalyticsResponse, error)
 	mustEmbedUnimplementedProjectServiceServer()
 }
 
@@ -628,6 +643,9 @@ func (UnimplementedProjectServiceServer) UpdateGameItem(context.Context, *Projec
 }
 func (UnimplementedProjectServiceServer) DeleteGameItem(context.Context, *ProjectDeleteGameItemRequest) (*ProjectDeleteGameItemResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteGameItem not implemented")
+}
+func (UnimplementedProjectServiceServer) GetProjectAnalytics(context.Context, *GetProjectAnalyticsRequest) (*GetProjectAnalyticsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProjectAnalytics not implemented")
 }
 func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
 func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
@@ -1258,6 +1276,24 @@ func _ProjectService_DeleteGameItem_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_GetProjectAnalytics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectAnalyticsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).GetProjectAnalytics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_GetProjectAnalytics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).GetProjectAnalytics(ctx, req.(*GetProjectAnalyticsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1396,6 +1432,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteGameItem",
 			Handler:    _ProjectService_DeleteGameItem_Handler,
+		},
+		{
+			MethodName: "GetProjectAnalytics",
+			Handler:    _ProjectService_GetProjectAnalytics_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

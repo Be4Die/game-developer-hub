@@ -5034,6 +5034,1134 @@ func (x *ProjectDeleteGameItemResponse) GetSuccess() bool {
 	return false
 }
 
+type GetProjectAnalyticsRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId         int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	DateFrom          string                 `protobuf:"bytes,2,opt,name=date_from,json=dateFrom,proto3" json:"date_from,omitempty"`
+	DateTo            string                 `protobuf:"bytes,3,opt,name=date_to,json=dateTo,proto3" json:"date_to,omitempty"`
+	AggregationPeriod string                 `protobuf:"bytes,4,opt,name=aggregation_period,json=aggregationPeriod,proto3" json:"aggregation_period,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetProjectAnalyticsRequest) Reset() {
+	*x = GetProjectAnalyticsRequest{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProjectAnalyticsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProjectAnalyticsRequest) ProtoMessage() {}
+
+func (x *GetProjectAnalyticsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProjectAnalyticsRequest.ProtoReflect.Descriptor instead.
+func (*GetProjectAnalyticsRequest) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *GetProjectAnalyticsRequest) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *GetProjectAnalyticsRequest) GetDateFrom() string {
+	if x != nil {
+		return x.DateFrom
+	}
+	return ""
+}
+
+func (x *GetProjectAnalyticsRequest) GetDateTo() string {
+	if x != nil {
+		return x.DateTo
+	}
+	return ""
+}
+
+func (x *GetProjectAnalyticsRequest) GetAggregationPeriod() string {
+	if x != nil {
+		return x.AggregationPeriod
+	}
+	return ""
+}
+
+type AnalyticsSummary struct {
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	UniquePlayers           int64                  `protobuf:"varint,1,opt,name=unique_players,json=uniquePlayers,proto3" json:"unique_players,omitempty"`
+	TotalRevenue            float64                `protobuf:"fixed64,2,opt,name=total_revenue,json=totalRevenue,proto3" json:"total_revenue,omitempty"`
+	TotalSessions           int64                  `protobuf:"varint,3,opt,name=total_sessions,json=totalSessions,proto3" json:"total_sessions,omitempty"`
+	AvgSessionMinutes       float64                `protobuf:"fixed64,4,opt,name=avg_session_minutes,json=avgSessionMinutes,proto3" json:"avg_session_minutes,omitempty"`
+	D1RetentionRate         float64                `protobuf:"fixed64,5,opt,name=d1_retention_rate,json=d1RetentionRate,proto3" json:"d1_retention_rate,omitempty"`
+	OverallCtr              float64                `protobuf:"fixed64,6,opt,name=overall_ctr,json=overallCtr,proto3" json:"overall_ctr,omitempty"`
+	Arpu                    float64                `protobuf:"fixed64,7,opt,name=arpu,proto3" json:"arpu,omitempty"`
+	Arppu                   float64                `protobuf:"fixed64,8,opt,name=arppu,proto3" json:"arppu,omitempty"`
+	PayingUsersCount        int64                  `protobuf:"varint,9,opt,name=paying_users_count,json=payingUsersCount,proto3" json:"paying_users_count,omitempty"`
+	PayingUsersPercent      float64                `protobuf:"fixed64,10,opt,name=paying_users_percent,json=payingUsersPercent,proto3" json:"paying_users_percent,omitempty"`
+	TotalPurchases          int64                  `protobuf:"varint,11,opt,name=total_purchases,json=totalPurchases,proto3" json:"total_purchases,omitempty"`
+	AvgOrderValue           float64                `protobuf:"fixed64,12,opt,name=avg_order_value,json=avgOrderValue,proto3" json:"avg_order_value,omitempty"`
+	TotalAdImpressions      int64                  `protobuf:"varint,13,opt,name=total_ad_impressions,json=totalAdImpressions,proto3" json:"total_ad_impressions,omitempty"`
+	TotalPromoImpressions   int64                  `protobuf:"varint,14,opt,name=total_promo_impressions,json=totalPromoImpressions,proto3" json:"total_promo_impressions,omitempty"`
+	TotalPromoClicks        int64                  `protobuf:"varint,15,opt,name=total_promo_clicks,json=totalPromoClicks,proto3" json:"total_promo_clicks,omitempty"`
+	Ltv                     float64                `protobuf:"fixed64,16,opt,name=ltv,proto3" json:"ltv,omitempty"`
+	AvgHoursToFirstPurchase float64                `protobuf:"fixed64,17,opt,name=avg_hours_to_first_purchase,json=avgHoursToFirstPurchase,proto3" json:"avg_hours_to_first_purchase,omitempty"`
+	RprConversionRate1To2   float64                `protobuf:"fixed64,18,opt,name=rpr_conversion_rate1_to2,json=rprConversionRate1To2,proto3" json:"rpr_conversion_rate1_to2,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *AnalyticsSummary) Reset() {
+	*x = AnalyticsSummary{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsSummary) ProtoMessage() {}
+
+func (x *AnalyticsSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsSummary.ProtoReflect.Descriptor instead.
+func (*AnalyticsSummary) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *AnalyticsSummary) GetUniquePlayers() int64 {
+	if x != nil {
+		return x.UniquePlayers
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalRevenue() float64 {
+	if x != nil {
+		return x.TotalRevenue
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalSessions() int64 {
+	if x != nil {
+		return x.TotalSessions
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetAvgSessionMinutes() float64 {
+	if x != nil {
+		return x.AvgSessionMinutes
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetD1RetentionRate() float64 {
+	if x != nil {
+		return x.D1RetentionRate
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetOverallCtr() float64 {
+	if x != nil {
+		return x.OverallCtr
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetArpu() float64 {
+	if x != nil {
+		return x.Arpu
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetArppu() float64 {
+	if x != nil {
+		return x.Arppu
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetPayingUsersCount() int64 {
+	if x != nil {
+		return x.PayingUsersCount
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetPayingUsersPercent() float64 {
+	if x != nil {
+		return x.PayingUsersPercent
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalPurchases() int64 {
+	if x != nil {
+		return x.TotalPurchases
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetAvgOrderValue() float64 {
+	if x != nil {
+		return x.AvgOrderValue
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalAdImpressions() int64 {
+	if x != nil {
+		return x.TotalAdImpressions
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalPromoImpressions() int64 {
+	if x != nil {
+		return x.TotalPromoImpressions
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetTotalPromoClicks() int64 {
+	if x != nil {
+		return x.TotalPromoClicks
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetLtv() float64 {
+	if x != nil {
+		return x.Ltv
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetAvgHoursToFirstPurchase() float64 {
+	if x != nil {
+		return x.AvgHoursToFirstPurchase
+	}
+	return 0
+}
+
+func (x *AnalyticsSummary) GetRprConversionRate1To2() float64 {
+	if x != nil {
+		return x.RprConversionRate1To2
+	}
+	return 0
+}
+
+type AnalyticsRevenuePoint struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Date           string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	TotalRevenue   float64                `protobuf:"fixed64,2,opt,name=total_revenue,json=totalRevenue,proto3" json:"total_revenue,omitempty"`
+	PurchasesCount int64                  `protobuf:"varint,3,opt,name=purchases_count,json=purchasesCount,proto3" json:"purchases_count,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *AnalyticsRevenuePoint) Reset() {
+	*x = AnalyticsRevenuePoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[82]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsRevenuePoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsRevenuePoint) ProtoMessage() {}
+
+func (x *AnalyticsRevenuePoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[82]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsRevenuePoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsRevenuePoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{82}
+}
+
+func (x *AnalyticsRevenuePoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsRevenuePoint) GetTotalRevenue() float64 {
+	if x != nil {
+		return x.TotalRevenue
+	}
+	return 0
+}
+
+func (x *AnalyticsRevenuePoint) GetPurchasesCount() int64 {
+	if x != nil {
+		return x.PurchasesCount
+	}
+	return 0
+}
+
+type AnalyticsPlayerPoint struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Date               string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	UniquePlayersCount int64                  `protobuf:"varint,2,opt,name=unique_players_count,json=uniquePlayersCount,proto3" json:"unique_players_count,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AnalyticsPlayerPoint) Reset() {
+	*x = AnalyticsPlayerPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[83]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsPlayerPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsPlayerPoint) ProtoMessage() {}
+
+func (x *AnalyticsPlayerPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[83]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsPlayerPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsPlayerPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{83}
+}
+
+func (x *AnalyticsPlayerPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsPlayerPoint) GetUniquePlayersCount() int64 {
+	if x != nil {
+		return x.UniquePlayersCount
+	}
+	return 0
+}
+
+type AnalyticsSessionPoint struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Date               string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	TotalSessions      int64                  `protobuf:"varint,2,opt,name=total_sessions,json=totalSessions,proto3" json:"total_sessions,omitempty"`
+	AvgDurationMinutes float64                `protobuf:"fixed64,3,opt,name=avg_duration_minutes,json=avgDurationMinutes,proto3" json:"avg_duration_minutes,omitempty"`
+	SessionsPerUser    float64                `protobuf:"fixed64,4,opt,name=sessions_per_user,json=sessionsPerUser,proto3" json:"sessions_per_user,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *AnalyticsSessionPoint) Reset() {
+	*x = AnalyticsSessionPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[84]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsSessionPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsSessionPoint) ProtoMessage() {}
+
+func (x *AnalyticsSessionPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[84]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsSessionPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsSessionPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{84}
+}
+
+func (x *AnalyticsSessionPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsSessionPoint) GetTotalSessions() int64 {
+	if x != nil {
+		return x.TotalSessions
+	}
+	return 0
+}
+
+func (x *AnalyticsSessionPoint) GetAvgDurationMinutes() float64 {
+	if x != nil {
+		return x.AvgDurationMinutes
+	}
+	return 0
+}
+
+func (x *AnalyticsSessionPoint) GetSessionsPerUser() float64 {
+	if x != nil {
+		return x.SessionsPerUser
+	}
+	return 0
+}
+
+type AnalyticsCohortRetentionPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	D1            float64                `protobuf:"fixed64,2,opt,name=d1,proto3" json:"d1,omitempty"`
+	D3            float64                `protobuf:"fixed64,3,opt,name=d3,proto3" json:"d3,omitempty"`
+	D7            float64                `protobuf:"fixed64,4,opt,name=d7,proto3" json:"d7,omitempty"`
+	D30           float64                `protobuf:"fixed64,5,opt,name=d30,proto3" json:"d30,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsCohortRetentionPoint) Reset() {
+	*x = AnalyticsCohortRetentionPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[85]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsCohortRetentionPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsCohortRetentionPoint) ProtoMessage() {}
+
+func (x *AnalyticsCohortRetentionPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[85]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsCohortRetentionPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsCohortRetentionPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{85}
+}
+
+func (x *AnalyticsCohortRetentionPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsCohortRetentionPoint) GetD1() float64 {
+	if x != nil {
+		return x.D1
+	}
+	return 0
+}
+
+func (x *AnalyticsCohortRetentionPoint) GetD3() float64 {
+	if x != nil {
+		return x.D3
+	}
+	return 0
+}
+
+func (x *AnalyticsCohortRetentionPoint) GetD7() float64 {
+	if x != nil {
+		return x.D7
+	}
+	return 0
+}
+
+func (x *AnalyticsCohortRetentionPoint) GetD30() float64 {
+	if x != nil {
+		return x.D30
+	}
+	return 0
+}
+
+type AnalyticsAdImpressionPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Interstitial  int64                  `protobuf:"varint,2,opt,name=interstitial,proto3" json:"interstitial,omitempty"`
+	Rewarded      int64                  `protobuf:"varint,3,opt,name=rewarded,proto3" json:"rewarded,omitempty"`
+	Banner        int64                  `protobuf:"varint,4,opt,name=banner,proto3" json:"banner,omitempty"`
+	Total         int64                  `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsAdImpressionPoint) Reset() {
+	*x = AnalyticsAdImpressionPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[86]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsAdImpressionPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsAdImpressionPoint) ProtoMessage() {}
+
+func (x *AnalyticsAdImpressionPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[86]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsAdImpressionPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsAdImpressionPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{86}
+}
+
+func (x *AnalyticsAdImpressionPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsAdImpressionPoint) GetInterstitial() int64 {
+	if x != nil {
+		return x.Interstitial
+	}
+	return 0
+}
+
+func (x *AnalyticsAdImpressionPoint) GetRewarded() int64 {
+	if x != nil {
+		return x.Rewarded
+	}
+	return 0
+}
+
+func (x *AnalyticsAdImpressionPoint) GetBanner() int64 {
+	if x != nil {
+		return x.Banner
+	}
+	return 0
+}
+
+func (x *AnalyticsAdImpressionPoint) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type AnalyticsPromoPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Impressions   int64                  `protobuf:"varint,2,opt,name=impressions,proto3" json:"impressions,omitempty"`
+	Clicks        int64                  `protobuf:"varint,3,opt,name=clicks,proto3" json:"clicks,omitempty"`
+	Ctr           float64                `protobuf:"fixed64,4,opt,name=ctr,proto3" json:"ctr,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsPromoPoint) Reset() {
+	*x = AnalyticsPromoPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[87]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsPromoPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsPromoPoint) ProtoMessage() {}
+
+func (x *AnalyticsPromoPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[87]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsPromoPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsPromoPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{87}
+}
+
+func (x *AnalyticsPromoPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsPromoPoint) GetImpressions() int64 {
+	if x != nil {
+		return x.Impressions
+	}
+	return 0
+}
+
+func (x *AnalyticsPromoPoint) GetClicks() int64 {
+	if x != nil {
+		return x.Clicks
+	}
+	return 0
+}
+
+func (x *AnalyticsPromoPoint) GetCtr() float64 {
+	if x != nil {
+		return x.Ctr
+	}
+	return 0
+}
+
+type AnalyticsPromoPlacementPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Placement     string                 `protobuf:"bytes,1,opt,name=placement,proto3" json:"placement,omitempty"`
+	PlacementName string                 `protobuf:"bytes,2,opt,name=placement_name,json=placementName,proto3" json:"placement_name,omitempty"`
+	Impressions   int64                  `protobuf:"varint,3,opt,name=impressions,proto3" json:"impressions,omitempty"`
+	Clicks        int64                  `protobuf:"varint,4,opt,name=clicks,proto3" json:"clicks,omitempty"`
+	Ctr           float64                `protobuf:"fixed64,5,opt,name=ctr,proto3" json:"ctr,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsPromoPlacementPoint) Reset() {
+	*x = AnalyticsPromoPlacementPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[88]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsPromoPlacementPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsPromoPlacementPoint) ProtoMessage() {}
+
+func (x *AnalyticsPromoPlacementPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[88]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsPromoPlacementPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsPromoPlacementPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{88}
+}
+
+func (x *AnalyticsPromoPlacementPoint) GetPlacement() string {
+	if x != nil {
+		return x.Placement
+	}
+	return ""
+}
+
+func (x *AnalyticsPromoPlacementPoint) GetPlacementName() string {
+	if x != nil {
+		return x.PlacementName
+	}
+	return ""
+}
+
+func (x *AnalyticsPromoPlacementPoint) GetImpressions() int64 {
+	if x != nil {
+		return x.Impressions
+	}
+	return 0
+}
+
+func (x *AnalyticsPromoPlacementPoint) GetClicks() int64 {
+	if x != nil {
+		return x.Clicks
+	}
+	return 0
+}
+
+func (x *AnalyticsPromoPlacementPoint) GetCtr() float64 {
+	if x != nil {
+		return x.Ctr
+	}
+	return 0
+}
+
+type AnalyticsRepeatPurchaseSegment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SegmentName   string                 `protobuf:"bytes,1,opt,name=segment_name,json=segmentName,proto3" json:"segment_name,omitempty"`
+	UsersCount    int64                  `protobuf:"varint,2,opt,name=users_count,json=usersCount,proto3" json:"users_count,omitempty"`
+	Percentage    float64                `protobuf:"fixed64,3,opt,name=percentage,proto3" json:"percentage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsRepeatPurchaseSegment) Reset() {
+	*x = AnalyticsRepeatPurchaseSegment{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[89]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsRepeatPurchaseSegment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsRepeatPurchaseSegment) ProtoMessage() {}
+
+func (x *AnalyticsRepeatPurchaseSegment) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[89]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsRepeatPurchaseSegment.ProtoReflect.Descriptor instead.
+func (*AnalyticsRepeatPurchaseSegment) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{89}
+}
+
+func (x *AnalyticsRepeatPurchaseSegment) GetSegmentName() string {
+	if x != nil {
+		return x.SegmentName
+	}
+	return ""
+}
+
+func (x *AnalyticsRepeatPurchaseSegment) GetUsersCount() int64 {
+	if x != nil {
+		return x.UsersCount
+	}
+	return 0
+}
+
+func (x *AnalyticsRepeatPurchaseSegment) GetPercentage() float64 {
+	if x != nil {
+		return x.Percentage
+	}
+	return 0
+}
+
+type AnalyticsUserTypeRevenue struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	NewUsersRevenue       float64                `protobuf:"fixed64,1,opt,name=new_users_revenue,json=newUsersRevenue,proto3" json:"new_users_revenue,omitempty"`
+	NewUsersCount         int64                  `protobuf:"varint,2,opt,name=new_users_count,json=newUsersCount,proto3" json:"new_users_count,omitempty"`
+	ReturningUsersRevenue float64                `protobuf:"fixed64,3,opt,name=returning_users_revenue,json=returningUsersRevenue,proto3" json:"returning_users_revenue,omitempty"`
+	ReturningUsersCount   int64                  `protobuf:"varint,4,opt,name=returning_users_count,json=returningUsersCount,proto3" json:"returning_users_count,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *AnalyticsUserTypeRevenue) Reset() {
+	*x = AnalyticsUserTypeRevenue{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[90]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsUserTypeRevenue) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsUserTypeRevenue) ProtoMessage() {}
+
+func (x *AnalyticsUserTypeRevenue) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[90]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsUserTypeRevenue.ProtoReflect.Descriptor instead.
+func (*AnalyticsUserTypeRevenue) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{90}
+}
+
+func (x *AnalyticsUserTypeRevenue) GetNewUsersRevenue() float64 {
+	if x != nil {
+		return x.NewUsersRevenue
+	}
+	return 0
+}
+
+func (x *AnalyticsUserTypeRevenue) GetNewUsersCount() int64 {
+	if x != nil {
+		return x.NewUsersCount
+	}
+	return 0
+}
+
+func (x *AnalyticsUserTypeRevenue) GetReturningUsersRevenue() float64 {
+	if x != nil {
+		return x.ReturningUsersRevenue
+	}
+	return 0
+}
+
+func (x *AnalyticsUserTypeRevenue) GetReturningUsersCount() int64 {
+	if x != nil {
+		return x.ReturningUsersCount
+	}
+	return 0
+}
+
+type AnalyticsLtvPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	CohortSize    int64                  `protobuf:"varint,2,opt,name=cohort_size,json=cohortSize,proto3" json:"cohort_size,omitempty"`
+	TotalRevenue  float64                `protobuf:"fixed64,3,opt,name=total_revenue,json=totalRevenue,proto3" json:"total_revenue,omitempty"`
+	Ltv           float64                `protobuf:"fixed64,4,opt,name=ltv,proto3" json:"ltv,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsLtvPoint) Reset() {
+	*x = AnalyticsLtvPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[91]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsLtvPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsLtvPoint) ProtoMessage() {}
+
+func (x *AnalyticsLtvPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[91]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsLtvPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsLtvPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{91}
+}
+
+func (x *AnalyticsLtvPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsLtvPoint) GetCohortSize() int64 {
+	if x != nil {
+		return x.CohortSize
+	}
+	return 0
+}
+
+func (x *AnalyticsLtvPoint) GetTotalRevenue() float64 {
+	if x != nil {
+		return x.TotalRevenue
+	}
+	return 0
+}
+
+func (x *AnalyticsLtvPoint) GetLtv() float64 {
+	if x != nil {
+		return x.Ltv
+	}
+	return 0
+}
+
+type AnalyticsChurnPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	ChurnRate     float64                `protobuf:"fixed64,2,opt,name=churn_rate,json=churnRate,proto3" json:"churn_rate,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AnalyticsChurnPoint) Reset() {
+	*x = AnalyticsChurnPoint{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[92]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AnalyticsChurnPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AnalyticsChurnPoint) ProtoMessage() {}
+
+func (x *AnalyticsChurnPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[92]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AnalyticsChurnPoint.ProtoReflect.Descriptor instead.
+func (*AnalyticsChurnPoint) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{92}
+}
+
+func (x *AnalyticsChurnPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *AnalyticsChurnPoint) GetChurnRate() float64 {
+	if x != nil {
+		return x.ChurnRate
+	}
+	return 0
+}
+
+type GetProjectAnalyticsResponse struct {
+	state           protoimpl.MessageState            `protogen:"open.v1"`
+	ProjectId       int64                             `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	DateFrom        string                            `protobuf:"bytes,2,opt,name=date_from,json=dateFrom,proto3" json:"date_from,omitempty"`
+	DateTo          string                            `protobuf:"bytes,3,opt,name=date_to,json=dateTo,proto3" json:"date_to,omitempty"`
+	Summary         *AnalyticsSummary                 `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
+	RevenueItems    []*AnalyticsRevenuePoint          `protobuf:"bytes,5,rep,name=revenue_items,json=revenueItems,proto3" json:"revenue_items,omitempty"`
+	DauItems        []*AnalyticsPlayerPoint           `protobuf:"bytes,6,rep,name=dau_items,json=dauItems,proto3" json:"dau_items,omitempty"`
+	SessionItems    []*AnalyticsSessionPoint          `protobuf:"bytes,7,rep,name=session_items,json=sessionItems,proto3" json:"session_items,omitempty"`
+	RetentionItems  []*AnalyticsCohortRetentionPoint  `protobuf:"bytes,8,rep,name=retention_items,json=retentionItems,proto3" json:"retention_items,omitempty"`
+	ChurnItems      []*AnalyticsChurnPoint            `protobuf:"bytes,9,rep,name=churn_items,json=churnItems,proto3" json:"churn_items,omitempty"`
+	AdItems         []*AnalyticsAdImpressionPoint     `protobuf:"bytes,10,rep,name=ad_items,json=adItems,proto3" json:"ad_items,omitempty"`
+	PromoItems      []*AnalyticsPromoPoint            `protobuf:"bytes,11,rep,name=promo_items,json=promoItems,proto3" json:"promo_items,omitempty"`
+	PromoPlacements []*AnalyticsPromoPlacementPoint   `protobuf:"bytes,12,rep,name=promo_placements,json=promoPlacements,proto3" json:"promo_placements,omitempty"`
+	RprSegments     []*AnalyticsRepeatPurchaseSegment `protobuf:"bytes,13,rep,name=rpr_segments,json=rprSegments,proto3" json:"rpr_segments,omitempty"`
+	UserTypeData    *AnalyticsUserTypeRevenue         `protobuf:"bytes,14,opt,name=user_type_data,json=userTypeData,proto3" json:"user_type_data,omitempty"`
+	LtvItems        []*AnalyticsLtvPoint              `protobuf:"bytes,15,rep,name=ltv_items,json=ltvItems,proto3" json:"ltv_items,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetProjectAnalyticsResponse) Reset() {
+	*x = GetProjectAnalyticsResponse{}
+	mi := &file_project_manager_v1_project_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProjectAnalyticsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProjectAnalyticsResponse) ProtoMessage() {}
+
+func (x *GetProjectAnalyticsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_manager_v1_project_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProjectAnalyticsResponse.ProtoReflect.Descriptor instead.
+func (*GetProjectAnalyticsResponse) Descriptor() ([]byte, []int) {
+	return file_project_manager_v1_project_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *GetProjectAnalyticsResponse) GetProjectId() int64 {
+	if x != nil {
+		return x.ProjectId
+	}
+	return 0
+}
+
+func (x *GetProjectAnalyticsResponse) GetDateFrom() string {
+	if x != nil {
+		return x.DateFrom
+	}
+	return ""
+}
+
+func (x *GetProjectAnalyticsResponse) GetDateTo() string {
+	if x != nil {
+		return x.DateTo
+	}
+	return ""
+}
+
+func (x *GetProjectAnalyticsResponse) GetSummary() *AnalyticsSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetRevenueItems() []*AnalyticsRevenuePoint {
+	if x != nil {
+		return x.RevenueItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetDauItems() []*AnalyticsPlayerPoint {
+	if x != nil {
+		return x.DauItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetSessionItems() []*AnalyticsSessionPoint {
+	if x != nil {
+		return x.SessionItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetRetentionItems() []*AnalyticsCohortRetentionPoint {
+	if x != nil {
+		return x.RetentionItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetChurnItems() []*AnalyticsChurnPoint {
+	if x != nil {
+		return x.ChurnItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetAdItems() []*AnalyticsAdImpressionPoint {
+	if x != nil {
+		return x.AdItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetPromoItems() []*AnalyticsPromoPoint {
+	if x != nil {
+		return x.PromoItems
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetPromoPlacements() []*AnalyticsPromoPlacementPoint {
+	if x != nil {
+		return x.PromoPlacements
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetRprSegments() []*AnalyticsRepeatPurchaseSegment {
+	if x != nil {
+		return x.RprSegments
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetUserTypeData() *AnalyticsUserTypeRevenue {
+	if x != nil {
+		return x.UserTypeData
+	}
+	return nil
+}
+
+func (x *GetProjectAnalyticsResponse) GetLtvItems() []*AnalyticsLtvPoint {
+	if x != nil {
+		return x.LtvItems
+	}
+	return nil
+}
+
 var File_project_manager_v1_project_proto protoreflect.FileDescriptor
 
 const file_project_manager_v1_project_proto_rawDesc = "" +
@@ -5422,7 +6550,111 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\fgame_item_id\x18\x02 \x01(\tR\n" +
 	"gameItemId\"9\n" +
 	"\x1dProjectDeleteGameItemResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\xa0\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xa0\x01\n" +
+	"\x1aGetProjectAnalyticsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x1b\n" +
+	"\tdate_from\x18\x02 \x01(\tR\bdateFrom\x12\x17\n" +
+	"\adate_to\x18\x03 \x01(\tR\x06dateTo\x12-\n" +
+	"\x12aggregation_period\x18\x04 \x01(\tR\x11aggregationPeriod\"\xfe\x05\n" +
+	"\x10AnalyticsSummary\x12%\n" +
+	"\x0eunique_players\x18\x01 \x01(\x03R\runiquePlayers\x12#\n" +
+	"\rtotal_revenue\x18\x02 \x01(\x01R\ftotalRevenue\x12%\n" +
+	"\x0etotal_sessions\x18\x03 \x01(\x03R\rtotalSessions\x12.\n" +
+	"\x13avg_session_minutes\x18\x04 \x01(\x01R\x11avgSessionMinutes\x12*\n" +
+	"\x11d1_retention_rate\x18\x05 \x01(\x01R\x0fd1RetentionRate\x12\x1f\n" +
+	"\voverall_ctr\x18\x06 \x01(\x01R\n" +
+	"overallCtr\x12\x12\n" +
+	"\x04arpu\x18\a \x01(\x01R\x04arpu\x12\x14\n" +
+	"\x05arppu\x18\b \x01(\x01R\x05arppu\x12,\n" +
+	"\x12paying_users_count\x18\t \x01(\x03R\x10payingUsersCount\x120\n" +
+	"\x14paying_users_percent\x18\n" +
+	" \x01(\x01R\x12payingUsersPercent\x12'\n" +
+	"\x0ftotal_purchases\x18\v \x01(\x03R\x0etotalPurchases\x12&\n" +
+	"\x0favg_order_value\x18\f \x01(\x01R\ravgOrderValue\x120\n" +
+	"\x14total_ad_impressions\x18\r \x01(\x03R\x12totalAdImpressions\x126\n" +
+	"\x17total_promo_impressions\x18\x0e \x01(\x03R\x15totalPromoImpressions\x12,\n" +
+	"\x12total_promo_clicks\x18\x0f \x01(\x03R\x10totalPromoClicks\x12\x10\n" +
+	"\x03ltv\x18\x10 \x01(\x01R\x03ltv\x12<\n" +
+	"\x1bavg_hours_to_first_purchase\x18\x11 \x01(\x01R\x17avgHoursToFirstPurchase\x127\n" +
+	"\x18rpr_conversion_rate1_to2\x18\x12 \x01(\x01R\x15rprConversionRate1To2\"y\n" +
+	"\x15AnalyticsRevenuePoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12#\n" +
+	"\rtotal_revenue\x18\x02 \x01(\x01R\ftotalRevenue\x12'\n" +
+	"\x0fpurchases_count\x18\x03 \x01(\x03R\x0epurchasesCount\"\\\n" +
+	"\x14AnalyticsPlayerPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x120\n" +
+	"\x14unique_players_count\x18\x02 \x01(\x03R\x12uniquePlayersCount\"\xb0\x01\n" +
+	"\x15AnalyticsSessionPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12%\n" +
+	"\x0etotal_sessions\x18\x02 \x01(\x03R\rtotalSessions\x120\n" +
+	"\x14avg_duration_minutes\x18\x03 \x01(\x01R\x12avgDurationMinutes\x12*\n" +
+	"\x11sessions_per_user\x18\x04 \x01(\x01R\x0fsessionsPerUser\"u\n" +
+	"\x1dAnalyticsCohortRetentionPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x0e\n" +
+	"\x02d1\x18\x02 \x01(\x01R\x02d1\x12\x0e\n" +
+	"\x02d3\x18\x03 \x01(\x01R\x02d3\x12\x0e\n" +
+	"\x02d7\x18\x04 \x01(\x01R\x02d7\x12\x10\n" +
+	"\x03d30\x18\x05 \x01(\x01R\x03d30\"\x9e\x01\n" +
+	"\x1aAnalyticsAdImpressionPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\"\n" +
+	"\finterstitial\x18\x02 \x01(\x03R\finterstitial\x12\x1a\n" +
+	"\brewarded\x18\x03 \x01(\x03R\brewarded\x12\x16\n" +
+	"\x06banner\x18\x04 \x01(\x03R\x06banner\x12\x14\n" +
+	"\x05total\x18\x05 \x01(\x03R\x05total\"u\n" +
+	"\x13AnalyticsPromoPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12 \n" +
+	"\vimpressions\x18\x02 \x01(\x03R\vimpressions\x12\x16\n" +
+	"\x06clicks\x18\x03 \x01(\x03R\x06clicks\x12\x10\n" +
+	"\x03ctr\x18\x04 \x01(\x01R\x03ctr\"\xaf\x01\n" +
+	"\x1cAnalyticsPromoPlacementPoint\x12\x1c\n" +
+	"\tplacement\x18\x01 \x01(\tR\tplacement\x12%\n" +
+	"\x0eplacement_name\x18\x02 \x01(\tR\rplacementName\x12 \n" +
+	"\vimpressions\x18\x03 \x01(\x03R\vimpressions\x12\x16\n" +
+	"\x06clicks\x18\x04 \x01(\x03R\x06clicks\x12\x10\n" +
+	"\x03ctr\x18\x05 \x01(\x01R\x03ctr\"\x84\x01\n" +
+	"\x1eAnalyticsRepeatPurchaseSegment\x12!\n" +
+	"\fsegment_name\x18\x01 \x01(\tR\vsegmentName\x12\x1f\n" +
+	"\vusers_count\x18\x02 \x01(\x03R\n" +
+	"usersCount\x12\x1e\n" +
+	"\n" +
+	"percentage\x18\x03 \x01(\x01R\n" +
+	"percentage\"\xda\x01\n" +
+	"\x18AnalyticsUserTypeRevenue\x12*\n" +
+	"\x11new_users_revenue\x18\x01 \x01(\x01R\x0fnewUsersRevenue\x12&\n" +
+	"\x0fnew_users_count\x18\x02 \x01(\x03R\rnewUsersCount\x126\n" +
+	"\x17returning_users_revenue\x18\x03 \x01(\x01R\x15returningUsersRevenue\x122\n" +
+	"\x15returning_users_count\x18\x04 \x01(\x03R\x13returningUsersCount\"\x7f\n" +
+	"\x11AnalyticsLtvPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1f\n" +
+	"\vcohort_size\x18\x02 \x01(\x03R\n" +
+	"cohortSize\x12#\n" +
+	"\rtotal_revenue\x18\x03 \x01(\x01R\ftotalRevenue\x12\x10\n" +
+	"\x03ltv\x18\x04 \x01(\x01R\x03ltv\"H\n" +
+	"\x13AnalyticsChurnPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1d\n" +
+	"\n" +
+	"churn_rate\x18\x02 \x01(\x01R\tchurnRate\"\xa0\b\n" +
+	"\x1bGetProjectAnalyticsResponse\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\x03R\tprojectId\x12\x1b\n" +
+	"\tdate_from\x18\x02 \x01(\tR\bdateFrom\x12\x17\n" +
+	"\adate_to\x18\x03 \x01(\tR\x06dateTo\x12>\n" +
+	"\asummary\x18\x04 \x01(\v2$.project_manager.v1.AnalyticsSummaryR\asummary\x12N\n" +
+	"\rrevenue_items\x18\x05 \x03(\v2).project_manager.v1.AnalyticsRevenuePointR\frevenueItems\x12E\n" +
+	"\tdau_items\x18\x06 \x03(\v2(.project_manager.v1.AnalyticsPlayerPointR\bdauItems\x12N\n" +
+	"\rsession_items\x18\a \x03(\v2).project_manager.v1.AnalyticsSessionPointR\fsessionItems\x12Z\n" +
+	"\x0fretention_items\x18\b \x03(\v21.project_manager.v1.AnalyticsCohortRetentionPointR\x0eretentionItems\x12H\n" +
+	"\vchurn_items\x18\t \x03(\v2'.project_manager.v1.AnalyticsChurnPointR\n" +
+	"churnItems\x12I\n" +
+	"\bad_items\x18\n" +
+	" \x03(\v2..project_manager.v1.AnalyticsAdImpressionPointR\aadItems\x12H\n" +
+	"\vpromo_items\x18\v \x03(\v2'.project_manager.v1.AnalyticsPromoPointR\n" +
+	"promoItems\x12[\n" +
+	"\x10promo_placements\x18\f \x03(\v20.project_manager.v1.AnalyticsPromoPlacementPointR\x0fpromoPlacements\x12U\n" +
+	"\frpr_segments\x18\r \x03(\v22.project_manager.v1.AnalyticsRepeatPurchaseSegmentR\vrprSegments\x12R\n" +
+	"\x0euser_type_data\x18\x0e \x01(\v2,.project_manager.v1.AnalyticsUserTypeRevenueR\fuserTypeData\x12B\n" +
+	"\tltv_items\x18\x0f \x03(\v2%.project_manager.v1.AnalyticsLtvPointR\bltvItems*\xa0\x01\n" +
 	"\rProjectStatus\x12\x1e\n" +
 	"\x1aPROJECT_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PROJECT_STATUS_DRAFT\x10\x01\x12\x1a\n" +
@@ -5443,7 +6675,7 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\x19INVITATION_STATUS_PENDING\x10\x01\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_ACCEPTED\x10\x02\x12\x1e\n" +
 	"\x1aINVITATION_STATUS_DECLINED\x10\x03\x12\x1e\n" +
-	"\x1aINVITATION_STATUS_CANCELED\x10\x042\xa4*\n" +
+	"\x1aINVITATION_STATUS_CANCELED\x10\x042\xce+\n" +
 	"\x0eProjectService\x12z\n" +
 	"\x06Create\x12(.project_manager.v1.ProjectCreateRequest\x1a).project_manager.v1.ProjectCreateResponse\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/v1/projects\x12s\n" +
 	"\x03Get\x12%.project_manager.v1.ProjectGetRequest\x1a&.project_manager.v1.ProjectGetResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/projects/{id}\x12q\n" +
@@ -5480,7 +6712,8 @@ const file_project_manager_v1_project_proto_rawDesc = "" +
 	"\vGetGameItem\x12-.project_manager.v1.ProjectGetGameItemRequest\x1a..project_manager.v1.ProjectGetGameItemResponse\"D\x82\xd3\xe4\x93\x02>\x12</api/v1/projects/{project_id}/purchases/items/{game_item_id}\x12\xaf\x01\n" +
 	"\x0eCreateGameItem\x120.project_manager.v1.ProjectCreateGameItemRequest\x1a1.project_manager.v1.ProjectCreateGameItemResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/projects/{project_id}/purchases/items\x12\xbe\x01\n" +
 	"\x0eUpdateGameItem\x120.project_manager.v1.ProjectUpdateGameItemRequest\x1a1.project_manager.v1.ProjectUpdateGameItemResponse\"G\x82\xd3\xe4\x93\x02A:\x01*\x1a</api/v1/projects/{project_id}/purchases/items/{game_item_id}\x12\xbb\x01\n" +
-	"\x0eDeleteGameItem\x120.project_manager.v1.ProjectDeleteGameItemRequest\x1a1.project_manager.v1.ProjectDeleteGameItemResponse\"D\x82\xd3\xe4\x93\x02>*</api/v1/projects/{project_id}/purchases/items/{game_item_id}B\xdd\x01\n" +
+	"\x0eDeleteGameItem\x120.project_manager.v1.ProjectDeleteGameItemRequest\x1a1.project_manager.v1.ProjectDeleteGameItemResponse\"D\x82\xd3\xe4\x93\x02>*</api/v1/projects/{project_id}/purchases/items/{game_item_id}\x12\xa7\x01\n" +
+	"\x13GetProjectAnalytics\x12..project_manager.v1.GetProjectAnalyticsRequest\x1a/.project_manager.v1.GetProjectAnalyticsResponse\"/\x82\xd3\xe4\x93\x02)\x12'/api/v1/projects/{project_id}/analyticsB\xdd\x01\n" +
 	"\x16com.project_manager.v1B\fProjectProtoP\x01ZPgithub.com/Be4Die/game-developer-hub/protos/project_manager/v1;project_managerv1\xa2\x02\x03PXX\xaa\x02\x11ProjectManager.V1\xca\x02\x11ProjectManager\\V1\xe2\x02\x1dProjectManager\\V1\\GPBMetadata\xea\x02\x12ProjectManager::V1b\x06proto3"
 
 var (
@@ -5496,7 +6729,7 @@ func file_project_manager_v1_project_proto_rawDescGZIP() []byte {
 }
 
 var file_project_manager_v1_project_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 80)
+var file_project_manager_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 94)
 var file_project_manager_v1_project_proto_goTypes = []any{
 	(ProjectStatus)(0),                             // 0: project_manager.v1.ProjectStatus
 	(DeploymentEnvironment)(0),                     // 1: project_manager.v1.DeploymentEnvironment
@@ -5582,6 +6815,20 @@ var file_project_manager_v1_project_proto_goTypes = []any{
 	(*ProjectUpdateGameItemResponse)(nil),          // 81: project_manager.v1.ProjectUpdateGameItemResponse
 	(*ProjectDeleteGameItemRequest)(nil),           // 82: project_manager.v1.ProjectDeleteGameItemRequest
 	(*ProjectDeleteGameItemResponse)(nil),          // 83: project_manager.v1.ProjectDeleteGameItemResponse
+	(*GetProjectAnalyticsRequest)(nil),             // 84: project_manager.v1.GetProjectAnalyticsRequest
+	(*AnalyticsSummary)(nil),                       // 85: project_manager.v1.AnalyticsSummary
+	(*AnalyticsRevenuePoint)(nil),                  // 86: project_manager.v1.AnalyticsRevenuePoint
+	(*AnalyticsPlayerPoint)(nil),                   // 87: project_manager.v1.AnalyticsPlayerPoint
+	(*AnalyticsSessionPoint)(nil),                  // 88: project_manager.v1.AnalyticsSessionPoint
+	(*AnalyticsCohortRetentionPoint)(nil),          // 89: project_manager.v1.AnalyticsCohortRetentionPoint
+	(*AnalyticsAdImpressionPoint)(nil),             // 90: project_manager.v1.AnalyticsAdImpressionPoint
+	(*AnalyticsPromoPoint)(nil),                    // 91: project_manager.v1.AnalyticsPromoPoint
+	(*AnalyticsPromoPlacementPoint)(nil),           // 92: project_manager.v1.AnalyticsPromoPlacementPoint
+	(*AnalyticsRepeatPurchaseSegment)(nil),         // 93: project_manager.v1.AnalyticsRepeatPurchaseSegment
+	(*AnalyticsUserTypeRevenue)(nil),               // 94: project_manager.v1.AnalyticsUserTypeRevenue
+	(*AnalyticsLtvPoint)(nil),                      // 95: project_manager.v1.AnalyticsLtvPoint
+	(*AnalyticsChurnPoint)(nil),                    // 96: project_manager.v1.AnalyticsChurnPoint
+	(*GetProjectAnalyticsResponse)(nil),            // 97: project_manager.v1.GetProjectAnalyticsResponse
 }
 var file_project_manager_v1_project_proto_depIdxs = []int32{
 	0,  // 0: project_manager.v1.Project.status:type_name -> project_manager.v1.ProjectStatus
@@ -5613,81 +6860,95 @@ var file_project_manager_v1_project_proto_depIdxs = []int32{
 	73, // 26: project_manager.v1.ProjectGetGameItemResponse.item:type_name -> project_manager.v1.GameItem
 	73, // 27: project_manager.v1.ProjectCreateGameItemResponse.item:type_name -> project_manager.v1.GameItem
 	73, // 28: project_manager.v1.ProjectUpdateGameItemResponse.item:type_name -> project_manager.v1.GameItem
-	9,  // 29: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
-	11, // 30: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
-	13, // 31: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
-	15, // 32: project_manager.v1.ProjectService.ListPublished:input_type -> project_manager.v1.ProjectListPublishedRequest
-	17, // 33: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
-	19, // 34: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
-	21, // 35: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
-	22, // 36: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
-	25, // 37: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
-	27, // 38: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
-	29, // 39: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
-	30, // 40: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
-	33, // 41: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
-	35, // 42: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
-	37, // 43: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
-	39, // 44: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
-	41, // 45: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
-	47, // 46: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
-	49, // 47: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
-	51, // 48: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
-	53, // 49: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
-	55, // 50: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
-	57, // 51: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
-	59, // 52: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
-	61, // 53: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
-	63, // 54: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
-	65, // 55: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
-	67, // 56: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
-	69, // 57: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
-	71, // 58: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
-	74, // 59: project_manager.v1.ProjectService.ListGameItems:input_type -> project_manager.v1.ProjectListGameItemsRequest
-	76, // 60: project_manager.v1.ProjectService.GetGameItem:input_type -> project_manager.v1.ProjectGetGameItemRequest
-	78, // 61: project_manager.v1.ProjectService.CreateGameItem:input_type -> project_manager.v1.ProjectCreateGameItemRequest
-	80, // 62: project_manager.v1.ProjectService.UpdateGameItem:input_type -> project_manager.v1.ProjectUpdateGameItemRequest
-	82, // 63: project_manager.v1.ProjectService.DeleteGameItem:input_type -> project_manager.v1.ProjectDeleteGameItemRequest
-	10, // 64: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
-	12, // 65: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
-	14, // 66: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
-	16, // 67: project_manager.v1.ProjectService.ListPublished:output_type -> project_manager.v1.ProjectListPublishedResponse
-	18, // 68: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
-	20, // 69: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
-	24, // 70: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	24, // 71: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
-	26, // 72: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
-	28, // 73: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
-	32, // 74: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	32, // 75: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
-	34, // 76: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
-	36, // 77: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
-	38, // 78: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
-	40, // 79: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
-	42, // 80: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
-	48, // 81: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
-	50, // 82: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
-	52, // 83: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
-	54, // 84: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
-	56, // 85: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
-	58, // 86: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
-	60, // 87: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
-	62, // 88: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
-	64, // 89: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
-	66, // 90: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
-	68, // 91: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
-	70, // 92: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
-	72, // 93: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
-	75, // 94: project_manager.v1.ProjectService.ListGameItems:output_type -> project_manager.v1.ProjectListGameItemsResponse
-	77, // 95: project_manager.v1.ProjectService.GetGameItem:output_type -> project_manager.v1.ProjectGetGameItemResponse
-	79, // 96: project_manager.v1.ProjectService.CreateGameItem:output_type -> project_manager.v1.ProjectCreateGameItemResponse
-	81, // 97: project_manager.v1.ProjectService.UpdateGameItem:output_type -> project_manager.v1.ProjectUpdateGameItemResponse
-	83, // 98: project_manager.v1.ProjectService.DeleteGameItem:output_type -> project_manager.v1.ProjectDeleteGameItemResponse
-	64, // [64:99] is the sub-list for method output_type
-	29, // [29:64] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	85, // 29: project_manager.v1.GetProjectAnalyticsResponse.summary:type_name -> project_manager.v1.AnalyticsSummary
+	86, // 30: project_manager.v1.GetProjectAnalyticsResponse.revenue_items:type_name -> project_manager.v1.AnalyticsRevenuePoint
+	87, // 31: project_manager.v1.GetProjectAnalyticsResponse.dau_items:type_name -> project_manager.v1.AnalyticsPlayerPoint
+	88, // 32: project_manager.v1.GetProjectAnalyticsResponse.session_items:type_name -> project_manager.v1.AnalyticsSessionPoint
+	89, // 33: project_manager.v1.GetProjectAnalyticsResponse.retention_items:type_name -> project_manager.v1.AnalyticsCohortRetentionPoint
+	96, // 34: project_manager.v1.GetProjectAnalyticsResponse.churn_items:type_name -> project_manager.v1.AnalyticsChurnPoint
+	90, // 35: project_manager.v1.GetProjectAnalyticsResponse.ad_items:type_name -> project_manager.v1.AnalyticsAdImpressionPoint
+	91, // 36: project_manager.v1.GetProjectAnalyticsResponse.promo_items:type_name -> project_manager.v1.AnalyticsPromoPoint
+	92, // 37: project_manager.v1.GetProjectAnalyticsResponse.promo_placements:type_name -> project_manager.v1.AnalyticsPromoPlacementPoint
+	93, // 38: project_manager.v1.GetProjectAnalyticsResponse.rpr_segments:type_name -> project_manager.v1.AnalyticsRepeatPurchaseSegment
+	94, // 39: project_manager.v1.GetProjectAnalyticsResponse.user_type_data:type_name -> project_manager.v1.AnalyticsUserTypeRevenue
+	95, // 40: project_manager.v1.GetProjectAnalyticsResponse.ltv_items:type_name -> project_manager.v1.AnalyticsLtvPoint
+	9,  // 41: project_manager.v1.ProjectService.Create:input_type -> project_manager.v1.ProjectCreateRequest
+	11, // 42: project_manager.v1.ProjectService.Get:input_type -> project_manager.v1.ProjectGetRequest
+	13, // 43: project_manager.v1.ProjectService.List:input_type -> project_manager.v1.ProjectListRequest
+	15, // 44: project_manager.v1.ProjectService.ListPublished:input_type -> project_manager.v1.ProjectListPublishedRequest
+	17, // 45: project_manager.v1.ProjectService.Update:input_type -> project_manager.v1.ProjectUpdateRequest
+	19, // 46: project_manager.v1.ProjectService.Delete:input_type -> project_manager.v1.ProjectDeleteRequest
+	21, // 47: project_manager.v1.ProjectService.UploadBuild:input_type -> project_manager.v1.ProjectUploadBuildRequest
+	22, // 48: project_manager.v1.ProjectService.UploadBuildStream:input_type -> project_manager.v1.ProjectUploadBuildStreamRequest
+	25, // 49: project_manager.v1.ProjectService.ListBuilds:input_type -> project_manager.v1.ProjectListBuildsRequest
+	27, // 50: project_manager.v1.ProjectService.DeleteBuild:input_type -> project_manager.v1.ProjectDeleteBuildRequest
+	29, // 51: project_manager.v1.ProjectService.UploadMedia:input_type -> project_manager.v1.ProjectUploadMediaRequest
+	30, // 52: project_manager.v1.ProjectService.UploadMediaStream:input_type -> project_manager.v1.ProjectUploadMediaStreamRequest
+	33, // 53: project_manager.v1.ProjectService.SubmitForModeration:input_type -> project_manager.v1.SubmitForModerationRequest
+	35, // 54: project_manager.v1.ProjectService.PublishRelease:input_type -> project_manager.v1.ProjectPublishReleaseRequest
+	37, // 55: project_manager.v1.ProjectService.RejectDraft:input_type -> project_manager.v1.ProjectRejectDraftRequest
+	39, // 56: project_manager.v1.ProjectService.GetPublished:input_type -> project_manager.v1.ProjectGetPublishedRequest
+	41, // 57: project_manager.v1.ProjectService.Unpublish:input_type -> project_manager.v1.ProjectUnpublishRequest
+	47, // 58: project_manager.v1.ProjectService.SendInvitation:input_type -> project_manager.v1.ProjectSendInvitationRequest
+	49, // 59: project_manager.v1.ProjectService.ListIncomingInvitations:input_type -> project_manager.v1.ProjectListIncomingInvitationsRequest
+	51, // 60: project_manager.v1.ProjectService.ListOutgoingInvitations:input_type -> project_manager.v1.ProjectListOutgoingInvitationsRequest
+	53, // 61: project_manager.v1.ProjectService.RespondInvitation:input_type -> project_manager.v1.ProjectRespondInvitationRequest
+	55, // 62: project_manager.v1.ProjectService.CancelInvitation:input_type -> project_manager.v1.ProjectCancelInvitationRequest
+	57, // 63: project_manager.v1.ProjectService.ListMembers:input_type -> project_manager.v1.ProjectListMembersRequest
+	59, // 64: project_manager.v1.ProjectService.UpdateMemberPermissions:input_type -> project_manager.v1.ProjectUpdateMemberPermissionsRequest
+	61, // 65: project_manager.v1.ProjectService.RemoveMember:input_type -> project_manager.v1.ProjectRemoveMemberRequest
+	63, // 66: project_manager.v1.ProjectService.LeaveProject:input_type -> project_manager.v1.ProjectLeaveRequest
+	65, // 67: project_manager.v1.ProjectService.ListSharedProjects:input_type -> project_manager.v1.ProjectListSharedProjectsRequest
+	67, // 68: project_manager.v1.ProjectService.BlockUser:input_type -> project_manager.v1.ProjectBlockUserRequest
+	69, // 69: project_manager.v1.ProjectService.UnblockUser:input_type -> project_manager.v1.ProjectUnblockUserRequest
+	71, // 70: project_manager.v1.ProjectService.ListBlockedUsers:input_type -> project_manager.v1.ProjectListBlockedUsersRequest
+	74, // 71: project_manager.v1.ProjectService.ListGameItems:input_type -> project_manager.v1.ProjectListGameItemsRequest
+	76, // 72: project_manager.v1.ProjectService.GetGameItem:input_type -> project_manager.v1.ProjectGetGameItemRequest
+	78, // 73: project_manager.v1.ProjectService.CreateGameItem:input_type -> project_manager.v1.ProjectCreateGameItemRequest
+	80, // 74: project_manager.v1.ProjectService.UpdateGameItem:input_type -> project_manager.v1.ProjectUpdateGameItemRequest
+	82, // 75: project_manager.v1.ProjectService.DeleteGameItem:input_type -> project_manager.v1.ProjectDeleteGameItemRequest
+	84, // 76: project_manager.v1.ProjectService.GetProjectAnalytics:input_type -> project_manager.v1.GetProjectAnalyticsRequest
+	10, // 77: project_manager.v1.ProjectService.Create:output_type -> project_manager.v1.ProjectCreateResponse
+	12, // 78: project_manager.v1.ProjectService.Get:output_type -> project_manager.v1.ProjectGetResponse
+	14, // 79: project_manager.v1.ProjectService.List:output_type -> project_manager.v1.ProjectListResponse
+	16, // 80: project_manager.v1.ProjectService.ListPublished:output_type -> project_manager.v1.ProjectListPublishedResponse
+	18, // 81: project_manager.v1.ProjectService.Update:output_type -> project_manager.v1.ProjectUpdateResponse
+	20, // 82: project_manager.v1.ProjectService.Delete:output_type -> project_manager.v1.ProjectDeleteResponse
+	24, // 83: project_manager.v1.ProjectService.UploadBuild:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	24, // 84: project_manager.v1.ProjectService.UploadBuildStream:output_type -> project_manager.v1.ProjectUploadBuildResponse
+	26, // 85: project_manager.v1.ProjectService.ListBuilds:output_type -> project_manager.v1.ProjectListBuildsResponse
+	28, // 86: project_manager.v1.ProjectService.DeleteBuild:output_type -> project_manager.v1.ProjectDeleteBuildResponse
+	32, // 87: project_manager.v1.ProjectService.UploadMedia:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	32, // 88: project_manager.v1.ProjectService.UploadMediaStream:output_type -> project_manager.v1.ProjectUploadMediaResponse
+	34, // 89: project_manager.v1.ProjectService.SubmitForModeration:output_type -> project_manager.v1.SubmitForModerationResponse
+	36, // 90: project_manager.v1.ProjectService.PublishRelease:output_type -> project_manager.v1.ProjectPublishReleaseResponse
+	38, // 91: project_manager.v1.ProjectService.RejectDraft:output_type -> project_manager.v1.ProjectRejectDraftResponse
+	40, // 92: project_manager.v1.ProjectService.GetPublished:output_type -> project_manager.v1.ProjectGetPublishedResponse
+	42, // 93: project_manager.v1.ProjectService.Unpublish:output_type -> project_manager.v1.ProjectUnpublishResponse
+	48, // 94: project_manager.v1.ProjectService.SendInvitation:output_type -> project_manager.v1.ProjectSendInvitationResponse
+	50, // 95: project_manager.v1.ProjectService.ListIncomingInvitations:output_type -> project_manager.v1.ProjectListIncomingInvitationsResponse
+	52, // 96: project_manager.v1.ProjectService.ListOutgoingInvitations:output_type -> project_manager.v1.ProjectListOutgoingInvitationsResponse
+	54, // 97: project_manager.v1.ProjectService.RespondInvitation:output_type -> project_manager.v1.ProjectRespondInvitationResponse
+	56, // 98: project_manager.v1.ProjectService.CancelInvitation:output_type -> project_manager.v1.ProjectCancelInvitationResponse
+	58, // 99: project_manager.v1.ProjectService.ListMembers:output_type -> project_manager.v1.ProjectListMembersResponse
+	60, // 100: project_manager.v1.ProjectService.UpdateMemberPermissions:output_type -> project_manager.v1.ProjectUpdateMemberPermissionsResponse
+	62, // 101: project_manager.v1.ProjectService.RemoveMember:output_type -> project_manager.v1.ProjectRemoveMemberResponse
+	64, // 102: project_manager.v1.ProjectService.LeaveProject:output_type -> project_manager.v1.ProjectLeaveResponse
+	66, // 103: project_manager.v1.ProjectService.ListSharedProjects:output_type -> project_manager.v1.ProjectListSharedProjectsResponse
+	68, // 104: project_manager.v1.ProjectService.BlockUser:output_type -> project_manager.v1.ProjectBlockUserResponse
+	70, // 105: project_manager.v1.ProjectService.UnblockUser:output_type -> project_manager.v1.ProjectUnblockUserResponse
+	72, // 106: project_manager.v1.ProjectService.ListBlockedUsers:output_type -> project_manager.v1.ProjectListBlockedUsersResponse
+	75, // 107: project_manager.v1.ProjectService.ListGameItems:output_type -> project_manager.v1.ProjectListGameItemsResponse
+	77, // 108: project_manager.v1.ProjectService.GetGameItem:output_type -> project_manager.v1.ProjectGetGameItemResponse
+	79, // 109: project_manager.v1.ProjectService.CreateGameItem:output_type -> project_manager.v1.ProjectCreateGameItemResponse
+	81, // 110: project_manager.v1.ProjectService.UpdateGameItem:output_type -> project_manager.v1.ProjectUpdateGameItemResponse
+	83, // 111: project_manager.v1.ProjectService.DeleteGameItem:output_type -> project_manager.v1.ProjectDeleteGameItemResponse
+	97, // 112: project_manager.v1.ProjectService.GetProjectAnalytics:output_type -> project_manager.v1.GetProjectAnalyticsResponse
+	77, // [77:113] is the sub-list for method output_type
+	41, // [41:77] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_project_manager_v1_project_proto_init() }
@@ -5710,7 +6971,7 @@ func file_project_manager_v1_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_manager_v1_project_proto_rawDesc), len(file_project_manager_v1_project_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   80,
+			NumMessages:   94,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

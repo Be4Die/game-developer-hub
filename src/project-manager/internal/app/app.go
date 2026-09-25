@@ -177,6 +177,16 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		log.Info("using in-memory stub purchase client for local development")
 	}
 
+	// ─── Клиент сервиса аналитики (HTTP или Stub) ───────────────
+	var analyticsClient domain.AnalyticsClient
+	if cfg.AnalyticsService.Driver == "http" && cfg.AnalyticsService.URL != "" {
+		analyticsClient = client.NewHTTPAnalyticsClient(cfg.AnalyticsService.URL, cfg.AnalyticsService.APIKey, cfg.AnalyticsService.Timeout, log)
+		log.Info("connected to external analytics service", slog.String("url", cfg.AnalyticsService.URL))
+	} else {
+		analyticsClient = client.NewStubAnalyticsClient(log)
+		log.Info("using in-memory stub analytics client for local development")
+	}
+
 	// ─── Сервисы ────────────────────────────────────────────────
 	projectService := service.NewProjectService(
 		projectRepo,
@@ -195,7 +205,8 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		cfg.Storage.MaxBuildVersions,
 	).
 		WithPlatformProxyHosts(cfg.Deployment.PlatformProxyHosts).
-		WithPurchaseClient(purchaseClient)
+		WithPurchaseClient(purchaseClient).
+		WithAnalyticsClient(analyticsClient)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)

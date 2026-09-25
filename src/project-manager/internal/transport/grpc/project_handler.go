@@ -693,3 +693,25 @@ func (h *ProjectHandler) DeleteGameItem(ctx context.Context, req *pb.ProjectDele
 	}
 	return &pb.ProjectDeleteGameItemResponse{Success: true}, nil
 }
+
+// GetProjectAnalytics возвращает детальные аналитические данные по проекту (игре).
+func (h *ProjectHandler) GetProjectAnalytics(ctx context.Context, req *pb.GetProjectAnalyticsRequest) (*pb.GetProjectAnalyticsResponse, error) {
+	userID, ok := UserIDFromContext(ctx)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "missing user id")
+	}
+
+	filter := domain.AnalyticsFilter{
+		DateFrom:          req.GetDateFrom(),
+		DateTo:            req.GetDateTo(),
+		AggregationPeriod: req.GetAggregationPeriod(),
+	}
+
+	analytics, err := h.svc.GetProjectAnalytics(ctx, req.GetProjectId(), userID, filter)
+	if err != nil {
+		return nil, domainError(err, "get project analytics")
+	}
+
+	return analyticsToProto(analytics), nil
+}
+

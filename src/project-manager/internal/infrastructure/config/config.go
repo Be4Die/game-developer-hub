@@ -27,8 +27,17 @@ type Config struct {
 	Storage         StorageConfig
 	Deployment      DeploymentConfig
 	Moderation      ModerationConfig
-	PurchaseService PurchaseServiceConfig `yaml:"purchase_service"`
-	JWT             JWTConfig
+	PurchaseService  PurchaseServiceConfig  `yaml:"purchase_service"`
+	AnalyticsService AnalyticsServiceConfig `yaml:"analytics_service"`
+	JWT              JWTConfig
+}
+
+// AnalyticsServiceConfig настройки подключения к сервису аналитической статистики (PlayerGameAnalytics / Gateway).
+type AnalyticsServiceConfig struct {
+	Driver  string        `yaml:"driver" env:"ANALYTICS_SERVICE_DRIVER" env-default:"stub"` // stub | http
+	URL     string        `yaml:"url" env:"ANALYTICS_SERVICE_URL" env-default:""`
+	Timeout time.Duration `yaml:"timeout" env:"ANALYTICS_SERVICE_TIMEOUT" env-default:"10s"`
+	APIKey  string        `yaml:"api_key" env:"ANALYTICS_API_KEY" env-default:""`
 }
 
 // PurchaseServiceConfig настройки подключения к сервису внутриигровых покупок (IAP).

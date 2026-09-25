@@ -196,3 +196,131 @@ func gameItemToProto(item *domain.GameItem) *pb.GameItem {
 		UpdatedAt:   formatTime(item.UpdatedAt),
 	}
 }
+
+func analyticsToProto(a *domain.GameAnalytics) *pb.GetProjectAnalyticsResponse {
+	if a == nil {
+		return &pb.GetProjectAnalyticsResponse{}
+	}
+
+	resp := &pb.GetProjectAnalyticsResponse{
+		ProjectId: a.ProjectID,
+		DateFrom:  a.DateFrom,
+		DateTo:    a.DateTo,
+		Summary: &pb.AnalyticsSummary{
+			UniquePlayers:           a.Summary.UniquePlayers,
+			TotalRevenue:            a.Summary.TotalRevenue,
+			TotalSessions:           a.Summary.TotalSessions,
+			AvgSessionMinutes:       a.Summary.AvgSessionMinutes,
+			D1RetentionRate:         a.Summary.D1RetentionRate,
+			OverallCtr:              a.Summary.OverallCTR,
+			Arpu:                    a.Summary.ARPU,
+			Arppu:                   a.Summary.ARPPU,
+			PayingUsersCount:        a.Summary.PayingUsersCount,
+			PayingUsersPercent:      a.Summary.PayingUsersPercent,
+			TotalPurchases:          a.Summary.TotalPurchases,
+			AvgOrderValue:           a.Summary.AvgOrderValue,
+			TotalAdImpressions:      a.Summary.TotalAdImpressions,
+			TotalPromoImpressions:   a.Summary.TotalPromoImpressions,
+			TotalPromoClicks:        a.Summary.TotalPromoClicks,
+			Ltv:                     a.Summary.LTV,
+			AvgHoursToFirstPurchase: a.Summary.AvgHoursToFirstPurchase,
+			RprConversionRate1To2:   a.Summary.RPRConversionRate1To2,
+		},
+		RevenueItems:    make([]*pb.AnalyticsRevenuePoint, len(a.RevenueItems)),
+		DauItems:        make([]*pb.AnalyticsPlayerPoint, len(a.DAUItems)),
+		SessionItems:    make([]*pb.AnalyticsSessionPoint, len(a.SessionItems)),
+		RetentionItems:  make([]*pb.AnalyticsCohortRetentionPoint, len(a.RetentionItems)),
+		ChurnItems:      make([]*pb.AnalyticsChurnPoint, len(a.ChurnItems)),
+		AdItems:         make([]*pb.AnalyticsAdImpressionPoint, len(a.AdItems)),
+		PromoItems:      make([]*pb.AnalyticsPromoPoint, len(a.PromoItems)),
+		PromoPlacements: make([]*pb.AnalyticsPromoPlacementPoint, len(a.PromoPlacements)),
+		RprSegments:     make([]*pb.AnalyticsRepeatPurchaseSegment, len(a.RPRSegments)),
+		UserTypeData: &pb.AnalyticsUserTypeRevenue{
+			NewUsersRevenue:       a.UserTypeData.NewUsersRevenue,
+			NewUsersCount:         a.UserTypeData.NewUsersCount,
+			ReturningUsersRevenue: a.UserTypeData.ReturningUsersRevenue,
+			ReturningUsersCount:   a.UserTypeData.ReturningUsersCount,
+		},
+		LtvItems: make([]*pb.AnalyticsLtvPoint, len(a.LTVItems)),
+	}
+
+	for i, r := range a.RevenueItems {
+		resp.RevenueItems[i] = &pb.AnalyticsRevenuePoint{
+			Date:           r.Date,
+			TotalRevenue:   r.TotalRevenue,
+			PurchasesCount: r.PurchasesCount,
+		}
+	}
+	for i, p := range a.DAUItems {
+		resp.DauItems[i] = &pb.AnalyticsPlayerPoint{
+			Date:               p.Date,
+			UniquePlayersCount: p.UniquePlayersCount,
+		}
+	}
+	for i, s := range a.SessionItems {
+		resp.SessionItems[i] = &pb.AnalyticsSessionPoint{
+			Date:               s.Date,
+			TotalSessions:      s.TotalSessions,
+			AvgDurationMinutes: s.AvgDurationMinutes,
+			SessionsPerUser:    s.SessionsPerUser,
+		}
+	}
+	for i, ret := range a.RetentionItems {
+		resp.RetentionItems[i] = &pb.AnalyticsCohortRetentionPoint{
+			Date: ret.Date,
+			D1:   ret.D1,
+			D3:   ret.D3,
+			D7:   ret.D7,
+			D30:  ret.D30,
+		}
+	}
+	for i, c := range a.ChurnItems {
+		resp.ChurnItems[i] = &pb.AnalyticsChurnPoint{
+			Date:      c.Date,
+			ChurnRate: c.ChurnRate,
+		}
+	}
+	for i, ad := range a.AdItems {
+		resp.AdItems[i] = &pb.AnalyticsAdImpressionPoint{
+			Date:         ad.Date,
+			Interstitial: ad.Interstitial,
+			Rewarded:     ad.Rewarded,
+			Banner:       ad.Banner,
+			Total:        ad.Total,
+		}
+	}
+	for i, pr := range a.PromoItems {
+		resp.PromoItems[i] = &pb.AnalyticsPromoPoint{
+			Date:        pr.Date,
+			Impressions: pr.Impressions,
+			Clicks:      pr.Clicks,
+			Ctr:         pr.CTR,
+		}
+	}
+	for i, pl := range a.PromoPlacements {
+		resp.PromoPlacements[i] = &pb.AnalyticsPromoPlacementPoint{
+			Placement:     pl.Placement,
+			PlacementName: pl.PlacementName,
+			Impressions:   pl.Impressions,
+			Clicks:        pl.Clicks,
+			Ctr:           pl.CTR,
+		}
+	}
+	for i, rpr := range a.RPRSegments {
+		resp.RprSegments[i] = &pb.AnalyticsRepeatPurchaseSegment{
+			SegmentName: rpr.SegmentName,
+			UsersCount:  rpr.UsersCount,
+			Percentage:  rpr.Percentage,
+		}
+	}
+	for i, ltv := range a.LTVItems {
+		resp.LtvItems[i] = &pb.AnalyticsLtvPoint{
+			Date:         ltv.Date,
+			CohortSize:   ltv.CohortSize,
+			TotalRevenue: ltv.TotalRevenue,
+			Ltv:          ltv.LTV,
+		}
+	}
+
+	return resp
+}
