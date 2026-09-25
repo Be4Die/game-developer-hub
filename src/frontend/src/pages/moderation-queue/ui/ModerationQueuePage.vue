@@ -186,32 +186,19 @@
                 </div>
               </td>
 
-              <!-- 2 колонка: Предмет заявки (версия билда или обоснование серверов) -->
+              <!-- 2 колонка: Предмет заявки (версия билда или квота серверов) -->
               <td class="col-details">
-                <template v-if="req.type === 'project'">
-                  <span v-if="req.version" class="version-badge">
-                    v{{ req.version }}
-                  </span>
-                  <span v-else class="text-muted text-sm">—</span>
-                </template>
-                <template v-else>
-                  <div class="server-details-cell">
-                    <div class="quota-chips-line">
-                      <span class="quota-chip" title="Запрошенное число инстансов">
-                        {{ req.maxInstances }} инст.
-                      </span>
-                      <span class="quota-chip" title="Суммарный лимит CPU">
-                        {{ formatCpu(req.maxTotalCpuMillis, true) }}
-                      </span>
-                      <span class="quota-chip" title="Суммарный лимит RAM">
-                        {{ formatMemory(req.maxTotalMemoryMb, true) }}
-                      </span>
-                    </div>
-                    <p class="server-reason-snippet" :title="req.reason">
-                      «{{ req.reason || 'Запрос доступа к серверам платформы' }}»
-                    </p>
-                  </div>
-                </template>
+                <span v-if="req.type === 'project' && req.version" class="version-badge">
+                  v{{ req.version }}
+                </span>
+                <span
+                  v-else-if="req.type === 'server'"
+                  class="server-quota-tag"
+                  :title="`Лимит: ${req.maxInstances || 2} инст., CPU: ${formatCpu(req.maxTotalCpuMillis, true)}, RAM: ${formatMemory(req.maxTotalMemoryMb, true)}${req.reason ? ` — «${req.reason}»` : ''}`"
+                >
+                  {{ req.maxInstances ? `${req.maxInstances} инст.` : 'Серверы' }}
+                </span>
+                <span v-else class="text-muted text-sm">—</span>
               </td>
 
               <!-- 3 колонка: Разработчик -->
@@ -236,28 +223,9 @@
                 </span>
               </td>
 
-              <!-- 6 колонка: Модератор / Решение -->
+              <!-- 6 колонка: Модератор -->
               <td class="col-mod">
-                <!-- Для серверов, если одобрено/отклонено -->
-                <div v-if="req.type === 'server' && isApproved(req.status)" class="mod-decision-box text-success">
-                  <strong>Квота: {{ req.maxInstances }} инст.</strong>
-                  <span class="quota-subline">
-                    {{ formatCpu(req.maxTotalCpuMillis, true) }} / {{ formatMemory(req.maxTotalMemoryMb, true) }}
-                  </span>
-                  <span
-                    v-if="req.moderatorComment"
-                    class="mod-comment-cell"
-                    :title="req.moderatorComment"
-                  >
-                    «{{ req.moderatorComment }}»
-                  </span>
-                  <span v-if="req.moderatorId" class="sub-mod">{{ getUserDisplayName(req.moderatorId) }}</span>
-                </div>
-                <div v-else-if="req.type === 'server' && isRejected(req.status)" class="mod-decision-box text-danger">
-                  <span class="rejection-text-cell" :title="req.rejectionReason">«{{ req.rejectionReason || 'Отказ' }}»</span>
-                  <span v-if="req.moderatorId" class="sub-mod">{{ getUserDisplayName(req.moderatorId) }}</span>
-                </div>
-                <span v-else-if="req.moderatorId" class="mod-name" :title="req.moderatorId">
+                <span v-if="req.moderatorId" class="mod-name" :title="req.moderatorId">
                   {{ getUserDisplayName(req.moderatorId) }}
                 </span>
                 <span v-else class="unassigned-text">
@@ -379,10 +347,6 @@ import {
   Gamepad2,
   Globe,
   Server,
-  Check,
-  AlertCircle,
-  Sliders,
-  ExternalLink,
 } from 'lucide-vue-next';
 import {
   moderationApi,
@@ -882,6 +846,7 @@ function handleRowClick(req: any): void {
   width: 32%;
 }
 
+.col-details,
 .col-version {
   width: 10%;
 }
@@ -1383,75 +1348,17 @@ function handleRowClick(req: any): void {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.server-details-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.quota-chips-line {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.quota-chip {
+.server-quota-tag {
   display: inline-flex;
   align-items: center;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
-  background: var(--bg-secondary, #21262d);
-  color: var(--text-secondary, #c9d1d9);
-  border: 1px solid var(--border, #30363d);
-}
-
-.quota-subline {
-  font-size: 11px;
-  color: var(--text-secondary, #8b949e);
-}
-
-.mod-comment-cell {
-  font-size: 11px;
-  color: #60a5fa;
-  font-style: italic;
-  max-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.server-reason-snippet {
   font-size: 12px;
-  color: var(--text-secondary, #c9d1d9);
-  max-width: 240px;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
-  font-style: italic;
-}
-
-.mod-decision-box {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 12px;
-}
-
-.sub-mod {
-  font-size: 11px;
-  color: var(--text-tertiary, #8b949e);
-}
-
-.rejection-text-cell {
-  max-width: 140px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 11px;
 }
 
 /* Модальные окна */
