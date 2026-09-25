@@ -890,6 +890,69 @@ func TestNodeService_ListServices_FilterByGame(t *testing.T) {
 	}
 }
 
+func TestNodeService_ListServices_AdoptOrphanServices(t *testing.T) {
+	node := &domain.Node{
+		ID:       10,
+		OwnerID:  "user-1",
+		Status:   domain.NodeStatusOnline,
+		Address:  "127.0.0.1:44044",
+		APIToken: "tok",
+	}
+	nodeRepo := &hbMockNodeRepo{
+		getByIDFn: func(ctx context.Context, id int64) (*domain.Node, error) {
+			return node, nil
+		},
+	}
+	var createdInDB []*domain.ManagedService
+	svcRepo := &mockManagedServiceRepo{
+		listByNodeFn: func(ctx context.Context, nodeID int64) ([]*domain.ManagedService, error) {
+			// Initially DB has no services
+			return []*domain.ManagedService{}, nil
+		},
+		createFn: func(ctx context.Context, s *domain.ManagedService) error {
+			createdInDB = append(createdInDB, s)
+			return nil
+		},
+	}
+	nodeClient := &hbMockNodeClient{
+		ListServicesFn: func(ctx context.Context, nodeAddress, apiKey string) ([]domain.ServiceInfo, error) {
+			return []domain.ServiceInfo{
+				{
+					Name:        "game-postgres",
+					ServiceType: domain.ServiceTypePostgres,
+					ContainerID: "cid-pg-123",
+					HostPort:    5432,
+					Status:      "running",
+					VolumePath:  "gdh-vol-game-postgres",
+				},
+			}, nil
+		},
+	}
+
+	svc := NewNodeService(testLogger(), nodeRepo, &hbMockNodeStateStore{}, &hbMockInstanceRepo{}, &hbMockInstanceState{}, nodeClient).WithServiceRepo(svcRepo)
+
+	ctx := context.Background()
+	res, err := svc.ListServices(ctx, "user-1", 10, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(res) != 1 {
+		t.Fatalf("expected 1 adopted service, got %d", len(res))
+	}
+	if res[0].Name != "game-postgres" {
+		t.Errorf("expected service name 'game-postgres', got '%s'", res[0].Name)
+	}
+	if len(createdInDB) != 1 {
+		t.Fatalf("expected 1 service created in DB via adoption, got %d", len(createdInDB))
+	}
+	if createdInDB[0].Name != "game-postgres" {
+		t.Errorf("expected adopted service in DB to be 'game-postgres', got '%s'", createdInDB[0].Name)
+	}
+	if createdInDB[0].OwnerID != "user-1" {
+		t.Errorf("expected owner 'user-1', got '%s'", createdInDB[0].OwnerID)
+	}
+}
+
 func TestNodeService_DeleteService(t *testing.T) {
 	node := &domain.Node{
 		ID:       10,

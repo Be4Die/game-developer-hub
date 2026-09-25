@@ -181,12 +181,13 @@ type DeployServiceResult struct {
 
 // ServiceInfo содержит информацию о сервисе на ноде.
 type ServiceInfo struct {
-	Name            string
-	ServiceType     ServiceType
-	ContainerID     string
-	Status          string
-	HostPort        uint32
-	VolumePath      string
-	VolumeSizeBytes uint64
+	Name              string
+	ServiceType       ServiceType
+	ContainerID       string
+	Status            string
+	HostPort          uint32
+	VolumePath        string
+	VolumeSizeBytes   uint64
+	AutoBackupEnabled bool
 }
 

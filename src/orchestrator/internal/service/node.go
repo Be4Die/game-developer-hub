@@ -563,7 +563,7 @@ func (s *NodeService) UpdateRole(
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.UpdateRole: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 
@@ -874,7 +874,7 @@ func (s *NodeService) StartService(ctx context.Context, ownerID string, nodeID, 
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.StartService: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 	if node.Role == domain.NodeRoleCompute {
@@ -917,7 +917,7 @@ func (s *NodeService) StopService(ctx context.Context, ownerID string, nodeID, s
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.StopService: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 
@@ -963,7 +963,7 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.CreateService: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 	if node.Status != domain.NodeStatusOnline {
@@ -1101,7 +1101,7 @@ func (s *NodeService) ListServices(ctx context.Context, ownerID string, nodeID i
 	if err != nil {
 		return nil, fmt.Errorf("NodeService.ListServices: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return nil, domain.ErrForbidden
 	}
 
@@ -1119,7 +1119,9 @@ func (s *NodeService) ListServices(ctx context.Context, ownerID string, nodeID i
 				nodeSvcMap[ns.Name] = ns
 			}
 
+			dbSvcMap := make(map[string]*domain.ManagedService, len(services))
 			for _, svc := range services {
+				dbSvcMap[svc.Name] = svc
 				ns, ok := nodeSvcMap[svc.Name]
 				if !ok {
 					continue
@@ -1160,6 +1162,71 @@ func (s *NodeService) ListServices(ctx context.Context, ownerID string, nodeID i
 					}
 				}
 			}
+
+			// Автоматическое усыновление (Adoption): если сервис обнаружен на ноде, но отсутствует в БД
+			for name, ns := range nodeSvcMap {
+				if _, exists := dbSvcMap[name]; exists {
+					continue
+				}
+				svcOwnerID := node.OwnerID
+				if svcOwnerID == "" {
+					svcOwnerID = ownerID
+				}
+				newStatus := domain.ServiceStatusRunning
+				if ns.Status == "stopped" || ns.Status == "exited" {
+					newStatus = domain.ServiceStatusStopped
+				} else if ns.Status == "error" {
+					newStatus = domain.ServiceStatusError
+				}
+
+				host := "127.0.0.1"
+				if h, _, err := net.SplitHostPort(node.Address); err == nil && h != "" {
+					host = h
+				}
+				var connURI string
+				switch ns.ServiceType {
+				case domain.ServiceTypePostgres:
+					connURI = fmt.Sprintf("postgresql://postgres@%s:%d/game_db?sslmode=disable", host, ns.HostPort)
+				case domain.ServiceTypeMySQL:
+					connURI = fmt.Sprintf("mysql://root@%s:%d/game_db", host, ns.HostPort)
+				case domain.ServiceTypeRedis:
+					connURI = fmt.Sprintf("redis://%s:%d/0", host, ns.HostPort)
+				case domain.ServiceTypeAdminer, domain.ServiceTypePGAdmin:
+					connURI = fmt.Sprintf("http://%s:%d", host, ns.HostPort)
+				}
+
+				now := time.Now()
+				adoptedRecord := &domain.ManagedService{
+					NodeID:            nodeID,
+					OwnerID:           svcOwnerID,
+					AllowedGameIDs:    []int64{},
+					ServiceType:       ns.ServiceType,
+					Name:              ns.Name,
+					ContainerID:       ns.ContainerID,
+					HostPort:          ns.HostPort,
+					ConnectionURI:     connURI,
+					Status:            newStatus,
+					VolumePath:        ns.VolumePath,
+					VolumeSizeBytes:   ns.VolumeSizeBytes,
+					AutoBackupEnabled: ns.AutoBackupEnabled,
+					CreatedAt:         now,
+					UpdatedAt:         now,
+				}
+				if err := s.serviceRepo.Create(ctx, adoptedRecord); err != nil {
+					s.log.Warn("failed to adopt orphan service from node into DB",
+						slog.String("name", name),
+						slog.Int64("node_id", nodeID),
+						slog.String("error", err.Error()),
+					)
+				} else {
+					s.log.Info("adopted orphan service from node into DB",
+						slog.Int64("service_id", adoptedRecord.ID),
+						slog.String("name", name),
+						slog.Int64("node_id", nodeID),
+					)
+					services = append(services, adoptedRecord)
+				}
+			}
 		} else {
 			s.log.Debug("could not sync managed services from node",
 				slog.Int64("node_id", nodeID),
@@ -1198,7 +1265,7 @@ func (s *NodeService) DeleteService(ctx context.Context, ownerID string, nodeID,
 	if err != nil {
 		return fmt.Errorf("NodeService.DeleteService: get node: %w", err)
 	}
-	if ownerID != "" && node.OwnerID != ownerID {
+	if ownerID != "" && node.OwnerID != "" && node.OwnerID != ownerID {
 		return domain.ErrForbidden
 	}
 

@@ -692,6 +692,9 @@ func (c *Client) DeployService(ctx context.Context, nodeAddress, apiKey string, 
 		VolumeName:  req.VolumeName,
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return nil, fmt.Errorf("Client.DeployService: %w: %v", domain.ErrAlreadyExists, err)
+		}
 		return nil, fmt.Errorf("Client.DeployService: %w", err)
 	}
 
@@ -796,13 +799,14 @@ func (c *Client) ListServices(ctx context.Context, nodeAddress, apiKey string) (
 		}
 
 		res = append(res, domain.ServiceInfo{
-			Name:            s.GetName(),
-			ServiceType:     domainType,
-			ContainerID:     s.GetContainerId(),
-			Status:          s.GetStatus(),
-			HostPort:        s.GetHostPort(),
-			VolumePath:      s.GetVolumePath(),
-			VolumeSizeBytes: s.GetVolumeSizeBytes(),
+			Name:              s.GetName(),
+			ServiceType:       domainType,
+			ContainerID:       s.GetContainerId(),
+			Status:            s.GetStatus(),
+			HostPort:          s.GetHostPort(),
+			VolumePath:        s.GetVolumePath(),
+			VolumeSizeBytes:   s.GetVolumeSizeBytes(),
+			AutoBackupEnabled: s.GetAutoBackupEnabled(),
 		})
 	}
 	return res, nil
