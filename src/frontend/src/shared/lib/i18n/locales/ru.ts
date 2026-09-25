@@ -492,6 +492,7 @@ export default {
     refresh: 'Обновить',
     exportCsv: 'Экспорт в CSV',
     period: 'Период',
+    today: 'Сегодня',
     day: 'День',
     week: '7 дней',
     month: '30 дней',

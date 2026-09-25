@@ -491,6 +491,7 @@ export default {
     refresh: 'Refresh Data',
     exportCsv: 'Export to CSV',
     period: 'Period',
+    today: 'Today',
     day: 'Day',
     week: '7 Days',
     month: '30 Days',
