@@ -35,6 +35,7 @@ export default {
     active: 'Активен',
     inactive: 'Неактивен',
     required: 'Обязательное поле',
+    default: 'По умолчанию',
   },
   roles: {
     developer: 'Разработчик',
@@ -62,7 +63,7 @@ export default {
     switchLanguage: 'Выбрать язык',
   },
   auth: {
-    loginTitle: 'Вход в Game Developer Hub',
+    loginTitle: 'Вход в Welwise',
     registerTitle: 'Регистрация разработчика',
     resetPasswordTitle: 'Восстановление доступа',
     email: 'Email',
@@ -295,6 +296,8 @@ export default {
     uploadFormats: 'Поддерживаются: .zip, .tar.gz (до 100 МБ)',
     saveDraft: 'Сохранить черновик',
     draftSaved: 'Черновик успешно сохранен',
+    clickToEnlarge: 'Увеличить',
+    clickToPreview: 'Нажмите для полноэкранного просмотра',
   },
   moderation: {
     dashboardTitle: 'Панель модератора',
@@ -416,6 +419,13 @@ export default {
     buildsTitle: 'Серверные билды',
     runningInstances: 'Работающие',
     onlinePlayers: 'Игроков онлайн',
+    players: 'Игроки',
+    address: 'Адрес',
+    selectBuild: 'Выберите сборку',
+    maxPlayers: 'Макс. игроков',
+    envVars: 'Переменные окружения',
+    arguments: 'Аргументы запуска',
+    addArgument: '+ Добавить аргумент',
     inQueue: 'В очереди',
     uploadBuildDesc: 'Загрузить новую версию серверного билда',
     startInstanceDesc: 'Развернуть новый экземпляр сервера',
@@ -424,7 +434,7 @@ export default {
     tabs: {
       overview: 'Обзор',
       builds: 'Сборки сервера',
-      instances: 'Экземпляры (инстансы)',
+      instances: 'Экземпляры',
       nodes: 'Вычислительные узлы',
       policy: 'Политика оркестрации',
     },

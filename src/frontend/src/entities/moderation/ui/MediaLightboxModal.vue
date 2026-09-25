@@ -1,7 +1,7 @@
 <template>
   <div class="lightbox-backdrop" @click.self="$emit('close')" @keydown.esc="$emit('close')">
     <div class="lightbox-toolbar">
-      <span class="lightbox-title">{{ fileName || 'Изображение' }}</span>
+      <span class="lightbox-title">{{ fileName || (isVideoMedia ? 'Видео' : 'Изображение') }}</span>
       <div class="lightbox-actions">
         <a
           v-if="downloadUrl"
@@ -19,24 +19,48 @@
       </div>
     </div>
     <div class="lightbox-body" @click.self="$emit('close')">
-      <img :src="src" :alt="fileName || 'Full view'" class="lightbox-image" />
+      <video
+        v-if="isVideoMedia"
+        :src="src"
+        controls
+        autoplay
+        class="lightbox-media-video"
+      ></video>
+      <img v-else :src="src" :alt="fileName || 'Full view'" class="lightbox-image" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { Download, X } from 'lucide-vue-next';
 
 interface Props {
   src: string;
   fileName?: string;
   downloadUrl?: string;
+  isVideo?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   fileName: '',
   downloadUrl: '',
+  isVideo: undefined,
+});
+
+const isVideoMedia = computed(() => {
+  if (props.isVideo !== undefined) return props.isVideo;
+  const s = (props.src || '').toLowerCase();
+  const f = (props.fileName || '').toLowerCase();
+  return (
+    f.endsWith('.mp4') ||
+    f.endsWith('.webm') ||
+    f.endsWith('.mov') ||
+    s.endsWith('.mp4') ||
+    s.endsWith('.webm') ||
+    s.endsWith('.mov') ||
+    s.startsWith('data:video/')
+  );
 });
 
 const emit = defineEmits<{
@@ -132,13 +156,19 @@ onUnmounted(() => {
   overflow: auto;
 }
 
-.lightbox-image {
+.lightbox-image,
+.lightbox-media-video {
   max-width: 95vw;
   max-height: 85vh;
   object-fit: contain;
   border-radius: 6px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   animation: zoomIn 0.15s ease-out;
+}
+
+.lightbox-media-video {
+  outline: none;
+  background: #000;
 }
 
 @keyframes fadeIn {

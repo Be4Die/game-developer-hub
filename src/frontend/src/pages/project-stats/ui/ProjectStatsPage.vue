@@ -917,7 +917,7 @@ function exportCsv(): void {
   const data = analyticsData.value;
   const lines: string[] = [];
 
-  lines.push('GDH Game Analytics Export');
+  lines.push('Welwise Game Analytics Export');
   lines.push(`Project ID,${data.project_id}`);
   lines.push(`Date From,${data.date_from}`);
   lines.push(`Date To,${data.date_to}`);

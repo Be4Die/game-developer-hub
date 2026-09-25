@@ -1,12 +1,5 @@
 <template>
   <div class="builds-page tab-fade-in">
-    <div class="page-header">
-      <h1>{{ t('servers.buildsTitle') }}</h1>
-      <button class="btn-primary" @click="showUploadForm = !showUploadForm">
-        <Upload class="icon-sm" /> {{ t('servers.uploadBuild') }}
-      </button>
-    </div>
-
     <!-- Уведомление о модерации -->
     <div v-if="isUnderReview" class="moderation-notice-banner">
       <AlertCircle class="icon-sm text-warning" />
@@ -126,10 +119,18 @@ const props = defineProps<{
 const sharedProject = inject<Ref<Project | null> | null>('project', null);
 const isUnderReview = computed<boolean>(() => sharedProject?.value?.is_under_review === true);
 
+const serverLayoutContext = inject<any>('serverLayoutContext', null);
+
 const builds = ref<Build[]>([]);
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
 const showUploadForm = ref<boolean>(false);
+
+if (serverLayoutContext) {
+  serverLayoutContext.triggerUpload = () => {
+    showUploadForm.value = true;
+  };
+}
 const deleteTarget = ref<DeleteTarget | null>(null);
 const deleting = ref<boolean>(false);
 

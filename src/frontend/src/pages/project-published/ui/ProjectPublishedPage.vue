@@ -108,8 +108,17 @@
               <span class="media-req-badge">{{ t('projectDraft.iconReq') }}</span>
             </div>
 
-            <div v-if="iconUrl" class="media-preview-wrapper icon-size">
+            <div
+              v-if="iconUrl"
+              class="media-preview-wrapper icon-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click="openLightbox('icon')"
+            >
               <img :src="iconUrl" alt="Icon preview" class="media-preview-image" />
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -126,8 +135,17 @@
               <span class="media-req-badge">{{ t('projectDraft.coverReq') }}</span>
             </div>
 
-            <div v-if="coverUrl" class="media-preview-wrapper cover-size">
+            <div
+              v-if="coverUrl"
+              class="media-preview-wrapper cover-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click="openLightbox('cover')"
+            >
               <img :src="coverUrl" alt="Cover preview" class="media-preview-image" />
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -144,8 +162,17 @@
               <span class="media-req-badge">{{ t('projectDraft.videoReq') }}</span>
             </div>
 
-            <div v-if="videoUrl" class="media-preview-wrapper video-size">
+            <div
+              v-if="videoUrl"
+              class="media-preview-wrapper video-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click="openLightbox('video')"
+            >
               <video :src="videoUrl" controls playsinline class="media-preview-video"></video>
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
             </div>
             <div v-else class="media-empty-info">
               <span>{{ t('projectDraft.mediaNotAttached') }}</span>
@@ -177,6 +204,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Полноэкранный просмотр медиа (Lightbox) -->
+    <MediaLightboxModal
+      v-if="lightboxData"
+      :src="lightboxData.src"
+      :file-name="lightboxData.fileName"
+      :download-url="lightboxData.downloadUrl"
+      :is-video="lightboxData.isVideo"
+      @close="lightboxData = null"
+    />
   </div>
 </template>
 
@@ -184,8 +221,9 @@
 import { ref, computed, onMounted, inject, type Ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Image as ImageIcon, Film, Download, Globe, Gamepad2 } from 'lucide-vue-next';
+import { Image as ImageIcon, Film, Download, Globe, Gamepad2, Maximize2 } from 'lucide-vue-next';
 import { getProject, getPublished, getMediaUrl } from '@/entities/project';
+import { MediaLightboxModal } from '@/entities/moderation';
 import type { Project } from '@/shared/types';
 
 const { t } = useI18n();
@@ -195,6 +233,39 @@ const projectId = computed<string>(() => String(route.params.id || ''));
 const sharedProject = inject<Ref<Project | null> | null>('project', null);
 const directRelease = ref<any | null>(null);
 const loading = ref<boolean>(false);
+
+const lightboxData = ref<{
+  src: string;
+  fileName: string;
+  downloadUrl: string;
+  isVideo?: boolean;
+} | null>(null);
+
+function getMediaFileName(type: 'icon' | 'cover' | 'video'): string {
+  const path =
+    type === 'icon'
+      ? releaseData.value?.icon_path
+      : type === 'cover'
+        ? releaseData.value?.cover_path
+        : releaseData.value?.video_path;
+  if (path) {
+    const parts = path.split('/');
+    return parts[parts.length - 1];
+  }
+  return type === 'icon' ? 'icon.png' : type === 'cover' ? 'cover.png' : 'video.mp4';
+}
+
+function openLightbox(type: 'icon' | 'cover' | 'video'): void {
+  const url =
+    type === 'icon' ? iconUrl.value : type === 'cover' ? coverUrl.value : videoUrl.value;
+  if (!url) return;
+  lightboxData.value = {
+    src: url,
+    fileName: getMediaFileName(type),
+    downloadUrl: url,
+    isVideo: type === 'video',
+  };
+}
 
 const releaseData = computed<any | null>(() => {
   if (directRelease.value) return directRelease.value;
@@ -474,6 +545,39 @@ onMounted(loadData);
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.interactive-preview {
+  cursor: zoom-in;
+  transition: all 0.2s ease;
+}
+
+.interactive-preview:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.preview-overlay-hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 17, 23, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.interactive-preview:hover .preview-overlay-hover {
+  opacity: 1;
 }
 
 .media-empty-info {

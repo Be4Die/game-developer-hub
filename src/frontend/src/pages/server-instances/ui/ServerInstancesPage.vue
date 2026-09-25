@@ -1,27 +1,5 @@
 <template>
   <div class="instances-page tab-fade-in">
-    <div class="page-header">
-      <h1>
-        {{ t('servers.tabs.instances') }}
-        <span class="counter" :title="`Активных: ${activeCount}, Всего: ${instances.length}`">
-          {{ activeCount }} / {{ maxInstances }}
-        </span>
-      </h1>
-      <div class="header-actions">
-        <select v-model="statusFilter" class="filter-select" @change="fetchInstances">
-          <option value="all">{{ t('projects.allStatuses') }}</option>
-          <option value="starting">Starting</option>
-          <option value="running">Running</option>
-          <option value="stopping">Stopping</option>
-          <option value="stopped">Stopped</option>
-          <option value="crashed">Crashed</option>
-        </select>
-        <button class="btn-primary" @click="showStartForm = true">
-          <Play class="icon-sm" /> {{ t('servers.startInstance') }}
-        </button>
-      </div>
-    </div>
-
     <!-- Уведомление о модерации -->
     <div v-if="isUnderReview" class="moderation-notice-banner">
       <AlertCircle class="icon-sm text-warning" />
@@ -49,8 +27,8 @@
             <th>{{ t('common.version') }}</th>
             <th>{{ t('common.status') }}</th>
             <th>Node</th>
-            <th>{{ t('stats.players') }}</th>
-            <th>Address</th>
+            <th>{{ t('servers.players') }}</th>
+            <th>{{ t('servers.address') }}</th>
             <th>{{ t('common.created') }}</th>
             <th></th>
           </tr>
@@ -126,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, type Ref } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, inject, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Play, Square, AlertCircle, Server, Trash2 } from 'lucide-vue-next';
 import { StatusBadge, EmptyState } from '@/shared/ui';
@@ -147,19 +125,50 @@ const props = defineProps<{
 const sharedProject = inject<Ref<Project | null> | null>('project', null);
 const isUnderReview = computed<boolean>(() => sharedProject?.value?.is_under_review === true);
 
+const serverLayoutContext = inject<any>('serverLayoutContext', null);
+
 const instances = ref<Instance[]>([]);
 const availableBuilds = ref<Build[]>([]);
 const loading = ref<boolean>(true);
 const error = ref<string | null>(null);
-const statusFilter = ref<string>('all');
+const localStatusFilter = ref<string>('all');
 const showStartForm = ref<boolean>(false);
 const stoppingId = ref<string | number | null>(null);
 const resumingId = ref<string | number | null>(null);
 const deletingId = ref<string | number | null>(null);
 const maxInstances = ref<number>(5);
 
+const statusFilter = computed({
+  get: () => serverLayoutContext?.statusFilter ?? localStatusFilter.value,
+  set: (val: string) => {
+    if (serverLayoutContext) {
+      serverLayoutContext.statusFilter = val;
+    } else {
+      localStatusFilter.value = val;
+    }
+  },
+});
+
+if (serverLayoutContext) {
+  serverLayoutContext.triggerStart = () => {
+    showStartForm.value = true;
+  };
+}
+
 const activeCount = computed<number>(() => {
   return instances.value.filter((i) => i.status === 'running' || i.status === 'starting').length;
+});
+
+if (serverLayoutContext) {
+  // Sync active count and max instances to layout tabs
+  watchEffect(() => {
+    serverLayoutContext.activeCount = activeCount.value;
+    serverLayoutContext.maxInstances = maxInstances.value;
+  });
+}
+
+watch(statusFilter, () => {
+  fetchInstances();
 });
 
 const filteredInstances = computed<Instance[]>(() => {

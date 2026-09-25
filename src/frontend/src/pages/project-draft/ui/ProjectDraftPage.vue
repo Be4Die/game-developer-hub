@@ -194,13 +194,22 @@
             </div>
 
             <!-- Загруженное превью -->
-            <div v-if="media.icon && mediaUrls.icon" class="media-preview-wrapper icon-size">
+            <div
+              v-if="media.icon && mediaUrls.icon"
+              class="media-preview-wrapper icon-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click.stop="openLightbox('icon')"
+            >
               <img
                 :src="mediaUrls.icon"
                 alt="Icon preview"
                 class="media-preview-image"
                 @error="handleMediaError('icon')"
               />
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
               <span v-if="pendingFiles.icon" class="staged-pill">Локальный файл</span>
               <button
                 v-if="canUploadMedia"
@@ -261,13 +270,22 @@
             </div>
 
             <!-- Загруженное превью -->
-            <div v-if="media.cover && mediaUrls.cover" class="media-preview-wrapper cover-size">
+            <div
+              v-if="media.cover && mediaUrls.cover"
+              class="media-preview-wrapper cover-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click.stop="openLightbox('cover')"
+            >
               <img
                 :src="mediaUrls.cover"
                 alt="Cover preview"
                 class="media-preview-image"
                 @error="handleMediaError('cover')"
               />
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
               <span v-if="pendingFiles.cover" class="staged-pill">Локальный файл</span>
               <button
                 v-if="canUploadMedia"
@@ -327,7 +345,12 @@
             </div>
 
             <!-- Загруженное видео -->
-            <div v-if="media.video && mediaUrls.video" class="media-preview-wrapper video-size">
+            <div
+              v-if="media.video && mediaUrls.video"
+              class="media-preview-wrapper video-size interactive-preview"
+              :title="t('projectDraft.clickToPreview')"
+              @click.stop="openLightbox('video')"
+            >
               <video
                 :src="mediaUrls.video"
                 autoplay
@@ -337,6 +360,10 @@
                 class="media-preview-video"
                 @error="handleMediaError('video')"
               ></video>
+              <div class="preview-overlay-hover">
+                <Maximize2 class="icon-md" />
+                <span>{{ t('projectDraft.clickToEnlarge') }}</span>
+              </div>
               <span v-if="pendingFiles.video" class="staged-pill">Локальный файл</span>
               <button
                 v-if="canUploadMedia"
@@ -436,6 +463,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Полноэкранный просмотр медиа (Lightbox) -->
+    <MediaLightboxModal
+      v-if="lightboxData"
+      :src="lightboxData.src"
+      :file-name="lightboxData.fileName"
+      :download-url="lightboxData.downloadUrl"
+      :is-video="lightboxData.isVideo"
+      @close="lightboxData = null"
+    />
   </div>
 </template>
 
@@ -454,6 +491,7 @@ import {
   Globe,
   AlertCircle,
   Lock,
+  Maximize2,
 } from 'lucide-vue-next';
 import {
   getProject,
@@ -463,7 +501,7 @@ import {
   submitForModeration as submitProjectForModeration,
 } from '@/entities/project';
 import { listClientBuilds } from '@/entities/build';
-import { moderationApi, REQUEST_STATUS } from '@/entities/moderation';
+import { moderationApi, REQUEST_STATUS, MediaLightboxModal } from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
 import type { Project } from '@/shared/types';
@@ -537,6 +575,44 @@ const mediaUrls = ref<Record<MediaType, string>>({ icon: '', cover: '', video: '
 const pendingFiles = reactive<Record<MediaType, File | null>>({ icon: null, cover: null, video: null });
 const uploading = reactive<Record<MediaType, boolean>>({ icon: false, cover: false, video: false });
 const dragStates = reactive<Record<MediaType, boolean>>({ icon: false, cover: false, video: false });
+
+const lightboxData = ref<{
+  src: string;
+  fileName: string;
+  downloadUrl: string;
+  isVideo?: boolean;
+} | null>(null);
+
+function getMediaFileName(type: MediaType): string {
+  if (pendingFiles[type]) {
+    return pendingFiles[type]!.name;
+  }
+  const p = projectData.value;
+  const path =
+    type === 'icon'
+      ? p?.draft?.icon_path || p?.icon_path
+      : type === 'cover'
+        ? p?.draft?.cover_path || p?.cover_path
+        : p?.draft?.video_path || p?.video_path;
+
+  if (path) {
+    const parts = path.split('/');
+    return parts[parts.length - 1];
+  }
+  return type === 'icon' ? 'icon.png' : type === 'cover' ? 'cover.png' : 'video.mp4';
+}
+
+function openLightbox(type: MediaType): void {
+  const url = mediaUrls.value[type];
+  if (!url) return;
+  const fileName = getMediaFileName(type);
+  lightboxData.value = {
+    src: url,
+    fileName,
+    downloadUrl: url,
+    isVideo: type === 'video',
+  };
+}
 
 const fileIcon = ref<HTMLInputElement | null>(null);
 const fileCoverMain = ref<HTMLInputElement | null>(null);
@@ -1151,6 +1227,39 @@ function downloadBuild(version: string): void {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.interactive-preview {
+  cursor: zoom-in;
+  transition: all 0.2s ease;
+}
+
+.interactive-preview:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
+
+.preview-overlay-hover {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 17, 23, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.interactive-preview:hover .preview-overlay-hover {
+  opacity: 1;
 }
 
 .media-action-btn {

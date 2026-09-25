@@ -439,8 +439,14 @@ onMounted(() => {
 .policy-form label.checkbox {
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin-top: 24px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.policy-form label.checkbox:hover .label-row {
+  color: var(--text-main);
 }
 
 .label-row {

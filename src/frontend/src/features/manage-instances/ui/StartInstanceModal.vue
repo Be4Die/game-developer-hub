@@ -6,7 +6,7 @@
         <div class="form-group">
           <label>{{ t('common.version') }} *</label>
           <select v-model="startForm.build_version" class="form-input">
-            <option value="" disabled>Select build</option>
+            <option value="" disabled>{{ t('servers.selectBuild') }}</option>
             <option v-for="b in availableBuilds" :key="b.build_version" :value="b.build_version">
               {{ b.build_version }}
             </option>
@@ -23,17 +23,17 @@
           />
         </div>
         <div class="form-group">
-          <label>Max Players</label>
+          <label>{{ t('servers.maxPlayers') }}</label>
           <input
             v-model.number="startForm.max_players"
             type="number"
             class="form-input"
             min="1"
-            placeholder="Default"
+            :placeholder="t('common.default')"
           />
         </div>
         <div class="form-group form-group-wide">
-          <label>Environment Variables</label>
+          <label>{{ t('servers.envVars') }}</label>
           <div class="env-storage-hint">
             <Database class="icon-xs" />
             <span>Базы данных и кэши (PostgreSQL, Redis, MySQL), развернутые на нодах, автоматически инжектируются (<code>DATABASE_URL</code>, <code>REDIS_URL</code>).</span>
@@ -41,7 +41,7 @@
           <KeyValueEditor v-model="startForm.env_vars" />
         </div>
         <div class="form-group form-group-wide">
-          <label>Arguments</label>
+          <label>{{ t('servers.arguments') }}</label>
           <div class="args-list">
             <div v-for="(arg, i) in startForm.args" :key="i" class="arg-row">
               <input
@@ -52,7 +52,7 @@
               />
               <button class="arg-remove" @click="startForm.args.splice(i, 1)">&times;</button>
             </div>
-            <button class="arg-add" @click="startForm.args.push('')">+ Add argument</button>
+            <button class="arg-add" @click="startForm.args.push('')">{{ t('servers.addArgument') }}</button>
           </div>
         </div>
       </div>

@@ -1,7 +1,88 @@
 <template>
   <div class="overview tab-fade-in">
-    <div class="overview-header">
-      <h1>{{ t('servers.overviewTitle') }}</h1>
+    <!-- Блок доступа к серверам платформы -->
+    <div class="platform-access-card" :class="platformCardClass">
+      <div class="platform-access-header">
+        <div class="platform-header-left">
+          <div class="platform-icon-box">
+            <Server class="icon-md" />
+          </div>
+          <div>
+            <div class="platform-title-row">
+              <h3>Серверы платформы Welwise</h3>
+              <StatusBadge
+                v-if="platformAccess"
+                :status="platformAccess.status"
+                type="platform_access"
+              />
+              <span v-else class="platform-badge-available">Бесплатный пул</span>
+            </div>
+            <p v-if="!platformAccess" class="platform-desc">
+              Welwise предоставляет пул производительных серверов для поддержки начинающих проектов. Запросите доступ к серверам платформы, чтобы разворачивать сессии без собственного сервера.
+            </p>
+            <p v-else-if="isPlatformPending" class="platform-desc">
+              Ваша заявка на доступ к серверам платформы находится на рассмотрении модераторами. После подтверждения ноды платформы автоматически появятся в вашем проекте.
+            </p>
+            <div v-else-if="isPlatformApproved" class="platform-approved-info">
+              <p class="platform-desc">
+                Проекту открыт доступ к серверам платформы. Платформенные ноды подключены к общему пулу вашего проекта и готовы к запуску сессий.
+              </p>
+              <div v-if="platformAccess.moderatorComment || platformAccess.moderator_comment" class="moderator-comment-pill">
+                <MessageSquare class="icon-xxs" />
+                <span>Комментарий модератора: «{{ platformAccess.moderatorComment || platformAccess.moderator_comment }}»</span>
+              </div>
+            </div>
+            <p v-else-if="isPlatformRejected" class="platform-desc">
+              Заявка на доступ к серверам платформы отклонена модератором.
+              <span v-if="platformAccess.rejectionReason || platformAccess.rejection_reason" class="rejection-text">
+                Причина: «{{ platformAccess.rejectionReason || platformAccess.rejection_reason }}»
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="platform-header-actions">
+          <button
+            v-if="!platformAccess"
+            class="btn-primary platform-action-btn"
+            @click="openRequestModal"
+          >
+            <Sparkles class="icon-sm" />
+            <span>Запросить доступ к серверам</span>
+          </button>
+          <button
+            v-else-if="isPlatformRejected"
+            class="btn-outline platform-action-btn"
+            @click="openRequestModal"
+          >
+            <span>Подать заявку повторно</span>
+          </button>
+          <div v-else-if="isPlatformApproved" class="quota-badges-grid">
+            <div class="quota-pill" title="Максимум одновременно работающих инстансов">
+              <span class="quota-label">Инстансы:</span>
+              <span class="quota-value">{{ platformAccess.maxInstances || platformAccess.max_instances || 2 }}</span>
+            </div>
+            <div class="quota-pill" title="Лимит CPU на весь проект">
+              <span class="quota-label">Всего CPU:</span>
+              <span class="quota-value">{{ formatCpu(platformAccess.maxTotalCpuMillis || platformAccess.max_total_cpu_millis) }}</span>
+            </div>
+            <div class="quota-pill" title="Лимит RAM на весь проект">
+              <span class="quota-label">Всего RAM:</span>
+              <span class="quota-value">{{ formatMemory(platformAccess.maxTotalMemoryMb || platformAccess.max_total_memory_mb) }}</span>
+            </div>
+            <div
+              v-if="(platformAccess.maxInstanceCpuMillis || platformAccess.max_instance_cpu_millis) || (platformAccess.maxInstanceMemoryMb || platformAccess.max_instance_memory_mb)"
+              class="quota-pill"
+              title="Лимиты на один инстанс"
+            >
+              <span class="quota-label">На инстанс:</span>
+              <span class="quota-value">
+                {{ formatCpu(platformAccess.maxInstanceCpuMillis || platformAccess.max_instance_cpu_millis) }} / {{ formatMemory(platformAccess.maxInstanceMemoryMb || platformAccess.max_instance_memory_mb) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Ошибка загрузки -->
@@ -41,91 +122,6 @@
       <div class="summary-card">
         <span class="summary-label">{{ t('servers.inQueue') }}</span>
         <span class="summary-value">{{ loading ? '...' : queueCount }}</span>
-      </div>
-    </div>
-
-    <!-- Блок доступа к серверам платформы -->
-    <div class="platform-access-card" :class="platformCardClass">
-      <div class="platform-access-header">
-        <div class="platform-header-left">
-          <div class="platform-icon-box">
-            <Server class="icon-md" />
-          </div>
-          <div>
-            <div class="platform-title-row">
-              <h3>Серверы платформы GDH</h3>
-              <StatusBadge
-                v-if="platformAccess"
-                :status="platformAccess.status"
-                type="platform_access"
-              />
-              <span v-else class="platform-badge-available">Бесплатный пул</span>
-            </div>
-            <p v-if="!platformAccess" class="platform-desc">
-              GDH предоставляет пул производительных серверов для поддержки начинающих проектов. Запросите доступ к серверам платформы, чтобы разворачивать сессии без собственного сервера.
-            </p>
-            <p v-else-if="isPlatformPending" class="platform-desc">
-              Ваша заявка на доступ к серверам платформы находится на рассмотрении модераторами. После подтверждения ноды платформы автоматически появятся в вашем проекте.
-            </p>
-            <div v-else-if="isPlatformApproved" class="platform-approved-info">
-              <p class="platform-desc">
-                Проекту открыт доступ к серверам платформы. Платформенные ноды подключены к общему пулу вашего проекта и готовы к запуску сессий.
-              </p>
-              <div v-if="platformAccess.moderatorComment || platformAccess.moderator_comment" class="moderator-comment-pill">
-                <MessageSquare class="icon-xxs" />
-                <span>Комментарий модератора: «{{ platformAccess.moderatorComment || platformAccess.moderator_comment }}»</span>
-              </div>
-            </div>
-            <p v-else-if="isPlatformRejected" class="platform-desc">
-              Заявка на доступ к серверам платформы отклонена модератором.
-              <span v-if="platformAccess.rejectionReason || platformAccess.rejection_reason" class="rejection-text">
-                Причина: «{{ platformAccess.rejectionReason || platformAccess.rejection_reason }}»
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div class="platform-header-actions">
-          <button
-            v-if="!platformAccess"
-            class="btn-primary"
-            @click="openRequestModal"
-          >
-            <Sparkles class="icon-sm" />
-            <span>Запросить доступ к серверам</span>
-          </button>
-          <button
-            v-else-if="isPlatformRejected"
-            class="btn-outline"
-            @click="openRequestModal"
-          >
-            <span>Подать заявку повторно</span>
-          </button>
-          <div v-else-if="isPlatformApproved" class="quota-badges-grid">
-            <div class="quota-pill" title="Максимум одновременно работающих инстансов">
-              <span class="quota-label">Инстансы:</span>
-              <span class="quota-value">{{ platformAccess.maxInstances || platformAccess.max_instances || 2 }}</span>
-            </div>
-            <div class="quota-pill" title="Лимит CPU на весь проект">
-              <span class="quota-label">Всего CPU:</span>
-              <span class="quota-value">{{ formatCpu(platformAccess.maxTotalCpuMillis || platformAccess.max_total_cpu_millis) }}</span>
-            </div>
-            <div class="quota-pill" title="Лимит RAM на весь проект">
-              <span class="quota-label">Всего RAM:</span>
-              <span class="quota-value">{{ formatMemory(platformAccess.maxTotalMemoryMb || platformAccess.max_total_memory_mb) }}</span>
-            </div>
-            <div
-              v-if="(platformAccess.maxInstanceCpuMillis || platformAccess.max_instance_cpu_millis) || (platformAccess.maxInstanceMemoryMb || platformAccess.max_instance_memory_mb)"
-              class="quota-pill"
-              title="Лимиты на один инстанс"
-            >
-              <span class="quota-label">На инстанс:</span>
-              <span class="quota-value">
-                {{ formatCpu(platformAccess.maxInstanceCpuMillis || platformAccess.max_instance_cpu_millis) }} / {{ formatMemory(platformAccess.maxInstanceMemoryMb || platformAccess.max_instance_memory_mb) }}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -254,7 +250,7 @@
         <div class="modal-header">
           <h3>Запрос доступа к серверам платформы</h3>
           <p class="modal-sub">
-            Укажите желаемую квоту ресурсов и расскажите, зачем вашему проекту бесплатные мощности GDH.
+            Укажите желаемую квоту ресурсов и расскажите, зачем вашему проекту бесплатные мощности Welwise.
           </p>
         </div>
 
@@ -754,30 +750,34 @@ onMounted(() => {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 18px 24px;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
 }
 
 .platform-access-card.card-available {
-  border-color: rgba(88, 166, 255, 0.4);
-  background: linear-gradient(180deg, rgba(88, 166, 255, 0.05) 0%, var(--bg-card) 100%);
+  border-color: rgba(88, 166, 255, 0.35);
+  background: linear-gradient(135deg, rgba(88, 166, 255, 0.08) 0%, rgba(88, 166, 255, 0.02) 60%, var(--bg-card) 100%);
+  box-shadow: 0 2px 12px rgba(88, 166, 255, 0.04);
 }
 
 .platform-access-card.card-pending {
-  border-color: rgba(234, 179, 8, 0.4);
-  background: linear-gradient(180deg, rgba(234, 179, 8, 0.05) 0%, var(--bg-card) 100%);
+  border-color: rgba(234, 179, 8, 0.35);
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(234, 179, 8, 0.02) 60%, var(--bg-card) 100%);
+  box-shadow: 0 2px 12px rgba(234, 179, 8, 0.04);
 }
 
 .platform-access-card.card-approved {
-  border-color: rgba(63, 185, 80, 0.4);
-  background: linear-gradient(180deg, rgba(63, 185, 80, 0.05) 0%, var(--bg-card) 100%);
+  border-color: rgba(63, 185, 80, 0.35);
+  background: linear-gradient(135deg, rgba(63, 185, 80, 0.08) 0%, rgba(63, 185, 80, 0.02) 60%, var(--bg-card) 100%);
+  box-shadow: 0 2px 12px rgba(63, 185, 80, 0.04);
 }
 
 .platform-access-card.card-rejected {
-  border-color: rgba(248, 81, 73, 0.4);
-  background: linear-gradient(180deg, rgba(248, 81, 73, 0.05) 0%, var(--bg-card) 100%);
+  border-color: rgba(248, 81, 73, 0.35);
+  background: linear-gradient(135deg, rgba(248, 81, 73, 0.08) 0%, rgba(248, 81, 73, 0.02) 60%, var(--bg-card) 100%);
+  box-shadow: 0 2px 12px rgba(248, 81, 73, 0.04);
 }
 
 .platform-access-header {
@@ -796,11 +796,11 @@ onMounted(() => {
 }
 
 .platform-icon-box {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
-  background: var(--bg-tertiary, #21262d);
-  border: 1px solid var(--border);
+  background: rgba(88, 166, 255, 0.12);
+  border: 1px solid rgba(88, 166, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -810,16 +810,19 @@ onMounted(() => {
 
 .card-approved .platform-icon-box {
   color: #3fb950;
+  background: rgba(63, 185, 80, 0.12);
   border-color: rgba(63, 185, 80, 0.3);
 }
 
 .card-pending .platform-icon-box {
   color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
   border-color: rgba(234, 179, 8, 0.3);
 }
 
 .card-rejected .platform-icon-box {
   color: #f85149;
+  background: rgba(248, 81, 73, 0.12);
   border-color: rgba(248, 81, 73, 0.3);
 }
 
@@ -867,6 +870,13 @@ onMounted(() => {
   gap: 12px;
 }
 
+.platform-action-btn {
+  white-space: nowrap;
+  padding: 9px 18px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
 .quota-pill {
   display: flex;
   align-items: center;
@@ -907,7 +917,7 @@ onMounted(() => {
   font-weight: 500;
   padding: 3px 8px;
   border-radius: 6px;
-  background: var(--bg-tertiary);
+  background: var(--bg-app);
   color: var(--text-muted);
   border: 1px solid var(--border);
 }
@@ -957,20 +967,20 @@ onMounted(() => {
 }
 
 .quota-block {
-  background: var(--bg-tertiary);
+  background: var(--bg-app);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 14px 16px;
   margin-bottom: 12px;
 }
 
 .quota-block-title {
   margin: 0 0 10px;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
-  color: var(--text-main);
+  color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
 }
 
 .quota-inputs-row {
@@ -1000,25 +1010,31 @@ onMounted(() => {
 .toggle-label {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
+  gap: 6px;
+  font-size: 0.78rem;
   color: var(--text-muted);
   cursor: pointer;
   user-select: none;
+  transition: color 0.15s;
 }
 
-.toggle-label input {
-  cursor: pointer;
+.toggle-label:hover {
+  color: var(--text-main);
 }
 
 .unlimited-placeholder {
-  padding: 8px 12px;
-  background: var(--bg-app);
-  border: 1px dashed var(--border);
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(88, 166, 255, 0.06);
+  border: 1px dashed rgba(88, 166, 255, 0.35);
   border-radius: var(--radius-md);
   font-size: 0.82rem;
-  color: var(--text-muted);
-  text-align: center;
+  font-weight: 500;
+  color: var(--primary);
+  box-sizing: border-box;
+  user-select: none;
 }
 
 .moderator-comment-pill {
@@ -1043,15 +1059,17 @@ onMounted(() => {
 
 .form-input {
   width: 100%;
+  height: 38px;
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--bg-app);
+  background: var(--bg-card);
   color: var(--text-main);
   font-size: 0.88rem;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
+  transition: border-color 0.15s;
 }
 
 .form-input:focus {
