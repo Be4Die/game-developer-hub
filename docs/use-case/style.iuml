@@ -1,0 +1,11 @@
+' Общее оформление диаграмм вариантов использования
+skinparam dpi 220
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+}
+left to right direction

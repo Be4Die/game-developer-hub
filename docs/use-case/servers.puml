@@ -1,0 +1,29 @@
+@startuml servers
+!include style.iuml
+actor "Разработчик\nигры" as Dev
+actor "Клиент\nигры" as Client
+usecase "Загрузить\nсерверную сборку" as S1
+usecase "Удалить\nсерверную сборку" as S1b
+usecase "Настроить политику\nоркестрации" as S3
+usecase "Запустить экземпляр" as S4
+usecase "Задать параметры\nзапуска" as S4p
+usecase "Управлять экземпляром" as S5
+usecase "Остановить или\nвозобновить экземпляр" as S5a
+usecase "Перезапустить\nэкземпляр" as S5b
+usecase "Удалить экземпляр" as S5c
+usecase "Просмотреть журналы\nи нагрузку экземпляра" as S6
+usecase "Найти свободный\nигровой сервер" as S7
+usecase "Встать в очередь" as S8
+Dev -- S1
+Dev -- S1b
+Dev -- S3
+Dev -- S4
+S4 <.. S4p : <<extend>>
+Dev -- S5
+S5 <.. S5a : <<extend>>
+S5 <.. S5b : <<extend>>
+S5 <.. S5c : <<extend>>
+Dev -- S6
+S7 -- Client
+S7 <.. S8 : <<extend>>
+@enduml

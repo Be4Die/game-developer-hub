@@ -1,0 +1,38 @@
+@startuml accounts
+!include style.iuml
+actor "Пользователь" as User
+actor "Разработчик\nигры" as Dev
+actor "Модератор" as Mod
+actor "Администратор" as Admin
+Dev -up-|> User
+Mod -up-|> User
+Admin -up-|> User
+usecase "Войти в систему" as U1
+usecase "Изменить отображаемое\nимя и пароль" as U2
+usecase "Настроить язык\nи тему" as U3
+usecase "Зарегистрироваться" as R1
+usecase "Подтвердить\nэлектронную почту" as R1a
+usecase "Снять игру\nс публикации" as G1
+usecase "Заблокировать\nавтора игры" as G1a
+usecase "Просмотреть журнал\nрешений" as G2
+usecase "Управлять\nмодераторами" as A1
+usecase "Создать учётную\nзапись модератора" as A1a
+usecase "Просмотреть показатели\nмодератора" as A1b
+usecase "Управлять\nразработчиками" as A2
+usecase "Заблокировать\nили удалить" as A2a
+User -- U1
+User -- U2
+User -- U3
+Dev -- R1
+R1 ..> R1a : <<include>>
+Mod -- G1
+Mod -- G2
+Admin -- G1
+Admin -- G2
+G1 <.. G1a : <<extend>>
+Admin -- A1
+A1 <.. A1a : <<extend>>
+A1 <.. A1b : <<extend>>
+Admin -- A2
+A2 <.. A2a : <<extend>>
+@enduml

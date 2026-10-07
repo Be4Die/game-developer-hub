@@ -1,0 +1,22 @@
+@startuml collaboration
+!include style.iuml
+actor "Владелец\nпроекта" as Owner
+actor "Разработчик\nигры" as Dev
+Owner -up-|> Dev
+usecase "Управлять участниками\nпроекта" as C1
+usecase "Пригласить\nразработчика" as C1a
+usecase "Изменить права\nучастника" as C1b
+usecase "Отозвать доступ\nу участника" as C1c
+usecase "Ответить\nна приглашение" as C2
+usecase "Покинуть проект" as C3
+usecase "Вести чёрный список" as C4
+usecase "Работать над общим\nпроектом в пределах прав" as C5
+Owner -- C1
+C1 <.. C1a : <<extend>>
+C1 <.. C1b : <<extend>>
+C1 <.. C1c : <<extend>>
+Dev -- C2
+Dev -- C3
+Dev -- C4
+Dev -- C5
+@enduml

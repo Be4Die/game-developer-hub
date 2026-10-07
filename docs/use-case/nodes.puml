@@ -1,0 +1,31 @@
+@startuml nodes
+!include style.iuml
+actor "Разработчик\nигры" as Dev
+actor "Администратор" as Admin
+usecase "Подключить\nвычислительный узел" as N1
+usecase "Выбрать роль узла" as N2
+usecase "Настроить внешний\nдоступ к узлу" as N3
+usecase "Подтвердить домен" as N3a
+usecase "Просмотреть нагрузку\nи экземпляры узла" as N4
+usecase "Удалить узел" as N5
+usecase "Управлять сервисами\nданных" as D1
+usecase "Создать сервис данных" as D1a
+usecase "Запустить или\nостановить сервис" as D1b
+usecase "Управлять резервными\nкопиями" as D2
+usecase "Восстановить\nиз резервной копии" as D2a
+usecase "Включить автоматическое\nрезервное копирование" as D2b
+usecase "Включить узел\nв пул платформы" as A1
+Dev -- N1
+Dev -- N2
+Dev -- N3
+N3 <.. N3a : <<extend>>
+Dev -- N4
+Dev -- N5
+Dev -- D1
+D1 <.. D1a : <<extend>>
+D1 <.. D1b : <<extend>>
+Dev -- D2
+D2 <.. D2a : <<extend>>
+D2 <.. D2b : <<extend>>
+A1 -- Admin
+@enduml

@@ -1,0 +1,30 @@
+@startuml projects
+!include style.iuml
+actor "Разработчик\nигры" as Dev
+usecase "Создать проект" as P1
+usecase "Редактировать\nчерновик проекта" as P2
+usecase "Загрузить\nмедиа-материалы" as P2a
+usecase "Загрузить\nклиентскую сборку" as P3
+usecase "Проверить игру\nв песочнице" as P4
+usecase "Управлять внутриигровыми\nтоварами" as P6
+usecase "Добавить товар" as P6a
+usecase "Изменить или\nудалить товар" as P6b
+usecase "Просмотреть\nаналитику проекта" as A1
+usecase "Выбрать период" as A1a
+usecase "Выгрузить отчёт" as A2
+usecase "Просмотреть\nопубликованную версию" as P7
+usecase "Удалить проект" as P8
+Dev -- P1
+Dev -- P2
+Dev -- P3
+Dev -- P4
+Dev -- P6
+Dev -- A1
+Dev -- P7
+Dev -- P8
+P2 <.. P2a : <<extend>>
+P6 <.. P6a : <<extend>>
+P6 <.. P6b : <<extend>>
+A1 <.. A1a : <<extend>>
+A1 <.. A2 : <<extend>>
+@enduml

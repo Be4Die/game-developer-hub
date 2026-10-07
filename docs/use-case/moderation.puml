@@ -1,0 +1,30 @@
+@startuml moderation
+!include style.iuml
+actor "Разработчик\nигры" as Dev
+actor "Модератор" as Mod
+usecase "Отправить проект\nна модерацию" as M1
+usecase "Запросить доступ\nк серверам платформы" as M2
+usecase "Вести переписку\nв чате проекта" as M3
+usecase "Прикрепить файл" as M3a
+usecase "Взять заявку в работу" as M4
+usecase "Проверить тестовую\nсборку игры" as M5
+usecase "Одобрить заявку" as M6
+usecase "Отклонить заявку" as M7
+usecase "Указать нарушенные\nправила площадки" as M7a
+usecase "Рассмотреть заявку\nна доступ к серверам" as M8
+usecase "Закрыть диалог" as M9
+usecase "Просмотреть\nархив решений" as M10
+Dev -- M1
+Dev -- M2
+Dev -- M3
+M3 <.. M3a : <<extend>>
+M3 -- Mod
+M4 -- Mod
+M5 -- Mod
+M6 -- Mod
+M7 -- Mod
+M7 ..> M7a : <<include>>
+M8 -- Mod
+M9 -- Mod
+M10 -- Mod
+@enduml
