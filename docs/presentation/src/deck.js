@@ -537,7 +537,7 @@ function bpmn(s, lanes, opt = {}) {
   ];
   text(s, [
     { text: 'Цель работы', options: { bold: true } },
-    { text: ' — повышение эффективности процесса публикации и сопровождения веб‑игр на платформе Welwise Games за счёт разработки автоматизированной системы, переводящей разработчиков на самообслуживание и исключающей ручные операции сотрудников.', options: { breakLine: true } },
+    { text: ' — повышение эффективности процесса публикации и сопровождения веб‑игр на платформе Welwise Games за счёт внедрения автоматизированной системы, переводящей разработчиков на самообслуживание и исключающей ручные операции сотрудников.', options: { breakLine: true } },
     { text: ' ', options: { breakLine: true, fontSize: 8 } },
     { text: 'Задачи:', options: { bold: true, breakLine: true } },
     ...tasks.map((t, i) => ({ text: t, options: { bullet: { type: 'number', style: 'arabicParenR' }, breakLine: i < tasks.length - 1 } })),
@@ -565,5 +565,30 @@ function ucSlide(pairs) {
 ucSlide([['projects.png', 'Рис. 1 — Проекты и аналитика', 1428, 1408], ['collaboration.png', 'Рис. 2 — Совместная работа', 1990, 1099]]);
 ucSlide([['moderation.png', 'Рис. 3 — Модерация', 1466, 1800], ['servers.png', 'Рис. 4 — Игровые серверы', 1796, 1571]]);
 ucSlide([['nodes.png', 'Рис. 5 — Узлы и сервисы данных', 1725, 1674], ['accounts.png', 'Рис. 6 — Учётные записи и администрирование', 2055, 1292]]);
+
+// ── 14. Заключение ─────────────────────────────────────────
+{
+  const s = slideTitle('Заключение');
+  const done = [
+    'Проанализирована предметная область и деятельность заказчика — игровой платформы Welwise Games.',
+    'Построены модели процессов «как есть» для публикации игр и управления серверами, выявлены проблемы.',
+    'Разработаны модели процессов «как будет» с использованием автоматизированной системы.',
+    'Проведено сравнение с аналогами: GameDistribution, CrazyGames, Poki for Developers, itch.io, CloudArcade.',
+    'Сформулированы цель и задачи, разработано техническое задание по ГОСТ 34.602-2020.',
+    'Построены диаграммы вариантов использования для четырёх ролей: разработчик, модератор, администратор, клиент игры.',
+    'Спроектирована и реализована система из восьми сервисов, программный код покрыт 413 автоматическими тестами.',
+  ];
+  text(s, [
+    { text: 'В ходе работы:', options: { bold: true, breakLine: true } },
+    ...done.map((t, i) => ({ text: t, options: { bullet: { type: 'number', style: 'arabicParenR' }, breakLine: i < done.length - 1 } })),
+  ], { x: 0.5, y: 0.95, w: 9.0, h: 3.55, fontSize: 15, valign: 'top', align: 'justify', paraSpaceAfter: 2 });
+  s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.6, w: 9.0, h: 0.62, fill: { color: C.white }, line: { color: C.accent, width: 1.5 } });
+  text(s, [
+    { text: 'Текущий этап — внедрение: ', options: { bold: true, color: C.accent } },
+    { text: 'система проходит тестирование на реальном стенде платформы, завершение — в течение месяца.' },
+  ], { x: 0.65, y: 4.6, w: 8.7, h: 0.62, fontSize: 15, valign: 'middle' });
+  num(s);
+  speechNotes(s);
+}
 
 pres.writeFile({ fileName: 'deck.pptx' }).then(() => console.log('written deck.pptx'));
