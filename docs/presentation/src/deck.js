@@ -4,6 +4,7 @@
 // чтобы текст оставался крупным; полные схемы идут в приложение записки.
 const pptxgen = require('pptxgenjs');
 const SPEECH = require('./speech.js');
+const { paragraphs } = require('./speech_text.js');
 
 const pres = new pptxgen();
 pres.layout = 'LAYOUT_16x9'; // 10 × 5.625 дюйма
@@ -33,7 +34,7 @@ const seg = (s, x1, y1, x2, y2, o = {}) => s.addShape(pres.shapes.LINE, {
 let speechIndex = 0;
 function speechNotes(s) {
   const sp = SPEECH[speechIndex++];
-  s.addNotes([...sp.text, ...(sp.next ? ['Переход: ' + sp.next] : [])].join('\n\n'));
+  s.addNotes(paragraphs(sp).join('\n\n'));
 }
 
 function slideTitle(title, sub) {
@@ -499,7 +500,7 @@ function bpmn(s, lanes, opt = {}) {
 {
   const s = slideTitle('Сравнительная таблица аналогов');
   const head = ['Критерий', 'Game\nDistribution', 'Crazy Games', 'Poki for Developers', 'itch.io', 'Cloud Arcade', 'Разрабатываемая система'];
-  const HR = 0.62, RH = 0.46;
+  const HR = 0.58, RH = 0.42;
   const rows = [
     ['Самостоятельная публикация', '+', '+', '–', '+', '–', '+'],
     ['Многоэтапная модерация', '–', '+', '+', '–', '–', '+'],
@@ -508,6 +509,7 @@ function bpmn(s, lanes, opt = {}) {
     ['Игровые метрики', '–', '+', '+', '–', '–', '+'],
     ['Управление игровыми серверами', '–', '–', '–', '–', '–', '+'],
     ['Свои серверы разработчика', '–', '–', '–', '±', '+', '+'],
+    ['Отечественная поддержка', '–', '–', '–', '–', '–', '+'],
   ];
   const cell = (t, o = {}) => ({ text: t, options: { fontFace: FONT, fontSize: 13.5, align: 'center', valign: 'middle', color: C.black, ...o } });
   const data = [head.map((h, i) => cell(h, { fontSize: 12, bold: true, color: i === 6 ? C.green : C.black, align: i ? 'center' : 'left', fill: { color: i === 6 ? C.greenSoft : C.soft } }))];
@@ -515,11 +517,11 @@ function bpmn(s, lanes, opt = {}) {
     : cell(v, { bold: true, fontSize: 17, color: v === '+' ? C.green : v === '–' ? C.red : C.black, fill: i === 6 ? { color: C.greenSoft } : undefined }))));
   const colW = [3.05, 1.1, 0.85, 1.05, 0.72, 0.88, 1.55];
   s.addTable(data, { x: 0.4, y: 0.95, w: 9.2, colW, rowH: [HR, ...rows.map(() => RH)], border: { type: 'solid', pt: 0.75, color: 'BFBFBF' } });
-  // Подсветка возможностей, которых нет ни у одного аналога
-  [3, 6].forEach((r, i) => s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-    x: 0.36, y: 0.95 + HR + (r - 1) * RH - 0.02, w: 9.28, h: RH + 0.04, fill: { type: 'none' }, line: { color: C.red, width: 2 }, rectRadius: 0.05, objectName: `a1_hl${i}`,
+  // Подсветка возможностей, которых нет ни у одного аналога: по щелчку на каждую, подпись — с последней
+  [3, 6, 8].forEach((r, i) => s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
+    x: 0.36, y: 0.95 + HR + (r - 1) * RH - 0.02, w: 9.28, h: RH + 0.04, fill: { type: 'none' }, line: { color: C.red, width: 2 }, rectRadius: 0.05, objectName: `a${i + 1}_hl`,
   }));
-  text(s, 'Сквозной чат и управление игровыми серверами не предоставляет ни один аналог', { x: 0.4, y: 4.88, w: 9.2, h: 0.3, fontSize: 15, bold: true, color: C.red, align: 'center', objectName: 'a1_cap' });
+  text(s, 'Чат, управление серверами и отечественная поддержка есть только у разрабатываемой системы', { x: 0.4, y: 4.95, w: 9.2, h: 0.3, fontSize: 14, bold: true, color: C.red, align: 'center', objectName: 'a3_cap' });
   num(s);
   speechNotes(s);
 }
@@ -546,10 +548,11 @@ function bpmn(s, lanes, opt = {}) {
   speechNotes(s);
 }
 
-// ── 11–13. Диаграммы вариантов использования ───────────────
+// ── 11–14. Диаграммы вариантов использования ───────────────
+// Первый рисунок — иерархия акторов; дальше функции по контекстам.
 function ucSlide(pairs) {
   const s = slideTitle('Диаграмма вариантов использования');
-  const maxW = 4.45, maxH = 3.95, top = 0.92;
+  const maxW = pairs.length === 1 ? 9.2 : 4.45, maxH = 3.9, top = 0.92;
   let x = 0.4;
   pairs.forEach(([f, cap, w, h]) => {
     let iw = maxW, ih = iw * h / w;
@@ -562,9 +565,10 @@ function ucSlide(pairs) {
   num(s);
   speechNotes(s);
 }
-ucSlide([['projects.png', 'Рис. 1 — Проекты и аналитика', 1428, 1408], ['collaboration.png', 'Рис. 2 — Совместная работа', 1990, 1099]]);
-ucSlide([['moderation.png', 'Рис. 3 — Модерация', 1466, 1800], ['servers.png', 'Рис. 4 — Игровые серверы', 1796, 1571]]);
-ucSlide([['nodes.png', 'Рис. 5 — Узлы и сервисы данных', 1725, 1674], ['accounts.png', 'Рис. 6 — Учётные записи и администрирование', 2055, 1292]]);
+ucSlide([['actors.png', 'Рис. 1 — Иерархия акторов', 829, 950], ['accounts.png', 'Рис. 2 — Учётные записи и администрирование', 2055, 1292]]);
+ucSlide([['projects.png', 'Рис. 3 — Проекты и аналитика', 1428, 1408], ['collaboration.png', 'Рис. 4 — Совместная работа', 1990, 1099]]);
+ucSlide([['moderation.png', 'Рис. 5 — Модерация', 1466, 1800], ['servers.png', 'Рис. 6 — Игровые серверы', 1796, 1571]]);
+ucSlide([['nodes.png', 'Рис. 7 — Узлы и сервисы данных', 1725, 1674]]);
 
 // ── 14. Заключение ─────────────────────────────────────────
 {
