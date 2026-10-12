@@ -1,0 +1,15 @@
+@startuml actors
+!include style.iuml
+top to bottom direction
+actor "Пользователь" as User
+actor "Разработчик\nигры" as Dev
+actor "Модератор" as Mod
+actor "Администратор" as Admin
+actor "Владелец\nпроекта" as Owner
+actor "Клиент игры\n(без учётной записи)" as Client
+Dev -up-|> User
+User -[hidden]right- Client
+Mod -up-|> User
+Admin -up-|> User
+Owner -up-|> Dev
+@enduml
