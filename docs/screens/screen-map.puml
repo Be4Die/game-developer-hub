@@ -1,0 +1,73 @@
+@startuml screen-map
+!include ../uml/style.iuml
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor black
+  RoundCorner 8
+}
+skinparam nodesep 18
+skinparam ranksep 40
+left to right direction
+
+rectangle "Вход, регистрация,\nподтверждение почты\n/login" as login
+rectangle "Профиль: имя, пароль,\nязык, тема, приглашения,\nчёрный список\n/profile" as profile
+rectangle "Справка и правила\nплощадки\n/docs" as docs
+
+rectangle "Разработчик игры" as gdev #line.dashed {
+  rectangle "Список проектов\n/projects" as projects
+  rectangle "Рабочая область проекта\n/projects/:id" as ws
+  rectangle "Черновик: описание, медиа,\nклиентская сборка, чат\n…/draft" as draft
+  rectangle "Песочница\n…/sandbox" as sandbox
+  rectangle "Внутриигровые товары\n…/purchases" as purchases
+  rectangle "Аналитика\n…/stats" as stats
+  rectangle "Опубликованная версия\n…/published" as published
+  rectangle "Участники и доступ\n…/access" as access
+  rectangle "Серверы: обзор, политика\nоркестрации\n…/servers" as servers
+  rectangle "Серверные сборки\n…/servers/builds" as sbuilds
+  rectangle "Экземпляры\n…/servers/instances" as sinst
+  rectangle "Экземпляр: журналы,\nнагрузка\n…/instances/:instanceId" as inst
+  rectangle "Вычислительные узлы\n/nodes" as nodes
+  rectangle "Узел: роль, внешний доступ,\nсервисы данных, копии\n/nodes/:nodeId" as node
+}
+rectangle "Модератор" as gmod #line.dashed {
+  rectangle "Очередь заявок\n/moderator/queue" as queue
+  rectangle "Проверка проекта\nпо шагам, вердикт\n/moderator/projects/:projectId" as review
+  rectangle "Диалоги\n/moderator/chats" as chats
+  rectangle "Журнал решений\n/moderator/journal" as journal
+  rectangle "Аудит-снимок решения\n/moderator/journal/:requestId" as snapshot
+  rectangle "Каталог опубликованных игр\n/catalog" as catalog
+}
+rectangle "Администратор" as gadm #line.dashed {
+  rectangle "Разработчики\n/admin/developers" as adevs
+  rectangle "Модераторы\n/admin/moderators" as amods
+  rectangle "Показатели модератора\n/admin/moderators/:id" as amod
+}
+
+login --> projects : разработчик
+login --> queue : модератор
+login --> catalog : администратор
+projects --> ws
+ws --> draft
+ws --> sandbox
+ws --> purchases
+ws --> stats
+ws --> published
+ws --> access
+ws --> servers
+servers --> sbuilds
+servers --> sinst
+sinst --> inst
+projects --> nodes
+nodes --> node
+queue --> review
+chats --> review
+journal --> snapshot
+catalog --> journal
+catalog --> adevs
+catalog --> amods
+amods --> amod
+projects ..> profile
+queue ..> profile
+projects ..> docs
+@enduml

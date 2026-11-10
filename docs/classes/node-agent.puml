@@ -1,0 +1,175 @@
+@startuml node-agent
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class DeploymentService {
+  --
+  + BuildImage(gameID, imageTag, internalPort, archive)
+  + LoadImage(gameID, imageTag, data)
+  + StartInstance(opts) : int64, uint32
+  + StopInstance(instanceID, timeout)
+  + RestartInstance(instanceID, timeout)
+  + StartStoppedInstance(instanceID)
+  + DeleteInstance(instanceID)
+  + StreamLogs(instanceID, follow) : ReadCloser
+  + StopAllInstances()
+  + CleanupOrphans()
+  + GetActiveContainerIDs() : []string
+  + StartPeriodicCleanup(interval)
+  {method} … ещё 14
+}
+class DiscoveryService {
+  --
+  + GetNode() : Node
+  + Heartbeat() : HeartbeatResult
+  + GetAllInstances() : []Instance
+  + GetInstance(id) : Instance
+  + GetInstancesByGameID(gameID) : []Instance
+  + GetInstanceUsage(instanceID) : ResourcesUsage
+}
+class BackupManager {
+  --
+  + StartAutoBackupsLoop()
+  + CreateBackup(serviceName, backupType) : BackupInfo
+  + ListBackups(serviceName) : []BackupInfo
+  + RestoreBackup(serviceName, backupID)
+  + DeleteBackup(serviceName, backupID)
+  + OpenBackup(serviceName, backupID) : ReadCloser, int64, string
+  + UploadBackup(serviceName, fileName, restoreImmediately, r) : BackupInfo
+}
+class AnnouncementService {
+  --
+  + Announce(activeContainerIDs) : AnnouncementResult
+  + AnnounceWithRetry(activeContainerIDs) : AnnouncementResult
+}
+class Instance {
+  + ID : int64
+  + ContainerID : string
+  + ImageTag : string
+  + Name : string
+  + GameID : int64
+  + BuildVersion : string
+  + Port : uint32
+  + Protocol : Protocol
+  + Status : InstanceStatus
+  + PlayerCount : uint32
+  + QueueSize : uint32
+  + MaxPlayers : uint32
+  … ещё 2
+}
+class Node {
+  + Version : string
+  + Region : string
+  + Resources : ResourcesMax
+  + StartedAt : Time
+}
+class ServiceInfo {
+  + Name : string
+  + ServiceType : ServiceType
+  + ContainerID : string
+  + Status : string
+  + HostPort : uint32
+  + VolumePath : string
+  + VolumeSizeBytes : uint64
+  + AutoBackupEnabled : bool
+}
+class BackupInfo {
+  + BackupID : string
+  + ServiceName : string
+  + FileName : string
+  + SizeBytes : uint64
+  + BackupType : BackupType
+  + Status : BackupStatus
+  + Checksum : string
+  + CreatedAt : Time
+}
+class ContainerOpts {
+  + ContainerName : string
+  + ImageTag : string
+  + InternalPort : uint32
+  + HostPort : uint32
+  + RestartPolicy : string
+  + EnvVars : map[string]string
+  + Args : []string
+  + CPUMillis : uint32
+  + MemoryBytes : uint64
+  + Labels : map[string]string
+  + Binds : []string
+  + Network : string
+}
+class ContainerInfo {
+  + ID : string
+  + Labels : map[string]string
+  + Status : string
+}
+class ResourcesUsage {
+  + CPU : float64
+  + Memory : uint64
+  + Disk : uint64
+  + Network : uint64
+}
+class ResourcesMax {
+  + CPUCores : uint32
+  + TotalMemorySize : uint64
+  + TotalDiskSpace : uint64
+  + NetworkBandwidth : uint64
+}
+enum InstanceStatus <<перечисление>> {
+  Starting
+  Running
+  Stopping
+  Stopped
+  Crashed
+}
+enum ServiceType <<перечисление>> {
+  Postgres
+  Redis
+  MySQL
+  Volume
+  Adminer
+  PGAdmin
+}
+enum BackupStatus <<перечисление>> {
+  Creating
+  Ready
+  Failed
+  Restoring
+}
+interface ContainerRuntime <<интерфейс>> {
+  + LoadImage(imageTag, data)
+  + BuildImage(imageTag, internalPort, archive)
+  + CleanupBuildArtifacts(imageTag)
+  + CreateContainer(opts) : string
+  + StartContainer(containerID)
+  + GetHostPort(containerID, internalPort) : uint32
+  + StopContainer(containerID, timeout)
+  + RestartContainer(containerID, timeout)
+  {method} … ещё 12
+}
+interface InstanceStorage <<интерфейс>> {
+  + GetInstanceByID(id) : Instance
+  + GetInstancesByGameID(gameID) : []Instance
+  + GetInstanceByContainerID(containerID) : Instance
+  + GetAllInstances() : []Instance
+  + RecordInstance(instance)
+  + DeleteInstance(id)
+}
+DeploymentService --> InstanceStorage
+DeploymentService --> ContainerRuntime
+DeploymentService --> BackupManager
+DiscoveryService --> InstanceStorage
+DiscoveryService --> ContainerRuntime
+BackupManager --> ContainerRuntime
+Instance --> InstanceStatus
+Node *-- ResourcesMax
+ServiceInfo --> ServiceType
+BackupInfo --> BackupStatus
+ContainerRuntime ..> ResourcesUsage
+ContainerRuntime ..> ContainerInfo
+InstanceStorage ..> Instance
+@enduml

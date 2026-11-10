@@ -1,0 +1,139 @@
+@startuml projects-services
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class ProjectService {
+  --
+  + CreateProject(ownerID, titleRu, titleEn, isOnline) : Project
+  + GetProject(projectID) : Project
+  + CheckAccess(projectID, userID, requiredPerm) : Project
+  + GetProjectForUser(projectID, userID, isStaff) : Project
+  + ListProjects(userID, limit, offset) : []Project, int
+  + ListPublishedProjects(limit, offset) : []Project, int
+  + UpdateDraft(projectID, userID, meta)
+  + DeleteProject(projectID, ownerID)
+  + UploadBuildStream(projectID, ownerID, version, archiveReader) : Build, string
+  + UploadBuild(projectID, ownerID, version, data) : Build, string
+  + ListBuilds(projectID, ownerID) : []Build
+  + DeleteBuild(projectID, ownerID, version)
+  {method} … ещё 27
+}
+interface ProjectRepo <<интерфейс>> {
+  + Create(p) : int64
+  + Get(id) : Project
+  + ListByOwner(ownerID, limit, offset) : []Project
+  + CountByOwner(ownerID) : int
+  + ListForUser(userID, limit, offset) : []Project
+  + CountForUser(userID) : int
+  + ListPublished(limit, offset) : []Project
+  + CountPublished() : int
+  {method} … ещё 4
+}
+interface DraftRepo <<интерфейс>> {
+  + Create(d)
+  + Get(projectID) : Draft
+  + Update(d)
+  + UpdateActiveBuild(projectID, version, devURL)
+  + UpdateMedia(projectID, mediaType, path)
+}
+interface BuildRepo <<интерфейс>> {
+  + Create(b)
+  + Get(projectID, version) : Build
+  + ListByProject(projectID, limit) : []Build
+  + MarkUnpacked(projectID, version, unpackedPath)
+  + Delete(id)
+}
+interface ReleaseRepo <<интерфейс>> {
+  + Create(r) : int64
+  + GetActive(projectID) : Release
+  + ListByProject(projectID) : []Release
+  + Deactivate(projectID)
+}
+interface DeploymentRepo <<интерфейс>> {
+  + Create(d)
+  + ListByProject(projectID, limit) : []DeploymentRecord
+}
+interface MemberRepo <<интерфейс>> {
+  + Add(m)
+  + Get(projectID, userID) : Member
+  + ListByProject(projectID) : []Member
+  + ListByUser(userID) : []Member
+  + UpdatePermissions(projectID, userID, permissions)
+  + Delete(projectID, userID)
+  + IsMember(projectID, userID) : bool
+}
+interface InvitationRepo <<интерфейс>> {
+  + Create(inv) : int64
+  + Get(id) : Invitation
+  + GetPending(projectID, inviteeID) : Invitation
+  + ListIncoming(inviteeID) : []Invitation
+  + ListOutgoing(inviterID, projectID) : []Invitation
+  + UpdateStatus(id, status)
+  + CancelAllPendingBetween(inviterID, inviteeID)
+  + IsSystemUser(userID, email) : bool
+}
+interface BlockRepo <<интерфейс>> {
+  + Block(b)
+  + Unblock(userID, blockedUserID)
+  + IsBlocked(blockerID, targetID) : bool
+  + ListBlocked(userID) : []UserBlock
+}
+interface BuildStorage <<интерфейс>> {
+  + SaveArchiveStream(projectID, version, src) : string, int64
+  + SaveArchive(projectID, version, data) : string, int64
+  + GetArchivePath(projectID, version) : string
+  + DeleteBuild(projectID, version)
+  + DeleteProject(projectID)
+}
+interface MediaStorage <<интерфейс>> {
+  + SaveMediaStream(projectID, mediaType, src) : string
+  + SaveMedia(projectID, mediaType, data) : string
+  + DeleteMedia(projectID, mediaType)
+  + SnapshotMediaForRelease(projectID, version, srcPath, mediaType) : string
+}
+interface Deployer <<интерфейс>> {
+  + DeployDev(projectID, version, archivePath) : DeploymentResult
+  + DeployProd(projectID, version, archivePath) : DeploymentResult
+  + UndeployProd(projectID)
+  + DeleteVersion(projectID, version)
+  + DeleteProject(projectID)
+  + UpdateCSP(projectID, env, isOnline, allowedHosts)
+}
+interface ModerationClient <<интерфейс>> {
+  + SubmitDraft(snapshot) : int64
+  + GetLatestRequest(projectID) : ModerationRequestInfo
+}
+interface AnalyticsClient <<интерфейс>> {
+  + GetGameAnalytics(gameID, filter) : GameAnalytics
+}
+interface PurchaseClient <<интерфейс>> {
+  + ListItems(gameID) : []GameItem
+  + GetItem(gameID, gameItemID) : GameItem
+  + CreateItem(item) : GameItem
+  + UpdateItem(item) : GameItem
+  + DeleteItem(gameID, gameItemID)
+}
+interface Locker <<интерфейс>> {
+  + Acquire(key, ttl) : func()
+}
+ProjectService --> ProjectRepo
+ProjectService --> DraftRepo
+ProjectService --> BuildRepo
+ProjectService --> ReleaseRepo
+ProjectService --> DeploymentRepo
+ProjectService --> MemberRepo
+ProjectService --> InvitationRepo
+ProjectService --> BlockRepo
+ProjectService --> ModerationClient
+ProjectService --> PurchaseClient
+ProjectService --> AnalyticsClient
+ProjectService --> BuildStorage
+ProjectService --> MediaStorage
+ProjectService --> Deployer
+ProjectService --> Locker
+@enduml

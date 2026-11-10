@@ -1,0 +1,14 @@
+@startuml invitation-state
+!include style.iuml
+[*] --> Pending : владелец приглашает\nразработчика
+state "Ожидает ответа" as Pending
+state "Принято" as Accepted
+state "Отклонено" as Declined
+state "Отменено" as Canceled
+Pending --> Accepted : приглашённый принимает,\nстановится участником
+Pending --> Declined : приглашённый отклоняет
+Pending --> Canceled : владелец отзывает
+Accepted --> [*]
+Declined --> [*]
+Canceled --> [*]
+@enduml

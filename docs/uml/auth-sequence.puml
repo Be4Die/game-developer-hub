@@ -1,0 +1,32 @@
+@startuml auth-sequence
+!include style.iuml
+skinparam sequenceMessageAlign center
+hide footbox
+autonumber
+actor "Пользователь" as U
+participant "Веб-приложение" as SPA
+participant "API-шлюз" as GW
+participant "Сервис\nучётных записей" as SSO
+database "База данных" as DB
+database "Valkey" as KV
+participant "Сервис\nпредметной области" as SV
+== Вход ==
+U -> SPA : почта и пароль
+SPA -> GW : запрос входа
+GW -> SSO : передать запрос
+SSO -> KV : проверить ограничение\nчисла попыток
+SSO -> DB : найти пользователя
+SSO -> SSO : проверить пароль, статус\nи подтверждение почты
+SSO -> DB : создать сессию с хешем\nтокена обновления
+SSO --> SPA : токен доступа\nи токен обновления
+== Обращение к системе ==
+SPA -> GW : запрос с токеном доступа
+GW -> SV : вызов метода сервиса
+SV -> SV : проверить подпись токена,\nроль и права на проект
+SV --> SPA : результат
+== Продление сессии ==
+SPA -> GW : обновить токены
+GW -> SSO : токен обновления
+SSO -> DB : найти сессию по хешу,\nзаменить её новой
+SSO --> SPA : новая пара токенов
+@enduml

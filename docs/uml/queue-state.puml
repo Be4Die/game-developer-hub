@@ -1,0 +1,14 @@
+@startuml queue-state
+!include style.iuml
+[*] --> Waiting : встать в очередь
+state "Ожидает" as Waiting
+state "Место закреплено" as Reserved
+state "Истекло" as Expired
+Waiting --> Waiting : сигнал присутствия,\nобновление позиции
+Waiting --> Reserved : освободилось место\nна экземпляре
+Waiting --> Expired : нет сигналов присутствия\nлибо превышено время ожидания
+Reserved --> Expired : игрок не подключился\nза отведённое время
+Reserved --> [*] : игрок подключился
+Waiting --> [*] : покинуть очередь
+Expired --> [*]
+@enduml

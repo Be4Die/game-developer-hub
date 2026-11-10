@@ -4,9 +4,10 @@
 state "Не подтверждён" as Unauthorized
 state "В сети" as Online
 state "Не в сети" as Offline
-Unauthorized --> Online : владелец подтверждает\nузел
-Online --> Offline : нет сигналов\nприсутствия
-Offline --> Online : сигналы\nвосстановились
+Unauthorized --> Online : владелец подтверждает\nузел ключом
+[*] --> Online : владелец подключает узел\nпо адресу и ключу
+Online --> Offline : узел не отвечает\nна опрос дольше тайм-аута
+Offline --> Online : узел снова\nответил на опрос
 Online --> [*] : удалить узел
 Offline --> [*] : удалить узел
 @enduml

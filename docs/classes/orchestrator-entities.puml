@@ -1,0 +1,215 @@
+@startuml orchestrator-entities
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+skinparam nodesep 30
+skinparam ranksep 45
+class Node {
+  + ID : int64
+  + OwnerID : string
+  + Address : string
+  + TokenHash : []byte
+  + APIToken : string
+  + Region : string
+  + Status : NodeStatus
+  + Role : NodeRole
+  + BackupsEnabled : bool
+  + IngressMode : IngressMode
+  + CustomDomain : string
+  + IsPlatform : bool
+  … ещё 7
+}
+class Instance {
+  + ID : int64
+  + OwnerID : string
+  + NodeID : int64
+  + ServerBuildID : int64
+  + GameID : int64
+  + Name : string
+  + BuildVersion : string
+  + Protocol : Protocol
+  + HostPort : uint32
+  + InternalPort : uint32
+  + Status : InstanceStatus
+  + PlayerCount : uint32
+  … ещё 9
+}
+class ServerBuild {
+  + ID : int64
+  + OwnerID : string
+  + GameID : int64
+  + UploadedBy : int64
+  + Version : string
+  + ImageTag : string
+  + Protocol : Protocol
+  + InternalPort : uint32
+  + MaxPlayers : uint32
+  + FileURL : string
+  + FileSize : int64
+  + CreatedAt : Time
+}
+class GamePolicy {
+  + GameID : int64
+  + OwnerID : string
+  + Mode : OrchestrationMode
+  + TargetInstances : int32
+  + AutoRestart : bool
+  + ScaleToZeroTimeout : int32
+  + DefaultBuildVersion : string
+  + MaxPlayersPerInstance : int32
+  + MaxInstancesPerGame : int32
+  + ScaleBehavior : ScaleBehavior
+  + NodePreference : string
+  + QueueLocation : QueueLocation
+  … ещё 6
+  --
+  + IsAuto() : bool
+}
+class ManagedService {
+  + ID : int64
+  + NodeID : int64
+  + OwnerID : string
+  + AllowedGameIDs : []int64
+  + ServiceType : ServiceType
+  + Name : string
+  + ContainerID : string
+  + HostPort : uint32
+  + ConnectionURI : string
+  + Credentials : map[string]string
+  + Status : ServiceStatus
+  + VolumePath : string
+  … ещё 4
+}
+class ServiceBackup {
+  + ID : int64
+  + BackupID : string
+  + NodeID : int64
+  + ServiceID : int64
+  + ServiceName : string
+  + ServiceType : ServiceType
+  + FileName : string
+  + SizeBytes : uint64
+  + Checksum : string
+  + BackupType : BackupType
+  + Status : BackupStatus
+  + CreatedAt : Time
+}
+class PlatformGrant {
+  + GameID : int64
+  + MaxInstances : int32
+  + MaxTotalCPUMillis : uint32
+  + MaxTotalMemoryMB : uint64
+  + MaxInstanceCPUMillis : uint32
+  + MaxInstanceMemoryMB : uint64
+  + IsActive : bool
+  + CreatedAt : Time
+  + UpdatedAt : Time
+}
+class QueueEntry {
+  + GameID : int64
+  + PlayerID : string
+  + Mode : string
+  + JoinTime : Time
+  + LastHeartbeat : Time
+  + ReservedInstanceID : int64
+  + ReservedUntil : Time
+}
+class ServerEndpoint {
+  + InstanceID : int64
+  + Address : string
+  + Port : uint32
+  + Protocol : Protocol
+  + PlayerCount : uint32
+  + MaxPlayers : uint32
+  + Path : string
+}
+class DiscoveryResult {
+  + Status : DiscoveryStatus
+  + Servers : []ServerEndpoint
+  + Message : string
+}
+enum NodeStatus <<перечисление>> {
+  Unauthorized
+  Online
+  Offline
+  Maintenance
+}
+enum NodeRole <<перечисление>> {
+  Mixed
+  Compute
+  Storage
+}
+enum IngressMode <<перечисление>> {
+  PlatformProxy
+  Direct
+}
+enum InstanceStatus <<перечисление>> {
+  Starting
+  Running
+  Stopping
+  Stopped
+  Crashed
+}
+enum Protocol <<перечисление>> {
+  TCP
+  UDP
+  WebSocket
+  WebRTC
+}
+enum OrchestrationMode <<перечисление>> {
+  Disabled
+  KeepAlive
+  ScaleToZero
+}
+enum ScaleBehavior <<перечисление>> {
+  Spawn
+  Queue
+}
+enum ServiceType <<перечисление>> {
+  Postgres
+  Redis
+  MySQL
+  Volume
+  Adminer
+  PGAdmin
+}
+enum ServiceStatus <<перечисление>> {
+  Starting
+  Running
+  Stopped
+  Error
+}
+enum DiscoveryStatus <<перечисление>> {
+  Ready
+  Starting
+  CapacityReached
+  Unavailable
+  Queue
+  Reserved
+}
+Node --> NodeStatus
+Node --> NodeRole
+Node --> IngressMode
+Instance --> Protocol
+Instance --> InstanceStatus
+ServerBuild --> Protocol
+GamePolicy --> OrchestrationMode
+GamePolicy --> ScaleBehavior
+ManagedService --> ServiceType
+ManagedService --> ServiceStatus
+ServiceBackup --> ServiceType
+ServerEndpoint --> Protocol
+DiscoveryResult --> DiscoveryStatus
+DiscoveryResult *-- ServerEndpoint
+Node "1" o-- "*" Instance : размещает
+ServerBuild "1" <-- "*" Instance : запущен из
+Node "1" *-- "*" ManagedService : размещает
+ManagedService "1" *-- "*" ServiceBackup : имеет
+GamePolicy "1" ..> "*" Instance : управляет числом
+GamePolicy "1" ..> "*" QueueEntry : настраивает очередь
+QueueEntry "*" --> "0..1" Instance : место закреплено на
+PlatformGrant "0..1" ..> "*" Instance : ограничивает
+ServerEndpoint ..> Instance : адрес для клиента
+@enduml

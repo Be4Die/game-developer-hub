@@ -1,0 +1,156 @@
+@startuml accounts
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class AuthService {
+  --
+  + Register(req) : RegisterResponse
+  + Login(req) : LoginResponse
+  + RefreshToken(req) : RefreshTokenResponse
+  + Logout(req)
+  + VerifyEmail(req)
+  + ResendVerificationEmail(req)
+  + RequestPasswordReset(req)
+  + ResetPassword(req)
+}
+class UserService {
+  --
+  + GetProfile(userID) : User
+  + UpdateProfile(req) : User
+  + ChangePassword(req)
+  + GetUserByID(userID) : User
+  + SearchUsers(req) : SearchUsersResponse
+  + CreateModerator(req) : CreateModeratorResponse
+  + DeleteUser(req)
+  + ChangeUserRole(req) : User
+}
+class TokenService {
+  --
+  + ValidateToken(accessToken) : Claims
+  + ListSessions(userID) : []Session
+  + RevokeSession(userID, sessionID)
+  + RevokeAllSessions(userID, excludeSessionID) : int64
+}
+class User {
+  + ID : string
+  + Email : string
+  + PasswordHash : []byte
+  + DisplayName : string
+  + Role : UserRole
+  + Status : UserStatus
+  + EmailVerified : bool
+  + CreatedAt : Time
+  + UpdatedAt : Time
+}
+class Session {
+  + ID : string
+  + UserID : string
+  + UserAgent : string
+  + IPAddress : string
+  + RefreshTokenHash : string
+  + CreatedAt : Time
+  + LastUsedAt : Time
+  + ExpiresAt : Time
+  + Revoked : bool
+  + RevokedAt : Time
+  --
+  + IsActive() : bool
+}
+class TokenPair {
+  + AccessToken : string
+  + RefreshToken : string
+  + ExpiresAt : Time
+  + TokenType : string
+}
+class Claims {
+  + UserID : string
+  + SessionID : string
+  + Email : string
+  + Role : UserRole
+}
+enum UserRole <<перечисление>> {
+  RoleDeveloper
+  RoleModerator
+  RoleAdmin
+}
+enum UserStatus <<перечисление>> {
+  StatusActive
+  StatusSuspended
+  StatusDeleted
+}
+interface UserRepository <<интерфейс>> {
+  + Create(user)
+  + GetByID(id) : User
+  + GetByEmail(email) : User
+  + Update(user)
+  + Search(query, limit, offset) : []User, int64
+  + Delete(id)
+}
+interface SessionRepository <<интерфейс>> {
+  + Create(session)
+  + GetByID(id) : Session
+  + GetByUserID(userID) : []Session
+  + GetByRefreshTokenHash(hash) : Session
+  + Update(session)
+  + Revoke(id)
+  + RevokeAllForUser(userID, excludeSessionID) : int64
+}
+interface TokenManager <<интерфейс>> {
+  + GenerateAccessToken(claims) : string, Time
+  + GenerateRefreshToken() : string
+  + ParseAccessToken(token) : Claims
+}
+interface PasswordHasher <<интерфейс>> {
+  + Hash(password) : []byte
+  + Compare(hash, password)
+}
+interface EmailSender <<интерфейс>> {
+  + SendVerificationEmail(email, code)
+  + SendPasswordResetEmail(email, token)
+}
+interface EmailVerificationStore <<интерфейс>> {
+  + Store(email, code)
+  + Verify(email, code) : bool
+}
+interface PasswordResetStore <<интерфейс>> {
+  + Store(email, token)
+  + Consume(token) : string
+}
+interface AttemptLimiter <<интерфейс>> {
+  + Blocked(key) : bool
+  + Fail(key)
+  + Reset(key)
+}
+interface SessionCache <<интерфейс>> {
+  + Set(session)
+  + Get(sessionID) : Session
+  + Invalidate(sessionID)
+}
+AuthService --> UserRepository
+AuthService --> SessionRepository
+AuthService --> TokenManager
+AuthService --> PasswordHasher
+AuthService --> EmailVerificationStore
+AuthService --> PasswordResetStore
+AuthService --> EmailSender
+AuthService --> AttemptLimiter
+UserService --> UserRepository
+UserService --> SessionRepository
+UserService --> PasswordHasher
+TokenService --> SessionRepository
+TokenService --> SessionCache
+TokenService --> TokenManager
+User --> UserRole
+User --> UserStatus
+Claims --> UserRole
+UserRepository ..> User
+SessionRepository ..> Session
+TokenManager ..> Claims
+SessionCache ..> Session
+User "1" *-- "*" Session : сессии
+@enduml

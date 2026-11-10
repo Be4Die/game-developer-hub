@@ -1,0 +1,211 @@
+@startuml moderation
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+skinparam nodesep 30
+skinparam ranksep 45
+class ModerationService {
+  --
+  + SubmitDraft(projectID, ownerID, snapshot, reqType) : ModerationRequest
+  + ListRequests(filter) : []ModerationRequest, int
+  + GetRequest(requestID) : ModerationRequest
+  + GetLatestRequestByProject(projectID) : ModerationRequest
+  + SubmitServerAccess(projectID, ownerID, reason, …) : ModerationRequest
+  + GetServerAccess(projectID) : ModerationRequest
+  + ReviewServerAccess(requestID, moderatorID, approved, …) : ModerationRequest
+  + ClaimRequest(requestID, moderatorID) : ModerationRequest
+  + Approve(projectID, moderatorID, comment) : ModerationRequest, string
+  + Reject(projectID, moderatorID, reason, violations) : ModerationRequest
+  + SendMessage(projectID, senderID, senderRole, …) : ChatMessage
+  + ListMessages(projectID, limit, offset) : []ChatMessage, int
+  {method} … ещё 9
+}
+class ModerationRequest {
+  + ID : int64
+  + ProjectID : int64
+  + OwnerID : string
+  + ModeratorID : string
+  + Status : RequestStatus
+  + Type : RequestType
+  + Snapshot : ProjectSnapshot
+  + Reason : string
+  + MaxInstances : int32
+  + MaxTotalCPUMillis : uint32
+  + MaxTotalMemoryMB : uint64
+  + MaxInstanceCPUMillis : uint32
+  … ещё 8
+}
+class ProjectSnapshot {
+  + ProjectID : int64
+  + TitleRu : string
+  + TitleEn : string
+  + SeoRu : string
+  + SeoEn : string
+  + AboutRu : string
+  + AboutEn : string
+  + IconPath : string
+  + CoverPath : string
+  + VideoPath : string
+  + ActiveBuildVersion : string
+  + DevURL : string
+  … ещё 2
+}
+class GameItemSnapshot {
+  + GameItemID : string
+  + Name : string
+  + Description : string
+  + PriceCoins : int64
+  + ImageURL : string
+  + IsActive : bool
+}
+class ModerationSnapshot {
+  + ID : int64
+  + RequestID : int64
+  + ProjectID : int64
+  + Status : RequestStatus
+  + FormatVersion : int
+  + SnapshotJSON : string
+  + SnapshotBlob : []byte
+  + CreatedAt : Time
+}
+class SnapshotPayload {
+  + Project : SnapshotProjectData
+  + Media : SnapshotMediaData
+  + Verdict : SnapshotVerdictData
+  + ChatTranscript : []SnapshotMessageItem
+}
+class ChatMessage {
+  + ID : int64
+  + ProjectID : int64
+  + RequestID : int64
+  + SenderID : string
+  + SenderRole : SenderRole
+  + MessageType : MessageType
+  + Content : string
+  + Attachments : []Attachment
+  + Payload : map[string]any
+  + CreatedAt : Time
+}
+class Attachment {
+  + ID : string
+  + ProjectID : int64
+  + MessageID : int64
+  + UploaderID : string
+  + UploaderRole : SenderRole
+  + FileName : string
+  + FileSize : int64
+  + MimeType : string
+  + StoragePath : string
+  + IsPurged : bool
+  + CreatedAt : Time
+}
+class ViolationItem {
+  + RuleCode : string
+  + RuleTitle : string
+  + Description : string
+  + AttachmentIDs : []string
+  + Attachments : []Attachment
+}
+class ModeratorStats {
+  + ModeratorID : string
+  + TotalAssigned : int32
+  + InReviewCount : int32
+  + ApprovedCount : int32
+  + RejectedCount : int32
+  + TotalResolved : int32
+  + ApprovalRate : float64
+  + RejectionRate : float64
+  + AvgReviewDurationSeconds : int64
+  + MessagesSent : int32
+  + TodayResolved : int32
+  + WeekResolved : int32
+  … ещё 1
+}
+enum RequestStatus <<перечисление>> {
+  Pending
+  InReview
+  Approved
+  Rejected
+  Cancelled
+}
+enum RequestType <<перечисление>> {
+  ProjectPublication
+  ServerAccess
+  ProjectUpdate
+}
+enum SenderRole <<перечисление>> {
+  Developer
+  Moderator
+  System
+}
+enum MessageType <<перечисление>> {
+  Text
+  Submitted
+  StatusChanged
+  Approved
+  Rejected
+}
+interface RequestRepo <<интерфейс>> {
+  + Create(req) : int64
+  + Get(id) : ModerationRequest
+  + GetLatestByProject(projectID) : ModerationRequest
+  + GetLatestByProjectAndType(projectID, reqType) : ModerationRequest
+  + List(filter) : []ModerationRequest, int
+  + Claim(id, moderatorID)
+  + Resolve(id, status, reason, moderatorID)
+  + ResolveServerAccess(id, status, maxInstances, …)
+  {method} … ещё 3
+}
+interface MessageRepo <<интерфейс>> {
+  + Create(msg) : int64
+  + ListByProject(projectID, limit, offset) : []ChatMessage, int
+  + ListActiveChats(limit, offset) : []ChatSummary, int
+}
+interface AttachmentRepo <<интерфейс>> {
+  + Create(att)
+  + Get(id, projectID) : Attachment
+  + GetByIDs(ids) : []Attachment
+  + BindToMessage(attachmentIDs, messageID)
+  + ListByMessageIDs(messageIDs) : map[int64][]Attachment
+  + PurgeByProjectID(projectID) : int, []string
+}
+interface SnapshotRepo <<интерфейс>> {
+  + Save(snapshot)
+  + GetByRequestID(requestID) : ModerationSnapshot
+  + GetByProjectID(projectID) : ModerationSnapshot
+}
+interface ProjectClient <<интерфейс>> {
+  + PublishRelease(projectID, version, approvedBy, comment) : string
+  + RejectDraft(projectID, reason)
+}
+interface OrchestratorClient <<интерфейс>> {
+  + GrantPlatformAccess(projectID, maxInstances, maxTotalCPU, …)
+  + RevokePlatformAccess(projectID)
+}
+ModerationService --> RequestRepo
+ModerationService --> MessageRepo
+ModerationService --> AttachmentRepo
+ModerationService --> SnapshotRepo
+ModerationService --> ProjectClient
+ModerationService --> OrchestratorClient
+ModerationRequest --> RequestStatus
+ModerationRequest --> RequestType
+ModerationRequest *-- ProjectSnapshot
+ProjectSnapshot *-- GameItemSnapshot
+ModerationSnapshot --> RequestStatus
+ChatMessage --> SenderRole
+ChatMessage --> MessageType
+ChatMessage *-- Attachment
+Attachment --> SenderRole
+ViolationItem *-- Attachment
+RequestRepo ..> ModerationRequest
+RequestRepo ..> ModeratorStats
+MessageRepo ..> ChatMessage
+AttachmentRepo ..> Attachment
+SnapshotRepo ..> ModerationSnapshot
+ModerationRequest "1" *-- "*" ChatMessage : переписка
+ModerationRequest "1" *-- "0..*" ModerationSnapshot : решения
+ModerationSnapshot ..> SnapshotPayload : содержит
+@enduml

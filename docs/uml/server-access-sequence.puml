@@ -1,0 +1,27 @@
+@startuml server-access-sequence
+!include style.iuml
+skinparam sequenceMessageAlign center
+hide footbox
+autonumber
+actor "Разработчик" as Dev
+actor "Модератор" as Mod
+participant "API-шлюз" as GW
+participant "Сервис\nмодерации" as MS
+participant "Сервис\nоркестрации" as OR
+database "База данных\nоркестрации" as DB
+Dev -> GW : запросить доступ к серверам\nплатформы: обоснование, ресурсы
+GW -> MS : создать заявку\nна доступ
+MS --> Dev : заявка «Ожидает»,\nсообщение в чате проекта
+Mod -> MS : открыть заявку из очереди
+alt одобрить
+  Mod -> MS : одобрить, задать квоту:\nэкземпляры, процессор, память
+  MS -> OR : выдать доступ с квотой
+  OR -> DB : сохранить квоту проекта
+  MS -> MS : аудит-снимок решения
+  MS --> Dev : «Одобрена»: узлы платформы\nдоступны для запуска
+else отклонить
+  Mod -> MS : отклонить с причиной
+  MS -> MS : аудит-снимок решения
+  MS --> Dev : «Отклонена»,\nпричина в чате проекта
+end
+@enduml

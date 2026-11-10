@@ -1,0 +1,25 @@
+' Общее оформление диаграмм C4: монохромно, Times New Roman, элементы — прямоугольники с подписью вида и технологии
+skinparam dpi 200
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam defaultTextAlignment center
+skinparam wrapWidth 190
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor black
+  RoundCorner 10
+}
+skinparam database {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam actor {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam ArrowFontSize 11
+!define ELEM(alias, name, kind, descr) rectangle "<b>name</b>\n<size:11>[kind]</size>\n\ndescr" as alias
+!define STORE(alias, name, kind, descr) database "<b>name</b>\n<size:11>[kind]</size>\n\ndescr" as alias
+!define EXT(alias, name, kind, descr) rectangle "<b>name</b>\n<size:11>[kind]</size>\n\ndescr" as alias #line.dashed

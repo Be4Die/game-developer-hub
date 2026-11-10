@@ -1,0 +1,224 @@
+@startuml orchestrator-services
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class NodeService {
+  --
+  + RegisterNode(params) : Node
+  + ListNodes(ownerID, status, gameID) : []EnrichedNode
+  + GetNode(ownerID, nodeID) : EnrichedNode
+  + UpdatePlatformStatus(nodeID, isPlatform) : EnrichedNode
+  + DeleteNode(ownerID, nodeID)
+  + GetNodeUsage(ownerID, nodeID) : NodeUsageResult
+  + AnnounceNode(params) : AnnounceNodeResult
+  + ListNodeInstances(ownerID, nodeID) : []EnrichedInstance
+  + SyncInstances(nodeID, activeContainerIDs)
+  + UpdateRole(ownerID, nodeID, role, …) : Node
+  + VerifyDomain(ownerID, nodeID, customDomain) : VerifyDomainResult
+  + UpdateIngress(ownerID, nodeID, mode, …) : Node
+  {method} … ещё 14
+}
+class InstanceService {
+  --
+  + StartInstance(params) : Instance
+  + StopInstance(ownerID, gameID, instanceID, timeoutSec) : Instance
+  + DeleteInstance(ownerID, gameID, instanceID)
+  + RestartInstance(ownerID, gameID, instanceID) : Instance
+  + ResumeInstance(ownerID, gameID, instanceID) : Instance
+  + ListInstances(ownerID, gameID, status) : []EnrichedInstance
+  + GetInstance(ownerID, gameID, instanceID) : EnrichedInstance
+  + StreamInstanceLogs(ownerID, gameID, instanceID, req) : LogStream
+  + GetInstanceUsage(ownerID, gameID, instanceID) : ResourceUsage
+}
+class BuildPipeline {
+  --
+  + UploadBuild(params) : ServerBuild
+  + ListBuilds(gameID) : []ServerBuild
+  + GetBuild(gameID, version) : ServerBuild
+  + DeleteBuild(gameID, version)
+}
+class GamePolicyService {
+  --
+  + Get(gameID) : GamePolicy
+  + ListAll() : []GamePolicy
+}
+class DiscoveryService {
+  --
+  + DiscoverServers(gameID, playerID) : DiscoveryResult
+}
+class QueueService {
+  --
+  + Join(gameID, playerID, mode) : QueueStatusResult
+  + Heartbeat(gameID, playerID) : QueueStatusResult
+  + Leave(gameID, playerID)
+  + Status(gameID, playerID) : QueueStatusResult
+  + ProcessQueue(gameID)
+  + CleanupExpired(gameID, policy) : []string
+  + Count(gameID) : int64
+}
+class HeartbeatService {
+  --
+  + Run()
+  + RestoreInstanceStatuses()
+  + EnforcePolicies()
+}
+class PlatformAccessService {
+  --
+  + GrantAccess(projectID, maxInstances, maxTotalCPU, …) : PlatformGrant
+  + RevokeAccess(projectID)
+  + GetGrant(projectID) : PlatformGrant, int32
+}
+interface NodeRepo <<интерфейс>> {
+  + Create(node)
+  + Update(node)
+  + GetByID(id) : Node
+  + GetByAddress(address) : Node
+  + List(status) : []Node
+  + Delete(id)
+  + UpdateLastPing(id)
+  + UpdateRole(id, role)
+  {method} … ещё 3
+}
+interface InstanceRepo <<интерфейс>> {
+  + Create(instance)
+  + GetByID(id) : Instance
+  + ListByGame(gameID, status) : []Instance
+  + ListByNode(nodeID) : []Instance
+  + List() : []Instance
+  + Update(instance)
+  + Delete(id)
+  + CountByGame(gameID) : int
+  {method} … ещё 1
+}
+interface BuildStorage <<интерфейс>> {
+  + Create(build)
+  + GetByID(id) : ServerBuild
+  + GetByVersion(gameID, version) : ServerBuild
+  + ListByGame(gameID, limit) : []ServerBuild
+  + CountByGame(gameID) : int
+  + Delete(id)
+  + CountActiveInstancesByBuild(buildID) : int
+}
+interface GamePolicyRepo <<интерфейс>> {
+  + Get(gameID) : GamePolicy
+  + Set(policy)
+  + Delete(gameID)
+  + ListAll() : []GamePolicy
+}
+interface QueueStore <<интерфейс>> {
+  + Join(gameID, playerID, mode)
+  + Leave(gameID, playerID)
+  + Heartbeat(gameID, playerID)
+  + GetLastHeartbeat(gameID, playerID) : int64
+  + GetPosition(gameID, playerID) : position, int64
+  + GetReservation(gameID, playerID) : ServerEndpoint, Time
+  + Reserve(gameID, endpoint, reservationTimeout) : string
+  + PopFirst(gameID) : QueueEntry
+  {method} … ещё 4
+}
+interface QueueEventRepo <<интерфейс>> {
+  + Log(gameID, playerID, eventType, …)
+  + ListEvents(gameID, limit) : []QueueEvent
+  + GetStats(gameID, since) : QueueStats
+}
+interface InstanceStateStore <<интерфейс>> {
+  + SetStatus(instanceID, status)
+  + GetStatus(instanceID) : InstanceStatus
+  + SetPlayerCount(instanceID, count)
+  + GetPlayerCount(instanceID) : uint32
+  + SetQueueSize(instanceID, size)
+  + GetQueueSize(instanceID) : uint32
+  + SetUsage(instanceID, usage)
+  + GetUsage(instanceID) : ResourceUsage
+  {method} … ещё 6
+}
+interface NodeStateStore <<интерфейс>> {
+  + UpdateHeartbeat(nodeID, usage)
+  + GetUsage(nodeID) : ResourceUsage
+  + GetActiveInstanceCount(nodeID) : uint32
+  + SetActiveInstanceCount(nodeID, count)
+  + Delete(nodeID)
+}
+interface NodeClient <<интерфейс>> {
+  + BuildImage(nodeAddress, apiKey, metadata, archive)
+  + LoadImage(nodeAddress, apiKey, metadata, chunks) : ImageLoadResult
+  + StartInstance(nodeAddress, apiKey, req) : StartInstanceResult
+  + StopInstance(nodeAddress, apiKey, instanceID, timeoutSec)
+  + RestartInstance(nodeAddress, apiKey, instanceID, timeoutSec)
+  + StartStoppedInstance(nodeAddress, apiKey, instanceID)
+  + DeleteInstance(nodeAddress, apiKey, instanceID)
+  + StreamLogs(nodeAddress, apiKey, req) : LogStream
+  {method} … ещё 17
+}
+interface ManagedServiceRepo <<интерфейс>> {
+  + Create(s)
+  + GetByID(id) : ManagedService
+  + GetByName(nodeID, name) : ManagedService
+  + ListByNode(nodeID) : []ManagedService
+  + ListByOwner(ownerID) : []ManagedService
+  + ListByGame(gameID) : []ManagedService
+  + Update(s)
+  + Delete(id)
+}
+interface BackupRepo <<интерфейс>> {
+  + Create(b)
+  + GetByID(backupID) : ServiceBackup
+  + ListByService(nodeID, serviceName) : []ServiceBackup
+  + Update(b)
+  + Delete(backupID)
+}
+interface PlatformAccessRepo <<интерфейс>> {
+  + SaveGrant(grant) : PlatformGrant
+  + RevokeGrant(gameID)
+  + GetGrant(gameID) : PlatformGrant
+  + HasApprovedAccess(gameID) : bool, PlatformGrant
+  + CountPlatformInstances(gameID) : int32
+  + GetActivePlatformUsage(gameID) : int32, uint32, uint64
+}
+NodeService --> NodeRepo
+NodeService --> NodeStateStore
+NodeService --> InstanceRepo
+NodeService --> InstanceStateStore
+NodeService --> NodeClient
+NodeService --> ManagedServiceRepo
+NodeService --> BackupRepo
+NodeService --> PlatformAccessRepo
+InstanceService --> InstanceRepo
+InstanceService --> InstanceStateStore
+InstanceService --> BuildStorage
+InstanceService --> NodeRepo
+InstanceService --> NodeStateStore
+InstanceService --> NodeClient
+InstanceService --> ManagedServiceRepo
+InstanceService --> PlatformAccessRepo
+BuildPipeline --> BuildStorage
+BuildPipeline --> NodeClient
+BuildPipeline --> NodeRepo
+BuildPipeline --> NodeStateStore
+GamePolicyService --> GamePolicyRepo
+DiscoveryService --> InstanceRepo
+DiscoveryService --> InstanceStateStore
+DiscoveryService --> NodeRepo
+DiscoveryService --> BuildStorage
+DiscoveryService --> GamePolicyService
+QueueService --> QueueStore
+QueueService --> QueueEventRepo
+QueueService --> GamePolicyService
+QueueService --> InstanceRepo
+QueueService --> InstanceStateStore
+QueueService --> NodeRepo
+HeartbeatService --> NodeRepo
+HeartbeatService --> NodeStateStore
+HeartbeatService --> InstanceRepo
+HeartbeatService --> InstanceStateStore
+HeartbeatService --> NodeClient
+HeartbeatService --> BuildStorage
+HeartbeatService --> GamePolicyService
+HeartbeatService --> QueueService
+PlatformAccessService --> PlatformAccessRepo
+@enduml

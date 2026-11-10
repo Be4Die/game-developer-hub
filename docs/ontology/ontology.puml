@@ -1,0 +1,70 @@
+@startuml ontology
+!include ../uml/style.iuml
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor black
+  RoundCorner 25
+}
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam ArrowFontSize 12
+rectangle "Пользователь" as user
+rectangle "Разработчик игры" as dev
+rectangle "Модератор" as mod
+rectangle "Администратор" as adm
+rectangle "Игрок" as pl
+rectangle "Проект" as prj
+rectangle "Черновик" as dr
+rectangle "Клиентская сборка" as cb
+rectangle "Релиз" as rel
+rectangle "Участник проекта" as mem
+rectangle "Приглашение" as inv
+rectangle "Внутриигровой товар" as item
+rectangle "Заявка на модерацию" as req
+rectangle "Аудит-снимок" as snap
+rectangle "Чат проекта" as chat
+rectangle "Правило площадки" as rule
+rectangle "Серверная сборка игры" as sb
+rectangle "Экземпляр игрового сервера" as inst
+rectangle "Политика оркестрации" as pol
+rectangle "Очередь игроков" as q
+rectangle "Вычислительный узел" as node
+rectangle "Сервис данных" as svc
+rectangle "Резервная копия" as bk
+rectangle "Квота серверов платформы" as quota
+
+dev -up-|> user
+mod -up-|> user
+adm -up-|> user
+dev --> prj : владеет
+dev --> node : подключает
+dev --> mem : является
+mem --> prj : имеет права в
+inv --> mem : порождает
+prj *-- dr : имеет
+prj *-- cb : содержит
+prj *-- rel : содержит
+prj *-- item : содержит
+prj *-- chat : имеет
+dr --> cb : ссылается на
+rel --> cb : публикует
+req --> prj : относится к
+req *-- snap : фиксируется в
+mod --> req : рассматривает
+req --> rule : ссылается на\nнарушенное
+req --> quota : назначает
+quota --> prj : выдана
+prj *-- sb : содержит
+prj *-- pol : имеет
+inst --> sb : запущен из
+inst --> node : размещён на
+pol --> inst : управляет числом
+pol --> q : настраивает
+pl --> q : ожидает в
+pl --> inst : подключается к
+node *-- svc : размещает
+svc *-- bk : имеет
+inst --> svc : использует
+adm --> node : включает в пул\nплатформы
+@enduml

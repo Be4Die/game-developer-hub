@@ -1,0 +1,26 @@
+@startuml instance-start-sequence
+!include style.iuml
+skinparam sequenceMessageAlign center
+hide footbox
+autonumber
+actor "Разработчик" as Dev
+participant "API-шлюз" as GW
+participant "Сервис\nоркестрации" as OR
+participant "Сервис\nуправления\nпроектами" as PM
+database "База данных" as DB
+database "Valkey" as KV
+participant "Агент узла" as AG
+Dev -> GW : запустить экземпляр:\nверсия сборки, параметры
+GW -> OR : запрос с токеном\nразработчика
+OR -> PM : проверить право управлять\nсерверами проекта
+PM --> OR : доступ разрешён
+OR -> DB : проверить предел экземпляров,\nнайти серверную сборку
+OR -> KV : загрузка узлов
+OR -> OR : выбрать узел, проверить\nквоту серверов платформы
+OR -> DB : адреса сервисов данных игры
+OR -> AG : запустить контейнер\nс параметрами и ограничениями
+AG --> OR : выделенный порт
+OR -> DB : сохранить экземпляр
+OR -> KV : статус «Работает», маршрут\nдля входного прокси
+OR --> Dev : экземпляр запущен
+@enduml

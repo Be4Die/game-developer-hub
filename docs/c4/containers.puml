@@ -1,0 +1,53 @@
+@startuml containers
+!include style.iuml
+skinparam nodesep 35
+skinparam ranksep 50
+actor "<b>Разработчик, модератор,</b>\n<b>администратор</b>" as user
+actor "<b>Игрок</b>" as pl
+
+rectangle "Разрабатываемая система" as sys #line.dashed {
+  ELEM(ngx, "Веб-сервер", "Nginx", "Отдаёт веб-приложение, игры и медиа, проксирует запросы")
+  ELEM(spa, "Веб-приложение", "Vue 3, TypeScript", "Личный кабинет, рабочие места модератора и администратора")
+  ELEM(gw, "API-шлюз", "Go, grpc-gateway", "Переводит REST в gRPC, принимает и отдаёт файлы")
+  ELEM(ing, "Входной прокси", "Go", "Маршрутизирует игровой трафик к экземплярам")
+  rectangle "Сервисы предметных областей" as svc #line.dotted {
+    ELEM(sso, "Сервис учётных записей", "Go, gRPC", "Регистрация, вход, токены, роли")
+    ELEM(pm, "Сервис управления проектами", "Go, gRPC", "Черновики, сборки, релизы, командный доступ, аналитика")
+    ELEM(ms, "Сервис модерации", "Go, gRPC", "Заявки, аудит-снимки, чат проекта")
+    ELEM(orc, "Сервис оркестрации", "Go, gRPC", "Узлы, серверные сборки, экземпляры, политики, очередь")
+  }
+  STORE(pg, "PostgreSQL", "реляционная СУБД", "Отдельная схема данных каждого сервиса")
+  STORE(kv, "Valkey", "хранилище ключ–значение", "Состояние узлов и экземпляров, блокировки, маршруты, коды подтверждения")
+  STORE(s3, "SeaweedFS", "объектное хранилище S3", "Сборки, опубликованные игры, медиа, вложения")
+}
+rectangle "Вычислительный узел" as nd #line.dashed {
+  ELEM(ag, "Агент узла", "Go, gRPC", "Управляет контейнерами, сервисами данных и резервными копиями")
+  ELEM(gs, "Экземпляр игрового сервера", "контейнер Docker", "Серверная сборка игры")
+  ELEM(ds, "Сервис данных игры", "контейнер Docker", "PostgreSQL, MySQL, Redis или том")
+}
+EXT(ext, "Смежные системы площадки", "почта, аналитика, покупки", "Существующие сервисы Welwise Games")
+
+user --> ngx : HTTPS
+pl --> ngx : HTTPS,\nWebSocket
+ngx --> spa : отдаёт файлы
+ngx --> gw : /api, HTTP
+ngx --> ing : /game-proxy,\nWebSocket
+gw --> svc : gRPC
+pm <-right-> ms : gRPC
+ms -down-> orc : gRPC
+pm -[hidden]down- sso
+sso -[hidden]right- orc
+svc --> pg : SQL
+svc --> kv : RESP
+svc --> s3 : S3
+ngx --> s3 : /games, /media
+gw --> s3 : S3: файлы
+ing --> kv : RESP:\nмаршруты
+orc <--> ag : gRPC: команды, опрос,\nжурналы; объявление узла
+ag --> gs : Docker API
+ag --> ds : Docker API
+gs --> ag : HTTP: число\nигроков
+gs --> ds : SQL, RESP
+ing --> gs : WebSocket
+svc --> ext : SMTP, HTTPS
+@enduml
