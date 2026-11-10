@@ -40,11 +40,11 @@ func TestIntegration_ModerationService_RealPostgres(t *testing.T) {
 	assert.Equal(t, domain.RequestStatusInReview, claimed.Status)
 
 	// 3. Send Messages
-	msg1, err := env.svc.SendMessage(ctx, projectID, ownerID, domain.SenderRoleDeveloper, "Когда релиз?")
+	msg1, err := env.svc.SendMessage(ctx, projectID, ownerID, domain.SenderRoleDeveloper, "Когда релиз?", nil, nil)
 	require.NoError(t, err)
 	assert.Greater(t, msg1.ID, int64(0))
 
-	msg2, err := env.svc.SendMessage(ctx, projectID, modID, domain.SenderRoleModerator, "Сейчас тестирую.")
+	msg2, err := env.svc.SendMessage(ctx, projectID, modID, domain.SenderRoleModerator, "Сейчас тестирую.", nil, nil)
 	require.NoError(t, err)
 	assert.Greater(t, msg2.ID, int64(0))
 

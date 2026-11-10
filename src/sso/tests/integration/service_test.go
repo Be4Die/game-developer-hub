@@ -51,7 +51,7 @@ func TestAuthService_FullRegistrationFlow(t *testing.T) {
 		t.Fatalf("store verification code failed: %v", err)
 	}
 
-	err = env.authService.VerifyEmail(ctx, domain.VerifyEmailRequest{VerificationCode: "123456"})
+	err = env.authService.VerifyEmail(ctx, domain.VerifyEmailRequest{Email: "flow@test.com", VerificationCode: "123456"})
 	if err != nil {
 		t.Fatalf("VerifyEmail failed: %v", err)
 	}

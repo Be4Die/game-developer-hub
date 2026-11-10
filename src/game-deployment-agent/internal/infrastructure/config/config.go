@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -52,6 +53,11 @@ func MustLoad() *Config {
 	var cfg Config
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		panic(fmt.Sprintf("read config %s: %v", configPath, err))
+	}
+
+	// Ключ агента даёт право выкладывать файлы игр: значение по умолчанию в prod недопустимо.
+	if cfg.Env == "prod" && (len(cfg.Server.APIKey) < 32 || strings.Contains(cfg.Server.APIKey, "dev-")) {
+		panic("prod: AGENT_API_KEY must be a unique random value of at least 32 characters")
 	}
 
 	return &cfg

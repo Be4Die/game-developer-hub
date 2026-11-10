@@ -45,6 +45,7 @@ type LogoutRequest struct {
 
 // VerifyEmailRequest — запрос на подтверждение email.
 type VerifyEmailRequest struct {
+	Email            string
 	VerificationCode string
 }
 
@@ -92,6 +93,8 @@ type SearchUsersResponse struct {
 
 // CreateModeratorRequest — запрос на создание модератора администратором.
 type CreateModeratorRequest struct {
+	// CallerID — идентификатор вызывающего пользователя (должен быть администратором).
+	CallerID    string
 	Login       string
 	Password    string
 	DisplayName string
@@ -120,3 +123,9 @@ type DeleteUserRequest struct {
 	UserID   string
 }
 
+// ChangeUserRoleRequest — запрос на изменение роли пользователя.
+type ChangeUserRoleRequest struct {
+	CallerID string
+	UserID   string
+	Role     UserRole
+}

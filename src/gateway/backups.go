@@ -1,49 +1,18 @@
 package main
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	gwpb "github.com/Be4Die/game-developer-hub/protos/orchestrator/v1"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
-
-const gatewayBackupTicketSecret = "gdh-backup-secret-key-2026"
-
-// validateTicket проверяет срок действия и HMAC-подпись одноразового тикета.
-func validateTicket(ticket string, nodeID int64, serviceName, backupID string) bool {
-	parts := strings.Split(ticket, ":")
-	if len(parts) != 5 {
-		return false
-	}
-	tNodeID, _ := strconv.ParseInt(parts[0], 10, 64)
-	tServiceName := parts[1]
-	tBackupID := parts[2]
-	exp, _ := strconv.ParseInt(parts[3], 10, 64)
-	sig := parts[4]
-
-	if tNodeID != nodeID || tServiceName != serviceName || tBackupID != backupID {
-		return false
-	}
-	if time.Now().Unix() > exp {
-		return false
-	}
-
-	payload := fmt.Sprintf("%d:%s:%s:%d", tNodeID, tServiceName, tBackupID, exp)
-	mac := hmac.New(sha256.New, []byte(gatewayBackupTicketSecret))
-	mac.Write([]byte(payload))
-	expectedSig := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(sig), []byte(expectedSig))
-}
 
 // handleBackupDownload обрабатывает скачивание бэкапа по одноразовому тикету или JWT.
 func handleBackupDownload(nodeClient gwpb.NodeServiceClient) http.HandlerFunc {
@@ -69,14 +38,7 @@ func handleBackupDownload(nodeClient gwpb.NodeServiceClient) http.HandlerFunc {
 			return
 		}
 
-		// Если передан тикет — валидируем криптографическую подпись
-		if ticket != "" {
-			if !validateTicket(ticket, nodeID, serviceName, backupID) {
-				http.Error(w, "invalid or expired download ticket", http.StatusForbidden)
-				return
-			}
-		}
-
+		// Подпись тикета проверяет оркестратор: только он владеет секретом, которым тикет подписан.
 		ctx := authContext(r.Context(), r)
 		if ticket != "" {
 			ctx = metadata.AppendToOutgoingContext(ctx, "x-backup-ticket", ticket)
@@ -93,6 +55,24 @@ func handleBackupDownload(nodeClient gwpb.NodeServiceClient) http.HandlerFunc {
 			return
 		}
 
+		// Первый фрагмент читается до отправки заголовков, чтобы отказ в доступе вернулся кодом ошибки,
+		// а не пустым файлом с кодом 200.
+		first, err := stream.Recv()
+		if err != nil && err != io.EOF {
+			log.Printf("[ERROR] DownloadServiceBackup: %v", err)
+			code := http.StatusInternalServerError
+			switch status.Code(err) {
+			case codes.PermissionDenied:
+				code = http.StatusForbidden
+			case codes.Unauthenticated:
+				code = http.StatusUnauthorized
+			case codes.NotFound:
+				code = http.StatusNotFound
+			}
+			http.Error(w, "download failed", code)
+			return
+		}
+
 		// Определяем имя скачиваемого файла
 		fileName := backupID
 		if !strings.Contains(fileName, ".") {
@@ -101,6 +81,17 @@ func handleBackupDownload(nodeClient gwpb.NodeServiceClient) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
+		if first != nil {
+			if data := first.GetChunk(); len(data) > 0 {
+				if _, writeErr := w.Write(data); writeErr != nil {
+					return
+				}
+			}
+		}
+		if err == io.EOF {
+			return
+		}
 
 		for {
 			chunk, err := stream.Recv()

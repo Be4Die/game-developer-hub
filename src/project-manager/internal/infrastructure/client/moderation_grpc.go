@@ -14,8 +14,9 @@ import (
 // GRPCModerationClient реализует domain.ModerationClient поверх gRPC вызовов к сервису moderation.
 // Потокобезопасен для конкурентного использования.
 type GRPCModerationClient struct {
-	client modpb.ModerationServiceClient
-	conn   *grpc.ClientConn
+	client        modpb.ModerationServiceClient
+	conn          *grpc.ClientConn
+	internalToken string
 }
 
 // NewGRPCModerationClient подключается к gRPC-сервису модерации по указанному адресу.
@@ -31,6 +32,12 @@ func NewGRPCModerationClient(addr string) (*GRPCModerationClient, error) {
 	}, nil
 }
 
+// WithInternalToken задаёт общий секрет межсервисных вызовов (INTERNAL_API_KEY).
+func (c *GRPCModerationClient) WithInternalToken(token string) *GRPCModerationClient {
+	c.internalToken = token
+	return c
+}
+
 // Close закрывает сетевое gRPC соединение с сервисом модерации.
 func (c *GRPCModerationClient) Close() error {
 	if c.conn != nil {
@@ -39,7 +46,10 @@ func (c *GRPCModerationClient) Close() error {
 	return nil
 }
 
-func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) context.Context {
+// forwardContext пробрасывает токен пользователя в сервис модерации и добавляет межсервисный токен.
+// Личность пользователя модерация определяет сама по JWT: проброшенные x-user-* она перезаписывает
+// значениями из токена.
+func (c *GRPCModerationClient) forwardContext(ctx context.Context) context.Context {
 	outgoingMD := metadata.MD{}
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		for _, key := range []string{"authorization", "x-user-id", "x-user-role", "x-user-name"} {
@@ -48,22 +58,15 @@ func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) co
 			}
 		}
 	}
-	if len(outgoingMD.Get("x-user-id")) == 0 && fallbackUserID != "" {
-		outgoingMD.Set("x-user-id", fallbackUserID)
-	}
-	if len(outgoingMD.Get("x-user-role")) == 0 {
-		if fallbackRole != "" {
-			outgoingMD.Set("x-user-role", fallbackRole)
-		} else {
-			outgoingMD.Set("x-user-role", "developer")
-		}
+	if c.internalToken != "" {
+		outgoingMD.Set("x-internal-token", c.internalToken)
 	}
 	return metadata.NewOutgoingContext(ctx, outgoingMD)
 }
 
 // SubmitDraft отправляет снимок черновика на модерацию через gRPC RPC.
 func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain.ProjectSnapshot) (int64, error) {
-	outCtx := forwardContext(ctx, snapshot.OwnerID, "developer")
+	outCtx := c.forwardContext(ctx)
 
 	var items []*modpb.GameItemSnapshot
 	for _, itm := range snapshot.Items {
@@ -117,7 +120,7 @@ func (c *GRPCModerationClient) SubmitDraft(ctx context.Context, snapshot *domain
 
 // GetLatestRequest запрашивает статус последней заявки проекта через gRPC RPC.
 func (c *GRPCModerationClient) GetLatestRequest(ctx context.Context, projectID int64) (*domain.ModerationRequestInfo, error) {
-	outCtx := forwardContext(ctx, "system", "moderator")
+	outCtx := c.forwardContext(ctx)
 	resp, err := c.client.GetLatestRequestByProject(outCtx, &modpb.GetLatestRequestByProjectRequest{
 		ProjectId: projectID,
 	})

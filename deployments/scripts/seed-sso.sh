@@ -40,13 +40,13 @@ for entry in "${USERS_LIST[@]}"; do
   user_id=$(echo "$resp" | grep -o '"id":"[^"]*"' | head -1 | sed 's/"id":"//;s/"//')
 
   # Получаем код верификации из Valkey
-  code=$(docker exec gdh-sso-valkey valkey-cli GET "sso:verify:$email" 2>/dev/null || echo "")
+  code=$(docker exec gdh-valkey valkey-cli -n 1 GET "sso:verify:$(echo "$email" | tr '[:upper:]' '[:lower:]')" 2>/dev/null || echo "")
 
   if [ -n "$code" ] && [ "$code" != "(nil)" ]; then
     echo "  Код верификации: $code"
     verify_resp=$(curl -s -X POST "$GATEWAY/api/v1/auth/verify-email" \
       -H "Content-Type: application/json" \
-      -d "{\"verification_code\":\"$code\"}")
+      -d "{\"email\":\"$email\",\"verification_code\":\"$code\"}")
 
     if echo "$verify_resp" | grep -q '"success":true'; then
       echo "  Email подтверждён"

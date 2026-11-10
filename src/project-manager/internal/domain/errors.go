@@ -64,4 +64,7 @@ var (
 
 	// ErrCannotInviteSystemUser возвращается при попытке пригласить модератора или администратора.
 	ErrCannotInviteSystemUser = errors.New("cannot invite system user (moderator or administrator)")
+
+	// ErrIntegrationDisabled возвращается, когда внешняя интеграция (покупки, аналитика) отключена в конфигурации.
+	ErrIntegrationDisabled = errors.New("integration is disabled")
 )

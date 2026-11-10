@@ -28,11 +28,34 @@ func clampInt32(v int) int32 {
 type ProjectHandler struct {
 	pb.UnimplementedProjectServiceServer
 	svc *service.ProjectService
+	// requireInternal включает проверку межсервисного токена для методов обратного вызова модерации.
+	requireInternal bool
 }
 
 // NewProjectHandler создаёт новый экземпляр ProjectHandler.
 func NewProjectHandler(svc *service.ProjectService) *ProjectHandler {
 	return &ProjectHandler{svc: svc}
+}
+
+// WithInternalOnly требует межсервисный токен для PublishRelease и RejectDraft.
+// Включается, когда задан INTERNAL_API_KEY (обязателен в продуктивной среде).
+func (h *ProjectHandler) WithInternalOnly() *ProjectHandler {
+	h.requireInternal = true
+	return h
+}
+
+// authorizeModerationCallback проверяет право вызова методов, которыми сервис модерации
+// сообщает о решении: вызывающий обязан быть модератором или администратором,
+// а при включённой межсервисной защите запрос должен прийти от сервиса платформы.
+func (h *ProjectHandler) authorizeModerationCallback(ctx context.Context) error {
+	role, _ := UserRoleFromContext(ctx)
+	if role != 2 && role != 3 {
+		return status.Error(codes.PermissionDenied, "moderator or admin privilege required")
+	}
+	if h.requireInternal && !IsInternalCall(ctx) {
+		return status.Error(codes.PermissionDenied, "method is available to platform services only")
+	}
+	return nil
 }
 
 // Create создаёт новый проект.
@@ -351,7 +374,15 @@ func (h *ProjectHandler) SubmitForModeration(ctx context.Context, req *pb.Submit
 
 // PublishRelease публикует одобренную версию игры в продуктивное окружение.
 func (h *ProjectHandler) PublishRelease(ctx context.Context, req *pb.ProjectPublishReleaseRequest) (*pb.ProjectPublishReleaseResponse, error) {
-	rel, err := h.svc.PublishRelease(ctx, req.GetProjectId(), req.GetVersion(), req.GetPublishedBy())
+	if err := h.authorizeModerationCallback(ctx); err != nil {
+		return nil, err
+	}
+	// Автором публикации считается проверенный пользователь из токена, а не поле запроса.
+	publishedBy := req.GetPublishedBy()
+	if uid, ok := UserIDFromContext(ctx); ok {
+		publishedBy = uid
+	}
+	rel, err := h.svc.PublishRelease(ctx, req.GetProjectId(), req.GetVersion(), publishedBy)
 	if err != nil {
 		return nil, domainError(err, "publish release")
 	}
@@ -363,6 +394,9 @@ func (h *ProjectHandler) PublishRelease(ctx context.Context, req *pb.ProjectPubl
 
 // RejectDraft возвращает черновик на доработку при отклонении модератором.
 func (h *ProjectHandler) RejectDraft(ctx context.Context, req *pb.ProjectRejectDraftRequest) (*pb.ProjectRejectDraftResponse, error) {
+	if err := h.authorizeModerationCallback(ctx); err != nil {
+		return nil, err
+	}
 	if err := h.svc.RejectDraft(ctx, req.GetProjectId()); err != nil {
 		return nil, domainError(err, "reject draft")
 	}
@@ -714,4 +748,3 @@ func (h *ProjectHandler) GetProjectAnalytics(ctx context.Context, req *pb.GetPro
 
 	return analyticsToProto(analytics), nil
 }
-

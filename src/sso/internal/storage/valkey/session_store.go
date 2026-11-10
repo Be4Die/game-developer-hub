@@ -3,9 +3,11 @@ package valkey
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Be4Die/game-developer-hub/sso/internal/domain"
@@ -32,12 +34,6 @@ func (s *EmailVerificationStore) Store(ctx context.Context, email, code string) 
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	// Обратный маппинг: code -> email для верификации по коду.
-	codeKey := codeToEmailKey(code)
-	if err := s.client.Set(ctx, codeKey, email, s.ttl).Err(); err != nil {
-		return fmt.Errorf("%s: reverse map: %w", op, err)
-	}
-
 	return nil
 }
 
@@ -54,7 +50,7 @@ func (s *EmailVerificationStore) Verify(ctx context.Context, email, code string)
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if storedCode != code {
+	if subtle.ConstantTimeCompare([]byte(storedCode), []byte(code)) != 1 {
 		return false, nil
 	}
 
@@ -62,26 +58,7 @@ func (s *EmailVerificationStore) Verify(ctx context.Context, email, code string)
 	if err := s.client.Del(ctx, key).Err(); err != nil {
 		return false, fmt.Errorf("%s: del: %w", op, err)
 	}
-	// Удаляем обратный маппинг.
-	_ = s.client.Del(ctx, codeToEmailKey(code)).Err()
-
 	return true, nil
-}
-
-// GetEmailByCode находит email по коду верификации.
-func (s *EmailVerificationStore) GetEmailByCode(ctx context.Context, code string) (string, error) {
-	const op = "valkey.EmailVerificationStore.GetEmailByCode"
-
-	key := codeToEmailKey(code)
-	email, err := s.client.Get(ctx, key).Result()
-	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return "", nil
-		}
-		return "", fmt.Errorf("%s: %w", op, err)
-	}
-
-	return email, nil
 }
 
 // PasswordResetStore — хранилище токенов сброса пароля в Valkey.
@@ -196,11 +173,7 @@ func (c *SessionCache) Invalidate(ctx context.Context, sessionID string) error {
 }
 
 func verificationKey(email string) string {
-	return "sso:verify:" + email
-}
-
-func codeToEmailKey(code string) string {
-	return "sso:verify:code:" + code
+	return "sso:verify:" + strings.ToLower(email)
 }
 
 func resetKey(token string) string {

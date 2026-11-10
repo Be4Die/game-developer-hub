@@ -639,7 +639,12 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 		return nil, fmt.Errorf("ProjectService.PublishRelease get draft: %w", err)
 	}
 
-	_ = s.releaseRepo.Deactivate(ctx, projectID)
+	// Ошибки шагов, влияющих на состояние проекта, возвращаются: moderation закрывает заявку
+	// только после успешной публикации, а повторный вызов идемпотентен (деплой перезаписывается,
+	// прежний релиз деактивируется), поэтому повтор одобрения приводит проект в согласованное состояние.
+	if err := s.releaseRepo.Deactivate(ctx, projectID); err != nil {
+		return nil, fmt.Errorf("ProjectService.PublishRelease deactivate previous release: %w", err)
+	}
 
 	iconPath := draft.IconPath
 	if iconPath != "" {
@@ -686,9 +691,16 @@ func (s *ProjectService) PublishRelease(ctx context.Context, projectID int64, ve
 	}
 	release.ID = relID
 
-	_ = s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, s.resolveAllowedHosts(draft.IsOnline))
-	_ = s.projectRepo.UpdateUnderReview(ctx, projectID, false)
-	_ = s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished)
+	if err := s.deployer.UpdateCSP(ctx, projectID, "prod", draft.IsOnline, s.resolveAllowedHosts(draft.IsOnline)); err != nil {
+		return nil, fmt.Errorf("ProjectService.PublishRelease update csp: %w", err)
+	}
+	if err := s.projectRepo.UpdateUnderReview(ctx, projectID, false); err != nil {
+		return nil, fmt.Errorf("ProjectService.PublishRelease clear review flag: %w", err)
+	}
+	if err := s.projectRepo.UpdateStatus(ctx, projectID, domain.ProjectStatusPublished); err != nil {
+		return nil, fmt.Errorf("ProjectService.PublishRelease update status: %w", err)
+	}
+	// Журнал деплоев носит справочный характер и не влияет на состояние релиза.
 	_ = s.deploymentRepo.Create(ctx, &domain.DeploymentRecord{
 		ProjectID:   projectID,
 		Environment: domain.DeploymentEnvProd,

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -19,7 +20,7 @@ const (
 
 // Config хранит конфигурацию приложения.
 type Config struct {
-	Env          string             `yaml:"env" env-required:"true"`
+	Env          string             `yaml:"env" env:"ENV" env-required:"true"`
 	GRPC         GRPCConfig         `yaml:"grpc"`
 	Report       ReportConfig       `yaml:"report"`
 	Node         NodeConfig         `yaml:"node"`
@@ -119,6 +120,10 @@ func (c *Config) Validate() error {
 
 	if c.APIKey == "" {
 		return errors.New("NODE_API_KEY is required")
+	}
+	// Ключ ноды даёт оркестратору право запускать контейнеры на хосте: отладочное значение в prod недопустимо.
+	if c.Env == EnvProd && (len(c.APIKey) < 32 || strings.Contains(c.APIKey, "dev-") || strings.Contains(c.APIKey, "local-testing")) {
+		return errors.New("prod: NODE_API_KEY must be a unique random value of at least 32 characters")
 	}
 
 	// Валидация настроек оркестратора.

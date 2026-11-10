@@ -80,10 +80,10 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 		announcementSvc = service.NewAnnouncementService(log, cfg, sysProvider)
 	}
 
-	// HTTP-сервер отчётов (только localhost, недоступен извне).
+	// HTTP-сервер отчётов. Каждый отчёт подписан токеном своего инстанса.
 	var reportServer *http.Server
 	if cfg.Report.Port > 0 {
-		reportServer = httpreport.NewReportServer(log, storage, cfg.Report.Port)
+		reportServer = httpreport.NewReportServer(log, storage, cfg.Report.Port, cfg.APIKey)
 	}
 
 	return &App{
@@ -123,6 +123,7 @@ func (a *App) MustRun() {
 	// Передаём порт отчётов в deployment service.
 	if a.config.Report.Port > 0 {
 		a.deploymentSvc.SetReportPort(a.config.Report.Port)
+		a.deploymentSvc.SetReportSecret(a.config.APIKey)
 	}
 
 	// Cleanup any orphan containers from previous runs.

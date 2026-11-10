@@ -31,4 +31,8 @@ var (
 	ErrModeratorManagedByAdmin = errors.New("moderator profile is managed by administrator")
 	// ErrProfileImmutable возвращается при попытке изменить защищённый профиль (модератора или администратора).
 	ErrProfileImmutable = errors.New("profile cannot be modified for this role")
+	// ErrTooManyAttempts возвращается при превышении числа попыток входа или подтверждения.
+	ErrTooManyAttempts = errors.New("too many attempts, try again later")
+	// ErrCannotChangeOwnRole возвращается при попытке изменить собственную роль.
+	ErrCannotChangeOwnRole = errors.New("cannot change own role")
 )

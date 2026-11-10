@@ -3,6 +3,7 @@ package grpc
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -66,8 +67,10 @@ func (j *JWTAuthInterceptor) authenticate(ctx context.Context) (context.Context,
 	}
 
 	// Добавляем user_id в контекст.
+	// Метаданные формируются заново: всё, что прислал клиент (включая x-user-*), отбрасывается.
 	newMd := metadata.New(map[string]string{
-		"x-user-id": claims.UserID,
+		"x-user-id":   claims.UserID,
+		"x-user-role": strconv.Itoa(int(claims.Role)),
 	})
 	return metadata.NewIncomingContext(ctx, newMd), nil
 }

@@ -13,8 +13,34 @@ import (
 
 // ProjectGRPCClient реализует domain.ProjectClient через gRPC вызовы к сервису project-manager.
 type ProjectGRPCClient struct {
-	client pmpb.ProjectServiceClient
-	conn   *grpc.ClientConn
+	client        pmpb.ProjectServiceClient
+	conn          *grpc.ClientConn
+	internalToken string
+}
+
+// WithInternalToken задаёт общий секрет межсервисных вызовов (INTERNAL_API_KEY).
+func (c *ProjectGRPCClient) WithInternalToken(token string) *ProjectGRPCClient {
+	c.internalToken = token
+	return c
+}
+
+// CheckAccess проверяет доступ текущего пользователя к проекту.
+// project-manager сам определяет личность по проброшенному JWT и возвращает ошибку,
+// если пользователь не владелец, не участник команды и не сотрудник платформы.
+func (c *ProjectGRPCClient) CheckAccess(ctx context.Context, projectID int64) error {
+	outCtx := appendInternalToken(forwardContext(ctx, "", "1"), c.internalToken)
+	if _, err := c.client.Get(outCtx, &pmpb.ProjectGetRequest{Id: projectID}); err != nil {
+		return fmt.Errorf("ProjectGRPCClient.CheckAccess: %w", err)
+	}
+	return nil
+}
+
+// appendInternalToken добавляет межсервисный токен к исходящему контексту.
+func appendInternalToken(ctx context.Context, token string) context.Context {
+	if token == "" {
+		return ctx
+	}
+	return metadata.AppendToOutgoingContext(ctx, "x-internal-token", token)
 }
 
 // NewProjectGRPCClient подключается к сервису project-manager по gRPC.
@@ -62,7 +88,7 @@ func forwardContext(ctx context.Context, fallbackUserID, fallbackRole string) co
 
 // PublishRelease инициирует публикацию одобренного релиза в продуктивное окружение.
 func (c *ProjectGRPCClient) PublishRelease(ctx context.Context, projectID int64, version, approvedBy, comment string) (string, error) {
-	outCtx := forwardContext(ctx, approvedBy, "2")
+	outCtx := appendInternalToken(forwardContext(ctx, approvedBy, "2"), c.internalToken)
 	resp, err := c.client.PublishRelease(outCtx, &pmpb.ProjectPublishReleaseRequest{
 		ProjectId:   projectID,
 		Version:     version,
@@ -81,7 +107,7 @@ func (c *ProjectGRPCClient) PublishRelease(ctx context.Context, projectID int64,
 
 // RejectDraft возвращает черновик проекта на доработку.
 func (c *ProjectGRPCClient) RejectDraft(ctx context.Context, projectID int64, reason string) error {
-	outCtx := forwardContext(ctx, "system", "2")
+	outCtx := appendInternalToken(forwardContext(ctx, "system", "2"), c.internalToken)
 	_, err := c.client.RejectDraft(outCtx, &pmpb.ProjectRejectDraftRequest{
 		ProjectId: projectID,
 		Reason:    reason,

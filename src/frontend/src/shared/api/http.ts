@@ -108,12 +108,28 @@ export function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('gdh_access_token');
   const user = JSON.parse(localStorage.getItem('gdh_user') || 'null');
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-  // Now that gateway ignores x-user-id from headers, the backend relies on JWT.
-  // We still send these for compatibility just in case, but they are safely ignored.
+  // Личность и роль сервер определяет только по подписанному токену; имя — отображаемая подпись.
   if (user?.id) {
-    headers['x-user-id'] = user.id;
-    headers['x-user-name'] = user.display_name || user.username || user.email || 'User';
-    headers['x-user-role'] = user.role || 'USER_ROLE_USER';
+    headers['x-user-name'] = encodeURIComponent(
+      user.display_name || user.username || user.email || 'User'
+    );
   }
   return headers;
+}
+
+/**
+ * Скачивает файл по защищённому API-адресу.
+ * Запрос идёт через общий HTTP-клиент, поэтому токен подставляется и при необходимости обновляется.
+ * @param path путь относительно /api/v1
+ */
+export async function downloadAuthorized(path: string, fileName: string): Promise<void> {
+  const response = await http.get(path, { responseType: 'blob' });
+  const url = URL.createObjectURL(response.data as Blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

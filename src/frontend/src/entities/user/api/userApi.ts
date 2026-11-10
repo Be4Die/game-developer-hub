@@ -19,8 +19,8 @@ export function logout(refresh_token: string): Promise<any> {
   return http.post('/auth/logout', { refresh_token }).then((r) => r.data);
 }
 
-export function verifyEmail(verification_code: string): Promise<any> {
-  return http.post('/auth/verify-email', { verification_code }).then((r) => r.data);
+export function verifyEmail(email: string, verification_code: string): Promise<any> {
+  return http.post('/auth/verify-email', { email, verification_code }).then((r) => r.data);
 }
 
 export function resendVerificationEmail(email: string): Promise<any> {

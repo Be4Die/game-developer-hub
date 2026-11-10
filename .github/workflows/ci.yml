@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go-unit:
+    name: Go unit (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - sso
+          - orchestrator
+          - project-manager
+          - moderation
+          - gateway
+          - ingress-proxy
+          - game-server-node
+          - game-deployment-agent
+    defaults:
+      run:
+        working-directory: src/${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/${{ matrix.module }}/go.mod
+          cache-dependency-path: src/${{ matrix.module }}/go.sum
+      - name: Build
+        run: go build ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Unit tests
+        run: go test -race -count=1 ./...
+
+  go-integration:
+    name: Go integration (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    needs: go-unit
+    strategy:
+      fail-fast: false
+      matrix:
+        # Репозитории Postgres и Valkey на реальных контейнерах (testcontainers).
+        module: [sso, orchestrator, project-manager, moderation]
+    defaults:
+      run:
+        working-directory: src/${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/${{ matrix.module }}/go.mod
+          cache-dependency-path: src/${{ matrix.module }}/go.sum
+      - name: Integration tests
+        run: go test -race -count=1 -tags=integration ./tests/integration/...
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci --no-audit
+      - name: Lint
+        run: npm run lint
+      - name: Type check and build
+        run: npm run build
+
+  compose:
+    name: Compose and nginx config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose files
+        working-directory: deployments
+        run: |
+          docker compose -f docker-compose.backend.yml config -q
+          docker compose -f docker-compose.prod.yml --env-file .env.prod.example \
+            config -q 2>&1 | tee /tmp/prod-config.log || true
+          # В шаблоне .env секреты пустые: compose обязан отказать, а не подставить пустоту.
+          grep -q "is required" /tmp/prod-config.log
+      - name: Validate prod nginx template
+        run: |
+          docker run --rm \
+            -e GDH_APP_HOST=app.example.com \
+            -e GDH_GAMES_HOST=games.example.com \
+            -e GDH_GAMES_FRAME_ANCESTORS= \
+            -v "$PWD/src/frontend/nginx.prod.conf.template:/etc/nginx/templates/default.conf.template:ro" \
+            --add-host gateway:127.0.0.1 --add-host seaweedfs:127.0.0.1 --add-host ingress-proxy:127.0.0.1 \
+            nginx:1.27-alpine sh -c '/docker-entrypoint.d/20-envsubst-on-templates.sh && nginx -t'

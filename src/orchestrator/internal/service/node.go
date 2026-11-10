@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -998,7 +1000,10 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 	case domain.ServiceTypePostgres:
 		pass := params.Password
 		if pass == "" {
-			pass = "gdh_secret_" + strconv.FormatInt(time.Now().UnixNano()%100000, 10)
+			pass, err = generateServicePassword()
+			if err != nil {
+				return nil, fmt.Errorf("NodeService.CreateService: %w", err)
+			}
 		}
 		db := params.DBName
 		if db == "" {
@@ -1012,15 +1017,24 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 		credentials["database"] = db
 
 	case domain.ServiceTypeRedis:
-		if params.Password != "" {
-			envVars["REDIS_PASSWORD"] = params.Password
-			credentials["password"] = params.Password
+		// Redis без пароля доступен любому, кто достучался до порта ноды, поэтому пароль есть всегда.
+		pass := params.Password
+		if pass == "" {
+			pass, err = generateServicePassword()
+			if err != nil {
+				return nil, fmt.Errorf("NodeService.CreateService: %w", err)
+			}
 		}
+		envVars["REDIS_PASSWORD"] = pass
+		credentials["password"] = pass
 
 	case domain.ServiceTypeMySQL:
 		pass := params.Password
 		if pass == "" {
-			pass = "gdh_root_secret"
+			pass, err = generateServicePassword()
+			if err != nil {
+				return nil, fmt.Errorf("NodeService.CreateService: %w", err)
+			}
 		}
 		db := params.DBName
 		if db == "" {
@@ -1039,8 +1053,17 @@ func (s *NodeService) CreateService(ctx context.Context, ownerID string, nodeID 
 		// Web-панель управления СУБД (PostgreSQL / MySQL)
 
 	case domain.ServiceTypePGAdmin:
+		pass := params.Password
+		if pass == "" {
+			pass, err = generateServicePassword()
+			if err != nil {
+				return nil, fmt.Errorf("NodeService.CreateService: %w", err)
+			}
+		}
+		envVars["PGADMIN_DEFAULT_EMAIL"] = "admin@gdh.local"
+		envVars["PGADMIN_DEFAULT_PASSWORD"] = pass
 		credentials["username"] = "admin@gdh.local"
-		credentials["password"] = "admin"
+		credentials["password"] = pass
 	}
 
 	req := domain.DeployServiceRequest{
@@ -1375,4 +1398,13 @@ func (s *NodeService) UploadServiceBackup(ctx context.Context, callerID string, 
 }
 func (s *NodeService) GetBackupTicket(ctx context.Context, callerID string, nodeID int64, serviceName string, backupID string) (string, int64, error) {
 	return "ticket", 3600, nil
+}
+
+// generateServicePassword создаёт случайный пароль для управляемого сервиса (192 бита энтропии).
+func generateServicePassword() (string, error) {
+	b := make([]byte, 24)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate service password: %w", err)
+	}
+	return hex.EncodeToString(b), nil
 }

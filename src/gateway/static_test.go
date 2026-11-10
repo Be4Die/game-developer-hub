@@ -6,7 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,15 +20,32 @@ func TestHandleProjectBuildDownload(t *testing.T) {
 	archivePath := filepath.Join(archiveDir, "1.0.0.zip")
 	require.NoError(t, os.WriteFile(archivePath, []byte("fake-zip-data"), 0o644))
 
-	handler := handleProjectBuildDownload(tmpDir)
+	const secret = "0123456789abcdef0123456789abcdef"
+	verifier := &tokenVerifier{secret: []byte(secret), issuer: "sso"}
+	handler := handleProjectBuildDownload(verifier, nil, tmpDir)
 
-	t.Run("successful download", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/42/builds/1.0.0/download", nil)
+	sign := func(role int) string {
+		tok, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"sub": "user-1", "role": role, "iss": "sso", "exp": time.Now().Add(time.Hour).Unix(),
+		}).SignedString([]byte(secret))
+		require.NoError(t, err)
+		return tok
+	}
+
+	request := func(version, token string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/42/builds/"+version+"/download", nil)
 		req.SetPathValue("project_id", "42")
-		req.SetPathValue("version", "1.0.0")
-
+		req.SetPathValue("version", version)
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
 		rec := httptest.NewRecorder()
 		handler(rec, req)
+		return rec
+	}
+
+	t.Run("successful download by staff", func(t *testing.T) {
+		rec := request("1.0.0", sign(2))
 
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "application/zip", rec.Header().Get("Content-Type"))
@@ -34,14 +53,30 @@ func TestHandleProjectBuildDownload(t *testing.T) {
 		assert.Equal(t, "fake-zip-data", rec.Body.String())
 	})
 
+	t.Run("anonymous download is rejected", func(t *testing.T) {
+		rec := request("1.0.0", "")
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+		assert.NotContains(t, rec.Body.String(), "fake-zip-data")
+	})
+
+	t.Run("forged token is rejected", func(t *testing.T) {
+		rec := request("1.0.0", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4Iiwicm9sZSI6M30.forged")
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
+	t.Run("developer without project access is rejected", func(t *testing.T) {
+		// Клиент project-manager не задан: доступ подтвердить нечем, значит он не выдаётся.
+		rec := request("1.0.0", sign(1))
+		assert.Equal(t, http.StatusForbidden, rec.Code)
+	})
+
 	t.Run("not found", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/42/builds/9.9.9/download", nil)
-		req.SetPathValue("project_id", "42")
-		req.SetPathValue("version", "9.9.9")
+		rec := request("9.9.9", sign(2))
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
 
-		rec := httptest.NewRecorder()
-		handler(rec, req)
-
+	t.Run("unsafe version is rejected", func(t *testing.T) {
+		rec := request("..%2F..%2Fetc", sign(3))
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 	})
 }

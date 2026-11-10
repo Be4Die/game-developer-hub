@@ -25,6 +25,8 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       CONFIG_PATH: /app/config/docker.yaml
+      # ENV=prod запрещает отладочные ключи (нужен уникальный NODE_API_KEY ≥ 32 символов).
+      ENV: ${ENV:-local}
       NODE_API_KEY: ${NODE_API_KEY:-dev-api-key-for-local-testing}
       ORCHESTRATOR_ADDRESS: ${ORCHESTRATOR_ADDRESS:-host.docker.internal:50052}
       GDH_BACKUPS_DIR: /app/data/backups
@@ -44,6 +46,7 @@ services:
     restart: unless-stopped
     environment:
       CONFIG_PATH: /app/config/docker.yaml
+      ENV: ${ENV:-local}
       AGENT_API_KEY: ${AGENT_API_KEY:-dev-deployment-agent-key}
     ports:
       - "50055:50055"

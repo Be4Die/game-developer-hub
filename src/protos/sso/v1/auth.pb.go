@@ -427,8 +427,10 @@ type AuthServiceVerifyEmailRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Код верификации из письма.
 	VerificationCode string `protobuf:"bytes,1,opt,name=verification_code,json=verificationCode,proto3" json:"verification_code,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Email, на который был отправлен код. Обязателен: попытки ввода считаются по адресу.
+	Email         string `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AuthServiceVerifyEmailRequest) Reset() {
@@ -464,6 +466,13 @@ func (*AuthServiceVerifyEmailRequest) Descriptor() ([]byte, []int) {
 func (x *AuthServiceVerifyEmailRequest) GetVerificationCode() string {
 	if x != nil {
 		return x.VerificationCode
+	}
+	return ""
+}
+
+func (x *AuthServiceVerifyEmailRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
 	}
 	return ""
 }
@@ -816,9 +825,10 @@ const file_sso_v1_auth_proto_rawDesc = "" +
 	"\x06tokens\x18\x01 \x01(\v2\x11.sso.v1.TokenInfoR\x06tokens\"?\n" +
 	"\x18AuthServiceLogoutRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\x1b\n" +
-	"\x19AuthServiceLogoutResponse\"L\n" +
+	"\x19AuthServiceLogoutResponse\"b\n" +
 	"\x1dAuthServiceVerifyEmailRequest\x12+\n" +
-	"\x11verification_code\x18\x01 \x01(\tR\x10verificationCode\":\n" +
+	"\x11verification_code\x18\x01 \x01(\tR\x10verificationCode\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\":\n" +
 	"\x1eAuthServiceVerifyEmailResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"A\n" +
 	")AuthServiceResendVerificationEmailRequest\x12\x14\n" +

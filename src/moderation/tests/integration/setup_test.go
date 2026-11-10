@@ -4,6 +4,8 @@ package integration
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -63,7 +65,7 @@ func setupModIntegration(t *testing.T) *ModTestEnv {
 	reqRepo := pg.NewRequestRepo(pool)
 	msgRepo := pg.NewMessageRepo(pool)
 	pmClient := newInMemoryProjectClient()
-	svc := service.NewModerationService(reqRepo, msgRepo, pmClient)
+	svc := service.NewModerationService(reqRepo, msgRepo, pg.NewAttachmentRepo(pool), pmClient, pg.NewSnapshotRepo(pool))
 
 	env := &ModTestEnv{
 		pgContainer: pgContainer,
@@ -82,41 +84,16 @@ func setupModIntegration(t *testing.T) *ModTestEnv {
 	return env
 }
 
+// createModTables накатывает схему сервиса из migrations/init.sql — ту же, что применяется
+// в docker-compose, чтобы тесты репозиториев проверяли реальную схему, а не её копию.
 func createModTables(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
-
-	ddl := []string{
-		`CREATE TABLE IF NOT EXISTS moderation_requests (
-			id                    BIGSERIAL PRIMARY KEY,
-			project_id            BIGINT NOT NULL,
-			owner_id              TEXT NOT NULL,
-			moderator_id          TEXT NOT NULL DEFAULT '',
-			status                SMALLINT NOT NULL DEFAULT 1,
-			snapshot_meta         JSONB NOT NULL DEFAULT '{}'::jsonb,
-			rejection_reason      TEXT NOT NULL DEFAULT '',
-			submitted_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			started_review_at     TIMESTAMP WITH TIME ZONE,
-			resolved_at           TIMESTAMP WITH TIME ZONE,
-			created_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			updated_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS moderation_messages (
-			id            BIGSERIAL PRIMARY KEY,
-			project_id    BIGINT NOT NULL,
-			request_id    BIGINT REFERENCES moderation_requests(id) ON DELETE SET NULL,
-			sender_id     TEXT NOT NULL,
-			sender_role   SMALLINT NOT NULL DEFAULT 1,
-			message_type  SMALLINT NOT NULL DEFAULT 1,
-			content       TEXT NOT NULL DEFAULT '',
-			payload       JSONB NOT NULL DEFAULT '{}'::jsonb,
-			created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
+	schema, err := os.ReadFile(filepath.Join("..", "..", "migrations", "init.sql"))
+	if err != nil {
+		t.Fatalf("failed to read schema: %v", err)
 	}
-
-	for _, stmt := range ddl {
-		if _, err := pool.Exec(ctx, stmt); err != nil {
-			t.Fatalf("failed to execute DDL: %v", err)
-		}
+	if _, err := pool.Exec(ctx, string(schema)); err != nil {
+		t.Fatalf("failed to apply schema: %v", err)
 	}
 }
 

@@ -105,6 +105,8 @@ func domainErrToStatus(err error) error {
 		return status.Errorf(codes.Unauthenticated, "%v", err)
 	case errors.Is(err, domain.ErrTokenExpired):
 		return status.Errorf(codes.Unauthenticated, "%v", err)
+	case errors.Is(err, domain.ErrTooManyAttempts):
+		return status.Errorf(codes.ResourceExhausted, "%v", err)
 	case errors.Is(err, domain.ErrEmailNotVerified):
 		return status.Errorf(codes.FailedPrecondition, "%v", err)
 	case errors.Is(err, domain.ErrUserSuspended),
@@ -113,6 +115,7 @@ func domainErrToStatus(err error) error {
 		errors.Is(err, domain.ErrPermissionDenied),
 		errors.Is(err, domain.ErrCannotModifyAdminStatus),
 		errors.Is(err, domain.ErrCannotModifyModeratorStatus),
+		errors.Is(err, domain.ErrCannotChangeOwnRole),
 		errors.Is(err, domain.ErrCannotDeleteAdmin):
 		return status.Errorf(codes.PermissionDenied, "%v", err)
 	default:
@@ -133,4 +136,38 @@ func extractUserIDFromContext(ctx context.Context) string {
 		return ""
 	}
 	return values[0]
+}
+
+// extractUserRoleFromContext возвращает роль из проверенного JWT (устанавливается JWT interceptor'ом).
+func extractUserRoleFromContext(ctx context.Context) domain.UserRole {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return 0
+	}
+	values := md.Get("x-user-role")
+	if len(values) == 0 {
+		return 0
+	}
+	switch values[0] {
+	case "1":
+		return domain.RoleDeveloper
+	case "2":
+		return domain.RoleModerator
+	case "3":
+		return domain.RoleAdmin
+	default:
+		return 0
+	}
+}
+
+// protoToUserRole преобразует роль из protobuf в доменную.
+func protoToUserRole(r pb.UserRole) domain.UserRole {
+	switch r {
+	case pb.UserRole_USER_ROLE_MODERATOR:
+		return domain.RoleModerator
+	case pb.UserRole_USER_ROLE_ADMIN:
+		return domain.RoleAdmin
+	default:
+		return domain.RoleDeveloper
+	}
 }

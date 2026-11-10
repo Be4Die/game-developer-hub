@@ -1,0 +1,48 @@
+# Продуктивная конфигурация. Секреты и адреса передаются только через переменные окружения
+# (JWT_SECRET, INTERNAL_API_KEY, DB_PASSWORD, VALKEY_PASSWORD, S3_*, DEPLOYMENT_URL_PREFIX),
+# см. deployments/.env.prod.example.
+env: "prod"
+
+grpc:
+  port: 50053
+
+db:
+  host: "postgres"
+  port: 5432
+  user: "postgres"
+  database: "orchestrator"
+  ssl_mode: "disable" # внутренняя docker-сеть
+
+valkey:
+  addr: "valkey:6379"
+  db: 2
+
+storage:
+  driver: "s3"
+  projects_path: "/tmp/projects"
+  max_build_versions: 5
+  s3:
+    endpoint: "seaweedfs:8333"
+    use_ssl: false
+    region: "us-east-1"
+    games_bucket: "games"
+    media_bucket: "media"
+    builds_bucket: "builds"
+
+deployment:
+  mode: "s3"
+  # Обязательно абсолютный https-адрес отдельного домена игр (проверяется при старте).
+  url_prefix: ""
+
+moderation:
+  addr: "moderation:50054"
+
+# Каталог товаров площадки не поддерживает создание и изменение товаров,
+# поэтому интеграции выключены, пока не появится API (ответ сервиса — Unavailable).
+purchase_service:
+  driver: "disabled"
+analytics_service:
+  driver: "disabled"
+
+jwt:
+  issuer: "sso"

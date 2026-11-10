@@ -37,6 +37,8 @@ type App struct {
 
 // New создаёт и инициализирует все компоненты сервиса.
 func New(log *slog.Logger, cfg *config.Config) (*App, error) {
+	isProd := cfg.Env == config.EnvProd
+
 	// ─── PostgreSQL ─────────────────────────────────────────────
 	pool, err := pgxpool.New(context.Background(), cfg.DB.DSN())
 	if err != nil {
@@ -48,17 +50,22 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	log.Info("connected to postgres", slog.String("host", cfg.DB.Host))
 
 	// ─── Valkey Locker ──────────────────────────────────────────
+	// В продуктивной среде блокировки обязательны: без них параллельные операции над проектом портят его состояние.
 	var locker domain.Locker
 	if cfg.Valkey.Addr != "" {
 		valkeyLocker, err := valkey.NewLocker(cfg.Valkey.Addr, cfg.Valkey.Password, cfg.Valkey.DB)
-		if err != nil {
-			log.Warn("failed to connect to valkey, falling back to no-op locker", slog.String("error", err.Error()))
-			locker = valkey.NewNoOpLocker()
-		} else {
+		switch {
+		case err == nil:
 			locker = valkeyLocker
 			log.Info("connected to valkey for distributed locks", slog.String("addr", cfg.Valkey.Addr))
+		case isProd:
+			return nil, fmt.Errorf("connect to valkey: %w", err)
+		default:
+			log.Warn("failed to connect to valkey, falling back to no-op locker", slog.String("error", err.Error()))
+			locker = valkey.NewNoOpLocker()
 		}
 	} else {
+		log.Warn("valkey is not configured, project locks are disabled")
 		locker = valkey.NewNoOpLocker()
 	}
 
@@ -101,6 +108,9 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 			cfg.Storage.S3.MediaBucket,
 			cfg.Storage.S3.BuildsBucket,
 		); err != nil {
+			if isProd {
+				return nil, fmt.Errorf("ensure S3 buckets: %w", err)
+			}
 			log.Warn("failed to ensure S3 buckets (storage might still be starting)", slog.String("error", err.Error()))
 		}
 	}
@@ -154,37 +164,44 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// ─── Клиент сервиса модерации (gRPC или Stub) ────────────────
 	var moderationClient domain.ModerationClient
 	if cfg.Moderation.Addr != "" {
+		// grpc.NewClient соединяется лениво: ошибка здесь означает некорректный адрес, а не недоступность сервиса.
 		grpcModClient, err := client.NewGRPCModerationClient(cfg.Moderation.Addr)
 		if err != nil {
-			log.Warn("failed to connect to moderation service, using stub", slog.String("error", err.Error()))
-			moderationClient = client.NewStubModerationClient()
-		} else {
-			moderationClient = grpcModClient
-			log.Info("connected to moderation service", slog.String("addr", cfg.Moderation.Addr))
+			return nil, fmt.Errorf("create moderation client: %w", err)
 		}
+		moderationClient = grpcModClient.WithInternalToken(cfg.Internal.APIKey)
+		log.Info("connected to moderation service", slog.String("addr", cfg.Moderation.Addr))
 	} else {
 		moderationClient = client.NewStubModerationClient()
-		log.Info("using in-memory stub moderation client")
+		log.Warn("using in-memory STUB moderation client: submissions never reach moderators")
 	}
 
-	// ─── Клиент сервиса покупок IAP (HTTP или Stub) ─────────────
+	// ─── Клиент сервиса покупок IAP (http | disabled | stub) ────
 	var purchaseClient domain.PurchaseClient
-	if cfg.PurchaseService.Driver == "http" && cfg.PurchaseService.URL != "" {
+	switch cfg.PurchaseService.Driver {
+	case config.DriverHTTP:
 		purchaseClient = client.NewHTTPPurchaseClient(cfg.PurchaseService.URL, cfg.PurchaseService.Timeout)
 		log.Info("connected to external purchase service", slog.String("url", cfg.PurchaseService.URL))
-	} else {
+	case config.DriverDisabled:
+		purchaseClient = client.DisabledPurchaseClient{}
+		log.Info("purchase service integration is disabled")
+	default:
 		purchaseClient = client.NewStubPurchaseClient(log)
-		log.Info("using in-memory stub purchase client for local development")
+		log.Warn("using in-memory STUB purchase client: catalog changes are not sent anywhere")
 	}
 
-	// ─── Клиент сервиса аналитики (HTTP или Stub) ───────────────
+	// ─── Клиент сервиса аналитики (http | disabled | stub) ──────
 	var analyticsClient domain.AnalyticsClient
-	if cfg.AnalyticsService.Driver == "http" && cfg.AnalyticsService.URL != "" {
+	switch cfg.AnalyticsService.Driver {
+	case config.DriverHTTP:
 		analyticsClient = client.NewHTTPAnalyticsClient(cfg.AnalyticsService.URL, cfg.AnalyticsService.APIKey, cfg.AnalyticsService.Timeout, log)
 		log.Info("connected to external analytics service", slog.String("url", cfg.AnalyticsService.URL))
-	} else {
+	case config.DriverDisabled:
+		analyticsClient = client.DisabledAnalyticsClient{}
+		log.Info("analytics service integration is disabled")
+	default:
 		analyticsClient = client.NewStubAnalyticsClient(log)
-		log.Info("using in-memory stub analytics client for local development")
+		log.Warn("using STUB analytics client: statistics are generated, not real")
 	}
 
 	// ─── Сервисы ────────────────────────────────────────────────
@@ -210,17 +227,24 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	projectHandler := grpctransport.NewProjectHandler(projectService)
+	if cfg.Internal.APIKey != "" {
+		projectHandler = projectHandler.WithInternalOnly()
+	} else {
+		log.Warn("INTERNAL_API_KEY is not set: moderation callbacks are protected by role check only")
+	}
 
 	// ─── Аутентификация ─────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create JWT auth: %w", err)
 	}
+	authInterceptor = authInterceptor.WithInternalToken(cfg.Internal.APIKey)
 
 	// ─── Создание gRPC-сервера ──────────────────────────────────
+	errSanitizer := grpctransport.NewErrorSanitizer(log)
 	gRPCServer := grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.Unary()),
-		grpc.StreamInterceptor(authInterceptor.Stream()),
+		grpc.ChainUnaryInterceptor(errSanitizer.Unary(), authInterceptor.Unary()),
+		grpc.ChainStreamInterceptor(errSanitizer.Stream(), authInterceptor.Stream()),
 	)
 
 	pb.RegisterProjectServiceServer(gRPCServer, projectHandler)

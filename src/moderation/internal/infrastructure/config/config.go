@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -24,6 +25,13 @@ type Config struct {
 	ProjectManager PMConfig
 	Orchestrator   OrchestratorConfig
 	JWT            JWTConfig
+	Internal       InternalConfig
+}
+
+// InternalConfig настройки межсервисного взаимодействия.
+type InternalConfig struct {
+	// APIKey — общий секрет сервисов платформы (x-internal-token). Обязателен в продуктивной среде.
+	APIKey string `yaml:"api_key" env:"INTERNAL_API_KEY" env-default:""`
 }
 
 // OrchestratorConfig настройки подключения к сервису orchestrator.
@@ -62,7 +70,7 @@ type PMConfig struct {
 // JWTConfig настройки JWT-валидации.
 type JWTConfig struct {
 	Secret string `yaml:"secret" env:"JWT_SECRET" env-required:"true"`
-	Issuer string `yaml:"issuer" env:"JWT_ISSUER" env-default:"gdh-sso"`
+	Issuer string `yaml:"issuer" env:"JWT_ISSUER" env-default:"sso"`
 }
 
 // MustLoad загружает конфигурацию из файла (путь из CONFIG_PATH или config/local.yaml).
@@ -75,5 +83,50 @@ func MustLoad() *Config {
 	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
 		panic("failed to load config: " + err.Error())
 	}
+	if err := cfg.Validate(); err != nil {
+		panic("invalid config: " + err.Error())
+	}
 	return &cfg
+}
+
+// EnvDocker — локальный запуск в Docker Compose.
+const EnvDocker = "docker"
+
+const minSecretLength = 32
+
+// Validate проверяет согласованность конфигурации.
+func (c *Config) Validate() error {
+	switch c.Env {
+	case EnvLocal, EnvDocker, EnvDev, EnvProd:
+	default:
+		return fmt.Errorf("env must be one of: local, docker, dev, prod")
+	}
+	if c.JWT.Secret == "" {
+		return fmt.Errorf("jwt.secret is required")
+	}
+	if c.Env != EnvProd {
+		return nil
+	}
+
+	// Продуктивная среда: заглушки и отладочные секреты запрещены.
+	if len(c.JWT.Secret) < minSecretLength || isDevSecret(c.JWT.Secret) {
+		return fmt.Errorf("prod: JWT_SECRET must be a unique random value of at least %d characters", minSecretLength)
+	}
+	if len(c.Internal.APIKey) < minSecretLength || isDevSecret(c.Internal.APIKey) {
+		return fmt.Errorf("prod: INTERNAL_API_KEY must be a unique random value of at least %d characters", minSecretLength)
+	}
+	if c.DB.Password == "" || c.DB.Password == "postgres" {
+		return fmt.Errorf("prod: DB_PASSWORD must not be empty or default")
+	}
+	if c.ProjectManager.Addr == "" {
+		return fmt.Errorf("prod: project_manager.addr is required (stub project client is not allowed)")
+	}
+	if c.Orchestrator.Addr == "" {
+		return fmt.Errorf("prod: orchestrator.addr is required")
+	}
+	return nil
+}
+
+func isDevSecret(v string) bool {
+	return strings.Contains(v, "dev-") || strings.Contains(v, "local-testing")
 }

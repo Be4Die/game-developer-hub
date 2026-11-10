@@ -34,16 +34,14 @@ func main() {
 }
 
 func setupLogger(env string) *slog.Logger {
-	var level slog.Level
-	switch env {
-	case config.EnvLocal:
+	// В продуктивной среде уровень Info: события входа, смены статусов и ролей нужны для аудита.
+	if env == config.EnvProd {
+		return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	}
+
+	level := slog.LevelInfo
+	if env == config.EnvLocal {
 		level = slog.LevelDebug
-	case config.EnvDev:
-		level = slog.LevelInfo
-	case config.EnvProd:
-		level = slog.LevelWarn
-	default:
-		level = slog.LevelInfo
 	}
 
 	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}))

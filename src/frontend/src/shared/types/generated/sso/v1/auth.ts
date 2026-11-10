@@ -51,6 +51,8 @@ export interface AuthServiceLogoutResponse {
 export interface AuthServiceVerifyEmailRequest {
   /** Код верификации из письма. */
   verification_code: string;
+  /** Email, на который был отправлен код. Обязателен: попытки ввода считаются по адресу. */
+  email: string;
 }
 
 export interface AuthServiceVerifyEmailResponse {

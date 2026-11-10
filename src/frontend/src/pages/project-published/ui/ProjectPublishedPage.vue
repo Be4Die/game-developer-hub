@@ -225,6 +225,8 @@ import { Image as ImageIcon, Film, Download, Globe, Gamepad2, Maximize2 } from '
 import { getProject, getPublished, getMediaUrl } from '@/entities/project';
 import { MediaLightboxModal } from '@/entities/moderation';
 import type { Project } from '@/shared/types';
+import { downloadAuthorized } from '@/shared/api';
+import { showToast } from '@/shared/lib';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -317,14 +319,16 @@ async function loadData(): Promise<void> {
   }
 }
 
-function downloadBuild(version: string): void {
+async function downloadBuild(version: string): Promise<void> {
   if (!version) return;
-  const link = document.createElement('a');
-  link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;
-  link.download = `project_${projectId.value}_v${version}.zip`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    await downloadAuthorized(
+      `/projects/${projectId.value}/builds/${version}/download`,
+      `project_${projectId.value}_v${version}.zip`
+    );
+  } catch {
+    showToast('Не удалось скачать сборку', 'danger');
+  }
 }
 
 onMounted(loadData);

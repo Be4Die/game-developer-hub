@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -48,6 +49,7 @@ func setupIntegration(t *testing.T) *integrationTestEnv {
 		testcontainerspostgres.WithDatabase("orchestrator"),
 		testcontainerspostgres.WithUsername("postgres"),
 		testcontainerspostgres.WithPassword("postgres"),
+		testcontainerspostgres.BasicWaitStrategies(),
 	)
 	if err != nil {
 		t.Skipf("PostgreSQL container not available: %v", err)
@@ -78,7 +80,7 @@ func setupIntegration(t *testing.T) *integrationTestEnv {
 	}
 	// PostgreSQL может быть ещё не готов принимать подключения — retry.
 	for i := range 10 {
-		if err := pool.Ping(ctx); err == nil {
+		if err = pool.Ping(ctx); err == nil {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -127,88 +129,17 @@ func setupIntegration(t *testing.T) *integrationTestEnv {
 	}
 }
 
-// createTables создаёт необходимые таблицы в PostgreSQL.
+// createTables накатывает схему сервиса из migrations/init.sql — ту же, что применяется
+// в docker-compose, чтобы тесты репозиториев проверяли реальную схему, а не её копию.
 func createTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
-
-	migrations := []string{
-		`CREATE TABLE IF NOT EXISTS nodes (
-			id            BIGSERIAL PRIMARY KEY,
-			owner_id      TEXT NOT NULL DEFAULT '',
-			address       TEXT NOT NULL UNIQUE,
-			token_hash    BYTEA NOT NULL,
-			api_token     TEXT NOT NULL DEFAULT '',
-			region        TEXT,
-			status        SMALLINT NOT NULL DEFAULT 1,
-			cpu_cores     INTEGER NOT NULL DEFAULT 0,
-			total_memory  BIGINT NOT NULL DEFAULT 0,
-			total_disk    BIGINT NOT NULL DEFAULT 0,
-			agent_version TEXT NOT NULL DEFAULT '',
-			last_ping_at  TIMESTAMP NOT NULL DEFAULT NOW(),
-			created_at    TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at    TIMESTAMP NOT NULL DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS server_builds (
-			id             BIGSERIAL PRIMARY KEY,
-			owner_id       TEXT NOT NULL DEFAULT '',
-			game_id        BIGINT NOT NULL,
-			uploaded_by    BIGINT NOT NULL DEFAULT 0,
-			version        TEXT NOT NULL,
-			image_tag      TEXT NOT NULL,
-			protocol       SMALLINT NOT NULL,
-			internal_port  INTEGER NOT NULL,
-			max_players    INTEGER NOT NULL,
-			file_url       TEXT NOT NULL,
-			file_size      BIGINT NOT NULL,
-			created_at     TIMESTAMP NOT NULL DEFAULT NOW(),
-			UNIQUE (game_id, version)
-		)`,
-		`CREATE TABLE IF NOT EXISTS instances (
-			id               BIGSERIAL PRIMARY KEY,
-			owner_id         TEXT NOT NULL DEFAULT '',
-			node_id          BIGINT NOT NULL REFERENCES nodes(id),
-			server_build_id  BIGINT NOT NULL REFERENCES server_builds(id),
-			game_id          BIGINT NOT NULL,
-			name             TEXT NOT NULL,
-			build_version    TEXT NOT NULL,
-			protocol         SMALLINT NOT NULL,
-			host_port        INTEGER NOT NULL,
-			internal_port    INTEGER NOT NULL,
-			status           SMALLINT NOT NULL DEFAULT 1,
-			max_players      INTEGER NOT NULL,
-			developer_payload JSONB,
-			server_address   TEXT NOT NULL,
-			started_at       TIMESTAMP NOT NULL,
-			created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS game_policies (
-			game_id                  BIGINT PRIMARY KEY,
-			owner_id                 TEXT NOT NULL DEFAULT '',
-			mode                     SMALLINT NOT NULL DEFAULT 1,
-			target_instances         INTEGER NOT NULL DEFAULT 1,
-			auto_restart             BOOLEAN NOT NULL DEFAULT false,
-			scale_to_zero_timeout    INTEGER NOT NULL DEFAULT 10,
-			default_build_version    TEXT NOT NULL DEFAULT 'latest',
-			max_players_per_instance INTEGER NOT NULL DEFAULT 100,
-			max_instances_per_game   INTEGER NOT NULL DEFAULT 1,
-			scale_behavior           SMALLINT NOT NULL DEFAULT 1,
-			node_preference          TEXT NOT NULL DEFAULT 'auto',
-			queue_location            SMALLINT NOT NULL DEFAULT 1,
-			queue_scale_up_threshold  INTEGER NOT NULL DEFAULT 0,
-			queue_reservation_seconds INTEGER NOT NULL DEFAULT 30,
-			queue_max_wait_seconds    INTEGER NOT NULL DEFAULT 300,
-			queue_heartbeat_timeout   INTEGER NOT NULL DEFAULT 15,
-			created_at               TIMESTAMP NOT NULL DEFAULT NOW(),
-			updated_at               TIMESTAMP NOT NULL DEFAULT NOW()
-		)`,
+	schema, err := os.ReadFile(filepath.Join("..", "..", "migrations", "init.sql"))
+	if err != nil {
+		t.Fatalf("failed to read schema: %v", err)
 	}
-
-	for _, migration := range migrations {
-		if _, err := pool.Exec(ctx, migration); err != nil {
-			t.Fatalf("failed to execute migration: %v\nSQL: %s", err, migration)
-		}
+	if _, err := pool.Exec(ctx, string(schema)); err != nil {
+		t.Fatalf("failed to apply schema: %v", err)
 	}
 }
 

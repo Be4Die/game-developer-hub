@@ -4,6 +4,8 @@ package integration
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -145,81 +147,16 @@ func setupIntegration(t *testing.T) *TestEnv {
 	return env
 }
 
+// createTables накатывает схему сервиса из migrations/init.sql — ту же, что применяется
+// в docker-compose, чтобы тесты репозиториев проверяли реальную схему, а не её копию.
 func createTables(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 	t.Helper()
-
-	ddl := []string{
-		`CREATE TABLE IF NOT EXISTS projects (
-			id              BIGSERIAL PRIMARY KEY,
-			owner_id        TEXT NOT NULL,
-			status          SMALLINT NOT NULL DEFAULT 1,
-			is_online       BOOLEAN NOT NULL DEFAULT FALSE,
-			is_under_review BOOLEAN NOT NULL DEFAULT FALSE,
-			created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS project_drafts (
-			project_id            BIGINT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
-			title_ru              VARCHAR(50) NOT NULL DEFAULT '',
-			title_en              VARCHAR(50) NOT NULL DEFAULT '',
-			seo_ru                VARCHAR(180) NOT NULL DEFAULT '',
-			seo_en                VARCHAR(180) NOT NULL DEFAULT '',
-			about_ru              VARCHAR(800) NOT NULL DEFAULT '',
-			about_en              VARCHAR(800) NOT NULL DEFAULT '',
-			icon_path             TEXT NOT NULL DEFAULT '',
-			cover_path            TEXT NOT NULL DEFAULT '',
-			video_path            TEXT NOT NULL DEFAULT '',
-			active_build_version  TEXT NOT NULL DEFAULT '',
-			dev_url               TEXT NOT NULL DEFAULT '',
-			is_online             BOOLEAN NOT NULL DEFAULT FALSE,
-			updated_at            TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
-		`CREATE TABLE IF NOT EXISTS project_builds (
-			id            BIGSERIAL PRIMARY KEY,
-			project_id    BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-			version       TEXT NOT NULL,
-			file_path     TEXT NOT NULL,
-			file_size     BIGINT NOT NULL DEFAULT 0,
-			is_unpacked   BOOLEAN NOT NULL DEFAULT FALSE,
-			unpacked_path TEXT NOT NULL DEFAULT '',
-			created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			UNIQUE (project_id, version)
-		)`,
-		`CREATE TABLE IF NOT EXISTS project_releases (
-			id                    BIGSERIAL PRIMARY KEY,
-			project_id            BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-			version               TEXT NOT NULL,
-			title_ru              VARCHAR(50) NOT NULL DEFAULT '',
-			title_en              VARCHAR(50) NOT NULL DEFAULT '',
-			seo_ru                VARCHAR(180) NOT NULL DEFAULT '',
-			seo_en                VARCHAR(180) NOT NULL DEFAULT '',
-			about_ru              VARCHAR(800) NOT NULL DEFAULT '',
-			about_en              VARCHAR(800) NOT NULL DEFAULT '',
-			icon_path             TEXT NOT NULL DEFAULT '',
-			cover_path            TEXT NOT NULL DEFAULT '',
-			video_path            TEXT NOT NULL DEFAULT '',
-			prod_url              TEXT NOT NULL DEFAULT '',
-			is_online             BOOLEAN NOT NULL DEFAULT FALSE,
-			is_active             BOOLEAN NOT NULL DEFAULT TRUE,
-			published_by          TEXT NOT NULL DEFAULT '',
-			published_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			unpublish_at          TIMESTAMP WITH TIME ZONE
-		)`,
-		`CREATE TABLE IF NOT EXISTS deployments (
-			id            BIGSERIAL PRIMARY KEY,
-			project_id    BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-			environment   SMALLINT NOT NULL DEFAULT 1,
-			version       TEXT NOT NULL DEFAULT '',
-			status        SMALLINT NOT NULL DEFAULT 1,
-			error_message TEXT NOT NULL DEFAULT '',
-			deployed_at   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
+	schema, err := os.ReadFile(filepath.Join("..", "..", "migrations", "init.sql"))
+	if err != nil {
+		t.Fatalf("failed to read schema: %v", err)
 	}
-
-	for _, stmt := range ddl {
-		if _, err := pool.Exec(ctx, stmt); err != nil {
-			t.Fatalf("failed to execute DDL: %v", err)
-		}
+	if _, err := pool.Exec(ctx, string(schema)); err != nil {
+		t.Fatalf("failed to apply schema: %v", err)
 	}
 }
 

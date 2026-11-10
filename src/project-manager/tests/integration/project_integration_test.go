@@ -189,7 +189,13 @@ func TestIntegration_FullProjectLifecycle(t *testing.T) {
 	}
 
 	// 5. Публикация релиза (вызов от имени модератора/сервиса модерации)
-	publishResp, err := projClient.PublishRelease(ctx, &pb.ProjectPublishReleaseRequest{
+	// Разработчик не может опубликовать собственную игру в обход модерации.
+	if _, err := projClient.PublishRelease(userCtx, &pb.ProjectPublishReleaseRequest{ProjectId: projectID, Version: "1.0.0"}); err == nil {
+		t.Fatal("PublishRelease by a developer must be rejected")
+	}
+
+	modCtx := metadata.NewOutgoingContext(ctx, metadata.Pairs("x-user-id", "mod-999", "x-user-role", "moderator"))
+	publishResp, err := projClient.PublishRelease(modCtx, &pb.ProjectPublishReleaseRequest{
 		ProjectId:   projectID,
 		Version:     "1.0.0",
 		PublishedBy: "mod-999",

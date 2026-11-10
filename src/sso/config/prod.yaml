@@ -1,0 +1,30 @@
+# Продуктивная конфигурация. Секреты и адреса передаются только через переменные окружения
+# (JWT_SECRET, SSO_API_KEY, DB_PASSWORD, KV_PASSWORD, SMTP_*, ADMIN_*), см. deployments/.env.prod.example.
+env: "prod"
+grpc:
+  port: 50051
+  timeout: 10s
+db:
+  host: "postgres"
+  port: 5432
+  user: "postgres"
+  name: "orchestrator" # единая БД, таблицы sso: users, sessions
+  ssl_mode: "disable"  # внутренняя docker-сеть
+  max_conns: 25
+kv:
+  addr: "valkey:6379"
+  db: 1
+  key_ttl: 30m
+jwt:
+  access_token_ttl: 15m
+  refresh_token_ttl: 720h
+  issuer: "sso"
+smtp:
+  port: 587
+  tls: true
+email:
+  driver: "smtp"
+  verification_code_ttl: 24h
+  reset_token_ttl: 1h
+admin:
+  display_name: "Admin"

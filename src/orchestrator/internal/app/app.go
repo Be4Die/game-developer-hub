@@ -13,6 +13,7 @@ import (
 
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/domain"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/grpcnode"
+	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/client/projectmanager"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/infrastructure/config"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/service"
 	"github.com/Be4Die/game-developer-hub/orchestrator/internal/storage/filesystem"
@@ -90,13 +91,13 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 			UseSSL:    cfg.Storage.S3.UseSSL,
 			Region:    cfg.Storage.S3.Region,
 		}, log)
+		// Хранилище выбрано явно: при сбое S3 сервис не стартует, а не переключается молча на диск,
+		// иначе часть билдов окажется в одном хранилище, часть — в другом.
 		if err != nil {
-			log.Warn("failed to initialize S3 build storage, falling back to filesystem", slog.String("error", err.Error()))
-			buildFS = filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
-		} else {
-			buildFS = s3Store
-			log.Info("using S3 build storage", slog.String("endpoint", cfg.Storage.S3.Endpoint), slog.String("bucket", cfg.Storage.S3.Bucket))
+			return nil, fmt.Errorf("initialize S3 build storage: %w", err)
 		}
+		buildFS = s3Store
+		log.Info("using S3 build storage", slog.String("endpoint", cfg.Storage.S3.Endpoint), slog.String("bucket", cfg.Storage.S3.Bucket))
 	} else {
 		buildFS = filesystem.NewBuildStorageFS(cfg.Storage.BuildsPath)
 		log.Info("using filesystem build storage", slog.String("path", cfg.Storage.BuildsPath))
@@ -133,12 +134,31 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	)
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
-	buildHandler := grpctransport.NewBuildHandler(buildPipeline)
-	instanceHandler := grpctransport.NewInstanceHandler(instanceService, cfg.Limits.MaxLogTailLines)
+	if cfg.Backup.TicketSecret != "" {
+		if err := grpctransport.SetBackupTicketSecret(cfg.Backup.TicketSecret); err != nil {
+			return nil, fmt.Errorf("configure backup tickets: %w", err)
+		}
+	}
+
+	// Проверка права пользователя на управление серверами игры выполняется через project-manager.
+	var gameAccess grpctransport.GameAccessChecker
+	if cfg.ProjectManager.Addr != "" {
+		pmClient, err := projectmanager.New(cfg.ProjectManager.Addr)
+		if err != nil {
+			return nil, fmt.Errorf("create project-manager client: %w", err)
+		}
+		gameAccess = pmClient
+		log.Info("game access checks enabled", slog.String("project_manager", cfg.ProjectManager.Addr))
+	} else {
+		log.Warn("project_manager.addr is not set: game ownership is NOT verified for builds and policies")
+	}
+
+	buildHandler := grpctransport.NewBuildHandler(buildPipeline).WithGameAccess(gameAccess)
+	instanceHandler := grpctransport.NewInstanceHandler(instanceService, cfg.Limits.MaxLogTailLines).WithGameAccess(gameAccess)
 	discoveryHandler := grpctransport.NewDiscoveryHandler(discoveryService)
 	nodeHandler := grpctransport.NewNodeHandler(nodeService, platformAccessService)
 	healthHandler := grpctransport.NewHealthHandler("1.0.0")
-	policyHandler := grpctransport.NewGamePolicyHandler(policyService)
+	policyHandler := grpctransport.NewGamePolicyHandler(policyService).WithGameAccess(gameAccess)
 	queueHandler := grpctransport.NewQueueHandler(queueService)
 
 	// ─── Аутентификация ─────────────────────────────────────────
@@ -150,9 +170,10 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	// ─── Создание gRPC-сервера ──────────────────────────────────
 	// 2GB max message size for large build uploads
 	const maxMsgSize = 2 * 1024 * 1024 * 1024 // 2GB
+	errSanitizer := grpctransport.NewErrorSanitizer(log)
 	gRPCServer := grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.Unary()),
-		grpc.StreamInterceptor(authInterceptor.Stream()),
+		grpc.ChainUnaryInterceptor(errSanitizer.Unary(), authInterceptor.Unary()),
+		grpc.ChainStreamInterceptor(errSanitizer.Stream(), authInterceptor.Stream()),
 		grpc.MaxRecvMsgSize(maxMsgSize),
 		grpc.MaxSendMsgSize(maxMsgSize),
 	)

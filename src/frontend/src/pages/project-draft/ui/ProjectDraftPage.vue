@@ -504,6 +504,7 @@ import { listClientBuilds } from '@/entities/build';
 import { moderationApi, REQUEST_STATUS, MediaLightboxModal } from '@/entities/moderation';
 import { ClientBuildUploader } from '@/features/upload-client-build';
 import { showToast } from '@/shared/lib';
+import { downloadAuthorized } from '@/shared/api';
 import type { Project } from '@/shared/types';
 
 type MediaType = 'icon' | 'cover' | 'video';
@@ -944,14 +945,16 @@ function setActiveBuild(version: string): void {
   showToast(`Активная версия изменена на ${version}`, 'success');
 }
 
-function downloadBuild(version: string): void {
+async function downloadBuild(version: string): Promise<void> {
   if (!version) return;
-  const link = document.createElement('a');
-  link.href = `/api/v1/projects/${projectId.value}/builds/${version}/download`;
-  link.download = `project_${projectId.value}_v${version}.zip`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    await downloadAuthorized(
+      `/projects/${projectId.value}/builds/${version}/download`,
+      `project_${projectId.value}_v${version}.zip`
+    );
+  } catch {
+    showToast('Не удалось скачать сборку', 'danger');
+  }
 }
 </script>
 

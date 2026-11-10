@@ -220,26 +220,73 @@ func TestJWTAuth_UnaryAndStream(t *testing.T) {
 		assert.Equal(t, "ok", resp)
 	})
 
-	t.Run("valid x-user-id header in unary", func(t *testing.T) {
-		md := metadata.Pairs("x-user-id", "gateway-user-1", "x-user-role", "1")
+	t.Run("x-user-id header without token is rejected", func(t *testing.T) {
+		md := metadata.Pairs("x-user-id", "gateway-user-1", "x-user-role", "3")
 		ctx := metadata.NewIncomingContext(context.Background(), md)
 
-		interceptor := auth.Unary()
-		handlerCalled := false
-		_, err := interceptor(ctx, "req", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
-			handlerCalled = true
-			userID, ok := UserIDFromContext(ctx)
-			assert.True(t, ok)
-			assert.Equal(t, "gateway-user-1", userID)
+		_, err := auth.Unary()(ctx, "req", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
+			t.Fatal("handler must not be called without a verified token")
+			return nil, nil
+		})
+		require.Error(t, err)
+		assert.Equal(t, codes.Unauthenticated, status.Code(err))
+	})
 
-			role, ok := UserRoleFromContext(ctx)
-			assert.True(t, ok)
-			assert.Equal(t, 1, role)
+	t.Run("spoofed x-user headers are overwritten by token claims", func(t *testing.T) {
+		md := metadata.Pairs(
+			"authorization", "Bearer "+tokenStr,
+			"x-user-id", "victim-user",
+			"x-user-role", "3",
+			"x-user-email", "admin@welwise.com",
+			"x-internal-call", "1",
+		)
+		ctx := metadata.NewIncomingContext(context.Background(), md)
+
+		_, err := auth.Unary()(ctx, "req", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
+			userID, _ := UserIDFromContext(ctx)
+			assert.Equal(t, "user-999", userID)
+			role, _ := UserRoleFromContext(ctx)
+			assert.Equal(t, 2, role)
+			assert.Empty(t, UserEmailFromContext(ctx))
+			assert.False(t, IsInternalCall(ctx))
 			return "ok", nil
 		})
-
 		require.NoError(t, err)
-		assert.True(t, handlerCalled)
+	})
+
+	t.Run("forged signature is rejected", func(t *testing.T) {
+		forged := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"sub": "attacker", "role": float64(3), "iss": issuer, "exp": time.Now().Add(time.Hour).Unix(),
+		})
+		forgedStr, err := forged.SignedString([]byte("another-secret"))
+		require.NoError(t, err)
+
+		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer "+forgedStr))
+		_, err = auth.Unary()(ctx, "req", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
+			return nil, nil
+		})
+		require.Error(t, err)
+		assert.Equal(t, codes.Unauthenticated, status.Code(err))
+	})
+
+	t.Run("internal token marks the call as internal", func(t *testing.T) {
+		internalAuth, err := NewJWTAuth(secret, issuer)
+		require.NoError(t, err)
+		internalAuth = internalAuth.WithInternalToken("service-secret")
+
+		call := func(token string) bool {
+			md := metadata.Pairs("authorization", "Bearer "+tokenStr, "x-internal-token", token)
+			ctx := metadata.NewIncomingContext(context.Background(), md)
+			internal := false
+			_, err := internalAuth.Unary()(ctx, "req", &grpc.UnaryServerInfo{}, func(ctx context.Context, req any) (any, error) {
+				internal = IsInternalCall(ctx)
+				return "ok", nil
+			})
+			require.NoError(t, err)
+			return internal
+		}
+		assert.True(t, call("service-secret"))
+		assert.False(t, call("wrong-secret"))
 	})
 
 	t.Run("missing metadata", func(t *testing.T) {

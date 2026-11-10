@@ -1,0 +1,22 @@
+# Продуктивная конфигурация. Секреты передаются только через переменные окружения
+# (JWT_SECRET, INTERNAL_API_KEY, DB_PASSWORD), см. deployments/.env.prod.example.
+env: "prod"
+
+grpc:
+  port: 50054
+
+db:
+  host: "postgres"
+  port: 5432
+  user: "postgres"
+  database: "orchestrator"
+  ssl_mode: "disable" # внутренняя docker-сеть
+
+project_manager:
+  addr: "project-manager:50053"
+
+orchestrator:
+  addr: "orchestrator:50052"
+
+jwt:
+  issuer: "sso"

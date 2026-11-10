@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -36,106 +35,6 @@ func newUUID() string {
 	b[6] = (b[6] & 0x0f) | 0x40 // RFC 4122 v4
 	b[8] = (b[8] & 0x3f) | 0x80 // variant
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
-}
-
-// decodeJWTSegment декодирует сегмент JWT с поддержкой raw URL, padded URL и стандартного Base64.
-func decodeJWTSegment(seg string) ([]byte, error) {
-	seg = strings.TrimSpace(seg)
-	if b, err := base64.RawURLEncoding.DecodeString(seg); err == nil {
-		return b, nil
-	}
-	if l := len(seg) % 4; l > 0 {
-		seg += strings.Repeat("=", 4-l)
-	}
-	if b, err := base64.URLEncoding.DecodeString(seg); err == nil {
-		return b, nil
-	}
-	return base64.StdEncoding.DecodeString(seg)
-}
-
-// extractAuthUser извлекает userID, userRole и rawToken из Authorization заголовка, query параметров или cookies.
-func extractAuthUser(r *http.Request) (userID, userRole, rawToken string) {
-	if auth := r.Header.Get("Authorization"); auth != "" {
-		trimmed := strings.TrimSpace(auth)
-		if strings.HasPrefix(strings.ToLower(trimmed), "bearer ") {
-			rawToken = strings.TrimSpace(trimmed[7:])
-		} else {
-			rawToken = trimmed
-		}
-	}
-	if rawToken == "" {
-		if tok := r.URL.Query().Get("token"); tok != "" {
-			rawToken = strings.TrimSpace(tok)
-		} else if tok := r.URL.Query().Get("auth"); tok != "" {
-			rawToken = strings.TrimSpace(tok)
-		} else if tok := r.URL.Query().Get("access_token"); tok != "" {
-			rawToken = strings.TrimSpace(tok)
-		}
-	}
-	if rawToken == "" {
-		if cookie, err := r.Cookie("gdh_access_token"); err == nil && cookie.Value != "" {
-			rawToken = strings.TrimSpace(cookie.Value)
-		} else if cookie, err := r.Cookie("gdh_session"); err == nil && cookie.Value != "" {
-			rawToken = strings.TrimSpace(cookie.Value)
-		} else if cookie, err := r.Cookie("access_token"); err == nil && cookie.Value != "" {
-			rawToken = strings.TrimSpace(cookie.Value)
-		}
-	}
-
-	if rawToken == "" {
-		return "", "", ""
-	}
-
-	parts := strings.Split(rawToken, ".")
-	if len(parts) != 3 {
-		return "", "", rawToken
-	}
-
-	payload, err := decodeJWTSegment(parts[1])
-	if err != nil {
-		return "", "", rawToken
-	}
-
-	var claims map[string]any
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return "", "", rawToken
-	}
-
-	if sub, ok := claims["sub"].(string); ok {
-		userID = sub
-	} else if uid, ok := claims["user_id"].(string); ok {
-		userID = uid
-	} else if id, ok := claims["id"].(string); ok {
-		userID = id
-	}
-
-	var rawRole any
-	if rVal, ok := claims["role"]; ok {
-		rawRole = rVal
-	} else if rVal, ok := claims["user_role"]; ok {
-		rawRole = rVal
-	} else if rVal, ok := claims["roles"]; ok {
-		rawRole = rVal
-	}
-
-	switch v := rawRole.(type) {
-	case float64:
-		userRole = fmt.Sprintf("%.0f", v)
-	case int:
-		userRole = strconv.Itoa(v)
-	case int64:
-		userRole = strconv.FormatInt(v, 10)
-	case json.Number:
-		userRole = v.String()
-	case string:
-		userRole = v
-	case []any:
-		if len(v) > 0 {
-			userRole = fmt.Sprintf("%v", v[0])
-		}
-	}
-
-	return userID, userRole, rawToken
 }
 
 // isRoleModeratorOrAdmin определяет, обладает ли роль правами модератора или администратора.
@@ -171,6 +70,10 @@ func outgoingAuthContext(ctx context.Context, userID, userRole, rawToken string)
 	}
 	if rawToken != "" {
 		md.Set("authorization", "Bearer "+rawToken)
+	}
+	// Межсервисный токен: служебные методы модерации (RegisterAttachment) принимают вызовы только от сервисов платформы.
+	if internalToken := os.Getenv("INTERNAL_API_KEY"); internalToken != "" {
+		md.Set("x-internal-token", internalToken)
 	}
 	return metadata.NewOutgoingContext(ctx, md)
 }
@@ -227,6 +130,7 @@ func sendJSONError(w http.ResponseWriter, msg string, statusCode int) {
 
 // handleChatAttachmentUpload обрабатывает POST /api/v1/projects/{project_id}/chat/attachments
 func handleChatAttachmentUpload(
+	verifier *tokenVerifier,
 	modClient modpb.ModerationServiceClient,
 	projClient projpb.ProjectServiceClient,
 	basePath string,
@@ -237,13 +141,7 @@ func handleChatAttachmentUpload(
 		s3Client = s3Clients[0]
 	}
 
-	attBucket := os.Getenv("S3_ATTACHMENTS_BUCKET")
-	if attBucket == "" {
-		attBucket = os.Getenv("S3_MEDIA_BUCKET")
-		if attBucket == "" {
-			attBucket = "media"
-		}
-	}
+	attBucket := attachmentsBucket()
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
@@ -259,7 +157,7 @@ func handleChatAttachmentUpload(
 		}
 
 		// Авторизация
-		userID, userRole, rawToken := extractAuthUser(r)
+		userID, userRole, rawToken := verifier.authenticate(r)
 		if userID == "" {
 			sendJSONError(w, "unauthorized", http.StatusUnauthorized)
 			return
@@ -356,6 +254,12 @@ func handleChatAttachmentUpload(
 			}
 		}
 
+		// В prod локальный диск контейнера не переживает перезапуск, поэтому без S3 загрузка отклоняется.
+		if !uploadedToS3 && isProd() {
+			sendJSONError(w, "attachment storage unavailable", http.StatusBadGateway)
+			return
+		}
+
 		// 2. Фоллбэк на локальный диск
 		if !uploadedToS3 {
 			localDir := filepath.Join(basePath, "chat_attachments", fmt.Sprintf("%d", projectID))
@@ -410,6 +314,7 @@ func handleChatAttachmentUpload(
 
 // handleChatAttachmentServe обрабатывает GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id} и .../download
 func handleChatAttachmentServe(
+	verifier *tokenVerifier,
 	modClient modpb.ModerationServiceClient,
 	projClient projpb.ProjectServiceClient,
 	basePath string,
@@ -420,13 +325,7 @@ func handleChatAttachmentServe(
 		s3Client = s3Clients[0]
 	}
 
-	attBucket := os.Getenv("S3_ATTACHMENTS_BUCKET")
-	if attBucket == "" {
-		attBucket = os.Getenv("S3_MEDIA_BUCKET")
-		if attBucket == "" {
-			attBucket = "media"
-		}
-	}
+	attBucket := attachmentsBucket()
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectIDStr := r.PathValue("project_id")
@@ -443,7 +342,7 @@ func handleChatAttachmentServe(
 		}
 
 		// Проверка авторизации и прав
-		userID, userRole, rawToken := extractAuthUser(r)
+		userID, userRole, rawToken := verifier.authenticate(r)
 		if userID == "" {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
@@ -559,4 +458,24 @@ func handleChatAttachmentServe(
 		w.Header().Set("Accept-Ranges", "bytes")
 		http.ServeContent(w, r, cleanFilename, stat.ModTime(), file)
 	}
+}
+
+// attachmentsBucket возвращает бакет вложений чата. Если отдельный бакет не задан,
+// используется бакет медиа (поведение локального стенда).
+func attachmentsBucket() string {
+	if b := os.Getenv("S3_ATTACHMENTS_BUCKET"); b != "" {
+		return b
+	}
+	return envOr("S3_MEDIA_BUCKET", "media")
+}
+
+// ensureBucket создаёт бакет, если его ещё нет.
+func ensureBucket(ctx context.Context, client *s3.Client, bucket string) error {
+	if _, err := client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(bucket)}); err == nil {
+		return nil
+	}
+	if _, err := client.CreateBucket(ctx, &s3.CreateBucketInput{Bucket: aws.String(bucket)}); err != nil {
+		return fmt.Errorf("create bucket %q: %w", bucket, err)
+	}
+	return nil
 }

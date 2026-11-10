@@ -285,8 +285,9 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		if _, ok := env["POSTGRES_USER"]; !ok {
 			env["POSTGRES_USER"] = "postgres"
 		}
-		if _, ok := env["POSTGRES_PASSWORD"]; !ok {
-			env["POSTGRES_PASSWORD"] = "postgres"
+		// Пароль обязан прийти от оркестратора: значений по умолчанию нет, чтобы сервис не поднялся с общеизвестным паролем.
+		if env["POSTGRES_PASSWORD"] == "" {
+			return nil, fmt.Errorf("%s: POSTGRES_PASSWORD is required for postgres service", op)
 		}
 		if _, ok := env["POSTGRES_DB"]; !ok {
 			env["POSTGRES_DB"] = "game_db"
@@ -305,8 +306,9 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		imageTag = "mariadb:11"
 		internalPort = 3306
 		bindPath = fmt.Sprintf("%s:/var/lib/mysql", volumeName)
-		if _, ok := env["MYSQL_ROOT_PASSWORD"]; !ok {
-			env["MYSQL_ROOT_PASSWORD"] = "root"
+		// Пароль обязан прийти от оркестратора: значений по умолчанию нет, чтобы сервис не поднялся с общеизвестным паролем.
+		if env["MYSQL_ROOT_PASSWORD"] == "" {
+			return nil, fmt.Errorf("%s: MYSQL_ROOT_PASSWORD is required for mysql service", op)
 		}
 		if _, ok := env["MYSQL_DATABASE"]; !ok {
 			env["MYSQL_DATABASE"] = "game_db"
@@ -323,8 +325,9 @@ func (s *ManagedServiceState) DeployService(ctx context.Context, req domain.Depl
 		if _, ok := env["PGADMIN_DEFAULT_EMAIL"]; !ok {
 			env["PGADMIN_DEFAULT_EMAIL"] = "admin@gdh.local"
 		}
-		if _, ok := env["PGADMIN_DEFAULT_PASSWORD"]; !ok {
-			env["PGADMIN_DEFAULT_PASSWORD"] = "admin"
+		// Пароль обязан прийти от оркестратора: значений по умолчанию нет, чтобы сервис не поднялся с общеизвестным паролем.
+		if env["PGADMIN_DEFAULT_PASSWORD"] == "" {
+			return nil, fmt.Errorf("%s: PGADMIN_DEFAULT_PASSWORD is required for pgadmin service", op)
 		}
 
 	default:

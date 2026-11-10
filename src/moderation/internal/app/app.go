@@ -53,18 +53,18 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	var pmGRPCClient *client.ProjectGRPCClient
 
 	if cfg.ProjectManager.Addr != "" {
+		// grpc.NewClient соединяется лениво: ошибка здесь означает некорректный адрес, а не недоступность сервиса.
 		grpcClient, err := client.NewProjectGRPCClient(cfg.ProjectManager.Addr)
 		if err != nil {
-			log.Warn("failed to connect to project-manager, using stub client", slog.String("error", err.Error()))
-			projectClient = client.NewProjectStubClient()
-		} else {
-			projectClient = grpcClient
-			pmGRPCClient = grpcClient
-			log.Info("connected to project-manager", slog.String("addr", cfg.ProjectManager.Addr))
+			return nil, fmt.Errorf("create project-manager client: %w", err)
 		}
+		grpcClient = grpcClient.WithInternalToken(cfg.Internal.APIKey)
+		projectClient = grpcClient
+		pmGRPCClient = grpcClient
+		log.Info("connected to project-manager", slog.String("addr", cfg.ProjectManager.Addr))
 	} else {
 		projectClient = client.NewProjectStubClient()
-		log.Info("using in-memory stub project client")
+		log.Warn("using in-memory STUB project client: approvals do not deploy anything")
 	}
 
 	// ─── Клиент Orchestrator ───────────────────────────────────
@@ -72,11 +72,10 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	if cfg.Orchestrator.Addr != "" {
 		orch, err := client.NewOrchestratorGRPCClient(cfg.Orchestrator.Addr)
 		if err != nil {
-			log.Warn("failed to connect to orchestrator", slog.String("error", err.Error()))
-		} else {
-			orchGRPCClient = orch
-			log.Info("connected to orchestrator", slog.String("addr", cfg.Orchestrator.Addr))
+			return nil, fmt.Errorf("create orchestrator client: %w", err)
 		}
+		orchGRPCClient = orch
+		log.Info("connected to orchestrator", slog.String("addr", cfg.Orchestrator.Addr))
 	}
 
 	// ─── Сервис ─────────────────────────────────────────────────
@@ -94,16 +93,26 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	// ─── gRPC-транспорт ─────────────────────────────────────────
 	moderationHandler := grpctransport.NewModerationHandler(moderationService)
+	if pmGRPCClient != nil {
+		moderationHandler = moderationHandler.WithAccessChecker(pmGRPCClient)
+	}
+	if cfg.Internal.APIKey != "" {
+		moderationHandler = moderationHandler.WithInternalOnly()
+	} else {
+		log.Warn("INTERNAL_API_KEY is not set: service-only methods are not restricted to platform services")
+	}
 
 	// ─── JWT Interceptor ────────────────────────────────────────
 	authInterceptor, err := grpctransport.NewJWTAuth(cfg.JWT.Secret, cfg.JWT.Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create JWT auth: %w", err)
 	}
+	authInterceptor = authInterceptor.WithInternalToken(cfg.Internal.APIKey)
 
+	errSanitizer := grpctransport.NewErrorSanitizer(log)
 	gRPCServer := grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.Unary()),
-		grpc.StreamInterceptor(authInterceptor.Stream()),
+		grpc.ChainUnaryInterceptor(errSanitizer.Unary(), authInterceptor.Unary()),
+		grpc.ChainStreamInterceptor(errSanitizer.Stream(), authInterceptor.Stream()),
 	)
 
 	pb.RegisterModerationServiceServer(gRPCServer, moderationHandler)

@@ -1152,6 +1152,14 @@ tasks:
       - docker exec gdh-postgres psql -U postgres -c "DROP DATABASE IF EXISTS orchestrator WITH (FORCE);"
       - docker exec gdh-postgres psql -U postgres -c "CREATE DATABASE orchestrator;"
       - task: stack:db:init
+      - task: stack:db:seed-dev-users
+
+  stack:db:seed-dev-users:
+    desc: "Create local dev accounts (dev@/moderator@welwise.com, password123). Never run against production."
+    cmds:
+      - |
+        docker exec -i gdh-postgres psql -U postgres -d orchestrator < deployments/scripts/seed-dev-users.sql
+      - echo "✅ Dev users seeded"
 
   stack:seed:
     desc: "Seed orchestrator with test data (requires running backend stack)"

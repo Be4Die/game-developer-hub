@@ -139,6 +139,15 @@ func (s *UserService) SearchUsers(ctx context.Context, req domain.SearchUsersReq
 func (s *UserService) CreateModerator(ctx context.Context, req domain.CreateModeratorRequest) (domain.CreateModeratorResponse, error) {
 	const op = "UserService.CreateModerator"
 
+	// Создавать модераторов может только администратор.
+	caller, err := s.userRepo.GetByID(ctx, req.CallerID)
+	if err != nil {
+		return domain.CreateModeratorResponse{}, fmt.Errorf("%s: get caller: %w", op, err)
+	}
+	if caller.Role != domain.RoleAdmin || caller.Status != domain.StatusActive {
+		return domain.CreateModeratorResponse{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+	}
+
 	// Формируем email из логина.
 	email := req.Login + domain.WelwiseDomain
 
@@ -295,3 +304,51 @@ func (s *UserService) DeleteUser(ctx context.Context, req domain.DeleteUserReque
 	return nil
 }
 
+// ChangeUserRole изменяет роль пользователя.
+// Доступно только администраторам. Нельзя менять собственную роль и роль другого администратора.
+// После смены роли все сессии пользователя отзываются, чтобы старые токены с прежней ролью перестали обновляться.
+func (s *UserService) ChangeUserRole(ctx context.Context, req domain.ChangeUserRoleRequest) (domain.User, error) {
+	const op = "UserService.ChangeUserRole"
+
+	caller, err := s.userRepo.GetByID(ctx, req.CallerID)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%s: get caller: %w", op, err)
+	}
+	if caller.Role != domain.RoleAdmin || caller.Status != domain.StatusActive {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+	}
+	if req.CallerID == req.UserID {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrCannotChangeOwnRole)
+	}
+
+	target, err := s.userRepo.GetByID(ctx, req.UserID)
+	if err != nil {
+		return domain.User{}, fmt.Errorf("%s: get target: %w", op, err)
+	}
+	if target.Role == domain.RoleAdmin {
+		return domain.User{}, fmt.Errorf("%s: %w", op, domain.ErrPermissionDenied)
+	}
+	if target.Role == req.Role {
+		return *target, nil
+	}
+
+	target.Role = req.Role
+	target.UpdatedAt = time.Now()
+	if err := s.userRepo.Update(ctx, *target); err != nil {
+		return domain.User{}, fmt.Errorf("%s: update role: %w", op, err)
+	}
+
+	if s.sessionRepo != nil {
+		if _, err := s.sessionRepo.RevokeAllForUser(ctx, target.ID, ""); err != nil {
+			s.log.Warn("failed to revoke sessions on role change", slog.String("user_id", target.ID), slog.String("error", err.Error()))
+		}
+	}
+
+	s.log.Info("user role changed",
+		slog.String("target_id", target.ID),
+		slog.String("new_role", target.Role.String()),
+		slog.String("caller_id", caller.ID),
+	)
+
+	return *target, nil
+}

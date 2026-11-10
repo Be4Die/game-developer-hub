@@ -1,0 +1,65 @@
+# ═══════════════════════════════════════════════════════════════
+#  Пример server-блоков для nginx площадки (conf.d/40-gdh.conf).
+#
+#  nginx площадки завершает TLS (сертификаты certbot) и проксирует оба домена
+#  на nginx GDH, который подключён к той же docker-сети под алиасом gdh-nginx.
+#  Замените devhub.example.com / games-devhub.example.com на значения
+#  GDH_APP_HOST / GDH_GAMES_HOST из .env.prod и добавьте оба домена в
+#  HTTP→HTTPS редирект (00-redirect.conf).
+# ═══════════════════════════════════════════════════════════════
+
+# Кабинет разработчика
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name devhub.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/devhub.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/devhub.example.com/privkey.pem;
+
+    # Загрузка веб-сборок и серверных билдов (до 2 ГБ) идёт потоком.
+    client_max_body_size 2048m;
+    proxy_request_buffering off;
+
+    set $gdh gdh-nginx;
+
+    location / {
+        proxy_pass http://$gdh:80;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection        "";
+
+        # SSE-поток логов инстансов
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 300s;
+    }
+}
+
+# Веб-сборки игр и WebSocket-прокси игровых серверов
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name games-devhub.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/games-devhub.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/games-devhub.example.com/privkey.pem;
+
+    set $gdh gdh-nginx;
+
+    location / {
+        proxy_pass http://$gdh:80;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        $http_connection;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}

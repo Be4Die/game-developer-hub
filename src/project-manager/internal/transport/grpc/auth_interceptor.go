@@ -3,6 +3,7 @@ package grpc
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"strconv"
 	"strings"
@@ -14,10 +15,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Ключи метаданных, которые формирует только сам интерсептор.
+// Значения, присланные клиентом под этими ключами, отбрасываются до обработки запроса.
+const (
+	mdUserID       = "x-user-id"
+	mdUserRole     = "x-user-role"
+	mdUserEmail    = "x-user-email"
+	mdUserName     = "x-user-name"
+	mdInternalCall = "x-internal-call"
+	// mdInternalToken — общий секрет межсервисных вызовов (INTERNAL_API_KEY).
+	mdInternalToken = "x-internal-token"
+
+	maxUserNameRunes = 100
+)
+
 // JWTAuth gRPC interceptor для JWT-аутентификации.
+//
+// Личность и роль пользователя берутся ТОЛЬКО из проверенного JWT. Заголовки x-user-id / x-user-role
+// из входящего запроса не являются доверенными и перезаписываются значениями из токена.
 type JWTAuth struct {
-	secret []byte
-	issuer string
+	secret        []byte
+	issuer        string
+	internalToken []byte
 }
 
 // NewJWTAuth создаёт JWT interceptor.
@@ -28,48 +47,35 @@ func NewJWTAuth(secret, issuer string) (*JWTAuth, error) {
 	return &JWTAuth{secret: []byte(secret), issuer: issuer}, nil
 }
 
-func (a *JWTAuth) extractUserID(ctx context.Context) (string, float64, string, string, error) {
+// WithInternalToken задаёт общий секрет межсервисных вызовов.
+// Запрос с совпадающим x-internal-token помечается как внутренний (см. IsInternalCall).
+func (a *JWTAuth) WithInternalToken(token string) *JWTAuth {
+	a.internalToken = []byte(token)
+	return a
+}
+
+// identity — данные пользователя, извлечённые из проверенного токена.
+type identity struct {
+	userID   string
+	role     float64
+	email    string
+	name     string
+	internal bool
+}
+
+func (a *JWTAuth) authenticate(ctx context.Context) (identity, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return "", 0, "", "", fmt.Errorf("missing metadata")
+		return identity{}, fmt.Errorf("missing metadata")
 	}
 
-	var email, name string
-	if emailVals := md.Get("x-user-email"); len(emailVals) > 0 {
-		email = emailVals[0]
-	}
-	if nameVals := md.Get("x-user-name"); len(nameVals) > 0 {
-		name = nameVals[0]
-	}
-
-	// 1. Проверяем явный заголовок x-user-id (проброшенный шлюзом)
-	if vals := md.Get("x-user-id"); len(vals) > 0 && vals[0] != "" {
-		var role float64
-		if roleVals := md.Get("x-user-role"); len(roleVals) > 0 && roleVals[0] != "" {
-			switch strings.ToLower(roleVals[0]) {
-			case "admin", "user_role_admin", "3":
-				role = 3
-			case "moderator", "user_role_moderator", "2":
-				role = 2
-			case "developer", "user_role_developer", "1":
-				role = 1
-			default:
-				if roleInt, err := strconv.Atoi(roleVals[0]); err == nil {
-					role = float64(roleInt)
-				}
-			}
-		}
-		return vals[0], role, email, name, nil
-	}
-
-	// 2. Проверяем заголовок Authorization: Bearer <token>
 	vals := md.Get("authorization")
 	if len(vals) == 0 {
-		return "", 0, "", "", fmt.Errorf("missing authorization header or x-user-id")
+		return identity{}, fmt.Errorf("missing authorization header")
 	}
 	tokenStr := strings.TrimPrefix(vals[0], "Bearer ")
 	if tokenStr == vals[0] {
-		return "", 0, "", "", fmt.Errorf("invalid authorization format")
+		return identity{}, fmt.Errorf("invalid authorization format")
 	}
 
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
@@ -77,71 +83,106 @@ func (a *JWTAuth) extractUserID(ctx context.Context) (string, float64, string, s
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return a.secret, nil
-	}, jwt.WithIssuer(a.issuer))
+	}, jwt.WithIssuer(a.issuer), jwt.WithExpirationRequired())
 	if err != nil {
-		return "", 0, "", "", fmt.Errorf("parse token: %w", err)
+		return identity{}, fmt.Errorf("parse token: %w", err)
 	}
 	if !token.Valid {
-		return "", 0, "", "", fmt.Errorf("token invalid")
+		return identity{}, fmt.Errorf("token invalid")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", 0, "", "", fmt.Errorf("invalid claims")
+		return identity{}, fmt.Errorf("invalid claims")
 	}
 	sub, ok := claims["sub"].(string)
 	if !ok || sub == "" {
-		return "", 0, "", "", fmt.Errorf("missing sub claim")
+		return identity{}, fmt.Errorf("missing sub claim")
 	}
-	role, _ := claims["role"].(float64)
-	if claimEmail, ok := claims["email"].(string); ok && claimEmail != "" {
-		email = claimEmail
-	}
+
+	id := identity{userID: sub}
+	id.role, _ = claims["role"].(float64)
+	id.email, _ = claims["email"].(string)
+
+	// Отображаемое имя не влияет на права доступа: берётся из токена, а при его отсутствии — из запроса.
 	if claimName, ok := claims["display_name"].(string); ok && claimName != "" {
-		name = claimName
+		id.name = claimName
+	} else if nameVals := md.Get(mdUserName); len(nameVals) > 0 {
+		id.name = truncateRunes(strings.TrimSpace(nameVals[0]), maxUserNameRunes)
 	}
-	return sub, role, email, name, nil
+
+	if len(a.internalToken) > 0 {
+		if tokVals := md.Get(mdInternalToken); len(tokVals) > 0 &&
+			subtle.ConstantTimeCompare([]byte(tokVals[0]), a.internalToken) == 1 {
+			id.internal = true
+		}
+	}
+
+	return id, nil
+}
+
+func truncateRunes(s string, limit int) string {
+	r := []rune(s)
+	if len(r) > limit {
+		return string(r[:limit])
+	}
+	return s
 }
 
 func (a *JWTAuth) Unary() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		userID, role, email, name, err := a.extractUserID(ctx)
+		id, err := a.authenticate(ctx)
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
 		}
-		ctx = withUserContext(ctx, userID, role, email, name)
-		return handler(ctx, req)
+		return handler(withUserContext(ctx, id), req)
 	}
 }
 
 func (a *JWTAuth) Stream() grpc.StreamServerInterceptor {
 	return func(srv any, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		userID, role, email, name, err := a.extractUserID(stream.Context())
+		id, err := a.authenticate(stream.Context())
 		if err != nil {
 			return status.Errorf(codes.Unauthenticated, "unauthenticated: %v", err)
 		}
-		ctx := withUserContext(stream.Context(), userID, role, email, name)
-		wrapped := &wrappedStream{ServerStream: stream, ctx: ctx}
+		wrapped := &wrappedStream{ServerStream: stream, ctx: withUserContext(stream.Context(), id)}
 		return handler(srv, wrapped)
 	}
 }
 
-func withUserContext(ctx context.Context, userID string, role float64, email, name string) context.Context {
+func withUserContext(ctx context.Context, id identity) context.Context {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		md = metadata.New(nil)
 	} else {
 		md = md.Copy()
 	}
-	md.Set("x-user-id", userID)
-	md.Set("x-user-role", fmt.Sprintf("%v", role))
-	if email != "" {
-		md.Set("x-user-email", email)
+	// Сначала удаляем всё, что мог прислать клиент под служебными ключами.
+	for _, key := range []string{mdUserID, mdUserRole, mdUserEmail, mdUserName, mdInternalCall} {
+		md.Delete(key)
 	}
-	if name != "" {
-		md.Set("x-user-name", name)
+	md.Set(mdUserID, id.userID)
+	md.Set(mdUserRole, fmt.Sprintf("%v", id.role))
+	if id.email != "" {
+		md.Set(mdUserEmail, id.email)
+	}
+	if id.name != "" {
+		md.Set(mdUserName, id.name)
+	}
+	if id.internal {
+		md.Set(mdInternalCall, "1")
 	}
 	return metadata.NewIncomingContext(ctx, md)
+}
+
+// IsInternalCall сообщает, пришёл ли запрос от другого сервиса платформы (с верным x-internal-token).
+func IsInternalCall(ctx context.Context) bool {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return false
+	}
+	vals := md.Get(mdInternalCall)
+	return len(vals) > 0 && vals[0] == "1"
 }
 
 // UserIDFromContext извлекает user_id из контекста gRPC запроса.

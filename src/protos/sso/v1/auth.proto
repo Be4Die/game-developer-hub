@@ -113,6 +113,8 @@ message AuthServiceLogoutResponse {}
 message AuthServiceVerifyEmailRequest {
   // Код верификации из письма.
   string verification_code = 1;
+  // Email, на который был отправлен код. Обязателен: попытки ввода считаются по адресу.
+  string email = 2;
 }
 
 message AuthServiceVerifyEmailResponse {

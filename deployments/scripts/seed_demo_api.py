@@ -108,7 +108,7 @@ class GDHClient:
         code = self._get_verification_code_from_valkey()
         if code:
             verify_url = f"{GATEWAY_URL}/api/v1/auth/verify-email"
-            v_resp = self.session.post(verify_url, json={"verification_code": code})
+            v_resp = self.session.post(verify_url, json={"email": self.email, "verification_code": code})
             if v_resp.status_code == 200:
                 log(f"Email {self.email} успешно верифицирован кодом {code}", "SUCCESS")
             else:
@@ -124,7 +124,7 @@ class GDHClient:
         return self.login()
 
     def _get_verification_code_from_valkey(self) -> str:
-        cmd = ["docker", "exec", "gdh-valkey", "valkey-cli", "GET", f"sso:verify:{self.email}"]
+        cmd = ["docker", "exec", "gdh-valkey", "valkey-cli", "-n", "1", "GET", f"sso:verify:{self.email.lower()}"]
         res = subprocess.run(cmd, capture_output=True, text=True)
         out = res.stdout.strip()
         if out and out != "(nil)":

@@ -94,7 +94,11 @@ func (h *AuthHandler) Logout(ctx context.Context, req *pb.AuthServiceLogoutReque
 // VerifyEmail подтверждает email-адрес пользователя по коду верификации.
 // Возвращает ErrInvalidToken при неверном или истёкшем коде.
 func (h *AuthHandler) VerifyEmail(ctx context.Context, req *pb.AuthServiceVerifyEmailRequest) (*pb.AuthServiceVerifyEmailResponse, error) {
+	if req.Email == "" || req.VerificationCode == "" {
+		return nil, status.Error(codes.InvalidArgument, "email and verification_code are required")
+	}
 	if err := h.svc.VerifyEmail(ctx, domain.VerifyEmailRequest{
+		Email:            req.Email,
 		VerificationCode: req.VerificationCode,
 	}); err != nil {
 		return nil, domainErrToStatus(err)

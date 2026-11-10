@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 
 	pb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
+	"github.com/Be4Die/game-developer-hub/sso/internal/domain"
 	bcryptpkg "github.com/Be4Die/game-developer-hub/sso/internal/infrastructure/bcrypt"
 	"github.com/Be4Die/game-developer-hub/sso/internal/infrastructure/config"
 	jwtpkg "github.com/Be4Die/game-developer-hub/sso/internal/infrastructure/jwt"
+	smtppkg "github.com/Be4Die/game-developer-hub/sso/internal/infrastructure/smtp"
 	"github.com/Be4Die/game-developer-hub/sso/internal/service"
 	pg "github.com/Be4Die/game-developer-hub/sso/internal/storage/postgres"
 	"github.com/Be4Die/game-developer-hub/sso/internal/storage/valkey"
@@ -82,11 +85,34 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 	}
 
 	// 5. Инициализация сервисов.
-	emailSender := service.NewStubEmailSender(log)
+	var emailSender domain.EmailSender
+	if cfg.Email.Driver == config.EmailDriverSMTP {
+		smtpSender, err := smtppkg.NewSender(smtppkg.Config{
+			Host:     cfg.SMTP.Host,
+			Port:     cfg.SMTP.Port,
+			Username: cfg.SMTP.Username,
+			Password: cfg.SMTP.Password,
+			From:     cfg.SMTP.From,
+			TLS:      cfg.SMTP.TLS,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("app.New: create smtp sender: %w", err)
+		}
+		emailSender = smtpSender
+		log.Info("using SMTP email sender", slog.String("host", cfg.SMTP.Host), slog.Int("port", cfg.SMTP.Port))
+	} else {
+		emailSender = service.NewStubEmailSender(log)
+		log.Warn("using STUB email sender: verification codes are written to the log, do not use in production")
+	}
+
+	// Ограничение перебора: 10 неверных паролей или 5 неверных кодов за 15 минут на один адрес.
+	loginLimiter := valkey.NewAttemptLimiter(valkeyClient, "login", 10, 15*time.Minute)
+	verifyLimiter := valkey.NewAttemptLimiter(valkeyClient, "verify", 5, 15*time.Minute)
+
 	authService := service.NewAuthService(
 		log, userRepo, sessionRepo, tokenManager, passwordHasher,
 		emailStore, resetStore, emailSender, cfg.JWT.RefreshTokenTTL,
-	)
+	).WithAttemptLimiters(loginLimiter, verifyLimiter)
 	userService := service.NewUserService(log, userRepo, passwordHasher, sessionRepo)
 	tokenService := service.NewTokenService(log, sessionRepo, sessionCache, tokenManager)
 
@@ -102,7 +128,7 @@ func New(log *slog.Logger, cfg *config.Config) (*App, error) {
 
 	// 8. Создание и регистрация gRPC-сервера.
 	gRPCServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(authInterceptor.Unary(), jwtInterceptor.Unary()),
+		grpc.ChainUnaryInterceptor(grpctransport.NewErrorSanitizer(log).Unary(), authInterceptor.Unary(), jwtInterceptor.Unary()),
 	)
 	pb.RegisterAuthServiceServer(gRPCServer, authHandler)
 	pb.RegisterUserServiceServer(gRPCServer, userHandler)

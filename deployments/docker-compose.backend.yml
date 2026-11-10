@@ -81,6 +81,8 @@ services:
       S3_REGION: ${S3_REGION:-us-east-1}
       INGRESS_PROXY_HOST: ${INGRESS_PROXY_HOST:-localhost}
       INGRESS_PROXY_PORT: ${INGRESS_PROXY_PORT:-80}
+      # Проверка права управлять серверами игры выполняется через project-manager.
+      PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
     depends_on:
       postgres:
         condition: service_healthy
@@ -134,6 +136,7 @@ services:
       CONFIG_PATH: /app/config/docker.yaml
       JWT_SECRET: dev-jwt-secret-for-local-testing
       MODERATION_GRPC_ADDR: gdh-moderation:50054
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-api-key-for-local-testing}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-s3}
       DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-s3}
       S3_ENDPOINT: ${S3_ENDPOINT:-host.docker.internal:8333}
@@ -172,6 +175,7 @@ services:
       JWT_SECRET: dev-jwt-secret-for-local-testing
       PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
       ORCHESTRATOR_GRPC_ADDR: gdh-orchestrator:50052
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-api-key-for-local-testing}
     depends_on:
       postgres:
         condition: service_healthy
@@ -204,6 +208,10 @@ services:
       PROJECT_MANAGER_GRPC_ADDR: gdh-project-manager:50053
       MODERATION_GRPC_ADDR: gdh-moderation:50054
       HTTP_ADDR: :8080
+      # Шлюз проверяет подпись JWT сам; значение только для локальной разработки.
+      JWT_SECRET: dev-jwt-secret-for-local-testing
+      JWT_ISSUER: sso
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-api-key-for-local-testing}
       S3_ENDPOINT: ${S3_ENDPOINT:-host.docker.internal:8333}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-}

@@ -7,15 +7,24 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	projpb "github.com/Be4Die/game-developer-hub/protos/project_manager/v1"
 )
+
+// safeVersionRe ограничивает версию сборки символами, безопасными для путей и ключей хранилища.
+var safeVersionRe = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$`)
 
 // handleProjectBuildDownload отдаёт zip-архив клиентской сборки для скачивания.
 // GET /api/v1/projects/{project_id}/builds/{version}/download
-func handleProjectBuildDownload(basePath string, s3Clients ...*s3.Client) http.HandlerFunc {
+// Скачивание сборки доступно только сотрудникам платформы и тем, у кого есть доступ к проекту:
+// архив содержит исходные файлы игры, в том числе ещё не опубликованной.
+func handleProjectBuildDownload(verifier *tokenVerifier, projClient projpb.ProjectServiceClient, basePath string, s3Clients ...*s3.Client) http.HandlerFunc {
 	var s3Client *s3.Client
 	if len(s3Clients) > 0 {
 		s3Client = s3Clients[0]
@@ -32,6 +41,23 @@ func handleProjectBuildDownload(basePath string, s3Clients ...*s3.Client) http.H
 
 		if projectID == "" || version == "" {
 			http.NotFound(w, r)
+			return
+		}
+
+		// Идентификатор и версия попадают в путь к файлу и ключ S3: допускаются только безопасные символы.
+		projectNum, err := strconv.ParseInt(projectID, 10, 64)
+		if err != nil || projectNum <= 0 || !safeVersionRe.MatchString(version) {
+			http.NotFound(w, r)
+			return
+		}
+
+		userID, userRole, rawToken := verifier.authenticate(r)
+		if userID == "" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		if !checkProjectAccess(r.Context(), projClient, projectNum, userID, userRole, rawToken) {
+			http.Error(w, "forbidden: access denied", http.StatusForbidden)
 			return
 		}
 

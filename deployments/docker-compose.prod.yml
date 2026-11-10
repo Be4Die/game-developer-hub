@@ -1,0 +1,395 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — продуктивный стек ядра платформы
+#
+#  Отличия от docker-compose.backend.yml (локальная разработка):
+#    • все сервисы в режиме ENV=prod: при отладочных секретах, заглушках или
+#      отсутствии обязательных зависимостей сервис не стартует;
+#    • секреты только из .env (шаблон — .env.prod.example), в образах и yaml их нет;
+#    • наружу не опубликован ни один внутренний порт: Postgres, Valkey, SeaweedFS
+#      и gRPC-сервисы доступны только во внутренней сети;
+#    • Valkey и S3 требуют пароль/ключи, анонимно читаются только бакеты games и media;
+#    • игры обслуживаются с отдельного домена (GDH_GAMES_HOST);
+#    • прикладные контейнеры работают не от root, без capabilities.
+#
+#  TLS завершает внешний nginx площадки: он подключается к сети PLATFORM_NETWORK
+#  и проксирует оба домена на контейнер с алиасом gdh-nginx:80
+#  (пример — deployments/prod/platform-nginx.conf.example).
+#
+#  Агенты (game-server-node, game-deployment-agent) разворачиваются отдельно на
+#  игровых нодах; оркестратор для них публикуется на ORCHESTRATOR_BIND.
+#
+#  Использование:
+#    cp .env.prod.example .env.prod   # заполнить значения
+#    docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# ═══════════════════════════════════════════════════════════════
+
+name: gdh-prod
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+# Общие ограничения для прикладных Go-сервисов.
+x-app: &app
+  restart: unless-stopped
+  user: "65532:65532"
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  logging: *logging
+  networks: [internal]
+
+x-db-env: &db-env
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: postgres
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+  DB_NAME: orchestrator
+
+x-s3-env: &s3-env
+  S3_ENDPOINT: seaweedfs:8333
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+  S3_USE_SSL: "false"
+  S3_REGION: us-east-1
+
+services:
+  # ── Инфраструктура ────────────────────────────────────────────
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: *logging
+    networks: [internal]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: orchestrator
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Схема применяется только при первом старте с пустым томом.
+      # Тестовые пользователи (seed-dev-users.sql) в прод не попадают.
+      - ../src/orchestrator/migrations/init.sql:/docker-entrypoint-initdb.d/01-orchestrator.sql:ro
+      - ../src/sso/migrations/init.sql:/docker-entrypoint-initdb.d/02-sso.sql:ro
+      - ../src/project-manager/migrations/init.sql:/docker-entrypoint-initdb.d/03-project-manager.sql:ro
+      - ../src/moderation/migrations/init.sql:/docker-entrypoint-initdb.d/04-moderation.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d orchestrator"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    logging: *logging
+    networks: [internal]
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required}
+    command: ["sh", "-c", "exec valkey-server --requirepass \"$$VALKEY_PASSWORD\" --appendonly yes"]
+    volumes:
+      - valkeydata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli --no-auth-warning -a \"$$VALKEY_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Генерирует конфигурацию доступа S3 из .env: сервисы — по ключу,
+  # анонимно — только чтение бакетов games и media. Сборки, вложения чата
+  # и серверные билды без ключа недоступны.
+  seaweedfs-config:
+    image: ${SEAWEEDFS_IMAGE:-chrislusf/seaweedfs:4.46}
+    entrypoint: ["/bin/sh", "-c"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY is required}
+    command:
+      - |
+        umask 027
+        cat > /config/s3.json <<EOF
+        {
+          "identities": [
+            {"name": "anonymous", "actions": ["Read:games", "Read:media"]},
+            {
+              "name": "gdh",
+              "credentials": [{"accessKey": "$${S3_ACCESS_KEY}", "secretKey": "$${S3_SECRET_KEY}"}],
+              "actions": ["Admin", "Read", "List", "Tagging", "Write"]
+            }
+          ]
+        }
+        EOF
+        chown -R seaweed:seaweed /config
+    volumes:
+      - seaweed_config:/config
+    networks: [internal]
+    restart: "no"
+
+  seaweedfs:
+    image: ${SEAWEEDFS_IMAGE:-chrislusf/seaweedfs:4.46}
+    restart: unless-stopped
+    logging: *logging
+    networks: [internal]
+    command: "server -s3 -s3.config=/config/s3.json -filer -dir=/data -volume.max=100 -s3.port=8333 -ip=seaweedfs -ip.bind=0.0.0.0"
+    depends_on:
+      seaweedfs-config:
+        condition: service_completed_successfully
+    volumes:
+      - seaweed_data:/data
+      - seaweed_config:/config:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8333/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # ── Сервисы ядра платформы ────────────────────────────────────
+
+  sso:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}sso:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: sso/Dockerfile
+    environment:
+      <<: *db-env
+      ENV: prod
+      CONFIG_PATH: /app/config/prod.yaml
+      KV_ADDR: valkey:6379
+      KV_PASSWORD: ${VALKEY_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SSO_API_KEY: ${SSO_API_KEY:?SSO_API_KEY is required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL is required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      EMAIL_DRIVER: smtp
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:?SMTP_FROM is required}
+      SMTP_TLS: ${SMTP_TLS:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50051 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  orchestrator:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}orchestrator:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: orchestrator/Dockerfile
+    environment:
+      <<: [*db-env, *s3-env]
+      ENV: prod
+      CONFIG_PATH: /app/config/prod.yaml
+      KV_ADDR: valkey:6379
+      KV_PASSWORD: ${VALKEY_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      STORAGE_DRIVER: s3
+      S3_SERVER_BUILDS_BUCKET: server-builds
+      PROJECT_MANAGER_GRPC_ADDR: project-manager:50053
+      # Игры подключаются к серверам через WebSocket-прокси на домене игр.
+      INGRESS_PROXY_HOST: ${GDH_GAMES_HOST:?GDH_GAMES_HOST is required}
+      INGRESS_PROXY_PORT: "443"
+      BACKUP_TICKET_SECRET: ${BACKUP_TICKET_SECRET:-}
+    # Порт нужен агентам игровых нод. По умолчанию открыт только на localhost;
+    # для нод в другой сети укажите адрес VPN/частной сети, но не публичный интерфейс.
+    ports:
+      - "${ORCHESTRATOR_BIND:-127.0.0.1:50052}:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50052 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  project-manager:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}project-manager:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: project-manager/Dockerfile
+    environment:
+      <<: [*db-env, *s3-env]
+      ENV: prod
+      CONFIG_PATH: /app/config/prod.yaml
+      VALKEY_ADDR: valkey:6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?INTERNAL_API_KEY is required}
+      MODERATION_GRPC_ADDR: moderation:50054
+      STORAGE_DRIVER: s3
+      STORAGE_PROJECTS_PATH: /tmp/projects
+      DEPLOYMENT_MODE: s3
+      DEPLOYMENT_URL_PREFIX: https://${GDH_GAMES_HOST}/games
+      DEPLOYMENT_PLATFORM_PROXY_HOSTS: wss://${GDH_GAMES_HOST},https://${GDH_GAMES_HOST}${GDH_EXTRA_PROXY_HOSTS:-}
+      PURCHASE_SERVICE_DRIVER: ${PURCHASE_SERVICE_DRIVER:-disabled}
+      PURCHASE_SERVICE_URL: ${PURCHASE_SERVICE_URL:-}
+      ANALYTICS_SERVICE_DRIVER: ${ANALYTICS_SERVICE_DRIVER:-disabled}
+      ANALYTICS_SERVICE_URL: ${ANALYTICS_SERVICE_URL:-}
+      ANALYTICS_API_KEY: ${ANALYTICS_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50053 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  moderation:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}moderation:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: moderation/Dockerfile
+    environment:
+      <<: *db-env
+      ENV: prod
+      CONFIG_PATH: /app/config/prod.yaml
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      PROJECT_MANAGER_GRPC_ADDR: project-manager:50053
+      ORCHESTRATOR_GRPC_ADDR: orchestrator:50052
+      PROJECTS_DATA_PATH: /tmp/projects
+    depends_on:
+      postgres:
+        condition: service_healthy
+      project-manager:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 50054 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  gateway:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}gateway:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: gateway/Dockerfile
+    environment:
+      <<: *s3-env
+      ENV: prod
+      HTTP_ADDR: :8080
+      ORCHESTRATOR_GRPC_ADDR: orchestrator:50052
+      SSO_GRPC_ADDR: sso:50051
+      PROJECT_MANAGER_GRPC_ADDR: project-manager:50053
+      MODERATION_GRPC_ADDR: moderation:50054
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: sso
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ALLOWED_ORIGINS: https://${GDH_APP_HOST:?GDH_APP_HOST is required}
+      S3_BUILDS_BUCKET: builds
+      S3_MEDIA_BUCKET: media
+      S3_ATTACHMENTS_BUCKET: attachments
+      PROJECTS_DATA_PATH: /tmp/projects
+    depends_on:
+      sso:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+      project-manager:
+        condition: service_healthy
+      moderation:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  ingress-proxy:
+    <<: *app
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}ingress-proxy:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src
+      dockerfile: ingress-proxy/Dockerfile
+    environment:
+      PORT: "8085"
+      VALKEY_ADDR: valkey:6379
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD}
+    depends_on:
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8085/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  nginx:
+    image: ${GDH_IMAGE_PREFIX:-gdh-prod-}nginx:${GDH_IMAGE_TAG:-latest}
+    build:
+      context: ../src/frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *logging
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      GDH_APP_HOST: ${GDH_APP_HOST}
+      GDH_GAMES_HOST: ${GDH_GAMES_HOST}
+      # Дополнительные источники, которым разрешено встраивать игры (витрина площадки).
+      GDH_GAMES_FRAME_ANCESTORS: ${GDH_GAMES_FRAME_ANCESTORS:-}
+    volumes:
+      # Шаблон рендерится entrypoint-ом образа nginx в conf.d/default.conf.
+      - ../src/frontend/nginx.prod.conf.template:/etc/nginx/templates/default.conf.template:ro
+    # Для проверки без внешнего прокси; на сервере площадки трафик идёт через PLATFORM_NETWORK.
+    ports:
+      - "${GDH_HTTP_BIND:-127.0.0.1:8088}:80"
+    networks:
+      internal:
+      platform:
+        aliases: [gdh-nginx]
+    depends_on:
+      gateway:
+        condition: service_healthy
+      ingress-proxy:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  internal:
+  platform:
+    external: true
+    name: ${PLATFORM_NETWORK:-welwise-games-network}
+
+volumes:
+  pgdata:
+  valkeydata:
+  seaweed_data:
+  seaweed_config:

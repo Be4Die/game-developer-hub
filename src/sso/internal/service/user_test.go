@@ -394,11 +394,15 @@ func TestUserService_CreateModerator(t *testing.T) {
 			getByEmailFunc: func(_ context.Context, _ string) (*domain.User, error) {
 				return &createdUser, nil
 			},
+			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
+				return &domain.User{ID: id, Role: domain.RoleAdmin, Status: domain.StatusActive}, nil
+			},
 		}
 		hasher := &stubPasswordHasher{hashToReturn: []byte("hashed-password")}
 		svc := NewUserService(log, userRepo, hasher, nil)
 
 		res, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			CallerID:    "admin-1",
 			Login:       "moduser",
 			Password:    "password123",
 			DisplayName: "Moderator User",
@@ -422,17 +426,101 @@ func TestUserService_CreateModerator(t *testing.T) {
 
 		userRepo := &stubUserRepo{
 			createFunc: func(context.Context, domain.User) error { return errors.New("already exists") },
+			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
+				return &domain.User{ID: id, Role: domain.RoleAdmin, Status: domain.StatusActive}, nil
+			},
 		}
 		hasher := &stubPasswordHasher{hashToReturn: []byte("hash")}
 		svc := NewUserService(log, userRepo, hasher, nil)
 
 		_, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			CallerID:    "admin-1",
 			Login:       "moduser",
 			Password:    "password123",
 			DisplayName: "Mod",
 		})
 		if err == nil {
 			t.Fatal("expected error, got nil")
+		}
+	})
+
+	t.Run("non-admin caller is rejected", func(t *testing.T) {
+		t.Parallel()
+
+		created := false
+		userRepo := &stubUserRepo{
+			createFunc: func(context.Context, domain.User) error { created = true; return nil },
+			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
+				return &domain.User{ID: id, Role: domain.RoleDeveloper, Status: domain.StatusActive}, nil
+			},
+		}
+		svc := NewUserService(log, userRepo, &stubPasswordHasher{hashToReturn: []byte("hash")}, nil)
+
+		_, err := svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+			CallerID: "dev-1", Login: "evil", Password: "password123", DisplayName: "Evil",
+		})
+		if !errors.Is(err, domain.ErrPermissionDenied) {
+			t.Fatalf("expected ErrPermissionDenied, got %v", err)
+		}
+		if created {
+			t.Fatal("moderator must not be created by a non-admin caller")
+		}
+	})
+}
+
+func TestUserService_ChangeUserRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	log := newTestLogger()
+
+	newRepo := func(callerRole, targetRole domain.UserRole, updated *domain.User) *stubUserRepo {
+		return &stubUserRepo{
+			getByIDFunc: func(_ context.Context, id string) (*domain.User, error) {
+				if id == "caller" {
+					return &domain.User{ID: id, Role: callerRole, Status: domain.StatusActive}, nil
+				}
+				return &domain.User{ID: id, Role: targetRole, Status: domain.StatusActive}, nil
+			},
+			updateFunc: func(_ context.Context, u domain.User) error { *updated = u; return nil },
+		}
+	}
+
+	t.Run("admin promotes developer", func(t *testing.T) {
+		t.Parallel()
+		var updated domain.User
+		svc := NewUserService(log, newRepo(domain.RoleAdmin, domain.RoleDeveloper, &updated), &stubPasswordHasher{}, nil)
+
+		user, err := svc.ChangeUserRole(ctx, domain.ChangeUserRoleRequest{CallerID: "caller", UserID: "target", Role: domain.RoleModerator})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if user.Role != domain.RoleModerator || updated.Role != domain.RoleModerator {
+			t.Errorf("expected role Moderator, got %v / %v", user.Role, updated.Role)
+		}
+	})
+
+	t.Run("moderator cannot change roles", func(t *testing.T) {
+		t.Parallel()
+		var updated domain.User
+		svc := NewUserService(log, newRepo(domain.RoleModerator, domain.RoleDeveloper, &updated), &stubPasswordHasher{}, nil)
+
+		_, err := svc.ChangeUserRole(ctx, domain.ChangeUserRoleRequest{CallerID: "caller", UserID: "target", Role: domain.RoleAdmin})
+		if !errors.Is(err, domain.ErrPermissionDenied) {
+			t.Fatalf("expected ErrPermissionDenied, got %v", err)
+		}
+	})
+
+	t.Run("admin cannot change own role or another admin", func(t *testing.T) {
+		t.Parallel()
+		var updated domain.User
+		svc := NewUserService(log, newRepo(domain.RoleAdmin, domain.RoleAdmin, &updated), &stubPasswordHasher{}, nil)
+
+		if _, err := svc.ChangeUserRole(ctx, domain.ChangeUserRoleRequest{CallerID: "caller", UserID: "caller", Role: domain.RoleDeveloper}); !errors.Is(err, domain.ErrCannotChangeOwnRole) {
+			t.Errorf("expected ErrCannotChangeOwnRole, got %v", err)
+		}
+		if _, err := svc.ChangeUserRole(ctx, domain.ChangeUserRoleRequest{CallerID: "caller", UserID: "target", Role: domain.RoleDeveloper}); !errors.Is(err, domain.ErrPermissionDenied) {
+			t.Errorf("expected ErrPermissionDenied, got %v", err)
 		}
 	})
 }

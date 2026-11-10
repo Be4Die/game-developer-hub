@@ -55,7 +55,7 @@ func TestE2E_FullAuthFlow(t *testing.T) {
 		t.Fatalf("get verification code from valkey failed: %v", err)
 	}
 
-	_, err = env.authClient.VerifyEmail(ctx, &pb.AuthServiceVerifyEmailRequest{VerificationCode: code})
+	_, err = env.authClient.VerifyEmail(ctx, &pb.AuthServiceVerifyEmailRequest{Email: "e2e-flow@test.com", VerificationCode: code})
 	if err != nil {
 		t.Fatalf("VerifyEmail failed: %v", err)
 	}

@@ -17,6 +17,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -62,6 +63,7 @@ func setupIntegration(t *testing.T) *IntegrationTestEnv {
 		testcontainerspostgres.WithDatabase("sso"),
 		testcontainerspostgres.WithUsername("postgres"),
 		testcontainerspostgres.WithPassword("postgres"),
+		testcontainerspostgres.BasicWaitStrategies(),
 	)
 	if err != nil {
 		t.Skipf("PostgreSQL container not available: %v", err)
@@ -90,7 +92,7 @@ func setupIntegration(t *testing.T) *IntegrationTestEnv {
 		t.Fatalf("failed to create pool: %v", err)
 	}
 	for i := range 10 {
-		if err := pool.Ping(ctx); err == nil {
+		if err = pool.Ping(ctx); err == nil {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -163,62 +165,17 @@ func setupIntegration(t *testing.T) *IntegrationTestEnv {
 	}
 }
 
-// createTables создаёт таблицы в PostgreSQL.
+// createTables накатывает схему сервиса из migrations/init.sql — ту же, что применяется
+// в docker-compose, чтобы тесты репозиториев проверяли реальную схему, а не её копию.
 func createTables(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	ctx := context.Background()
-
-	migrations := []string{
-		`CREATE OR REPLACE FUNCTION update_updated_at()
-		RETURNS TRIGGER AS $$
-		BEGIN
-			NEW.updated_at = NOW();
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql`,
-
-		`CREATE TABLE IF NOT EXISTS users (
-			id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			email         VARCHAR(255) NOT NULL UNIQUE,
-			password_hash BYTEA NOT NULL,
-			display_name  VARCHAR(255) NOT NULL DEFAULT '',
-			role          SMALLINT NOT NULL DEFAULT 1,
-			status        SMALLINT NOT NULL DEFAULT 1,
-			email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-			created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-		)`,
-
-		`CREATE TABLE IF NOT EXISTS sessions (
-			id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			user_id          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-			user_agent       VARCHAR(512) NOT NULL DEFAULT '',
-			ip_address       VARCHAR(45) NOT NULL DEFAULT '',
-			refresh_token_hash VARCHAR(128) NOT NULL DEFAULT '',
-			created_at       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			last_used_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			expires_at       TIMESTAMP WITH TIME ZONE NOT NULL,
-			revoked          BOOLEAN NOT NULL DEFAULT FALSE,
-			revoked_at       TIMESTAMP WITH TIME ZONE
-		)`,
-
-		`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)`,
-		`CREATE INDEX IF NOT EXISTS idx_sessions_refresh_token ON sessions(refresh_token_hash)`,
-		`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
-		`CREATE INDEX IF NOT EXISTS idx_users_status ON users(status)`,
-
-		`DROP TRIGGER IF EXISTS trigger_users_updated_at ON users`,
-		`CREATE TRIGGER trigger_users_updated_at
-			BEFORE UPDATE ON users
-			FOR EACH ROW
-			EXECUTE FUNCTION update_updated_at()`,
+	schema, err := os.ReadFile(filepath.Join("..", "..", "migrations", "init.sql"))
+	if err != nil {
+		t.Fatalf("failed to read schema: %v", err)
 	}
-
-	for _, migration := range migrations {
-		if _, err := pool.Exec(ctx, migration); err != nil {
-			t.Fatalf("failed to execute migration: %v\nSQL: %s", err, migration)
-		}
+	if _, err := pool.Exec(ctx, string(schema)); err != nil {
+		t.Fatalf("failed to apply schema: %v", err)
 	}
 }
 

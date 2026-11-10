@@ -28,6 +28,16 @@ func clampInt32(v int) int32 {
 type ModerationHandler struct {
 	pb.UnimplementedModerationServiceServer
 	svc *service.ModerationService
+	// access проверяет доступ пользователя к проекту (владелец или участник команды).
+	access ProjectAccessChecker
+	// requireInternal включает проверку межсервисного токена для служебных методов.
+	requireInternal bool
+}
+
+// ProjectAccessChecker проверяет, имеет ли текущий пользователь доступ к проекту.
+// Реализуется клиентом project-manager: тот сам сверяет владельца и участников команды.
+type ProjectAccessChecker interface {
+	CheckAccess(ctx context.Context, projectID int64) error
 }
 
 // NewModerationHandler создаёт новый экземпляр ModerationHandler.
@@ -35,8 +45,56 @@ func NewModerationHandler(svc *service.ModerationService) *ModerationHandler {
 	return &ModerationHandler{svc: svc}
 }
 
+// WithAccessChecker подключает проверку доступа разработчика к проекту.
+func (h *ModerationHandler) WithAccessChecker(c ProjectAccessChecker) *ModerationHandler {
+	h.access = c
+	return h
+}
+
+// WithInternalOnly требует межсервисный токен для служебных методов (SubmitDraft, RegisterAttachment).
+// Включается, когда задан INTERNAL_API_KEY (обязателен в продуктивной среде).
+func (h *ModerationHandler) WithInternalOnly() *ModerationHandler {
+	h.requireInternal = true
+	return h
+}
+
+// requireStaff разрешает метод только модераторам и администраторам.
+func requireStaff(ctx context.Context) error {
+	if !IsStaff(ctx) {
+		return status.Error(codes.PermissionDenied, "moderator or admin privilege required")
+	}
+	return nil
+}
+
+// requireService разрешает служебный метод только сервисам платформы, когда межсервисная защита включена.
+func (h *ModerationHandler) requireService(ctx context.Context) error {
+	if h.requireInternal && !IsInternalCall(ctx) {
+		return status.Error(codes.PermissionDenied, "method is available to platform services only")
+	}
+	return nil
+}
+
+// authorizeProject разрешает доступ к данным проекта модераторам, администраторам, сервисам платформы
+// и тем разработчикам, у которых есть доступ к проекту в project-manager.
+func (h *ModerationHandler) authorizeProject(ctx context.Context, projectID int64) error {
+	if IsStaff(ctx) || IsInternalCall(ctx) {
+		return nil
+	}
+	if h.access == nil {
+		// Проверка недоступна только в локальном режиме без project-manager (в prod он обязателен).
+		return nil
+	}
+	if err := h.access.CheckAccess(ctx, projectID); err != nil {
+		return status.Error(codes.PermissionDenied, "no access to this project")
+	}
+	return nil
+}
+
 // SubmitDraft принимает снимок черновика и создает заявку на модерацию.
 func (h *ModerationHandler) SubmitDraft(ctx context.Context, req *pb.SubmitDraftRequest) (*pb.SubmitDraftResponse, error) {
+	if err := h.requireService(ctx); err != nil {
+		return nil, err
+	}
 	ownerID := req.GetOwnerId()
 	if ownerID == "" {
 		if uID, ok := UserIDFromContext(ctx); ok {
@@ -60,6 +118,9 @@ func (h *ModerationHandler) SubmitDraft(ctx context.Context, req *pb.SubmitDraft
 
 // ListRequests возвращает список заявок на модерацию с фильтрацией и пагинацией.
 func (h *ModerationHandler) ListRequests(ctx context.Context, req *pb.ListModerationRequestsRequest) (*pb.ListModerationRequestsResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	filter := domain.RequestFilter{
 		Limit:  int(req.GetLimit()),
 		Offset: int(req.GetOffset()),
@@ -109,11 +170,17 @@ func (h *ModerationHandler) GetRequest(ctx context.Context, req *pb.GetModeratio
 	if err != nil {
 		return nil, domainError(err, "get request")
 	}
+	if err := h.authorizeProject(ctx, r.ProjectID); err != nil {
+		return nil, err
+	}
 	return &pb.GetModerationRequestResponse{Request: requestToProto(r)}, nil
 }
 
 // GetSnapshot возвращает неизменяемый аудит-снимок по ID заявки на модерацию.
 func (h *ModerationHandler) GetSnapshot(ctx context.Context, req *pb.GetSnapshotRequest) (*pb.GetSnapshotResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	snap, err := h.svc.GetSnapshot(ctx, req.GetRequestId())
 	if err != nil {
 		return nil, domainError(err, "get snapshot")
@@ -129,9 +196,11 @@ func (h *ModerationHandler) GetSnapshot(ctx context.Context, req *pb.GetSnapshot
 	}, nil
 }
 
-
 // GetLatestRequestByProject возвращает последнюю заявку проекта.
 func (h *ModerationHandler) GetLatestRequestByProject(ctx context.Context, req *pb.GetLatestRequestByProjectRequest) (*pb.GetModerationRequestResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	r, err := h.svc.GetLatestRequestByProject(ctx, req.GetProjectId())
 	if err != nil {
 		return nil, domainError(err, "get latest request by project")
@@ -141,6 +210,9 @@ func (h *ModerationHandler) GetLatestRequestByProject(ctx context.Context, req *
 
 // ClaimRequest закрепляет заявку за модератором.
 func (h *ModerationHandler) ClaimRequest(ctx context.Context, req *pb.ClaimModerationRequestRequest) (*pb.ClaimModerationRequestResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	moderatorID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -156,6 +228,9 @@ func (h *ModerationHandler) ClaimRequest(ctx context.Context, req *pb.ClaimModer
 
 // Approve утверждает проект и инициирует публикацию.
 func (h *ModerationHandler) Approve(ctx context.Context, req *pb.ApproveModerationRequest) (*pb.ApproveModerationResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	moderatorID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -175,6 +250,9 @@ func (h *ModerationHandler) Approve(ctx context.Context, req *pb.ApproveModerati
 
 // Reject отклоняет заявку с указанием причины.
 func (h *ModerationHandler) Reject(ctx context.Context, req *pb.RejectModerationRequest) (*pb.RejectModerationResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	moderatorID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -198,6 +276,9 @@ func (h *ModerationHandler) Reject(ctx context.Context, req *pb.RejectModeration
 
 // SubmitServerAccess создает заявку на доступ к серверам платформы.
 func (h *ModerationHandler) SubmitServerAccess(ctx context.Context, req *pb.SubmitServerAccessRequest) (*pb.SubmitServerAccessResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	ownerID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -226,6 +307,9 @@ func (h *ModerationHandler) SubmitServerAccess(ctx context.Context, req *pb.Subm
 
 // GetServerAccess возвращает последнюю заявку на серверы по проекту.
 func (h *ModerationHandler) GetServerAccess(ctx context.Context, req *pb.GetServerAccessRequest) (*pb.GetServerAccessResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	r, err := h.svc.GetServerAccess(ctx, req.GetProjectId())
 	if err != nil {
 		if errors.Is(err, domain.ErrNotFound) {
@@ -240,6 +324,9 @@ func (h *ModerationHandler) GetServerAccess(ctx context.Context, req *pb.GetServ
 
 // ReviewServerAccess одобряет или отклоняет заявку на доступ к серверам платформы.
 func (h *ModerationHandler) ReviewServerAccess(ctx context.Context, req *pb.ReviewServerAccessRequest) (*pb.ReviewServerAccessResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	moderatorID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -270,6 +357,9 @@ func (h *ModerationHandler) ReviewServerAccess(ctx context.Context, req *pb.Revi
 
 // SendMessage отправляет сообщение в чат проекта.
 func (h *ModerationHandler) SendMessage(ctx context.Context, req *pb.SendChatMessageRequest) (*pb.SendChatMessageResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	senderID, ok := UserIDFromContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing user id")
@@ -296,6 +386,9 @@ func (h *ModerationHandler) SendMessage(ctx context.Context, req *pb.SendChatMes
 
 // ListMessages возвращает историю сообщений чата проекта.
 func (h *ModerationHandler) ListMessages(ctx context.Context, req *pb.ListChatMessagesRequest) (*pb.ListChatMessagesResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	messages, total, err := h.svc.ListMessages(ctx, req.GetProjectId(), int(req.GetLimit()), int(req.GetOffset()))
 	if err != nil {
 		return nil, domainError(err, "list chat messages")
@@ -314,6 +407,9 @@ func (h *ModerationHandler) ListMessages(ctx context.Context, req *pb.ListChatMe
 
 // ListActiveChats возвращает список активных чатов модерации.
 func (h *ModerationHandler) ListActiveChats(ctx context.Context, req *pb.ListActiveChatsRequest) (*pb.ListActiveChatsResponse, error) {
+	if err := requireStaff(ctx); err != nil {
+		return nil, err
+	}
 	chats, total, err := h.svc.ListActiveChats(ctx, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "list active chats: %v", err)
@@ -440,6 +536,9 @@ func (h *ModerationHandler) ListModeratorActivity(ctx context.Context, req *pb.L
 
 // RegisterAttachment регистрирует загруженное вложение в сервисе модерации.
 func (h *ModerationHandler) RegisterAttachment(ctx context.Context, req *pb.RegisterAttachmentRequest) (*pb.RegisterAttachmentResponse, error) {
+	if err := h.requireService(ctx); err != nil {
+		return nil, err
+	}
 	att := &domain.Attachment{
 		ID:           req.GetId(),
 		ProjectID:    req.GetProjectId(),
@@ -460,6 +559,9 @@ func (h *ModerationHandler) RegisterAttachment(ctx context.Context, req *pb.Regi
 
 // GetAttachment возвращает информацию о вложении.
 func (h *ModerationHandler) GetAttachment(ctx context.Context, req *pb.GetAttachmentRequest) (*pb.GetAttachmentResponse, error) {
+	if err := h.authorizeProject(ctx, req.GetProjectId()); err != nil {
+		return nil, err
+	}
 	att, err := h.svc.GetAttachment(ctx, req.GetAttachmentId(), req.GetProjectId())
 	if err != nil {
 		return nil, domainError(err, "get attachment")
@@ -470,6 +572,11 @@ func (h *ModerationHandler) GetAttachment(ctx context.Context, req *pb.GetAttach
 
 // PurgeProjectMedia помечает медиафайлы проекта как очищенные.
 func (h *ModerationHandler) PurgeProjectMedia(ctx context.Context, req *pb.PurgeProjectMediaRequest) (*pb.PurgeProjectMediaResponse, error) {
+	if !IsInternalCall(ctx) {
+		if err := requireStaff(ctx); err != nil {
+			return nil, err
+		}
+	}
 	count, _, err := h.svc.PurgeProjectMedia(ctx, req.GetProjectId())
 	if err != nil {
 		return nil, domainError(err, "purge project media")
@@ -480,4 +587,3 @@ func (h *ModerationHandler) PurgeProjectMedia(ctx context.Context, req *pb.Purge
 		PurgedCount: int32(count),
 	}, nil
 }
-

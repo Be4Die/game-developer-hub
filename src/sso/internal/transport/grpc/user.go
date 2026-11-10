@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -9,6 +10,13 @@ import (
 	pb "github.com/Be4Die/game-developer-hub/protos/sso/v1"
 	"github.com/Be4Die/game-developer-hub/sso/internal/domain"
 	"github.com/Be4Die/game-developer-hub/sso/internal/service"
+)
+
+const (
+	// minDeveloperSearchQuery — минимальная длина поискового запроса для пользователей без служебной роли.
+	minDeveloperSearchQuery = 3
+	// maxDeveloperSearchLimit — максимальный размер страницы поиска для пользователей без служебной роли.
+	maxDeveloperSearchLimit = 10
 )
 
 // UserHandler — gRPC обработчик для UserService.
@@ -116,6 +124,17 @@ func (h *UserHandler) Search(ctx context.Context, req *pb.UserServiceSearchReque
 		limit = 100
 	}
 
+	// Разработчикам поиск нужен только чтобы найти конкретного пользователя для приглашения:
+	// без запроса и большими страницами список пользователей им не отдаётся.
+	if role := extractUserRoleFromContext(ctx); role != domain.RoleAdmin && role != domain.RoleModerator {
+		if len([]rune(strings.TrimSpace(req.Query))) < minDeveloperSearchQuery {
+			return nil, status.Errorf(codes.InvalidArgument, "query must contain at least %d characters", minDeveloperSearchQuery)
+		}
+		if limit > maxDeveloperSearchLimit {
+			limit = maxDeveloperSearchLimit
+		}
+	}
+
 	offset := 0
 	if req.Offset != nil {
 		offset = int(*req.Offset)
@@ -145,8 +164,8 @@ func (h *UserHandler) Search(ctx context.Context, req *pb.UserServiceSearchReque
 }
 
 // ChangeUserRole изменяет роль указанного пользователя.
-// Требует роль admin или moderator. Возвращает codes.Unimplemented, пока не реализовано в сервисе.
-func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.UserServiceChangeRoleRequest) (*pb.UserServiceChangeRoleResponse, error) {
+// Доступно только администраторам.
+func (h *UserHandler) ChangeUserRole(ctx context.Context, req *pb.UserServiceChangeRoleRequest) (*pb.UserServiceChangeRoleResponse, error) {
 	if req.UserId == "" {
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
@@ -154,8 +173,21 @@ func (h *UserHandler) ChangeUserRole(_ context.Context, req *pb.UserServiceChang
 		return nil, err
 	}
 
-	// TODO: реализовать в UserService
-	return nil, status.Error(codes.Unimplemented, "ChangeUserRole not yet implemented in service layer")
+	callerID := extractUserIDFromContext(ctx)
+	if callerID == "" {
+		return nil, status.Error(codes.Unauthenticated, "missing user context")
+	}
+
+	user, err := h.svc.ChangeUserRole(ctx, domain.ChangeUserRoleRequest{
+		CallerID: callerID,
+		UserID:   req.UserId,
+		Role:     protoToUserRole(req.NewRole),
+	})
+	if err != nil {
+		return nil, domainErrToStatus(err)
+	}
+
+	return &pb.UserServiceChangeRoleResponse{User: userToProto(user)}, nil
 }
 
 // SetUserStatus изменяет статус учётной записи пользователя.
@@ -197,7 +229,13 @@ func (h *UserHandler) CreateModerator(ctx context.Context, req *pb.UserServiceCr
 		return nil, status.Error(codes.InvalidArgument, "display_name is required")
 	}
 
+	callerID := extractUserIDFromContext(ctx)
+	if callerID == "" {
+		return nil, status.Error(codes.Unauthenticated, "missing user context")
+	}
+
 	resp, err := h.svc.CreateModerator(ctx, domain.CreateModeratorRequest{
+		CallerID:    callerID,
 		Login:       req.Login,
 		Password:    req.Password,
 		DisplayName: req.DisplayName,

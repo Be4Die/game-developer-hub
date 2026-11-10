@@ -38,7 +38,8 @@ type DeploymentService struct {
 	imageMapPath     string
 	containerMapPath string
 	nodeID           string
-	reportPort       int // порт HTTP-сервера отчётов, 0 = отключён
+	reportPort       int    // порт HTTP-сервера отчётов, 0 = отключён
+	reportSecret     string // секрет для токенов отчётов (ключ ноды)
 	managedState     *ManagedServiceState
 	backupMgr        *BackupManager
 
@@ -351,6 +352,7 @@ func (s *DeploymentService) StartInstance(ctx context.Context, opts StartInstanc
 	if s.reportPort > 0 {
 		envVars["GAME_SERVER_NODE_REPORT_URL"] = fmt.Sprintf("http://%s:%d/v1/report", dockerHost(), s.reportPort)
 		envVars["GAME_SERVER_NODE_INSTANCE_ID"] = fmt.Sprintf("%d", opts.InstanceID)
+		envVars["GAME_SERVER_NODE_REPORT_TOKEN"] = domain.ReportToken(s.reportSecret, opts.InstanceID)
 	}
 
 	// Create container (does not start yet).
@@ -764,6 +766,11 @@ func (s *DeploymentService) SetNodeID(nodeID string) {
 // Если > 0, при старте инстанса будет инжектироваться GAME_SERVER_NODE_REPORT_URL.
 func (s *DeploymentService) SetReportPort(port int) {
 	s.reportPort = port
+}
+
+// SetReportSecret задаёт секрет, из которого выводятся токены отчётов инстансов.
+func (s *DeploymentService) SetReportSecret(secret string) {
+	s.reportSecret = secret
 }
 
 // GetActiveContainerIDs возвращает список ID контейнеров, управляемых этой нодой

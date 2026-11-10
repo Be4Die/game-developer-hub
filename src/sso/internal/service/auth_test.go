@@ -444,12 +444,12 @@ func TestAuthService_RefreshToken(t *testing.T) {
 	t.Run("session not found", func(t *testing.T) {
 		t.Parallel()
 
-		sessionRepo := &stubSessionRepo{getByRefreshTokenHash: func(context.Context, string) (*domain.Session, error) { return nil, errors.New("not found") }}
+		sessionRepo := &stubSessionRepo{getByRefreshTokenHash: func(context.Context, string) (*domain.Session, error) { return nil, domain.ErrNotFound }}
 		svc := NewAuthService(log, &stubUserRepo{}, sessionRepo, &stubTokenManager{}, &stubPasswordHasher{}, &stubEmailVerifyStore{}, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour)
 
 		_, err := svc.RefreshToken(ctx, domain.RefreshTokenRequest{RefreshToken: "invalid-token"})
-		if err == nil {
-			t.Fatal("expected error, got nil")
+		if !errors.Is(err, domain.ErrInvalidToken) {
+			t.Fatalf("expected ErrInvalidToken for unknown or revoked token, got %v", err)
 		}
 	})
 
@@ -546,7 +546,7 @@ func TestAuthService_VerifyEmail(t *testing.T) {
 		}
 		svc := NewAuthService(log, userRepo, sessionRepo, tokenManager, &stubPasswordHasher{}, emailStore, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour)
 
-		err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{VerificationCode: "123456"})
+		err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{Email: "test@example.com", VerificationCode: "123456"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -555,10 +555,10 @@ func TestAuthService_VerifyEmail(t *testing.T) {
 	t.Run("invalid verification code", func(t *testing.T) {
 		t.Parallel()
 
-		emailStore := &stubEmailVerifyStore{getEmailByCode: func(context.Context, string) (string, error) { return "", nil }}
+		emailStore := &stubEmailVerifyStore{verifyFunc: func(context.Context, string, string) (bool, error) { return false, nil }}
 		svc := NewAuthService(log, &stubUserRepo{}, &stubSessionRepo{}, &stubTokenManager{}, &stubPasswordHasher{}, emailStore, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour)
 
-		err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{VerificationCode: "invalid"})
+		err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{Email: "test@example.com", VerificationCode: "invalid"})
 		if err == nil {
 			t.Fatal("expected error, got nil")
 		}
@@ -686,6 +686,93 @@ func TestAuthService_ResetPassword(t *testing.T) {
 		err := svc.ResetPassword(ctx, domain.ResetPasswordRequest{ResetToken: "invalid-token", NewPassword: "new-password"})
 		if err == nil {
 			t.Fatal("expected error, got nil")
+		}
+	})
+}
+
+// stubAttemptLimiter — счётчик попыток в памяти для тестов.
+type stubAttemptLimiter struct {
+	max   int
+	fails map[string]int
+}
+
+func newStubAttemptLimiter(maxAttempts int) *stubAttemptLimiter {
+	return &stubAttemptLimiter{max: maxAttempts, fails: map[string]int{}}
+}
+
+func (l *stubAttemptLimiter) Blocked(_ context.Context, key string) (bool, error) {
+	return l.fails[key] >= l.max, nil
+}
+
+func (l *stubAttemptLimiter) Fail(_ context.Context, key string) error {
+	l.fails[key]++
+	return nil
+}
+
+func (l *stubAttemptLimiter) Reset(_ context.Context, key string) error {
+	delete(l.fails, key)
+	return nil
+}
+
+func TestAuthService_AttemptLimits(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	log := newTestLogger()
+
+	t.Run("login is blocked after repeated wrong passwords", func(t *testing.T) {
+		t.Parallel()
+
+		userRepo := &stubUserRepo{getByEmailFunc: func(context.Context, string) (*domain.User, error) {
+			return &domain.User{EmailVerified: true, Status: domain.StatusActive, PasswordHash: []byte("hashed")}, nil
+		}}
+		svc := NewAuthService(log, userRepo, &stubSessionRepo{}, &stubTokenManager{}, &stubPasswordHasher{compareErr: domain.ErrInvalidPassword}, &stubEmailVerifyStore{}, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour).
+			WithAttemptLimiters(newStubAttemptLimiter(3), nil)
+
+		for i := 0; i < 3; i++ {
+			if _, err := svc.Login(ctx, domain.LoginRequest{Email: "a@example.com", Password: "wrong"}); !errors.Is(err, domain.ErrInvalidPassword) {
+				t.Fatalf("attempt %d: expected ErrInvalidPassword, got %v", i, err)
+			}
+		}
+		if _, err := svc.Login(ctx, domain.LoginRequest{Email: "a@example.com", Password: "wrong"}); !errors.Is(err, domain.ErrTooManyAttempts) {
+			t.Fatalf("expected ErrTooManyAttempts, got %v", err)
+		}
+	})
+
+	t.Run("unknown email and wrong password are indistinguishable", func(t *testing.T) {
+		t.Parallel()
+
+		userRepo := &stubUserRepo{getByEmailFunc: func(context.Context, string) (*domain.User, error) { return nil, domain.ErrNotFound }}
+		svc := NewAuthService(log, userRepo, &stubSessionRepo{}, &stubTokenManager{}, &stubPasswordHasher{}, &stubEmailVerifyStore{}, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour)
+
+		if _, err := svc.Login(ctx, domain.LoginRequest{Email: "nobody@example.com", Password: "x"}); !errors.Is(err, domain.ErrInvalidPassword) {
+			t.Fatalf("expected ErrInvalidPassword, got %v", err)
+		}
+	})
+
+	t.Run("verification code cannot be brute-forced", func(t *testing.T) {
+		t.Parallel()
+
+		emailStore := &stubEmailVerifyStore{verifyFunc: func(context.Context, string, string) (bool, error) { return false, nil }}
+		svc := NewAuthService(log, &stubUserRepo{}, &stubSessionRepo{}, &stubTokenManager{}, &stubPasswordHasher{}, emailStore, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour).
+			WithAttemptLimiters(nil, newStubAttemptLimiter(5))
+
+		for i := 0; i < 5; i++ {
+			if err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{Email: "a@example.com", VerificationCode: "000000"}); !errors.Is(err, domain.ErrInvalidToken) {
+				t.Fatalf("attempt %d: expected ErrInvalidToken, got %v", i, err)
+			}
+		}
+		if err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{Email: "a@example.com", VerificationCode: "000000"}); !errors.Is(err, domain.ErrTooManyAttempts) {
+			t.Fatalf("expected ErrTooManyAttempts, got %v", err)
+		}
+	})
+
+	t.Run("verification requires email", func(t *testing.T) {
+		t.Parallel()
+
+		svc := NewAuthService(log, &stubUserRepo{}, &stubSessionRepo{}, &stubTokenManager{}, &stubPasswordHasher{}, &stubEmailVerifyStore{}, &stubPasswordResetStore{}, &stubEmailSender{}, 24*time.Hour)
+		if err := svc.VerifyEmail(ctx, domain.VerifyEmailRequest{VerificationCode: "123456"}); !errors.Is(err, domain.ErrInvalidToken) {
+			t.Fatalf("expected ErrInvalidToken, got %v", err)
 		}
 	})
 }

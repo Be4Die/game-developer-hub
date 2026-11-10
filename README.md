@@ -27,6 +27,7 @@
 | [`docs/use-case/`](docs/use-case/) | Диаграммы вариантов использования по контекстам (PlantUML) |
 | [`docs/business-process/bpmn/`](docs/business-process/bpmn/) | BPMN-модели процессов «как есть» и «как должно быть» |
 | [`docs/deployment/`](docs/deployment/) | UML-диаграмма развёртывания |
+| [`docs/deployment/production.md`](docs/deployment/production.md) | Развёртывание в продуктивной среде |
 | [`docs/diagrams-plan.md`](docs/diagrams-plan.md) | План диаграмм ВКР |
 | [`docs/Презентация_ВКР_Предзащита.pptx`](docs/Презентация_ВКР_Предзащита.pptx) | Презентация к предзащите, исходники в `docs/presentation/src/` |
 | [`docs/Речь_Предзащита_ВКР.docx`](docs/Речь_Предзащита_ВКР.docx) | Текст доклада на предзащите |

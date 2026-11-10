@@ -231,7 +231,7 @@ async function handleRegister() {
 async function handleVerify() {
   localError.value = '';
   try {
-    await verifyEmail(form.verification_code);
+    await verifyEmail(form.email, form.verification_code);
     successMessage.value = t('auth.loginSuccess');
     mode.value = 'login';
     form.password = '';

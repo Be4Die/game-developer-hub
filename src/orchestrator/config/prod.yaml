@@ -1,0 +1,56 @@
+# Продуктивная конфигурация. Секреты и адреса передаются только через переменные окружения
+# (JWT_SECRET, DB_PASSWORD, KV_PASSWORD, S3_*, INGRESS_PROXY_HOST, BACKUP_TICKET_SECRET),
+# см. deployments/.env.prod.example.
+env: "prod"
+
+grpc:
+  port: 50052
+
+jwt:
+  issuer: "sso"
+
+db:
+  host: "postgres"
+  port: 5432
+  user: "postgres"
+  name: "orchestrator"
+  ssl_mode: "disable" # внутренняя docker-сеть
+  max_conns: 25
+
+kv:
+  addr: "valkey:6379"
+  db: 0
+  key_ttl: 45s
+
+storage:
+  driver: "s3"
+  builds_path: "/tmp/builds" # используется только драйвером fs
+  s3:
+    endpoint: "seaweedfs:8333"
+    bucket: "server-builds"
+    use_ssl: false
+    region: "us-east-1"
+
+project_manager:
+  addr: "project-manager:50053"
+
+ingress_proxy:
+  port: 443
+
+grpc_client:
+  timeout: 30s
+  connect_timeout: 10s
+  keepalive_time: 30s
+  keepalive_timeout: 10s
+  max_message_size: 16777216
+  enable_compression: true
+
+node_heartbeat:
+  check_interval: 15s
+  inactivity_timeout: 60s
+
+limits:
+  max_builds_per_game: 10
+  max_instances_per_game: 50
+  max_log_tail_lines: 5000
+  max_build_size: 2147483648

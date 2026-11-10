@@ -16,6 +16,13 @@ import (
 type BuildHandler struct {
 	pb.UnimplementedBuildServiceServer
 	pipeline *service.BuildPipeline
+	access   gameAuthorizer
+}
+
+// WithGameAccess подключает проверку доступа пользователя к игре.
+func (h *BuildHandler) WithGameAccess(c GameAccessChecker) *BuildHandler {
+	h.access = gameAuthorizer{checker: c}
+	return h
 }
 
 // NewBuildHandler создаёт обработчик билдов.
@@ -25,6 +32,9 @@ func NewBuildHandler(pipeline *service.BuildPipeline) *BuildHandler {
 
 // Upload загружает серверный билд (unary, через grpc-gateway).
 func (h *BuildHandler) Upload(ctx context.Context, req *pb.BuildServiceUploadRequest) (*pb.BuildServiceUploadResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	ownerID, _ := GetUserID(ctx)
 
 	params := service.UploadBuildParams{
@@ -65,6 +75,9 @@ func (h *BuildHandler) UploadStream(stream pb.BuildService_UploadStreamServer) e
 	}
 
 	gameID := meta.GetGameId()
+	if err := h.access.authorize(stream.Context(), gameID); err != nil {
+		return err
+	}
 	ownerID, _ := GetUserID(stream.Context())
 
 	params := service.UploadBuildParams{
@@ -126,6 +139,9 @@ func (h *BuildHandler) UploadStream(stream pb.BuildService_UploadStreamServer) e
 
 // List возвращает список билдов игры.
 func (h *BuildHandler) List(ctx context.Context, req *pb.BuildServiceListRequest) (*pb.BuildServiceListResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	builds, err := h.pipeline.ListBuilds(ctx, req.GetGameId())
 	if err != nil {
 		return nil, domainError(err, "list builds")
@@ -141,6 +157,9 @@ func (h *BuildHandler) List(ctx context.Context, req *pb.BuildServiceListRequest
 
 // Get возвращает информацию о билде.
 func (h *BuildHandler) Get(ctx context.Context, req *pb.BuildServiceGetRequest) (*pb.BuildServiceGetResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	build, err := h.pipeline.GetBuild(ctx, req.GetGameId(), req.GetBuildVersion())
 	if err != nil {
 		return nil, domainError(err, "get build")
@@ -151,6 +170,9 @@ func (h *BuildHandler) Get(ctx context.Context, req *pb.BuildServiceGetRequest) 
 
 // Delete удаляет серверный билд.
 func (h *BuildHandler) Delete(ctx context.Context, req *pb.BuildServiceDeleteRequest) (*pb.BuildServiceDeleteResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	err := h.pipeline.DeleteBuild(ctx, req.GetGameId(), req.GetBuildVersion())
 	if err != nil {
 		return nil, domainError(err, "delete build")

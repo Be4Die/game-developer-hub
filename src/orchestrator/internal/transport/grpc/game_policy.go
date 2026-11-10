@@ -11,6 +11,13 @@ import (
 type GamePolicyHandler struct {
 	pb.UnimplementedGamePolicyServiceServer
 	policyService *service.GamePolicyService
+	access        gameAuthorizer
+}
+
+// WithGameAccess подключает проверку доступа пользователя к игре.
+func (h *GamePolicyHandler) WithGameAccess(c GameAccessChecker) *GamePolicyHandler {
+	h.access = gameAuthorizer{checker: c}
+	return h
 }
 
 // NewGamePolicyHandler создаёт обработчик политик.
@@ -20,6 +27,9 @@ func NewGamePolicyHandler(svc *service.GamePolicyService) *GamePolicyHandler {
 
 // Get возвращает политику игры.
 func (h *GamePolicyHandler) Get(ctx context.Context, req *pb.GamePolicyServiceGetRequest) (*pb.GamePolicyServiceGetResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	policy, err := h.policyService.Get(ctx, req.GetGameId())
 	if err != nil {
 		return nil, domainError(err, "get game policy")
@@ -30,6 +40,9 @@ func (h *GamePolicyHandler) Get(ctx context.Context, req *pb.GamePolicyServiceGe
 
 // Set создаёт или обновляет политику игры.
 func (h *GamePolicyHandler) Set(ctx context.Context, req *pb.GamePolicyServiceSetRequest) (*pb.GamePolicyServiceSetResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	ownerID, _ := GetUserID(ctx)
 	policy := gamePolicyFromProto(req)
 	policy.OwnerID = ownerID

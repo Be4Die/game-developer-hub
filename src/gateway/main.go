@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -46,6 +47,18 @@ func run(ctx context.Context) error {
 	modAddr := envOr("MODERATION_GRPC_ADDR", "moderation:50054")
 	httpAddr := envOr("HTTP_ADDR", ":8080")
 	projectsBasePath := envOr("PROJECTS_DATA_PATH", "/data/projects")
+
+	verifier, err := newTokenVerifierFromEnv()
+	if err != nil {
+		return err
+	}
+	allowedOrigins, err := loadAllowedOrigins()
+	if err != nil {
+		return err
+	}
+	if isProd() && len(os.Getenv("INTERNAL_API_KEY")) < minJWTSecretLength {
+		return errors.New("prod: INTERNAL_API_KEY must be a unique random value of at least 32 characters")
+	}
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -90,6 +103,13 @@ func run(ctx context.Context) error {
 			},
 		}),
 		runtime.WithMetadata(jwtMetadataAnnotator),
+		// Клиент не может подставить служебные метаданные (x-user-*, x-internal-*) через Grpc-Metadata-*.
+		runtime.WithIncomingHeaderMatcher(func(key string) (string, bool) {
+			if blockedMetadataHeader(key) {
+				return "", false
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
 	)
 
 	// Регистрация gRPC-Gateway сервисов
@@ -155,6 +175,20 @@ func run(ctx context.Context) error {
 			log.Printf("gateway configured with S3 storage at %s (region: %s)", s3Endpoint, region)
 		}
 	}
+	if isProd() && (s3Client == nil || os.Getenv("S3_ACCESS_KEY") == "" || os.Getenv("S3_SECRET_KEY") == "") {
+		return errors.New("prod: S3_ENDPOINT, S3_ACCESS_KEY and S3_SECRET_KEY are required (chat attachments and build downloads)")
+	}
+	if s3Client != nil {
+		bucketCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		err := ensureBucket(bucketCtx, s3Client, attachmentsBucket())
+		cancel()
+		if err != nil {
+			if isProd() {
+				return fmt.Errorf("prod: %w", err)
+			}
+			log.Printf("WARN: %v (attachments will fall back to local disk)", err)
+		}
+	}
 
 	// Корневой маршрутизатор
 	mux := http.NewServeMux()
@@ -164,7 +198,7 @@ func run(ctx context.Context) error {
 	mux.HandleFunc("POST /api/v1/projects/{project_id}/builds", handleProjectBuildUpload(projpb.NewProjectServiceClient(projConn), gwMux))
 	mux.HandleFunc("POST /api/v1/projects/{project_id}/media", handleProjectMediaUpload(projpb.NewProjectServiceClient(projConn), gwMux))
 	mux.HandleFunc("GET /api/v1/games/{game_id}/instances/{instance_id}/logs", handleInstanceLogsStream(gwpb.NewInstanceServiceClient(orchConn)))
-	mux.HandleFunc("GET /api/v1/projects/{project_id}/builds/{version}/download", handleProjectBuildDownload(projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/builds/{version}/download", handleProjectBuildDownload(verifier, projpb.NewProjectServiceClient(projConn), projectsBasePath, s3Client))
 	mux.HandleFunc("GET /api/v1/projects/{project_id}/media/{type}", handleProjectMediaServe(projectsBasePath, s3Client))
 	mux.HandleFunc("GET /api/v1/media/{path...}", handleProjectMediaServe(projectsBasePath, s3Client))
 	mux.HandleFunc("GET /media/{path...}", handleProjectMediaServe(projectsBasePath, s3Client))
@@ -174,16 +208,16 @@ func run(ctx context.Context) error {
 	// Эндпоинты вложений чата модерации (фото и видео)
 	modClient := modpb.NewModerationServiceClient(modConn)
 	projClient := projpb.NewProjectServiceClient(projConn)
-	mux.HandleFunc("POST /api/v1/projects/{project_id}/chat/attachments", handleChatAttachmentUpload(modClient, projClient, projectsBasePath, s3Client))
-	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}", handleChatAttachmentServe(modClient, projClient, projectsBasePath, s3Client))
-	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}/download", handleChatAttachmentServe(modClient, projClient, projectsBasePath, s3Client))
+	mux.HandleFunc("POST /api/v1/projects/{project_id}/chat/attachments", handleChatAttachmentUpload(verifier, modClient, projClient, projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}", handleChatAttachmentServe(verifier, modClient, projClient, projectsBasePath, s3Client))
+	mux.HandleFunc("GET /api/v1/projects/{project_id}/chat/attachments/{attachment_id}/download", handleChatAttachmentServe(verifier, modClient, projClient, projectsBasePath, s3Client))
 
 	// Все остальные запросы проксируются в gRPC-Gateway
 	mux.Handle("/", gwMux)
 
 	server := &http.Server{
 		Addr:         httpAddr,
-		Handler:      corsMiddleware(mux),
+		Handler:      corsMiddleware(allowedOrigins, mux),
 		ReadTimeout:  600 * time.Second,
 		WriteTimeout: 600 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -204,6 +238,11 @@ func run(ctx context.Context) error {
 	log.Printf("  Moderation gRPC: %s", modAddr)
 
 	return server.ListenAndServe()
+}
+
+// isProd сообщает, запущен ли шлюз в продуктивной среде (ENV=prod).
+func isProd() bool {
+	return os.Getenv("ENV") == "prod"
 }
 
 func envOr(key, fallback string) string {

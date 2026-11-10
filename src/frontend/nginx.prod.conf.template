@@ -1,0 +1,203 @@
+# ═══════════════════════════════════════════════════════════════
+#  Game Developer Hub — продуктивная конфигурация Nginx (шаблон envsubst)
+#
+#  TLS завершается внешним прокси площадки (nginx + certbot), сюда приходит HTTP
+#  с сохранённым заголовком Host. Два виртуальных хоста:
+#    ${GDH_APP_HOST}   — кабинет разработчика (SPA, /api, /media)
+#    ${GDH_GAMES_HOST} — веб-сборки игр и WebSocket-прокси игровых серверов
+#
+#  Игры — недоверенный код разработчиков, поэтому они обслуживаются только с
+#  отдельного origin и не имеют доступа к localStorage и cookie кабинета.
+#  Бакет сборок (builds) и вложений чата наружу не публикуется: их отдаёт шлюз
+#  после проверки токена и доступа к проекту.
+# ═══════════════════════════════════════════════════════════════
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+# Реальный адрес клиента из заголовков внешнего прокси (docker-сети).
+set_real_ip_from 10.0.0.0/8;
+set_real_ip_from 172.16.0.0/12;
+set_real_ip_from 192.168.0.0/16;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+server_tokens off;
+# Перенаправления не должны раскрывать внутренний адрес и порт контейнера.
+absolute_redirect off;
+
+# Ограничение частоты запросов к API (брутфорс, перебор идентификаторов).
+limit_req_zone $binary_remote_addr zone=gdh_api:10m rate=20r/s;
+
+# ── Неизвестные хосты ─────────────────────────────────────────
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    location / {
+        return 444;
+    }
+}
+
+# ── Кабинет разработчика ──────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${GDH_APP_HOST};
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    client_max_body_size 2048m;
+    client_body_timeout 300s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_min_length 256;
+    gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml image/svg+xml;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # index.html не кэшируется, чтобы новая версия фронтенда подхватывалась сразу.
+    location = /index.html {
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
+    }
+
+    location /assets/ {
+        expires 1y;
+        access_log off;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    location ^~ /api/ {
+        limit_req zone=gdh_api burst=100 nodelay;
+
+        set $gateway_upstream "http://gateway:8080";
+        proxy_pass $gateway_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_set_header Authorization $http_authorization;
+
+        # SSE и долгие потоки (логи инстансов)
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600s;
+    }
+
+    # Медиа проектов (иконки, обложки, видео) из публичного бакета media.
+    # sandbox запрещает выполнение скриптов, даже если загружен активный контент.
+    location ^~ /media/ {
+        limit_except GET HEAD { deny all; }
+
+        set $s3_upstream "http://seaweedfs:8333";
+        proxy_pass $s3_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host seaweedfs:8333;
+        proxy_set_header Connection "";
+        proxy_set_header Authorization "";
+        proxy_hide_header Set-Cookie;
+
+        expires 30d;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy "default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; sandbox" always;
+    }
+
+    # Старые относительные ссылки на игры уводятся на отдельный домен.
+    location ^~ /games/ {
+        return 301 https://${GDH_GAMES_HOST}$request_uri;
+    }
+}
+
+# ── Веб-сборки игр ────────────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${GDH_GAMES_HOST};
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Content-Security-Policy "frame-ancestors https://${GDH_APP_HOST} ${GDH_GAMES_FRAME_ANCESTORS}" always;
+
+    location ^~ /games/ {
+        limit_except GET HEAD { deny all; }
+
+        # set должен идти до rewrite: break прекращает выполнение и директив set.
+        set $s3_upstream "http://seaweedfs:8333";
+
+        # Каталог версии без index.html → index.html
+        rewrite ^(/games/[^/]+/[^/]+)$ $1/index.html break;
+        rewrite ^(/games/.*/)$ $1index.html break;
+
+        proxy_pass $s3_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host seaweedfs:8333;
+        proxy_set_header Connection "";
+        proxy_set_header Authorization "";
+        proxy_set_header Cookie "";
+        proxy_hide_header Set-Cookie;
+
+        # Content-Type и Content-Encoding (br/gzip для Unity WebGL) хранятся в S3 с момента загрузки.
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header Content-Security-Policy "frame-ancestors https://${GDH_APP_HOST} ${GDH_GAMES_FRAME_ANCESTORS}" always;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Expose-Headers "Content-Length, Content-Range, Content-Encoding" always;
+        expires 1h;
+    }
+
+    # WebSocket/HTTP-трафик онлайн-игр к игровым серверам.
+    location ^~ /game-proxy/ {
+        set $ingress_upstream "http://ingress-proxy:8085";
+        proxy_pass $ingress_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+        proxy_buffering off;
+    }
+
+    location / {
+        return 404;
+    }
+}

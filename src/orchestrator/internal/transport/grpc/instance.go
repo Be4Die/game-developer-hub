@@ -13,6 +13,13 @@ type InstanceHandler struct {
 	pb.UnimplementedInstanceServiceServer
 	instanceService *service.InstanceService
 	maxLogTailLines uint32
+	access          gameAuthorizer
+}
+
+// WithGameAccess подключает проверку доступа пользователя к игре.
+func (h *InstanceHandler) WithGameAccess(c GameAccessChecker) *InstanceHandler {
+	h.access = gameAuthorizer{checker: c}
+	return h
 }
 
 // NewInstanceHandler создаёт обработчик инстансов.
@@ -22,6 +29,9 @@ func NewInstanceHandler(svc *service.InstanceService, maxLogTailLines uint32) *I
 
 // Start запускает инстанс сервера.
 func (h *InstanceHandler) Start(ctx context.Context, req *pb.InstanceServiceStartRequest) (*pb.InstanceServiceStartResponse, error) {
+	if err := h.access.authorize(ctx, req.GetGameId()); err != nil {
+		return nil, err
+	}
 	ownerID, _ := GetUserID(ctx)
 
 	params := service.StartInstanceParams{

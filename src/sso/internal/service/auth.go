@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -24,6 +25,38 @@ type AuthService struct {
 	passwordResetStore domain.PasswordResetStore
 	emailSender        domain.EmailSender
 	refreshTokenTTL    time.Duration
+	// loginLimiter и verifyLimiter опциональны: nil отключает ограничение попыток.
+	loginLimiter  domain.AttemptLimiter
+	verifyLimiter domain.AttemptLimiter
+}
+
+// WithAttemptLimiters подключает ограничители неудачных попыток входа и подтверждения email.
+func (s *AuthService) WithAttemptLimiters(login, verify domain.AttemptLimiter) *AuthService {
+	s.loginLimiter = login
+	s.verifyLimiter = verify
+	return s
+}
+
+// blocked проверяет лимит попыток. Ошибка хранилища не должна открывать перебор, поэтому трактуется как блокировка.
+func (s *AuthService) blocked(ctx context.Context, l domain.AttemptLimiter, key string) bool {
+	if l == nil {
+		return false
+	}
+	isBlocked, err := l.Blocked(ctx, key)
+	if err != nil {
+		s.log.Error("attempt limiter unavailable", slog.String("error", err.Error()))
+		return true
+	}
+	return isBlocked
+}
+
+func (s *AuthService) registerFailure(ctx context.Context, l domain.AttemptLimiter, key string) {
+	if l == nil {
+		return
+	}
+	if err := l.Fail(ctx, key); err != nil {
+		s.log.Error("failed to register failed attempt", slog.String("error", err.Error()))
+	}
 }
 
 // NewAuthService создаёт сервис аутентификации.
@@ -95,7 +128,7 @@ func (s *AuthService) Register(ctx context.Context, req domain.RegisterRequest) 
 		return domain.RegisterResponse{}, fmt.Errorf("%s: store verification code: %w", op, err)
 	}
 
-	// Отправляем письмо (заглушка — логируем код).
+	// Отправляем письмо с кодом.
 	if err := s.emailSender.SendVerificationEmail(ctx, req.Email, code); err != nil {
 		s.log.Warn("failed to send verification email", slog.String("email", req.Email), slog.String("error", err.Error()))
 	}
@@ -113,14 +146,28 @@ func (s *AuthService) Register(ctx context.Context, req domain.RegisterRequest) 
 func (s *AuthService) Login(ctx context.Context, req domain.LoginRequest) (domain.LoginResponse, error) {
 	const op = "AuthService.Login"
 
-	// Находим пользователя по email.
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
-	if err != nil {
-		return domain.LoginResponse{}, fmt.Errorf("%s: get user: %w", op, err)
+	if s.blocked(ctx, s.loginLimiter, req.Email) {
+		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrTooManyAttempts)
 	}
 
-	// Проверяем статус.
+	// Неизвестный email и неверный пароль дают одну и ту же ошибку, чтобы не раскрывать наличие учётной записи.
+	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		s.registerFailure(ctx, s.loginLimiter, req.Email)
+		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrInvalidPassword)
+	}
+
+	// Пароль проверяется до статуса: о блокировке узнаёт только владелец учётной записи.
+	if err := s.passwordHasher.Compare(ctx, user.PasswordHash, req.Password); err != nil {
+		s.registerFailure(ctx, s.loginLimiter, req.Email)
+		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrInvalidPassword)
+	}
+
 	if user.Status != domain.StatusActive {
+		// Незавершённая регистрация: аккаунт создаётся приостановленным до подтверждения email.
+		if !user.EmailVerified && !user.Role.IsInternal() && user.Status == domain.StatusSuspended {
+			return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrEmailNotVerified)
+		}
 		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrUserSuspended)
 	}
 
@@ -129,9 +176,8 @@ func (s *AuthService) Login(ctx context.Context, req domain.LoginRequest) (domai
 		return domain.LoginResponse{}, fmt.Errorf("%s: %w", op, domain.ErrEmailNotVerified)
 	}
 
-	// Проверяем пароль.
-	if err := s.passwordHasher.Compare(ctx, user.PasswordHash, req.Password); err != nil {
-		return domain.LoginResponse{}, fmt.Errorf("%s: compare password: %w", op, err)
+	if s.loginLimiter != nil {
+		_ = s.loginLimiter.Reset(ctx, req.Email)
 	}
 
 	// Создаём сессию и токены.
@@ -160,6 +206,10 @@ func (s *AuthService) RefreshToken(ctx context.Context, req domain.RefreshTokenR
 
 	// Находим сессию по hash refresh token.
 	session, err := s.sessionRepo.GetByRefreshTokenHash(ctx, rtHash)
+	if errors.Is(err, domain.ErrNotFound) {
+		// Отозванный или чужой токен — это ошибка аутентификации, а не «ресурс не найден».
+		return domain.RefreshTokenResponse{}, fmt.Errorf("%s: %w", op, domain.ErrInvalidToken)
+	}
 	if err != nil {
 		return domain.RefreshTokenResponse{}, fmt.Errorf("%s: find session: %w", op, err)
 	}
@@ -216,43 +266,33 @@ func (s *AuthService) Logout(ctx context.Context, req domain.LogoutRequest) erro
 	return nil
 }
 
-// VerifyEmail подтверждает email пользователя.
+// VerifyEmail подтверждает email пользователя по паре «адрес + код».
+// Число неверных вводов ограничено по адресу, поэтому шестизначный код нельзя подобрать перебором.
 func (s *AuthService) VerifyEmail(ctx context.Context, req domain.VerifyEmailRequest) error {
 	const op = "AuthService.VerifyEmail"
 
-	// Находим email по коду.
-	email, err := s.emailVerifyStore.GetEmailByCode(ctx, req.VerificationCode)
-	if err != nil {
-		return fmt.Errorf("%s: get email by code: %w", op, err)
-	}
-	if email == "" {
+	if req.Email == "" || req.VerificationCode == "" {
 		return fmt.Errorf("%s: %w", op, domain.ErrInvalidToken)
 	}
+	if s.blocked(ctx, s.verifyLimiter, req.Email) {
+		return fmt.Errorf("%s: %w", op, domain.ErrTooManyAttempts)
+	}
 
-	// Верифицируем.
-	return s.VerifyEmailWithEmail(ctx, email, req.VerificationCode)
-}
-
-// VerifyEmailWithEmail подтверждает email пользователя (расширенная версия).
-func (s *AuthService) VerifyEmailWithEmail(ctx context.Context, email, code string) error {
-	const op = "AuthService.VerifyEmailWithEmail"
-
-	// Проверяем код.
-	valid, err := s.emailVerifyStore.Verify(ctx, email, code)
+	valid, err := s.emailVerifyStore.Verify(ctx, req.Email, req.VerificationCode)
 	if err != nil {
 		return fmt.Errorf("%s: verify code: %w", op, err)
 	}
 	if !valid {
+		s.registerFailure(ctx, s.verifyLimiter, req.Email)
 		return fmt.Errorf("%s: %w", op, domain.ErrInvalidToken)
 	}
 
-	// Находим пользователя.
-	user, err := s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		return fmt.Errorf("%s: get user: %w", op, err)
 	}
 
-	// Активируем аккаунт.
+	// Активируем аккаунт. Токены не выдаются: пользователь входит обычным способом.
 	user.EmailVerified = true
 	user.Status = domain.StatusActive
 	user.UpdatedAt = time.Now()
@@ -261,20 +301,11 @@ func (s *AuthService) VerifyEmailWithEmail(ctx context.Context, email, code stri
 		return fmt.Errorf("%s: update user: %w", op, err)
 	}
 
-	// Создаём сессию и выдаём токены.
-	tokens, session, err := s.createSession(ctx, user.ID, "", "")
-	if err != nil {
-		return fmt.Errorf("%s: create session: %w", op, err)
+	if s.verifyLimiter != nil {
+		_ = s.verifyLimiter.Reset(ctx, req.Email)
 	}
 
-	s.log.Info("email verified, user activated",
-		slog.String("user_id", user.ID),
-		slog.String("session_id", session.ID),
-	)
-
-	// Токены можно вернуть через отдельный метод, но для простоты логируем.
-	_ = tokens
-
+	s.log.Info("email verified, user activated", slog.String("user_id", user.ID))
 	return nil
 }
 

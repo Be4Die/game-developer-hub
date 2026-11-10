@@ -284,3 +284,73 @@ func TestMustLoad_PanicOnValidationError(t *testing.T) {
 
 	MustLoad()
 }
+
+// validProdConfig возвращает минимальную корректную конфигурацию продуктивной среды.
+func validProdConfig() Config {
+	return Config{
+		Env:            EnvProd,
+		GRPC:           GRPCConfig{Port: 50052},
+		JWT:            JWTConfig{Secret: "0123456789abcdef0123456789abcdef", Issuer: "sso"},
+		DB:             DBConfig{Host: "postgres", Port: 5432, User: "postgres", Password: "strong-db-password", Name: "orchestrator", SSLMode: "disable", MaxConns: 25},
+		KV:             KVConfig{Addr: "valkey:6379", KeyTTL: 45e9},
+		Storage:        StorageConfig{Driver: "s3", BuildsPath: "/tmp/builds", S3: S3Config{Endpoint: "seaweedfs:8333", Bucket: "server-builds", AccessKey: "gdh-access", SecretKey: "gdh-secret-key"}},
+		ProjectManager: ProjectManagerConfig{Addr: "project-manager:50053"},
+		IngressProxy:   IngressProxyConfig{Host: "games.example.com", Port: 443},
+		GRPCClient:     GRPCClientConfig{Timeout: 30e9, ConnectTimeout: 10e9, KeepAliveTime: 30e9, KeepAliveTimeout: 10e9, MaxMessageSize: 16777216},
+		NodeHeartbeat:  NodeHeartbeatCfg{CheckInterval: 15e9, InactivityTimeout: 60e9},
+		Limits:         LimitsConfig{MaxBuildsPerGame: 10, MaxInstancesPerGame: 50, MaxLogTailLines: 5000, MaxBuildSizeBytes: 2147483648},
+	}
+}
+
+func TestConfig_ValidateProd(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(c *Config)
+		wantError string
+	}{
+		{name: "valid", mutate: func(*Config) {}},
+		{
+			name:      "development jwt secret",
+			mutate:    func(c *Config) { c.JWT.Secret = "dev-jwt-secret-for-local-testing" },
+			wantError: "JWT_SECRET",
+		},
+		{
+			name:      "default db password",
+			mutate:    func(c *Config) { c.DB.Password = "postgres" },
+			wantError: "DB_PASSWORD",
+		},
+		{
+			name:      "s3 without credentials",
+			mutate:    func(c *Config) { c.Storage.S3.AccessKey = "" },
+			wantError: "S3_ACCESS_KEY",
+		},
+		{
+			name:      "no project-manager for ownership checks",
+			mutate:    func(c *Config) { c.ProjectManager.Addr = "" },
+			wantError: "project_manager.addr",
+		},
+		{
+			name:      "ingress proxy on localhost",
+			mutate:    func(c *Config) { c.IngressProxy.Host = "localhost" },
+			wantError: "INGRESS_PROXY_HOST",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := validProdConfig()
+			tt.mutate(&cfg)
+
+			err := cfg.Validate()
+			if tt.wantError == "" {
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantError) {
+				t.Fatalf("expected error containing %q, got %v", tt.wantError, err)
+			}
+		})
+	}
+}

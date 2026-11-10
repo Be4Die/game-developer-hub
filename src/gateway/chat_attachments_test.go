@@ -9,23 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExtractAuthUser_Empty(t *testing.T) {
+func TestAuthenticate_Empty(t *testing.T) {
+	v := &tokenVerifier{secret: []byte("0123456789abcdef0123456789abcdef"), issuer: "sso"}
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/1/chat/attachments/test", nil)
-	userID, userRole, rawToken := extractAuthUser(req)
+	userID, userRole, rawToken := v.authenticate(req)
 	assert.Empty(t, userID)
 	assert.Empty(t, userRole)
 	assert.Empty(t, rawToken)
 }
 
-func TestExtractAuthUser_FromQueryToken(t *testing.T) {
-	// payload: {"sub":"user-42","role":"moderator"}
-	// header.payload.signature
+func TestAuthenticate_UnsignedQueryTokenRejected(t *testing.T) {
+	v := &tokenVerifier{secret: []byte("0123456789abcdef0123456789abcdef"), issuer: "sso"}
+	// payload: {"sub":"user-42","role":"moderator"} с поддельной подписью
 	fakeToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTQyIiwicm9sZSI6Im1vZGVyYXRvciJ9.fakeSig"
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/projects/1/chat/attachments/test?token="+fakeToken, nil)
-	userID, userRole, rawToken := extractAuthUser(req)
-	assert.Equal(t, "user-42", userID)
-	assert.Equal(t, "moderator", userRole)
-	assert.Equal(t, fakeToken, rawToken)
+	userID, userRole, _ := v.authenticate(req)
+	assert.Empty(t, userID)
+	assert.Empty(t, userRole)
 }
 
 func TestIsRoleModeratorOrAdmin(t *testing.T) {

@@ -47,6 +47,10 @@ func domainError(err error, action string) error {
 		return status.Errorf(codes.NotFound, "%s: invitation not found", action)
 	case errors.Is(err, domain.ErrInvitationClosed):
 		return status.Errorf(codes.FailedPrecondition, "%s: invitation is already closed", action)
+	case errors.Is(err, domain.ErrIntegrationDisabled):
+		return status.Errorf(codes.Unavailable, "%s: integration is not configured on this installation", action)
+	case errors.Is(err, domain.ErrLockBusy):
+		return status.Errorf(codes.Aborted, "%s: project is busy, retry later", action)
 	default:
 		return status.Errorf(codes.Internal, "%s: %v", action, err)
 	}

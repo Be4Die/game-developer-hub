@@ -115,6 +115,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		testcontainerspostgres.WithDatabase("orchestrator"),
 		testcontainerspostgres.WithUsername("postgres"),
 		testcontainerspostgres.WithPassword("postgres"),
+		testcontainerspostgres.BasicWaitStrategies(),
 	)
 	if err != nil {
 		t.Skipf("PostgreSQL container not available: %v", err)
@@ -180,7 +181,7 @@ func setupE2E(t *testing.T) *e2eTestEnv {
 		t.Fatalf("failed to create pool: %v", err)
 	}
 	for i := range 10 {
-		if err := pool.Ping(ctx); err == nil {
+		if err = pool.Ping(ctx); err == nil {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -514,7 +515,7 @@ func (m *mockBuildStorageFS) Get(gameID int64, version string) (io.ReadCloser, e
 	key := fmt.Sprintf("%d/%s", gameID, version)
 	data, ok := m.files[key]
 	if !ok {
-		return nil, domain.ErrBuildNotFound
+		return nil, domain.ErrNotFound
 	}
 	return io.NopCloser(bytes.NewReader(data)), nil
 }

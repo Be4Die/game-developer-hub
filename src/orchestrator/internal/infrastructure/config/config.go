@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -20,21 +21,36 @@ const (
 
 // Config хранит конфигурацию оркестратора.
 type Config struct {
-	Env           string           `yaml:"env" env-required:"true"`
-	GRPC          GRPCConfig       `yaml:"grpc"`
-	JWT           JWTConfig        `yaml:"jwt"`
-	DB            DBConfig         `yaml:"db"`
-	KV            KVConfig         `yaml:"kv"`
-	Storage       StorageConfig    `yaml:"storage"`
-	GRPCClient    GRPCClientConfig `yaml:"grpc_client"`
-	NodeHeartbeat NodeHeartbeatCfg `yaml:"node_heartbeat"`
-	Limits        LimitsConfig     `yaml:"limits"`
-	IngressProxy  IngressProxyConfig `yaml:"ingress_proxy"`
+	Env            string               `yaml:"env" env:"ENV" env-required:"true"`
+	GRPC           GRPCConfig           `yaml:"grpc"`
+	JWT            JWTConfig            `yaml:"jwt"`
+	DB             DBConfig             `yaml:"db"`
+	KV             KVConfig             `yaml:"kv"`
+	Storage        StorageConfig        `yaml:"storage"`
+	GRPCClient     GRPCClientConfig     `yaml:"grpc_client"`
+	NodeHeartbeat  NodeHeartbeatCfg     `yaml:"node_heartbeat"`
+	Limits         LimitsConfig         `yaml:"limits"`
+	IngressProxy   IngressProxyConfig   `yaml:"ingress_proxy"`
+	ProjectManager ProjectManagerConfig `yaml:"project_manager"`
+	Backup         BackupConfig         `yaml:"backup"`
+}
+
+// ProjectManagerConfig хранит адрес сервиса project-manager.
+// Оркестратор обращается к нему, чтобы проверить право пользователя управлять серверами игры.
+type ProjectManagerConfig struct {
+	Addr string `yaml:"addr" env:"PROJECT_MANAGER_GRPC_ADDR" env-default:""`
+}
+
+// BackupConfig хранит параметры выдачи бэкапов.
+type BackupConfig struct {
+	// TicketSecret — ключ подписи одноразовых тикетов на скачивание. Пустое значение означает
+	// случайный ключ на время жизни процесса (достаточно для одного экземпляра оркестратора).
+	TicketSecret string `yaml:"-" env:"BACKUP_TICKET_SECRET" env-default:""`
 }
 
 // JWTConfig хранит параметры валидации JWT-токенов.
 type JWTConfig struct {
-	Secret string `yaml:"secret" env:"ORCHESTRATOR_JWT_SECRET" env-required:"true"`
+	Secret string `yaml:"secret" env:"JWT_SECRET" env-required:"true"`
 	Issuer string `yaml:"issuer" env-default:"sso"`
 }
 
@@ -45,12 +61,12 @@ type GRPCConfig struct {
 
 // DBConfig хранит настройки подключения к PostgreSQL.
 type DBConfig struct {
-	Host     string `yaml:"host"     env-default:"localhost"`
-	Port     int    `yaml:"port"     env-default:"5432"`
-	User     string `yaml:"user"     env-default:"postgres"`
-	Password string `yaml:"password" env-default:"postgres"`
-	Name     string `yaml:"name"     env-default:"orchestrator"`
-	SSLMode  string `yaml:"ssl_mode" env-default:"disable"`
+	Host     string `yaml:"host"     env:"DB_HOST" env-default:"localhost"`
+	Port     int    `yaml:"port"     env:"DB_PORT" env-default:"5432"`
+	User     string `yaml:"user"     env:"DB_USER" env-default:"postgres"`
+	Password string `yaml:"password" env:"DB_PASSWORD" env-default:"postgres"`
+	Name     string `yaml:"name"     env:"DB_NAME" env-default:"orchestrator"`
+	SSLMode  string `yaml:"ssl_mode" env:"DB_SSL_MODE" env-default:"disable"`
 	MaxConns int    `yaml:"max_conns" env-default:"25"`
 }
 
@@ -69,8 +85,8 @@ func (db DBConfig) DSN() string {
 
 // KVConfig хранит настройки подключения к KV-хранилищу (Valkey/Redis).
 type KVConfig struct {
-	Addr     string        `yaml:"addr"     env-default:"localhost:6379"`
-	Password string        `yaml:"password" env-default:""`
+	Addr     string        `yaml:"addr"     env:"KV_ADDR" env-default:"localhost:6379"`
+	Password string        `yaml:"password" env:"KV_PASSWORD" env-default:""`
 	DB       int           `yaml:"db"       env-default:"0"`
 	KeyTTL   time.Duration `yaml:"key_ttl"  env-default:"45s"`
 }
@@ -258,7 +274,49 @@ func (c *Config) Validate() error {
 		return errors.New("limits.max_build_size must be at least 1024 bytes")
 	}
 
+	switch c.Storage.Driver {
+	case "", "s3", "fs":
+	default:
+		return errors.New("storage.driver must be one of: s3, fs")
+	}
+	if c.Backup.TicketSecret != "" && len(c.Backup.TicketSecret) < minSecretLength {
+		return fmt.Errorf("BACKUP_TICKET_SECRET must be at least %d characters", minSecretLength)
+	}
+
+	if c.Env == EnvProd {
+		return c.validateProd()
+	}
+
 	return nil
+}
+
+const minSecretLength = 32
+
+// validateProd запрещает запуск продуктивной среды с отладочными значениями.
+func (c *Config) validateProd() error {
+	if len(c.JWT.Secret) < minSecretLength || isDevSecret(c.JWT.Secret) {
+		return fmt.Errorf("prod: JWT_SECRET must be a unique random value of at least %d characters", minSecretLength)
+	}
+	if c.DB.Password == "" || c.DB.Password == "postgres" {
+		return errors.New("prod: DB_PASSWORD must not be empty or default")
+	}
+	if c.Storage.Driver == "s3" && c.Storage.S3.Endpoint == "" {
+		return errors.New("prod: storage.s3.endpoint is required when storage.driver is s3")
+	}
+	if c.Storage.Driver == "s3" && (c.Storage.S3.AccessKey == "" || c.Storage.S3.SecretKey == "") {
+		return errors.New("prod: S3_ACCESS_KEY and S3_SECRET_KEY are required when storage.driver is s3")
+	}
+	if c.ProjectManager.Addr == "" {
+		return errors.New("prod: project_manager.addr is required (game ownership checks)")
+	}
+	if c.IngressProxy.Host == "" || c.IngressProxy.Host == "localhost" {
+		return errors.New("prod: INGRESS_PROXY_HOST must be the public host of the game proxy")
+	}
+	return nil
+}
+
+func isDevSecret(v string) bool {
+	return strings.Contains(v, "dev-") || strings.Contains(v, "local-testing")
 }
 
 func fetchConfigPath() string {

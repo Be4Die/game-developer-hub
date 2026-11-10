@@ -57,15 +57,6 @@ CREATE TRIGGER trigger_users_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
 
+-- В таблице sessions нет колонки updated_at, поэтому триггер update_updated_at на неё не вешается.
+-- Удаляем триггер, оставшийся от прежних версий схемы (он ломал любой UPDATE sessions).
 DROP TRIGGER IF EXISTS trigger_sessions_updated_at ON sessions;
-CREATE TRIGGER trigger_sessions_updated_at
-    BEFORE UPDATE ON sessions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
--- Seed Users (Password: password123)
-INSERT INTO users (email, password_hash, display_name, role, status, email_verified)
-VALUES
-    ('dev@welwise.com', decode('243261243130246134693851654a7948306544747170573176594c73753370472e46334c6c674b5271706e753956593334325045416b346159397257', 'hex'), 'Test Developer', 1, 1, TRUE),
-    ('moderator@welwise.com', decode('243261243130246134693851654a7948306544747170573176594c73753370472e46334c6c674b5271706e753956593334325045416b346159397257', 'hex'), 'Test Moderator', 2, 1, TRUE)
-ON CONFLICT (email) DO NOTHING;

@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"crypto/rand"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -541,12 +542,32 @@ func (h *NodeHandler) UploadServiceBackup(stream pb.NodeService_UploadServiceBac
 	})
 }
 
-const backupTicketSecret = "gdh-backup-secret-key-2026"
+// backupTicketSecret — ключ подписи одноразовых тикетов на скачивание бэкапов.
+// По умолчанию генерируется случайно при старте процесса: тикет живёт 60 секунд и проверяется
+// тем же экземпляром оркестратора. Для нескольких экземпляров ключ задаётся через BACKUP_TICKET_SECRET.
+var backupTicketSecret = mustRandomSecret()
+
+func mustRandomSecret() []byte {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		panic("generate backup ticket secret: " + err.Error())
+	}
+	return b
+}
+
+// SetBackupTicketSecret задаёт ключ подписи тикетов из конфигурации. Вызывается один раз при старте.
+func SetBackupTicketSecret(secret string) error {
+	if len(secret) < 32 {
+		return errors.New("backup ticket secret must be at least 32 characters")
+	}
+	backupTicketSecret = []byte(secret)
+	return nil
+}
 
 func generateBackupTicket(nodeID int64, serviceName, backupID string, ttl time.Duration) string {
 	exp := time.Now().Add(ttl).Unix()
 	payload := fmt.Sprintf("%d:%s:%s:%d", nodeID, serviceName, backupID, exp)
-	mac := hmac.New(sha256.New, []byte(backupTicketSecret))
+	mac := hmac.New(sha256.New, backupTicketSecret)
 	mac.Write([]byte(payload))
 	sig := hex.EncodeToString(mac.Sum(nil))
 	return fmt.Sprintf("%s:%s", payload, sig)
@@ -572,7 +593,7 @@ func ValidateBackupTicket(ticket string, nodeID int64, serviceName, backupID str
 	}
 
 	payload := fmt.Sprintf("%d:%s:%s:%d", tNodeID, tServiceName, tBackupID, exp)
-	mac := hmac.New(sha256.New, []byte(backupTicketSecret))
+	mac := hmac.New(sha256.New, backupTicketSecret)
 	mac.Write([]byte(payload))
 	expectedSig := hex.EncodeToString(mac.Sum(nil))
 
