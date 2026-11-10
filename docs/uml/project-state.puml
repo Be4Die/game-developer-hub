@@ -1,0 +1,14 @@
+@startuml project-state
+!include style.iuml
+[*] --> Draft : создать проект
+state "Черновик" as Draft
+state "На модерации" as Pending
+state "Опубликован" as Published
+state "Отклонён" as Rejected
+Draft --> Pending : отправить\nна модерацию
+Pending --> Published : одобрено
+Pending --> Rejected : отклонено
+Rejected --> Pending : исправить и отправить\nповторно
+Published --> Draft : снять с публикации
+Published --> Published : обновление на проверке,\nопубликованная версия работает
+@enduml

@@ -1,0 +1,30 @@
+@startuml accounts
+!include ../uml/style.iuml
+hide circle
+skinparam linetype ortho
+skinparam classBackgroundColor white
+left to right direction
+entity "Пользователи\n(users)" as users {
+  * id : uuid
+  --
+  email : varchar
+  password_hash : bytea
+  display_name : varchar
+  role : smallint
+  status : smallint
+  email_verified : bool
+}
+entity "Сессии\n(sessions)" as sessions {
+  * id : uuid
+  + user_id : uuid
+  --
+  user_agent : varchar
+  ip_address : varchar
+  refresh_token_hash : varchar
+  last_used_at : timestamp
+  expires_at : timestamp
+  revoked : bool
+  … ещё 1
+}
+users ||--o{ sessions
+@enduml

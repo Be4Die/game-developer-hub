@@ -1,0 +1,92 @@
+@startuml projects
+!include ../uml/style.iuml
+hide circle
+skinparam linetype ortho
+skinparam classBackgroundColor white
+entity "Проекты\n(projects)" as projects {
+  * id : bigint
+  --
+  owner_id : text
+  status : smallint
+  is_online : bool
+  is_under_review : bool
+}
+entity "Черновики\n(project_drafts)" as project_drafts {
+  * project_id : bigint
+  --
+  title_ru : varchar
+  title_en : varchar
+  seo_ru : varchar
+  seo_en : varchar
+  about_ru : varchar
+  about_en : varchar
+  … ещё 6
+}
+entity "Клиентские сборки\n(project_builds)" as project_builds {
+  * id : bigint
+  + project_id : bigint
+  --
+  version : text
+  file_path : text
+  file_size : bigint
+  is_unpacked : bool
+  unpacked_path : text
+}
+entity "Релизы\n(project_releases)" as project_releases {
+  * id : bigint
+  + project_id : bigint
+  --
+  version : text
+  title_ru : varchar
+  title_en : varchar
+  seo_ru : varchar
+  seo_en : varchar
+  about_ru : varchar
+  … ещё 10
+}
+entity "Развёртывания\n(deployments)" as deployments {
+  * id : bigint
+  + project_id : bigint
+  --
+  environment : smallint
+  version : text
+  status : smallint
+  error_message : text
+  deployed_at : timestamp
+}
+entity "Участники проектов\n(project_members)" as project_members {
+  * id : bigint
+  + project_id : bigint
+  --
+  user_id : text
+  user_email : text
+  user_name : text
+  permissions : text
+}
+entity "Приглашения\n(project_invitations)" as project_invitations {
+  * id : bigint
+  + project_id : bigint
+  --
+  inviter_id : text
+  inviter_email : text
+  inviter_name : text
+  invitee_id : text
+  invitee_email : text
+  permissions : text
+  … ещё 1
+}
+entity "Блокировки приглашений\n(user_access_blocks)" as user_access_blocks {
+  * id : bigint
+  --
+  user_id : text
+  blocked_user_id : text
+  blocked_user_email : text
+  blocked_user_name : text
+}
+projects ||--o| project_drafts
+projects ||--o{ project_builds
+projects ||--o{ project_releases
+projects ||--o{ deployments
+projects ||--o{ project_members
+projects ||--o{ project_invitations
+@enduml

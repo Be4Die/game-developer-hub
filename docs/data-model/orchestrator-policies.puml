@@ -1,0 +1,48 @@
+@startuml orchestrator-policies
+!include ../uml/style.iuml
+hide circle
+skinparam linetype ortho
+skinparam classBackgroundColor white
+entity "Политики оркестрации\n(game_policies)" as game_policies {
+  * game_id : bigint
+  --
+  owner_id : text
+  mode : smallint
+  target_instances : int
+  auto_restart : bool
+  scale_to_zero_timeout : int
+  default_build_version : text
+  … ещё 9
+}
+entity "События очереди\n(queue_events)" as queue_events {
+  * id : bigint
+  --
+  game_id : bigint
+  player_id : text
+  event_type : smallint
+  instance_id : bigint
+  wait_seconds : int
+}
+entity "Заявки на серверы платформы\n(platform_access_requests)" as platform_access_requests {
+  * id : bigint
+  --
+  project_id : bigint
+  developer_id : text
+  status : smallint
+  reason : text
+  reviewer_id : text
+  reviewer_comment : text
+  … ещё 1
+}
+entity "Доступ к серверам платформы\n(platform_grants)" as platform_grants {
+  * id : bigint
+  --
+  game_id : bigint
+  max_instances : int
+  is_active : bool
+  max_total_cpu_millis : int
+  max_total_memory_mb : bigint
+  max_instance_cpu_millis : int
+  … ещё 1
+}
+@enduml

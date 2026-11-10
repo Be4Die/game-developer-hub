@@ -1,0 +1,24 @@
+@startuml publish-sequence
+!include style.iuml
+skinparam sequenceMessageAlign center
+hide footbox
+autonumber
+actor "Разработчик" as Dev
+actor "Модератор" as Mod
+participant "API-шлюз" as GW
+participant "Сервис\nуправления\nпроектами" as PM
+participant "Сервис\nмодерации" as MS
+participant "Агент\nразвёртывания\nвеб-игр" as AG
+Dev -> GW : отправить проект на модерацию
+GW -> PM : передать заявку
+PM -> MS : создать заявку\nс аудит-снимком проекта
+MS --> PM : номер заявки
+PM --> Dev : проект «На модерации»
+Mod -> MS : взять заявку в работу\n(статус «В проверке»)
+Mod -> MS : одобрить заявку
+MS -> PM : опубликовать\nверсию сборки
+PM -> AG : развернуть сборку\nв каталоге игр
+AG --> PM : адрес игры
+PM --> MS : игра опубликована\n(проект «Опубликован»)
+MS --> Dev : решение в чате проекта\n(статус «Одобрена»)
+@enduml

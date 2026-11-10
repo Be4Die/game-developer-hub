@@ -1,0 +1,54 @@
+@startuml moderation
+!include ../uml/style.iuml
+hide circle
+skinparam linetype ortho
+skinparam classBackgroundColor white
+left to right direction
+entity "Заявки на модерацию\n(moderation_requests)" as moderation_requests {
+  * id : bigint
+  --
+  project_id : bigint
+  owner_id : text
+  moderator_id : text
+  status : smallint
+  request_type : smallint
+  reason : text
+  … ещё 11
+}
+entity "Сообщения чата\n(moderation_messages)" as moderation_messages {
+  * id : bigint
+  + request_id : bigint
+  --
+  project_id : bigint
+  sender_id : text
+  sender_role : smallint
+  message_type : smallint
+  content : text
+  payload : jsonb
+}
+entity "Вложения\n(moderation_attachments)" as moderation_attachments {
+  * id : text
+  + message_id : bigint
+  --
+  project_id : bigint
+  uploader_id : text
+  uploader_role : smallint
+  file_name : text
+  file_size : bigint
+  mime_type : text
+  … ещё 2
+}
+entity "Аудит-снимки\n(moderation_snapshots)" as moderation_snapshots {
+  * id : bigint
+  + request_id : bigint
+  --
+  project_id : bigint
+  status : smallint
+  format_version : int
+  snapshot_json : jsonb
+  snapshot_blob : bytea
+}
+moderation_requests ||--o{ moderation_messages
+moderation_messages ||--o{ moderation_attachments
+moderation_requests ||--o{ moderation_snapshots
+@enduml

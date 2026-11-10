@@ -1,0 +1,23 @@
+@startuml instance-state
+!include style.iuml
+left to right direction
+[*] --> Starting : запустить экземпляр
+state "Запускается" as Starting
+state "Работает" as Running
+state "Останавливается" as Stopping
+state "Остановлен" as Stopped
+state "Сбой" as Crashed
+Starting --> Running : контейнер запущен
+Starting --> Crashed : ошибка запуска
+Running --> Stopping : остановить
+Running --> Running : перезапустить
+Running --> Crashed : сбой или узел недоступен
+Stopping --> Stopped : остановлен
+Stopping --> Crashed : ошибка остановки
+Stopped --> Running : возобновить
+Crashed --> Running : автоматический\nперезапуск
+Crashed --> Stopped : остановить
+Running --> [*] : удалить
+Stopped --> [*] : удалить
+Crashed --> [*] : удалить
+@enduml

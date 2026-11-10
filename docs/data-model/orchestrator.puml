@@ -1,0 +1,72 @@
+@startuml orchestrator
+!include ../uml/style.iuml
+hide circle
+skinparam linetype ortho
+skinparam classBackgroundColor white
+left to right direction
+entity "Узлы\n(nodes)" as nodes {
+  * id : bigint
+  --
+  owner_id : text
+  address : text
+  token_hash : bytea
+  api_token : text
+  region : text
+  status : smallint
+  … ещё 10
+}
+entity "Серверные сборки\n(server_builds)" as server_builds {
+  * id : bigint
+  --
+  owner_id : text
+  game_id : bigint
+  uploaded_by : bigint
+  version : text
+  image_tag : text
+  protocol : smallint
+  … ещё 4
+}
+entity "Экземпляры\n(instances)" as instances {
+  * id : bigint
+  + node_id : bigint
+  + server_build_id : bigint
+  --
+  owner_id : text
+  game_id : bigint
+  name : text
+  build_version : text
+  protocol : smallint
+  host_port : int
+  … ещё 8
+}
+entity "Сервисы данных узла\n(node_services)" as node_services {
+  * id : bigint
+  + node_id : bigint
+  --
+  owner_id : text
+  allowed_game_ids : bigint
+  service_type : smallint
+  name : varchar
+  container_id : varchar
+  host_port : int
+  … ещё 5
+}
+entity "Резервные копии\n(node_service_backups)" as node_service_backups {
+  * id : bigint
+  + node_id : bigint
+  + service_id : bigint
+  --
+  backup_id : varchar
+  service_name : varchar
+  service_type : smallint
+  file_name : varchar
+  size_bytes : bigint
+  backup_type : smallint
+  … ещё 1
+}
+nodes ||--o{ instances
+server_builds ||--o{ instances
+nodes ||--o{ node_services
+nodes ||--o{ node_service_backups
+node_services ||--o{ node_service_backups
+@enduml

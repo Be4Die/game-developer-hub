@@ -1,0 +1,14 @@
+@startuml request-state
+!include style.iuml
+[*] --> Pending : подать заявку
+state "Ожидает" as Pending
+state "В проверке" as InReview
+state "Одобрена" as Approved
+state "Отклонена" as Rejected
+Pending --> InReview : модератор берёт\nв работу
+InReview --> Approved : одобрить\n(сборка публикуется)
+InReview --> Rejected : отклонить\n(указать причину)
+InReview --> InReview : сбой публикации,\nзаявка остаётся на проверке
+Approved --> [*]
+Rejected --> [*]
+@enduml
