@@ -2,6 +2,7 @@
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, AlignmentType } = require('docx');
 const SPEECH = require('./speech.js');
+const HIDDEN = require('./speech_hidden.js');
 const { MARK, paragraphs, countWords } = require('./speech_text.js');
 
 const FONT = 'Times New Roman', SIZE = 28; // 14 пт
@@ -38,12 +39,21 @@ SPEECH.forEach((sp, i) => {
   body.push(para([run(`Слайд ${i + 1}. ${sp.title}`, { bold: true })], { indent: { firstLine: 0 }, spacing: { line: 360, before: 240, after: 120 }, keepNext: true }));
   paragraphs(sp).forEach((t) => body.push(speechPara(t)));
 });
+// Резервные слайды: скрыты в показе, нужны для ответов на вопросы комиссии
+body.push(para([run('Резервные слайды', { bold: true })], { indent: { firstLine: 0 }, spacing: { line: 360, before: 360, after: 60 }, keepNext: true }));
+body.push(para([run('Скрыты в показе и идут после заключения. В доклад не входят: открываются только если комиссия задаёт вопрос по теме слайда.', { italics: true })]));
+HIDDEN.forEach((h, i) => {
+  body.push(para([run(`Слайд ${SPEECH.length + i + 1}. ${h.title}`, { bold: true })], { indent: { firstLine: 0 }, spacing: { line: 360, before: 240, after: 120 }, keepNext: true }));
+  body.push(para([run('Если спросят: ', { italics: true, bold: true }), run(h.ask, { italics: true })]));
+  h.text.forEach((t) => body.push(para([run(t)])));
+});
 body.push(para([run('Примечания', { bold: true })], { indent: { firstLine: 0 }, spacing: { line: 360, before: 360, after: 120 } }));
 [
   `Объём доклада — около ${words} слов, это примерно ${minutes} минут спокойной речи; регламент — 5–7 минут, при нехватке времени сокращаются пояснения на слайдах с диаграммами вариантов использования.`,
   'Названия слайдов вслух не повторяются. Текст не зачитывается слово в слово: можно менять порядок слов и падежи, главное — сохранить смысл и цифры.',
   `Пометка ${MARK} означает «нажать далее». Это не всегда новый слайд: на слайдах с моделями процессов и на сравнительной таблице так появляются выделения — каждое нужно сопроводить своим абзацем.`,
   'Фраза-переход произносится до нажатия на следующий слайд: она связывает слайды и удерживает внимание комиссии. Пометка после неё означает смену слайда.',
+  'Резервные слайды при показе пропускаются автоматически; чтобы открыть один из них, нужно выбрать его в панели слайдов.',
   'Можно подсматривать в текст, но обязательно поднимать взгляд на членов комиссии.',
 ].forEach((t) => body.push(para([run('— ' + t)])));
 

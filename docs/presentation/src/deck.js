@@ -3,7 +3,9 @@
 // Схемы BPMN на слайдах — упрощённые версии схем из docs/business-process/bpmn, нарисованные фигурами,
 // чтобы текст оставался крупным; полные схемы идут в приложение записки.
 const pptxgen = require('pptxgenjs');
+const fs = require('fs');
 const SPEECH = require('./speech.js');
+const HIDDEN = require('./speech_hidden.js');
 const { paragraphs } = require('./speech_text.js');
 
 const pres = new pptxgen();
@@ -35,6 +37,13 @@ let speechIndex = 0;
 function speechNotes(s) {
   const sp = SPEECH[speechIndex++];
   s.addNotes(paragraphs(sp).join('\n\n'));
+}
+
+// Заметки скрытых слайдов: вопрос комиссии и короткий ответ
+let hiddenIndex = 0;
+function hiddenNotes(s) {
+  const h = HIDDEN[hiddenIndex++];
+  s.addNotes([`Резервный слайд. Если спросят: ${h.ask}`, ...h.text].join('\n\n'));
 }
 
 function slideTitle(title, sub) {
@@ -594,5 +603,125 @@ ucSlide([['nodes.png', 'Рис. 7 — Узлы и сервисы данных', 
   num(s);
   speechNotes(s);
 }
+
+// ══ Скрытые резервные слайды (после заключения): показываются только при вопросах комиссии ══
+const MAIN_SLIDES = pres.slides.length;
+
+// ── Диаграмма развёртывания (упрощённая схема фигурами; полная — docs/deployment) ──
+{
+  const s = slideTitle('Диаграмма развёртывания', 'Упрощённая схема, полная — в приложении');
+  const box = (x, y, w, h, title, sub, o = {}) => {
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: C.white }, line: { color: C.black, width: o.thick || 1, dashType: o.dash ? 'dash' : 'solid' } });
+    text(s, [{ text: title, options: { bold: !o.plain, fontSize: o.fs || 9.5, breakLine: !!sub } }, ...(sub ? [{ text: sub, options: { fontSize: 8.5 } }] : [])],
+      { x: x + 0.04, y, w: w - 0.08, h, align: 'center', valign: o.top ? 'top' : 'middle' });
+  };
+  const ln = (x1, y1, x2, y2, both = false) => seg(s, x1, y1, x2, y2, { width: 1, endArrowType: 'triangle', ...(both ? { beginArrowType: 'triangle' } : {}) });
+  const plain = (x1, y1, x2, y2) => seg(s, x1, y1, x2, y2, { width: 1 });
+  const lab = (t, x, y, w, o = {}) => text(s, t, { x, y, w, h: 0.15, fontSize: 8, align: 'center', ...o });
+  // Устройства и смежные системы
+  box(0.3, 1.05, 1.75, 0.75, 'Устройство разработчика или сотрудника', 'Браузер, SPA-приложение', { fs: 9 });
+  box(0.3, 1.95, 1.75, 0.8, 'Устройство игрока', 'Браузер, веб-игра с модулем обнаружения сервера', { fs: 9 });
+  box(0.3, 2.85, 1.75, 0.5, 'Почтовый сервер', 'смежная система', { dash: true });
+  box(0.3, 3.5, 1.75, 0.55, 'Сервис аналитики площадки', 'смежная система', { dash: true, fs: 9 });
+  // Сервер платформы
+  box(2.55, 1.0, 5.1, 4.0, '', '', { thick: 1.5 });
+  text(s, 'Сервер платформы Welwise, Docker Compose', { x: 2.65, y: 1.03, w: 2.7, h: 0.2, fontSize: 9, bold: true });
+  box(2.65, 1.4, 1.4, 0.7, 'Nginx', 'интерфейс, игры, /api');
+  box(4.35, 1.4, 1.4, 0.7, 'API-шлюз', 'REST в gRPC');
+  box(6.05, 1.4, 1.4, 0.7, 'Входной прокси', 'игровой трафик');
+  const svc = [[2.65, 'Сервис учётных записей'], [3.65, 'Агент развёртывания игр'], [4.65, 'Сервис проектов'], [5.65, 'Сервис модерации'], [6.65, 'Сервис оркестрации']];
+  svc.forEach(([x, t]) => box(x, 2.5, 0.85, 0.8, t, '', { fs: 7.8, plain: true }));
+  box(2.65, 4.1, 1.5, 0.7, 'PostgreSQL', 'базы сервисов');
+  box(4.3, 4.1, 1.5, 0.7, 'Valkey', 'блокировки, кэш, маршруты');
+  box(5.95, 4.1, 1.5, 0.7, 'SeaweedFS (S3)', 'сборки, медиа');
+  // Вычислительный узел
+  box(8.4, 1.35, 1.4, 3.3, '', '', { thick: 1.5 });
+  text(s, 'Вычислительный узел', { x: 8.45, y: 1.37, w: 1.3, h: 0.2, fontSize: 9, bold: true, align: 'center' });
+  box(8.5, 1.65, 1.2, 0.7, 'Экземпляры игровых серверов', '', { fs: 8.5 });
+  box(8.5, 2.55, 1.2, 0.75, 'Агент узла', 'команды, журналы', { fs: 9 });
+  box(8.5, 3.5, 1.2, 1.0, 'Сервисы данных игры', 'PostgreSQL, Redis, MySQL, MinIO, резервные копии', { fs: 9 });
+  // Связи
+  ln(2.05, 1.55, 2.65, 1.55); lab('HTTPS', 2.1, 1.38, 0.5);
+  ln(2.05, 2.02, 2.65, 2.02); lab('HTTPS, WSS', 2.08, 2.04, 0.55);
+  plain(3.35, 1.4, 3.35, 1.27); plain(3.35, 1.27, 6.75, 1.27); ln(6.75, 1.27, 6.75, 1.4);
+  lab('WebSocket, /game-proxy', 5.3, 1.1, 1.7);
+  ln(4.05, 1.75, 4.35, 1.75);
+  plain(5.05, 2.1, 5.05, 2.3); plain(3.07, 2.3, 7.07, 2.3);
+  [3.07, 5.07, 6.07, 7.07].forEach((x) => ln(x, 2.3, x, 2.5));
+  lab('gRPC', 5.1, 2.12, 0.5, { align: 'left' });
+  ln(3.5, 2.9, 3.65, 2.9, true); ln(4.5, 2.9, 4.65, 2.9, true); ln(5.5, 2.9, 5.65, 2.9, true); ln(6.5, 2.9, 6.65, 2.9, true);
+  ln(2.05, 3.05, 2.65, 3.05); lab('SMTP', 2.1, 2.88, 0.5);
+  plain(2.05, 3.75, 5.07, 3.75); ln(5.07, 3.75, 5.07, 3.3); lab('HTTPS', 2.4, 3.58, 0.6);
+  s.addShape(pres.shapes.DOWN_ARROW, { x: 6.0, y: 3.4, w: 0.35, h: 0.6, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+  lab('SQL, RESP, S3', 6.4, 3.62, 1.1, { align: 'left' });
+  ln(7.45, 1.95, 8.5, 1.95); lab('WebSocket', 7.7, 1.78, 0.75);
+  ln(7.5, 2.93, 8.5, 2.93, true); lab('gRPC', 7.7, 2.75, 0.75);
+  text(s, 'Игрок может подключаться и напрямую к узлу по его домену', { x: 8.4, y: 4.72, w: 1.4, h: 0.5, fontSize: 8, align: 'center', valign: 'top' });
+  num(s);
+  hiddenNotes(s);
+}
+
+// ── Слайды с диаграммами: общая высота подбирается так, чтобы картинки уместились в ряд ──
+// opts.cols — колонки равной ширины, каждая картинка масштабируется по своей колонке (для моделей данных);
+// иначе у всех картинок общая высота (для диаграмм состояний)
+function figSlide(title, items, opts = {}) {
+  const s = slideTitle(title);
+  const gap = 0.35, maxH = opts.maxH || 3.8, top = 0.95, n = items.length;
+  const colW = (9.2 - gap * (n - 1)) / n;
+  const H = Math.min(maxH, (9.2 - gap * (n - 1)) / items.reduce((a, [, , w, h]) => a + w / h, 0));
+  const dims = items.map(([, , w, h]) => {
+    if (!opts.cols) return { w: H * w / h, h: H };
+    const ih = Math.min(maxH, colW * h / w);
+    return { w: ih * w / h, h: ih };
+  });
+  const widths = dims.map((d) => d.w);
+  let x = (W - widths.reduce((a, b) => a + b, 0) - gap * (n - 1)) / 2;
+  items.forEach(([f, cap], i) => {
+    s.addImage({ path: IMG(f), x, y: top + (maxH - dims[i].h) / 2, w: widths[i], h: dims[i].h });
+    const cw = Math.max(widths[i] + 0.3, 2.2);
+    text(s, cap, { x: x + widths[i] / 2 - cw / 2, y: top + maxH + 0.08, w: cw, h: 0.45, fontSize: 11, align: 'center', valign: 'top' });
+    x += widths[i] + gap;
+  });
+  num(s);
+  hiddenNotes(s);
+}
+figSlide('Диаграммы состояний', [['project-state.png', 'Рис. 8 — Состояния проекта', 1487, 985], ['request-state.png', 'Рис. 9 — Состояния заявки на модерацию', 853, 1173], ['node-state.png', 'Рис. 10 — Состояния вычислительного узла', 799, 1239]]);
+figSlide('Диаграмма состояний', [['instance-state.png', 'Рис. 11 — Состояния экземпляра игрового сервера', 3295, 1096]]);
+figSlide('Диаграмма последовательности', [['publish-sequence.png', 'Рис. 12 — Публикация игры', 1729, 1271]]);
+figSlide('Модель данных', [['er-orchestrator.png', 'Рис. 13 — База оркестратора: узлы и экземпляры', 1309, 1292], ['er-orchestrator-policies.png', 'Рис. 14 — База оркестратора: политики и доступ', 994, 1042]], { cols: true });
+figSlide('Модель данных', [['er-projects.png', 'Рис. 15 — База сервиса проектов', 2241, 968]]);
+figSlide('Модель данных', [['er-moderation.png', 'Рис. 16 — База сервиса модерации', 1329, 967], ['er-accounts.png', 'Рис. 17 — База сервиса учётных записей', 912, 513]], { cols: true });
+
+// ── Средства разработки и рабочий проект ──
+{
+  const s = slideTitle('Средства разработки и рабочий проект');
+  const B = (t) => ({ text: t, options: { bold: true } });
+  const T = (t, o = {}) => ({ text: t, options: o });
+  const br = { breakLine: true };
+  text(s, [
+    T('Средства разработки', { bold: true, color: C.accent, fontSize: 17, breakLine: true }),
+    T(' ', { fontSize: 6, breakLine: true }),
+    B('Серверная часть: '), T('Go, gRPC и Protocol Buffers, grpc-gateway', br),
+    B('Веб-интерфейс: '), T('Vue 3, TypeScript, Vite', br),
+    B('Хранение данных: '), T('PostgreSQL 17, Valkey 8, SeaweedFS (S3)', br),
+    B('Развёртывание: '), T('Docker, Docker Compose, Nginx', br),
+    B('Проектирование: '), T('draw.io, PlantUML'),
+  ], { x: 0.5, y: 1.05, w: 4.4, h: 3.8, fontSize: 15, valign: 'top', paraSpaceAfter: 8 });
+  text(s, [
+    T('Рабочий проект', { bold: true, color: C.accent, fontSize: 17, breakLine: true }),
+    T(' ', { fontSize: 6, breakLine: true }),
+    B('8'), T(' серверных сервисов и веб-интерфейс', br),
+    B('162'), T(' метода программного интерфейса', br),
+    B('23'), T(' таблицы в четырёх базах данных', br),
+    B('≈ 39 500'), T(' строк кода на Go, без тестов', br),
+    B('≈ 54 600'), T(' строк веб-интерфейса', br),
+    B('413'), T(' автоматических тестов, ≈ 24 500 строк'),
+  ], { x: 5.2, y: 1.05, w: 4.4, h: 3.8, fontSize: 15, valign: 'top', paraSpaceAfter: 8 });
+  num(s);
+  hiddenNotes(s);
+}
+
+// Список скрытых слайдов для postprocess.py
+fs.writeFileSync('hidden.json', JSON.stringify(Array.from({ length: pres.slides.length - MAIN_SLIDES }, (_, i) => MAIN_SLIDES + i + 1)));
 
 pres.writeFile({ fileName: 'deck.pptx' }).then(() => console.log('written deck.pptx'));

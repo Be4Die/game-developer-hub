@@ -9,6 +9,7 @@
 import re, sys, os, zipfile, json, hashlib
 
 src, dst = sys.argv[1], sys.argv[2]
+HIDDEN = set(json.load(open('hidden.json'))) if os.path.exists('hidden.json') else set()  # номера скрытых слайдов
 ANIM = json.load(open('anim.json')) if os.path.exists('anim.json') else {}  # номер слайда → {имя объекта: группа «b1»}
 MORPH = ('<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">'
          '<mc:Choice xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="p159">'
@@ -90,8 +91,13 @@ for item in zin.infolist():
                 groups.setdefault((g.group(1), int(g.group(2))), []).append(c.group(1))
                 if el.group(1) == 'sp':
                     sps.add(c.group(1))
-        extra = (MORPH if n >= 3 else '') + (timing(groups, sps) if groups else '')
-        if extra:
+        hidden = n in HIDDEN
+        if hidden:  # скрытый слайд: не показывается в докладе и без перехода
+            x = re.sub(r'<p:sld ', '<p:sld show="0" ', x, count=1)
+        extra = (MORPH if n >= 3 and not hidden else '') + (timing(groups, sps) if groups else '')
+        if hidden and not extra:
+            data = x.encode('utf8')
+        elif extra:
             assert '<p:timing>' not in x and '<p:transition' not in x
             x = x.replace('</p:clrMapOvr>', '</p:clrMapOvr>' + extra, 1)
             print(f'slide{n}: morph={n >= 3} clicks={len(groups)}')

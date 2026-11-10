@@ -8,5 +8,5 @@ set -e
 cd "$(dirname "$0")"
 node deck.js
 python3 postprocess.py deck.pptx "../../Презентация_ВКР_Предзащита.pptx"
-rm -f deck.pptx
+rm -f deck.pptx anim.json hidden.json
 node speech_docx.js "../../Речь_Предзащита_ВКР.docx"
