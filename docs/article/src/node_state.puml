@@ -1,0 +1,13 @@
+@startuml node_state
+!include style.iuml
+left to right direction
+[*] --> NotConfirmed : узел объявил себя
+state "Не подтверждён" as NotConfirmed
+state "В сети" as Online
+state "Не в сети" as Offline
+NotConfirmed --> Online : владелец\nподтвердил
+Online --> Offline : нет сигналов\nболее 60 с
+Offline --> Online : сигналы\nвосстановились
+Online --> [*] : удалить
+Offline --> [*] : удалить
+@enduml

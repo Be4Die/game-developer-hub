@@ -1,0 +1,9 @@
+' Общее оформление схем статьи: монохромно, Times New Roman
+skinparam dpi 200
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 14
+skinparam roundcorner 10
+skinparam ArrowFontSize 13
+hide empty description

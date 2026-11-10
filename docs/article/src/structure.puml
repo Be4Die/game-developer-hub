@@ -1,0 +1,44 @@
+@startuml structure
+!include style.iuml
+skinparam componentStyle rectangle
+skinparam nodesep 14
+skinparam ranksep 26
+
+actor "Разработчик" as dev
+actor "Игрок" as pl
+
+node "Сервер платформы (Docker Compose)" as srv {
+  component "API-шлюз" as gw
+  component "Входной прокси" as ing
+  component "Сервис учётных записей" as sso
+  component "Сервис проектов" as pm
+  component "Сервис модерации" as mod
+  component "Сервис оркестрации" as orc
+  database "PostgreSQL" as pg
+  database "Valkey" as kv
+  database "SeaweedFS" as s3
+}
+
+node "Вычислительный узел" as nd {
+  component "Агент узла" as ag
+  component "Экземпляры игровых серверов" as inst
+}
+
+dev --> gw : HTTPS
+pl --> ing : WebSocket
+gw --> sso : gRPC
+gw --> pm : gRPC
+gw --> mod : gRPC
+gw --> orc : gRPC
+ing --> inst : WebSocket
+orc --> ag : gRPC, команды
+ag --> inst : Docker API
+ag ..> orc : регистрация,\nсигналы
+orc --> pg
+orc --> kv
+orc --> s3
+pm --> pg
+pm --> s3
+mod --> pg
+sso --> pg
+@enduml
