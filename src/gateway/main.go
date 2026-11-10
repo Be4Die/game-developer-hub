@@ -120,6 +120,7 @@ func run(ctx context.Context) error {
 		gwpb.RegisterHealthServiceHandler,
 		gwpb.RegisterDiscoveryServiceHandler,
 		gwpb.RegisterGamePolicyServiceHandler,
+		gwpb.RegisterQueueServiceHandler,
 	} {
 		if err := reg(ctx, gwMux, orchConn); err != nil {
 			return err
