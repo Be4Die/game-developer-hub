@@ -1,7 +1,13 @@
 """Строит UML-диаграммы классов PlantUML из исходного кода Go: структуры, интерфейсы и перечисления
-пакетов domain и service каждого сервиса. Состав листов задан в SHEETS.
+пакетов domain и service каждого сервиса.
 
-Запуск из docs/classes: python3 src/classes.py && PLANTUML_LIMIT_SIZE=16384 plantuml -tpng -tsvg *.puml
+Три уровня подробности:
+  overview.puml, overview-fragment.puml — обзор для презентации (OVERVIEW, FRAGMENT);
+  text/*.puml — рисунки для текста записки, под книжный лист А4 (TEXT, SERVICES);
+  *.puml — полные листы для приложения (SHEETS).
+
+Запуск из docs/classes:
+  python3 src/classes.py && PLANTUML_LIMIT_SIZE=16384 plantuml -tpng -tsvg *.puml text/*.puml
 """
 import re, pathlib
 
@@ -116,9 +122,13 @@ class Pkg:
             self.methods.setdefault(m.group(1), []).append(signature(m.group(2), ' '.join(m.group(3).split())))
 
 
-def render(name, title, pkg, types, opts='', extra=()):
-    """types — список имён; префикс '~' — показать только имя (без членов)."""
-    L = [f'@startuml {name}', '!include ../uml/style.iuml', 'skinparam classAttributeIconSize 0', 'skinparam classBackgroundColor white',
+def render(name, title, pkg, types, opts='', extra=(), level='full', max_fields=MAX_FIELDS, max_methods=MAX_METHODS + 4):
+    """types — список имён; префикс '~' — показать только имя (без членов).
+    level='text' — рисунок для записки: у сущностей только поля, у сервисов только методы, пустые отсеки скрыты."""
+    text = level == 'text'
+    base = name.rsplit('/', 1)[-1]
+    up = '../' * (name.count('/') + 1)
+    L = [f'@startuml {base}', f'!include {up}uml/style.iuml', 'hide empty members' if text else '', 'skinparam classAttributeIconSize 0', 'skinparam classBackgroundColor white',
          'skinparam classFontStyle bold', 'skinparam linetype ortho' if 'ortho' in opts else '', 'hide circle',
          'left to right direction' if 'ltr' in opts else '', 'skinparam nodesep 30', 'skinparam ranksep 45']
     brief = {t[1:] for t in types if t.startswith('~')}
@@ -166,19 +176,21 @@ def render(name, title, pkg, types, opts='', extra=()):
                             deps.append((o, '*--' if not ftype.startswith('map') else '-->'))
                 if fname[0].islower() or t in brief:
                     continue  # зависимости сервиса показаны связями
-                if shown < MAX_FIELDS:
+                if shown < max_fields:
                     L.append(f'  + {fname} : {ftype}')
                 shown += 1
-            if shown > MAX_FIELDS:
-                L.append(f'  … ещё {shown - MAX_FIELDS}')
+            if shown > max_fields:
+                L.append(f'  … ещё {shown - max_fields}')
             ms = [] if t in brief else pkg.methods.get(t, [])
             ms = [s for s in ms if not s.startswith(('With', 'String(', 'Set'))] or ms
-            if ms:
+            if text:
+                ms = [] if shown else [s.split(' : ')[0] for s in ms]
+            if ms and not (text and not shown):
                 L.append('  --')
-            for s in ms[:MAX_METHODS + 4]:
+            for s in ms[:max_methods]:
                 L.append(f'  + {s}')
-            if len(ms) > MAX_METHODS + 4:
-                L.append(f'  {{method}} … ещё {len(ms) - MAX_METHODS - 4}')
+            if len(ms) > max_methods:
+                L.append(f'  {{method}} … ещё {len(ms) - max_methods}')
             L.append('}')
             for o, a in deps:
                 if (t, o) not in {(x, y) for x, y, _ in rel}:
@@ -189,7 +201,9 @@ def render(name, title, pkg, types, opts='', extra=()):
         L.append(f'{a} {arrow} {b}')
     L.extend(extra)
     L.append('@enduml')
-    pathlib.Path(name + '.puml').write_text('\n'.join(x for x in L if x) + '\n')
+    out = pathlib.Path(name + '.puml')
+    out.parent.mkdir(exist_ok=True)
+    out.write_text('\n'.join(x for x in L if x) + '\n')
     print(name, len(names), 'типов')
 
 
@@ -240,3 +254,92 @@ SHEETS = [
 for name, title, pkg, types, opts, *extra in SHEETS:
     types = [t for t in types if t.lstrip('~') in pkg.structs or t.lstrip('~') in pkg.ifaces or t.lstrip('~') in pkg.enums or print('  нет типа', t)]
     render(name, title, pkg, types, opts, extra[0] if extra else ())
+
+
+# --- Рисунки для текста записки: сущности без методов и перечислений, не более восьми полей ---
+TEXT = [
+    ('text/orchestrator-entities', orc,
+     ['Node', 'Instance', 'ServerBuild', 'GamePolicy', 'QueueEntry', 'PlatformGrant', 'ManagedService', 'ServiceBackup'],
+     ['Node "1" o-- "*" Instance : размещает', 'ServerBuild "1" <-- "*" Instance : запущен из', 'Node "1" *-- "*" ManagedService : размещает',
+      'ManagedService "1" *-- "*" ServiceBackup : имеет', 'GamePolicy "1" ..> "*" Instance : управляет числом',
+      'GamePolicy "1" ..> "*" QueueEntry : настраивает очередь', 'QueueEntry "*" --> "0..1" Instance : место закреплено на',
+      'PlatformGrant "0..1" ..> "*" Instance : ограничивает']),
+    ('text/projects-entities', pm,
+     ['Project', 'Draft', 'Build', 'Release', 'Member', 'Invitation', 'DeploymentRecord', 'GameItem'],
+     ['Project "1" *-- "*" Build : содержит', 'Project "1" *-- "*" DeploymentRecord : журнал',
+      'Project "1" *-- "*" Member : участники', 'Project "1" *-- "*" Invitation : приглашения', 'Project "1" *-- "*" GameItem : товары',
+      'Release "*" --> "1" Build : публикует', 'Draft "*" --> "0..1" Build : активная сборка', 'Invitation ..> Member : при принятии']),
+    ('text/moderation-entities', md,
+     ['ModerationRequest', 'ProjectSnapshot', 'ModerationSnapshot', 'ChatMessage', 'Attachment', 'ViolationItem'],
+     ['ModerationRequest "1" *-- "*" ChatMessage : переписка', 'ModerationRequest "1" *-- "0..*" ModerationSnapshot : решения',
+      'ModerationRequest "1" ..> "*" ViolationItem : нарушения при отказе']),
+    ('text/accounts-entities', sso, ['User', 'Session', 'TokenPair', 'Claims'],
+     ['User "1" *-- "*" Session : сессии', 'Session "1" ..> "1" TokenPair : выдаётся при входе', 'Claims ..> User', 'Claims ..> Session']),
+]
+for name, pkg, types, extra in TEXT:
+    render(name, '', pkg, types, '', extra, level='text', max_fields=8)
+
+# --- Рисунки для текста записки: один сервис и его зависимости (только имена) ---
+SERVICES = [
+    ('text/service-instance', orc, 'InstanceService'), ('text/service-queue', orc, 'QueueService'),
+    ('text/service-discovery', orc, 'DiscoveryService'), ('text/service-project', pm, 'ProjectService'),
+    ('text/service-moderation', md, 'ModerationService'), ('text/service-auth', sso, 'AuthService'),
+]
+
+
+def deps_of(pkg, svc):
+    """Интерфейсы и сервисы, от которых зависит сервис, в порядке объявления полей."""
+    out = []
+    for fname, ftype in pkg.structs[svc]:
+        for o in re.findall(r'\w+', ftype):
+            if o[0].isupper() and o != svc and o not in out and (o in pkg.ifaces or o.endswith('Service')) and (o in pkg.ifaces or o in pkg.structs):
+                out.append(o)
+    return out
+
+
+for name, pkg, svc in SERVICES:
+    render(name, '', pkg, [svc] + ['~' + d for d in deps_of(pkg, svc)], 'ltr', level='text', max_methods=10)
+
+# Таблица «сервис — зависимости» вместо листов с десятками пересекающихся стрелок
+rows = ['| Сервис | Число операций | Используемые интерфейсы и сервисы |', '|---|---|---|']
+for title, pkg, svcs in [('Оркестрация', orc, ['NodeService', 'InstanceService', 'BuildPipeline', 'GamePolicyService', 'DiscoveryService',
+                                              'QueueService', 'HeartbeatService', 'PlatformAccessService']),
+                         ('Управление проектами', pm, ['ProjectService']), ('Модерация', md, ['ModerationService']),
+                         ('Учётные записи', sso, ['AuthService', 'UserService', 'TokenService']),
+                         ('Агент узла', node, ['DeploymentService', 'DiscoveryService', 'BackupManager', 'AnnouncementService'])]:
+    rows.append(f'| **{title}** | | |')
+    for s in svcs:
+        rows.append(f"| `{s}` | {len([m for m in pkg.methods.get(s, []) if not m.startswith(('With', 'String(', 'Set'))])} | {', '.join(f'`{d}`' for d in deps_of(pkg, s)) or '–'} |")
+pathlib.Path('text/dependencies.md').write_text('\n'.join(rows) + '\n')
+
+# --- Обзор для презентации: ключевые сущности всех сервисов, только имена, связи и кратности ---
+HEAD = ['!include ../uml/style.iuml', 'skinparam classAttributeIconSize 0', 'skinparam classBackgroundColor white', 'hide circle',
+        'hide empty members', 'skinparam defaultFontSize 16', 'skinparam packageStyle rectangle', 'skinparam packageFontStyle plain']
+OVERVIEW = {
+    'Учётные записи': [('User', 'Пользователь')],
+    'Управление проектами': [('Project', 'Проект'), ('Draft', 'Черновик'), ('Build', 'Клиентская сборка'), ('Release', 'Релиз'),
+                             ('Member', 'Участник проекта')],
+    'Модерация': [('ModerationRequest', 'Заявка на модерацию'), ('ModerationSnapshot', 'Аудит-снимок')],
+    'Оркестрация': [('ServerBuild', 'Серверная сборка игры'), ('GamePolicy', 'Политика оркестрации'), ('Instance', 'Экземпляр сервера'),
+                    ('Node', 'Вычислительный узел'), ('QueueEntry', 'Место в очереди')],
+}
+OVERVIEW_REL = [
+    'User "1" -- "*" Project : владеет', 'User "1" -- "*" Member : является', 'User "1" -- "*" Node : подключает',
+    'Project *-- "1" Draft', 'Project *-- "*" Build', 'Project *-- "*" Release', 'Project *-- "*" Member',
+    'Release "*" --> "1" Build : публикует',
+    'ModerationRequest "*" --> "1" Project : проверяет', 'ModerationRequest *-- "*" ModerationSnapshot',
+    'Project "1" -- "*" ServerBuild : серверные сборки', 'Project "1" -- "0..1" GamePolicy : политика',
+    'ServerBuild "1" <-- "*" Instance : запущен из', 'Node "1" o-- "*" Instance : размещает',
+    'GamePolicy "1" ..> "*" Instance : управляет числом', 'QueueEntry "*" --> "0..1" Instance : закреплено за',
+]
+L = ['@startuml overview'] + HEAD + ['skinparam nodesep 45', 'skinparam ranksep 55']
+for pkg_title, items in OVERVIEW.items():
+    L.append(f'package "{pkg_title}" {{')
+    for cls, ru in items:
+        L.append(f'  class "<b>{cls}</b>\\n{ru}" as {cls}')
+    L.append('}')
+pathlib.Path('overview.puml').write_text('\n'.join(L + OVERVIEW_REL + ['@enduml']) + '\n')
+
+# --- Фрагмент крупно: ядро оркестрации с полями ---
+render('overview-fragment', '', orc, ['Node', 'Instance', 'ServerBuild'], 'ltr',
+       ['Node "1" o-- "*" Instance : размещает', 'ServerBuild "1" <-- "*" Instance : запущен из'], level='text', max_fields=10)

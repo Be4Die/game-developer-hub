@@ -1,0 +1,104 @@
+@startuml projects-entities
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+skinparam nodesep 30
+skinparam ranksep 45
+class Project {
+  + ID : int64
+  + OwnerID : string
+  + Status : ProjectStatus
+  + IsOnline : bool
+  + CreatedAt : Time
+  + UpdatedAt : Time
+  + Draft : Draft
+  + Release : Release
+  … ещё 3
+}
+class Draft {
+  + ProjectID : int64
+  + TitleRu : string
+  + TitleEn : string
+  + SeoRu : string
+  + SeoEn : string
+  + AboutRu : string
+  + AboutEn : string
+  + IconPath : string
+  … ещё 6
+}
+class Build {
+  + ID : int64
+  + ProjectID : int64
+  + Version : string
+  + FilePath : string
+  + FileSize : int64
+  + IsUnpacked : bool
+  + UnpackedPath : string
+  + CreatedAt : Time
+}
+class Release {
+  + ID : int64
+  + ProjectID : int64
+  + Version : string
+  + TitleRu : string
+  + TitleEn : string
+  + SeoRu : string
+  + SeoEn : string
+  + AboutRu : string
+  … ещё 10
+}
+class Member {
+  + ID : int64
+  + ProjectID : int64
+  + UserID : string
+  + UserEmail : string
+  + UserName : string
+  + Permissions : []string
+  + CreatedAt : Time
+  + UpdatedAt : Time
+}
+class Invitation {
+  + ID : int64
+  + ProjectID : int64
+  + ProjectTitle : string
+  + ProjectIcon : string
+  + InviterID : string
+  + InviterEmail : string
+  + InviterName : string
+  + InviteeID : string
+  … ещё 5
+}
+class DeploymentRecord {
+  + ID : int64
+  + ProjectID : int64
+  + Environment : DeploymentEnvironment
+  + Version : string
+  + Status : DeploymentStatus
+  + ErrorMessage : string
+  + DeployedAt : Time
+}
+class GameItem {
+  + ID : int64
+  + ProjectID : int64
+  + GameItemID : string
+  + Name : string
+  + Description : string
+  + ImageURL : string
+  + PriceCoins : int64
+  + IsActive : bool
+  … ещё 2
+}
+Project *-- Draft
+Project *-- Release
+Project "1" *-- "*" Build : содержит
+Project "1" *-- "*" DeploymentRecord : журнал
+Project "1" *-- "*" Member : участники
+Project "1" *-- "*" Invitation : приглашения
+Project "1" *-- "*" GameItem : товары
+Release "*" --> "1" Build : публикует
+Draft "*" --> "0..1" Build : активная сборка
+Invitation ..> Member : при принятии
+@enduml

@@ -1,0 +1,69 @@
+@startuml service-project
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class ProjectService {
+  + CreateProject(ownerID, titleRu, titleEn, isOnline)
+  + GetProject(projectID)
+  + CheckAccess(projectID, userID, requiredPerm)
+  + GetProjectForUser(projectID, userID, isStaff)
+  + ListProjects(userID, limit, offset)
+  + ListPublishedProjects(limit, offset)
+  + UpdateDraft(projectID, userID, meta)
+  + DeleteProject(projectID, ownerID)
+  + UploadBuildStream(projectID, ownerID, version, archiveReader)
+  + UploadBuild(projectID, ownerID, version, data)
+  {method} … ещё 29
+}
+interface ProjectRepo <<интерфейс>> {
+}
+interface DraftRepo <<интерфейс>> {
+}
+interface BuildRepo <<интерфейс>> {
+}
+interface ReleaseRepo <<интерфейс>> {
+}
+interface DeploymentRepo <<интерфейс>> {
+}
+interface MemberRepo <<интерфейс>> {
+}
+interface InvitationRepo <<интерфейс>> {
+}
+interface BlockRepo <<интерфейс>> {
+}
+interface ModerationClient <<интерфейс>> {
+}
+interface PurchaseClient <<интерфейс>> {
+}
+interface AnalyticsClient <<интерфейс>> {
+}
+interface BuildStorage <<интерфейс>> {
+}
+interface MediaStorage <<интерфейс>> {
+}
+interface Deployer <<интерфейс>> {
+}
+interface Locker <<интерфейс>> {
+}
+ProjectService --> ProjectRepo
+ProjectService --> DraftRepo
+ProjectService --> BuildRepo
+ProjectService --> ReleaseRepo
+ProjectService --> DeploymentRepo
+ProjectService --> MemberRepo
+ProjectService --> InvitationRepo
+ProjectService --> BlockRepo
+ProjectService --> ModerationClient
+ProjectService --> PurchaseClient
+ProjectService --> AnalyticsClient
+ProjectService --> BuildStorage
+ProjectService --> MediaStorage
+ProjectService --> Deployer
+ProjectService --> Locker
+@enduml

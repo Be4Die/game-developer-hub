@@ -1,0 +1,42 @@
+@startuml service-moderation
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class ModerationService {
+  + SubmitDraft(projectID, ownerID, snapshot, reqType)
+  + ListRequests(filter)
+  + GetRequest(requestID)
+  + GetLatestRequestByProject(projectID)
+  + SubmitServerAccess(projectID, ownerID, reason, …)
+  + GetServerAccess(projectID)
+  + ReviewServerAccess(requestID, moderatorID, approved, …)
+  + ClaimRequest(requestID, moderatorID)
+  + Approve(projectID, moderatorID, comment)
+  + Reject(projectID, moderatorID, reason, violations)
+  {method} … ещё 11
+}
+interface RequestRepo <<интерфейс>> {
+}
+interface MessageRepo <<интерфейс>> {
+}
+interface AttachmentRepo <<интерфейс>> {
+}
+interface SnapshotRepo <<интерфейс>> {
+}
+interface ProjectClient <<интерфейс>> {
+}
+interface OrchestratorClient <<интерфейс>> {
+}
+ModerationService --> RequestRepo
+ModerationService --> MessageRepo
+ModerationService --> AttachmentRepo
+ModerationService --> SnapshotRepo
+ModerationService --> ProjectClient
+ModerationService --> OrchestratorClient
+@enduml

@@ -1,0 +1,77 @@
+@startuml moderation-entities
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+skinparam nodesep 30
+skinparam ranksep 45
+class ModerationRequest {
+  + ID : int64
+  + ProjectID : int64
+  + OwnerID : string
+  + ModeratorID : string
+  + Status : RequestStatus
+  + Type : RequestType
+  + Snapshot : ProjectSnapshot
+  + Reason : string
+  … ещё 12
+}
+class ProjectSnapshot {
+  + ProjectID : int64
+  + TitleRu : string
+  + TitleEn : string
+  + SeoRu : string
+  + SeoEn : string
+  + AboutRu : string
+  + AboutEn : string
+  + IconPath : string
+  … ещё 6
+}
+class ModerationSnapshot {
+  + ID : int64
+  + RequestID : int64
+  + ProjectID : int64
+  + Status : RequestStatus
+  + FormatVersion : int
+  + SnapshotJSON : string
+  + SnapshotBlob : []byte
+  + CreatedAt : Time
+}
+class ChatMessage {
+  + ID : int64
+  + ProjectID : int64
+  + RequestID : int64
+  + SenderID : string
+  + SenderRole : SenderRole
+  + MessageType : MessageType
+  + Content : string
+  + Attachments : []Attachment
+  … ещё 2
+}
+class Attachment {
+  + ID : string
+  + ProjectID : int64
+  + MessageID : int64
+  + UploaderID : string
+  + UploaderRole : SenderRole
+  + FileName : string
+  + FileSize : int64
+  + MimeType : string
+  … ещё 3
+}
+class ViolationItem {
+  + RuleCode : string
+  + RuleTitle : string
+  + Description : string
+  + AttachmentIDs : []string
+  + Attachments : []Attachment
+}
+ModerationRequest *-- ProjectSnapshot
+ChatMessage *-- Attachment
+ViolationItem *-- Attachment
+ModerationRequest "1" *-- "*" ChatMessage : переписка
+ModerationRequest "1" *-- "0..*" ModerationSnapshot : решения
+ModerationRequest "1" ..> "*" ViolationItem : нарушения при отказе
+@enduml

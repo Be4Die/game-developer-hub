@@ -1,0 +1,49 @@
+@startuml overview
+!include ../uml/style.iuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+hide circle
+hide empty members
+skinparam defaultFontSize 16
+skinparam packageStyle rectangle
+skinparam packageFontStyle plain
+skinparam nodesep 45
+skinparam ranksep 55
+package "Учётные записи" {
+  class "<b>User</b>\nПользователь" as User
+}
+package "Управление проектами" {
+  class "<b>Project</b>\nПроект" as Project
+  class "<b>Draft</b>\nЧерновик" as Draft
+  class "<b>Build</b>\nКлиентская сборка" as Build
+  class "<b>Release</b>\nРелиз" as Release
+  class "<b>Member</b>\nУчастник проекта" as Member
+}
+package "Модерация" {
+  class "<b>ModerationRequest</b>\nЗаявка на модерацию" as ModerationRequest
+  class "<b>ModerationSnapshot</b>\nАудит-снимок" as ModerationSnapshot
+}
+package "Оркестрация" {
+  class "<b>ServerBuild</b>\nСерверная сборка игры" as ServerBuild
+  class "<b>GamePolicy</b>\nПолитика оркестрации" as GamePolicy
+  class "<b>Instance</b>\nЭкземпляр сервера" as Instance
+  class "<b>Node</b>\nВычислительный узел" as Node
+  class "<b>QueueEntry</b>\nМесто в очереди" as QueueEntry
+}
+User "1" -- "*" Project : владеет
+User "1" -- "*" Member : является
+User "1" -- "*" Node : подключает
+Project *-- "1" Draft
+Project *-- "*" Build
+Project *-- "*" Release
+Project *-- "*" Member
+Release "*" --> "1" Build : публикует
+ModerationRequest "*" --> "1" Project : проверяет
+ModerationRequest *-- "*" ModerationSnapshot
+Project "1" -- "*" ServerBuild : серверные сборки
+Project "1" -- "0..1" GamePolicy : политика
+ServerBuild "1" <-- "*" Instance : запущен из
+Node "1" o-- "*" Instance : размещает
+GamePolicy "1" ..> "*" Instance : управляет числом
+QueueEntry "*" --> "0..1" Instance : закреплено за
+@enduml

@@ -1,0 +1,46 @@
+@startuml service-instance
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class InstanceService {
+  + StartInstance(params)
+  + StopInstance(ownerID, gameID, instanceID, timeoutSec)
+  + DeleteInstance(ownerID, gameID, instanceID)
+  + RestartInstance(ownerID, gameID, instanceID)
+  + ResumeInstance(ownerID, gameID, instanceID)
+  + ListInstances(ownerID, gameID, status)
+  + GetInstance(ownerID, gameID, instanceID)
+  + StreamInstanceLogs(ownerID, gameID, instanceID, req)
+  + GetInstanceUsage(ownerID, gameID, instanceID)
+}
+interface InstanceRepo <<интерфейс>> {
+}
+interface InstanceStateStore <<интерфейс>> {
+}
+interface BuildStorage <<интерфейс>> {
+}
+interface NodeRepo <<интерфейс>> {
+}
+interface NodeStateStore <<интерфейс>> {
+}
+interface NodeClient <<интерфейс>> {
+}
+interface ManagedServiceRepo <<интерфейс>> {
+}
+interface PlatformAccessRepo <<интерфейс>> {
+}
+InstanceService --> InstanceRepo
+InstanceService --> InstanceStateStore
+InstanceService --> BuildStorage
+InstanceService --> NodeRepo
+InstanceService --> NodeStateStore
+InstanceService --> NodeClient
+InstanceService --> ManagedServiceRepo
+InstanceService --> PlatformAccessRepo
+@enduml

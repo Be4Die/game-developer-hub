@@ -1,0 +1,29 @@
+@startuml service-discovery
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+left to right direction
+skinparam nodesep 30
+skinparam ranksep 45
+class DiscoveryService {
+  + DiscoverServers(gameID, playerID)
+}
+interface InstanceRepo <<интерфейс>> {
+}
+interface InstanceStateStore <<интерфейс>> {
+}
+interface NodeRepo <<интерфейс>> {
+}
+interface BuildStorage <<интерфейс>> {
+}
+class GamePolicyService {
+}
+DiscoveryService --> InstanceRepo
+DiscoveryService --> InstanceStateStore
+DiscoveryService --> NodeRepo
+DiscoveryService --> BuildStorage
+DiscoveryService --> GamePolicyService
+@enduml

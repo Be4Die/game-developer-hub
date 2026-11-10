@@ -1,0 +1,104 @@
+@startuml orchestrator-entities
+!include ../../uml/style.iuml
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam classFontStyle bold
+hide circle
+skinparam nodesep 30
+skinparam ranksep 45
+class Node {
+  + ID : int64
+  + OwnerID : string
+  + Address : string
+  + TokenHash : []byte
+  + APIToken : string
+  + Region : string
+  + Status : NodeStatus
+  + Role : NodeRole
+  … ещё 11
+}
+class Instance {
+  + ID : int64
+  + OwnerID : string
+  + NodeID : int64
+  + ServerBuildID : int64
+  + GameID : int64
+  + Name : string
+  + BuildVersion : string
+  + Protocol : Protocol
+  … ещё 13
+}
+class ServerBuild {
+  + ID : int64
+  + OwnerID : string
+  + GameID : int64
+  + UploadedBy : int64
+  + Version : string
+  + ImageTag : string
+  + Protocol : Protocol
+  + InternalPort : uint32
+  … ещё 4
+}
+class GamePolicy {
+  + GameID : int64
+  + OwnerID : string
+  + Mode : OrchestrationMode
+  + TargetInstances : int32
+  + AutoRestart : bool
+  + ScaleToZeroTimeout : int32
+  + DefaultBuildVersion : string
+  + MaxPlayersPerInstance : int32
+  … ещё 10
+}
+class QueueEntry {
+  + GameID : int64
+  + PlayerID : string
+  + Mode : string
+  + JoinTime : Time
+  + LastHeartbeat : Time
+  + ReservedInstanceID : int64
+  + ReservedUntil : Time
+}
+class PlatformGrant {
+  + GameID : int64
+  + MaxInstances : int32
+  + MaxTotalCPUMillis : uint32
+  + MaxTotalMemoryMB : uint64
+  + MaxInstanceCPUMillis : uint32
+  + MaxInstanceMemoryMB : uint64
+  + IsActive : bool
+  + CreatedAt : Time
+  … ещё 1
+}
+class ManagedService {
+  + ID : int64
+  + NodeID : int64
+  + OwnerID : string
+  + AllowedGameIDs : []int64
+  + ServiceType : ServiceType
+  + Name : string
+  + ContainerID : string
+  + HostPort : uint32
+  … ещё 8
+}
+class ServiceBackup {
+  + ID : int64
+  + BackupID : string
+  + NodeID : int64
+  + ServiceID : int64
+  + ServiceName : string
+  + ServiceType : ServiceType
+  + FileName : string
+  + SizeBytes : uint64
+  … ещё 4
+}
+Node "1" o-- "*" Instance : размещает
+ServerBuild "1" <-- "*" Instance : запущен из
+Node "1" *-- "*" ManagedService : размещает
+ManagedService "1" *-- "*" ServiceBackup : имеет
+GamePolicy "1" ..> "*" Instance : управляет числом
+GamePolicy "1" ..> "*" QueueEntry : настраивает очередь
+QueueEntry "*" --> "0..1" Instance : место закреплено на
+PlatformGrant "0..1" ..> "*" Instance : ограничивает
+@enduml
