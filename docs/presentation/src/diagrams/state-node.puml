@@ -1,0 +1,15 @@
+@startuml state-node
+!include style.iuml
+skinparam nodesep 40
+skinparam ranksep 34
+state "Не подтверждён" as Unauthorized
+state "В сети" as Online
+state "Не в сети" as Offline
+[*] --> Unauthorized : узел объявил\nсебя сам
+[*] --> Online : подключён\nпо адресу и ключу
+Unauthorized --> Online : владелец\nподтвердил
+Online --> Offline : не отвечает\nна опрос
+Offline --> Online : снова\nответил
+Online --> [*] : удалён
+Offline --> [*] : удалён
+@enduml

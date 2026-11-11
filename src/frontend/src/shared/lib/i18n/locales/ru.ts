@@ -137,6 +137,7 @@ export default {
     invitesCount: 'приглашений',
   },
   projects: {
+    publishedUpdateInReview: 'Обновление на проверке',
     title: 'Мои проекты',
     subtitle: 'Управление веб-играми, черновиками и опубликованными версиями',
     createBtn: 'Добавить игру',

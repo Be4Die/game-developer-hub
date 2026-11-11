@@ -1,0 +1,16 @@
+@startuml state-request
+!include style.iuml
+skinparam nodesep 40
+skinparam ranksep 34
+state "Ожидает" as Pending
+state "В проверке" as InReview
+state "Одобрена" as Approved
+state "Отклонена" as Rejected
+[*] --> Pending : подать заявку
+Pending --> InReview : модератор берёт\nв работу
+InReview --> Approved : одобрить
+InReview --> Rejected : отклонить,\nуказать причину
+InReview --> InReview : сбой\nпубликации
+Approved --> [*]
+Rejected --> [*]
+@enduml

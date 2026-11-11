@@ -89,4 +89,11 @@ projects ||--o{ project_releases
 projects ||--o{ deployments
 projects ||--o{ project_members
 projects ||--o{ project_invitations
+entity "Пользователи\n(users)\n<i>сервис учётных записей</i>" as users #line.dashed {
+  * id
+}
+users ||..o{ projects : owner_id
+users ||..o{ project_members : user_id
+users ||..o{ project_invitations : invitee_id
+users ||..o{ user_access_blocks : user_id
 @enduml

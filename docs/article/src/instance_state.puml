@@ -12,7 +12,10 @@ Starting --> Crashed : ошибка\nзапуска
 Running --> Stopping : остановить
 Running --> Crashed : сбой или\nузел недоступен
 Stopping --> Stopped : остановлен
+Stopping --> Crashed : ошибка\nостановки
 Stopped --> Running : возобновить
 Crashed --> Running : автоматический\nперезапуск
+Crashed --> Stopped : остановить
 Running --> [*] : удалить
+Stopped --> [*] : удалить
 @enduml

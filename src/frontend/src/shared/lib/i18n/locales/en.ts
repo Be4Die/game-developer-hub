@@ -137,6 +137,7 @@ export default {
     invitesCount: 'invitations',
   },
   projects: {
+    publishedUpdateInReview: 'Update in review',
     title: 'My Projects',
     subtitle: 'Manage web games, drafts, and published versions',
     createBtn: 'Add Game',

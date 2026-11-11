@@ -1,0 +1,34 @@
+@startuml cycle_policy
+' Диаграмма деятельности UML: часть «б» — применение политики (выполняется для каждой игры);
+' один проход цикла оркестрации (служба HeartbeatService), период — 15 с.
+!include style.iuml
+skinparam defaultFontSize 15
+skinparam activity {
+  BackgroundColor white
+  BorderColor black
+  DiamondBackgroundColor white
+  DiamondBorderColor black
+}
+skinparam partition {
+  BackgroundColor white
+  BorderColor black
+}
+start
+if (Экземпляров меньше n*?) then (да)
+  :Запустить недостающие;
+else (нет)
+endif
+if (Экземпляр пуст дольше T<sub>idle</sub>?) then (да)
+  :Остановить экземпляр;
+else (нет)
+endif
+if (Экземпляры заполнены\nи их меньше N<sub>max</sub>?) then (да)
+  :Запустить один дополнительный;
+else (нет)
+endif
+if (Есть очередь игроков\nи свободное место?) then (да)
+  :Закрепить место за первым\nигроком очереди;
+else (нет)
+endif
+stop
+@enduml

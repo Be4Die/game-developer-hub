@@ -5,9 +5,10 @@ left to right direction
 state "Не подтверждён" as NotConfirmed
 state "В сети" as Online
 state "Не в сети" as Offline
-NotConfirmed --> Online : владелец\nподтвердил
-Online --> Offline : нет сигналов\nболее 60 с
-Offline --> Online : сигналы\nвосстановились
+NotConfirmed --> Online : владелец подтвердил\nузел ключом
+[*] --> Online : владелец подключил\nузел по адресу и ключу
+Online --> Offline : не отвечает на опрос\nболее 60 с
+Offline --> Online : снова ответил\nна опрос
 Online --> [*] : удалить
 Offline --> [*] : удалить
 @enduml

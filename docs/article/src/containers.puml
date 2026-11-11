@@ -1,0 +1,39 @@
+@startuml containers
+' Диаграмма контейнеров (C4, уровень 2) для статьи: только то, что участвует в оркестрации игровых серверов.
+!include ../../c4/style.iuml
+skinparam defaultFontSize 15
+skinparam ArrowFontSize 13
+skinparam wrapWidth 150
+skinparam nodesep 28
+skinparam ranksep 40
+actor "Разработчик" as dev
+actor "Игрок" as pl
+rectangle "Разрабатываемая система" as sys #line.dashed {
+  ELEM(gw, API-шлюз, "Go, grpc-gateway", Переводит REST в gRPC)
+  ELEM(ing, Входной прокси, Go, Направляет игровой трафик к экземплярам)
+  ELEM(oth, "Сервисы учётных записей, проектов, модерации", "Go, gRPC", "Пользователи, проекты, заявки")
+  ELEM(orc, Сервис оркестрации, "Go, gRPC", "Узлы, сборки, экземпляры, политики, очередь")
+  STORE(pg, PostgreSQL, СУБД, Долговременные данные)
+  STORE(kv, Valkey, «ключ — значение», "Состояние, очередь, маршруты")
+  STORE(s3, SeaweedFS, объектное хранилище, Серверные сборки)
+}
+rectangle "Вычислительный узел" as nd #line.dashed {
+  ELEM(ag, Агент узла, "Go, gRPC", Управляет контейнерами)
+  ELEM(inst, Экземпляр игрового сервера, контейнер Docker, Серверная сборка игры)
+}
+dev --> gw : управляет серверами\n[HTTPS]
+pl --> gw : ищет сервер\n[HTTPS]
+pl --> ing : играет\n[WebSocket]
+gw --> orc : [gRPC]
+gw --> oth : [gRPC]
+orc -left-> oth : проверка прав\n[gRPC]
+orc --> pg : [SQL]
+orc --> kv : [RESP]
+orc --> s3 : [S3]
+ing --> kv : маршруты\n[RESP]
+orc ---> ag : команды, опрос\n[gRPC]
+ag -right-> inst : [Docker API]
+s3 -[hidden]down-> ag
+kv -[hidden]down-> inst
+ing ---> inst : [WebSocket]
+@enduml

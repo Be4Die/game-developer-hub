@@ -51,4 +51,10 @@ entity "Аудит-снимки\n(moderation_snapshots)" as moderation_snapshots
 moderation_requests ||--o{ moderation_messages
 moderation_messages ||--o{ moderation_attachments
 moderation_requests ||--o{ moderation_snapshots
+entity "Проекты\n(projects)\n<i>сервис управления проектами</i>" as projects #line.dashed {
+  * id
+}
+projects ||..o{ moderation_requests : project_id
+projects ||..o{ moderation_messages : project_id
+projects ||..o{ moderation_attachments : project_id
 @enduml

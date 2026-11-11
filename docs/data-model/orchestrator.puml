@@ -69,4 +69,12 @@ server_builds ||--o{ instances
 nodes ||--o{ node_services
 nodes ||--o{ node_service_backups
 node_services ||--o{ node_service_backups
+entity "Проекты\n(projects)\n<i>сервис управления проектами</i>" as projects #line.dashed {
+  * id
+}
+entity "Пользователи\n(users)\n<i>сервис учётных записей</i>" as users #line.dashed {
+  * id
+}
+users ||..o{ nodes : owner_id
+projects ||..o{ server_builds : game_id
 @enduml

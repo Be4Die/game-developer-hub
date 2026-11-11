@@ -1,4 +1,4 @@
-// Презентация к предзащите ВКР: «Автоматизированная система управления процессом публикации и сопровождения веб-игр».
+// Презентация к защите ВКР: «Автоматизированная система управления процессом публикации и сопровождения веб-игр».
 // Объекты с именем «aN_…» появляются по щелчку (группа N) — анимацию добавляет postprocess.py.
 // Схемы BPMN на слайдах — упрощённые версии схем из docs/business-process/bpmn, нарисованные фигурами,
 // чтобы текст оставался крупным; полные схемы идут в приложение записки.
@@ -25,7 +25,8 @@ const IMG = (n) => `img/${n}`;
 pres.defineSlideMaster({ title: 'PLAIN', background: { color: C.white } });
 
 const text = (s, t, o) => s.addText(t, { fontFace: FONT, color: C.black, margin: 0, isTextBox: true, ...o });
-const num = (s) => { s.slideNumber = { x: 9.3, y: 5.25, w: 0.45, h: 0.3, fontFace: FONT, fontSize: 12, color: C.black, align: 'right' }; };
+// Номер слайда — в правом верхнем углу, крупно: комиссия называет слайд по номеру
+const num = (s) => { s.slideNumber = { x: 9.2, y: 0.2, w: 0.55, h: 0.5, fontFace: FONT, fontSize: 20, color: C.black, align: 'right', valign: 'middle' }; };
 // Отрезок: горизонтальный или вертикальный, со стрелкой на конце по желанию
 const seg = (s, x1, y1, x2, y2, o = {}) => s.addShape(pres.shapes.LINE, {
   x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1) || 0.001, h: Math.abs(y2 - y1) || 0.001,
@@ -48,7 +49,8 @@ function hiddenNotes(s) {
 
 function slideTitle(title, sub) {
   const s = pres.addSlide({ masterName: 'PLAIN' });
-  text(s, title.toUpperCase(), { x: 0.3, y: 0.15, w: 9.4, h: 0.6, fontSize: 28, bold: true, align: 'center', valign: 'middle' });
+  // Заголовок уже слайда на ширину номера; длинные заголовки набираются чуть мельче, чтобы не переноситься
+  text(s, title.toUpperCase(), { x: 0.7, y: 0.15, w: 8.6, h: 0.6, fontSize: title.length > 31 ? 24 : 26, bold: true, align: 'center', valign: 'middle' });
   if (sub) text(s, sub, { x: 0.3, y: 0.7, w: 9.4, h: 0.3, fontSize: 15, color: C.accent, align: 'center' });
   return s;
 }
@@ -82,7 +84,7 @@ function marker(s, n, x, y, color, name, d = 0.3) {
     { text: 'Наследсков Михаил Викторович', options: { breakLine: true } },
     { text: ' ', options: { breakLine: true, fontSize: 6 } },
     { text: 'Руководитель ВКР: к.т.н., доцент', options: { breakLine: true } },
-    { text: 'Морозов А. В.' },
+    { text: 'Морозов Александр Васильевич' },
   ], { x: 5.6, y: 3.6, w: 4.1, h: 1.25, fontSize: 14, valign: 'top' });
   text(s, 'Астрахань 2026 г.', { x: 3.5, y: 5.15, w: 3, h: 0.3, fontSize: 12, align: 'center' });
   speechNotes(s);
@@ -199,6 +201,7 @@ function marker(s, n, x, y, color, name, d = 0.3) {
 // конечные — итоговое состояние, таймеры — по расписанию.
 function bpmn(s, lanes, opt = {}) {
   const x0 = 0.3, x1 = 9.7, hw = opt.hw || 0.42, tw = opt.tw || 1.05, th = opt.th || 0.56, fs = opt.fs || 10;
+  const uml = !!opt.uml; // диаграмма деятельности UML: решение без знака, начальный узел залит, конечный — «мишень»
   let y = opt.y0 || 1.08;
   const lane = {};
   lanes.forEach(([id, label, h]) => {
@@ -234,7 +237,9 @@ function bpmn(s, lanes, opt = {}) {
     event(id, cx, l, kind, t, o = {}) {
       const d = o.d || 0.28, n = put(id, cx, l, d, d, o.dy);
       const line = { color: C.black, width: kind === 'end' ? 2.5 : 1, dashType: o.dashed ? 'dash' : 'solid' };
-      s.addShape(pres.shapes.OVAL, { x: n.x, y: n.y, w: d, h: d, fill: { color: C.white }, line });
+      if (uml && kind === 'end') line.width = 1;
+      s.addShape(pres.shapes.OVAL, { x: n.x, y: n.y, w: d, h: d, fill: { color: uml && kind === 'start' ? C.black : C.white }, line });
+      if (uml && kind === 'end') s.addShape(pres.shapes.OVAL, { x: n.x + d * 0.22, y: n.y + d * 0.22, w: d * 0.56, h: d * 0.56, fill: { color: C.black }, line: { color: C.black, width: 0.5 } });
       if (o.inter) s.addShape(pres.shapes.OVAL, { x: n.x + 0.035, y: n.y + 0.035, w: d - 0.07, h: d - 0.07, fill: { type: 'none' }, line: { ...line, width: 0.75 } });
       const gx = n.cx, gy = n.cy;
       if (kind === 'msg') {
@@ -255,7 +260,7 @@ function bpmn(s, lanes, opt = {}) {
     gw(id, cx, l, t, o = {}) {
       const d = 0.36, n = put(id, cx, l, d, d, o.dy);
       s.addShape(pres.shapes.DIAMOND, { x: n.x, y: n.y, w: d, h: d, fill: { color: C.white }, line: { color: C.black, width: 1 } });
-      text(s, '×', { x: n.x, y: n.y - 0.02, w: d, h: d, fontSize: 20, bold: true, align: 'center', valign: 'middle' });
+      if (!uml) text(s, '×', { x: n.x, y: n.y - 0.02, w: d, h: d, fontSize: 20, bold: true, align: 'center', valign: 'middle' });
       if (t) {
         const p = o.lpos || 'top', lw = o.lw || 1.2;
         if (p === 'top') lbl(t, n.cx - lw / 2, n.y - (o.lh || 0.2), lw);
@@ -264,6 +269,8 @@ function bpmn(s, lanes, opt = {}) {
         else lbl(t, n.x + d + 0.05, n.cy - 0.24, lw, 'left');
       }
     },
+    // Точка на линии потока: в неё можно привести стрелку (слияние потоков)
+    point(id, x, y) { N[id] = { cx: x, cy: y, w: 0, h: 0, x, y }; },
     // Порт узла: сторона «t/b/l/r» и сдвиг вдоль стороны
     port(id, side, d = 0) {
       const n = N[id];
@@ -508,29 +515,29 @@ function bpmn(s, lanes, opt = {}) {
 // ── 9. Сравнительная таблица аналогов ──────────────────────
 {
   const s = slideTitle('Сравнительная таблица аналогов');
-  const head = ['Критерий', 'Game\nDistribution', 'Crazy Games', 'Poki for Developers', 'itch.io', 'Cloud Arcade', 'Разрабатываемая система'];
+  const head = ['Критерий', 'Game\nDistribution', 'Crazy Games', 'Poki for Developers', 'itch.io', 'Cloud Arcade'];
   const HR = 0.58, RH = 0.42;
   const rows = [
-    ['Самостоятельная публикация', '+', '+', '–', '+', '–', '+'],
-    ['Многоэтапная модерация', '–', '+', '+', '–', '–', '+'],
-    ['Сквозной чат с модератором', '–', '–', '–', '–', '–', '+'],
-    ['Показатели монетизации', '+', '+', '+', '–', '–', '+'],
-    ['Игровые метрики', '–', '+', '+', '–', '–', '+'],
-    ['Управление игровыми серверами', '–', '–', '–', '–', '–', '+'],
-    ['Свои серверы разработчика', '–', '–', '–', '±', '+', '+'],
-    ['Отечественная поддержка', '–', '–', '–', '–', '–', '+'],
+    ['Самостоятельная публикация', '+', '+', '–', '+', '–'],
+    ['Многоэтапная модерация', '–', '+', '+', '–', '–'],
+    ['Сквозной чат с модератором', '–', '–', '–', '–', '–'],
+    ['Показатели монетизации', '+', '+', '+', '–', '–'],
+    ['Игровые метрики', '–', '+', '+', '–', '–'],
+    ['Управление игровыми серверами', '–', '–', '–', '–', '–'],
+    ['Свои серверы разработчика', '–', '–', '–', '±', '+'],
+    ['Отечественная поддержка', '–', '–', '–', '–', '–'],
   ];
   const cell = (t, o = {}) => ({ text: t, options: { fontFace: FONT, fontSize: 13.5, align: 'center', valign: 'middle', color: C.black, ...o } });
-  const data = [head.map((h, i) => cell(h, { fontSize: 12, bold: true, color: i === 6 ? C.green : C.black, align: i ? 'center' : 'left', fill: { color: i === 6 ? C.greenSoft : C.soft } }))];
+  const data = [head.map((h, i) => cell(h, { fontSize: 12, bold: true, color: C.black, align: i ? 'center' : 'left', fill: { color: C.soft } }))];
   rows.forEach((r) => data.push(r.map((v, i) => i === 0 ? cell(v, { align: 'left' })
-    : cell(v, { bold: true, fontSize: 17, color: v === '+' ? C.green : v === '–' ? C.red : C.black, fill: i === 6 ? { color: C.greenSoft } : undefined }))));
-  const colW = [3.05, 1.1, 0.85, 1.05, 0.72, 0.88, 1.55];
+    : cell(v, { bold: true, fontSize: 17, color: v === '+' ? C.green : v === '–' ? C.red : C.black }))));
+  const colW = [3.6, 1.25, 1.05, 1.25, 0.95, 1.1];
   s.addTable(data, { x: 0.4, y: 0.95, w: 9.2, colW, rowH: [HR, ...rows.map(() => RH)], border: { type: 'solid', pt: 0.75, color: 'BFBFBF' } });
   // Подсветка возможностей, которых нет ни у одного аналога: по щелчку на каждую, подпись — с последней
   [3, 6, 8].forEach((r, i) => s.addShape(pres.shapes.ROUNDED_RECTANGLE, {
     x: 0.36, y: 0.95 + HR + (r - 1) * RH - 0.02, w: 9.28, h: RH + 0.04, fill: { type: 'none' }, line: { color: C.red, width: 2 }, rectRadius: 0.05, objectName: `a${i + 1}_hl`,
   }));
-  text(s, 'Чат, управление серверами и отечественная поддержка есть только у разрабатываемой системы', { x: 0.4, y: 4.95, w: 9.2, h: 0.3, fontSize: 14, bold: true, color: C.red, align: 'center', objectName: 'a3_cap' });
+  text(s, 'Сквозного чата, управления игровыми серверами и отечественной поддержки нет ни у одного аналога', { x: 0.4, y: 4.95, w: 9.2, h: 0.3, fontSize: 14, bold: true, color: C.red, align: 'center', objectName: 'a3_cap' });
   num(s);
   speechNotes(s);
 }
@@ -579,27 +586,582 @@ ucSlide([['projects.png', 'Рис. 3 — Проекты и аналитика', 
 ucSlide([['moderation.png', 'Рис. 5 — Модерация', 1466, 1800], ['servers.png', 'Рис. 6 — Игровые серверы', 1796, 1571]]);
 ucSlide([['nodes.png', 'Рис. 7 — Узлы и сервисы данных', 1725, 1674]]);
 
-// ── 14. Заключение ─────────────────────────────────────────
+// ── Номера рисунков: первые семь — диаграммы вариантов использования, дальше счётчик ──
+let figNo = 7;
+const fig = (t) => `Рис. ${++figNo} — ${t}`;
+// Размер PNG в пикселях — из заголовка файла
+const pngSize = (f) => { const b = fs.readFileSync(IMG(f)); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+
+// ── Слайды с готовыми диаграммами (PlantUML) ──
+// Элемент: [файл, подпись]. opts.uniform — один масштаб для всех картинок (одинаковый кегль, для диаграмм состояний);
+// opts.cols — колонки равной ширины (для моделей данных); иначе у картинок общая высота.
+// opts.main — слайд основного доклада (заметки из speech.js); иначе резервный (speech_hidden.js).
+function figSlide(title, items, opts = {}) {
+  const s = slideTitle(title);
+  const gap = opts.gap ?? 0.35, maxH = opts.maxH || 3.85, top = opts.top || 0.92, n = items.length, AW = opts.w || 9.3;
+  const px = items.map(([f]) => pngSize(f));
+  const colW = (AW - gap * (n - 1)) / n;
+  let dims;
+  if (opts.uniform) {
+    const k = Math.min((AW - gap * (n - 1)) / px.reduce((a, [w]) => a + w, 0), maxH / Math.max(...px.map(([, h]) => h)));
+    dims = px.map(([w, h]) => ({ w: w * k, h: h * k }));
+  } else if (opts.cols) {
+    dims = px.map(([w, h]) => { const ih = Math.min(maxH, colW * h / w); return { w: ih * w / h, h: ih }; });
+  } else {
+    const H = Math.min(maxH, (AW - gap * (n - 1)) / px.reduce((a, [w, h]) => a + w / h, 0));
+    dims = px.map(([w, h]) => ({ w: H * w / h, h: H }));
+  }
+  const boxH = opts.uniform ? Math.max(...dims.map((d) => d.h)) : maxH;
+  let x = (W - dims.reduce((a, d) => a + d.w, 0) - gap * (n - 1)) / 2;
+  items.forEach(([f, cap], i) => {
+    s.addImage({ path: IMG(f), x, y: top + (boxH - dims[i].h) / 2, w: dims[i].w, h: dims[i].h });
+    const cw = Math.max(dims[i].w + 0.3, 2.4);
+    text(s, fig(cap), { x: x + dims[i].w / 2 - cw / 2, y: top + boxH + 0.06, w: cw, h: 0.42, fontSize: 11, align: 'center', valign: 'top' });
+    x += dims[i].w + gap;
+  });
+  num(s);
+  if (opts.main) speechNotes(s); else hiddenNotes(s);
+}
+const MAIN = { main: true };
+
+// ── Модели данных: ER-диаграммы фигурами ───────────────────
+// Сущность — прямоугольник с заголовком и списком атрибутов; первая строка — первичный ключ.
+// Связь идёт от строки первичного ключа родителя к строке внешнего ключа потомка: «один» — поперечная черта,
+// «много» — «воронья лапка». Пунктир — ссылка без внешнего ключа (между таблицами разных сервисов).
+const ER_W = 1.4, ER_GAP = 0.585, ER_X = [0, 1, 2, 3, 4].map((i) => 0.38 + i * (ER_W + ER_GAP));
+function erDiagram(s, o = {}) {
+  const fsz = o.fs || 9, rowH = o.rowH || 0.15, headH = o.headH || 0.27, E = {};
+  const thin = { width: 1 };
+  const api = {
+    E,
+    // rows: строка либо массив фрагментов { text, options }
+    entity(id, x, y, w, title, rows) {
+      const h = headH + rows.length * rowH + 0.07;
+      E[id] = { x, y, w, h, cx: x + w / 2 };
+      s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+      s.addShape(pres.shapes.RECTANGLE, { x, y, w, h: headH, fill: { color: C.soft }, line: { color: C.black, width: 1 } });
+      text(s, title, { x, y, w, h: headH, fontSize: o.tfs || fsz + 0.5, bold: true, align: 'center', valign: 'middle' });
+      const runs = [];
+      rows.forEach((r, i) => {
+        const parts = Array.isArray(r) ? r : [{ text: r }];
+        parts.forEach((p, k) => runs.push({ text: p.text, options: { ...(p.options || {}), breakLine: k === parts.length - 1 && i < rows.length - 1 } }));
+      });
+      text(s, runs, { x: x + 0.06, y: y + headH + 0.035, w: w - 0.08, h: rows.length * rowH, fontSize: fsz, valign: 'top', lineSpacing: rowH * 72 });
+    },
+    // Точка на боковой стороне сущности на уровне строки i
+    at(id, i, side) { const e = E[id]; return [side === 'l' ? e.x : e.x + e.w, e.y + headH + 0.035 + (i + 0.5) * rowH]; },
+    mark(p, side, kind) {
+      const dx = side === 'l' ? -1 : 1;
+      if (kind === 'N') {
+        seg(s, p[0] + dx * 0.1, p[1], p[0], p[1] - 0.05, thin);
+        seg(s, p[0] + dx * 0.1, p[1], p[0], p[1] + 0.05, thin);
+      } else seg(s, p[0] + dx * 0.06, p[1] - 0.045, p[0] + dx * 0.06, p[1] + 0.045, thin);
+    },
+    line(pts, dash) {
+      for (let i = 0; i < pts.length - 1; i++) seg(s, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], { width: 1, dashType: dash ? 'dash' : 'solid' });
+    },
+  };
+  return api;
+}
+
+// Общая расстановка обеих моделей: пять колонок, три ряда, в центре — проект. Линии связей идут по промежуткам
+// между колонками и рядами и подходят сбоку к строке ключа; дорожки подобраны так, чтобы линии не пересекались.
+// id — имена сущностей по ролям; logical — рисовать ссылки между сервисами пунктиром (даталогическая модель).
+function erLayout(er, id, Y, logical) {
+  const at = (k, i, side) => er.at(id[k], i, side);
+  const G = ER_X.map((x) => x + ER_W); // левые края промежутков между колонками
+  const bot = (r) => Math.max(...Object.values(er.E).filter((e) => Math.abs(e.y - Y[r]) < 0.01).map((e) => e.y + e.h));
+  const La = (bot(0) + Y[1]) / 2, Lb = (bot(1) + Y[2]) / 2; // горизонтали между рядами
+  const m0 = 0.14, tu = G[0] + 0.2, tn = G[0] + 0.4, tl = G[1] + 0.17, ts = G[1] + 0.28, tp = G[1] + 0.39, tr = G[2] + 0.29, gp = G[3] + 0.18, tq = G[3] + 0.4;
+  const marked = new Set();
+  // parent/child: [роль, строка, сторона]; via — точки между ними; kind — кратность потомка: «N» или «1»
+  const R = (parent, child, kind, via, cross) => {
+    const p = at(...parent), c = at(...child);
+    er.line([p, ...via, c], logical && cross);
+    const key = parent.join();
+    if (!marked.has(key)) { er.mark(p, parent[2], '1'); marked.add(key); }
+    er.mark(c, child[2], kind);
+  };
+  const y = (k, i) => at(k, i, 'l')[1], P = y('project', 0), U = y('user', 0), Q = y('request', 0);
+  R(['project', 0, 'l'], ['draft', 0, 'r'], '1', [[tl, P], [tl, y('draft', 0)]]);
+  R(['project', 0, 'l'], ['member', 1, 'r'], 'N', [[tl, P], [tl, y('member', 1)]]);
+  R(['project', 0, 'r'], ['build', 1, 'r'], 'N', [[tr, P], [tr, y('build', 1)]]);
+  R(['project', 0, 'r'], ['release', 1, 'l'], 'N', [[tr, P], [tr, y('release', 1)]]);
+  R(['project', 0, 'r'], ['request', 1, 'l'], 'N', [[tr, P], [tr, y('request', 1)]], true);
+  R(['project', 0, 'r'], ['sbuild', 1, 'r'], 'N', [[tr, P], [tr, y('sbuild', 1)]], true);
+  R(['project', 0, 'r'], ['policy', 0, 'l'], '1', [[tr, P], [tr, y('policy', 0)]], true);
+  R(['project', 0, 'r'], ['grant', 1, 'l'], '1', [[tr, P], [tr, La], [gp, La], [gp, y('grant', 1)]], true);
+  R(['project', 0, 'r'], ['message', 2, 'l'], 'N', [[tr, P], [tr, Lb], [gp, Lb], [gp, y('message', 2)]], true);
+  R(['request', 0, 'r'], ['snapshot', 1, 'l'], '1', [[tq, Q], [tq, y('snapshot', 1)]]);
+  R(['request', 0, 'r'], ['message', 1, 'l'], 'N', [[tq, Q], [tq, y('message', 1)]]);
+  R(['user', 0, 'r'], ['member', 2, 'l'], 'N', [[tu, U], [tu, y('member', 2)]], true);
+  R(['user', 0, 'r'], ['project', 1, 'l'], 'N', [[tu, U], [tu, Lb], [tp, Lb], [tp, y('project', 1)]], true);
+  R(['user', 0, 'l'], ['node', 1, 'l'], 'N', [[m0, U], [m0, y('node', 1)]], true);
+  R(['node', 0, 'r'], ['instance', 1, 'l'], 'N', [[tn, y('node', 0)], [tn, y('instance', 1)]]);
+  R(['sbuild', 0, 'l'], ['instance', 2, 'r'], 'N', [[ts, y('sbuild', 0)], [ts, y('instance', 2)]]);
+}
+// Обозначения — в свободной ячейке первого ряда
+function erLegend(s, er, logical) {
+  text(s, 'Обозначения:', { x: 0.38, y: 0.95, w: 1.4, h: 0.2, fontSize: 9.5, bold: true });
+  [['1', 'один'], ['N', 'много']].forEach(([k, t], i) => {
+    const yy = 1.3 + i * 0.22;
+    seg(s, 0.43, yy, 0.88, yy);
+    er.mark([0.88, yy], 'l', k);
+    seg(s, 0.88, yy - 0.06, 0.88, yy + 0.06);
+    text(s, `— ${t}`, { x: 0.96, y: yy - 0.1, w: 0.85, h: 0.2, fontSize: 9, valign: 'middle' });
+  });
+  if (!logical) return;
+  seg(s, 0.43, 1.74, 0.88, 1.74, { dashType: 'dash' });
+  text(s, '— ссылка на таблицу другого сервиса, без внешнего ключа', { x: 0.96, y: 1.62, w: 0.9, h: 0.55, fontSize: 8, valign: 'top' });
+}
+
+// ── 15. Инфологическая модель: сущности предметной области, их атрибуты и связи; без типов и имён таблиц ──
+{
+  const s = slideTitle('Инфологическая модель');
+  const er = erDiagram(s, { fs: 8.7, rowH: 0.15 });
+  const Y = [0.9, 2.49, 4.08];
+  const PK = (t) => `${t} «PK»`, FK = (t) => `${t} «FK»`;
+  const grid = [
+    [null,
+      ['draft', 'Черновик', ['Код проекта «PK, FK»', 'название и описание', 'значок, обложка, видео', 'активная сборка']],
+      ['build', 'Клиентская сборка', [PK('Код сборки'), FK('Код проекта'), 'версия', 'файл и размер']],
+      ['release', 'Релиз', [PK('Код релиза'), FK('Код проекта'), 'версия', 'адрес игры', 'дата публикации']],
+      ['grant', 'Квота платформы', [PK('Код квоты'), FK('Код проекта'), 'предел экземпляров', 'пределы ресурсов']]],
+    [['user', 'Пользователь', [PK('Код пользователя'), 'электронная почта', 'отображаемое имя', 'роль', 'состояние']],
+      ['member', 'Участник проекта', [PK('Код участника'), FK('Код проекта'), FK('Код пользователя'), 'права в проекте']],
+      ['project', 'Проект', [PK('Код проекта'), FK('Код владельца'), 'состояние', 'признак онлайн-игры']],
+      ['request', 'Заявка на модерацию', [PK('Код заявки'), FK('Код проекта'), 'вид заявки', 'состояние', 'причина отклонения']],
+      ['snapshot', 'Аудит-снимок', [PK('Код снимка'), FK('Код заявки'), 'решение', 'содержимое проекта']]],
+    [['node', 'Вычислительный узел', [PK('Код узла'), FK('Код владельца'), 'адрес', 'состояние', 'ресурсы']],
+      ['instance', 'Экземпляр сервера', [PK('Код экземпляра'), FK('Код узла'), FK('Код сборки'), 'состояние', 'адрес и порт']],
+      ['sbuild', 'Серверная сборка', [PK('Код сборки'), FK('Код проекта'), 'версия', 'образ контейнера', 'предел игроков']],
+      ['policy', 'Политика оркестрации', ['Код проекта «PK, FK»', 'режим', 'число экземпляров', 'автоперезапуск', 'при заполнении']],
+      ['message', 'Сообщение чата', [PK('Код сообщения'), FK('Код заявки'), FK('Код проекта'), 'отправитель', 'текст']]],
+  ];
+  const id = {};
+  grid.forEach((row, r) => row.forEach((e, k) => { if (e) { er.entity(e[0], ER_X[k], Y[r], ER_W, e[1], e[2]); id[e[0]] = e[0]; } }));
+  erLayout(er, id, Y, false);
+  erLegend(s, er, false);
+  text(s, fig('Инфологическая модель предметной области'), { x: 0.4, y: 5.25, w: 9.2, h: 0.25, fontSize: 11, align: 'center' });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 16. Диаграммы состояний: общий масштаб, чтобы кегль на всех трёх был одинаковым ──
+figSlide('Диаграммы состояний', [['state-project.png', 'Состояния проекта'], ['state-request.png', 'Состояния заявки на модерацию'], ['state-node.png', 'Состояния вычислительного узла']],
+  { uniform: true, main: true, gap: 0.25, w: 9.4, maxH: 3.95 });
+
+// ── 17. Алгоритм оркестрации: диаграмма деятельности UML, один проход цикла ──
+{
+  const s = slideTitle('Алгоритм оркестрации');
+  const b = bpmn(s, [['mon', 'Контроль узлов', 1.62], ['pol', 'Применение политик', 1.5]], { uml: true, y0: 0.93, tw: 1.0, th: 0.5, fs: 9.5 });
+  const yes = '[да]', no = '[нет]';
+  // Раздел 1: контроль узлов
+  const r1 = -0.24, r2 = 0.42, y1 = b.lane.mon.cy + r1, y2 = b.lane.mon.cy + r2;
+  b.event('s', 0.95, 'mon', 'start', '', { dy: r1, d: 0.2 });
+  b.task('a0', 1.85, 'mon', 'Опросить состояние узла', { dy: r1, w: 1.05 });
+  b.gw('d1', 2.95, 'mon', 'Узел ответил?', { dy: r1, lw: 1.0 });
+  b.task('a1', 4.3, 'mon', 'Сверить экземпляры, пропавшие отметить сбойными', { dy: r1, w: 1.55 });
+  b.gw('d2', 2.95, 'mon', 'Молчит дольше 60 с?', { dy: r2, lpos: 'left', lw: 1.3 });
+  b.task('a2', 4.3, 'mon', 'Узел — «Не в сети», его экземпляры — «Сбой»', { dy: r2, w: 1.55 });
+  b.gw('d3', 6.4, 'mon', 'Есть сбойные экземпляры и включён автоперезапуск?', { dy: r1, lw: 1.75, lh: 0.33 });
+  b.task('a3', 7.7, 'mon', 'Перезапустить экземпляры', { dy: r1, w: 1.15 });
+  b.point('j1', 5.35, y1); b.point('j1b', 5.52, y1); b.point('j2', 8.65, y1);
+  b.flow('s', 'a0'); b.flow('a0', 'd1'); b.flow('d1', 'a1', { label: yes }); b.flow('a1', 'd3');
+  b.flow('d1', 'd2', { label: no, lp: [3.0, y1 + 0.42] });
+  b.flow('d2', 'a2', { label: yes });
+  b.flow('a2', 'j1', { from: 'r', to: 'b', via: [[5.35, y2]] });
+  b.flow('d2', 'j1b', { from: 'b', to: 'b', via: [[2.95, y2 + 0.3], [5.52, y2 + 0.3]], label: no, lp: [2.58, y2 + 0.4] });
+  b.flow('d3', 'a3', { label: yes });
+  b.flow('d3', 'j2', { from: 'b', to: 'b', via: [[6.4, y1 + 0.52], [8.65, y1 + 0.52]], label: no, lp: [6.45, y1 + 0.4] });
+  // Раздел 2: применение политики игры
+  const q = 0.05, yq = b.lane.pol.cy + q, yb = yq + 0.47, top2 = b.lane.pol.y + 0.12;
+  const D = [1.5, 3.65, 5.8, 7.95], A = [2.55, 4.7, 6.85, 9.05];
+  const dl = ['Экземпляров меньше целевого числа?', 'Экземпляр пуст дольше заданного времени?', 'Все экземпляры заполнены?', 'Есть очередь и свободное место?'];
+  const al = ['Запустить недостающие', 'Остановить экземпляр', 'Запустить ещё один экземпляр', 'Закрепить место за игроком очереди'];
+  D.forEach((x, i) => {
+    b.gw(`p${i}`, x, 'pol', dl[i], { dy: q, lw: 1.1, lh: i < 2 ? 0.47 : 0.33 }); // первые две подписи — в три строки
+    b.task(`q${i}`, A[i], 'pol', al[i], { dy: q, w: i === 3 ? 1.0 : 0.95, h: 0.56, fs: 9 });
+  });
+  b.event('e', 9.05, 'pol', 'end', '', { dy: q + 0.52, d: 0.22 });
+  b.flow('a3', 'p0', { from: 'r', to: 'l', via: [[9.5, y1], [9.5, top2], [0.85, top2], [0.85, yq]] });
+  D.forEach((x, i) => {
+    b.flow(`p${i}`, `q${i}`, { label: yes });
+    if (i < 3) {
+      const jx = (A[i] + 0.475 + D[i + 1] - 0.18) / 2;
+      b.point(`k${i}`, jx, yq);
+      b.flow(`q${i}`, `p${i + 1}`);
+      b.flow(`p${i}`, `k${i}`, { from: 'b', to: 'b', via: [[x, yb], [jx, yb]], label: no, lp: [x + 0.05, yq + 0.4] });
+    }
+  });
+  b.flow('q3', 'e', { from: 'b', to: 't' });
+  b.flow('p3', 'e', { from: 'b', to: 'l', label: no, lp: [D[3] + 0.05, yq + 0.4] });
+  const dy = 0.93 + 3.12;
+  text(s, fig('Диаграмма деятельности: один проход цикла оркестрации, выполняется каждые 15 секунд'), { x: 0.4, y: dy + 0.04, w: 9.2, h: 0.25, fontSize: 11, align: 'center' });
+  const B = (t) => ({ text: t, options: { bold: true } });
+  const T = (t, o = {}) => ({ text: t, options: o });
+  text(s, [
+    T('Политику оркестрации разработчик задаёт для каждой игры:', { bold: true, color: C.accent, breakLine: true }),
+    B('Поддержание'), T(' — система держит целевое число работающих экземпляров.', { breakLine: true }),
+    B('Масштабирование до нуля'), T(' — экземпляр запускается по запросу игрока и останавливается при простое.', { breakLine: true }),
+    B('При заполнении'), T(' — запуск дополнительного экземпляра либо очередь игроков с закреплением места.'),
+  ], { x: 0.5, y: dy + 0.34, w: 9.0, h: 1.1, fontSize: 12.5, valign: 'top', paraSpaceAfter: 2 });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 18. Диаграмма последовательности: во всю ширину слайда ──
+figSlide('Диаграмма последовательности', [['sequence-publish.png', 'Диаграмма последовательности: публикация игры']], { main: true, w: 9.4, maxH: 4.32, top: 0.86 });
+
+// ── 19. Диаграмма развёртывания UML: устройства, среды выполнения, артефакты, каналы связи ──
+// Показывает только физическое размещение; что работает внутри и как взаимодействует — на следующем слайде.
+// Полная схема с портами — docs/deployment.
+{
+  const s = slideTitle('Диаграмма развёртывания');
+  // Узел UML — «кубик»: передняя грань и две видимые боковые
+  const node3d = (x, y, w, h, stereo, title, o = {}) => {
+    const d = 0.08;
+    s.addShape(pres.shapes.RECTANGLE, { x, y: y + d, w: w - d, h: h - d, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+    [[x, y + d, x + d, y], [x + d, y, x + w, y], [x + w, y, x + w - d, y + d], [x + w, y, x + w, y + h - d], [x + w, y + h - d, x + w - d, y + h]]
+      .forEach(([a, b2, c, e]) => seg(s, a, b2, c, e, { width: 1 }));
+    text(s, [{ text: `«${stereo}»`, options: { fontSize: 8.5, breakLine: true } }, { text: title, options: { bold: true, fontSize: o.fs || 10.5 } }],
+      { x, y: y + d + 0.03, w: w - d, h: 0.36, align: 'center', valign: 'top' });
+  };
+  // Артефакт UML: прямоугольник со значком документа и стереотипом
+  const artifact = (x, y, w, h, title, sub) => {
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+    const ix = x + w - 0.16, iy = y + 0.05;
+    s.addShape(pres.shapes.RECTANGLE, { x: ix, y: iy, w: 0.1, h: 0.13, fill: { color: C.white }, line: { color: C.black, width: 0.75 } });
+    seg(s, ix + 0.055, iy, ix + 0.1, iy + 0.045, { width: 0.75 });
+    text(s, [{ text: '«artifact» ', options: { fontSize: 8 } }, { text: title, options: { bold: true, fontSize: 10, breakLine: !!sub } }, ...(sub ? [{ text: sub, options: { fontSize: 9 } }] : [])],
+      { x: x + 0.06, y, w: w - 0.26, h, align: 'center', valign: 'middle' });
+  };
+  const path = (pts) => pts.slice(1).forEach((p, i) => seg(s, pts[i][0], pts[i][1], p[0], p[1], { width: 1 }));
+  const proto = (t, x, y, w, o = {}) => text(s, t, { x, y, w, h: 0.17, fontSize: 9, align: 'center', valign: 'middle', ...o });
+  const ENV = 'execution environment';
+  // Устройства пользователей и смежные системы
+  node3d(0.3, 1.15, 2.45, 1.25, 'device', 'Устройство игрока');
+  node3d(0.45, 1.62, 2.1, 0.7, ENV, 'Веб-браузер', { fs: 10 });
+  node3d(0.3, 2.58, 2.45, 1.25, 'device', 'Рабочее место пользователя');
+  node3d(0.45, 3.05, 2.1, 0.7, ENV, 'Веб-браузер', { fs: 10 });
+  node3d(0.3, 4.02, 2.45, 0.5, 'device', 'Почтовый сервер площадки');
+  node3d(0.3, 4.66, 2.45, 0.5, 'device', 'Сервисы аналитики и покупок');
+  // Сервер платформы
+  node3d(3.65, 1.15, 3.2, 4.01, 'device', 'Сервер платформы');
+  node3d(3.8, 1.62, 2.9, 3.46, ENV, 'Docker', { fs: 10 });
+  artifact(3.97, 2.1, 2.5, 0.82, 'Веб-сервер и шлюзы', 'Nginx, API-шлюз, входной прокси');
+  artifact(3.97, 3.06, 2.5, 0.82, 'Сервисы системы', 'учётные записи, проекты, модерация, оркестрация');
+  artifact(3.97, 4.02, 2.5, 0.82, 'Хранилища данных', 'PostgreSQL, Valkey, SeaweedFS');
+  // Вычислительный узел
+  node3d(7.75, 1.75, 2.0, 2.75, 'device', 'Вычислительный узел');
+  node3d(7.88, 2.22, 1.74, 2.2, ENV, 'Docker', { fs: 10 });
+  artifact(8.0, 2.7, 1.42, 0.6, 'Агент узла');
+  artifact(8.0, 3.42, 1.42, 0.86, 'Игровые серверы', 'экземпляры, сервисы данных');
+  // Каналы связи между устройствами
+  path([[2.75, 1.8], [3.65, 1.8]]); proto('«HTTPS, WSS»', 2.75, 1.61, 0.9);
+  path([[2.75, 3.25], [3.65, 3.25]]); proto('«HTTPS»', 2.75, 3.06, 0.9);
+  path([[2.75, 4.31], [3.65, 4.31]]); proto('«SMTP»', 2.75, 4.12, 0.9);
+  path([[2.75, 4.95], [3.65, 4.95]]); proto('«HTTPS»', 2.75, 4.76, 0.9);
+  path([[6.85, 2.9], [7.75, 2.9]]); proto('«gRPC»', 6.85, 2.71, 0.9);
+  path([[6.85, 3.6], [7.75, 3.6]]); proto('«WSS»', 6.85, 3.41, 0.9);
+  text(s, '1', { x: 6.88, y: 2.93, w: 0.2, h: 0.16, fontSize: 9 }); text(s, '1..*', { x: 7.4, y: 2.93, w: 0.33, h: 0.16, fontSize: 9, align: 'right' });
+  path([[1.5, 1.15], [1.5, 0.98], [8.75, 0.98], [8.75, 1.75]]);
+  proto('«WSS» — прямое подключение игрока к узлу', 6.95, 1.03, 1.75, { h: 0.36, align: 'right' });
+  text(s, fig('Диаграмма развёртывания'), { x: 0.4, y: 5.22, w: 9.2, h: 0.25, fontSize: 11, align: 'center' });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 20. Архитектура системы: диаграмма контейнеров C4 (уровень 2) — детализация сервера платформы и узла ──
+{
+  const s = slideTitle('Архитектура системы');
+  // Контейнер C4: название, [технология], назначение
+  const box = (x, y, w, h, name, tech, desc, o = {}) => {
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: o.fill || C.white }, line: { color: C.black, width: 1 } });
+    text(s, [{ text: name, options: { bold: true, fontSize: o.fs || 10, breakLine: true } }, { text: `[${tech}]`, options: { fontSize: 8, breakLine: !!desc } },
+      ...(desc ? [{ text: desc, options: { fontSize: 8.5 } }] : [])], { x: x + 0.04, y, w: w - 0.08, h, align: 'center', valign: 'middle' });
+    return { x, y, w, h, cx: x + w / 2, cy: y + h / 2, b: y + h, r: x + w };
+  };
+  // Пользователь C4: «голова» и подпись
+  const person = (cx, y, w, name) => {
+    s.addShape(pres.shapes.OVAL, { x: cx - 0.11, y, w: 0.22, h: 0.22, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: cx - w / 2, y: y + 0.2, w, h: 0.42, rectRadius: 0.08, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+    text(s, [{ text: name, options: { bold: true, fontSize: 10, breakLine: true } }, { text: '[Пользователь]', options: { fontSize: 8 } }], { x: cx - w / 2, y: y + 0.2, w, h: 0.42, align: 'center', valign: 'middle' });
+    return { cx, b: y + 0.62 };
+  };
+  const boundary = (x, y, w, h, name, top) => {
+    s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { type: 'none' }, line: { color: C.black, width: 1, dashType: 'dash' } });
+    text(s, name, { x: x + 0.08, y: top ? y + 0.03 : y + h - 0.21, w: w - 0.16, h: 0.18, fontSize: 9, bold: true, valign: 'middle' });
+  };
+  const arrow = (pts) => pts.slice(1).forEach((p, i) => seg(s, pts[i][0], pts[i][1], p[0], p[1], { width: 1, ...(i === pts.length - 2 ? { endArrowType: 'triangle' } : {}) }));
+  const lab = (t, x, y, w, al = 'left') => text(s, t, { x, y, w, h: 0.15, fontSize: 8, align: al, valign: 'middle' });
+  boundary(0.3, 1.77, 7.36, 3.37, 'Разрабатываемая система');
+  boundary(7.98, 1.77, 1.77, 2.5, 'Вычислительный узел', true);
+  const pu = person(2.65, 0.88, 3.0, 'Разработчик, модератор, администратор');
+  const pg = person(5.95, 0.88, 1.3, 'Игрок');
+  const web = box(1.55, 1.92, 2.2, 0.62, 'Веб-приложение', 'Vue 3, TypeScript', 'личный кабинет');
+  const cli = box(4.85, 1.92, 2.2, 0.62, 'Клиент игры', 'JavaScript', 'модуль обнаружения сервера');
+  const gw = box(1.55, 2.84, 2.2, 0.54, 'API-шлюз', 'Go, grpc-gateway', 'REST в gRPC');
+  const px = box(4.85, 2.84, 2.2, 0.54, 'Входной прокси', 'Go', 'маршруты игрового трафика');
+  const SW = 1.66, SX = [0, 1, 2, 3].map((i) => 0.45 + i * (SW + 0.15)), SY = 3.68, SH = 0.5;
+  const sv = ['Сервис учётных записей', 'Сервис управления проектами', 'Сервис модерации', 'Сервис оркестрации'].map((t, i) => box(SX[i], SY, SW, SH, t, 'Go, gRPC', '', { fs: 9.5 }));
+  const DW = 2.1, DX = [0.55, 2.92, 5.29], DY = 4.46, DH = 0.42;
+  const db = [['База данных', 'PostgreSQL 17'], ['Хранилище состояния', 'Valkey 8'], ['Объектное хранилище', 'SeaweedFS, S3']].map(([t, tech], i) => box(DX[i], DY, DW, DH, t, tech, '', { fs: 9.5, fill: C.soft }));
+  const inst = box(8.09, 2.08, 1.56, 0.64, 'Экземпляр игрового сервера', 'Контейнер Docker', '', { fs: 9.5 });
+  const ag = box(8.09, 3.1, 1.56, 0.62, 'Агент узла', 'Go, gRPC', 'управление контейнерами', { fs: 9.5 });
+  // Связи: кто кого вызывает и по какому протоколу
+  arrow([[pu.cx, pu.b], [pu.cx, web.y]]); lab('работает в кабинете [HTTPS]', pu.cx + 0.06, 1.56, 1.9);
+  arrow([[pg.cx, pg.b], [pg.cx, cli.y]]); lab('играет [HTTPS]', pg.cx + 0.06, 1.56, 1.2);
+  arrow([[web.cx, web.b], [web.cx, gw.y]]); lab('вызывает [REST, HTTPS]', web.cx - 1.46, 2.62, 1.4, 'right');
+  arrow([[cli.x + 0.4, cli.b], [cli.x + 0.4, 2.71], [gw.r - 0.25, 2.71], [gw.r - 0.25, gw.y]]); lab('ищет сервер [REST]', 3.72, 2.55, 1.4, 'center');
+  arrow([[cli.cx + 0.3, cli.b], [cli.cx + 0.3, px.y]]); lab('игровой трафик [WebSocket]', cli.cx + 0.36, 2.62, 1.5);
+  seg(s, gw.cx, gw.b, gw.cx, 3.54, { width: 1 }); seg(s, sv[0].cx, 3.54, sv[3].cx, 3.54, { width: 1 });
+  sv.forEach((v) => arrow([[v.cx, 3.54], [v.cx, SY]])); lab('[gRPC]', gw.cx + 0.06, 3.385, 0.6);
+  sv.forEach((v) => seg(s, v.cx, v.b, v.cx, 4.32, { width: 1 })); seg(s, sv[0].cx, 4.32, sv[3].cx, 4.32, { width: 1 });
+  db.forEach((d) => arrow([[d.cx, 4.32], [d.cx, DY]])); lab('[SQL, RESP, S3]', sv[3].cx + 0.06, 4.2, 0.9);
+  arrow([[px.r, px.cy], [7.82, px.cy], [7.82, inst.cy], [inst.x, inst.cy]]); lab('[WebSocket]', px.r + 0.02, px.cy - 0.17, 0.62, 'center');
+  arrow([[sv[3].r, sv[3].cy], [ag.cx, sv[3].cy], [ag.cx, ag.b]]); lab('управляет [gRPC]', 8.02, sv[3].cy + 0.03, 1.0);
+  arrow([[ag.cx, ag.y], [ag.cx, inst.b]]); lab('[Docker API]', ag.cx + 0.05, 2.83, 0.75);
+  // Обозначения
+  text(s, 'Обозначения:', { x: 7.98, y: 4.4, w: 1.8, h: 0.18, fontSize: 9, bold: true });
+  s.addShape(pres.shapes.RECTANGLE, { x: 8.0, y: 4.64, w: 0.3, h: 0.16, fill: { color: C.white }, line: { color: C.black, width: 1 } });
+  text(s, '— контейнер', { x: 8.36, y: 4.62, w: 1.4, h: 0.2, fontSize: 8.5, valign: 'middle' });
+  s.addShape(pres.shapes.RECTANGLE, { x: 8.0, y: 4.88, w: 0.3, h: 0.16, fill: { color: C.soft }, line: { color: C.black, width: 1 } });
+  text(s, '— хранилище данных', { x: 8.36, y: 4.86, w: 1.45, h: 0.2, fontSize: 8.5, valign: 'middle' });
+  text(s, fig('Диаграмма контейнеров (C4, уровень 2)'), { x: 0.4, y: 5.22, w: 9.2, h: 0.25, fontSize: 11, align: 'center' });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 21. Даталогическая модель: таблицы и поля — как в init.sql сервисов ──
+// Типы и число полей читаются из src/<сервис>/migrations/init.sql, поэтому слайд не расходится со схемой.
+function sqlTables(svc) {
+  const sql = fs.readFileSync(`../../../src/${svc}/migrations/init.sql`, 'utf8').replace(/--[^\n]*/g, '');
+  const T = {};
+  for (const m of sql.matchAll(/CREATE TABLE(?: IF NOT EXISTS)?\s+(\w+)\s*\((.*?)\n\);/gs)) {
+    const cols = [];
+    m[2].split(/,\s*\n/).forEach((l) => {
+      l = l.trim().replace(/\s+/g, ' ');
+      if (!l || /^(PRIMARY KEY|FOREIGN KEY|UNIQUE|CONSTRAINT|CHECK)\b/i.test(l)) return;
+      const c = l.match(/^(\w+) ([A-Za-z]+(?:\(\d+\))?(?:\[\])?(?: WITH TIME ZONE)?)/);
+      if (!c) return;
+      const type = c[2].toLowerCase().replace(/^bigserial$/, 'bigint').replace(/^integer$/, 'int').replace('timestamp with time zone', 'timestamptz');
+      cols.push({ name: c[1], type, pk: /PRIMARY KEY/i.test(l), fk: /REFERENCES/i.test(l) });
+    });
+    T[m[1]] = cols;
+  }
+  return T;
+}
+{
+  const s = slideTitle('Даталогическая модель');
+  const er = erDiagram(s, { fs: 8.3, rowH: 0.15, tfs: 9 });
+  const Y = [0.9, 2.49, 4.08]; // высота таблицы 1,09: пять строк
+  const DB = { sso: sqlTables('sso'), pm: sqlTables('project-manager'), mod: sqlTables('moderation'), orc: sqlTables('orchestrator') };
+  // [роль в расстановке, сервис, таблица, показанные поля, поля-ссылки без внешнего ключа].
+  // Порядок полей — как в erLayout: первое — первичный ключ, следом ссылочные.
+  const grid = [
+    [null,
+      ['draft', 'pm', 'project_drafts', ['project_id', 'title_ru', 'about_ru', 'icon_path'], []],
+      ['build', 'pm', 'project_builds', ['id', 'project_id', 'version', 'file_path'], []],
+      ['release', 'pm', 'project_releases', ['id', 'project_id', 'version', 'prod_url'], []],
+      ['grant', 'orc', 'platform_grants', ['id', 'game_id', 'max_instances', 'is_active'], ['game_id']]],
+    [['user', 'sso', 'users', ['id', 'email', 'role', 'status'], []],
+      ['member', 'pm', 'project_members', ['id', 'project_id', 'user_id', 'permissions'], ['user_id']],
+      ['project', 'pm', 'projects', ['id', 'owner_id', 'status', 'is_online'], ['owner_id']],
+      ['request', 'mod', 'moderation_requests', ['id', 'project_id', 'status', 'request_type'], ['project_id']],
+      ['snapshot', 'mod', 'moderation_snapshots', ['id', 'request_id', 'status', 'snapshot_json'], []]],
+    [['node', 'orc', 'nodes', ['id', 'owner_id', 'address', 'status'], ['owner_id']],
+      ['instance', 'orc', 'instances', ['id', 'node_id', 'server_build_id', 'status'], []],
+      ['sbuild', 'orc', 'server_builds', ['id', 'game_id', 'version', 'image_tag'], ['game_id']],
+      ['policy', 'orc', 'game_policies', ['game_id', 'mode', 'target_instances', 'auto_restart'], ['game_id']],
+      ['message', 'mod', 'moderation_messages', ['id', 'request_id', 'project_id', 'content'], ['project_id']]],
+  ];
+  const id = {};
+  let shown = 0;
+  grid.forEach((row, r) => row.forEach((e, k) => {
+    if (!e) return;
+    const [key, svc, table, show, logical] = e, cols = DB[svc][table];
+    const rows = show.map((name) => {
+      const c = cols.find((q) => q.name === name);
+      if (!c) throw new Error(`нет поля ${table}.${name}`);
+      const pre = [c.pk && 'PK', c.fk && 'FK'].filter(Boolean).join(', ');
+      return [...(pre ? [{ text: pre + ' ', options: { bold: true } }] : []), { text: `${c.name} : ${c.type}`, options: { italic: logical.includes(name) } }];
+    });
+    rows.push(`… ещё ${cols.length - show.length}`);
+    er.entity(table, ER_X[k], Y[r], ER_W, table, rows);
+    id[key] = table; shown++;
+  }));
+  erLayout(er, id, Y, true);
+  erLegend(s, er, true);
+  const total = Object.values(DB).reduce((a2, t) => a2 + Object.keys(t).length, 0);
+  text(s, fig(`Даталогическая модель: основные таблицы (${shown} из ${total}), база данных PostgreSQL`), { x: 0.4, y: 5.25, w: 9.2, h: 0.25, fontSize: 11, align: 'center' });
+  num(s);
+  speechNotes(s);
+}
+
+// Текстовый слайд из колонок: [заголовок колонки, [[жирное начало, продолжение] | строка, …]]
+function listSlide(title, cols, o = {}) {
+  const s = slideTitle(title);
+  const gap = o.gap || 0.4, cw = (9.0 - gap * (cols.length - 1)) / cols.length, fz = o.fs || 15;
+  cols.forEach(([head, items], i) => {
+    const x = 0.5 + i * (cw + gap);
+    // Подзаголовок — отдельной надписью вплотную к списку: без пустой строки между ними
+    text(s, head, { x, y: 1.0, w: cw, h: 0.36, fontSize: fz + 2, bold: true, color: C.accent, valign: 'middle' });
+    const runs = [];
+    items.forEach((it, k) => {
+      const last = k === items.length - 1;
+      if (Array.isArray(it)) runs.push({ text: it[0], options: { bold: true, bullet: o.bullet ? { indent: 14 } : undefined } }, { text: it[1], options: { breakLine: !last } });
+      else runs.push({ text: it, options: { bullet: o.bullet ? { indent: 14 } : undefined, breakLine: !last } });
+    });
+    text(s, runs, { x, y: 1.42, w: cw, h: 3.9, fontSize: fz, valign: 'top', paraSpaceAfter: o.after || 7 });
+  });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 22. Входные и выходные данные ──
+listSlide('Входные и выходные данные', [
+  ['Входные данные', [
+    'Клиентская сборка веб-игры',
+    'Описание игры, медиа-материалы, внутриигровые товары',
+    'Серверная сборка игры',
+    'Политика оркестрации и команды управления серверами',
+    'Сведения о вычислительных узлах: адрес, ключ, ресурсы',
+    'Решения и замечания модератора',
+    'Запросы клиентов игр на подключение к серверу',
+  ]],
+  ['Выходные данные', [
+    'Опубликованная игра в каталоге площадки',
+    'Заявки на модерацию и аудит-снимки решений',
+    'Адрес экземпляра игрового сервера или место в очереди',
+    'Состояние узлов и экземпляров, журналы серверов',
+    'Ежедневная аналитика игры с выгрузкой в CSV',
+    'Сообщения в чате проекта и письма с кодами подтверждения',
+  ]],
+], { bullet: true });
+
+// ── 23. Разработанные интерфейсы: один слайд, снимки экранов каскадом ──
+// Первый снимок виден сразу, каждый следующий по щелчку ложится поверх со сдвигом; подпись меняется вместе с ним.
+// Снимки делает shots.cjs со стенда (1440×810, светлая тема). Тонкая рамка добавлена в сами файлы снимков (magick -border 3):
+// отдельная фигура-рамка в части программ показа оставалась видна поверх ещё не появившихся снимков.
+{
+  const s = slideTitle('Разработанные интерфейсы');
+  const shots = [
+    ['ui-draft.jpg', 'Черновик игры'], ['ui-stats.jpg', 'Аналитика игры'], ['ui-servers.jpg', 'Игровые серверы проекта'],
+    ['ui-node.jpg', 'Вычислительный узел разработчика'], ['ui-queue.jpg', 'Очередь заявок модератора'], ['ui-review.jpg', 'Проверка игры в песочнице и чат проекта'],
+    ['ui-catalog.jpg', 'Каталог опубликованных игр'], ['ui-admin.jpg', 'Управление разработчиками'],
+  ];
+  const n = shots.length, dx = 0.12, dy = 0.045, top = 0.9, ih = 4.28 - dy * (n - 1), iw = ih * 2166 / 1221, x0 = (W - iw - dx * (n - 1)) / 2;
+  shots.forEach(([f, cap], i) => {
+    const x = x0 + i * dx, y = top + i * dy, g = i ? `a${i}_` : 'ui0_';
+    s.addImage({ path: IMG(f), x, y, w: iw, h: ih, objectName: `${g}shot` });
+    s.addText(fig(cap), { x: 0.4, y: 5.22, w: 9.2, h: 0.28, fontFace: FONT, fontSize: 11.5, color: C.black, align: 'center', valign: 'middle', margin: 0, fill: { color: C.white }, objectName: `${g}cap` });
+  });
+  num(s);
+  speechNotes(s);
+}
+
+// ── 24. Системные требования ──
+listSlide('Системные требования', [
+  ['Сервер платформы', [
+    'Linux, архитектура x86-64',
+    'Docker Engine 24 и новее, Docker Compose 2.20 и новее',
+    'Процессор — от 2 ядер',
+    'Оперативная память — от 4 ГБ',
+    'Диск — от 100 ГБ',
+    'Два доменных имени с сертификатами TLS',
+  ]],
+  ['Вычислительный узел', [
+    'Linux, архитектура x86-64',
+    'Docker Engine 24 и новее',
+    'Агент узла; порт 44044 открыт для сервиса оркестрации',
+    'Процессор и память — по числу экземпляров: пределы задаются для каждого',
+  ]],
+  ['Пользователь и игрок', [
+    'Google Chrome 120 и новее',
+    'Яндекс Браузер 24.1 и новее',
+    'Mozilla Firefox 121 и новее',
+    'Microsoft Edge 120, Safari 17 и новее',
+    'Экран шириной от 1280 точек для личного кабинета',
+    'Подключение к сети Интернет',
+  ]],
+], { bullet: true, fs: 13.5, after: 6, gap: 0.3 });
+
+// ── 25. Сведения о проекте ──
+listSlide('Сведения о проекте', [
+  ['Серверная часть', [
+    ['8', ' сервисов'],
+    ['162', ' метода программного интерфейса'],
+    ['≈ 41 000', ' строк кода на Go, без тестов'],
+    ['433', ' автоматических теста, ≈ 25 300 строк'],
+  ]],
+  ['База данных', [
+    ['23', ' таблицы в PostgreSQL'],
+    ['4', ' набора таблиц — у каждого сервиса свой'],
+  ]],
+  ['Веб-интерфейс', [
+    ['26', ' экранов для трёх ролей'],
+    ['64', ' компонента Vue'],
+    ['≈ 54 700', ' строк кода'],
+  ]],
+], { fs: 17, after: 10 });
+
+// ── 26. Средства разработки: версии — из go.mod, package.json, файлов Docker и рабочего места ──
+listSlide('Средства разработки', [
+  ['Разработка', [
+    ['Серверная часть: ', 'Go 1.25, gRPC 1.80, Protocol Buffers 3 (protoc 36.1), grpc-gateway 2.29'],
+    ['Веб-интерфейс: ', 'Vue 3.5, TypeScript 5.8, Vite 7.3, Node.js 22'],
+    ['Тестирование: ', 'testify 1.11, Playwright 1.63'],
+    ['Контроль версий: ', 'Git 2.56'],
+  ]],
+  ['Хранение и развёртывание', [
+    ['СУБД: ', 'PostgreSQL 17'],
+    ['Состояние и блокировки: ', 'Valkey 8'],
+    ['Объектное хранилище: ', 'SeaweedFS 4.46'],
+    ['Контейнеры: ', 'Docker 29.9, Docker Compose 5.7'],
+    ['Веб-сервер: ', 'Nginx 1.27'],
+  ]],
+  ['Рабочее место', [
+    ['Операционная система: ', 'CachyOS, ядро Linux 7.3'],
+    ['Редактор кода: ', 'Zed 1.27'],
+    ['Проектирование: ', 'draw.io 31.7, PlantUML 1.2026.8'],
+    ['Документация: ', 'ONLYOFFICE Desktop Editors 10.0'],
+  ]],
+], { fs: 13.5, after: 7, gap: 0.3 });
+
+// ── 27. Заключение ─────────────────────────────────────────
+// Справа — место под фотографию подписанного акта о внедрении: достаточно положить файл img/act.jpg.
 {
   const s = slideTitle('Заключение');
   const done = [
-    'Проанализирована предметная область и деятельность заказчика — игровой платформы Welwise Games.',
-    'Построены модели процессов «как есть» для публикации игр и управления серверами, выявлены проблемы.',
-    'Разработаны модели процессов «как будет» с использованием автоматизированной системы.',
-    'Проведено сравнение с аналогами: GameDistribution, CrazyGames, Poki for Developers, itch.io, CloudArcade.',
-    'Сформулированы цель и задачи, разработано техническое задание по ГОСТ 34.602-2020.',
-    'Построены диаграммы вариантов использования для четырёх ролей: разработчик, модератор, администратор, клиент игры.',
-    'Спроектирована и реализована система из восьми сервисов, программный код покрыт 413 автоматическими тестами.',
+    'Проанализированы предметная область и деятельность заказчика, построены модели процессов «как есть» и «как будет».',
+    'Проведено сравнение с аналогами, разработано техническое задание по ГОСТ 34.602-2020.',
+    'Спроектированы архитектура, модели данных и алгоритмы оркестрации игровых серверов.',
+    'Реализована система из восьми сервисов и веб-интерфейса, код проверен 433 автоматическими тестами.',
   ];
+  const LW = 6.0;
   text(s, [
     { text: 'В ходе работы:', options: { bold: true, breakLine: true } },
     ...done.map((t, i) => ({ text: t, options: { bullet: { type: 'number', style: 'arabicParenR' }, breakLine: i < done.length - 1 } })),
-  ], { x: 0.5, y: 0.95, w: 9.0, h: 3.55, fontSize: 15, valign: 'top', align: 'justify', paraSpaceAfter: 2 });
-  s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.6, w: 9.0, h: 0.62, fill: { color: C.white }, line: { color: C.accent, width: 1.5 } });
-  text(s, [
-    { text: 'Текущий этап — внедрение: ', options: { bold: true, color: C.accent } },
-    { text: 'система проходит тестирование на реальном стенде платформы, завершение — в течение месяца.' },
-  ], { x: 0.65, y: 4.6, w: 8.7, h: 0.62, fontSize: 15, valign: 'middle' });
+  ], { x: 0.4, y: 0.95, w: LW, h: 2.2, fontSize: 13, valign: 'top', align: 'justify', paraSpaceAfter: 3 });
+  // Сравнение моделей процессов: подсчёт по схемам BPMN (docs/business-process/bpmn/README.md)
+  const cell = (t, o = {}) => ({ text: t, options: { fontFace: FONT, fontSize: 12, align: 'center', valign: 'middle', color: C.black, margin: [1, 6, 1, 6], ...o } });
+  const rows = [
+    ['Участников-людей в процессе', '4', '2'],
+    ['Ручных операций инженера и менеджера', '7', '0'],
+    ['Передач через мессенджер', '8', '0'],
+    ['Автоматических операций', '3', '12'],
+    ['Задержка получения статистики', 'до 30 дней', 'до суток'],
+  ];
+  const data = [['Критерий', 'Как есть', 'Как будет'].map((h, i) => cell(h, { bold: true, align: i ? 'center' : 'left', fill: { color: C.soft } }))];
+  rows.forEach((r) => data.push(r.map((v, i) => cell(v, i === 0 ? { align: 'left' } : { bold: true, color: i === 1 ? C.red : C.green }))));
+  s.addTable(data, { x: 0.4, y: 3.3, w: LW, colW: [3.5, 1.25, 1.25], rowH: data.map(() => 0.3), border: { type: 'solid', pt: 0.75, color: 'BFBFBF' } });
+  // Акт о внедрении: лист А4 в книжной ориентации
+  const ah = 4.0, aw = ah / 1.414, ax = 6.4 + (3.2 - aw) / 2, ay = 0.95;
+  if (fs.existsSync(IMG('act.jpg'))) s.addImage({ path: IMG('act.jpg'), x: ax, y: ay, w: aw, h: ah, sizing: { type: 'contain', w: aw, h: ah } });
+  else text(s, 'Место для фотографии подписанного акта о внедрении', { x: ax + 0.2, y: ay, w: aw - 0.4, h: ah, fontSize: 13, color: '7F7F7F', align: 'center', valign: 'middle' });
+  s.addShape(pres.shapes.RECTANGLE, { x: ax, y: ay, w: aw, h: ah, fill: { type: 'none' }, line: { color: C.black, width: 0.75, dashType: fs.existsSync(IMG('act.jpg')) ? 'solid' : 'dash' } });
+  text(s, fig('Акт о внедрении'), { x: 6.4, y: ay + ah + 0.06, w: 3.2, h: 0.25, fontSize: 11, align: 'center' });
   num(s);
   speechNotes(s);
 }
@@ -607,121 +1169,16 @@ ucSlide([['nodes.png', 'Рис. 7 — Узлы и сервисы данных', 
 // ══ Скрытые резервные слайды (после заключения): показываются только при вопросах комиссии ══
 const MAIN_SLIDES = pres.slides.length;
 
-// ── Диаграмма развёртывания (упрощённая схема фигурами; полная — docs/deployment) ──
-{
-  const s = slideTitle('Диаграмма развёртывания', 'Упрощённая схема, полная — в приложении');
-  const box = (x, y, w, h, title, sub, o = {}) => {
-    s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: C.white }, line: { color: C.black, width: o.thick || 1, dashType: o.dash ? 'dash' : 'solid' } });
-    text(s, [{ text: title, options: { bold: !o.plain, fontSize: o.fs || 9.5, breakLine: !!sub } }, ...(sub ? [{ text: sub, options: { fontSize: 8.5 } }] : [])],
-      { x: x + 0.04, y, w: w - 0.08, h, align: 'center', valign: o.top ? 'top' : 'middle' });
-  };
-  const ln = (x1, y1, x2, y2, both = false) => seg(s, x1, y1, x2, y2, { width: 1, endArrowType: 'triangle', ...(both ? { beginArrowType: 'triangle' } : {}) });
-  const plain = (x1, y1, x2, y2) => seg(s, x1, y1, x2, y2, { width: 1 });
-  const lab = (t, x, y, w, o = {}) => text(s, t, { x, y, w, h: 0.15, fontSize: 8, align: 'center', ...o });
-  // Устройства и смежные системы
-  box(0.3, 1.05, 1.75, 0.75, 'Устройство разработчика или сотрудника', 'Браузер, SPA-приложение', { fs: 9 });
-  box(0.3, 1.95, 1.75, 0.8, 'Устройство игрока', 'Браузер, веб-игра с модулем обнаружения сервера', { fs: 9 });
-  box(0.3, 2.85, 1.75, 0.5, 'Почтовый сервер', 'смежная система', { dash: true });
-  box(0.3, 3.5, 1.75, 0.55, 'Сервис аналитики площадки', 'смежная система', { dash: true, fs: 9 });
-  // Сервер платформы
-  box(2.55, 1.0, 5.1, 4.0, '', '', { thick: 1.5 });
-  text(s, 'Сервер платформы Welwise, Docker Compose', { x: 2.65, y: 1.03, w: 2.7, h: 0.2, fontSize: 9, bold: true });
-  box(2.65, 1.4, 1.4, 0.7, 'Nginx', 'интерфейс, игры, /api');
-  box(4.35, 1.4, 1.4, 0.7, 'API-шлюз', 'REST в gRPC');
-  box(6.05, 1.4, 1.4, 0.7, 'Входной прокси', 'игровой трафик');
-  const svc = [[2.65, 'Сервис учётных записей'], [3.65, 'Агент развёртывания игр'], [4.65, 'Сервис проектов'], [5.65, 'Сервис модерации'], [6.65, 'Сервис оркестрации']];
-  svc.forEach(([x, t]) => box(x, 2.5, 0.85, 0.8, t, '', { fs: 7.8, plain: true }));
-  box(2.65, 4.1, 1.5, 0.7, 'PostgreSQL', 'базы сервисов');
-  box(4.3, 4.1, 1.5, 0.7, 'Valkey', 'блокировки, кэш, маршруты');
-  box(5.95, 4.1, 1.5, 0.7, 'SeaweedFS (S3)', 'сборки, медиа');
-  // Вычислительный узел
-  box(8.4, 1.35, 1.4, 3.3, '', '', { thick: 1.5 });
-  text(s, 'Вычислительный узел', { x: 8.45, y: 1.37, w: 1.3, h: 0.2, fontSize: 9, bold: true, align: 'center' });
-  box(8.5, 1.65, 1.2, 0.7, 'Экземпляры игровых серверов', '', { fs: 8.5 });
-  box(8.5, 2.55, 1.2, 0.75, 'Агент узла', 'команды, журналы', { fs: 9 });
-  box(8.5, 3.5, 1.2, 1.0, 'Сервисы данных игры', 'PostgreSQL, Redis, MySQL, MinIO, резервные копии', { fs: 9 });
-  // Связи
-  ln(2.05, 1.55, 2.65, 1.55); lab('HTTPS', 2.1, 1.38, 0.5);
-  ln(2.05, 2.02, 2.65, 2.02); lab('HTTPS, WSS', 2.08, 2.04, 0.55);
-  plain(3.35, 1.4, 3.35, 1.27); plain(3.35, 1.27, 6.75, 1.27); ln(6.75, 1.27, 6.75, 1.4);
-  lab('WebSocket, /game-proxy', 5.3, 1.1, 1.7);
-  ln(4.05, 1.75, 4.35, 1.75);
-  plain(5.05, 2.1, 5.05, 2.3); plain(3.07, 2.3, 7.07, 2.3);
-  [3.07, 5.07, 6.07, 7.07].forEach((x) => ln(x, 2.3, x, 2.5));
-  lab('gRPC', 5.1, 2.12, 0.5, { align: 'left' });
-  ln(3.5, 2.9, 3.65, 2.9, true); ln(4.5, 2.9, 4.65, 2.9, true); ln(5.5, 2.9, 5.65, 2.9, true); ln(6.5, 2.9, 6.65, 2.9, true);
-  ln(2.05, 3.05, 2.65, 3.05); lab('SMTP', 2.1, 2.88, 0.5);
-  plain(2.05, 3.75, 5.07, 3.75); ln(5.07, 3.75, 5.07, 3.3); lab('HTTPS', 2.4, 3.58, 0.6);
-  s.addShape(pres.shapes.DOWN_ARROW, { x: 6.0, y: 3.4, w: 0.35, h: 0.6, fill: { color: C.white }, line: { color: C.black, width: 1 } });
-  lab('SQL, RESP, S3', 6.4, 3.62, 1.1, { align: 'left' });
-  ln(7.45, 1.95, 8.5, 1.95); lab('WebSocket', 7.7, 1.78, 0.75);
-  ln(7.5, 2.93, 8.5, 2.93, true); lab('gRPC', 7.7, 2.75, 0.75);
-  text(s, 'Игрок может подключаться и напрямую к узлу по его домену', { x: 8.4, y: 4.72, w: 1.4, h: 0.5, fontSize: 8, align: 'center', valign: 'top' });
-  num(s);
-  hiddenNotes(s);
-}
-
-// ── Слайды с диаграммами: общая высота подбирается так, чтобы картинки уместились в ряд ──
-// opts.cols — колонки равной ширины, каждая картинка масштабируется по своей колонке (для моделей данных);
-// иначе у всех картинок общая высота (для диаграмм состояний)
-function figSlide(title, items, opts = {}) {
-  const s = slideTitle(title);
-  const gap = 0.35, maxH = opts.maxH || 3.8, top = 0.95, n = items.length;
-  const colW = (9.2 - gap * (n - 1)) / n;
-  const H = Math.min(maxH, (9.2 - gap * (n - 1)) / items.reduce((a, [, , w, h]) => a + w / h, 0));
-  const dims = items.map(([, , w, h]) => {
-    if (!opts.cols) return { w: H * w / h, h: H };
-    const ih = Math.min(maxH, colW * h / w);
-    return { w: ih * w / h, h: ih };
-  });
-  const widths = dims.map((d) => d.w);
-  let x = (W - widths.reduce((a, b) => a + b, 0) - gap * (n - 1)) / 2;
-  items.forEach(([f, cap], i) => {
-    s.addImage({ path: IMG(f), x, y: top + (maxH - dims[i].h) / 2, w: widths[i], h: dims[i].h });
-    const cw = Math.max(widths[i] + 0.3, 2.2);
-    text(s, cap, { x: x + widths[i] / 2 - cw / 2, y: top + maxH + 0.08, w: cw, h: 0.45, fontSize: 11, align: 'center', valign: 'top' });
-    x += widths[i] + gap;
-  });
-  num(s);
-  hiddenNotes(s);
-}
-figSlide('Диаграммы состояний', [['project-state.png', 'Рис. 8 — Состояния проекта', 1487, 985], ['request-state.png', 'Рис. 9 — Состояния заявки на модерацию', 853, 1173], ['node-state.png', 'Рис. 10 — Состояния вычислительного узла', 799, 1239]]);
-figSlide('Диаграмма состояний', [['instance-state.png', 'Рис. 11 — Состояния экземпляра игрового сервера', 3295, 1096]]);
-figSlide('Диаграмма последовательности', [['publish-sequence.png', 'Рис. 12 — Публикация игры', 1729, 1271]]);
-figSlide('Модель данных', [['er-orchestrator.png', 'Рис. 13 — База оркестратора: узлы и экземпляры', 1309, 1292], ['er-orchestrator-policies.png', 'Рис. 14 — База оркестратора: политики и доступ', 994, 1042]], { cols: true });
-figSlide('Модель данных', [['er-projects.png', 'Рис. 15 — База сервиса проектов', 2241, 968]]);
-figSlide('Модель данных', [['er-moderation.png', 'Рис. 16 — База сервиса модерации', 1329, 967], ['er-accounts.png', 'Рис. 17 — База сервиса учётных записей', 912, 513]], { cols: true });
-
-// ── Средства разработки и рабочий проект ──
-{
-  const s = slideTitle('Средства разработки и рабочий проект');
-  const B = (t) => ({ text: t, options: { bold: true } });
-  const T = (t, o = {}) => ({ text: t, options: o });
-  const br = { breakLine: true };
-  text(s, [
-    T('Средства разработки', { bold: true, color: C.accent, fontSize: 17, breakLine: true }),
-    T(' ', { fontSize: 6, breakLine: true }),
-    B('Серверная часть: '), T('Go, gRPC и Protocol Buffers, grpc-gateway', br),
-    B('Веб-интерфейс: '), T('Vue 3, TypeScript, Vite', br),
-    B('Хранение данных: '), T('PostgreSQL 17, Valkey 8, SeaweedFS (S3)', br),
-    B('Развёртывание: '), T('Docker, Docker Compose, Nginx', br),
-    B('Проектирование: '), T('draw.io, PlantUML'),
-  ], { x: 0.5, y: 1.05, w: 4.4, h: 3.8, fontSize: 15, valign: 'top', paraSpaceAfter: 8 });
-  text(s, [
-    T('Рабочий проект', { bold: true, color: C.accent, fontSize: 17, breakLine: true }),
-    T(' ', { fontSize: 6, breakLine: true }),
-    B('8'), T(' серверных сервисов и веб-интерфейс', br),
-    B('162'), T(' метода программного интерфейса', br),
-    B('23'), T(' таблицы в четырёх базах данных', br),
-    B('≈ 39 500'), T(' строк кода на Go, без тестов', br),
-    B('≈ 54 600'), T(' строк веб-интерфейса', br),
-    B('413'), T(' автоматических тестов, ≈ 24 500 строк'),
-  ], { x: 5.2, y: 1.05, w: 4.4, h: 3.8, fontSize: 15, valign: 'top', paraSpaceAfter: 8 });
-  num(s);
-  hiddenNotes(s);
-}
+figSlide('Диаграмма состояний', [['instance-state.png', 'Состояния экземпляра игрового сервера']]);
+figSlide('Диаграмма последовательности', [['instance-start-sequence.png', 'Запуск экземпляра игрового сервера']], { maxH: 4.2, top: 0.88 });
+figSlide('Диаграмма последовательности', [['discovery-sequence.png', 'Обнаружение сервера и подключение игрока']], { maxH: 4.2, top: 0.88 });
+figSlide('Диаграмма деятельности', [['node-select-activity.png', 'Выбор узла для экземпляра']], { maxH: 4.2, top: 0.88 });
+figSlide('Диаграмма классов', [['class-orchestrator.png', 'Классы предметной области сервиса оркестрации']], { maxH: 4.2, top: 0.88 });
+figSlide('Даталогическая модель', [['er-orchestrator.png', 'Таблицы сервиса оркестрации: узлы и экземпляры'], ['er-orchestrator-policies.png', 'Таблицы сервиса оркестрации: политики и доступ']], { cols: true });
+figSlide('Даталогическая модель', [['er-projects.png', 'Таблицы сервиса управления проектами']]);
+figSlide('Даталогическая модель', [['er-moderation.png', 'Таблицы сервиса модерации'], ['er-accounts.png', 'Таблицы сервиса учётных записей']], { cols: true });
 
 // Список скрытых слайдов для postprocess.py
 fs.writeFileSync('hidden.json', JSON.stringify(Array.from({ length: pres.slides.length - MAIN_SLIDES }, (_, i) => MAIN_SLIDES + i + 1)));
 
-pres.writeFile({ fileName: 'deck.pptx' }).then(() => console.log('written deck.pptx'));
+pres.writeFile({ fileName: 'deck.pptx' }).then(() => console.log(`written deck.pptx: ${MAIN_SLIDES} основных слайдов, ${pres.slides.length - MAIN_SLIDES} резервных`));

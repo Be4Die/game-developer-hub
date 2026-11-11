@@ -501,7 +501,7 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 24px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-main, #fff);
 }
 
 .ad-desc {
@@ -592,7 +592,7 @@ onUnmounted(() => {
 .purchase-item-name {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-main, #fff);
 }
 
 .purchase-item-desc {

@@ -1,0 +1,60 @@
+' Оформление диаграмм для слайдов: монохромно, Times New Roman, крупный кегль.
+' Полные версии диаграмм для записки лежат в docs/uml, docs/data-model, docs/deployment.
+skinparam dpi 200
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 17
+skinparam roundcorner 14
+skinparam ArrowThickness 1.2
+hide empty description
+skinparam state {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam activity {
+  BackgroundColor white
+  BorderColor black
+  DiamondBackgroundColor white
+  DiamondBorderColor black
+}
+skinparam sequence {
+  ParticipantBackgroundColor white
+  ParticipantBorderColor black
+  ActorBackgroundColor white
+  ActorBorderColor black
+  LifeLineBorderColor black
+}
+skinparam class {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam component {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam node {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam database {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam artifact {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam interface {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam partition {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam ArrowColor black

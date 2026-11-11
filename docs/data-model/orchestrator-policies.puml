@@ -45,4 +45,15 @@ entity "Доступ к серверам платформы\n(platform_grants)" 
   max_instance_cpu_millis : int
   … ещё 1
 }
+entity "Экземпляры\n(instances)\n<i>сервис оркестрации</i>" as instances #line.dashed {
+  * id
+}
+entity "Проекты\n(projects)\n<i>сервис управления проектами</i>" as projects #line.dashed {
+  * id
+}
+projects ||..o| game_policies : game_id
+projects ||..o{ queue_events : game_id
+instances ||..o{ queue_events : instance_id
+projects ||..o{ platform_access_requests : project_id
+projects ||..o| platform_grants : game_id
 @enduml

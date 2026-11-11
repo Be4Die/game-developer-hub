@@ -1,0 +1,28 @@
+@startuml sequence-publish
+!include style.iuml
+skinparam defaultFontSize 18
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowThickness 1.3
+  LifeLineThickness 1
+}
+hide footbox
+autonumber
+actor "Разработчик" as Dev
+participant "Сервис управления\nпроектами" as PM
+participant "Сервис\nмодерации" as MS
+actor "Модератор" as Mod
+participant "Объектное\nхранилище" as S3
+Dev -> PM : отправить проект на модерацию
+PM -> MS : создать заявку с аудит-снимком проекта
+MS --> PM : номер заявки
+PM --> Dev : проект «На модерации», черновик заблокирован
+Mod -> MS : взять заявку в работу, проверить и одобрить
+MS -> PM : опубликовать версию сборки
+PM -> S3 : разместить файлы сборки в каталоге игр
+S3 --> PM : адрес игры
+PM -> PM : создать релиз,\nснять блокировку
+PM --> MS : игра опубликована
+MS -> MS : зафиксировать решение\nи аудит-снимок
+MS --> Dev : решение в чате проекта
+@enduml

@@ -513,17 +513,17 @@ const filteredLogs = computed(() => {
 
 .log-dir-badge.in {
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: var(--primary, #60a5fa);
 }
 
 .log-dir-badge.out {
   background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
+  color: var(--success, #34d399);
 }
 
 .log-dir-badge.system {
   background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  color: var(--warning, #fbbf24);
 }
 
 .log-action {
@@ -554,7 +554,7 @@ const filteredLogs = computed(() => {
   background: var(--bg-input, #101114);
   border-radius: 4px;
   font-size: 11px;
-  color: #a5b4fc;
+  color: var(--primary, #a5b4fc);
   max-height: 200px;
   overflow: auto;
 }

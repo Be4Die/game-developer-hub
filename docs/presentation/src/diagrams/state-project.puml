@@ -1,0 +1,16 @@
+@startuml state-project
+!include style.iuml
+skinparam nodesep 40
+skinparam ranksep 34
+state "Черновик" as Draft
+state "На модерации" as Pending
+state "Опубликован" as Published
+state "Отклонён" as Rejected
+[*] --> Draft : создать проект
+Draft --> Pending : отправить\nна модерацию
+Pending --> Published : одобрено
+Pending --> Rejected : отклонено
+Rejected --> Pending : исправить\nи отправить
+Published --> Draft : снять\nс публикации
+Published --> Published : обновление\nна проверке
+@enduml

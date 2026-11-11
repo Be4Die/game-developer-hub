@@ -20,6 +20,18 @@ TYPES = {'BIGSERIAL': 'bigint', 'BIGINT': 'bigint', 'SERIAL': 'int', 'INTEGER': 
          'TIMESTAMP': 'timestamp', 'TIMESTAMPTZ': 'timestamp', 'JSONB': 'jsonb', 'BOOLEAN': 'bool', 'UUID': 'uuid', 'BYTEA': 'bytea',
          'DOUBLE': 'float', 'REAL': 'float', 'NUMERIC': 'numeric'}
 SKIP = {'created_at', 'updated_at'}
+# Ссылки по идентификатору на таблицы других сервисов: внешнего ключа нет, потому что у каждого сервиса свой набор таблиц
+# и сервисы не обращаются к чужим таблицам. На диаграмме такие связи показаны пунктиром, чужая таблица — пунктирной рамкой.
+LOGICAL = {
+    'projects': {'owner_id': 'users'}, 'project_members': {'user_id': 'users'}, 'project_invitations': {'invitee_id': 'users'},
+    'user_access_blocks': {'user_id': 'users'},
+    'moderation_requests': {'project_id': 'projects'}, 'moderation_messages': {'project_id': 'projects'},
+    'moderation_attachments': {'project_id': 'projects'},
+    'nodes': {'owner_id': 'users'}, 'server_builds': {'game_id': 'projects'}, 'game_policies': {'game_id': 'projects'},
+    'queue_events': {'game_id': 'projects', 'instance_id': 'instances'}, 'platform_access_requests': {'project_id': 'projects'},
+    'platform_grants': {'game_id': 'projects'},
+}
+OWNER = {'users': 'сервис учётных записей', 'projects': 'сервис управления проектами', 'instances': 'сервис оркестрации'}
 MAX_OTHER = 6
 
 
@@ -81,6 +93,16 @@ def render(svc, tables, out, ltr=False):
             if parent in tables:
                 # внешний ключ, он же первичный, даёт связь «один к одному»
                 lines.append(f'{parent} ||--o| {t}' if col in d['pks'] else f'{parent} ||--o{{ {t}')
+    # Таблицы других сервисов, на которые ссылаются по идентификатору
+    ext = sorted({p for t in tables for p in LOGICAL.get(t, {}).values() if p not in tables})
+    for p in ext:
+        lines.append(f'entity "{NAMES.get(p, p)}\\n({p})\\n<i>{OWNER[p]}</i>" as {p} #line.dashed {{')
+        lines.append('  * id')
+        lines.append('}')
+    for t in tables:
+        for col, parent in sorted(LOGICAL.get(t, {}).items()):
+            one = col in tables[t]['pks'] or (t, col) in {('platform_grants', 'game_id')}
+            lines.append(f'{parent} ||..o| {t} : {col}' if one else f'{parent} ||..o{{ {t} : {col}')
     lines.append('@enduml')
     pathlib.Path(out + '.puml').write_text('\n'.join(lines) + '\n')
 

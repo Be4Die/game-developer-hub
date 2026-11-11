@@ -733,7 +733,7 @@ async function confirmRevoke(): Promise<void> {
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(13, 17, 23, 0.85);
+  background: var(--primary-light, rgba(13, 17, 23, 0.85));
   border: 1px solid var(--border, #30363d);
   color: var(--primary, #58a6ff);
 }

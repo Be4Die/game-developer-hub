@@ -1,0 +1,31 @@
+@startuml cycle_nodes
+' Диаграмма деятельности UML: часть «а» — контроль узлов (выполняется для каждого узла);
+' один проход цикла оркестрации (служба HeartbeatService), период — 15 с.
+!include style.iuml
+skinparam defaultFontSize 15
+skinparam activity {
+  BackgroundColor white
+  BorderColor black
+  DiamondBackgroundColor white
+  DiamondBorderColor black
+}
+skinparam partition {
+  BackgroundColor white
+  BorderColor black
+}
+start
+:Опросить состояние узла;
+if (Узел ответил?) then (да)
+  :Сверить экземпляры,\nпропавшие отметить сбойными;
+else (нет)
+  if (Молчит дольше T<sub>off</sub>?) then (да)
+    :Узел — «Не в сети»,\nего экземпляры — «Сбой»;
+  else (нет)
+  endif
+endif
+if (Есть сбойные экземпляры\nи включён автоперезапуск?) then (да)
+  :Перезапустить контейнер либо\nзапустить новый экземпляр;
+else (нет)
+endif
+stop
+@enduml

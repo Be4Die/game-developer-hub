@@ -27,6 +27,22 @@
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 10px;
+
+  /* Производные токены: ими пользуются отдельные компоненты (песочница, журналы, редакторы).
+     Без этих определений срабатывали запасные тёмные значения и в светлой теме часть интерфейса была чёрной. */
+  --bg-surface: #f8f9fa;
+  --bg-input: #ffffff;
+  --bg-hover: #f1f3f5;
+  --border-color: #e9ecef;
+  --border-color-hover: #ced4da;
+  --border-hover: #ced4da;
+  --text-primary: #212529;
+  --text-color: #212529;
+  --text-secondary: #495057;
+  --info: #3b5bdb;
+  --warning-dark: #e67700;
+  --danger-dark: #c92a2a;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 }
 
 [data-theme='dark'] {
@@ -51,6 +67,19 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 8px 0 rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 4px 16px 0 rgba(0, 0, 0, 0.5);
+
+  --bg-surface: #161b22;
+  --bg-input: #0d1117;
+  --bg-hover: #21262d;
+  --border-color: #30363d;
+  --border-color-hover: #484f58;
+  --border-hover: #484f58;
+  --text-primary: #f0f6fc;
+  --text-color: #f0f6fc;
+  --text-secondary: #b0b8c4;
+  --info: #58a6ff;
+  --warning-dark: #e6a000;
+  --danger-dark: #da3633;
 }
 
 body {
